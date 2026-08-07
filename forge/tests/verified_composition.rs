@@ -85,7 +85,7 @@ fn build_args(bundle: &Path) -> Vec<String> {
         "--crate-name".to_string(),
         "thermite_probe".to_string(),
         "--target".to_string(),
-        "kernel".to_string(),
+        "freestanding".to_string(),
         "--out".to_string(),
         bundle.to_string_lossy().to_string(),
     ]

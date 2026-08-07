@@ -52,7 +52,7 @@ component delivers the groundwork:
   invariant / bounded unrolling / a fixpoint argument. The hard, kernel-gated piece. NOT designed here
   (see "Step 2.2.2 horizon").
 - **Sibling groundwork (FRAMED, NOT designed here):** the `no_std` freestanding target
-  (`forge build --target kernel`) — the verified-microkernel enablement. It is a SEPARATE deliverable,
+  (`forge build --target freestanding`) — the verified-microkernel enablement. It is a SEPARATE deliverable,
   NOT a step-2.2 prerequisite (see "Kernel convergence").
 
 ## Trust model (same as step 1 / 2.1 — N-version differential validation, not proof)
@@ -379,7 +379,7 @@ The REQ-1 frozen exec-statement subset + the REQ-2 operational semantics are the
 EXEC-LANGUAGE foundation: a kernel written in Thermite needs (a) a pinned, semantics-bearing exec
 statement language (REQ-1/REQ-2 deliver exactly this — let/assign/mutation/seq/if/while with a
 mechanized state-transformer meaning) and (b) a freestanding `no_std` lowering target. (b) is a
-SEPARATE sibling groundwork item — `forge build --target kernel` emitting `no_std` freestanding
+SEPARATE sibling groundwork item — `forge build --target freestanding` emitting `no_std` freestanding
 Verus-Rust (no `vstd::prelude::*` std assumptions, a freestanding allocator/panic discipline). It is
 **NOT a step-2.2 prerequisite** (2.2.1/2.2.2 are TV over the SAME lowering target as the rest of the
 toolchain). It is FRAMED here as a sibling and tracked as blocker #164; it is NOT designed in this doc
@@ -395,7 +395,7 @@ kernel's exec language — one frozen set, two consumers.
   per-RHS value faithfulness.
 - **2.2.2 (loops, KERNEL-GATED):** `while`/`loop`/`break`/`continue` — the after-loop state needs the
   invariant / unrolling / a fixpoint. Framed, not designed; a loop body is Skipped honestly.
-- **no_std kernel target (SIBLING groundwork):** `forge build --target kernel` — separate deliverable,
+- **no_std kernel target (SIBLING groundwork):** `forge build --target freestanding` — separate deliverable,
   not a step-2.2 prerequisite, framed not designed (blocker #164).
 
 A reader must NOT read straight-line body-TV (2.2.1) as whole-body (loop-inclusive) faithfulness, nor

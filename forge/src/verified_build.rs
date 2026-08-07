@@ -75,7 +75,7 @@ const COMPOSITION_STRICT_GATES: &[&str] = &[
 #[serde(rename_all = "snake_case")]
 pub enum VerifiedTarget {
     Std,
-    Kernel,
+    Freestanding,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -853,7 +853,7 @@ fn normalize_program_debug(debug: &str) -> String {
 fn target_name(target: VerifiedTarget) -> &'static str {
     match target {
         VerifiedTarget::Std => "std",
-        VerifiedTarget::Kernel => "kernel",
+        VerifiedTarget::Freestanding => "freestanding",
     }
 }
 
@@ -954,7 +954,7 @@ pub fn build_file(
         .collect();
     let lower_target = match target {
         VerifiedTarget::Std => L3LibraryTarget::Std,
-        VerifiedTarget::Kernel => L3LibraryTarget::Kernel,
+        VerifiedTarget::Freestanding => L3LibraryTarget::Freestanding,
     };
     let verus_source =
         thermite_lower::lower_l3_library(&subprogram, &lowering_exports, lower_target)
@@ -1214,7 +1214,7 @@ fn strict_source_checks(
                 if effects.iter().any(|effect| matches!(effect, Effect::Panic)) {
                     return Some(format!("reachable function `{}` declares fx panic", f.name));
                 }
-                if matches!(target, VerifiedTarget::Kernel)
+                if matches!(target, VerifiedTarget::Freestanding)
                     && effects.iter().any(|effect| {
                         matches!(
                             effect,
@@ -2162,7 +2162,7 @@ fn collect_toolchain(target: VerifiedTarget) -> Result<CollectedToolchain, Forge
     let verus_dir = verus.parent().ok_or_else(|| ForgeError::VerusOutput {
         detail: "the resolved Verus binary has no installation directory".to_string(),
     })?;
-    if matches!(target, VerifiedTarget::Kernel) {
+    if matches!(target, VerifiedTarget::Freestanding) {
         let (scratch, dependency, model) = build_kernel_vstd_link(&verus, verus_dir, &environment)?;
         dependency_paths.insert(dependency.name.clone(), scratch.path.join("libvstd.rlib"));
         link_dependencies.push(dependency);
@@ -2971,7 +2971,7 @@ fn compile_verus_source(
 
 fn expected_verus_args(crate_name: &str, target: VerifiedTarget) -> Vec<String> {
     let mut args = vec!["--output-json".to_string(), "--profile".to_string()];
-    if matches!(target, VerifiedTarget::Kernel) {
+    if matches!(target, VerifiedTarget::Freestanding) {
         args.extend([
             "--no-vstd".to_string(),
             "--import".to_string(),
@@ -3630,7 +3630,7 @@ pub fn validate_bundle(bundle: &Path, replay: bool) -> Result<VerifyBuildReport,
             .collect();
         let lower_target = match plan.target {
             VerifiedTarget::Std => L3LibraryTarget::Std,
-            VerifiedTarget::Kernel => L3LibraryTarget::Kernel,
+            VerifiedTarget::Freestanding => L3LibraryTarget::Freestanding,
         };
         let emitted = thermite_lower::lower_l3_library(&subprogram, &lower_exports, lower_target)
             .map_err(ForgeError::Lower)?;
@@ -3844,7 +3844,7 @@ pub fn validate_bundle(bundle: &Path, replay: bool) -> Result<VerifyBuildReport,
         }
     }
     match (plan.target, toolchain.kernel_vstd_model.as_ref()) {
-        (VerifiedTarget::Kernel, Some(model)) => {
+        (VerifiedTarget::Freestanding, Some(model)) => {
             let vstd_dependency = toolchain
                 .link_dependencies
                 .iter()
@@ -3954,7 +3954,7 @@ pub fn validate_bundle(bundle: &Path, replay: bool) -> Result<VerifyBuildReport,
             &current_rustup,
             &toolchain.artifact_codegen.rustup_toolchain,
         )?;
-        let replay_kernel_vstd = if matches!(plan.target, VerifiedTarget::Kernel) {
+        let replay_kernel_vstd = if matches!(plan.target, VerifiedTarget::Freestanding) {
             let current_verus_dir =
                 current_verus
                     .parent()

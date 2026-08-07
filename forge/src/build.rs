@@ -55,7 +55,7 @@
 //! | REQ-FORGE-BUILD-RUSTC | shipped | `forge/src/build.rs` | Checked rustc invocation and scratch cleanup |  |
 //! <!-- /generated:reqs -->
 //!
-//! ## `.design/build/kernel-target.md` REQ status (`forge build --target kernel`, #197)
+//! ## `.design/build/freestanding-target.md` REQ status (`forge build --target freestanding`, #197)
 //!
 //! <!-- generated:reqs view=forge-build-kernel-status -->
 //! Source: `.design/reqs/registry.toml`
@@ -98,8 +98,8 @@ const EDITION: &str = "2021";
 const ASSURANCE_L1: &str = "L1 (built, runtime-checked)";
 
 /// The codegen target profile `forge build --target` selects
-/// (`.design/build/kernel-target.md` REQ-1). The default ([`BuildTarget::Std`])
-/// is the unchanged hosted profile; [`BuildTarget::Kernel`] emits a freestanding
+/// (`.design/build/freestanding-target.md` REQ-1). The default ([`BuildTarget::Std`])
+/// is the unchanged hosted profile; [`BuildTarget::Freestanding`] emits a freestanding
 /// `no_std + alloc` library crate (no `main`, no seccomp, `panic=abort`) and
 /// refuses ambient-syscall `fx` rows. A "target" is a rustc-invocation +
 /// crate-prelude choice (rustc is the codegen backend — `thermite-design.md` §3);
@@ -109,21 +109,18 @@ const ASSURANCE_L1: &str = "L1 (built, runtime-checked)";
 pub enum BuildTarget {
     /// The default hosted profile: the std crate, seccomp sandbox available for an
     /// `--entry` runner, the existing `forge build` corpus byte-unchanged
-    /// (`.design/build/kernel-target.md` AC-4).
+    /// (`.design/build/freestanding-target.md` AC-4).
     Std,
     /// The freestanding profile (REQ-1/REQ-2): a `#![no_std]` + `extern crate
     /// alloc;` library crate compiled `--crate-type=rlib -C panic=abort`, with no
-    /// `main`/seccomp prelude, suitable for linking into a verified microkernel. An
-    /// ambient-syscall `fx` row (`read`/`write`/`net`/`term`) is refused (REQ-3).
-    Kernel,
-    /// A receipt-bound bootable image. The CLI handles this profile before the
-    /// ordinary Rust-crate lowerer; treating it as the kernel prelude here keeps
-    /// internal exhaustive matches fail-closed if it is ever routed incorrectly.
-    KernelImage,
+    /// `main`/seccomp prelude, suitable for linking into a verified microkernel,
+    /// a bootloader, or an embedded target. An ambient-syscall `fx` row
+    /// (`read`/`write`/`net`/`term`) is refused (REQ-3).
+    Freestanding,
 }
 
 /// The freestanding `#![no_std] + alloc` crate prelude prepended to `lower_l1`'s
-/// output under [`BuildTarget::Kernel`] (REQ-2). `#![no_std]` drops the std
+/// output under [`BuildTarget::Freestanding`] (REQ-2). `#![no_std]` drops the std
 /// prelude; `extern crate alloc;` + `use alloc::vec::Vec;` resolves the bare `Vec`
 /// the L1 collection wrappers (`TString { data: Vec<u8> }`, the `TVec*`/`TMap*`
 /// runtime) spell (OQ-3: the L1 emission carries no `std::`-qualified path — the
@@ -133,9 +130,9 @@ pub enum BuildTarget {
 /// import, `E0252`)). `panic!` is a core macro (no import needed); it routes to the
 /// kernel host's `#[panic_handler]` under `panic=abort` (REQ-4, OQ-1). The
 /// `#![allow(internal_features)]`-free, deterministic fixed string (R-CODE-5).
-const KERNEL_PRELUDE: &str = "#![no_std]\nextern crate alloc;\nuse alloc::vec::Vec;\n\n";
+const FREESTANDING_PRELUDE: &str = "#![no_std]\nextern crate alloc;\nuse alloc::vec::Vec;\n\n";
 
-/// The ambient-syscall effect verbs a [`BuildTarget::Kernel`] build refuses (REQ-3):
+/// The ambient-syscall effect verbs a [`BuildTarget::Freestanding`] build refuses (REQ-3):
 /// `read`/`write`/`net`/`term` carry a userspace syscall surface (the #57 seccomp
 /// allowlist maps them to `openat`/`socket`/`ioctl`/…) with no kernel analogue, and
 /// `time`/`rand` carry std-bodied effect wrappers (`effect_wrappers::WRAPPERS`
@@ -293,13 +290,13 @@ pub fn build_file(
     let path = path.as_ref();
     let program = parse_program(path)?;
 
-    // `.design/build/kernel-target.md` REQ-1/REQ-3: a kernel build is a library
-    // (no `main`), so `--target kernel` + `--entry` is a usage error — a kernel
+    // `.design/build/freestanding-target.md` REQ-1/REQ-3: a kernel build is a library
+    // (no `main`), so `--target freestanding` + `--entry` is a usage error — a kernel
     // crate has no userspace process entry point / seccomp sandbox.
-    if matches!(target, BuildTarget::Kernel | BuildTarget::KernelImage) {
+    if matches!(target, BuildTarget::Freestanding) {
         if let Some(name) = entry {
             return Err(ForgeError::Usage(format!(
-                "`forge build --target kernel` emits a no_std LIBRARY crate and takes no \
+                "`forge build --target freestanding` emits a no_std LIBRARY crate and takes no \
                  `--entry` (a kernel crate has no userspace `main`/seccomp surface); drop \
                  `--entry {name}` to build the kernel rlib"
             )));
@@ -317,8 +314,8 @@ pub fn build_file(
     // (#198: their std-bodied effect wrappers leak into `#![no_std]`; OQ-2 amended).
     // Every in-language fn is scanned (the whole class, not just an `--entry` closure) so
     // a library exporting an ambient-`fx` fn is refused regardless of call site.
-    if matches!(target, BuildTarget::Kernel | BuildTarget::KernelImage) {
-        reject_ambient_fx_for_kernel(&program)?;
+    if matches!(target, BuildTarget::Freestanding) {
+        reject_ambient_fx_for_freestanding(&program)?;
     }
 
     // #193/#195 open-hole refusal (`.design/forge/goal-repl.md` REQ-4/REQ-5;
@@ -452,7 +449,7 @@ pub fn emit_source(
     let program = parse_program(path)?;
     let lowered = thermite_lower::lower_l1(&program).map_err(ForgeError::Lower)?;
 
-    // `.design/build/kernel-target.md` REQ-2: under the kernel target, prepend the
+    // `.design/build/freestanding-target.md` REQ-2: under the kernel target, prepend the
     // `#![no_std]` + `extern crate alloc;` + `use alloc::vec::Vec;` prelude (a crate
     // inner attribute must be the first token) before the lowered body. The std
     // default prepends nothing (the existing emission is byte-unchanged, AC-4). The
@@ -460,7 +457,7 @@ pub fn emit_source(
     // `panic!` is `alloc`-clean — OQ-3 — and resolves against the prelude).
     let mut source = match target {
         BuildTarget::Std => String::new(),
-        BuildTarget::Kernel | BuildTarget::KernelImage => KERNEL_PRELUDE.to_string(),
+        BuildTarget::Freestanding => FREESTANDING_PRELUDE.to_string(),
     };
 
     // Basis Stage 8 (`.design/basis/08-runnable-effect-link.md` REQ-2): emit a
@@ -477,7 +474,7 @@ pub fn emit_source(
     source.push_str(&lowered);
 
     // REQ-2: a kernel build is a library — no `synthesize_entry_main` (no `main`, no
-    // seccomp prelude). `build_file` already rejected `--target kernel` + `--entry`,
+    // seccomp prelude). `build_file` already rejected `--target freestanding` + `--entry`,
     // so `entry` is `None` here under the kernel target; the guard keeps the
     // invariant local and explicit.
     if let (Some(name), BuildTarget::Std) = (entry, target) {
@@ -487,7 +484,7 @@ pub fn emit_source(
     Ok(source)
 }
 
-/// Refuse a [`BuildTarget::Kernel`] build of `program` if any in-language `fn`'s
+/// Refuse a [`BuildTarget::Freestanding`] build of `program` if any in-language `fn`'s
 /// transitive `fx` carries an ambient-syscall effect (`read`/`write`/`net`/`term`,
 /// [`KERNEL_REJECTED_FX`]) — REQ-3. Kernel code has no ambient userspace syscall
 /// surface, so an item carrying one cannot be a freestanding kernel library item.
@@ -499,7 +496,7 @@ pub fn emit_source(
 /// fn is ambient-syscall-free (`pure`/`alloc`/`panic`/`diverge` admit; `time`/`rand`
 /// are rejected — #198, their std-bodied effect wrappers leak into the `#![no_std]`
 /// crate and a kernel has no ambient clock/entropy).
-fn reject_ambient_fx_for_kernel(program: &Program) -> Result<(), ForgeError> {
+fn reject_ambient_fx_for_freestanding(program: &Program) -> Result<(), ForgeError> {
     for item in &program.items {
         let Item::Fn(f) = item else { continue };
         let fx = sandbox::transitive_fx(program, &f.name);
@@ -509,7 +506,7 @@ fn reject_ambient_fx_for_kernel(program: &Program) -> Result<(), ForgeError> {
             let verb = tok.split('(').next().unwrap_or(tok);
             if KERNEL_REJECTED_FX.contains(&verb) {
                 return Err(ForgeError::Usage(format!(
-                    "`forge build --target kernel` refuses `{}`: its transitive effect row \
+                    "`forge build --target freestanding` refuses `{}`: its transitive effect row \
                      carries the ambient-syscall effect `{tok}` (a `{verb}` userspace syscall), \
                      which kernel code has no ambient surface for. The admitted kernel effects \
                      are pure/alloc/panic/diverge; build it for the default (std) target, or \
@@ -826,14 +823,14 @@ fn invoke_rustc(
         .env("SOURCE_DATE_EPOCH", SOURCE_DATE_EPOCH)
         .current_dir(&scratch.path);
 
-    // `.design/build/kernel-target.md` REQ-2: a freestanding crate cannot unwind, so
+    // `.design/build/freestanding-target.md` REQ-2: a freestanding crate cannot unwind, so
     // pin `-C panic=abort` under the kernel target (`--edition`/`--crate-name`/
     // `SOURCE_DATE_EPOCH`/`--remap-path-prefix` are target-independent, unchanged).
     // The std default adds nothing here, so the existing build is byte-unchanged
     // (AC-4). The kernel `#![no_std]` rlib needs no `#[panic_handler]`/allocator to
     // compile (only a final bin/staticlib link does — OQ-1; the test harness supplies
     // a stub for the freestanding-compile AC).
-    if matches!(target, BuildTarget::Kernel | BuildTarget::KernelImage) {
+    if matches!(target, BuildTarget::Freestanding) {
         command.arg("-C").arg("panic=abort");
     }
 
@@ -982,15 +979,15 @@ mod tests {
     /// — only `kernel_target.rs::reconstruct_kernel_source` (an independent N-version
     /// reconstruction). Close the gap directly against `emit_source`: the kernel
     /// emission for the pure corpus item `sum.th` must carry the design-pinned
-    /// `#![no_std]` prelude (`.design/build/kernel-target.md` REQ-2:
-    /// [`KERNEL_PRELUDE`]) and not a `std::`-qualified path / `fn main` (a pure lib).
+    /// `#![no_std]` prelude (`.design/build/freestanding-target.md` REQ-2:
+    /// [`FREESTANDING_PRELUDE`]) and not a `std::`-qualified path / `fn main` (a pure lib).
     #[test]
     fn kernel_emit_source_carries_no_std_prelude() -> Result<(), ForgeError> {
         let source = emit_source(
             corpus("sum.th"),
             None,
             SandboxConfig::default(),
-            BuildTarget::Kernel,
+            BuildTarget::Freestanding,
         )?;
 
         // The actual emission begins with the design-pinned freestanding prelude.

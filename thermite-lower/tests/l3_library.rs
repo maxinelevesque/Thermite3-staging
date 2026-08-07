@@ -56,7 +56,7 @@ fn kernel_library_is_no_std_and_adds_alloc_only_when_needed() {
         wrapped: false,
         visibility: L3ExportVisibility::Public,
     }];
-    let pure = lower_l3_library(&scalar, &scalar_export, L3LibraryTarget::Kernel).unwrap();
+    let pure = lower_l3_library(&scalar, &scalar_export, L3LibraryTarget::Freestanding).unwrap();
     assert!(pure.starts_with(
         "#![no_std]\n#![crate_type = \"rlib\"]\nuse verus_builtin::*;\nuse verus_builtin_macros::*;"
     ));
@@ -71,8 +71,12 @@ fn kernel_library_is_no_std_and_adds_alloc_only_when_needed() {
         wrapped: false,
         visibility: L3ExportVisibility::Public,
     }];
-    let with_alloc =
-        lower_l3_library(&allocating, &allocating_export, L3LibraryTarget::Kernel).unwrap();
+    let with_alloc = lower_l3_library(
+        &allocating,
+        &allocating_export,
+        L3LibraryTarget::Freestanding,
+    )
+    .unwrap();
     assert!(with_alloc.contains("extern crate alloc;"));
 
     let bounded = parse(
@@ -85,7 +89,7 @@ fn kernel_library_is_no_std_and_adds_alloc_only_when_needed() {
         visibility: L3ExportVisibility::Crate,
     }];
     let bounded_kernel =
-        lower_l3_library(&bounded, &bounded_export, L3LibraryTarget::Kernel).unwrap();
+        lower_l3_library(&bounded, &bounded_export, L3LibraryTarget::Freestanding).unwrap();
     assert!(bounded_kernel.contains("pub struct TVecU64 { pub length: usize }"));
     assert!(bounded_kernel.contains("pub(crate) fn keep"));
     assert!(!bounded_kernel.contains("spec_get"));
@@ -110,7 +114,7 @@ fn composition_library_delays_enum_items_past_randomized_verus_helper_synthesis(
         visibility: L3ExportVisibility::Crate,
     }];
 
-    let source = lower_l3_library(&program, &exports, L3LibraryTarget::Kernel).unwrap();
+    let source = lower_l3_library(&program, &exports, L3LibraryTarget::Freestanding).unwrap();
     assert!(source.contains("macro_rules! __thermite_deterministic_enum"));
     assert!(source.contains("#[verus::internal(verus_macro)]"));
     assert!(source.contains("__thermite_deterministic_enum! {\npub enum Action"));
@@ -120,7 +124,8 @@ fn composition_library_delays_enum_items_past_randomized_verus_helper_synthesis(
         visibility: L3ExportVisibility::Public,
         ..exports[0].clone()
     }];
-    let ordinary = lower_l3_library(&program, &public_exports, L3LibraryTarget::Kernel).unwrap();
+    let ordinary =
+        lower_l3_library(&program, &public_exports, L3LibraryTarget::Freestanding).unwrap();
     assert!(!ordinary.contains("__thermite_deterministic_enum"));
     assert!(ordinary.contains("pub enum Action"));
 }

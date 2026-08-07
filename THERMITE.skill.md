@@ -195,18 +195,6 @@ behind the language.
 - `panic` — may panic / abort
 - `diverge` — may not terminate (waives the default termination proof)
 - `term` — controls the terminal (raw mode via the `ioctl` syscall)
-- `platform(boot)` — uses one frozen kernel platform authority domain
-- `platform(memory)` — uses one frozen kernel platform authority domain
-- `platform(mmio)` — uses one frozen kernel platform authority domain
-- `platform(pio)` — uses one frozen kernel platform authority domain
-- `platform(irq)` — uses one frozen kernel platform authority domain
-- `platform(cpu)` — uses one frozen kernel platform authority domain
-- `platform(atomic)` — uses one frozen kernel platform authority domain
-- `platform(smp)` — uses one frozen kernel platform authority domain
-- `platform(dma)` — uses one frozen kernel platform authority domain
-- `platform(clock)` — uses one frozen kernel platform authority domain
-- `platform(entropy)` — uses one frozen kernel platform authority domain
-- `platform(power)` — uses one frozen kernel platform authority domain
 
 Removed from Rust: explicit lifetimes, the trait system (only built-in
 `Eq`/`Ord`/`Hash`/`Iter`/`Display`), macros, `unsafe` (→ `#[slag]`), UFCS, implicit

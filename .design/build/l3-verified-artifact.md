@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 46ee0151535566ef908765f13a921ed530117ff5535a70ec5fa4934c5baa4073
+audited-content-sha256: c5ad43230ea492bb869efdac76935eac697a3a6c4c3d7d5ca411d6958f060e46 (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 46ee0151535566ef908765f13a921ed530117ff5535a70ec5fa4934c5baa4073)
 decision: Option A — compile the canonical Verus executable body that was verified
 issue: github:dollspace-gay/Thermite#101, github:dollspace-gay/Thermite#103, github:dollspace-gay/Thermite#104, github:dollspace-gay/Thermite#108, github:dollspace-gay/Thermite#111
 governs:
@@ -143,7 +143,7 @@ Examples:
 
 ```text
 forge build math.th --level l3 --export checked_add --out dist/math.verified
-forge build page.th --level l3 --export render --export size --target kernel \
+forge build page.th --level l3 --export render --export size --target freestanding \
   --out dist/page-kernel.verified
 ```
 
@@ -158,7 +158,7 @@ Rules:
   generated sample runner.
 - `--out` names a bundle directory, not a bare artifact, for L3. Without it,
   Forge uses the existing stable per-run output location and reports it.
-- `--target kernel` selects the `no_std + alloc`, `rlib`, `panic=abort` profile.
+- `--target freestanding` selects the `no_std + alloc`, `rlib`, `panic=abort` profile.
 - `--crate-name` defaults to the sanitized source stem. The chosen name is part
   of the ABI record and receipt.
 - `--json` changes console rendering only. It does not suppress the receipt or
@@ -486,7 +486,7 @@ sample `main` functions and seccomp injection remain features of the L1
 
 ### Kernel
 
-`--target kernel` produces:
+`--target freestanding` produces:
 
 - `#![no_std]`;
 - `extern crate alloc` when the reachable closure needs allocation;
@@ -736,7 +736,7 @@ must not print a successful artifact path before the rename completes.
   codegen, artifact hashing and receipt staging leave no destination bundle or
   partial sibling. Success publishes one self-validating directory.
 - **AC-13 (kernel final link).** A pure or alloc-using supported function builds
-  under `--target kernel`, and a separate `no_std` harness with a test allocator
+  under `--target freestanding`, and a separate `no_std` harness with a test allocator
   and panic handler links and calls it. Ambient effects and hosted boundaries
   reject before codegen.
 - **AC-14 (L1 compatibility).** Existing build conformance and kernel-target
