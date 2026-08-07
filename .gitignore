@@ -63,3 +63,9 @@ binary_search_golden
 
 # crosslink kickoff agent-id marker (per-worktree, must not be committed)
 .kickoff-session
+
+# kan local log and derived index. The shareable signed form is .claims/, tracked.
+.kan/
+
+# day disposable render cache (display only).
+.day/
