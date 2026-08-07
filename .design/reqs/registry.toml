@@ -17853,3 +17853,307 @@ generated_to = ["status"]
 kind = "doc"
 target = ".design/rfcs/0006-full-words.md"
 note = "the allowlist lines, and the address-segment constraint that ruled out `terminates by`"
+
+[[requirement]]
+id = "REQ-SYNTAX-EFFECT-BASIS"
+title = "The effect basis: five primitive theories"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "state(r), accrues(M), exception, partiality and io(s) generate the frame conditions every other label is built from; random and blocks are given atoms that generate none."
+remaining_scope = "Introduce the basis in the surface and route existing atoms through it: read/write/owns/forgets become state(r), cost(E) becomes accrues over a monoid, panic becomes exception, diverge becomes partiality. Proposed by RFC-8; staged and not filed."
+contributors = [".design/rfcs/0008-effect-algebra.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0008-effect-algebra.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SYNTAX-EFFECT-DECLARED"
+title = "User-declared effects as basis combinations"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "`effect platform(d) = state(d)` declares a label as a combination of the fixed basis, so the prover only ever sees primitives it can encode."
+remaining_scope = "Parse the declaration form and expand it to the basis before lowering. Today platform(memory) gets no conflict checking at all, because nothing knows what it is. Proposed by RFC-8; staged and not filed."
+contributors = [".design/rfcs/0008-effect-algebra.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0008-effect-algebra.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SPEC-EFFECT-COMMUTATION"
+title = "Commutation facts derive the conflict table"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "spec"
+summary = "Each label owes a theory, a composition law and a commutation fact, which makes the data-race-freedom table a theorem rather than an axiom."
+remaining_scope = "Compute commutation per operation pair from the state equations, so read/read accepts, read/write rejects, and write(a)/write(b) accepts on independent instances. Proposed by RFC-8; staged and not filed."
+contributors = [".design/rfcs/0008-effect-algebra.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0008-effect-algebra.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SYNTAX-SHARED-DECL"
+title = "`shared` declarations name a region"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "A `shared name: Type` declaration is what makes an effect row checkable: a shared thing is named in the row and a resource thing is not."
+remaining_scope = "Parse the declaration and resolve region names in effect rows against it. Proposed by RFC-9; staged and not filed."
+contributors = [".design/rfcs/0009-verified-effect-rows.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0009-verified-effect-rows.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SPEC-EFFECT-ROW-CHECKED"
+title = "The effect row is checked against the body"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "spec"
+summary = "Today the row is unchecked in both directions: a function declaring write() on a region that does not exist, over a body that touches nothing, certifies at L3."
+remaining_scope = "Check that every region a body touches appears in the row, and that every region the row names exists. Probed at 84d276e7; the verdict is recorded in RFC-7's appendix. Proposed by RFC-9; staged and not filed."
+contributors = [".design/rfcs/0009-verified-effect-rows.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0009-verified-effect-rows.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SPEC-EFFECT-CONFLICT"
+title = "The conflict rule over declared regions"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "spec"
+summary = "Two rows conflict when their state effects fail to commute on a shared region, which is the purely syntactic check that makes sequential proofs valid on multiple CPUs."
+remaining_scope = "Implement the conflict rule over declared regions, deriving it from the commutation facts rather than stipulating a table. Proposed by RFC-9; staged and not filed."
+contributors = [".design/rfcs/0009-verified-effect-rows.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0009-verified-effect-rows.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SYNTAX-LOCK-DECL"
+title = "`lock N guards T [after M]`"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "A lock declaration names what it guards and, optionally, what it must be taken after, which is what makes an acquisition order checkable."
+remaining_scope = "Parse the declaration and the optional ordering constraint. Proposed by RFC-10; staged and not filed."
+contributors = [".design/rfcs/0010-shared-state-invariants.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0010-shared-state-invariants.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SYNTAX-HOLDING-BLOCK"
+title = "`holding r { … }` marks the critical section"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "The row declares which lock a function takes; the block declares where. Neither is inferred, so an over-declared lock is an error rather than invisible."
+remaining_scope = "Parse the block and check it against owns(r) in the row. Proposed by RFC-10; staged and not filed."
+contributors = [".design/rfcs/0010-shared-state-invariants.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0010-shared-state-invariants.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SPEC-LOCK-DISCIPLINE"
+title = "One lock unless ordered, and a handler's lock needs masking"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "spec"
+summary = "A function holds at most one lock unless the locks are ordered with `after`. A lock any interrupt handler takes needs masking rather than ordering, which is the defect no acquisition order catches."
+remaining_scope = "Check the one-lock default, the declared order, and the masking rule. Proposed by RFC-10; staged and not filed."
+contributors = [".design/rfcs/0010-shared-state-invariants.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0010-shared-state-invariants.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SYNTAX-RESOURCE-MODIFIER"
+title = "`resource struct` marks a linear type"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "Thermite's declared types are already affine, so the modifier marks the no-drop upgrade: a resource is consumed exactly once on every path that returns."
+remaining_scope = "Parse the modifier. It is an adjective on an item, following pub/unsafe/const. Proposed by RFC-11; staged and not filed."
+contributors = [".design/rfcs/0011-resource-types.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0011-resource-types.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SYNTAX-FORGET"
+title = "`forget(g)`, recorded as `forgets(r)`"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "Abandonment is an operation rather than a hole: it is counted in the effect row, so a release rule can refuse it the way TMK's refuses #[boundary]."
+remaining_scope = "Parse forget(g) and emit forgets(r) into the row. Proposed by RFC-11; staged and not filed."
+contributors = [".design/rfcs/0011-resource-types.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0011-resource-types.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SPEC-RESOURCE-LINEARITY"
+title = "A resource is consumed on every returning path"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "spec"
+summary = "Affine types permit dropping; linear types do not. The obligation is scoped exactly as `ensures` is, so a path that diverges or panics owes nothing."
+remaining_scope = "Check consumption per path. This is the half Rust's move semantics does not already give. Proposed by RFC-11; staged and not filed."
+contributors = [".design/rfcs/0011-resource-types.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0011-resource-types.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SPEC-RESOURCE-CONTAGION"
+title = "Contagion is declared and checked"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "spec"
+summary = "A struct or enum reachable to a resource is itself a resource, which answers the contagion question in English rather than by a separate rule."
+remaining_scope = "Check reachability and require the modifier where it is implied. Blocked on Thermite#122 for the composed case, since a declared type cannot appear inside another today. Proposed by RFC-11; staged and not filed."
+contributors = [".design/rfcs/0011-resource-types.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0011-resource-types.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SYNTAX-INTERLEAVES-BLOCK"
+title = "`interleaves { asks …; promises …; }`"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "Both clauses are mandatory inside the block, and the words are reserved so that `asks` outside it reaches the unexpected-token arm rather than parsing."
+remaining_scope = "Add the block production and a dedicated diagnostic beside MissingClause and ClauseOrder, so the message names the cause. Proposed by RFC-12; staged and not filed."
+contributors = [".design/rfcs/0012-interference-clauses.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0012-interference-clauses.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SPEC-RELY-GUARANTEE"
+title = "The pairwise interference obligation"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "spec"
+summary = "For each pair that may overlap, the guarantee of one must imply the rely of the other. For interrupt handlers the obligation is generated in one direction only, from the declared preemption order."
+remaining_scope = "Generate and discharge the pairwise obligation. The stability conjunct does not map to persistent sharding and is the one part of the lowering that is not settled. Proposed by RFC-12; staged and not filed."
+contributors = [".design/rfcs/0012-interference-clauses.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0012-interference-clauses.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SYNTAX-PROTOCOL-DECL"
+title = "`protocol P { Role { … }, end }`"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "A sequence of turns, each labelled with whose turn it is. Roles are names rather than keywords, so a protocol names its own and an endpoint is a path to a role."
+remaining_scope = "Parse the declaration, the role sequence, `end`, and the `repeat | end` branch. Proposed by RFC-13; staged and not filed."
+contributors = [".design/rfcs/0013-protocol-types.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0013-protocol-types.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SPEC-PROTOCOL-ENDPOINT"
+title = "An endpoint is a resource, and `end` consumes it"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "spec"
+summary = "Termination is load-bearing: running the protocol to completion is what consumes the endpoint, so an endpoint that can be dropped abandons its peer mid-session."
+remaining_scope = "Check endpoint linearity and session progress. Depends on resource types landing first. Proposed by RFC-13; staged and not filed."
+contributors = [".design/rfcs/0013-protocol-types.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0013-protocol-types.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SYNTAX-SURVIVES-CLAUSE"
+title = "`survives P`, the crash-time analogue of `ensures`"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "syntax"
+summary = "What holds if execution stops mid-step, conjugated the same way as the clause it mirrors."
+remaining_scope = "Parse the clause, in bare and conjunct-block form. Proposed by RFC-14; staged and not filed."
+contributors = [".design/rfcs/0014-crash-clause.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0014-crash-clause.md"
+note = "the proposal, with its design record and probe results"
+
+[[requirement]]
+id = "REQ-SPEC-CRASH-MODEL"
+title = "The crash model is a named per-device assumption"
+owner = ".design/rfcs"
+status = "not_started"
+scope = "spec"
+summary = "Which writes survive and in what order depends on the device and the barriers issued, so the model is a trusted input that must be stated as plainly as the machine model."
+remaining_scope = "State a first model — synchronous and sector-atomic, which is NOT true of a real disk since devices buffer and reorder — and carry the model's name in the certificate, the way to_platform(p) names a platform. Proposed by RFC-14; staged and not filed."
+contributors = [".design/rfcs/0014-crash-clause.md"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/rfcs/0014-crash-clause.md"
+note = "the proposal, with its design record and probe results"
