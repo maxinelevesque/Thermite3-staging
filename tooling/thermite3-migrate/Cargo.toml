@@ -1,0 +1,17 @@
+[package]
+name = "thermite3-migrate"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# The UNPATCHED front end, from this branch. The rewriter reads Thermite 2
+# source, so it needs a parser that still has req/ens/fx as keywords — which is
+# why this tool lives on `main` rather than on `anchor/implementation`, where
+# those keywords are gone. Run it against a worktree of the work branch.
+#
+# `bv` is NON-DEFAULT and required: without it @bvN is a parse error, so every
+# tagged clause in the corpus would be declined.
+[dependencies]
+thermite-syntax = { path = "../../thermite-syntax", features = ["bv"] }
+
+[workspace]
