@@ -8,7 +8,17 @@ governs: tooling/control-plane-check.py + the control-plane files it and
          the `make control-plane` Makefile target and its CI step. Explicitly
          NOT `scripts/audit.sh`, which this component leaves byte-identical
          (the doc-drift decision-5 precedent).
-audited-content-sha256: cdce9510c89d0bd00fb08a9a441e07a8299ad4eb71e43e20d4c29e928797b59e
+audited-content-sha256: 02b575b6618dad4ce42323ea0eca0cff763b854058c8e367bc9669ea21aaeadb
+re-pinned: 2026-08-07, from cdce9510c89d0bd00fb08a9a441e07a8299ad4eb71e43e20d4c29e928797b59e.
+  The content pin digests the WHOLE of .claude/settings.json, so it moves on any
+  addition to the file, not only on a change to the three wirings this document
+  audits. What moved it is fork-local process wiring appended in 54d9bb92 and
+  restored in e5ea0911: two SessionStart entries invoking `day hook`, +16 lines,
+  purely additive. The audited control plane is unchanged — control-plane-check.py
+  exits 0 both sides of the move, all three required hooks still wired. Re-pinned
+  rather than reverted because the appended entries are correct; see
+  rfc/15-harness-agnostic-tooling, under which .claude/ stops being tracked at
+  root and this class of drift stops being possible.
 thesis-refs:
   - thermite-design.md §1 (trust relocated: "a skeptical third party can audit in minutes")
   - thermite-design.md §8 (#[slag]: the unverified residue is LOUD, never silent)
