@@ -880,7 +880,7 @@ mod tests {
     #[test]
     fn probe_pure_int_tail_is_auto() {
         let program =
-            parse_program("fn count(n: u32) -> u32 req n < 100 ens result == n fx pure { n }");
+            parse_program("fn count(n: u32) -> u32 ! pure requires n < 100 ensures result == n { n }");
         let row = LeanFragmentRow::probe("count", &program);
         assert!(
             row.exportable,
@@ -899,7 +899,7 @@ mod tests {
     #[test]
     fn probe_boundary_is_not_pure_contract() {
         let program = parse_program(
-            "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 req x < 100 ens result == x fx pure ;",
+            "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
         );
         let row = LeanFragmentRow::probe("bnd", &program);
         assert!(!row.exportable);
@@ -927,11 +927,11 @@ mod tests {
         for (name, src) in [
             (
                 "count",
-                "fn count(n: u32) -> u32 req n < 100 ens result == n fx pure { n }",
+                "fn count(n: u32) -> u32 ! pure requires n < 100 ensures result == n { n }",
             ),
             (
                 "bnd",
-                "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 req x < 100 ens result == x fx pure ;",
+                "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
             ),
         ] {
             let program = parse_program(src);

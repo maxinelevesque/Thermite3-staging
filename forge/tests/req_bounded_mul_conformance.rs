@@ -91,7 +91,8 @@ fn sq_certifies_l3_via_req_bounded_mul_aid() {
     }
     let certs = check_program(
         "sq",
-        "fn sq(n: u64) -> u64\n  req n <= 30\n  ens result == n * n\n  fx pure\n{\n  n * n\n}\n",
+        "fn sq(n: u64) -> u64\n  ! pure
+  requires n <= 30\n  ensures result == n * n\n{\n  n * n\n}\n",
     );
     assert_eq!(
         level_of(&certs, "sq"),
@@ -112,7 +113,8 @@ fn unbounded_product_does_not_certify_l3() {
     }
     let certs = check_program(
         "nm",
-        "fn mul_nm(n: u64, m: u64) -> u64\n  req n <= 30\n  ens result == n * m\n  fx pure\n{\n  n * m\n}\n",
+        "fn mul_nm(n: u64, m: u64) -> u64\n  ! pure
+  requires n <= 30\n  ensures result == n * m\n{\n  n * m\n}\n",
     );
     assert_ne!(
         level_of(&certs, "mul_nm"),

@@ -76,7 +76,7 @@ fn parse_clean(src: &str) -> thermite_syntax::Program {
 fn divergence_lowercase_variant_bypasses_exhaustiveness() {
     let program = parse_clean(
         "enum E { foo, bar } \
-         fn f(e: E) -> u64 req true ens result == result fx pure { match e { foo => 0 } }",
+         fn f(e: E) -> u64 ! pure requires true ensures result == result { match e { foo => 0 } }",
     );
     let result = validate(&program);
     let errors = match result {
@@ -113,7 +113,7 @@ fn divergence_lowercase_variant_bypasses_exhaustiveness() {
 fn divergence_lowercase_arm_masks_unhandled_variant() {
     let program = parse_clean(
         "enum Shape { Circle(u64), Rect { w: u64, h: u64 }, tri } \
-         fn f(s: Shape) -> u64 req true ens result == result fx pure \
+         fn f(s: Shape) -> u64 ! pure requires true ensures result == result \
          { match s { Circle(r) => r, tri => 0 } }",
     );
     let result = validate(&program);
@@ -148,7 +148,7 @@ fn divergence_lowercase_arm_masks_unhandled_variant() {
 fn exhaustiveness_intact_uppercase_nonexhaustive() {
     let program = parse_clean(
         "enum Shape { Circle(u64), Rect { w: u64, h: u64 } } \
-         fn f(s: Shape) -> u64 req true ens result == result fx pure { match s { Circle(r) => r } }",
+         fn f(s: Shape) -> u64 ! pure requires true ensures result == result { match s { Circle(r) => r } }",
     );
     let result = validate(&program);
     let errors = match result {

@@ -6,9 +6,9 @@
 // hand (covenant-before-burn), certifies L3, and carries the deterministic covenant
 // evidence block (witness count, falsify generated/refuted = 2002/0, seed).
 fn maxv(x: u64, y: u64) -> u64
-    req true
-    ens result >= x && result >= y
-    fx pure
+    ! pure
+    requires true
+    ensures result >= x && result >= y
 { if x > y { x } else { y } }
 
 witness { inhabit (5, 5); inhabit (9, 2); falsify 2000; }

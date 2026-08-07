@@ -4214,7 +4214,7 @@ mod tests {
     // `result >= a` is `Expr.cmp CmpOp.ge (var "result") (var "a")`.
     #[test]
     fn encode_scalar_comparison_arm_by_arm() {
-        let p = parse_one("fn max2(a: u32, b: u32) -> u32 req true ens result >= a fx pure { a }");
+        let p = parse_one("fn max2(a: u32, b: u32) -> u32 ! pure requires true ensures result >= a { a }");
         let f = match find_item(&p, "max2").unwrap() {
             Item::Fn(f) => f,
             _ => unreachable!(),
@@ -4261,7 +4261,7 @@ mod tests {
     // §6.1(a) classification (R-CHAR-3).
     #[test]
     fn spec_call_free_is_tier_a() {
-        let p = parse_one("fn id(x: u64) -> u64 req true ens result == x fx pure { x }");
+        let p = parse_one("fn id(x: u64) -> u64 ! pure requires true ensures result == x { x }");
         let f = match find_item(&p, "id").unwrap() {
             Item::Fn(f) => f,
             _ => unreachable!(),
@@ -4284,8 +4284,8 @@ mod tests {
     fn recursive_registry_detection() {
         // Non-recursive: g calls nothing.
         let p = parse_one(
-            "spec fn g(x: int) -> int dec x { x } \
-             fn f(x: u64) -> u64 req true ens result == g(x as int) as u64 fx pure { x }",
+            "spec fn g(x: int) -> int measures x { x } \
+             fn f(x: u64) -> u64 ! pure requires true ensures result == g(x as int) as u64 { x }",
         );
         let decls = spec_decls(&p);
         assert!(
@@ -4294,8 +4294,8 @@ mod tests {
         );
         // Recursive: r calls itself.
         let p2 = parse_one(
-            "spec fn r(x: int) -> int dec x { r(x) } \
-             fn f(x: u64) -> u64 req true ens result == r(x as int) as u64 fx pure { x }",
+            "spec fn r(x: int) -> int measures x { r(x) } \
+             fn f(x: u64) -> u64 ! pure requires true ensures result == r(x as int) as u64 { x }",
         );
         let decls2 = spec_decls(&p2);
         assert!(
@@ -4339,7 +4339,7 @@ mod tests {
     #[test]
     fn undefined_callee_refuses_export() {
         let p = parse_one(
-            "fn f(x: u64) -> u64 req true ens result == mystery(x as int) as u64 fx pure { 0 }",
+            "fn f(x: u64) -> u64 ! pure requires true ensures result == mystery(x as int) as u64 { 0 }",
         );
         // The closure is empty (mystery is undefined, so no closure could list it).
         let o = fn_obl(&p, "f", vec![]);
@@ -4366,7 +4366,7 @@ mod tests {
     // Expected from §4.1.2 (R-CHAR-3): the bridge resolves the Pin H concern.
     #[test]
     fn bool_result_item_exports_via_bindbool() {
-        let p = parse_one("fn t(a: u32) -> bool req true ens result == true fx pure { true }");
+        let p = parse_one("fn t(a: u32) -> bool ! pure requires true ensures result == true { true }");
         let o = fn_obl(&p, "t", vec![]);
         if let Some(item) = find_item(&p, "t") {
             match export_item(&o, &p, item) {
@@ -4399,12 +4399,12 @@ mod tests {
     #[test]
     fn capture_unsafe_unfolding_refuses() {
         let p = parse_one(
-            "spec fn cntk(xs: &[u32], v: int) -> int dec xs.len() \
+            "spec fn cntk(xs: &[u32], v: int) -> int measures xs.len() \
                { count_where(xs, |k| k as int == v) } \
-             spec fn cntall(xs: &[u32]) -> int dec xs.len() \
+             spec fn cntall(xs: &[u32]) -> int measures xs.len() \
                { count_where(xs, |k| k as int == k as int) } \
-             fn f3(xs: &[u32], k: u32) -> u64 req true \
-               ens cntk(xs, k as int) == cntall(xs) fx pure { 0 }",
+             fn f3(xs: &[u32], k: u32) -> u64 ! pure requires true \
+               ensures cntk(xs, k as int) == cntall(xs) { 0 }",
         );
         let o = fn_obl(&p, "f3", vec!["cntk".to_string(), "cntall".to_string()]);
         if let Some(item) = find_item(&p, "f3") {
@@ -4428,8 +4428,8 @@ mod tests {
     #[test]
     fn non_capturing_unfolding_still_exports() {
         let p = parse_one(
-            "spec fn dbl(x: int) -> int dec x { x + x } \
-             fn g(y: u32) -> u32 req y < 100 ens result as int == dbl(y as int) fx pure { y + y }",
+            "spec fn dbl(x: int) -> int measures x { x + x } \
+             fn g(y: u32) -> u32 ! pure requires y < 100 ensures result as int == dbl(y as int) { y + y }",
         );
         let o = fn_obl(&p, "g", vec!["dbl".to_string()]);
         if let Some(item) = find_item(&p, "g") {
@@ -4457,7 +4457,7 @@ mod tests {
     // and keeps the byte-identical `req`/`ens`/`R_item` of the obligation.
     #[test]
     fn arbitrary_result_harness_binds_result_to_a_fresh_binder() {
-        let p = parse_one("fn f(x: u32) -> u32 req x > 0 ens result == x + 1 fx pure { x + 1 }");
+        let p = parse_one("fn f(x: u32) -> u32 ! pure requires x > 0 ensures result == x + 1 { x + 1 }");
         let o = fn_obl(&p, "f", vec![]);
         let item = find_item(&p, "f").expect("fn f present");
 
@@ -4509,8 +4509,8 @@ mod tests {
     #[test]
     fn non_capturing_binder_body_unfolding_still_exports() {
         let p = parse_one(
-            "spec fn cntpos(s: &[u32]) -> int dec s.len() { count_where(s, |k| k as int > 0) } \
-             fn h(xs: &[u32]) -> u64 req true ens result as int == cntpos(xs) fx pure { 0 }",
+            "spec fn cntpos(s: &[u32]) -> int measures s.len() { count_where(s, |k| k as int > 0) } \
+             fn h(xs: &[u32]) -> u64 ! pure requires true ensures result as int == cntpos(xs) { 0 }",
         );
         let o = fn_obl(&p, "h", vec!["cntpos".to_string()]);
         if let Some(item) = find_item(&p, "h") {
@@ -4543,7 +4543,7 @@ mod tests {
     #[test]
     fn full_export_scalar_item_is_self_contained() {
         let p = parse_one(
-            "fn max2(a: u32, b: u32) -> u32 req true ens result >= a && result >= b fx pure { a }",
+            "fn max2(a: u32, b: u32) -> u32 ! pure requires true ensures result >= a && result >= b { a }",
         );
         let item = find_item(&p, "max2").unwrap();
         let f = match item {

@@ -4,19 +4,19 @@ enum List {
 }
 
 spec fn len_list(l: List) -> u64
-  dec l
+  measures l
 {
   fold(l, 0, |x, acc| 1 + acc)
 }
 
 spec fn sum_list(l: List) -> u64
-  dec l
+  measures l
 {
   fold(l, 0, |x, acc| x + acc)
 }
 
 spec fn all_positive(l: List) -> bool
-  dec l
+  measures l
 {
   for_all(l, |x| x > 0)
 }

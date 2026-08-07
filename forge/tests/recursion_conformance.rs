@@ -134,23 +134,25 @@ fn linux_build_run_supported(test: &str) -> bool {
 
 // The GROUNDED countdown (design Verification): `count_down(n - 1)`, `dec n`.
 const COUNT_DOWN_L3: &str = "fn count_down(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == 0\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == 0\n  measures n\n\
     {\n  if n == 0 {\n    0\n  } else {\n    count_down(n - 1)\n  }\n}\n";
 
 // The same fn recursing on `n` (non-decreasing) — the decreases does not bite.
 const COUNT_DOWN_NONDECREASING: &str = "fn count_down(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == 0\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == 0\n  measures n\n\
     {\n  if n == 0 {\n    0\n  } else {\n    count_down(n)\n  }\n}\n";
 
 // A self-calling fn with no `dec` and not `fx diverge` — the mandatory-dec reject.
 const COUNT_DOWN_NO_DEC: &str = "fn count_down(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == 0\n  fx pure\n\
-    {\n  if n == 0 {\n    0\n  } else {\n    count_down(n - 1)\n  }\n}\n";
+    ! pure
+  requires n <= 1000\n  ensures result == 0\n{\n  if n == 0 {\n    0\n  } else {\n    count_down(n - 1)\n  }\n}\n";
 
 // A `fx diverge` recursive fn with no `dec` — the #88 exemption (L1-capped).
 const SPIN_DIVERGE: &str = "fn spin(n: u64) -> u64\n  \
-    req true\n  ens result == 0\n  fx diverge\n\
-    {\n  if n == 0 {\n    0\n  } else {\n    spin(n - 1)\n  }\n}\n";
+    ! diverge
+  requires true\n  ensures result == 0\n{\n  if n == 0 {\n    0\n  } else {\n    spin(n - 1)\n  }\n}\n";
 
 // ---------------------------------------------------------------------------
 // REQ-1/REQ-3, AC-1: a recursive fn with `dec` certifies L3 (verus).
@@ -256,10 +258,11 @@ fn recursive_fn_builds_and_runs() {
     // calls `count_down(5)`, executing the self-recursion through the runtime-check
     // path (the `ens result == 0` runtime check passes — no panic).
     let program = "fn count_down(n: u64) -> u64\n  \
-        req n <= 1000\n  ens result == 0\n  fx pure\n  dec n\n\
+        ! pure
+  requires n <= 1000\n  ensures result == 0\n  measures n\n\
         {\n  if n == 0 {\n    0\n  } else {\n    count_down(n - 1)\n  }\n}\n\n\
-        fn run() -> u64\n  req true\n  ens result == 0\n  fx pure\n\
-        {\n  count_down(5)\n}\n";
+        fn run() -> u64\n  ! pure
+  requires true\n  ensures result == 0\n{\n  count_down(5)\n}\n";
     let fixture = std::env::temp_dir().join(format!("forge_recur_build_{}.th", std::process::id()));
     std::fs::write(&fixture, program).expect("write fixture");
     let out = Command::new(forge_bin())

@@ -101,9 +101,9 @@ fn first_cert(program: &str, name: &str) -> Value {
 const SLAG_WITH_WITNESS: &str = "\
 #[slag(reason = \"vendored\", owner = \"agent:forge-7\", review = \"required\")]
 fn f(x: u32) -> u32
-    req true
-    ens result == x
-    fx pure
+    ! pure
+    requires true
+    ensures result == x
 { 0 }
 
 witness { inhabit (5); falsify 10; }
@@ -114,9 +114,9 @@ witness { inhabit (5); falsify 10; }
 const SLAG_NO_WITNESS: &str = "\
 #[slag(reason = \"vendored\", owner = \"agent:forge-7\", review = \"required\")]
 fn f(x: u32) -> u32
-    req true
-    ens result == x
-    fx pure
+    ! pure
+    requires true
+    ensures result == x
 { 0 }
 ";
 

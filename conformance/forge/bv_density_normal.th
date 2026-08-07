@@ -16,25 +16,25 @@
 //   project     — 1/4 ens machine-semantics (250‰) → WITHIN the 500‰ threshold.
 
 fn wrap_add(a: u64, b: u64) -> u64
-    req true
-    ens@bv64 a + b == b + a
-    fx pure
+    ! pure
+    requires true
+    ensures@bv64 a + b == b + a
 { a + b }
 
 fn plain_add(a: u64, b: u64) -> u64
-    req a < 100 && b < 100
-    ens result >= a
-    fx pure
+    ! pure
+    requires a < 100 && b < 100
+    ensures result >= a
 { a + b }
 
 fn plain_inc(x: u32) -> u32
-    req x < 100
-    ens result == x + 1
-    fx pure
+    ! pure
+    requires x < 100
+    ensures result == x + 1
 { x + 1 }
 
 fn plain_id(x: u32) -> u32
-    req true
-    ens result == x
-    fx pure
+    ! pure
+    requires true
+    ensures result == x
 { x }

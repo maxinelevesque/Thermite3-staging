@@ -1,10 +1,10 @@
 use thermite_syntax::parse;
 
 const SOURCE: &str = "fn write_byte(data: &mut [u8], at: usize, value: u8) -> u8\n\
-req at < data.len()\n\
-ens result == value\n\
-ens final(data)[at] == value\n\
-fx platform(memory)\n\
+! platform(memory)
+requires at < data.len()\n\
+ensures result == value\n\
+ensures final(data)[at] == value\n\
 { data[at] = value; value }\n";
 
 #[test]

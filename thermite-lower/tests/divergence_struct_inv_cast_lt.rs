@@ -31,7 +31,7 @@ fn struct_invariant_cast_lt_is_parenthesized() {
     // `Gauge`'s invariant casts `x` then compares with `<` — the cast-`<`
     // ambiguity. (The source parens are stripped + re-emitted through
     // `lower_inv_operand`, which does not re-add them.)
-    let src = "struct Gauge { x: u64, cap: u64, } inv (x as u32) < cap";
+    let src = "struct Gauge { x: u64, cap: u64, } keeps (x as u32) < cap";
     let parsed = thermite_syntax::parse(src);
     assert!(parsed.is_clean(), "fixture must parse clean: {parsed:?}");
 

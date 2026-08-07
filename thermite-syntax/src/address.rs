@@ -1,5 +1,5 @@
 //! Thermite semantic addressing — stable, positional block addresses computed
-//! over the AST (`binary_search.loop#1.inv#2`).
+//! over the AST (`binary_search.loop#1.keeps#2`).
 //!
 //! Governing design: `.design/syntax/semantic-addressing.md`. Addresses are the
 //! operands of `forge edit <addr>` and the keys of the per-item proof cache
@@ -8,7 +8,7 @@
 //! `while` and `loop` share the `loop#N` namespace (REQ-2). Resolution is
 //! bidirectional and never panics: a bad address yields a structured
 //! `AddressError` (REQ-6). Blocker #26 is resolved by the oracle: 1-based source
-//! order, all invariants counted (`inv#2` = `forall_below`, `inv#3` =
+//! order, all invariants counted (`keeps#2` = `forall_below`, `keeps#3` =
 //! `forall_from`).
 //!
 //! ## REQ status
@@ -65,11 +65,11 @@ pub enum AddrKind {
     Hole,
     /// A Stage-1 forge-tier item root or proof obligation
     /// (`.design/stage1-forge-tier.md` REQ-3): a `prop fn`/`lemma` name, a numbered
-    /// `witness#N`, or a proof obligation `f.proof.ens#k`. The consumers (proof view
+    /// `witness#N`, or a proof obligation `f.proof.ensures#k`. The consumers (proof view
     /// 2e, lemma library 3) resolve these; here they are addressable + round-trip.
     Forge,
     /// An open proof hole `?pN` (`.design/stage1-forge-tier.md` REQ-3) inside a
-    /// proof block. Addressed `<lemma>.proof.?pN` / `f.proof.ens#k.?pN`. Distinct
+    /// proof block. Addressed `<lemma>.proof.?pN` / `f.proof.ensures#k.?pN`. Distinct
     /// from a body [`AddrKind::Hole`]: `forge fill` targeting a proof hole is the
     /// proof view (increment 2e, REQ-7), so for now this is addressable + round-trip
     /// only (the body-hole `forge fill` path rejects it as "not a body hole").
@@ -147,7 +147,7 @@ pub fn addresses_of(program: &Program) -> Vec<AddressEntry> {
             Item::Struct(_) | Item::Enum(_) => {}
             // Stage-1 forge-tier items (`.design/stage1-forge-tier.md` REQ-3): the
             // prop/lemma/proof/witness addressing, including the proof-block
-            // addresses (`f.proof.ens#k`) and the `?pN` proof-hole form (AC-7).
+            // addresses (`f.proof.ensures#k`) and the `?pN` proof-hole form (AC-7).
             Item::Forge(forge) => collect_forge_addresses(forge, &mut witness_index, &mut out),
         }
     }
@@ -156,7 +156,7 @@ pub fn addresses_of(program: &Program) -> Vec<AddressEntry> {
 
 /// Collect the addresses of a Stage-1 forge-tier item
 /// (`.design/stage1-forge-tier.md` REQ-3): the item root, the proof-block
-/// obligation addresses (`f.proof.ens#k`), and the `?pN` proof-hole addresses.
+/// obligation addresses (`f.proof.ensures#k`), and the `?pN` proof-hole addresses.
 /// `witness_index` is the running 1-based witness counter (witnesses are anonymous,
 /// so numbered `witness#N`).
 fn collect_forge_addresses(
@@ -196,7 +196,7 @@ fn collect_forge_addresses(
             }
         }
         ForgeItem::Proof(p) => {
-            // Each obligation is addressed `f.proof.<clause>` (e.g. `f.proof.ens#k`);
+            // Each obligation is addressed `f.proof.<clause>` (e.g. `f.proof.ensures#k`);
             // its proof block's open holes are `f.proof.<clause>.?pN`.
             for ob in &p.obligations {
                 let clause_addr = match ob.clause.index {
@@ -265,7 +265,7 @@ fn collect_in_block(
     }
 }
 
-/// Emit the loop's own address plus its `inv#M` (1-based, source order) and
+/// Emit the loop's own address plus its `keeps#M` (1-based, source order) and
 /// `dec` addresses (semantic-addressing.md REQ-3/REQ-4).
 fn emit_loop(loop_addr: &str, lp: &LoopNode, out: &mut Vec<AddressEntry>) {
     out.push(AddressEntry {
@@ -276,14 +276,14 @@ fn emit_loop(loop_addr: &str, lp: &LoopNode, out: &mut Vec<AddressEntry>) {
     });
     for (m, inv) in lp.invs.iter().enumerate() {
         out.push(AddressEntry {
-            addr: format!("{loop_addr}.inv#{}", m + 1),
+            addr: format!("{loop_addr}.keeps#{}", m + 1),
             kind: AddrKind::Inv,
             surface_keyword: None,
             text: Some(inv.text.clone()),
         });
     }
     out.push(AddressEntry {
-        addr: format!("{loop_addr}.dec"),
+        addr: format!("{loop_addr}.measures"),
         kind: AddrKind::Dec,
         surface_keyword: None,
         text: Some(lp.dec.text.clone()),
@@ -305,7 +305,7 @@ pub fn resolve(program: &Program, addr: &str) -> Result<AddressEntry, AddressErr
         .ok_or_else(|| AddressError::NotFound(addr.to_string()))
 }
 
-/// Check that every segment after the root is a well-formed `loop#N`/`inv#M`/
+/// Check that every segment after the root is a well-formed `loop#N`/`keeps#M`/
 /// `dec` (REQ-1) or a forge-tier segment — `proof`, a clause family `ens`/`req`/
 /// `inv` (optionally `#k`), or a proof hole `?pN` (`.design/stage1-forge-tier.md`
 /// REQ-3). The root is a non-empty identifier (a fn/prop/lemma name) or the
@@ -328,7 +328,7 @@ fn validate_segments(addr: &str) -> Result<(), AddressError> {
     for seg in segs {
         // Bare keyword segments: the loop `dec`, the proof-block `proof`, and an
         // unindexed clause family (`f.proof.req`).
-        if matches!(seg, "dec" | "proof" | "ens" | "req" | "inv") {
+        if matches!(seg, "measures" | "proof" | "ensures" | "requires" | "keeps") {
             continue;
         }
         // A hole segment — a body hole `?N` (#193) or a proof hole `?pN`
@@ -342,9 +342,9 @@ fn validate_segments(addr: &str) -> Result<(), AddressError> {
             continue;
         }
         // A numbered segment `<word>#<digits>`: a loop/inv ordinal (#193 addressing)
-        // or a forge-tier clause ordinal `ens#k`/`req#k`/`inv#k` (REQ-3).
+        // or a forge-tier clause ordinal `ensures#k`/`requires#k`/`keeps#k` (REQ-3).
         if let Some((word, num)) = seg.split_once('#') {
-            if !matches!(word, "loop" | "inv" | "ens" | "req") || !all_digits(num) {
+            if !matches!(word, "loop" | "keeps" | "ensures" | "requires") || !all_digits(num) {
                 return Err(AddressError::Malformed(addr.to_string()));
             }
             continue;

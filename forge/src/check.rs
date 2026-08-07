@@ -3570,7 +3570,7 @@ fn forge_proof_text_for(program: &Program, fn_name: &str, index: usize) -> Optio
         if let Item::Forge(thermite_syntax::ForgeItem::Proof(p)) = item {
             if p.target == fn_name {
                 for ob in &p.obligations {
-                    if ob.clause.keyword == "ens" && ob.clause.index == Some(index as u32) {
+                    if ob.clause.keyword == "ensures" && ob.clause.index == Some(index as u32) {
                         return Some(ob.proof.text.clone());
                     }
                 }
@@ -6880,9 +6880,9 @@ mod tests {
     fn reelaboration_mutation_shares_the_frozen_catalogue_not_forked() {
         let src = "\
 fn to_1based(x: u32) -> u32
-  req x < 1000
-  ens result == x + 1
-  fx pure
+  ! pure
+  requires x < 1000
+  ensures result == x + 1
 { x + 1 }
 ";
         let parsed = thermite_syntax::parse(src);
@@ -6940,12 +6940,12 @@ fn to_1based(x: u32) -> u32
         // (`dec tree_size(xs)`), never from its body — the #226 measure-position
         // case. The full closure must still reach `tree_size`.
         let src = "\
-spec fn tree_size(xs: &[u32]) -> u64 dec xs.len() { xs.len() as u64 }
+spec fn tree_size(xs: &[u32]) -> u64 measures xs.len() { xs.len() as u64 }
 fn measured(xs: &[u32]) -> u64
-  req xs.len() <= 10
-  ens result == xs.len() as u64
-  fx pure
-  dec tree_size(xs)
+  ! pure
+  requires xs.len() <= 10
+  ensures result == xs.len() as u64
+  measures tree_size(xs)
 { xs.len() as u64 }
 ";
         let parsed = thermite_syntax::parse(src);
@@ -6990,7 +6990,7 @@ fn measured(xs: &[u32]) -> u64
     // non-empty). Expected from REQ-1.2's assignment condition (R-CHAR-3).
     #[test]
     fn spec_fn_free_item_has_no_registry_termination() {
-        let src = "fn add(x: u64, y: u64) -> u64 req x < 100 ens result == x + y fx pure { x + y }";
+        let src = "fn add(x: u64, y: u64) -> u64 ! pure requires x < 100 ensures result == x + y { x + y }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         let mut add: Option<&Item> = None;
@@ -7170,11 +7170,15 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
         const THERMITE: &str = "0.0.0-test";
 
         // Two independent `fn`s; `g` does not reference `f`. Original program.
-        let src_v1 = "fn f(x: u64) -> u64\n  req x < 10\n  ens result == x\n  fx  pure\n{\n  x\n}\n\
-                      fn g(y: u64) -> u64\n  req y < 10\n  ens result == y\n  fx  pure\n{\n  y\n}\n";
+        let src_v1 = "fn f(x: u64) -> u64\n  ! pure
+  requires x < 10\n  ensures result == x\n{\n  x\n}\n\
+                      fn g(y: u64) -> u64\n  ! pure
+  requires y < 10\n  ensures result == y\n{\n  y\n}\n";
         // Same `g`, but `f`'s body/contract edited.
-        let src_v2 = "fn f(x: u64) -> u64\n  req x < 20\n  ens result == x\n  fx  pure\n{\n  x\n}\n\
-                      fn g(y: u64) -> u64\n  req y < 10\n  ens result == y\n  fx  pure\n{\n  y\n}\n";
+        let src_v2 = "fn f(x: u64) -> u64\n  ! pure
+  requires x < 20\n  ensures result == x\n{\n  x\n}\n\
+                      fn g(y: u64) -> u64\n  ! pure
+  requires y < 10\n  ensures result == y\n{\n  y\n}\n";
 
         let key_of = |src: &str, target: &str| -> Option<String> {
             let parsed = thermite_syntax::parse(src);
@@ -7259,8 +7263,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     // other (non-final) cert first.
     #[test]
     fn apply_lemma_library_refuses_uncertified_citation_named() {
-        let src = "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-                   lemma user(n: u32) req n > 0 ens n >= 1 proof { simp [melems_cons]; omega }";
+        let src = "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+                   lemma user(n: u32) requires n > 0 ensures n >= 1 proof { simp [melems_cons]; omega }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture parses: {:?}", parsed.errors);
         // `melems_cons` did not certify; `user` carries some placeholder cert.
@@ -7293,8 +7297,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     // intact (no spurious refusal).
     #[test]
     fn apply_lemma_library_passes_certified_citation() {
-        let src = "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-                   lemma user(n: u32) req n > 0 ens n >= 1 proof { simp [melems_cons]; omega }";
+        let src = "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+                   lemma user(n: u32) requires n > 0 ensures n >= 1 proof { simp [melems_cons]; omega }";
         let parsed = thermite_syntax::parse(src);
         let certs = vec![certified_l3("melems_cons"), certified_l3("user")];
         let library = crate::lemma_library::LemmaLibrary::build(&parsed.program, &certs);
@@ -7308,9 +7312,9 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     // rewrite is oracle-excluded (the burn receipt is), so the oracle subset is unchanged.
     #[test]
     fn apply_lemma_library_rewrites_burn_citation_to_canonical() {
-        let src = "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-                   lemma melems_cons_dup(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-                   lemma user(n: u32) req n > 0 ens n >= 1 proof { simp [melems_cons_dup]; omega }";
+        let src = "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+                   lemma melems_cons_dup(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+                   lemma user(n: u32) requires n > 0 ensures n >= 1 proof { simp [melems_cons_dup]; omega }";
         let parsed = thermite_syntax::parse(src);
         let user_before = certified_l3("user").with_burn(crate::burn::BurnReceipt::for_proof_text(
             "simp [melems_cons_dup]; omega",
@@ -7446,8 +7450,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
         assert!(supported.bv_shadow.is_some() && bitwise.bv_shadow.is_some());
 
         let parsed = thermite_syntax::parse(
-            "fn linear(a: u64, b: u64) -> u64 req a <= b \
-             ens a + 1 <= b + 1 fx pure { a }",
+            "fn linear(a: u64, b: u64) -> u64 ! pure requires a <= b \
+             ensures a + 1 <= b + 1 { a }",
         );
         assert!(
             parsed.is_clean(),
@@ -7498,10 +7502,10 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
         use thermite_syntax::{BvWidth, Item};
 
         let parsed = thermite_syntax::parse(
-            "struct Word { bits: u64 } inv@bv8 bits + 255 == bits - 1\n\
-             fn f(x: u64) -> u64 req x <= 2 ens result == 2 fx pure {\n\
+            "struct Word { bits: u64 } keeps@bv8 bits + 255 == bits - 1\n\
+             fn f(x: u64) -> u64 ! pure requires x <= 2 ensures result == 2 {\n\
                let mut i: u64 = x;\n\
-               while i < 2 inv@bv16 i + 65535 == i - 1 inv i <= 2 dec 2 - i {\n\
+               while i < 2 keeps@bv16 i + 65535 == i - 1 keeps i <= 2 measures 2 - i {\n\
                  i = i + 1;\n\
                }\n\
                i\n\
@@ -7602,7 +7606,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     /// shape): `result >= x` is the body-constraining clause, `x + 0` the identity body.
     #[cfg(feature = "bv")]
     fn parse_succ_ge() -> thermite_syntax::FnItem {
-        let src = "fn succ_ge(x: u64) -> u64 req true ens@bv64 result >= x fx pure { x + 0 }";
+        let src = "fn succ_ge(x: u64) -> u64 ! pure requires true ensures@bv64 result >= x { x + 0 }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         parsed
@@ -7758,7 +7762,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     #[cfg(feature = "bv")]
     #[test]
     fn ac5_non_result_bv_clause_has_no_scoreable_mutant() {
-        let src = "fn commute(a: u64, b: u64) -> u64 req true ens@bv64 a + b == b + a fx pure \
+        let src = "fn commute(a: u64, b: u64) -> u64 ! pure requires true ensures@bv64 a + b == b + a \
                    { a + b }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
@@ -7830,8 +7834,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
             return;
         }
         let cert = bv_fn_cert_from(
-            "fn add_nowrap(a: u64, b: u64) -> u64 req true ens@bv64(nowrap) result == a + b \
-             fx pure { a + b }",
+            "fn add_nowrap(a: u64, b: u64) -> u64 ! pure requires true ensures@bv64(nowrap) result == a + b { a + b }",
             "add_nowrap",
         );
         // A witnessed nowrap overflow must not certify (the promise is violated).
@@ -7873,7 +7876,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     #[test]
     fn ac6_nowrap_body_without_arithmetic_holds_and_records_discharged() {
         let cert = bv_fn_cert_from(
-            "fn idem(a: u64) -> u64 req true ens@bv64(nowrap) result == a fx pure { a }",
+            "fn idem(a: u64) -> u64 ! pure requires true ensures@bv64(nowrap) result == a { a }",
             "idem",
         );
         assert!(
@@ -7913,7 +7916,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     #[test]
     fn bare_bv_clause_records_no_nowrap_obligation() {
         let cert = bv_fn_cert_from(
-            "fn idem(a: u64) -> u64 req true ens@bv64 result == a fx pure { a }",
+            "fn idem(a: u64) -> u64 ! pure requires true ensures@bv64 result == a { a }",
             "idem",
         );
         assert!(
@@ -7972,9 +7975,10 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     fn epr_route_fixture() -> (Program, Certificate) {
         let parsed = thermite_syntax::parse(
             "fn epr_route(xs: Vec<u64>) -> u64\n\
-             req xs.len() > 0\n\
-             ens forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+             ! pure
+requires xs.len() > 0\n\
+             ensures forall (i : usize) in xs. xs[i] == xs[i]\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         let base = Certificate::rejected(
@@ -7992,9 +7996,10 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     fn epr_false_route_fixture() -> (Program, Certificate) {
         let parsed = thermite_syntax::parse(
             "fn epr_false(xs: Vec<u64>) -> u64\n\
-             req xs.len() > 0\n\
-             ens forall (i : usize) in xs. xs[i] != xs[i]\n\
-             fx pure { 0 }",
+             ! pure
+requires xs.len() > 0\n\
+             ensures forall (i : usize) in xs. xs[i] != xs[i]\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         let base = Certificate::rejected(
@@ -8013,9 +8018,10 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     fn automatic_route_does_not_model_result_as_an_unconstrained_sequence() {
         let parsed = thermite_syntax::parse(
             "fn format(n: u64) -> String\n\
-             req true\n\
-             ens result.len() >= 1\n\
-             fx alloc { n.to_string() }",
+             ! alloc
+requires true\n\
+             ensures result.len() >= 1\n\
+              { n.to_string() }",
         );
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         let Item::Fn(function) = &parsed.program.items[0] else {

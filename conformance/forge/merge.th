@@ -19,6 +19,6 @@
 // `forge/tests/merge_example.rs` (AC-11: the proof view renders the hypotheses in scope,
 // the fill closes the `?p0` goal, the re-check certifies + surfaces the burn receipt).
 lemma merge_advance(i: u64, n: u64)
-    req i < n
-    ens i + 1 <= n
+    requires i < n
+    ensures i + 1 <= n
     proof { simp [Thermite.denote, Thermite.Env.bindInt, Thermite.intVal, Thermite.arithDenote]; omega }

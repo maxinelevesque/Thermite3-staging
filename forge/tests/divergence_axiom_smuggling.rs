@@ -115,8 +115,8 @@ fn divergence_interactive_replay_accepts_nonstandard_axiom() {
     // shape from `engine.rs::recursive_registry_is_interactive_unknown`.
     std::fs::write(
         &file,
-        "spec fn r(x: int) -> int dec x { r(x) }\n\
-         fn f(x: u32) -> u32 req true ens result as int == r(x as int) fx pure { x }\n",
+        "spec fn r(x: int) -> int measures x { r(x) }\n\
+         fn f(x: u32) -> u32 ! pure requires true ensures result as int == r(x as int) { x }\n",
     )
     .expect("write fixture");
 

@@ -55,7 +55,7 @@ fn has_arith_spec_call_arg(src: &str) -> bool {
 
 const U32_PROGRAM: &str = "\
 spec fn s_dec(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -67,7 +67,7 @@ spec fn s_dec(n: u32) -> u32
 
 const U64_PROGRAM: &str = "\
 spec fn s_dec(n: u64) -> u64
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -79,7 +79,7 @@ spec fn s_dec(n: u64) -> u64
 
 const USIZE_PROGRAM: &str = "\
 spec fn s_dec(n: usize) -> usize
-  dec n
+  measures n
 {
   if n == 0 {
     0

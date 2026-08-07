@@ -8,7 +8,7 @@
   ],
   "reject": [
     { "name": "oob_get_no_req", "expect_level": "L0",
-      "program": "fn bad(v: Vec<u64>, i: usize) -> u64 req true ens result == v.get(i) fx pure { v.get(i) }",
+      "program": "fn bad(v: Vec<u64>, i: usize) -> u64 ! pure requires true ensures result == v.get(i) { v.get(i) }",
       "why": "without `req i < v.len()`, v.get(i) is unproven in-bounds -> get's precondition is not discharged -> L0 (the no-OOB guarantee requires the caller to establish i < len; a missing bound is caught, not laundered to L3)." }
   ]
 }

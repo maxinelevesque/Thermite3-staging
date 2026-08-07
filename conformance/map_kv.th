@@ -14,9 +14,9 @@
 // Build a fresh map and insert one entry; the inserted key is then a member
 // (the membership half of the round-trip — `insert(k,v)` makes `k` present).
 fn build_one(k: u64, v: u64) -> Map<u64, u64>
-  req true
-  ens result.contains_key(k)
-  fx alloc
+  ! alloc
+  requires true
+  ensures result.contains_key(k)
 {
   let mut m: Map<u64, u64> = Map::new();
   m.insert(k, v);
@@ -26,9 +26,9 @@ fn build_one(k: u64, v: u64) -> Map<u64, u64>
 // The no-OOB / handled-or-loud `contains_key` accessor: the result is EXACTLY the
 // spec membership (both branches proved by the wrapper's linear-scan invariant).
 fn has_key(m: Map<u64, u64>, k: u64) -> bool
-  req true
-  ens result == m.contains_key(k)
-  fx pure
+  ! pure
+  requires true
+  ensures result == m.contains_key(k)
 {
   m.contains_key(k)
 }
@@ -39,9 +39,9 @@ fn has_key(m: Map<u64, u64>, k: u64) -> bool
 // insert + get → 42. The contract is the §7-thin runnable-core form (the round-trip
 // PROOF lives in the TMap wrapper, grounded by forge/tests/map_conformance.rs).
 fn demo() -> u64
-  req true
-  ens true
-  fx alloc
+  ! alloc
+  requires true
+  ensures true
 {
   let mut m: Map<u64, u64> = Map::new();
   m.insert(7, 42);
@@ -53,9 +53,9 @@ fn demo() -> u64
 // precondition `!m.contains_key(k)` makes `k` absent; the wrapper's `get` ensures
 // the None arm `!spec_contains_key(k)`, so the result is provably `None`.
 fn lookup_absent(m: Map<u64, u64>, k: u64) -> Option<u64>
-  req !m.contains_key(k)
-  ens result is None
-  fx pure
+  ! pure
+  requires !m.contains_key(k)
+  ensures result is None
 {
   m.get(k)
 }

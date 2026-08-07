@@ -300,7 +300,7 @@ fn string_literal_parses_as_expression() {
 fn oob_byte_at_without_req_fails_verus_l0() {
     // The oracle's reject program (cases.json `oob_byte_at_no_req.program`).
     let src =
-        "fn oob_byte_at_no_req(s: String) -> u64 req true ens result == s.byte_at(0) fx pure { s.byte_at(0) }";
+        "fn oob_byte_at_no_req(s: String) -> u64 ! pure requires true ensures result == s.byte_at(0) { s.byte_at(0) }";
     let program = parse_src(src, "oob_byte_at_no_req");
     let emitted = lower_l3(&program);
     // It still lowers (a well-formed program); the failure is at verus (L0), not a

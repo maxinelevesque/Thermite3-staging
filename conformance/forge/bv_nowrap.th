@@ -12,13 +12,13 @@
 //                       certifies L4, its verdict recorded in `bv_shadow.nowrap_obligation`.
 
 fn add_overflows(a: u64, b: u64) -> u64
-    req true
-    ens@bv64(nowrap) result == a + b
-    fx pure
+    ! pure
+    requires true
+    ensures@bv64(nowrap) result == a + b
 { a + b }
 
 fn add_bounded(a: u64, b: u64) -> u64
-    req a < 100 && b < 100
-    ens@bv64(nowrap) result == a + b
-    fx pure
+    ! pure
+    requires a < 100 && b < 100
+    ensures@bv64(nowrap) result == a + b
 { a + b }

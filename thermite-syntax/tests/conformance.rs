@@ -327,17 +327,17 @@ fn recover_per_item() {
     // The missing-`ens` error must be reported.
     let want = &facts.errors[0];
     assert_eq!(want.kind, "missing-mandatory-clause");
-    assert_eq!(want.clause, "ens");
+    assert_eq!(want.clause, "ensures");
     let found_missing_ens = result.errors.iter().any(|e| {
         matches!(
             e,
             thermite_syntax::SyntaxError::MissingClause { clause, item, .. }
-                if clause == "ens" && item == &want.item
+                if clause == "ensures" && item == &want.item
         )
     });
     assert!(
         found_missing_ens,
-        "expected a missing-`ens` diagnostic for `{}`, got {:?}",
+        "expected a missing-`ensures` diagnostic for `{}`, got {:?}",
         want.item, result.errors
     );
 
@@ -487,7 +487,7 @@ fn address_stability_under_unrelated_edit() {
     );
 
     // The inv#2 text is stable regardless of sibling presence.
-    let inv2 = resolve(&with_both.program, "binary_search.loop#1.inv#2").unwrap();
+    let inv2 = resolve(&with_both.program, "binary_search.loop#1.keeps#2").unwrap();
     assert_eq!(
         inv2.text.as_deref(),
         Some("forall_below(haystack, lo, |x| x < needle)")
@@ -559,7 +559,7 @@ fn int_literal_preserves_value_and_raw() {
     // hand-derived from the source, never copied from the parser (R-CHAR-3).
     use thermite_syntax::ast::{BinOp, Expr};
 
-    let src = "fn f(xs: &[u32]) -> u32 req xs.len() <= 1_000_000 ens result == 0 fx pure { 0 }";
+    let src = "fn f(xs: &[u32]) -> u32 ! pure requires xs.len() <= 1_000_000 ensures result == 0 { 0 }";
     let result = parse(src);
     assert!(result.is_clean(), "fixture should parse clean: {result:?}");
 
@@ -582,7 +582,7 @@ fn int_literal_preserves_value_and_raw() {
     }
 
     // A separator-free literal `42` round-trips as `{ value: 42, raw: "42" }`.
-    let src2 = "fn g() -> u32 req true ens result == 42 fx pure { 0 }";
+    let src2 = "fn g() -> u32 ! pure requires true ensures result == 42 { 0 }";
     let result2 = parse(src2);
     assert!(result2.is_clean());
     let Item::Fn(g) = &result2.program.items[0] else {
@@ -603,7 +603,7 @@ fn int_literal_preserves_value_and_raw() {
 #[test]
 fn stray_char_is_diagnostic_not_panic() {
     // lexer.md AC-6: a stray `@` yields a diagnostic, never a panic.
-    let result = parse("fn f(@) -> u32 req true ens result == 0 fx pure { 0 }");
+    let result = parse("fn f(@) -> u32 ! pure requires true ensures result == 0 { 0 }");
     assert!(!result.is_clean(), "stray char should produce a diagnostic");
 }
 
@@ -615,9 +615,9 @@ fn negative_inputs_never_panic() {
         "fn",
         "fn f",
         "fn f(",
-        "spec fn g() -> u32 { 0 }",             // missing dec
-        "fn h() -> u32 fx pure { 0 }",          // missing req/ens
-        "fn h() -> u32 req true fx pure { 0 }", // missing ens
+        "spec fn g() -> u32 { 0 }",                 // missing measures
+        "fn h() -> u32 ! pure { 0 }",               // missing requires/ensures
+        "fn h() -> u32 ! pure requires true { 0 }", // missing ensures
         "loop inv true dec 0 {}",
         "match",
         "@#$%",

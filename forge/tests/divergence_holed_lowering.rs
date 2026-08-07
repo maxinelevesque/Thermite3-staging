@@ -50,7 +50,8 @@ fn forge_bin() -> PathBuf {
 /// shape in which the hole vanishes silently. Hand-derived from
 /// `thermite-design.md` §5.1 `body = hole ?0` (R-CHAR-3).
 const HOLED_MAIN: &str =
-    "fn main() -> u64\n  req true\n  ens result == 42\n  fx  pure\n{\n  ?0\n  42\n}\n";
+    "fn main() -> u64\n  ! pure
+  requires true\n  ensures result == 42\n{\n  ?0\n  42\n}\n";
 
 fn temp_th(tag: &str) -> PathBuf {
     let path = std::env::temp_dir().join(format!(

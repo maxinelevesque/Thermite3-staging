@@ -142,8 +142,8 @@ pub enum TokKind {
     // Attribute introducer `#[`.
     HashBracket,
     /// A bare `#` (`.design/stage1-forge-tier.md` REQ-3): the clause-ordinal
-    /// separator in a forge-tier proof obligation `ens#k` (the surface spelling of
-    /// the `ens#k` semantic address). Distinct from `HashBracket` (`#[`) by maximal
+    /// separator in a forge-tier proof obligation `ensures#k` (the surface spelling of
+    /// the `ensures#k` semantic address). Distinct from `HashBracket` (`#[`) by maximal
     /// munch — `#[` wins when a `[` follows, else a `#` lexes to this. Outside a
     /// proof item the parser never expects it, so a stray `#` surfaces as a normal
     /// unexpected-token error.
@@ -221,11 +221,10 @@ fn keyword_kind(word: &str) -> Option<TokKind> {
     Some(match word {
         "fn" => TokKind::Fn,
         "spec" => TokKind::Spec,
-        "req" => TokKind::Req,
-        "ens" => TokKind::Ens,
-        "fx" => TokKind::Fx,
-        "inv" => TokKind::Inv,
-        "dec" => TokKind::Dec,
+        "requires" => TokKind::Req,
+        "ensures" => TokKind::Ens,
+        "keeps" => TokKind::Inv,
+        "measures" => TokKind::Dec,
         "pure" => TokKind::Pure,
         "let" => TokKind::Let,
         "mut" => TokKind::Mut,
@@ -273,7 +272,7 @@ pub fn tokenize(src: &str) -> (Vec<Token>, Vec<SyntaxError>) {
             i += 2;
         } else if c == b'#' {
             // A bare `#` — the clause-ordinal separator in a proof obligation
-            // `ens#k` (forge-tier REQ-3). `#[` is handled above (maximal munch),
+            // `ensures#k` (forge-tier REQ-3). `#[` is handled above (maximal munch),
             // so this arm fires only when no `[` follows.
             tokens.push(Token {
                 kind: TokKind::Hash,

@@ -59,7 +59,7 @@ fn vacuous_bv_lemma_is_rejected_not_certified() {
     }
     let certs = check_bv(
         "lemma",
-        "lemma vac_lemma(a: u64, b: u64)\n    req false\n    ens@bv64 a < b\n    proof { }\n",
+        "lemma vac_lemma(a: u64, b: u64)\n    requires false\n    ensures@bv64 a < b\n    proof { }\n",
     );
     let c = certs
         .iter()
@@ -87,7 +87,8 @@ fn vacuous_param_only_bv_clause_is_not_kernel_checked() {
     }
     let certs = check_bv(
         "fn",
-        "fn vac2(a: u64, b: u64) -> u64\n    req false\n    ens@bv64 a < b\n    fx pure\n{ 0 }\n",
+        "fn vac2(a: u64, b: u64) -> u64\n    ! pure
+    requires false\n    ensures@bv64 a < b\n{ 0 }\n",
     );
     let c = certs
         .iter()

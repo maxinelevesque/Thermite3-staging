@@ -7,9 +7,9 @@
 // counterexample. The item dies as `CovenantRefuted` BEFORE any L3 proof search
 // (covenant-before-burn), with the concrete counterexample in the certificate.
 fn maxv(x: u64, y: u64) -> u64
-    req true
-    ens result >= x && result >= y
-    fx pure
+    ! pure
+    requires true
+    ensures result >= x && result >= y
 { x }
 
 witness { inhabit (5, 5); inhabit (9, 2); falsify 5000; }

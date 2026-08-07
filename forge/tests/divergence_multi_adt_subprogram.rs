@@ -115,15 +115,15 @@ enum Role { Owner, Player }
 enum Unused { A, B }
 
 spec fn is_owner(r: Role) -> bool
-  dec r
+  measures r
 {
   match r { Role::Owner => true, Role::Player => false }
 }
 
 fn check(r: Role) -> bool
-  req true
-  ens result == is_owner(r)
-  fx  pure
+  ! pure
+  requires true
+  ensures result == is_owner(r)
 {
   match r { Role::Owner => true, Role::Player => false }
 }
@@ -135,15 +135,15 @@ const SINGLE_ADT_TWIN: &str = "\
 enum Role { Owner, Player }
 
 spec fn is_owner(r: Role) -> bool
-  dec r
+  measures r
 {
   match r { Role::Owner => true, Role::Player => false }
 }
 
 fn check(r: Role) -> bool
-  req true
-  ens result == is_owner(r)
-  fx  pure
+  ! pure
+  requires true
+  ensures result == is_owner(r)
 {
   match r { Role::Owner => true, Role::Player => false }
 }
@@ -157,15 +157,15 @@ const EXEC_FN_UNMENTIONED_ADT: &str = "\
 enum E { A, B }
 
 spec fn p(e: E) -> bool
-  dec e
+  measures e
 {
   match e { E::A => true, E::B => false }
 }
 
 fn g(x: u64) -> u64
-  req x < 10
-  ens result == x
-  fx  pure
+  ! pure
+  requires x < 10
+  ensures result == x
 {
   x
 }

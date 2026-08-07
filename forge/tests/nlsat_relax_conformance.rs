@@ -76,8 +76,9 @@ fn nlsat_isqrt_certifies_l4_pushbutton() {
     let cert = nlsat_check(
         "isqrt",
         "fn isqrt_bound(n: u64, r: u64) -> u64\n  \
-         req r * r <= n && n < (r + 1) * (r + 1) && 1 <= r\n  \
-         ens r <= n\n  fx pure\n{ r }\n",
+         ! pure
+  requires r * r <= n && n < (r + 1) * (r + 1) && 1 <= r\n  \
+         ensures r <= n\n{ r }\n",
     );
     assert_eq!(
         cert.get("level").and_then(Value::as_str),
@@ -119,7 +120,8 @@ fn nlsat_n_squared_ne_two_is_real_witness_never_counterexample() {
     }
     let cert = nlsat_check(
         "sqrt2",
-        "fn sq(n: u64) -> u64\n  req true\n  ens n * n != 2\n  fx pure\n{ n }\n",
+        "fn sq(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
     );
     let verdict = cert
         .get("obligations")
@@ -168,7 +170,8 @@ fn nlsat_n_squared_ne_two_is_real_witness_never_counterexample() {
 fn nlsat_div_clause_is_not_relaxable_skip() {
     let cert = nlsat_check(
         "divclause",
-        "fn g(n: u64) -> u64\n  req true\n  ens result == n / 2\n  fx pure\n{ n }\n",
+        "fn g(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n / 2\n{ n }\n",
     );
     assert_ne!(
         cert.get("level").and_then(Value::as_str),

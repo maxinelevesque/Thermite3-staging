@@ -487,7 +487,8 @@ fn parser_parses_effectful_rows() {
     // checker is not blocked on a parser gap; the fixtures above build AST
     // directly only for hermeticity, not out of necessity). Hand-derived
     // expected row: {alloc}.
-    let src = "fn f() -> ()\n  req true\n  ens true\n  fx alloc\n{\n}\n";
+    let src = "fn f() -> ()\n  ! alloc
+  requires true\n  ensures true\n{\n}\n";
     let parsed = thermite_syntax::parse(src);
     assert!(
         parsed.errors.is_empty(),

@@ -124,7 +124,7 @@ fn find_cert<'a>(certs: &'a [Value], item: &str) -> &'a Value {
 /// over a saturating identity, hand-derived (R-CHAR-3) — it must verify.
 fn verifiable_program(name: &str) -> String {
     format!(
-        "fn {name}(x: u64) -> u64\n  req x < 1000\n  ens result == x\n  fx  pure\n{{\n  x\n}}\n"
+        "fn {name}(x: u64) -> u64\n  ! pure\n  requires x < 1000\n  ensures result == x\n{{\n  x\n}}\n"
     )
 }
 
@@ -259,7 +259,8 @@ fn changed_body_is_a_cache_miss() {
     // Populate with one body.
     let f1 = write_fixture(
         "invalidate",
-        "fn inv_fn(x: u64) -> u64\n  req x < 1000\n  ens result == x\n  fx  pure\n{\n  x\n}\n",
+        "fn inv_fn(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x\n{\n  x\n}\n",
     );
     let (code1, certs1) = run_check(&f1, &cache_dir, &env);
     assert_eq!(code1, Some(0));
@@ -270,7 +271,8 @@ fn changed_body_is_a_cache_miss() {
     // first cache entry persists; the key differs because the lowered source does.
     let f2 = write_fixture(
         "invalidate",
-        "fn inv_fn(x: u64) -> u64\n  req x < 1000\n  ens result == x + 1\n  fx  pure\n{\n  x + 1\n}\n",
+        "fn inv_fn(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x + 1\n{\n  x + 1\n}\n",
     );
     let (_code2, certs2) = run_check(&f2, &cache_dir, &env);
     assert_eq!(

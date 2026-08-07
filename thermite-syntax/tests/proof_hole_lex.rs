@@ -79,7 +79,7 @@ fn digit_then_p_is_a_body_hole_then_ident() {
 fn proof_hole_in_fn_body_is_structured_error_not_a_body_hole() {
     // A `?pN` in fn-body statement position is rejected: proof holes live only in
     // proof blocks (AC-7). It is not silently reclassified as a body hole.
-    let src = "fn f(x: u64) -> u64 req true ens result == x fx pure { ?p0 }";
+    let src = "fn f(x: u64) -> u64 ! pure requires true ensures result == x { ?p0 }";
     let result = parse(src);
     assert!(
         result
@@ -95,7 +95,7 @@ fn proof_hole_in_fn_body_is_structured_error_not_a_body_hole() {
 fn body_hole_in_fn_body_still_parses_clean() {
     // Regression (#193): a body hole `?N` in fn-body statement position is still
     // accepted and recorded on the fn — the proof discriminant did not disturb it.
-    let src = "fn f(x: u64) -> u64 req true ens result == x fx pure { ?0 }";
+    let src = "fn f(x: u64) -> u64 ! pure requires true ensures result == x { ?0 }";
     let result = parse(src);
     assert!(
         result.is_clean(),

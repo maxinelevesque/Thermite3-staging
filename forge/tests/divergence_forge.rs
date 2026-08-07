@@ -89,7 +89,9 @@ fn divergence_multi_item_correct_item_not_falsely_failed() {
         eprintln!("SKIP: verus absent — multi-item mis-certification not exercised.");
         return;
     }
-    let src = "fn good(x: u64) -> u64\n  req x < 1000\n  ens result == x + x\n  fx  pure\n{\n  x + x\n}\n\nfn bad(x: u64) -> u64\n  req x < 1000\n  ens result == x + x + x\n  fx  pure\n{\n  x + x\n}\n";
+    let src = "fn good(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x + x\n{\n  x + x\n}\n\nfn bad(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x + x + x\n{\n  x + x\n}\n";
     let certs = check_json(src, "multi");
     let good = cert_for(&certs, "good");
     // Authority (§5.3 independence; §6 per-function level): `good`'s contract
@@ -122,7 +124,9 @@ fn divergence_multi_item_counterexample_misattributed() {
         eprintln!("SKIP: verus absent — counterexample misattribution not exercised.");
         return;
     }
-    let src = "fn good(x: u64) -> u64\n  req x < 1000\n  ens result == x + x\n  fx  pure\n{\n  x + x\n}\n\nfn bad(x: u64) -> u64\n  req x < 1000\n  ens result == x + x + x\n  fx  pure\n{\n  x + x\n}\n";
+    let src = "fn good(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x + x\n{\n  x + x\n}\n\nfn bad(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x + x + x\n{\n  x + x\n}\n";
     let certs = check_json(src, "multicx");
     let good = cert_for(&certs, "good");
     let obs = good["obligations"].as_array().expect("obligations present");

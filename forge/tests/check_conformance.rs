@@ -166,7 +166,8 @@ fn broken_contract_is_reported_failure_with_counterexample() {
     let fixture = std::env::temp_dir().join(format!("forge_broken_{}.th", std::process::id()));
     std::fs::write(
         &fixture,
-        "fn add_one(x: u64) -> u64\n  req x < 1000\n  ens result == x + 2\n  fx  pure\n{\n  x + 1\n}\n",
+        "fn add_one(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x + 2\n{\n  x + 1\n}\n",
     )
     .expect("write broken fixture");
 

@@ -110,7 +110,7 @@ fn level_of(certs: &[Value], item: &str) -> String {
 /// editor's `10` (`\n`); the shape is the #126 `spec_line_start` twin.
 const SCAN_PROGRAM: &str = "\
 spec fn spec_scan(s: &String, i: u64, target: u64, acc: u64) -> u64
-  dec target - i
+  measures target - i
 {
   if i >= target {
     acc
@@ -124,10 +124,10 @@ spec fn spec_scan(s: &String, i: u64, target: u64, acc: u64) -> u64
 }
 
 fn scan_exec(s: &String, i: u64, target: u64, acc: u64) -> u64
-  req i <= target && target <= s.len() && acc <= i
-  ens result == spec_scan(s, i, target, acc)
-  fx  pure
-  dec target - i
+  ! pure
+  requires i <= target && target <= s.len() && acc <= i
+  ensures result == spec_scan(s, i, target, acc)
+  measures target - i
 {
   if i >= target {
     acc
@@ -142,9 +142,9 @@ fn scan_exec(s: &String, i: u64, target: u64, acc: u64) -> u64
 }
 
 fn use_scan(s: &String) -> u64
-  req true
-  ens result == spec_scan(s, 0, s.len(), 0)
-  fx  pure
+  ! pure
+  requires true
+  ensures result == spec_scan(s, 0, s.len(), 0)
 {
   scan_exec(s, 0, s.len(), 0)
 }

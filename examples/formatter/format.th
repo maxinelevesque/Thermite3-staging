@@ -3,10 +3,10 @@
 // The round-trip postcondition requires the emitted decimal bytes to parse back
 // to `n`. The length condition covers the zero case.
 fn format(n: u64) -> String
-  req true
-  ens parse_be(result) == n
-  ens result.len() >= 1
-  fx  alloc
+  ! alloc
+  requires true
+  ensures parse_be(result) == n
+  ensures result.len() >= 1
 {
   n.to_string()
 }
@@ -14,27 +14,27 @@ fn format(n: u64) -> String
 // Fixed-input entries are used because the runner does not synthesize arguments.
 
 fn format_42() -> String
-  req true
-  ens parse_be(result) == 42
-  fx  alloc
+  ! alloc
+  requires true
+  ensures parse_be(result) == 42
 {
   let n: u64 = 42;
   n.to_string()
 }
 
 fn format_0() -> String
-  req true
-  ens parse_be(result) == 0
-  fx  alloc
+  ! alloc
+  requires true
+  ensures parse_be(result) == 0
 {
   let n: u64 = 0;
   n.to_string()
 }
 
 fn format_1000000() -> String
-  req true
-  ens parse_be(result) == 1000000
-  fx  alloc
+  ! alloc
+  requires true
+  ensures parse_be(result) == 1000000
 {
   let n: u64 = 1000000;
   n.to_string()

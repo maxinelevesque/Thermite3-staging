@@ -27,15 +27,15 @@ struct Tainted { raw: u64 }
 #[sealed] struct Sql { stmt: u64 }
 
 #[boundary("ifc::query")] fn query(q: Sql) -> u64
-  req true
-  ens result == q.stmt
-  fx  net(db)
+  ! net(db)
+  requires true
+  ensures result == q.stmt
   ;
 
 fn bypass_query(input: Tainted) -> u64
-  req true
-  ens result == input.raw
-  fx  net(db)
+  ! net(db)
+  requires true
+  ensures result == input.raw
 {
   query(Sql { stmt: input.raw })
 }
@@ -60,21 +60,21 @@ struct Tainted { raw: u64 }
 #[sealed] struct Sql { stmt: u64 }
 
 #[boundary("ifc::parameterize")] fn parameterize(t: Tainted) -> Sql
-  req true
-  ens result.stmt == t.raw
-  fx  pure
+  ! pure
+  requires true
+  ensures result.stmt == t.raw
   ;
 
 #[boundary("ifc::query")] fn query(q: Sql) -> u64
-  req true
-  ens result == q.stmt
-  fx  net(db)
+  ! net(db)
+  requires true
+  ensures result == q.stmt
   ;
 
 fn safe_query(input: Tainted) -> u64
-  req true
-  ens result == input.raw
-  fx  net(db)
+  ! net(db)
+  requires true
+  ensures result == input.raw
 {
   query(parameterize(input))
 }
@@ -93,9 +93,9 @@ fn a_plain_struct_literal_is_unaffected() {
 struct Account { balance: u64 }
 
 fn mk(b: u64) -> u64
-  req true
-  ens result == b
-  fx  pure
+  ! pure
+  requires true
+  ensures result == b
 {
   Account { balance: b }.balance
 }
@@ -114,9 +114,9 @@ fn no_sealed_struct_means_the_rule_is_inert() {
 struct Sql { stmt: u64 }
 
 fn build(x: u64) -> u64
-  req true
-  ens result == x
-  fx  pure
+  ! pure
+  requires true
+  ensures result == x
 {
   Sql { stmt: x }.stmt
 }

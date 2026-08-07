@@ -1279,7 +1279,7 @@ mod tests {
     /// `fn_named` gate-clean (no `.unwrap()`/`.expect()`/`panic!` on the added
     /// patch lines). Builds a trivially-default `FnItem` via re-parse of a stub.
     fn unreachable_fn() -> FnItem {
-        parse_fn("fn _u() -> u32 req true ens true fx pure { 0 }")
+        parse_fn("fn _u() -> u32 ! pure requires true ensures true { 0 }")
     }
 
     // AC-5 (re-derived for #269, REQ-12): the frozen set + deterministic order for
@@ -1295,7 +1295,7 @@ mod tests {
     //   - family 3: one IntLit `1` (1->2, 1->0).
     #[test]
     fn frozen_set_and_order_for_small_fn() {
-        let f = parse_fn("fn f(x: u32) -> u32 req x < 10 ens result == x fx pure { x + 1 }");
+        let f = parse_fn("fn f(x: u32) -> u32 ! pure requires x < 10 ensures result == x { x + 1 }");
         let mutants = generate(&f, 0, &[]);
         let descs: Vec<&str> = mutants.iter().map(|m| m.desc.as_str()).collect();
         assert_eq!(
@@ -1320,7 +1320,7 @@ mod tests {
     fn ident_return_for_exact_type_match() {
         let items = parse_items(
             "struct S { a: u64 } \
-             fn id(s: S) -> S req true ens result.a <= 1_000_000 fx pure { s }",
+             fn id(s: S) -> S ! pure requires true ensures result.a <= 1_000_000 { s }",
         );
         let f = fn_named(&items, "id");
         let descs: Vec<String> = generate(&f, 0, &items)
@@ -1340,7 +1340,7 @@ mod tests {
     #[test]
     fn ident_return_one_per_matching_param_in_order() {
         let f = parse_fn(
-            "fn min2(a: u64, b: u64) -> u64 req true ens result <= a ens result <= b fx pure \
+            "fn min2(a: u64, b: u64) -> u64 ! pure requires true ensures result <= a ensures result <= b \
              { if a <= b { a } else { b } }",
         );
         let idents: Vec<String> = generate(&f, 0, &[])
@@ -1364,7 +1364,7 @@ mod tests {
     fn ident_return_no_ref_stripping() {
         let items = parse_items(
             "struct Buf { n: u64 } \
-             fn deref_id(b: &Buf) -> Buf req true ens result.n <= 1_000_000 fx pure { *b }",
+             fn deref_id(b: &Buf) -> Buf ! pure requires true ensures result.n <= 1_000_000 { *b }",
         );
         let f = fn_named(&items, "deref_id");
         let descs: Vec<String> = generate(&f, 0, &items)
@@ -1383,7 +1383,7 @@ mod tests {
     #[test]
     fn ident_return_exact_ref_match() {
         let f = parse_fn(
-            "fn pick(xs: &[u32]) -> &[u32] req xs.len() <= 10 ens result.len() <= 10 fx pure { xs }",
+            "fn pick(xs: &[u32]) -> &[u32] ! pure requires xs.len() <= 10 ensures result.len() <= 10 { xs }",
         );
         let descs: Vec<String> = generate(&f, 0, &[]).into_iter().map(|m| m.desc).collect();
         assert!(
@@ -1403,8 +1403,8 @@ mod tests {
         let items = parse_items(
             "struct Account { balance: u64 } \
              fn deposit(a: Account, amount: u64) -> Account \
-               req a.balance + amount <= 1_000_000 \
-               ens result.balance == a.balance + amount fx pure \
+               ! pure requires a.balance + amount <= 1_000_000 \
+               ensures result.balance == a.balance + amount \
              { Account { balance: a.balance + amount } }",
         );
         let f = fn_named(&items, "deposit");
@@ -1432,7 +1432,7 @@ mod tests {
     fn struct_zero_drops_when_a_field_has_no_zero() {
         let items = parse_items(
             "struct Node { next: Box<Node> } \
-             fn wrap(n: Box<Node>) -> Node req true ens true fx alloc { Node { next: n } }",
+             fn wrap(n: Box<Node>) -> Node ! alloc requires true ensures true { Node { next: n } }",
         );
         let f = fn_named(&items, "wrap");
         let descs: Vec<String> = generate(&f, 0, &items)
@@ -1452,7 +1452,7 @@ mod tests {
     fn struct_zero_drops_for_enum_named_return() {
         let items = parse_items(
             "enum Color { Red, Green } \
-             fn pick_color(c: Color) -> Color req true ens true fx pure { c }",
+             fn pick_color(c: Color) -> Color ! pure requires true ensures true { c }",
         );
         let f = fn_named(&items, "pick_color");
         let descs: Vec<String> = generate(&f, 0, &items)
@@ -1477,8 +1477,8 @@ mod tests {
     fn struct_zero_composes_string_and_scalar_fields() {
         let items = parse_items(
             "struct Buffer { text: String, cursor: u64 } \
-             fn mk(t: String) -> Buffer req t.len() <= 1_000_000 \
-               ens result.cursor <= result.text.len() fx alloc \
+             fn mk(t: String) -> Buffer ! alloc requires t.len() <= 1_000_000 \
+               ensures result.cursor <= result.text.len() \
              { Buffer { text: t, cursor: 0 } }",
         );
         let f = fn_named(&items, "mk");
@@ -1498,7 +1498,7 @@ mod tests {
     // REQ-1 (OQ-3): an `Option` return type's early-return mutant is `return None`.
     #[test]
     fn option_return_early_return_is_none() {
-        let f = parse_fn("fn g(x: u32) -> Option<usize> req x < 10 ens true fx pure { Some(0) }");
+        let f = parse_fn("fn g(x: u32) -> Option<usize> ! pure requires x < 10 ensures true { Some(0) }");
         let mutants = generate(&f, 0, &[]);
         assert!(
             mutants
@@ -1513,7 +1513,7 @@ mod tests {
     // represent -1) — documented, not a silent wrap.
     #[test]
     fn off_by_one_skips_minus_one_at_zero() {
-        let f = parse_fn("fn h(x: u32) -> u32 req x < 10 ens result >= 0 fx pure { 0 }");
+        let f = parse_fn("fn h(x: u32) -> u32 ! pure requires x < 10 ensures result >= 0 { 0 }");
         let mutants = generate(&f, 0, &[]);
         let obo: Vec<&str> = mutants
             .iter()
@@ -1529,9 +1529,9 @@ mod tests {
     #[test]
     fn generate_is_deterministic() {
         let f = parse_fn(
-            "fn s(xs: &[u32]) -> u64 req xs.len() < 10 ens result >= 0 fx pure { \
+            "fn s(xs: &[u32]) -> u64 ! pure requires xs.len() < 10 ensures result >= 0 { \
              let mut a: u64 = 0; let mut i: usize = 0; \
-             while i < xs.len() inv i <= xs.len() inv a >= 0 dec xs.len() - i \
+             while i < xs.len() keeps i <= xs.len() keeps a >= 0 measures xs.len() - i \
              { a = a + xs[i] as u64; i = i + 1; } a }",
         );
         let a: Vec<String> = generate(&f, 0, &[]).into_iter().map(|m| m.desc).collect();
@@ -1547,9 +1547,9 @@ mod tests {
     #[test]
     fn capped_at_mutant_cap() {
         let f = parse_fn(
-            "fn s(xs: &[u32]) -> u64 req xs.len() < 10 ens result >= 0 fx pure { \
+            "fn s(xs: &[u32]) -> u64 ! pure requires xs.len() < 10 ensures result >= 0 { \
              let mut a: u64 = 0; let mut i: usize = 0; \
-             while i < xs.len() inv i <= xs.len() inv a >= 0 dec xs.len() - i \
+             while i < xs.len() keeps i <= xs.len() keeps a >= 0 measures xs.len() - i \
              { a = a + xs[i] as u64; i = i + 1; } a }",
         );
         assert!(generate(&f, 0, &[]).len() <= MUTANT_CAP);
@@ -1559,7 +1559,7 @@ mod tests {
     // body differs.
     #[test]
     fn mutant_keeps_contract_changes_only_body() {
-        let f = parse_fn("fn f(x: u32) -> u32 req x < 10 ens result == x fx pure { x + 1 }");
+        let f = parse_fn("fn f(x: u32) -> u32 ! pure requires x < 10 ensures result == x { x + 1 }");
         let mutants = generate(&f, 0, &[]);
         for m in &mutants {
             assert_eq!(m.item.contract, f.contract, "contract untouched");
@@ -1629,7 +1629,7 @@ mod tests {
     #[test]
     fn slice_return_synthesizes_early_return_mutant() {
         let f = parse_fn(
-            "fn pick(xs: &[u32]) -> &[u32] req xs.len() <= 10 ens result.len() <= 10 fx pure { xs }",
+            "fn pick(xs: &[u32]) -> &[u32] ! pure requires xs.len() <= 10 ensures result.len() <= 10 { xs }",
         );
         let mutants = generate(&f, 0, &[]);
         assert!(
@@ -1645,7 +1645,7 @@ mod tests {
     #[test]
     fn branch_swap_negates_comparison() {
         let f = parse_fn(
-            "fn b(x: u32) -> u32 req x < 100 ens result >= 0 fx pure { \
+            "fn b(x: u32) -> u32 ! pure requires x < 100 ensures result >= 0 { \
              if x < 5 { return 1; } x }",
         );
         let mutants = generate(&f, 0, &[]);

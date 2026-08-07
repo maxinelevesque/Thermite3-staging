@@ -1558,7 +1558,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             })?;
             let addr = addr.ok_or_else(|| {
                 ForgeError::Usage(
-                    "`forge edit` requires a semantic <addr> (e.g. `binary_search.loop#1.inv#2`)"
+                    "`forge edit` requires a semantic <addr> (e.g. `binary_search.loop#1.keeps#2`)"
                         .to_string(),
                 )
             })?;

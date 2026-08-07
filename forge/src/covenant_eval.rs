@@ -536,7 +536,7 @@ mod tests {
     /// Evaluate the contract expression of source `req true ens <EXPR>` clause k.
     fn eval_src(expr_src: &str, e: &Env) -> Result<Value, CovenantEvalError> {
         let f = parse_fn(&format!(
-            "fn probe(x: u64, y: u64) -> u64 req true ens {expr_src} fx pure {{ x }}"
+            "fn probe(x: u64, y: u64) -> u64 ! pure requires true ensures {expr_src} {{ x }}"
         ));
         eval_expr(&f.contract.ens[0].expr, e)
     }
@@ -605,7 +605,7 @@ mod tests {
     fn body_with_let_and_tail() {
         // A body of `let`-bindings + a tail expression evaluates to the tail value.
         let f = parse_fn(
-            "fn add(x: u64, y: u64) -> u64 req true ens result == x + y fx pure \
+            "fn add(x: u64, y: u64) -> u64 ! pure requires true ensures result == x + y \
              { let s = x + y; s }",
         );
         let e = env(&[("x", Value::Int(4)), ("y", Value::Int(5))]);
@@ -619,7 +619,7 @@ mod tests {
     fn body_with_early_return_in_if() {
         // An `if` whose then-branch `return`s short-circuits the body.
         let f = parse_fn(
-            "fn clamp(x: u64) -> u64 req true ens result <= 10 fx pure \
+            "fn clamp(x: u64) -> u64 ! pure requires true ensures result <= 10 \
              { if x > 10 { return 10; } x }",
         );
         let big = env(&[("x", Value::Int(99))]);
@@ -641,7 +641,7 @@ mod tests {
         // (taking the branch tail as a block return) manufactures a false refutation on a
         // correct item — the divergence the critic pinned (#298).
         let f = parse_fn(
-            "fn alwayszero(x: u64) -> u64 req true ens result == 0 fx pure \
+            "fn alwayszero(x: u64) -> u64 ! pure requires true ensures result == 0 \
              { if x > 0 { x } else { x } 0 }",
         );
         for x in [0_i128, 1, 99, i128::from(u64::MAX)] {
@@ -662,7 +662,7 @@ mod tests {
         // E0384) — an error, never a silent mutation (#299, the faithfulness
         // contract). The only textual difference from the legal control is `mut`.
         let immutable = parse_fn(
-            "fn setone(x: u64) -> u64 req true ens result == 1 fx pure \
+            "fn setone(x: u64) -> u64 ! pure requires true ensures result == 1 \
              { let r = 0; if x > 0 { r = 1; } else { r = 1; } r }",
         );
         let r = eval_block(
@@ -676,7 +676,7 @@ mod tests {
 
         // The `let mut` control evaluates the mutation legally.
         let mutable = parse_fn(
-            "fn setone(x: u64) -> u64 req true ens result == 1 fx pure \
+            "fn setone(x: u64) -> u64 ! pure requires true ensures result == 1 \
              { let mut r = 0; if x > 0 { r = 1; } else { r = 1; } r }",
         );
         assert_eq!(
@@ -695,7 +695,7 @@ mod tests {
         // a bool. The integer case uses the i128 agreement model the other bitwise ops
         // use — a body `!x` and `ens result == !x` evaluate `!` identically, so a covenant
         // on a `!`-using item validates rather than being wrongly refused (#302).
-        let f = parse_fn("fn flip(x: u64) -> u64 req true ens result == !x fx pure { !x }");
+        let f = parse_fn("fn flip(x: u64) -> u64 ! pure requires true ensures result == !x { !x }");
         let e = env(&[("x", Value::Int(5))]);
         let result = eval_block(f.body.as_ref().expect("body"), &e).expect("body evals");
         assert_eq!(result, Value::Int(!5_i128));
@@ -709,7 +709,7 @@ mod tests {
         // Logical `!` on a bool is unaffected.
         assert_eq!(
             eval_expr(
-                &parse_fn("fn p(b: bool) -> bool req true ens result == !b fx pure { b }")
+                &parse_fn("fn p(b: bool) -> bool ! pure requires true ensures result == !b { b }")
                     .contract
                     .ens[0]
                     .expr,

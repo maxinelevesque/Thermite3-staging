@@ -104,7 +104,8 @@ fn cert_for<'a>(certs: &'a [Value], item: &str) -> &'a Value {
 #[test]
 fn tuple_type_disambiguation_unit_grouping_tuple() {
     let parsed = thermite_syntax::parse(
-        "fn swap(a: u64, b: u64) -> (u64, u64)\n  req true\n  ens result.0 == b && result.1 == a\n  fx pure\n{ (b, a) }\n",
+        "fn swap(a: u64, b: u64) -> (u64, u64)\n  ! pure
+  requires true\n  ensures result.0 == b && result.1 == a\n{ (b, a) }\n",
     );
     assert!(
         parsed.is_clean(),
@@ -127,7 +128,8 @@ fn tuple_type_disambiguation_unit_grouping_tuple() {
     }
 
     // The unit `()` return stays `Type::Unit` (the disambiguation did not break it).
-    let unit = thermite_syntax::parse("fn log() -> ()\n  req true\n  ens true\n  fx pure\n{ }\n");
+    let unit = thermite_syntax::parse("fn log() -> ()\n  ! pure
+  requires true\n  ensures true\n{ }\n");
     assert!(
         unit.is_clean(),
         "`()` unit return still parses: {:?}",
@@ -145,7 +147,8 @@ fn tuple_type_disambiguation_unit_grouping_tuple() {
 
     // The parenthesised `(u64)` is grouping → the inner type (arity 1, not a tuple).
     let grouped = thermite_syntax::parse(
-        "fn id(a: u64) -> (u64)\n  req true\n  ens result == a\n  fx pure\n{ a }\n",
+        "fn id(a: u64) -> (u64)\n  ! pure
+  requires true\n  ensures result == a\n{ a }\n",
     );
     assert!(
         grouped.is_clean(),
@@ -168,7 +171,8 @@ fn tuple_type_disambiguation_unit_grouping_tuple() {
 #[test]
 fn tuple_expr_and_projection_nodes() {
     let parsed = thermite_syntax::parse(
-        "fn swap(a: u64, b: u64) -> (u64, u64)\n  req true\n  ens result.0 == b && result.1 == a\n  fx pure\n{ (b, a) }\n",
+        "fn swap(a: u64, b: u64) -> (u64, u64)\n  ! pure
+  requires true\n  ensures result.0 == b && result.1 == a\n{ (b, a) }\n",
     );
     assert!(parsed.is_clean(), "must parse: {:?}", parsed.errors);
     let f = match &parsed.program.items[0] {
@@ -217,7 +221,8 @@ fn tuple_expr_and_projection_nodes() {
 // End-to-end ladder pins (REQ-8; verus via `forge check`).
 // ---------------------------------------------------------------------------
 
-const SWAP_L3: &str = "fn swap(a: u64, b: u64) -> (u64, u64)\n  req true\n  ens result.0 == b && result.1 == a\n  fx pure\n{ (b, a) }\n";
+const SWAP_L3: &str = "fn swap(a: u64, b: u64) -> (u64, u64)\n  ! pure
+  requires true\n  ensures result.0 == b && result.1 == a\n{ (b, a) }\n";
 
 /// AC-4 — `swap(a, b) -> (u64, u64) ens result.0 == b && result.1 == a { (b, a) }`
 /// certifies L3.
@@ -259,7 +264,8 @@ fn ac5_wrong_body_under_projection_ens_is_rejected() {
     }
     let certs = check_program(
         "swapwrong",
-        "fn swap(a: u64, b: u64) -> (u64, u64)\n  req true\n  ens result.0 == b && result.1 == a\n  fx pure\n{ (a, b) }\n",
+        "fn swap(a: u64, b: u64) -> (u64, u64)\n  ! pure
+  requires true\n  ensures result.0 == b && result.1 == a\n{ (a, b) }\n",
     );
     let swap = cert_for(&certs, "swap");
     assert_ne!(
@@ -284,7 +290,8 @@ fn ac6_three_tuple_certifies_l3() {
     }
     let certs = check_program(
         "triple",
-        "fn triple() -> (u64, u64, u64)\n  req true\n  ens result.0 == 1 && result.1 == 2 && result.2 == 3\n  fx pure\n{ (1, 2, 3) }\n",
+        "fn triple() -> (u64, u64, u64)\n  ! pure
+  requires true\n  ensures result.0 == 1 && result.1 == 2 && result.2 == 3\n{ (1, 2, 3) }\n",
     );
     let triple = cert_for(&certs, "triple");
     assert_eq!(
@@ -310,7 +317,8 @@ fn req8_tuple_let_and_exec_projection_certifies_l3() {
     }
     let certs = check_program(
         "letproj",
-        "fn first(a: u64, b: u64) -> u64\n  req true\n  ens result == a\n  fx pure\n{ let p: (u64, u64) = (a, b); p.0 }\n",
+        "fn first(a: u64, b: u64) -> u64\n  ! pure
+  requires true\n  ensures result == a\n{ let p: (u64, u64) = (a, b); p.0 }\n",
     );
     let first = cert_for(&certs, "first");
     assert_eq!(

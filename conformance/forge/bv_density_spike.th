@@ -15,19 +15,19 @@
 //   project      — 2/3 ens machine-semantics (666‰) → REACHES the 500‰ threshold (TRIP).
 
 fn wrap_comm(a: u64, b: u64) -> u64
-    req true
-    ens@bv64 a + b == b + a
-    fx pure
+    ! pure
+    requires true
+    ensures@bv64 a + b == b + a
 { a + b }
 
 fn wrap_xor(a: u64, b: u64) -> u64
-    req true
-    ens@bv64 a ^ b ^ b == a
-    fx pure
+    ! pure
+    requires true
+    ensures@bv64 a ^ b ^ b == a
 { a ^ b }
 
 fn plain_add(a: u64, b: u64) -> u64
-    req a < 100 && b < 100
-    ens result >= a
-    fx pure
+    ! pure
+    requires a < 100 && b < 100
+    ensures result >= a
 { a + b }

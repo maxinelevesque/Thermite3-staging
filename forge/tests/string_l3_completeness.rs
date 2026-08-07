@@ -120,7 +120,8 @@ fn gap1_slice_u64_arg_coerces_and_certifies_l3() {
     }
     let certs = check_program(
         "slice",
-        "fn pre(s: String, k: u64) -> String\n  req s.len() <= 1_000_000 && k <= s.len()\n  ens result.len() == k\n  fx alloc\n{ s.slice(0, k) }\n",
+        "fn pre(s: String, k: u64) -> String\n  ! alloc
+  requires s.len() <= 1_000_000 && k <= s.len()\n  ensures result.len() == k\n{ s.slice(0, k) }\n",
     );
     let pre = cert_for(&certs, "pre");
     assert_eq!(
@@ -156,7 +157,8 @@ fn gap1_mid_string_insert_via_slice_concat_certifies_l3() {
     }
     let certs = check_program(
         "insert",
-        "fn insert(s: String, ins: String, p: u64) -> String\n  req s.len() + ins.len() <= 1_000_000 && p <= s.len()\n  ens result.len() == s.len() + ins.len()\n  fx alloc\n{ s.slice(0, p).concat(ins).concat(s.slice(p, s.len())) }\n",
+        "fn insert(s: String, ins: String, p: u64) -> String\n  ! alloc
+  requires s.len() + ins.len() <= 1_000_000 && p <= s.len()\n  ensures result.len() == s.len() + ins.len()\n{ s.slice(0, p).concat(ins).concat(s.slice(p, s.len())) }\n",
     );
     let insert = cert_for(&certs, "insert");
     assert_eq!(
@@ -189,7 +191,8 @@ fn gap2_buf_struct_with_string_field_certifies_l3() {
     }
     let certs = check_program(
         "buf",
-        "struct Buf { text: String, cursor: u64 }\n  inv cursor <= text.len()\n\nfn mk(t: String) -> Buf\n  req t.len() <= 1_000_000\n  ens result.text.len() == t.len()\n  fx alloc\n{ Buf { text: t, cursor: 0 } }\n",
+        "struct Buf { text: String, cursor: u64 }\n  keeps cursor <= text.len()\n\nfn mk(t: String) -> Buf\n  ! alloc
+  requires t.len() <= 1_000_000\n  ensures result.text.len() == t.len()\n{ Buf { text: t, cursor: 0 } }\n",
     );
     let buf = cert_for(&certs, "Buf");
     assert_eq!(
@@ -234,7 +237,8 @@ fn gap2_fn_reading_string_field_len_certifies_l3() {
     }
     let certs = check_program(
         "readbuf",
-        "struct Buf { text: String, cursor: u64 }\n  inv cursor <= text.len()\n\nfn buf_len(b: &Buf) -> u64\n  req b.text.len() <= 1_000_000\n  ens result == b.text.len()\n  fx pure\n{ b.text.len() }\n",
+        "struct Buf { text: String, cursor: u64 }\n  keeps cursor <= text.len()\n\nfn buf_len(b: &Buf) -> u64\n  ! pure
+  requires b.text.len() <= 1_000_000\n  ensures result == b.text.len()\n{ b.text.len() }\n",
     );
     let buf_len = cert_for(&certs, "buf_len");
     assert_eq!(
@@ -271,7 +275,8 @@ fn gap1_slice_precondition_is_load_bearing() {
     // not establishable -> slice's `self.well_formed()` precondition undischarged.
     let certs = check_program(
         "slice_unbounded",
-        "fn bad(s: String, k: u64) -> String\n  req k <= s.len()\n  ens result.len() == k\n  fx alloc\n{ s.slice(0, k) }\n",
+        "fn bad(s: String, k: u64) -> String\n  ! alloc
+  requires k <= s.len()\n  ensures result.len() == k\n{ s.slice(0, k) }\n",
     );
     let bad = cert_for(&certs, "bad");
     assert_eq!(

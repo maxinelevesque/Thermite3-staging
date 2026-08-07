@@ -35,7 +35,7 @@ mod plumbing_absent {
     /// pointing at the `@` (the structural lock R-BV-1 / AC-1 negative half).
     #[test]
     fn ens_bv_tag_is_a_parse_error_without_plumbing() {
-        let src = "fn f(a: u64) -> u64 req true ens@bv64 result == 0 fx pure { 0 }";
+        let src = "fn f(a: u64) -> u64 ! pure requires true ensures@bv64 result == 0 { 0 }";
         let result = parse(src);
         assert!(
             !result.is_clean(),
@@ -56,8 +56,8 @@ mod plumbing_absent {
     #[test]
     fn nowrap_and_inv_tags_are_parse_errors_without_plumbing() {
         for src in [
-            "fn f(a: u64) -> u64 req true ens@bv64(nowrap) result == 0 fx pure { 0 }",
-            "struct S { x: u64 } inv@bv32 x == x",
+            "fn f(a: u64) -> u64 ! pure requires true ensures@bv64(nowrap) result == 0 { 0 }",
+            "struct S { x: u64 } keeps@bv32 x == x",
         ] {
             let result = parse(src);
             assert!(
@@ -74,7 +74,7 @@ mod plumbing_absent {
     /// The error message names the `bv` feature so the gate is discoverable.
     #[test]
     fn the_error_message_points_at_the_feature() {
-        let src = "fn f(a: u64) -> u64 req true ens@bv64 result == 0 fx pure { 0 }";
+        let src = "fn f(a: u64) -> u64 ! pure requires true ensures@bv64 result == 0 { 0 }";
         let err = parse(src)
             .errors
             .into_iter()
@@ -113,7 +113,7 @@ mod plumbing_present {
 
     /// Scaffold a minimal exec `fn` whose single `ens` clause is `<ens> result == 0`.
     fn fn_with_ens(ens: &str) -> String {
-        format!("fn f(a: u64) -> u64 req true ens{ens} result == 0 fx pure {{ 0 }}")
+        format!("fn f(a: u64) -> u64 ! pure requires true ensures{ens} result == 0 {{ 0 }}")
     }
 
     #[test]
@@ -153,10 +153,9 @@ mod plumbing_present {
     fn tagged_and_untagged_clauses_coexist_on_one_item() {
         // The RFC mix64 shape: wraparound and unbounded clauses side by side, each
         // labeled. Here a `@bv64` ens next to an untagged ens.
-        let src = "fn f(a: u64) -> u64 req true \
-                   ens@bv64 result == 0 \
-                   ens result == a \
-                   fx pure { 0 }";
+        let src = "fn f(a: u64) -> u64 ! pure requires true \
+                   ensures@bv64 result == 0 \
+                   ensures result == a { 0 }";
         let ens = fn_ens(src);
         assert_eq!(ens.len(), 2);
         assert_eq!(ens[0].bv.expect("first ens is tagged").width, BvWidth::W64);
@@ -166,7 +165,7 @@ mod plumbing_present {
     #[test]
     fn inv_clause_accepts_the_tag() {
         // A struct type-invariant `inv@bvN` parses under the same gate.
-        let result = parse("struct S { x: u64 } inv@bv32 x == x");
+        let result = parse("struct S { x: u64 } keeps@bv32 x == x");
         assert!(
             result.is_clean(),
             "expected a clean parse, got: {:?}",
@@ -186,7 +185,7 @@ mod plumbing_present {
     fn lemma_items_accept_the_tag() {
         // REQ-1: `lemma` items accept the tag under the same gate (its `ens`
         // conclusion flows through the shared `parse_clause` seam).
-        let result = parse("lemma l(a: u64) req true ens@bv64 a == a proof { omega }");
+        let result = parse("lemma l(a: u64) requires true ensures@bv64 a == a proof { omega }");
         assert!(
             result.is_clean(),
             "expected a clean parse, got: {:?}",
@@ -206,7 +205,7 @@ mod plumbing_present {
     #[test]
     fn preconditions_cannot_define_a_bit_width() {
         let result =
-            parse("fn f(a: u64) -> u64 req@bv64 a == a ens@bv64 result == a fx pure { a }");
+            parse("fn f(a: u64) -> u64 ! pure requires@bv64 a == a ensures@bv64 result == a { a }");
         assert!(
             result
                 .errors
@@ -234,7 +233,7 @@ mod plumbing_present {
     #[test]
     fn a_bare_at_with_no_width_is_a_structured_error() {
         // `@` with no `bvN` following -> BvWidthInvalid (the width token is absent).
-        let result = parse("fn f(a: u64) -> u64 req true ens@ result == 0 fx pure { 0 }");
+        let result = parse("fn f(a: u64) -> u64 ! pure requires true ensures@ result == 0 { 0 }");
         assert!(
             result
                 .errors

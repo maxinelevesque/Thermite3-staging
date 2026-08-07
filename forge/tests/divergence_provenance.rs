@@ -143,15 +143,15 @@ struct Tainted { raw: u64 }
 #[sealed] struct Sql { stmt: u64 }
 
 #[boundary("ifc::query")] fn query(q: Sql) -> u64
-  req true
-  ens result == q.stmt
-  fx  net(db)
+  ! net(db)
+  requires true
+  ensures result == q.stmt
   ;
 
 fn bypass_query(input: Tainted) -> u64
-  req true
-  ens result == input.raw
-  fx  net(db)
+  ! net(db)
+  requires true
+  ensures result == input.raw
 {
   query(Sql { stmt: input.raw })
 }
@@ -164,15 +164,15 @@ struct Secret { val: u64 }
 #[sealed] struct Public { val: u64 }
 
 #[boundary("ifc::emit")] fn emit(p: Public) -> u64
-  req true
-  ens result == p.val
-  fx  write(log)
+  ! write(log)
+  requires true
+  ensures result == p.val
   ;
 
 fn bypass_emit(s: Secret) -> u64
-  req true
-  ens result == s.val
-  fx  write(log)
+  ! write(log)
+  requires true
+  ensures result == s.val
 {
   emit(Public { val: s.val })
 }
@@ -185,15 +185,15 @@ struct User { id: u64 }
 #[sealed] struct Authorized { id: u64 }
 
 #[boundary("ifc::delete")] fn delete(c: Authorized) -> u64
-  req true
-  ens result == c.id
-  fx  write(db)
+  ! write(db)
+  requires true
+  ensures result == c.id
   ;
 
 fn bypass_delete(u: User) -> u64
-  req true
-  ens result == u.id
-  fx  write(db)
+  ! write(db)
+  requires true
+  ensures result == u.id
 {
   delete(Authorized { id: u.id })
 }

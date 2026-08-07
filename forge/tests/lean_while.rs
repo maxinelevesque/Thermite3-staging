@@ -118,14 +118,14 @@ fn certified_via_lean(cert: &[Value]) -> bool {
 
 const COUNT_SRC: &str = "\
 fn count(n: u64) -> u64
-  req n <= 1000
-  ens result == n
-  fx pure
+  ! pure
+  requires n <= 1000
+  ensures result == n
 {
   let mut lo: u64 = 0;
   while lo < n
-    inv lo <= n
-    dec n - lo
+    keeps lo <= n
+    measures n - lo
   {
     lo = lo + 1;
   }
@@ -208,41 +208,41 @@ fn refusal_matrix_no_lean_certification() {
     let matrix: &[(&str, &str)] = &[
         (
             "loop_kind",
-            "fn f(n: u64) -> u64 req n <= 100 ens result == n fx pure \
-             { let mut lo: u64 = 0; loop inv lo <= n dec n - lo { lo = lo + 1; } lo }",
+            "fn f(n: u64) -> u64 ! pure requires n <= 100 ensures result == n \
+             { let mut lo: u64 = 0; loop keeps lo <= n measures n - lo { lo = lo + 1; } lo }",
         ),
         (
             "nested_loop",
-            "fn f(n: u64) -> u64 req n <= 100 ens result == n fx pure \
-             { let mut lo: u64 = 0; while lo < n inv lo <= n dec n - lo \
-               { while lo < n inv lo <= n dec n - lo { lo = lo + 1; } } lo }",
+            "fn f(n: u64) -> u64 ! pure requires n <= 100 ensures result == n \
+             { let mut lo: u64 = 0; while lo < n keeps lo <= n measures n - lo \
+               { while lo < n keeps lo <= n measures n - lo { lo = lo + 1; } } lo }",
         ),
         (
             "while_under_if",
-            "fn f(n: u64) -> u64 req n <= 100 ens result == n fx pure \
-             { let mut lo: u64 = 0; if n > 0 { while lo < n inv lo <= n dec n - lo \
+            "fn f(n: u64) -> u64 ! pure requires n <= 100 ensures result == n \
+             { let mut lo: u64 = 0; if n > 0 { while lo < n keeps lo <= n measures n - lo \
                { lo = lo + 1; } } lo }",
         ),
         (
             "multi_loop",
-            "fn f(n: u64) -> u64 req n <= 100 ens result == n fx pure \
-             { let mut lo: u64 = 0; while lo < n inv lo <= n dec n - lo { lo = lo + 1; } \
-               while lo < n inv lo <= n dec n - lo { lo = lo + 1; } lo }",
+            "fn f(n: u64) -> u64 ! pure requires n <= 100 ensures result == n \
+             { let mut lo: u64 = 0; while lo < n keeps lo <= n measures n - lo { lo = lo + 1; } \
+               while lo < n keeps lo <= n measures n - lo { lo = lo + 1; } lo }",
         ),
         (
             "break_body",
-            "fn f(n: u64) -> u64 req n <= 100 ens result == n fx pure \
-             { let mut lo: u64 = 0; while lo < n inv lo <= n dec n - lo { break; } lo }",
+            "fn f(n: u64) -> u64 ! pure requires n <= 100 ensures result == n \
+             { let mut lo: u64 = 0; while lo < n keeps lo <= n measures n - lo { break; } lo }",
         ),
         (
             "continue_body",
-            "fn f(n: u64) -> u64 req n <= 100 ens result == n fx pure \
-             { let mut lo: u64 = 0; while lo < n inv lo <= n dec n - lo { continue; } lo }",
+            "fn f(n: u64) -> u64 ! pure requires n <= 100 ensures result == n \
+             { let mut lo: u64 = 0; while lo < n keeps lo <= n measures n - lo { continue; } lo }",
         ),
         (
             "mid_return",
-            "fn f(n: u64) -> u64 req n <= 100 ens result == n fx pure \
-             { let mut lo: u64 = 0; while lo < n inv lo <= n dec n - lo { return lo; } lo }",
+            "fn f(n: u64) -> u64 ! pure requires n <= 100 ensures result == n \
+             { let mut lo: u64 = 0; while lo < n keeps lo <= n measures n - lo { return lo; } lo }",
         ),
         (
             "empty_inv",
@@ -251,13 +251,13 @@ fn refusal_matrix_no_lean_certification() {
         ),
         (
             "all_true_inv",
-            "fn f(n: u64) -> u64 req n <= 100 ens result == n fx pure \
-             { let mut lo: u64 = 0; while lo < n inv true dec n - lo { lo = lo + 1; } lo }",
+            "fn f(n: u64) -> u64 ! pure requires n <= 100 ensures result == n \
+             { let mut lo: u64 = 0; while lo < n keeps true measures n - lo { lo = lo + 1; } lo }",
         ),
         (
             "non_scalar_assign",
-            "fn f(xs: &[u32], n: u64) -> u64 req n <= 100 ens result == n fx pure \
-             { let mut lo: u64 = 0; while lo < n inv lo <= n dec n - lo \
+            "fn f(xs: &[u32], n: u64) -> u64 ! pure requires n <= 100 ensures result == n \
+             { let mut lo: u64 = 0; while lo < n keeps lo <= n measures n - lo \
                { xs[lo] = lo; lo = lo + 1; } lo }",
         ),
     ];
@@ -288,8 +288,8 @@ fn while_true_no_op_is_not_proven_l3_via_lean() {
     // obligation is vacuously discharge-able, but the conjoined `_converges` obligation
     // fails (the §4.2.3 termination-vacuity gate; the `PinWhileVacuity` mirror). The item
     // must not certify L3 via Lean. Expected from §4.2.3 (R-CHAR-3).
-    let src = "fn spin(lo: u64) -> u64 req lo <= 100 ens result == lo fx pure \
-               { let mut acc: u64 = lo; while 0 < 1 inv acc <= acc dec acc - acc \
+    let src = "fn spin(lo: u64) -> u64 ! pure requires lo <= 100 ensures result == lo \
+               { let mut acc: u64 = lo; while 0 < 1 keeps acc <= acc measures acc - acc \
                  { acc = acc; } acc }";
     let path = write_fixture("spin", src);
     let cert = check_lean_required(&path);

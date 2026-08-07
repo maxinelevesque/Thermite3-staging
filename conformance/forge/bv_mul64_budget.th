@@ -8,6 +8,6 @@
 // budget profile; the over-budget query is reported as `Timeout` under that named profile,
 // NEVER a bare `unknown`.
 lemma mul64_no_factor(a: u64, b: u64)
-    req a > 1 && a < 4294967296 && b > 1 && b < 4294967296
-    ens@bv64 a * b != 2305843009213693951
+    requires a > 1 && a < 4294967296 && b > 1 && b < 4294967296
+    ensures@bv64 a * b != 2305843009213693951
     proof { }

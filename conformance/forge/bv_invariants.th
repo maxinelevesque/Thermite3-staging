@@ -5,19 +5,19 @@
 struct Word {
     bits: u64,
     amount: u64
-} inv@bv8 bits + amount == amount + bits
+} keeps@bv8 bits + amount == amount + bits
 
 fn advance(start: u64) -> u64
-    req start <= 3
-    ens result == 3
-    fx pure
+    ! pure
+    requires start <= 3
+    ensures result == 3
 {
     let mut i: u64 = start;
     while i < 3
-        inv i <= 3
-        inv@bv8 i + 255 == i - 1
-        inv@bv8(nowrap) i + 1 <= 4
-        dec 3 - i
+        keeps i <= 3
+        keeps@bv8 i + 255 == i - 1
+        keeps@bv8(nowrap) i + 1 <= 4
+        measures 3 - i
     {
         i = i + 1;
     }

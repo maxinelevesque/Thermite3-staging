@@ -158,7 +158,8 @@ fn confirm_checked_get_bound_is_load_bearing() {
         std::env::temp_dir().join(format!("forge_div_offbyone_{}.th", std::process::id()));
     std::fs::write(
         &fixture,
-        "fn oob_get_offbyone(v: Vec<u64>, i: usize) -> u64\n  req i <= v.len()\n  ens result == v.get(i)\n  fx  pure\n{\n  v.get(i)\n}\n",
+        "fn oob_get_offbyone(v: Vec<u64>, i: usize) -> u64\n  ! pure
+  requires i <= v.len()\n  ensures result == v.get(i)\n{\n  v.get(i)\n}\n",
     )
     .expect("write fixture");
     let certs = check_json_file(&fixture);

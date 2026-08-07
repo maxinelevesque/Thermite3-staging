@@ -138,7 +138,8 @@ fn ac6_byte_builder_certifies_l3_alloc() {
     // from_byte result is well_formed and len 1 < CAP).
     let certs = check_program(
         "bytebuilder",
-        "fn build2(a: u64, b: u64) -> String\n  req true\n  ens result.len() == 2\n  fx alloc\n{ String::from_byte(a).push_byte(b) }\n",
+        "fn build2(a: u64, b: u64) -> String\n  ! alloc
+  requires true\n  ensures result.len() == 2\n{ String::from_byte(a).push_byte(b) }\n",
     );
     let build2 = cert_for(&certs, "build2");
     assert_eq!(
@@ -172,7 +173,8 @@ fn ac7_to_string_round_trip_certifies_l3() {
     }
     let certs = check_program(
         "tostring",
-        "fn show(n: u64) -> String\n  req true\n  ens parse_be(result) == n\n  fx alloc\n{ n.to_string() }\n",
+        "fn show(n: u64) -> String\n  ! alloc
+  requires true\n  ensures parse_be(result) == n\n{ n.to_string() }\n",
     );
     let show = cert_for(&certs, "show");
     assert_eq!(
@@ -216,7 +218,8 @@ fn ac7_overclaimed_round_trip_is_rejected() {
     // fails the postcondition and therefore does not reach L3.
     let certs = check_program(
         "tostring_overclaim",
-        "fn bad(n: u64) -> String\n  req n < 1000\n  ens parse_be(result) == n + 1\n  fx alloc\n{ n.to_string() }\n",
+        "fn bad(n: u64) -> String\n  ! alloc
+  requires n < 1000\n  ensures parse_be(result) == n + 1\n{ n.to_string() }\n",
     );
     let bad = cert_for(&certs, "bad");
     assert_ne!(
@@ -248,7 +251,8 @@ fn ac7_formatter_builds_and_prints_decimal() {
         return;
     }
     // rustc is always present (no skip; the editor_runs.rs precedent).
-    let program = "fn show42() -> String\n  req true\n  ens parse_be(result) == 42\n  fx alloc\n{ let n: u64 = 42; n.to_string() }\n";
+    let program = "fn show42() -> String\n  ! alloc
+  requires true\n  ensures parse_be(result) == 42\n{ let n: u64 = 42; n.to_string() }\n";
     let fixture = std::env::temp_dir().join(format!("forge_strfmt_run_{}.th", std::process::id()));
     std::fs::write(&fixture, program).expect("write fixture");
 

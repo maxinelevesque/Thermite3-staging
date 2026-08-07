@@ -96,7 +96,7 @@ fn level_of(certs: &[Value], item: &str) -> String {
 /// programs below is the name.
 const TEMPLATE: &str = "\
 spec fn __NAME__(s: &String, i: u64, target: u64, acc: u64) -> u64
-  dec target - i
+  measures target - i
 {
   if i >= target {
     acc

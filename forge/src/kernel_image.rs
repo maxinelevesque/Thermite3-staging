@@ -1279,13 +1279,13 @@ mod tests {
     #[test]
     fn boundary_inventory_rejects_unknown_and_wrong_domain() {
         let unknown = thermite_syntax::parse(
-            "#[boundary(\"kernel::memory::unknown@v1\")] fn b(x: u32) -> u32 req true ens result == x fx platform(memory) ;",
+            "#[boundary(\"kernel::memory::unknown@v1\")] fn b(x: u32) -> u32 ! platform(memory) requires true ensures result == x ;",
         );
         assert!(unknown.is_clean());
         assert!(validate_boundaries(&unknown.program).is_err());
 
         let wrong = thermite_syntax::parse(
-            "#[boundary(\"kernel::memory::map@v1\")] fn b(x: u32) -> u32 req true ens result == x fx platform(pio) ;",
+            "#[boundary(\"kernel::memory::map@v1\")] fn b(x: u32) -> u32 ! platform(pio) requires true ensures result == x ;",
         );
         assert!(wrong.is_clean());
         assert!(validate_boundaries(&wrong.program).is_err());
@@ -1303,15 +1303,15 @@ mod tests {
         );
 
         let weaker_source = include_str!("../../conformance/bootable_kernel.th").replace(
-            "ens result.scale_denominator > 0",
-            "ens result.scale_denominator >= 0",
+            "ensures result.scale_denominator > 0",
+            "ensures result.scale_denominator >= 0",
         );
         let weaker = thermite_syntax::parse(&weaker_source);
         assert!(weaker.is_clean());
         assert!(validate_boundaries(&weaker.program).is_err());
 
         let missing = thermite_syntax::parse(
-            "fn kernel_step(x: u64) -> u64 req true ens result == x fx pure { x }",
+            "fn kernel_step(x: u64) -> u64 ! pure requires true ensures result == x { x }",
         );
         assert!(missing.is_clean());
         assert!(validate_boundaries(&missing.program).is_err());
