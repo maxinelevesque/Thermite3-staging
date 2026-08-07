@@ -1365,7 +1365,7 @@ fn plan_exports(
             .ens
             .iter()
             .enumerate()
-            .map(|(index, _)| format!("{}.ens#{}", function.name, index + 1))
+            .map(|(index, _)| format!("{}.ensures#{}", function.name, index + 1))
             .collect::<Vec<_>>();
         let abi_preimage = format!(
             "thermite-rust-abi-v1\0crate={crate_name}\0profile={}\0triple={target_triple}\0pointer_width={target_pointer_width}\0endian={target_endian}\0ownership={}\0{signature}",
@@ -2017,12 +2017,12 @@ fn expected_tv_inventory(
         if !closure.functions.contains(&function.name) {
             continue;
         }
-        expect_tv(&mut expected, "contract", format!("{}.req", function.name));
+        expect_tv(&mut expected, "contract", format!("{}.requires", function.name));
         for index in 0..function.contract.ens.len() {
             expect_tv(
                 &mut expected,
                 "contract",
-                format!("{}.ens#{}", function.name, index + 1),
+                format!("{}.ensures#{}", function.name, index + 1),
             );
         }
         if let Some(body) = &function.body {
@@ -2111,7 +2111,7 @@ fn expected_contract_loops(
                     expect_tv(
                         expected,
                         "contract",
-                        format!("{function}.loop#{current}.inv#{}", index + 1),
+                        format!("{function}.loop#{current}.keeps#{}", index + 1),
                     );
                 }
                 expect_tv(
@@ -4268,9 +4268,9 @@ mod tests {
     #[test]
     fn export_plan_is_explicit_private_by_default_and_wraps_nontrivial_req() {
         let program = parse(
-            "fn direct(x: u64) -> u64 req true ens result == x fx pure { x } \
-             fn guarded(x: u64) -> u64 req x < 100 ens result == x fx pure { x } \
-             fn hidden(x: u64) -> u64 req true ens result == x fx pure { x }",
+            "fn direct(x: u64) -> u64 ! pure requires true ensures result == x { x } \
+             fn guarded(x: u64) -> u64 ! pure requires x < 100 ensures result == x { x } \
+             fn hidden(x: u64) -> u64 ! pure requires true ensures result == x { x }",
         );
         let exports = plan_exports(
             &program,
@@ -4301,11 +4301,11 @@ mod tests {
 
     #[test]
     fn normalized_program_digest_ignores_only_source_presentation() {
-        let compact = parse("fn id(x: u64) -> u64 req x < 10 ens result == 10 fx pure { 1_0 }");
+        let compact = parse("fn id(x: u64) -> u64 ! pure requires x < 10 ensures result == 10 { 1_0 }");
         let presented_differently = parse(
-            "\nfn id ( x : u64 ) -> u64\n  req x < 10\n  ens result == 10\n  fx pure\n{ 10 }\n",
+            "\nfn id ( x : u64 ) -> u64\n  ! pure\n  requires x < 10\n  ensures result == 10\n{ 10 }\n",
         );
-        let changed = parse("fn id(x: u64) -> u64 req x < 10 ens result == 11 fx pure { 10 }");
+        let changed = parse("fn id(x: u64) -> u64 ! pure requires x < 10 ensures result == 11 { 10 }");
         assert_eq!(
             normalized_program_sha256(&compact),
             normalized_program_sha256(&presented_differently)

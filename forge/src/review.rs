@@ -978,7 +978,7 @@ mod tests {
     // battery_failing with its cause and is not surfaced for intent review.
     #[test]
     fn rejected_fn_flagged_not_surfaced() {
-        let program = parse_ok("fn f(x: u32) -> u32 req true ens true fx pure { x }");
+        let program = parse_ok("fn f(x: u32) -> u32 ! pure requires true ensures true { x }");
         let certs = vec![Certificate::rejected(
             "f",
             vec!["pure".to_string()],
@@ -1066,7 +1066,7 @@ mod tests {
     #[test]
     fn burned_lemma_surfaces_in_review() {
         let program = parse_ok(
-            "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { simp [Thermite.denote]; omega }",
+            "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { simp [Thermite.denote]; omega }",
         );
         let burned = Certificate::new(
             "melems_cons",
@@ -1113,7 +1113,7 @@ mod tests {
     #[test]
     fn uncertified_lemma_does_not_surface_as_burned() {
         let program =
-            parse_ok("lemma bad(n: u32) req n > 0 ens n >= 1 proof { simp [Thermite.denote] }");
+            parse_ok("lemma bad(n: u32) requires n > 0 ensures n >= 1 proof { simp [Thermite.denote] }");
         let rejected = Certificate::rejected(
             "bad".to_string(),
             vec!["pure".to_string()],

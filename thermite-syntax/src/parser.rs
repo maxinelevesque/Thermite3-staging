@@ -954,7 +954,7 @@ impl<'a> Parser<'a> {
         if !self.check(&TokKind::Dec) {
             return Err(SyntaxError::MissingClause {
                 item: name,
-                clause: "dec".to_string(),
+                clause: "measures".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -1125,7 +1125,7 @@ impl<'a> Parser<'a> {
         if !self.check(&TokKind::Req) {
             return Err(SyntaxError::MissingClause {
                 item: name.clone(),
-                clause: "req".to_string(),
+                clause: "requires".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -1134,7 +1134,7 @@ impl<'a> Parser<'a> {
         if !self.check(&TokKind::Ens) {
             return Err(SyntaxError::MissingClause {
                 item: name.clone(),
-                clause: "ens".to_string(),
+                clause: "ensures".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -1159,10 +1159,10 @@ impl<'a> Parser<'a> {
     }
 
     /// Parse a `proof for f { clause by { … } … }` item (REQ-3): a proof discharging
-    /// specific contract clauses (`ens#k`) of an existing function `f`. Each
+    /// specific contract clauses (`ensures#k`) of an existing function `f`. Each
     /// obligation is a [`ClauseSelector`] + a `by { … }` proof block (with `?pN`
     /// proof holes). The clauses are resolved against `f` by the proof view
-    /// (increment 2e); here they are parsed + addressed (`f.proof.ens#k`).
+    /// (increment 2e); here they are parsed + addressed (`f.proof.ensures#k`).
     fn parse_proof_item(&mut self, start_span: Span) -> PResult<ProofItem> {
         self.expect_contextual("proof")?;
         self.expect_contextual("for")?;
@@ -1192,17 +1192,21 @@ impl<'a> Parser<'a> {
         })
     }
 
-    /// Parse a clause selector `ens#k` / `req` / `inv#k` (REQ-3): the clause family
+    /// Parse a clause selector `ensures#k` / `requires` / `keeps#k` (REQ-3): the clause family
     /// keyword (a reserved keyword, accepted by kind) plus an optional `#k` ordinal.
     fn parse_clause_selector(&mut self) -> PResult<ClauseSelector> {
+        // The family name is the SURFACE spelling, because it becomes an address
+        // segment (`f.proof.ensures#k`) and `validate_segments` allows only
+        // `ensures`/`requires`/`keeps`. Leaving the v2 spellings here emitted
+        // `f.proof.ensures#2`, which the same crate's `resolve` rejects as Malformed.
         let keyword = if self.eat(&TokKind::Ens) {
-            "ens".to_string()
+            "ensures".to_string()
         } else if self.eat(&TokKind::Req) {
-            "req".to_string()
+            "requires".to_string()
         } else if self.eat(&TokKind::Inv) {
-            "inv".to_string()
+            "keeps".to_string()
         } else {
-            return Err(self.unexpected("a clause family (`ens`/`req`/`inv`)"));
+            return Err(self.unexpected("a clause family (`ensures`/`requires`/`keeps`)"));
         };
         let index = if self.eat(&TokKind::Hash) {
             match self.peek().clone() {
@@ -1420,20 +1424,29 @@ impl<'a> Parser<'a> {
     /// Parse the mandatory contract `req` then `ens`+ then `fx`, in that exact
     /// order (parser.md REQ-2). Absence or misorder is a `SyntaxError`.
     fn parse_contract(&mut self, fn_name: &str) -> PResult<Contract> {
-        // `req` — exactly one, first.
+        // Thermite 3 order: the effect row first — it is part of the type —
+        // then `requires`, then `ensures`+.
+        if !self.check(&TokKind::Bang) {
+            return Err(SyntaxError::MissingClause {
+                item: fn_name.to_string(),
+                clause: "!".to_string(),
+                span: self.peek_span(),
+            });
+        }
+        let fx = self.parse_effect_row()?;
+
+        // `requires` — exactly one, after the row.
         if !self.check(&TokKind::Req) {
-            // If `ens`/`fx` appear first, that is an order error; otherwise the
-            // clause is simply absent.
-            if matches!(self.peek(), TokKind::Ens | TokKind::Fx) {
+            if matches!(self.peek(), TokKind::Ens) {
                 return Err(SyntaxError::ClauseOrder {
                     item: fn_name.to_string(),
-                    clause: "req".to_string(),
+                    clause: "requires".to_string(),
                     span: self.peek_span(),
                 });
             }
             return Err(SyntaxError::MissingClause {
                 item: fn_name.to_string(),
-                clause: "req".to_string(),
+                clause: "requires".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -1443,7 +1456,7 @@ impl<'a> Parser<'a> {
         if !self.check(&TokKind::Ens) {
             return Err(SyntaxError::MissingClause {
                 item: fn_name.to_string(),
-                clause: "ens".to_string(),
+                clause: "ensures".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -1456,20 +1469,10 @@ impl<'a> Parser<'a> {
         if self.check(&TokKind::Req) {
             return Err(SyntaxError::ClauseOrder {
                 item: fn_name.to_string(),
-                clause: "req".to_string(),
+                clause: "requires".to_string(),
                 span: self.peek_span(),
             });
         }
-
-        // `fx` — exactly one, last.
-        if !self.check(&TokKind::Fx) {
-            return Err(SyntaxError::MissingClause {
-                item: fn_name.to_string(),
-                clause: "fx".to_string(),
-                span: self.peek_span(),
-            });
-        }
-        let fx = self.parse_effect_row()?;
 
         Ok(Contract { req, ens, fx })
     }
@@ -1662,7 +1665,10 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_effect_row(&mut self) -> PResult<EffectRow> {
-        self.consume(&TokKind::Fx, "`fx`")?;
+        // Thermite 3: the row is marked `!` and belongs to the arrow rather than
+        // to the predicates. `Bang` is unambiguous here — a clause line never
+        // opens with one (checked across the corpus: 144 rows, 0 others).
+        self.consume(&TokKind::Bang, "`!`")?;
         if self.eat(&TokKind::Pure) {
             return Ok(EffectRow::Pure);
         }
@@ -1993,7 +1999,7 @@ impl<'a> Parser<'a> {
         if !self.check(&TokKind::Inv) {
             return Err(SyntaxError::MissingClause {
                 item: "for".to_string(),
-                clause: "inv".to_string(),
+                clause: "keeps".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -2164,7 +2170,7 @@ impl<'a> Parser<'a> {
         if !self.check(&TokKind::Inv) {
             return Err(SyntaxError::MissingClause {
                 item: "while".to_string(),
-                clause: "inv".to_string(),
+                clause: "keeps".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -2176,7 +2182,7 @@ impl<'a> Parser<'a> {
         if !self.check(&TokKind::Dec) {
             return Err(SyntaxError::MissingClause {
                 item: "while".to_string(),
-                clause: "dec".to_string(),
+                clause: "measures".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -2335,7 +2341,7 @@ impl<'a> Parser<'a> {
         if !self.check(&TokKind::Inv) {
             return Err(SyntaxError::MissingClause {
                 item: "loop".to_string(),
-                clause: "inv".to_string(),
+                clause: "keeps".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -2348,7 +2354,7 @@ impl<'a> Parser<'a> {
         if !self.check(&TokKind::Dec) {
             return Err(SyntaxError::MissingClause {
                 item: "loop".to_string(),
-                clause: "dec".to_string(),
+                clause: "measures".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -2357,7 +2363,7 @@ impl<'a> Parser<'a> {
             // A second `dec` violates the exactly-one cardinality.
             return Err(SyntaxError::ClauseOrder {
                 item: "loop".to_string(),
-                clause: "dec".to_string(),
+                clause: "measures".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -3400,7 +3406,7 @@ fn token_text(kind: &TokKind) -> &'static str {
         TokKind::Spec => "spec",
         TokKind::Req => "req",
         TokKind::Ens => "ens",
-        TokKind::Fx => "fx",
+        TokKind::Fx => "!",
         TokKind::Inv => "inv",
         TokKind::Dec => "dec",
         TokKind::Pure => "pure",

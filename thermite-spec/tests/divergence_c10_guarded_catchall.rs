@@ -43,7 +43,7 @@ use thermite_spec::{validate, SpecError};
 #[test]
 fn divergence_guarded_only_catchall_is_non_exhaustive() {
     let parsed = thermite_syntax::parse(
-        "enum Maybe { Yes(u64), No } fn f(m: Maybe) -> u64 req true ens result == 0 fx pure { match m { _ if true => 0 } }",
+        "enum Maybe { Yes(u64), No } fn f(m: Maybe) -> u64 ! pure requires true ensures result == 0 { match m { _ if true => 0 } }",
     );
     assert!(parsed.is_clean(), "must parse: {:?}", parsed.errors);
 

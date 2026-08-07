@@ -29,7 +29,7 @@ use thermite_syntax::parse;
 /// Tracking: #28
 #[test]
 fn divergence_unit_return_type_accepted() {
-    let src = "fn f(x: u32) -> () req true ens result == result fx pure { }";
+    let src = "fn f(x: u32) -> () ! pure requires true ensures result == result { }";
     let r = parse(src);
     assert!(
         r.is_clean(),
@@ -102,7 +102,7 @@ fn divergence_deep_nesting_no_panic() {
 /// Tracking: #30
 #[test]
 fn divergence_if_else_in_tail_position_is_expr() {
-    let src = "fn f(x: u32) -> u32 req true ens result == x fx pure { if x == 0 { 1 } else { 2 } }";
+    let src = "fn f(x: u32) -> u32 ! pure requires true ensures result == x { if x == 0 { 1 } else { 2 } }";
     let r = parse(src);
     assert!(
         r.is_clean(),

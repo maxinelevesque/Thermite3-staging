@@ -26,7 +26,7 @@ use thermite_syntax::ast::{Expr, Item};
 #[test]
 fn cast_over_binary_inner_is_parenthesized_in_spec_position_l3() {
     let src =
-        "spec fn pow(k: nat) -> nat dec k { if k == 0 { 1 } else { 10 * pow((k - 1) as nat) } }";
+        "spec fn pow(k: nat) -> nat measures k { if k == 0 { 1 } else { 10 * pow((k - 1) as nat) } }";
     let parsed = thermite_syntax::parse(src);
     assert!(parsed.is_clean(), "fixture must parse clean: {parsed:?}");
 
@@ -59,9 +59,8 @@ fn cast_over_binary_inner_is_parenthesized_in_spec_position_l3() {
 #[test]
 fn compound_string_index_in_contract_is_parenthesized_l3() {
     let src = "fn last(s: String, i: u64) -> u64 \
-               req i >= 1 && i <= s.len() \
-               ens result == s.byte_at(i - 1) \
-               fx pure { s.byte_at(i - 1) }";
+               ! pure requires i >= 1 && i <= s.len() \
+               ensures result == s.byte_at(i - 1) { s.byte_at(i - 1) }";
     let parsed = thermite_syntax::parse(src);
     assert!(parsed.is_clean(), "fixture must parse clean: {parsed:?}");
 
@@ -82,9 +81,8 @@ fn compound_string_index_in_contract_is_parenthesized_l3() {
 #[test]
 fn compound_string_index_in_build_path_is_parenthesized_l1() {
     let src = "fn last(s: String, i: u64) -> u64 \
-               req i >= 1 && i <= s.len() \
-               ens result == s.byte_at(i - 1) \
-               fx pure { s.byte_at(i - 1) }";
+               ! pure requires i >= 1 && i <= s.len() \
+               ensures result == s.byte_at(i - 1) { s.byte_at(i - 1) }";
     let parsed = thermite_syntax::parse(src);
     assert!(parsed.is_clean(), "fixture must parse clean: {parsed:?}");
 
@@ -106,7 +104,7 @@ fn compound_string_index_in_build_path_is_parenthesized_l1() {
 #[test]
 fn simple_cast_inner_is_not_parenthesized_no_regression() {
     let src =
-        "spec fn pow(k: nat) -> nat dec k { if k == 0 { 1 } else { 10 * pow((k - 1) as nat) } }";
+        "spec fn pow(k: nat) -> nat measures k { if k == 0 { 1 } else { 10 * pow((k - 1) as nat) } }";
     let parsed = thermite_syntax::parse(src);
     assert!(parsed.is_clean(), "fixture must parse clean: {parsed:?}");
     let l3 = thermite_lower::lower(&parsed.program).expect("L3 lowering");

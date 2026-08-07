@@ -46,9 +46,9 @@ fn fn_req(src: &str) -> (Expr, String) {
 }
 
 /// Wrap a contract expression `e` (bool-valued) as the `req` of a minimal exec
-/// `fn` (the `fn f(...) -> u64 req <e> ens result == 0 fx pure { 0 }` scaffold).
+/// `fn` (the `fn f(...) -> u64 ! pure requires <e> ensures result == 0 { 0 }` scaffold).
 fn fn_with_req(req: &str) -> String {
-    format!("fn f(xs: Vec<u64>) -> u64 req {req} ens result == 0 fx pure {{ 0 }}")
+    format!("fn f(xs: Vec<u64>) -> u64 ! pure requires {req} ensures result == 0 {{ 0 }}")
 }
 
 /// Wrap a bool expression `e` as the body of a minimal `prop fn`.

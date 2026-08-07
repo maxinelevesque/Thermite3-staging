@@ -42,7 +42,7 @@ fn a_plain_struct_is_not_sealed() {
 #[test]
 fn sealed_with_an_inv_clause_still_parses() {
     // `#[sealed]` composes with the REQ-1 `inv` type-invariant clause.
-    let r = parse("#[sealed] struct Cap { ok: bool } inv ok\n");
+    let r = parse("#[sealed] struct Cap { ok: bool } keeps ok\n");
     assert!(r.is_clean(), "must parse clean, got {:?}", r.errors);
     let s = match &r.program.items[0] {
         Item::Struct(s) => s,

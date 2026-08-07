@@ -115,7 +115,8 @@ fn rem_with_nonzero_req_certifies_l3() {
     }
     let certs = check_program(
         "rem_ok",
-        "fn modulo(a: u64, b: u64) -> u64\n  req b != 0\n  ens result == a % b\n  fx pure\n{ a % b }\n",
+        "fn modulo(a: u64, b: u64) -> u64\n  ! pure
+  requires b != 0\n  ensures result == a % b\n{ a % b }\n",
     );
     assert_eq!(
         level(&certs, "modulo"),
@@ -136,7 +137,8 @@ fn shifts_and_bitwise_certify_l3() {
     // `<<` with the shift-bound obligation discharged.
     let shl = check_program(
         "shl_ok",
-        "fn lshift(a: u64, k: u64) -> u64\n  req k < 64\n  ens result == a << k\n  fx pure\n{ a << k }\n",
+        "fn lshift(a: u64, k: u64) -> u64\n  ! pure
+  requires k < 64\n  ensures result == a << k\n{ a << k }\n",
     );
     assert_eq!(
         level(&shl, "lshift"),
@@ -146,7 +148,8 @@ fn shifts_and_bitwise_certify_l3() {
     // `>>` with the same bound.
     let shr = check_program(
         "shr_ok",
-        "fn rshift(a: u64, k: u64) -> u64\n  req k < 64\n  ens result == a >> k\n  fx pure\n{ a >> k }\n",
+        "fn rshift(a: u64, k: u64) -> u64\n  ! pure
+  requires k < 64\n  ensures result == a >> k\n{ a >> k }\n",
     );
     assert_eq!(
         level(&shr, "rshift"),
@@ -156,7 +159,8 @@ fn shifts_and_bitwise_certify_l3() {
     // `&` — total, no obligation.
     let and = check_program(
         "band_ok",
-        "fn band(a: u64, b: u64) -> u64\n  req true\n  ens result == a & b\n  fx pure\n{ a & b }\n",
+        "fn band(a: u64, b: u64) -> u64\n  ! pure
+  requires true\n  ensures result == a & b\n{ a & b }\n",
     );
     assert_eq!(
         level(&and, "band"),
@@ -166,7 +170,8 @@ fn shifts_and_bitwise_certify_l3() {
     // `|`
     let or = check_program(
         "bor_ok",
-        "fn bor(a: u64, b: u64) -> u64\n  req true\n  ens result == a | b\n  fx pure\n{ a | b }\n",
+        "fn bor(a: u64, b: u64) -> u64\n  ! pure
+  requires true\n  ensures result == a | b\n{ a | b }\n",
     );
     assert_eq!(
         level(&or, "bor"),
@@ -176,7 +181,8 @@ fn shifts_and_bitwise_certify_l3() {
     // `^`
     let xor = check_program(
         "bxor_ok",
-        "fn bxor(a: u64, b: u64) -> u64\n  req true\n  ens result == a ^ b\n  fx pure\n{ a ^ b }\n",
+        "fn bxor(a: u64, b: u64) -> u64\n  ! pure
+  requires true\n  ensures result == a ^ b\n{ a ^ b }\n",
     );
     assert_eq!(
         level(&xor, "bxor"),
@@ -197,7 +203,8 @@ fn unary_not_certifies_l3_per_type() {
     // logical-not on bool.
     let lnot = check_program(
         "lnot_ok",
-        "fn lnot(flag: bool) -> bool\n  req true\n  ens result == !flag\n  fx pure\n{ !flag }\n",
+        "fn lnot(flag: bool) -> bool\n  ! pure
+  requires true\n  ensures result == !flag\n{ !flag }\n",
     );
     assert_eq!(
         level(&lnot, "lnot"),
@@ -207,7 +214,8 @@ fn unary_not_certifies_l3_per_type() {
     // bitwise-not on u64.
     let bnot = check_program(
         "bnot_ok",
-        "fn bnot(bits: u64) -> u64\n  req true\n  ens result == !bits\n  fx pure\n{ !bits }\n",
+        "fn bnot(bits: u64) -> u64\n  ! pure
+  requires true\n  ensures result == !bits\n{ !bits }\n",
     );
     assert_eq!(
         level(&bnot, "bnot"),
@@ -230,7 +238,8 @@ fn rem_without_nonzero_req_is_l0() {
     }
     let certs = check_program(
         "rem_bad",
-        "fn modulo(a: u64, b: u64) -> u64\n  req true\n  ens result == a % b\n  fx pure\n{ a % b }\n",
+        "fn modulo(a: u64, b: u64) -> u64\n  ! pure
+  requires true\n  ensures result == a % b\n{ a % b }\n",
     );
     assert_eq!(
         level(&certs, "modulo"),
@@ -249,7 +258,8 @@ fn shift_without_bound_is_l0() {
     }
     let certs = check_program(
         "shl_bad",
-        "fn lshift(a: u64, k: u64) -> u64\n  req true\n  ens result == a << k\n  fx pure\n{ a << k }\n",
+        "fn lshift(a: u64, k: u64) -> u64\n  ! pure
+  requires true\n  ensures result == a << k\n{ a << k }\n",
     );
     assert_eq!(
         level(&certs, "lshift"),
@@ -274,7 +284,8 @@ fn char_hex_binary_literals_certify_exact_value_l3() {
     // char 'A' == 65 (the byte/u8 model; the value flows through Expr::IntLit).
     let ch = check_program(
         "char_a",
-        "fn char_a() -> u64\n  req true\n  ens result == 65\n  fx pure\n{ 'A' }\n",
+        "fn char_a() -> u64\n  ! pure
+  requires true\n  ensures result == 65\n{ 'A' }\n",
     );
     assert_eq!(
         level(&ch, "char_a"),
@@ -284,7 +295,8 @@ fn char_hex_binary_literals_certify_exact_value_l3() {
     // hex 0x1b == 27.
     let hex = check_program(
         "hex_1b",
-        "fn hex_1b() -> u64\n  req true\n  ens result == 27\n  fx pure\n{ 0x1b }\n",
+        "fn hex_1b() -> u64\n  ! pure
+  requires true\n  ensures result == 27\n{ 0x1b }\n",
     );
     assert_eq!(
         level(&hex, "hex_1b"),
@@ -294,7 +306,8 @@ fn char_hex_binary_literals_certify_exact_value_l3() {
     // binary 0b101 == 5.
     let bin = check_program(
         "bin_101",
-        "fn bin_101() -> u64\n  req true\n  ens result == 5\n  fx pure\n{ 0b101 }\n",
+        "fn bin_101() -> u64\n  ! pure
+  requires true\n  ensures result == 5\n{ 0b101 }\n",
     );
     assert_eq!(
         level(&bin, "bin_101"),
@@ -313,7 +326,8 @@ fn char_literal_value_is_load_bearing_wrong_code_not_l3() {
     }
     let certs = check_program(
         "char_wrong",
-        "fn char_wrong() -> u64\n  req true\n  ens result == 66\n  fx pure\n{ 'A' }\n",
+        "fn char_wrong() -> u64\n  ! pure
+  requires true\n  ensures result == 66\n{ 'A' }\n",
     );
     assert_ne!(
         level(&certs, "char_wrong"),
@@ -338,7 +352,8 @@ fn precedence_rem_binds_tighter_than_add() {
     }
     let certs = check_program(
         "prec",
-        "fn prec(a: u64, b: u64) -> u64\n  req b != 0\n  ens result == (a % b) + 1\n  fx pure\n{ a % b + 1 }\n",
+        "fn prec(a: u64, b: u64) -> u64\n  ! pure
+  requires b != 0\n  ensures result == (a % b) + 1\n{ a % b + 1 }\n",
     );
     assert_eq!(
         level(&certs, "prec"),

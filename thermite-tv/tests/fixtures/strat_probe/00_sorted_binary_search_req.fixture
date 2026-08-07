@@ -1,6 +1,6 @@
-# strat_probe fixture — binary_search.req
+# strat_probe fixture — binary_search.requires
 shape: sorted
-source: binary_search.req
+source: binary_search.requires
 origin: corpus
 hit: true
 --- production ---

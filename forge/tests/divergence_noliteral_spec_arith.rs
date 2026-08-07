@@ -96,7 +96,7 @@ fn level_of(certs: &[Value], item: &str) -> String {
 /// `int`-typed body dies E0308 → L0.
 const DOUBLE_PROGRAM: &str = "\
 spec fn double(n: u64) -> u64
-  dec n
+  measures n
 {
   n + n
 }
@@ -106,7 +106,7 @@ spec fn double(n: u64) -> u64
 /// the literal-carrying decrement that masks the gap in recursive fixtures).
 const ADD_PROGRAM: &str = "\
 spec fn add(a: u64, b: u64) -> u64
-  dec a
+  measures a
 {
   a + b
 }

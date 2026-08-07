@@ -45,7 +45,7 @@ fn run_forge(args: &[&str]) -> (String, String, bool) {
 fn open_proof_hole_blocks_certification() {
     let th = temp_th(
         "cert",
-        "lemma add_id(a: u64) req true ens a == a proof { ?p0 }",
+        "lemma add_id(a: u64) requires true ensures a == a proof { ?p0 }",
     );
     let (cout, cerr, _ok) = run_forge(&["check", th.to_str().unwrap(), "--json"]);
     let combined = format!("{cout}{cerr}");
@@ -67,7 +67,7 @@ fn open_proof_hole_blocks_certification() {
 fn open_proof_hole_blocks_build() {
     let th = temp_th(
         "build",
-        "lemma add_id(a: u64) req true ens a == a proof { ?p0 }",
+        "lemma add_id(a: u64) requires true ensures a == a proof { ?p0 }",
     );
     let (bout, berr, ok) = run_forge(&["build", th.to_str().unwrap()]);
     assert!(!ok, "`forge build` must fail on an open proof hole");
@@ -85,7 +85,7 @@ fn open_proof_hole_blocks_build() {
 fn hole_free_lemma_is_not_open_hole_rejected() {
     let th = temp_th(
         "clean",
-        "lemma add_id(a: u64) req true ens a == a proof { omega }",
+        "lemma add_id(a: u64) requires true ensures a == a proof { omega }",
     );
     let (cout, cerr, _ok) = run_forge(&["check", th.to_str().unwrap(), "--json"]);
     let combined = format!("{cout}{cerr}");

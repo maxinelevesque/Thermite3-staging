@@ -14,31 +14,31 @@
 // (R-CHAR-3).
 
 fn slice_id(a: &String) -> String
-  req  a.len() <= 1_000_000
-  ens  result.len() == a.len()
-  ens  bytes_eq(&result, &a, 0, 0, a.len())
-  fx   alloc
+  ! alloc
+  requires  a.len() <= 1_000_000
+  ensures  result.len() == a.len()
+  ensures  bytes_eq(&result, &a, 0, 0, a.len())
 {
   a.slice(0, a.len())
 }
 
 fn insert_str(text: &String, ins: &String, cursor: u64) -> String
-  req  cursor <= text.len() && text.len() + ins.len() <= 1_000_000
-  ens  bytes_eq(&result, &text, 0, 0, cursor)
-  ens  bytes_eq(&result, &ins, cursor, 0, ins.len())
-  ens  bytes_eq(&result, &text, cursor + ins.len(), cursor, text.len() - cursor)
-  fx    alloc
+  ! alloc
+  requires  cursor <= text.len() && text.len() + ins.len() <= 1_000_000
+  ensures  bytes_eq(&result, &text, 0, 0, cursor)
+  ensures  bytes_eq(&result, &ins, cursor, 0, ins.len())
+  ensures  bytes_eq(&result, &text, cursor + ins.len(), cursor, text.len() - cursor)
 {
   text.slice(0, cursor).concat(ins.slice(0, ins.len())).concat(text.slice(cursor, text.len()))
 }
 
 struct Buf { text: String, cursor: u64 }
-  inv cursor <= text.len() && text.len() <= 1_000_000
+  keeps cursor <= text.len() && text.len() <= 1_000_000
 
 fn buf_prefix_pin(b: Buf) -> Buf
-  req  true
-  ens  bytes_eq(&result.text, &b.text, 0, 0, b.cursor)
-  fx   alloc
+  ! alloc
+  requires  true
+  ensures  bytes_eq(&result.text, &b.text, 0, 0, b.cursor)
 {
   Buf { text: b.text.slice(0, b.text.len()), cursor: b.cursor }
 }

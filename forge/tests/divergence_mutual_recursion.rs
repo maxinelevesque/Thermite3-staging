@@ -92,11 +92,11 @@ fn verus_present() -> bool {
 // certificate verdict (no crash, no false L3), as the single-fn
 // non-decreasing case is an L0 cert.
 const MUTUAL_NO_DEC: &str = "fn a(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == 0\n  fx pure\n\
-    {\n  if n == 0 { 0 } else { b(n - 1) }\n}\n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == 0\n{\n  if n == 0 { 0 } else { b(n - 1) }\n}\n\n\
     fn b(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == 0\n  fx pure\n\
-    {\n  if n == 0 { 0 } else { a(n - 1) }\n}\n";
+    ! pure
+  requires n <= 1000\n  ensures result == 0\n{\n  if n == 0 { 0 } else { a(n - 1) }\n}\n";
 
 #[test]
 fn divergence_mutual_recursion_is_rejected_not_crashed() {

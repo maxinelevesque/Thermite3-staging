@@ -98,12 +98,12 @@ fn a_false_tagged_invariant_is_not_certified() {
     std::fs::write(
         &path,
         "fn bad(start: u64) -> u64\n\
-             req true\n\
-             ens result == start\n\
-             fx pure\n\
-         {\n\
+             ! pure
+requires true\n\
+             ensures result == start\n\
+             {\n\
              let mut i: u64 = start;\n\
-             while i < 1 inv@bv8 i == 0 dec 1 - i { i = i + 1; }\n\
+             while i < 1 keeps@bv8 i == 0 measures 1 - i { i = i + 1; }\n\
              start\n\
          }\n",
     )

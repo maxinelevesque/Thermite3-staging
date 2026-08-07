@@ -652,8 +652,8 @@ mod tests {
     #[test]
     fn transitive_fx_of_pure_entry_is_pure() {
         let prog = parse(
-            "spec fn spec_id(x: u32) -> u32 dec 0 { x }\n\
-             fn sum(xs: &[u32]) -> u64 req xs.len() <= 10 ens result == 0 fx pure { 0 }",
+            "spec fn spec_id(x: u32) -> u32 measures 0 { x }\n\
+             fn sum(xs: &[u32]) -> u64 ! pure requires xs.len() <= 10 ensures result == 0 { 0 }",
         );
         let fx = transitive_fx(&prog, "sum");
         assert_eq!(fx, set(&["pure"]), "a pure entry's transitive fx is pure");
@@ -663,7 +663,7 @@ mod tests {
     // widens. Anchored to the oracle's `rf` fixture shape.
     #[test]
     fn transitive_fx_carries_read() {
-        let prog = parse("fn rf(x: u32) -> u32 req x < 100 ens result == x fx read(src) { x }");
+        let prog = parse("fn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }");
         let fx = transitive_fx(&prog, "rf");
         assert!(fx.contains("read(src)"), "rf declares read(src): {fx:?}");
         assert!(syscall_allowlist(&fx).contains(&257), "→ openat widened");
@@ -674,8 +674,8 @@ mod tests {
     #[test]
     fn transitive_fx_unions_callee_row() {
         let prog = parse(
-            "fn helper(x: u32) -> u32 req x < 100 ens result == x fx read(src) { x }\n\
-             fn caller(x: u32) -> u32 req x < 100 ens result == x fx read(src) { helper(x) }",
+            "fn helper(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }\n\
+             fn caller(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { helper(x) }",
         );
         let fx = transitive_fx(&prog, "caller");
         assert!(

@@ -5,10 +5,10 @@
 // the result to that sum. The parser-related specification functions do not yet
 // have L1 lowering, so the runnable entries use `add_vals` instead.
 fn add(a: String, b: String) -> Option<u64>
-  req all_digits(a) && a.len() >= 1 && parse_be(a) <= 9223372036854775807 && all_digits(b) && b.len() >= 1 && parse_be(b) <= 9223372036854775807
-  ens result is Some
-  ens match result { Some(v) => v == parse_be(a) + parse_be(b), None => true }
-  fx  pure
+  ! pure
+  requires all_digits(a) && a.len() >= 1 && parse_be(a) <= 9223372036854775807 && all_digits(b) && b.len() >= 1 && parse_be(b) <= 9223372036854775807
+  ensures result is Some
+  ensures match result { Some(v) => v == parse_be(a) + parse_be(b), None => true }
 {
   match parse_u64(a) {
     Some(x) => match parse_u64(b) { Some(y) => Some(x + y), None => None },
@@ -19,27 +19,27 @@ fn add(a: String, b: String) -> Option<u64>
 // Add two parsed values. The operand bounds rule out overflow, and the
 // postcondition requires `Some(x + y)`.
 fn add_vals(x: u64, y: u64) -> Option<u64>
-  req x <= 9223372036854775807 && y <= 9223372036854775807
-  ens match result { Some(v) => v == x + y, None => false }
-  fx  pure
+  ! pure
+  requires x <= 9223372036854775807 && y <= 9223372036854775807
+  ensures match result { Some(v) => v == x + y, None => false }
 {
   Some(x + y)
 }
 
 // Runnable entry: `forge build calc.th --entry add_2_3`.
 fn add_2_3() -> Option<u64>
-  req true
-  ens match result { Some(v) => v == 5, None => false }
-  fx  pure
+  ! pure
+  requires true
+  ensures match result { Some(v) => v == 5, None => false }
 {
   add_vals(2, 3)
 }
 
 // A second fixed-input entry for checking a larger sum.
 fn add_100_200() -> Option<u64>
-  req true
-  ens match result { Some(v) => v == 300, None => false }
-  fx  pure
+  ! pure
+  requires true
+  ensures match result { Some(v) => v == 300, None => false }
 {
   add_vals(100, 200)
 }

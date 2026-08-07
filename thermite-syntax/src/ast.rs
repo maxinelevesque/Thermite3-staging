@@ -213,8 +213,8 @@ pub enum ForgeItem {
     /// `lemma NAME(params) req … ens … proof { … }` — a named lemma carrying a
     /// req/ens statement and a proof block.
     Lemma(LemmaItem),
-    /// `proof for f { ens#k by { … } }` — a proof item discharging specific
-    /// contract clauses (`ens#k`) of an existing function `f`.
+    /// `proof for f { ensures#k by { … } }` — a proof item discharging specific
+    /// contract clauses (`ensures#k`) of an existing function `f`.
     Proof(ProofItem),
     /// `witness { inhabit (…); falsify N; }` — a covenant witness block (the
     /// covenant logic is increment 2b; here parsed + represented only).
@@ -268,12 +268,12 @@ pub struct LemmaItem {
     pub span: Span,
 }
 
-/// A `proof for f { ens#k by { … } }` item (`.design/stage1-forge-tier.md`
+/// A `proof for f { ensures#k by { … } }` item (`.design/stage1-forge-tier.md`
 /// REQ-3). A proof item discharges one or more specific contract clauses of an
-/// existing function `target` (`f`), each named by a [`ClauseSelector`] (`ens#k`)
+/// existing function `target` (`f`), each named by a [`ClauseSelector`] (`ensures#k`)
 /// and proved by a `by { … }` proof block. The clauses are resolved against `f`'s
 /// contract by the proof view (increment 2e, REQ-7); here the surface is parsed
-/// and addressed (`f.proof.ens#k`) only.
+/// and addressed (`f.proof.ensures#k`) only.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProofItem {
     /// The target function name `f` (the `proof for f` head). The address root.
@@ -283,7 +283,7 @@ pub struct ProofItem {
 }
 
 /// One `clause by { … }` obligation inside a [`ProofItem`]
-/// (`.design/stage1-forge-tier.md` REQ-3): a [`ClauseSelector`] (`ens#k`) plus the
+/// (`.design/stage1-forge-tier.md` REQ-3): a [`ClauseSelector`] (`ensures#k`) plus the
 /// proof block discharging it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProofObligation {
@@ -292,10 +292,10 @@ pub struct ProofObligation {
     pub span: Span,
 }
 
-/// A reference to a specific contract clause of a function, e.g. `ens#k`
+/// A reference to a specific contract clause of a function, e.g. `ensures#k`
 /// (`.design/stage1-forge-tier.md` REQ-3). `keyword` is the clause family
-/// (`"ens"`/`"req"`/`"inv"`); `index` is the `#k` ordinal, or `None` for an
-/// unindexed family (`req`). The surface spelling of the `f.proof.ens#k` address.
+/// (`"ensures"`/`"requires"`/`"keeps"`); `index` is the `#k` ordinal, or `None` for an
+/// unindexed family (`requires`). The surface spelling of the `f.proof.ensures#k` address.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClauseSelector {
     pub keyword: Ident,

@@ -91,7 +91,7 @@ fn run_forge(args: &[&str]) -> (String, String, bool) {
 // block has no extra `Stmt`). Hand-derived from §5.1 `body = ?0` (R-CHAR-3).
 #[test]
 fn fn_body_hole_parses_clean_and_records_the_hole() {
-    let src = "fn pick(n: u32) -> u32 req n < 10 ens result == n fx pure { ?0 }";
+    let src = "fn pick(n: u32) -> u32 ! pure requires n < 10 ensures result == n { ?0 }";
     let parsed = parse(src);
     assert!(
         parsed.is_clean(),
@@ -124,7 +124,7 @@ fn fn_body_hole_parses_clean_and_records_the_hole() {
 #[test]
 fn holes_in_nested_blocks_are_accepted_in_document_order() {
     let src =
-        "fn pick(n: u32) -> u32 req n < 10 ens result == n fx pure { if n < 5 { ?1 } else { ?2 } }";
+        "fn pick(n: u32) -> u32 ! pure requires n < 10 ensures result == n { if n < 5 { ?1 } else { ?2 } }";
     let parsed = parse(src);
     assert!(
         parsed.is_clean(),
@@ -150,7 +150,7 @@ fn holes_in_nested_blocks_are_accepted_in_document_order() {
 #[test]
 fn hole_outside_fn_body_statement_position_is_a_structured_parse_error_not_a_panic() {
     // spec-fn body: rejected (a spec fn parses at fn_body_depth 0).
-    let spec = parse("spec fn m(n: u32) -> u32 dec n { ?0 }");
+    let spec = parse("spec fn m(n: u32) -> u32 measures n { ?0 }");
     assert!(
         !spec.is_clean(),
         "a hole in a spec-fn body is a parse error"
@@ -163,16 +163,16 @@ fn hole_outside_fn_body_statement_position_is_a_structured_parse_error_not_a_pan
         spec.errors
     );
     // expression position: rejected (a `?N` is not a primary expression).
-    let expr = parse("fn f(n: u32) -> u32 req true ens result == n fx pure { let x: u32 = ?0; x }");
+    let expr = parse("fn f(n: u32) -> u32 ! pure requires true ensures result == n { let x: u32 = ?0; x }");
     assert!(
         !expr.is_clean(),
         "a hole in expression position is a parse error"
     );
     // clause position: rejected.
-    let clause = parse("fn f(n: u32) -> u32 req ?0 ens result == n fx pure { n }");
+    let clause = parse("fn f(n: u32) -> u32 ! pure requires ?0 ensures result == n { n }");
     assert!(!clause.is_clean(), "a hole in a clause is a parse error");
     // A bare `?` with no digit is a stray-char diagnostic, never a partial token.
-    let bare = parse("fn f(n: u32) -> u32 req true ens result == n fx pure { ? }");
+    let bare = parse("fn f(n: u32) -> u32 ! pure requires true ensures result == n { ? }");
     assert!(!bare.is_clean(), "a bare `?` is a lex/parse error");
 }
 
@@ -182,7 +182,7 @@ fn hole_outside_fn_body_statement_position_is_a_structured_parse_error_not_a_pan
 
 #[test]
 fn hole_address_resolves_and_bad_hole_address_is_structured_error() {
-    let src = "fn pick(n: u32) -> u32 req n < 10 ens result == n fx pure { ?0 }";
+    let src = "fn pick(n: u32) -> u32 ! pure requires n < 10 ensures result == n { ?0 }";
     let program = parse(src).program;
     // The `<fn>.?N` address enumerates + resolves to a Hole.
     let addrs: Vec<String> = thermite_syntax::addresses_of(&program)
@@ -218,7 +218,7 @@ fn hole_address_resolves_and_bad_hole_address_is_structured_error() {
 fn holed_item_never_certifies_open_hole_l0_no_verus() {
     let th = temp_th(
         "openhole",
-        "fn pick(n: u32) -> u32 req n < 10 ens result == n fx pure { ?0 }",
+        "fn pick(n: u32) -> u32 ! pure requires n < 10 ensures result == n { ?0 }",
     );
     // `forge goal` renders the §5.1 four-part view with the open hole.
     let (stdout, _stderr, _ok) = run_forge(&["goal", th.to_str().unwrap(), "pick"]);
@@ -259,7 +259,7 @@ fn holed_item_never_certifies_open_hole_l0_no_verus() {
 fn fill_introducing_new_holes_re_presents_them() {
     let th = temp_th(
         "newholes",
-        "fn pick(n: u32) -> u32 req n < 10 ens result == n fx pure { ?0 }",
+        "fn pick(n: u32) -> u32 ! pure requires n < 10 ensures result == n { ?0 }",
     );
     let (stdout, stderr, ok) = run_forge(&[
         "fill",
@@ -296,7 +296,7 @@ fn fill_introducing_new_holes_re_presents_them() {
 fn fill_on_a_non_hole_address_is_an_honest_error() {
     let th = temp_th(
         "nonhole",
-        "fn sum2(a: u64, b: u64) -> u64 req true ens result == a + b fx pure { a + b }",
+        "fn sum2(a: u64, b: u64) -> u64 ! pure requires true ensures result == a + b { a + b }",
     );
     // `sum2` is a fn root (an `edit`-able address, not a hole).
     let (_out, stderr, ok) = run_forge(&["fill", th.to_str().unwrap(), "sum2", "a + b"]);
@@ -319,7 +319,7 @@ fn fill_closing_the_hole_certifies_l3() {
     }
     let th = temp_th(
         "close",
-        "fn pick(n: u32) -> u32 req n < 10 ens result == n fx pure { ?0 }",
+        "fn pick(n: u32) -> u32 ! pure requires n < 10 ensures result == n { ?0 }",
     );
     let (stdout, stderr, ok) = run_forge(&["fill", th.to_str().unwrap(), "pick.?0", "n"]);
     assert!(ok, "fill succeeds: {stderr}");
@@ -363,10 +363,10 @@ fn ac6_binary_search_dialogue_structural_oracle() {
     // on a faithful holed declaration of the corpus signature.)
     let declared = "\
 fn binary_search(haystack: &[u32], needle: u32) -> Option<usize>\n\
-  req sorted(haystack)\n\
-  ens match result { Some(i) => i < haystack.len() && haystack[i] == needle, None => forall_in(haystack, |x| x != needle), }\n\
-  fx  pure\n\
-{\n\
+  ! pure
+requires sorted(haystack)\n\
+  ensures match result { Some(i) => i < haystack.len() && haystack[i] == needle, None => forall_in(haystack, |x| x != needle), }\n\
+  {\n\
   ?0\n\
 }\n";
     let th = temp_th("dialogue", declared);
@@ -390,10 +390,10 @@ fn binary_search(haystack: &[u32], needle: u32) -> Option<usize>\n\
 let mut lo: usize = 0; \
 let mut hi: usize = haystack.len(); \
 loop \
-  inv lo <= hi && hi <= haystack.len() \
-  inv forall_below(haystack, lo, |x| x < needle) \
-  inv forall_from(haystack, hi, |x| x > needle) \
-  dec hi - lo \
+  keeps lo <= hi && hi <= haystack.len() \
+  keeps forall_below(haystack, lo, |x| x < needle) \
+  keeps forall_from(haystack, hi, |x| x > needle) \
+  measures hi - lo \
 { \
   if lo == hi { return None; } \
   let mid = lo + (hi - lo) / 2; \

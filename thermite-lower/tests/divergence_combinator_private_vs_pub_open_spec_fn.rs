@@ -76,15 +76,15 @@ fn run_verus(file: &Path) -> Option<(bool, String)> {
 /// isolating the visibility divergence from the separate def-emission scan).
 const COMBINATOR_IN_SPEC_FN_BODY: &str = "\
 spec fn all_small(s: &[u32]) -> bool
-  dec s.len()
+  measures s.len()
 {
   forall_in(s, |x| x < 10)
 }
 
 fn k(xs: &[u32]) -> u32
-  req forall_in(xs, |x| x < 100) && all_small(xs)
-  ens result == 0
-  fx  pure
+  ! pure
+  requires forall_in(xs, |x| x < 100) && all_small(xs)
+  ensures result == 0
 {
   0
 }

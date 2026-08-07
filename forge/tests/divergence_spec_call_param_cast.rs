@@ -90,7 +90,7 @@ fn level_of(certs: &[Value], item: &str) -> String {
 /// and a fn naming the spec fn in a contract. All three must certify L3.
 const U32_PROGRAM: &str = "\
 spec fn s_dec(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -100,10 +100,10 @@ spec fn s_dec(n: u32) -> u32
 }
 
 fn dec_exec(n: u32) -> u32
-  req true
-  ens result == s_dec(n)
-  fx  pure
-  dec n
+  ! pure
+  requires true
+  ensures result == s_dec(n)
+  measures n
 {
   if n == 0 {
     0
@@ -113,9 +113,9 @@ fn dec_exec(n: u32) -> u32
 }
 
 fn use_dec(n: u32) -> u32
-  req true
-  ens result == s_dec(n)
-  fx  pure
+  ! pure
+  requires true
+  ensures result == s_dec(n)
 {
   dec_exec(n)
 }
@@ -162,8 +162,10 @@ fn broken_dec_twin_rejects_below_l3() {
     // unconditionally no longer equals `s_dec(n)`, so the `ens result == s_dec(n)`
     // equality fails and `dec_exec` rejects below L3. The contract is real.
     let mutant = U32_PROGRAM.replace(
-        "fn dec_exec(n: u32) -> u32\n  req true\n  ens result == s_dec(n)\n  fx  pure\n  dec n\n{\n  if n == 0 {\n    0\n  } else {\n    dec_exec(n - 1)\n  }\n}",
-        "fn dec_exec(n: u32) -> u32\n  req true\n  ens result == s_dec(n)\n  fx  pure\n  dec n\n{\n  if n == 0 {\n    0\n  } else {\n    0\n  }\n}",
+        "fn dec_exec(n: u32) -> u32\n  ! pure
+  requires true\n  ensures result == s_dec(n)\n  measures n\n{\n  if n == 0 {\n    0\n  } else {\n    dec_exec(n - 1)\n  }\n}",
+        "fn dec_exec(n: u32) -> u32\n  ! pure
+  requires true\n  ensures result == s_dec(n)\n  measures n\n{\n  if n == 0 {\n    0\n  } else {\n    0\n  }\n}",
     );
     assert_ne!(
         mutant, U32_PROGRAM,

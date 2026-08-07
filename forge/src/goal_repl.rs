@@ -280,9 +280,10 @@ fn clause_label(sel: &ClauseSelector) -> String {
 /// by { … }`). Returns `None` for an out-of-range / unknown selector (rendered as an
 /// explicit "unresolved" goal rather than a fabricated one).
 fn resolve_clause<'c>(contract: &'c Contract, sel: &ClauseSelector) -> Option<&'c Clause> {
+    // The selector carries the SURFACE spelling, which is now the full word.
     match sel.keyword.as_str() {
-        "req" => Some(&contract.req),
-        "ens" => contract.ens.get(sel.index? as usize),
+        "requires" => Some(&contract.req),
+        "ensures" => contract.ens.get(sel.index? as usize),
         _ => None,
     }
 }
@@ -779,15 +780,15 @@ fn span_of_address(program: &Program, addr: &str) -> Option<Span> {
         AddrKind::Loop | AddrKind::Inv | AddrKind::Dec => {
             let body = fn_item.body.as_ref()?;
             // The address's inner segments name `loop#N` then optionally
-            // `inv#M`/`dec`. Walk to the addressed loop, then to the clause.
+            // `keeps#M`/`measures`. Walk to the addressed loop, then to the clause.
             let loop_seg = segs.next()?; // loop#N
             let loop_index: usize = loop_seg.strip_prefix("loop#")?.parse().ok()?;
             let lp = nth_loop(body, loop_index)?;
             match segs.next() {
                 None => Some(lp.span),
-                Some("dec") => Some(lp.dec.span),
+                Some("measures") => Some(lp.dec.span),
                 Some(clause_seg) => {
-                    let m: usize = clause_seg.strip_prefix("inv#")?.parse().ok()?;
+                    let m: usize = clause_seg.strip_prefix("keeps#")?.parse().ok()?;
                     lp.invs.get(m.checked_sub(1)?).map(|c| c.span)
                 }
             }
@@ -1017,7 +1018,7 @@ mod tests {
     // §7 battery line.
     #[test]
     fn goal_render_discharged() {
-        let program = parse_ok("fn f(n: u32) -> u32 req n < 10 ens result == n fx pure { n }");
+        let program = parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
         let cert = {
             let mut c = sum_cert_l3();
             c.item = "f".to_string();
@@ -1036,7 +1037,7 @@ mod tests {
     // property 2).
     #[test]
     fn goal_render_counterexample() {
-        let program = parse_ok("fn f(n: u32) -> u32 req n < 10 ens result == n fx pure { n }");
+        let program = parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
         let cert = Certificate::new(
             "f",
             Level::L0,
@@ -1070,7 +1071,7 @@ mod tests {
             .expect("read binary_search.th");
         let program = parse_ok(&src);
         let span =
-            span_of_address(&program, "binary_search.loop#1.inv#2").expect("inv#2 has a span");
+            span_of_address(&program, "binary_search.loop#1.keeps#2").expect("inv#2 has a span");
         // The addressed span must cover the verbatim inv#2 clause text.
         let original = &src[span.start..span.end()];
         assert_eq!(original, "forall_below(haystack, lo, |x| x < needle)");
@@ -1079,7 +1080,7 @@ mod tests {
         let spliced = splice(&src, span, replacement);
         // The spliced file re-parses, and inv#2 now resolves to the new text.
         let reparsed = parse_ok(&spliced);
-        let entry = address::resolve(&reparsed, "binary_search.loop#1.inv#2")
+        let entry = address::resolve(&reparsed, "binary_search.loop#1.keeps#2")
             .expect("inv#2 still resolves");
         assert_eq!(entry.text.as_deref(), Some(replacement));
         // The address set is unchanged (stability under the edit, REQ-3).
@@ -1097,7 +1098,7 @@ mod tests {
     // REQ-3 / REQ-7: a bad address resolves to a structured error, never a panic.
     #[test]
     fn edit_bad_address_is_structured_error() {
-        let program = parse_ok("fn f(n: u32) -> u32 req n < 10 ens result == n fx pure { n }");
+        let program = parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
         // A well-formed but absent address → NotFound; a malformed one → Malformed.
         assert!(matches!(
             address::resolve(&program, "f.loop#9"),
@@ -1111,7 +1112,7 @@ mod tests {
         }
         // An address that resolves but is not v1-editable (a spec-fn root) → None
         // from span_of_address (a clean miss, not a panic).
-        let spec_program = parse_ok("spec fn m(n: u32) -> u32 dec n { n }");
+        let spec_program = parse_ok("spec fn m(n: u32) -> u32 measures n { n }");
         assert!(span_of_address(&spec_program, "m").is_none());
     }
 
@@ -1132,7 +1133,7 @@ mod tests {
     // operand. A non-trivial `req` is bound as `h_req`.
     #[test]
     fn proof_view_renders_lemma_hypotheses_goal_and_holes() {
-        let program = parse_ok("lemma le_id(a: u64, b: u64) req a <= b ens a <= b proof { ?p0 }");
+        let program = parse_ok("lemma le_id(a: u64, b: u64) requires a <= b ensures a <= b proof { ?p0 }");
         let ForgeItem::Lemma(l) = first_forge(&program) else {
             panic!("expected a lemma");
         };
@@ -1161,7 +1162,7 @@ mod tests {
     // proof shows the committed line.
     #[test]
     fn proof_view_omits_trivial_req_and_marks_authored() {
-        let program = parse_ok("lemma add_id(a: u64) req true ens a == a proof { omega }");
+        let program = parse_ok("lemma add_id(a: u64) requires true ensures a == a proof { omega }");
         let ForgeItem::Lemma(l) = first_forge(&program) else {
             panic!("expected a lemma");
         };
@@ -1173,12 +1174,11 @@ mod tests {
 
     // REQ-7 / AC-11: a `proof for f` obligation resolves its `ens#k` goal against `f`'s
     // contract (0-based: `ens#0` is the first `ens`) and binds `f`'s params + `req` as
-    // the hypotheses in scope; the `?pN` hole names the `f.proof.ens#k.?pN` fill operand.
+    // the hypotheses in scope; the `?pN` hole names the `f.proof.ensures#k.?pN` fill operand.
     #[test]
     fn proof_view_proof_for_resolves_clause_against_target_contract() {
-        let src = "fn maxv(x: u64, y: u64) -> u64 req true ens result >= x ens result >= y \
-                   fx pure { if x > y { x } else { y } }\n\
-                   proof for maxv { ens#1 by { ?p0 } }";
+        let src = "fn maxv(x: u64, y: u64) -> u64 ! pure requires true ensures result >= x ensures result >= y { if x > y { x } else { y } }\n\
+                   proof for maxv { ensures#1 by { ?p0 } }";
         let program = parse_ok(src);
         let ForgeItem::Proof(p) = program
             .items
@@ -1193,7 +1193,7 @@ mod tests {
         };
         let r = render_proof_for(p, &program);
         assert!(
-            r.contains("PROOF VIEW — proof for maxv.ens#1 (forge-routed \u{2192} L3)"),
+            r.contains("PROOF VIEW — proof for maxv.ensures#1 (forge-routed \u{2192} L3)"),
             "{r}"
         );
         assert!(
@@ -1206,7 +1206,7 @@ mod tests {
             "ens#1 resolves to the second ens clause: {r}"
         );
         assert!(
-            r.contains("forge fill maxv.proof.ens#1.?p0"),
+            r.contains("forge fill maxv.proof.ensures#1.?p0"),
             "the proof-hole fill operand: {r}"
         );
     }
@@ -1216,16 +1216,16 @@ mod tests {
     #[test]
     fn proof_hole_span_resolves_lemma_and_proof_for() {
         // Lemma: `l.proof.?p0` spans the `?p0` token in the proof block.
-        let lemma_src = "lemma l(a: u64) req true ens a == a proof { ?p0 }";
+        let lemma_src = "lemma l(a: u64) requires true ensures a == a proof { ?p0 }";
         let lp = parse_ok(lemma_src);
         let span = span_of_address(&lp, "l.proof.?p0").expect("lemma proof-hole span");
         assert_eq!(&lemma_src[span.start..span.end()], "?p0");
 
-        // Proof-for: `f.proof.ens#0.?p1` spans the `?p1` token in that obligation.
-        let pf_src = "fn f(n: u32) -> u32 req true ens result == n fx pure { n }\n\
-                      proof for f { ens#0 by { ?p1 } }";
+        // Proof-for: `f.proof.ensures#0.?p1` spans the `?p1` token in that obligation.
+        let pf_src = "fn f(n: u32) -> u32 ! pure requires true ensures result == n { n }\n\
+                      proof for f { ensures#0 by { ?p1 } }";
         let pf = parse_ok(pf_src);
-        let span2 = span_of_address(&pf, "f.proof.ens#0.?p1").expect("proof-for hole span");
+        let span2 = span_of_address(&pf, "f.proof.ensures#0.?p1").expect("proof-for hole span");
         assert_eq!(&pf_src[span2.start..span2.end()], "?p1");
 
         // A resolvable forge root that is not a hole has no fill span (clean miss).
@@ -1236,8 +1236,8 @@ mod tests {
     // explicit "unresolved" goal, never a fabricated one or a panic.
     #[test]
     fn proof_view_proof_for_out_of_range_clause_is_unresolved() {
-        let src = "fn f(n: u32) -> u32 req true ens result == n fx pure { n }\n\
-                   proof for f { ens#9 by { omega } }";
+        let src = "fn f(n: u32) -> u32 ! pure requires true ensures result == n { n }\n\
+                   proof for f { ensures#9 by { omega } }";
         let program = parse_ok(src);
         let ForgeItem::Proof(p) = first_forge(&program) else {
             panic!("expected a proof-for");

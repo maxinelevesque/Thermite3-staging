@@ -11,7 +11,7 @@
 // equivalent (excluded at width), so it legitimately meets the floor.
 
 fn double(x: u64) -> u64
-    req true
-    ens@bv64 result + 0 == result
-    fx pure
+    ! pure
+    requires true
+    ensures@bv64 result + 0 == result
 { x + x }

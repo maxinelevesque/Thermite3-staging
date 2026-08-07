@@ -537,7 +537,7 @@ mod tests {
     }
 
     fn weak_fixture() -> FnItem {
-        parse_fn("fn f(a: u32, b: u32) -> u32 req a <= 10 && b <= 10 ens result <= 1000000 fx pure { a + b }")
+        parse_fn("fn f(a: u32, b: u32) -> u32 ! pure requires a <= 10 && b <= 10 ensures result <= 1000000 { a + b }")
     }
 
     fn early_zero_survivor() -> MutationScore {
@@ -611,8 +611,8 @@ mod tests {
     #[test]
     fn spec_fn_equality_candidate_for_matching_signature() {
         let items = parse_program_items(
-            "spec fn s(a: u32, b: u32) -> u32 dec a { a + b } \
-             fn f(a: u32, b: u32) -> u32 req a <= 10 && b <= 10 ens result <= 1000000 fx pure { a + b }",
+            "spec fn s(a: u32, b: u32) -> u32 measures a { a + b } \
+             fn f(a: u32, b: u32) -> u32 ! pure requires a <= 10 && b <= 10 ensures result <= 1000000 { a + b }",
         );
         let f = match items.iter().find(|i| i.name() == "f") {
             Some(Item::Fn(f)) => f.clone(),
@@ -657,7 +657,7 @@ mod tests {
     #[test]
     fn not_stronger_when_ens_already_pins_result() {
         let pinning = parse_fn(
-            "fn g(a: u32, b: u32) -> u32 req a <= 10 && b <= 10 ens result == a + b fx pure { a + b }",
+            "fn g(a: u32, b: u32) -> u32 ! pure requires a <= 10 && b <= 10 ensures result == a + b { a + b }",
         );
         assert!(current_ens_pins_result(&pinning.contract.ens));
         // A family-2 equality candidate over this fn carries no kill link (the
@@ -734,8 +734,8 @@ mod tests {
     #[test]
     fn already_pinned_yields_no_suggestion() {
         let items = parse_program_items(
-            "spec fn s(a: u32, b: u32) -> u32 dec a { a + b } \
-             fn g(a: u32, b: u32) -> u32 req a <= 10 && b <= 10 ens result == s(a, b) fx pure { a + b }",
+            "spec fn s(a: u32, b: u32) -> u32 measures a { a + b } \
+             fn g(a: u32, b: u32) -> u32 ! pure requires a <= 10 && b <= 10 ensures result == s(a, b) { a + b }",
         );
         let g = match items.iter().find(|i| i.name() == "g") {
             Some(Item::Fn(f)) => f.clone(),

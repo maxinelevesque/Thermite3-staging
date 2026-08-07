@@ -26,7 +26,7 @@ fn single_fn(src: &str) -> thermite_syntax::FnItem {
 
 #[test]
 fn param_refinement_folds_into_req_and_clears_the_transient_store() {
-    let src = "fn f(x: u64{x > 0}) -> u64 req true ens result == x fx pure { x }";
+    let src = "fn f(x: u64{x > 0}) -> u64 ! pure requires true ensures result == x { x }";
     let f = single_fn(src);
     // The transient refinement store is empty post-parse: downstream sees v1 shapes.
     assert!(
@@ -46,7 +46,7 @@ fn param_refinement_folds_into_req_and_clears_the_transient_store() {
 
 #[test]
 fn return_refinement_folds_into_ens() {
-    let src = "fn f(x: u64) -> u64{result > 0} req true ens result == x fx pure { x }";
+    let src = "fn f(x: u64) -> u64{result > 0} ! pure requires true ensures result == x { x }";
     let f = single_fn(src);
     assert!(f.refinements.is_empty());
     // The return refinement is appended as a new `ens` clause.
@@ -62,7 +62,7 @@ fn return_refinement_folds_into_ens() {
 
 #[test]
 fn multiple_param_refinements_chain_into_req() {
-    let src = "fn f(x: u64{x > 0}, y: u64{y < 100}) -> u64 req true ens result == x fx pure { x }";
+    let src = "fn f(x: u64{x > 0}, y: u64{y < 100}) -> u64 ! pure requires true ensures result == x { x }";
     let f = single_fn(src);
     assert!(f.refinements.is_empty());
     // Both refinements fold in, in source order: ((true) && (x > 0)) && (y < 100).
@@ -71,7 +71,7 @@ fn multiple_param_refinements_chain_into_req() {
 
 #[test]
 fn both_param_and_return_refinements_desugar() {
-    let src = "fn f(x: u64{x > 0}) -> u64{result >= x} req true ens result == x fx pure { x }";
+    let src = "fn f(x: u64{x > 0}) -> u64{result >= x} ! pure requires true ensures result == x { x }";
     let f = single_fn(src);
     assert!(f.refinements.is_empty());
     assert_eq!(f.contract.req.text, "(true) && (x > 0)");
@@ -82,7 +82,7 @@ fn both_param_and_return_refinements_desugar() {
 #[test]
 fn an_unrefined_fn_is_byte_stable() {
     // A fn with no refinement is unchanged by the pass (no spurious conjuncts).
-    let src = "fn f(x: u64) -> u64 req x > 0 ens result == x fx pure { x }";
+    let src = "fn f(x: u64) -> u64 ! pure requires x > 0 ensures result == x { x }";
     let f = single_fn(src);
     assert!(f.refinements.is_empty());
     assert_eq!(f.contract.req.text, "x > 0");
@@ -92,7 +92,7 @@ fn an_unrefined_fn_is_byte_stable() {
 #[test]
 fn refinement_predicate_is_a_parsed_expression() {
     // The predicate is a contract-position expression, not opaque text.
-    let src = "fn f(x: u64{x > 0 && x < 10}) -> u64 req true ens result == x fx pure { x }";
+    let src = "fn f(x: u64{x > 0 && x < 10}) -> u64 ! pure requires true ensures result == x { x }";
     let f = single_fn(src);
     // The folded req's rhs conjunct is the (parsed) predicate `x > 0 && x < 10`.
     match &f.contract.req.expr {

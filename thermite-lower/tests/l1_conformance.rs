@@ -191,8 +191,8 @@ fn corpus_lowers_ok_no_panic() {
 #[test]
 fn string_runtime_emits_for_adt_field_without_direct_string_signature() {
     let src = "struct Buf { text: String, cursor: u64 }\n\n\
-               fn make(n: u64) -> Buf\n  req true\n  ens result.cursor == n\n  fx pure\n\
-               {\n  Buf { text: String::new(), cursor: n }\n}\n";
+               fn make(n: u64) -> Buf\n  ! pure
+  requires true\n  ensures result.cursor == n\n{\n  Buf { text: String::new(), cursor: n }\n}\n";
     let parsed = thermite_syntax::parse(src);
     assert!(
         parsed.errors.is_empty(),
@@ -222,7 +222,7 @@ fn unsupported_construct_is_err_not_panic() {
     // `Err(LowerError::Unsupported)`, never panic (AC-6, R-CODE-2). We build
     // such a program: a head-fold-looking spec fn whose cons arm adds two
     // literals instead of recursing.
-    let src = "spec fn bad(xs: &[u32]) -> u64\n  dec xs.len()\n{\n  match xs {\n    [] => 0,\n    [head, ..t] => head as u64 + 1,\n  }\n}\n";
+    let src = "spec fn bad(xs: &[u32]) -> u64\n  measures xs.len()\n{\n  match xs {\n    [] => 0,\n    [head, ..t] => head as u64 + 1,\n  }\n}\n";
     let parsed = thermite_syntax::parse(src);
     assert!(
         parsed.errors.is_empty(),

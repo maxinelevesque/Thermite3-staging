@@ -652,14 +652,14 @@ mod tests {
     /// A correct `max`: `ens result >= x && result >= y` with a body that returns the
     /// larger. The covenant validates (no falsify hit).
     const CORRECT_MAX: &str = "fn maxv(x: u64, y: u64) -> u64 \
-        req true ens result >= x && result >= y && (result == x || result == y) fx pure \
+        ! pure requires true ensures result >= x && result >= y && (result == x || result == y) \
         { if x > y { x } else { y } } \
         witness { inhabit (3, 7); inhabit (10, 2); falsify 2000; }";
 
     /// A PLANTED-BUG `max`: the body always returns `x`, so `ens result >= y` is
     /// violated whenever `y > x`. The covenant is refuted with a concrete input.
     const BUGGY_MAX: &str = "fn maxv(x: u64, y: u64) -> u64 \
-        req true ens result >= x && result >= y fx pure \
+        ! pure requires true ensures result >= x && result >= y \
         { x } \
         witness { inhabit (3, 7); falsify 5000; }";
 
@@ -713,7 +713,7 @@ mod tests {
     #[test]
     fn unstated_budget_defaults_to_50_000() {
         // No `falsify N;` directive — the Q3 default 50_000 is recorded.
-        let src = "fn idv(x: u64) -> u64 req true ens result == x fx pure { x } \
+        let src = "fn idv(x: u64) -> u64 ! pure requires true ensures result == x { x } \
                    witness { inhabit (1); }";
         let (f, w) = parse_covenant(src);
         match analyze_covenant(&f, &w) {
@@ -731,7 +731,7 @@ mod tests {
     fn witness_not_satisfying_req_is_a_loud_error() {
         // `inhabit (2)` does not satisfy `req x > 5` — a loud covenant error, never
         // silently dropped (REQ-4).
-        let src = "fn pos(x: u64) -> u64 req x > 5 ens result == x fx pure { x } \
+        let src = "fn pos(x: u64) -> u64 ! pure requires x > 5 ensures result == x { x } \
                    witness { inhabit (2); falsify 10; }";
         let (f, w) = parse_covenant(src);
         match analyze_covenant(&f, &w) {
@@ -748,7 +748,7 @@ mod tests {
         // A witness block with only `falsify` (no author `inhabit`) is refused, named
         // (R-COV-1: an author witness is mandatory). The parser allows a falsify-only
         // block, so the engine is the enforcer.
-        let src = "fn idv(x: u64) -> u64 req true ens result == x fx pure { x } \
+        let src = "fn idv(x: u64) -> u64 ! pure requires true ensures result == x { x } \
                    witness { falsify 10; }";
         let (f, w) = parse_covenant(src);
         assert!(w.inhabits.is_empty());
@@ -762,7 +762,7 @@ mod tests {
 
     #[test]
     fn non_scalar_param_is_outside_the_fragment() {
-        let src = "fn sumv(xs: Vec<u64>) -> u64 req true ens result >= 0 fx pure { 0 } \
+        let src = "fn sumv(xs: Vec<u64>) -> u64 ! pure requires true ensures result >= 0 { 0 } \
                    witness { inhabit (1); falsify 10; }";
         let (f, w) = parse_covenant(src);
         match analyze_covenant(&f, &w) {
@@ -779,7 +779,7 @@ mod tests {
         // an ill-typed witness (WitnessTypeMismatch), not a `req`-satisfying input. Without
         // the width check the truncating model would compute result 0 and manufacture a
         // false CovenantRefuted on a sound item (#300).
-        let src = "fn idu(x: u32) -> u32 req true ens result == x fx pure { x } \
+        let src = "fn idu(x: u32) -> u32 ! pure requires true ensures result == x { x } \
                    witness { inhabit (4294967296); falsify 10; }";
         let (f, w) = parse_covenant(src);
         match analyze_covenant(&f, &w) {
@@ -789,7 +789,7 @@ mod tests {
             other => panic!("expected WitnessTypeMismatch, got {other:?}"),
         }
         // An in-range witness validates (the item is sound for every real u32).
-        let ok = "fn idu(x: u32) -> u32 req true ens result == x fx pure { x } \
+        let ok = "fn idu(x: u32) -> u32 ! pure requires true ensures result == x { x } \
                   witness { inhabit (5); falsify 10; }";
         let (f2, w2) = parse_covenant(ok);
         assert!(matches!(

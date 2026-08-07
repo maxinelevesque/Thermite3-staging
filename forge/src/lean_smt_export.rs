@@ -1049,7 +1049,7 @@ mod tests {
     fn reference_normalize_flips_and_commutes() {
         // `a <= b`  →  `¬ (b < a)`.
         let le = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true ens a <= b fx pure { a }",
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures a <= b { a }",
             "p",
         );
         assert_eq!(
@@ -1058,7 +1058,7 @@ mod tests {
         );
         // `a + b == c`  →  `(b + a) == c` (the Add commutes; the `=` is kept).
         let add = ens_expr(
-            "fn p(a: u64, b: u64, c: u64) -> u64 req true ens a + b == c fx pure { a }",
+            "fn p(a: u64, b: u64, c: u64) -> u64 ! pure requires true ensures a + b == c { a }",
             "p",
         );
         assert_eq!(
@@ -1085,7 +1085,7 @@ mod tests {
             })
         };
         let add = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true ens a + b == b + a fx pure { a }",
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures a + b == b + a { a }",
             "p",
         );
         assert!(
@@ -1093,7 +1093,7 @@ mod tests {
             "wrapping arithmetic has a validity theorem"
         );
         let xor = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true ens a ^ b ^ b == a fx pure { a }",
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures a ^ b ^ b == a { a }",
             "p",
         );
         assert!(
@@ -1101,12 +1101,12 @@ mod tests {
             "bitwise terms have a literal BitVec validity theorem"
         );
         let lia = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true ens a <= b fx pure { a }",
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures a <= b { a }",
             "p",
         );
         assert!(render(lia, SmtFragment::Lia).is_ok());
         let shift = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true ens (a << b) == a fx pure { a }",
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures (a << b) == a { a }",
             "p",
         );
         assert!(render(shift, SmtFragment::Bv(BvWidth::W64)).is_ok());
@@ -1140,11 +1140,11 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
     #[test]
     fn live_validity_replay_checks_lia_and_rejects_false_goals() {
         let req = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true ens a <= b fx pure { a }",
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures a <= b { a }",
             "p",
         );
         let clause = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true ens a + 1 <= b + 1 fx pure { a }",
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures a + 1 <= b + 1 { a }",
             "p",
         );
         let valid = reconstruct_validity(
@@ -1164,7 +1164,7 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
         assert!(evidence.checker.contains("omega"));
         assert!(evidence.solver_query_sha256.is_none());
 
-        let false_clause = ens_expr("fn p(a: u64) -> u64 req true ens a < a fx pure { a }", "p");
+        let false_clause = ens_expr("fn p(a: u64) -> u64 ! pure requires true ensures a < a { a }", "p");
         let invalid = reconstruct_validity(
             &SmtValidityObligation {
                 item: "lia_false".to_string(),
@@ -1185,8 +1185,8 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
     #[test]
     fn live_bv_replay_checks_the_complete_literal_surface_and_hashes_the_query() {
         let clause = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true \
-             ens a + b == b + a \
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true \
+             ensures a + b == b + a \
                  && a - 0 == a \
                  && a * b == b * a \
                  && (a & b) == (b & a) \
@@ -1201,8 +1201,7 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
                  && a <= a \
                  && !(a > a) \
                  && a >= a \
-                 && (a == a || a == b) \
-             fx pure { a }",
+                 && (a == a || a == b) { a }",
             "p",
         );
         let query = "(set-logic QF_BV)\n; exact query bytes\n";
@@ -1257,8 +1256,8 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
     #[test]
     fn program_export_skips_out_of_fragment_clauses() {
         let p = parse_one(
-            "fn ok(a: u64, b: u64) -> u64 req true ens a <= b fx pure { a }\n\
-             fn bad(a: u64, b: u64) -> u64 req true ens (a & b) == a fx pure { a }",
+            "fn ok(a: u64, b: u64) -> u64 ! pure requires true ensures a <= b { a }\n\
+             fn bad(a: u64, b: u64) -> u64 ! pure requires true ensures (a & b) == a { a }",
         );
         let (obligations, skipped) = obligations_for_program(&p);
         assert_eq!(
@@ -1277,7 +1276,7 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
     #[test]
     fn lia_renders_arith_comparison() {
         let prod = ens_expr(
-            "fn p(a: u64, b: u64, c: u64) -> u64 req true ens a - b <= c fx pure { a }",
+            "fn p(a: u64, b: u64, c: u64) -> u64 ! pure requires true ensures a - b <= c { a }",
             "p",
         );
         assert_eq!(
@@ -1290,7 +1289,7 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
     #[test]
     fn lia_renders_or_of_comparisons() {
         let p = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true ens a == b || a < b fx pure { a }",
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures a == b || a < b { a }",
             "p",
         );
         assert_eq!(
@@ -1303,7 +1302,7 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
     #[test]
     fn bv_renders_literal_bitvec_arithmetic() {
         let p = ens_expr(
-            "fn p(a: u64, b: u64, c: u64) -> u64 req true ens a + b == c fx pure { a }",
+            "fn p(a: u64, b: u64, c: u64) -> u64 ! pure requires true ensures a + b == c { a }",
             "p",
         );
         assert_eq!(
@@ -1312,7 +1311,7 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
         );
         // Numeric syntax carries the width and reduces the value modulo 2^N.
         let lit = ens_expr(
-            "fn p(a: u64) -> u64 req true ens a == 300 fx pure { a }",
+            "fn p(a: u64) -> u64 ! pure requires true ensures a == 300 { a }",
             "p",
         );
         assert_eq!(
@@ -1327,31 +1326,31 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
     fn bv_renders_bitwise_shift_division_and_remainder() {
         for (src, lean_op) in [
             (
-                "fn p(a: u64, b: u64) -> u64 req true ens (a & b) == a fx pure { a }",
+                "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures (a & b) == a { a }",
                 "&&&",
             ),
             (
-                "fn p(a: u64, b: u64) -> u64 req true ens (a | b) == a fx pure { a }",
+                "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures (a | b) == a { a }",
                 "|||",
             ),
             (
-                "fn p(a: u64, b: u64) -> u64 req true ens (a ^ b) == a fx pure { a }",
+                "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures (a ^ b) == a { a }",
                 "^^^",
             ),
             (
-                "fn p(a: u64, b: u64) -> u64 req true ens (a / b) == a fx pure { a }",
+                "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures (a / b) == a { a }",
                 "/",
             ),
             (
-                "fn p(a: u64, b: u64) -> u64 req true ens (a % b) == a fx pure { a }",
+                "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures (a % b) == a { a }",
                 "%",
             ),
             (
-                "fn p(a: u64, b: u64) -> u64 req true ens (a << b) == a fx pure { a }",
+                "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures (a << b) == a { a }",
                 "<<<",
             ),
             (
-                "fn p(a: u64, b: u64) -> u64 req true ens (a >> b) == a fx pure { a }",
+                "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures (a >> b) == a { a }",
                 ">>>",
             ),
         ] {
@@ -1365,7 +1364,7 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
         }
 
         let not = ens_expr(
-            "fn p(a: u64) -> u64 req true ens !a == a fx pure { a }",
+            "fn p(a: u64) -> u64 ! pure requires true ensures !a == a { a }",
             "p",
         );
         assert_eq!(
@@ -1374,7 +1373,7 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
         );
 
         let div = ens_expr(
-            "fn p(a: u64, b: u64) -> u64 req true ens (a / b) == a fx pure { a }",
+            "fn p(a: u64, b: u64) -> u64 ! pure requires true ensures (a / b) == a { a }",
             "p",
         );
         assert_eq!(

@@ -212,7 +212,8 @@ fn live_broken_contract_is_hard_fail_never_degraded() {
     // `ens result == x + 2` for a body returning `x + 1`; verus disproves it.
     std::fs::write(
         &fixture,
-        "fn add_one(x: u64) -> u64\n  req x < 1000\n  ens result == x + 2\n  fx  pure\n{\n  x + 1\n}\n",
+        "fn add_one(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x + 2\n{\n  x + 1\n}\n",
     )
     .expect("write broken fixture");
     let (code, certs) = run_check_json(&fixture, &[]);
@@ -271,7 +272,8 @@ fn broken_fixture_verdict_is_deterministic() {
     let fixture = std::env::temp_dir().join(format!("forge_degrade_det_{}.th", std::process::id()));
     std::fs::write(
         &fixture,
-        "fn add_one(x: u64) -> u64\n  req x < 1000\n  ens result == x + 2\n  fx  pure\n{\n  x + 1\n}\n",
+        "fn add_one(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x + 2\n{\n  x + 1\n}\n",
     )
     .expect("write fixture");
     let (c1, certs1) = run_check_json(&fixture, &[]);

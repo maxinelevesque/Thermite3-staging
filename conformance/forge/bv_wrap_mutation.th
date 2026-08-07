@@ -24,7 +24,7 @@
 // (`+` binds tighter than `>=`, so the clause needs no parens — and a `@bvN` clause
 // cannot open with `(`, which the REQ-1 tag grammar reads as the `(nowrap)` modifier.)
 fn succ_ge(x: u64) -> u64
-    req true
-    ens@bv64 result >= x
-    fx pure
+    ! pure
+    requires true
+    ensures@bv64 result >= x
 { x + 0 }

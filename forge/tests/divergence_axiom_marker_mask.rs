@@ -121,8 +121,8 @@ fn divergence_replay_masks_nonstandard_axiom_via_earlier_print() {
     // fixture shape as `divergence_axiom_smuggling.rs`).
     std::fs::write(
         &file,
-        "spec fn r(x: int) -> int dec x { r(x) }\n\
-         fn f(x: u32) -> u32 req true ens result as int == r(x as int) fx pure { x }\n",
+        "spec fn r(x: int) -> int measures x { r(x) }\n\
+         fn f(x: u32) -> u32 ! pure requires true ensures result as int == r(x as int) { x }\n",
     )
     .expect("write fixture");
 

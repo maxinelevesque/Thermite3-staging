@@ -106,7 +106,7 @@ fn divergence_ens_implied_by_req_over_rejects_partial_implication() {
     // `result == x` is a stronger conjunct of `ens`; the whole `ens`
     // is therefore not implied by `req` alone (REQ-3 requires every clause).
     let cert = first_cert(
-        "fn f(x: u32) -> u32 req x > 0 && x < 10 ens x > 0 ens result == x fx pure { x }",
+        "fn f(x: u32) -> u32 ! pure requires x > 0 && x < 10 ensures x > 0 ensures result == x { x }",
         "c_partial_implication",
     );
     assert_ne!(
@@ -126,7 +126,7 @@ fn divergence_ens_implied_by_req_over_rejects_partial_implication() {
 #[test]
 fn ens_fully_implied_by_req_still_rejects_c() {
     let cert = first_cert(
-        "fn f(x: u32) -> () req x > 0 && x < 10 ens x > 0 fx pure { }",
+        "fn f(x: u32) -> () ! pure requires x > 0 && x < 10 ensures x > 0 { }",
         "c_full_implication",
     );
     assert_eq!(
@@ -152,7 +152,7 @@ fn ens_fully_implied_by_req_still_rejects_c() {
 #[test]
 fn divergence_redundant_true_clause_with_real_clause_not_c_rejected() {
     let cert = first_cert(
-        "fn f(x: u32) -> u32 req true ens true ens result == x fx pure { x }",
+        "fn f(x: u32) -> u32 ! pure requires true ensures true ensures result == x { x }",
         "multi_ens_true_plus_real",
     );
     // The whole `ens` (true && result == x) is not implied by `req true`
@@ -176,11 +176,11 @@ fn divergence_redundant_true_clause_with_real_clause_not_c_rejected() {
 fn lt_ne_identity_is_not_a_rejected() {
     for (prog, label) in [
         (
-            "fn f(x: u32) -> () req true ens x < x fx pure { }",
+            "fn f(x: u32) -> () ! pure requires true ensures x < x { }",
             "x_lt_x",
         ),
         (
-            "fn f(x: u32) -> () req true ens x != x fx pure { }",
+            "fn f(x: u32) -> () ! pure requires true ensures x != x { }",
             "x_ne_x",
         ),
     ] {

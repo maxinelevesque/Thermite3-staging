@@ -7,7 +7,7 @@
   ],
   "runtime_violation": [
     { "name": "ens_violation_fires_at_runtime", "entry": "bad",
-      "program": "fn bad(x: u32) -> u32 req x < 100 ens result == x fx pure { x + 1 }",
+      "program": "fn bad(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x + 1 }",
       "expect_rustc_exit": 0, "expect_run_nonzero": true, "expect_run_contains": "ens",
       "why": "bad's body returns x+1 but ens claims result == x. forge build (L1) COMPILES it (rustc exit 0 — L1 does not verify, it checks at runtime); the runner calls bad(<sample x<100>) -> the always-active ens check FIRES at runtime (non-zero exit + an [ens] contract-violation diagnostic). This is the runtime-enforcement behavior #57 builds on. (forge CHECK would reject bad at L0; forge BUILD at L1 builds it + the runtime check catches the violation.)" }
   ]

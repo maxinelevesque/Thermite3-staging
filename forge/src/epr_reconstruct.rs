@@ -2344,9 +2344,10 @@ mod tests {
     fn production_reconstructs_an_admitted_array_clause() {
         let parsed = parse(
             "fn epr(xs: Vec<u64>) -> u64\n\
-             req true\n\
-             ens forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+             ! pure
+requires true\n\
+             ensures forall (i : usize) in xs. xs[i] == xs[i]\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2377,10 +2378,11 @@ mod tests {
     fn production_reconstructs_sequence_extensionality() {
         let parsed = parse(
             "fn epr_ext(xs: Vec<u64>, ys: Vec<u64>) -> u64\n\
-             req xs.len() == ys.len() && \
+             ! pure
+requires xs.len() == ys.len() && \
                forall (i : usize) in xs. xs[i] == ys[i]\n\
-             ens xs == ys\n\
-             fx pure { 0 }",
+             ensures xs == ys\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2414,10 +2416,11 @@ mod tests {
     fn production_returns_a_countermodel_with_checked_lia_leaves() {
         let parsed = parse(
             "fn epr_qfree(xs: Vec<u64>, x: u64) -> u64\n\
-             req x + x == 2\n\
-             ens (x + x == 4) && \
+             ! pure
+requires x + x == 2\n\
+             ensures (x + x == 4) && \
                forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2458,10 +2461,11 @@ mod tests {
     fn production_checks_mixed_lia_and_bv_countermodel_leaves() {
         let parsed = parse(
             "fn epr_mixed_qfree(xs: Vec<u64>, x: u64) -> u64\n\
-             req x + x == 2\n\
-             ens@bv8 x + x == 4 && \
+             ! pure
+requires x + x == 2\n\
+             ensures@bv8 x + x == 4 && \
                forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2505,9 +2509,10 @@ mod tests {
     fn production_retries_a_boolean_qfree_mask_that_lia_cannot_realize() {
         let parsed = parse(
             "fn epr_qfree_retry(xs: Vec<u64>, ys: Vec<u64>, x: u64) -> u64\n\
-             req x + x == x + x || xs.len() == xs.len()\n\
-             ens xs == ys\n\
-             fx pure { 0 }",
+             ! pure
+requires x + x == x + x || xs.len() == xs.len()\n\
+             ensures xs == ys\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2547,9 +2552,10 @@ mod tests {
     fn cache_replays_warm_entries_and_rejects_every_tampered_boundary() {
         let parsed = parse(
             "fn epr_cache(xs: Vec<u64>) -> u64\n\
-             req true\n\
-             ens forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+             ! pure
+requires true\n\
+             ensures forall (i : usize) in xs. xs[i] == xs[i]\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {

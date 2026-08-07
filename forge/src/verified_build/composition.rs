@@ -273,14 +273,14 @@ fn complete_rich_composition_tv(
                 let detail = Some(rich_completion_detail());
                 completed.push(TvEvidenceRow {
                     phase: "contract".to_string(),
-                    label: format!("{}.req", function.name),
+                    label: format!("{}.requires", function.name),
                     verdict: "faithful".to_string(),
                     detail: detail.clone(),
                 });
                 for index in 0..function.contract.ens.len() {
                     completed.push(TvEvidenceRow {
                         phase: "contract".to_string(),
-                        label: format!("{}.ens#{}", function.name, index + 1),
+                        label: format!("{}.ensures#{}", function.name, index + 1),
                         verdict: "faithful".to_string(),
                         detail: detail.clone(),
                     });

@@ -530,14 +530,14 @@ mod tests {
     // REQ-1 / AC-2: ens literal `true` → (a).
     #[test]
     fn ens_literal_true_rejected_a() {
-        let f = fn_item("fn f() -> () req true ens true fx pure { }");
+        let f = fn_item("fn f() -> () ! pure requires true ensures true { }");
         assert_eq!(cause_tag(&f).as_deref(), Some("EnsIsTrivial"));
     }
 
     // REQ-1 / AC-2: ens `x == x` identity → (a).
     #[test]
     fn ens_identity_rejected_a() {
-        let f = fn_item("fn f(x: u32) -> () req true ens x == x fx pure { }");
+        let f = fn_item("fn f(x: u32) -> () ! pure requires true ensures x == x { }");
         assert_eq!(cause_tag(&f).as_deref(), Some("EnsIsTrivial"));
     }
 
@@ -557,14 +557,14 @@ mod tests {
     // REQ-2 / AC-3: non-unit return, ens omits result → (b).
     #[test]
     fn ens_omits_result_rejected_b() {
-        let f = fn_item("fn f(x: u32) -> u32 req true ens x > 0 fx pure { x }");
+        let f = fn_item("fn f(x: u32) -> u32 ! pure requires true ensures x > 0 { x }");
         assert_eq!(cause_tag(&f).as_deref(), Some("EnsOmitsResult"));
     }
 
     // REQ-2 / AC-3: the Type::Unit exemption — same ens, unit return passes (b).
     #[test]
     fn unit_return_exempt_from_b() {
-        let f = fn_item("fn f(x: u32) -> () req true ens x > 0 fx pure { }");
+        let f = fn_item("fn f(x: u32) -> () ! pure requires true ensures x > 0 { }");
         // Not rejected by (b); the whole contract passes triage.
         assert_eq!(cause_tag(&f), None);
     }
@@ -572,7 +572,7 @@ mod tests {
     // REQ-2: a `result` buried in a nested call/method-call is found (not (b)).
     #[test]
     fn nested_result_mention_passes_b() {
-        let f = fn_item("fn f(xs: &[u32]) -> u64 req true ens result == helper(xs) fx pure { 0 }");
+        let f = fn_item("fn f(xs: &[u32]) -> u64 ! pure requires true ensures result == helper(xs) { 0 }");
         assert_ne!(cause_tag(&f).as_deref(), Some("EnsOmitsResult"));
     }
 
@@ -580,14 +580,14 @@ mod tests {
     #[test]
     fn ens_eq_req_rejected_c() {
         // Unit return so (b) does not pre-empt (c) (the oracle's `ens_eq_req`).
-        let f = fn_item("fn f(x: u32) -> () req x > 0 ens x > 0 fx pure { }");
+        let f = fn_item("fn f(x: u32) -> () ! pure requires x > 0 ensures x > 0 { }");
         assert_eq!(cause_tag(&f).as_deref(), Some("EnsImpliedByReq"));
     }
 
     // REQ-3 / AC-4: ens is a conjunct of req's && chain → (c).
     #[test]
     fn ens_conjunct_req_rejected_c() {
-        let f = fn_item("fn f(x: u32) -> () req x > 0 && x < 10 ens x > 0 fx pure { }");
+        let f = fn_item("fn f(x: u32) -> () ! pure requires x > 0 && x < 10 ensures x > 0 { }");
         assert_eq!(cause_tag(&f).as_deref(), Some("EnsImpliedByReq"));
     }
 
@@ -595,8 +595,7 @@ mod tests {
     #[test]
     fn maximal_fx_no_slag_rejected_d() {
         let f = fn_item(
-            "fn f(x: u32) -> u32 req true ens result == x \
-             fx read(a), write(a), net(a), alloc, time, rand, panic, diverge { x }",
+            "fn f(x: u32) -> u32 ! read(a), write(a), net(a), alloc, time, rand, panic, diverge requires true ensures result == x { x }",
         );
         assert_eq!(cause_tag(&f).as_deref(), Some("MaximalFxWithoutSlag"));
     }
@@ -606,8 +605,7 @@ mod tests {
     fn maximal_fx_with_slag_passes_d() {
         let f = fn_item(
             "#[slag(reason = \"x\", owner = \"y\", review = \"required\")] \
-             fn f(x: u32) -> u32 req true ens result == x \
-             fx read(a), write(a), net(a), alloc, time, rand, panic, diverge { x }",
+             fn f(x: u32) -> u32 ! read(a), write(a), net(a), alloc, time, rand, panic, diverge requires true ensures result == x { x }",
         );
         assert_eq!(cause_tag(&f), None);
     }
@@ -618,7 +616,7 @@ mod tests {
     fn slag_does_not_excuse_vacuous_ens() {
         let f = fn_item(
             "#[slag(reason = \"x\", owner = \"y\", review = \"required\")] \
-             fn f(x: u32) -> u32 req true ens true fx pure { x }",
+             fn f(x: u32) -> u32 ! pure requires true ensures true { x }",
         );
         assert_eq!(cause_tag(&f).as_deref(), Some("EnsIsTrivial"));
     }
@@ -635,8 +633,8 @@ mod tests {
     #[test]
     fn corpus_passes_triage() {
         let sum = fn_item(
-            "fn sum(xs: &[u32]) -> u64 req xs.len() <= 1000000 \
-             ens result <= xs.len() as u64 * 100 fx pure { 0 }",
+            "fn sum(xs: &[u32]) -> u64 ! pure requires xs.len() <= 1000000 \
+             ensures result <= xs.len() as u64 * 100 { 0 }",
         );
         assert_eq!(cause_tag(&sum), None);
     }

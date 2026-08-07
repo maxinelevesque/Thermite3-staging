@@ -13,10 +13,10 @@
 // calculator's parse primitive: a valid digit string in range -> Some(value), for all
 // such inputs.
 fn parse_valid(s: String) -> Option<u64>
-  req all_digits(s) && s.len() >= 1 && parse_be(s) <= 18446744073709551615
-  ens result is Some
-  ens match result { Some(v) => parse_be(s) == v, None => true }
-  fx  pure
+  ! pure
+  requires all_digits(s) && s.len() >= 1 && parse_be(s) <= 18446744073709551615
+  ensures result is Some
+  ensures match result { Some(v) => parse_be(s) == v, None => true }
 {
   parse_u64(s)
 }

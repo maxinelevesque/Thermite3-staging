@@ -6,11 +6,11 @@ use thermite_syntax::{parse, Effect, Item, PlatformDomain, PrimType, Type};
 fn parses_kernel_scalar_widths_and_every_platform_domain() {
     let source = r#"
 fn platform_probe(byte: u8, word: u16) -> u16
-  req byte as u16 <= word
-  ens result == word
-  fx platform(boot), platform(memory), platform(mmio), platform(pio),
+  ! platform(boot), platform(memory), platform(mmio), platform(pio),
      platform(irq), platform(cpu), platform(atomic), platform(smp),
      platform(dma), platform(clock), platform(entropy), platform(power)
+  requires byte as u16 <= word
+  ensures result == word
 {
   word
 }
@@ -55,9 +55,9 @@ fn platform_probe(byte: u8, word: u16) -> u16
 fn rejects_unregistered_platform_domain() {
     let source = r#"
 fn bad() -> ()
-  req true
-  ens true
-  fx platform(filesystem)
+  ! platform(filesystem)
+  requires true
+  ensures true
 {
 }
 "#;
@@ -75,10 +75,10 @@ fn bad() -> ()
 fn parses_mutable_byte_slice_write_and_final_state_contract() {
     let parsed = parse(
         "fn write_byte(data: &mut [u8], at: usize, value: u8) -> u8\n\
-         req at < data.len()\n\
-         ens result == value\n\
-         ens final(data)[at] == value\n\
-         fx platform(memory)\n\
+         ! platform(memory)
+requires at < data.len()\n\
+         ensures result == value\n\
+         ensures final(data)[at] == value\n\
          { data[at] = value; value }\n",
     );
     assert!(

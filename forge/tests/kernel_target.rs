@@ -294,7 +294,8 @@ fn ambient_write_net_term_fx_refuse_identically() {
     // A self-contained `fx write` boundary fn → refused.
     let write_th = write_fixture(
         "write_fx",
-        "#[boundary(\"os::write\")] fn put() -> bool\n  req true\n  ens true\n  fx  write(stdout)\n  ;\n",
+        "#[boundary(\"os::write\")] fn put() -> bool\n  ! write(stdout)
+  requires true\n  ensures true\n  ;\n",
     );
     let (ok_w, _so, se_w) = run_forge_build(&[write_th.to_str().unwrap(), "--target", "kernel"]);
     let _ = std::fs::remove_file(&write_th);
@@ -307,7 +308,8 @@ fn ambient_write_net_term_fx_refuse_identically() {
     // A self-contained `fx net` boundary fn → refused.
     let net_th = write_fixture(
         "net_fx",
-        "#[boundary(\"os::net\")] fn dial() -> bool\n  req true\n  ens true\n  fx  net(socket)\n  ;\n",
+        "#[boundary(\"os::net\")] fn dial() -> bool\n  ! net(socket)
+  requires true\n  ensures true\n  ;\n",
     );
     let (ok_n, _so2, se_n) = run_forge_build(&[net_th.to_str().unwrap(), "--target", "kernel"]);
     let _ = std::fs::remove_file(&net_th);
@@ -317,7 +319,8 @@ fn ambient_write_net_term_fx_refuse_identically() {
     // A self-contained `fx term` boundary fn → refused.
     let term_th = write_fixture(
         "term_fx",
-        "#[boundary(\"os::raw_mode_on\")] fn raw() -> bool\n  req true\n  ens true\n  fx  term\n  ;\n",
+        "#[boundary(\"os::raw_mode_on\")] fn raw() -> bool\n  ! term
+  requires true\n  ensures true\n  ;\n",
     );
     let (ok_t, _so3, se_t) = run_forge_build(&[term_th.to_str().unwrap(), "--target", "kernel"]);
     let _ = std::fs::remove_file(&term_th);

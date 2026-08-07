@@ -199,8 +199,8 @@ fn engine_lean_attaches_smaller_trust_base_live() {
     let file = dir.join("add.th");
     std::fs::write(
         &file,
-        "fn add(a: u32, b: u32) -> u64 req true \
-         ens result == a as u64 + b as u64 fx pure { a as u64 + b as u64 }",
+        "fn add(a: u32, b: u32) -> u64 ! pure requires true \
+         ensures result == a as u64 + b as u64 { a as u64 + b as u64 }",
     )
     .expect("write fixture");
 

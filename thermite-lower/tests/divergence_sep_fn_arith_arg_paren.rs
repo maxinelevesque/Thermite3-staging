@@ -32,9 +32,9 @@ fn lower(src: &str) -> String {
 /// separator arg (`sep + 1`, a `Binary`) at the `u8` position (index 1).
 const SEP_ARITH_PROGRAM: &str = "\
 fn g(s: String, sep: u64) -> u64
-  req count_sep(s, sep + 1) == 0
-  ens result == 0
-  fx  pure
+  ! pure
+  requires count_sep(s, sep + 1) == 0
+  ensures result == 0
 {
   0
 }

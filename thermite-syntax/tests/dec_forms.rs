@@ -39,7 +39,7 @@ fn call_shape(expr: &Expr) -> (String, usize) {
 fn dec_lex_parses_as_a_plain_call_registry_free() {
     // `dec lex(n, n)` — a lexicographic tuple is an ordinary `Expr::Call` (no
     // special parse; the consumer keys on the `lex` callee).
-    let dec = spec_fn_dec("spec fn f(n: u64) -> u64 dec lex(n, n) { n }");
+    let dec = spec_fn_dec("spec fn f(n: u64) -> u64 measures lex(n, n) { n }");
     assert_eq!(call_shape(&dec.expr), ("lex".to_string(), 2));
     assert_eq!(dec.text, "lex(n, n)");
 }
@@ -48,7 +48,7 @@ fn dec_lex_parses_as_a_plain_call_registry_free() {
 fn dec_wf_normalizes_to_a_wf_call() {
     // `dec wf lt` (ASCII spelling, Q-DECWF) — normalized to the registry-free call
     // `wf(lt)` so downstream sees an ordinary `Expr::Call`.
-    let dec = spec_fn_dec("spec fn f(n: u64) -> u64 dec wf lt { n }");
+    let dec = spec_fn_dec("spec fn f(n: u64) -> u64 measures wf lt { n }");
     assert_eq!(call_shape(&dec.expr), ("wf".to_string(), 1));
     // The verbatim text preserves the surface `wf <rel>` spelling.
     assert_eq!(dec.text, "wf lt");
@@ -56,7 +56,7 @@ fn dec_wf_normalizes_to_a_wf_call() {
 
 #[test]
 fn dec_wf_relation_can_be_a_compound_expression() {
-    let dec = spec_fn_dec("spec fn f(n: u64) -> u64 dec wf less_than(n) { n }");
+    let dec = spec_fn_dec("spec fn f(n: u64) -> u64 measures wf less_than(n) { n }");
     assert_eq!(call_shape(&dec.expr), ("wf".to_string(), 1));
 }
 
@@ -64,7 +64,7 @@ fn dec_wf_relation_can_be_a_compound_expression() {
 fn plain_dec_measure_is_unchanged() {
     // The v1 plain measure `dec n` still parses to the bare expression (no `wf`/
     // `lex` wrapping) — byte-stable.
-    let dec = spec_fn_dec("spec fn f(n: u64) -> u64 dec n { n }");
+    let dec = spec_fn_dec("spec fn f(n: u64) -> u64 measures n { n }");
     match &dec.expr {
         Expr::Path(segs) if segs == &vec!["n".to_string()] => {}
         other => panic!("expected the bare measure `n`, got {other:?}"),
@@ -75,7 +75,7 @@ fn plain_dec_measure_is_unchanged() {
 #[test]
 fn dec_wf_in_fn_position_parses() {
     // A recursive exec `fn` may carry `dec wf <rel>` (optional dec slot, after fx).
-    let src = "fn f(n: u64) -> u64 req true ens result == n fx pure dec wf lt { n }";
+    let src = "fn f(n: u64) -> u64 ! pure requires true ensures result == n measures wf lt { n }";
     let result = parse(src);
     assert!(result.is_clean(), "parse errors: {:?}", result.errors);
     let Item::Fn(f) = &result.program.items[0] else {

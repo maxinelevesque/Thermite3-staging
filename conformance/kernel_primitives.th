@@ -1,40 +1,40 @@
 fn increment_byte(value: u8) -> u8
-  req value < 255
-  ens result == value + 1
-  fx pure
+  ! pure
+  requires value < 255
+  ensures result == value + 1
 {
   value + 1
 }
 
 fn increment_port(value: u16) -> u16
-  req value < 65535
-  ens result == value + 1
-  fx pure
+  ! pure
+  requires value < 65535
+  ensures result == value + 1
 {
   value + 1
 }
 
 fn memory_authority(token: u32) -> u32
-  req true
-  ens result == token
-  fx platform(memory)
+  ! platform(memory)
+  requires true
+  ensures result == token
 {
   token
 }
 
 fn memory_caller(token: u32) -> u32
-  req true
-  ens result == token
-  fx platform(memory)
+  ! platform(memory)
+  requires true
+  ensures result == token
 {
   memory_authority(token)
 }
 
 fn write_byte(data: &mut [u8], at: usize, value: u8) -> u8
-  req at < data.len()
-  ens result == value
-  ens final(data)[at] == value
-  fx platform(memory)
+  ! platform(memory)
+  requires at < data.len()
+  ensures result == value
+  ensures final(data)[at] == value
 {
   data[at] = value;
   value
