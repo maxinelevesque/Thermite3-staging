@@ -1,0 +1,42 @@
+---
+{
+  "v": 2,
+  "cid": "bafyreidg5r3oapvqqdcs5t3qx4qjls2di322i3hul5x4ys2pv47yabk7kq",
+  "sig": "d09d6b0a1b0140c86657612c07f812670fb69763f2f627c3177350b709867604720ae03ce9307bf744494d2770d3657025240f102185b834623069a73940fd01",
+  "author": "did:key:zDnaekvyhdCRM1T1yw1BQgsoyEvmoyW27an3a8rygZPqbge2V",
+  "subject": "Local(\"tension/it-lands-upstream--the-corpus-still-certifies\")",
+  "kind": "Decision",
+  "cites": [
+    "bafyreiepwpbbdizdtsh4u2m5sx6tkzdj4gi77d7gydjafdkxqghktv6b24",
+    "bafyreidmm3pdsiyziafl7cb2wbpbd7zfnpr2znyehvff5rr3swadeqvxvq"
+  ],
+  "rev": "223mshs7ow7w3",
+  "seq": 0,
+  "of": 2,
+  "text_len": 966,
+  "content": "a764626f6479a1684465636973696f6ea164746578746065636974657382d82a582500017112208fb3c211a3239c8fca699d95fd356469e191ff8fe6c0d2028d57818ea9d7c1d7d82a582500017112206c66de392319400abf883ab05e11ff256be3acb7043d4a5ec63b95803242b7ac66617574686f72a26364696478396469643a6b65793a7a446e61656b7679686443524d315431797731425167736f7945766d6f79573237616e3361387279675a50716267653256656167656e74f6677375626a656374a1654c6f63616c783574656e73696f6e2f69742d6c616e64732d757073747265616d2d2d7468652d636f727075732d7374696c6c2d6365727469666965736961727469666163747381a166436f6d6d697478286535653139643635373835663764316534643633326430653461656162656464626565643063363469776f726b7370616365a169576f726b73706163657840323231666338316537643461376464326536633934303931323961393438623464633565326263393262626365383634663833623734353734316135346539366b7265636f726465645f61741b0006586e0b4e1680"
+}
+---
+
+Reaching the whole corpus made the diff bigger than the proposal that must be reviewed to accept it. RFC-6 scopes the migration at 547 clause sites in .th plus 1527 in Rust literals. Measuring with a fixed scanner and an unanchored candidacy filter gives 547 + 2153 + 210 in JSON conformance cases, and the corpus-still-certifies telos says every one of them must move or the corpus does not certify. So the honest number is 41 percent larger than the filed one, in a proposal whose whole argument for acceptance is that it is mechanical and adds no capability. Each extra population is also a place a maintainer has to take on trust that the rewrite was faithful, which is exactly the review cost it-lands-upstream is trying to keep small. Recorded rather than resolved: shrinking the diff means leaving a population unmigrated, and every one of them is load-bearing for some test.
+
+```day-tension
+{"between":["it-lands-upstream","the-corpus-still-certifies"]}
+```
+
+---8<---
+---
+{
+  "v": 2,
+  "cid": "bafyreiguq3au4km3vuwa2gomzvfkdxa5yee4nbopfrhktazlz2awhlhaeu",
+  "sig": "783a92039d61681cf7ecb62c179bae3196af881426e42c3eb9d173939366f8ec51ef04ac33a4bda42ca28200fae8c4fc03231e6de57bcc95b585056b80debc2f",
+  "author": "did:key:zDnaekvyhdCRM1T1yw1BQgsoyEvmoyW27an3a8rygZPqbge2V",
+  "subject": "Local(\"tension/it-lands-upstream--the-corpus-still-certifies\")",
+  "kind": "Publication",
+  "cites": [],
+  "rev": "223msj6niezzv",
+  "seq": 1,
+  "of": 2,
+  "content": "a764626f6479a16b5075626c69636174696f6ea1656c6179657267476974547265656563697465738066617574686f72a26364696478396469643a6b65793a7a446e61656b7679686443524d315431797731425167736f7945766d6f79573237616e3361387279675a50716267653256656167656e74f6677375626a656374a1654c6f63616c783574656e73696f6e2f69742d6c616e64732d757073747265616d2d2d7468652d636f727075732d7374696c6c2d6365727469666965736961727469666163747381a166436f6d6d697478283233393331623966663032383464333837666338386631373732343662393561333534343232383269776f726b7370616365a169576f726b73706163657840323231666338316537643461376464326536633934303931323961393438623464633565326263393262626365383634663833623734353734316135346539366b7265636f726465645f61741b0006587926e57f6f"
+}
+---
