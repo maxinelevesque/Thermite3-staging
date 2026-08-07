@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: adba1a733f08c9644914fad439fcaf367e972adeebc3039b37fd9dea8c8c233f (re-pinned 2026-08-01 after restoring the Rust cache before the pinned Stage 4 tools; Gate G4 identities remain enforced)
+audited-content-sha256: a2006a732dff1a7a13f11568a5adbdd291a6f66736ea6af05fdd8bb3ac287e9c (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: adba1a733f08c9644914fad439fcaf367e972adeebc3039b37fd9dea8c8c233f)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see tooling/spec-routes.toml)
 -->

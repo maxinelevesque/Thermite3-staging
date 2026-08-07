@@ -1,10 +1,10 @@
-# Freestanding `no_std` kernel build target — `forge build --target kernel`
+# Freestanding `no_std` build target — `forge build --target freestanding`
 
 <!--
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 4f266ec27c8b5bab0e66de73c5450b2fc40c3ca891fdfea97ac7163422f06e46
+audited-content-sha256: 171858be2a5df849043d667b857f6ad08a94ae6561b1df814de77d3c0f5faa3b (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 4f266ec27c8b5bab0e66de73c5450b2fc40c3ca891fdfea97ac7163422f06e46)
 governs: forge/src/build.rs
 thesis-refs:
   - thermite-design.md §3 (the stack — transpile to Rust, rustc is the codegen backend; the #21 realization note)
@@ -17,7 +17,7 @@ blocker: #164
 
 ## Summary
 
-`forge build --target kernel` emits a freestanding `no_std + alloc` Verus-Rust **library** crate
+`forge build --target freestanding` emits a freestanding `no_std + alloc` Verus-Rust **library** crate
 (`--crate-type=rlib`, no `main`, no seccomp sandbox, `panic=abort`) suitable for linking into a
 verified microkernel. It is a NEW fork of the existing `forge build` verb (`build_file` /
 `emit_source` / `invoke_rustc` in `build.rs`): the L1 lowering and the verification (L3) path are
@@ -44,7 +44,7 @@ sandbox code.
 - **No `main`, no seccomp.** The kernel target NEVER takes `--entry` (no generated `main`, no
   `synthesize_entry_main`), so the entire `forge/src/sandbox.rs` machinery (the seccomp BPF prelude,
   the `SandboxConfig`/`SandboxRecord`) is NOT emitted — kernel code is not a sandboxed userspace
-  process. `--target kernel` + `--entry` is a usage error.
+  process. `--target freestanding` + `--entry` is a usage error.
 - **`panic=abort`.** A freestanding crate cannot unwind; the rustc invocation pins `-C panic=abort`
   (and the kernel host supplies the `#[panic_handler]` / `#[global_allocator]` — they are NOT emitted
   by forge, see OQ-1).
@@ -55,7 +55,7 @@ sandbox code.
   carry std-bodied effect wrappers — `clock_gettime`/`getrandom` — with no kernel ambient clock/entropy
   either; OQ-2, amended by #198). The admit set is EXACTLY `pure`/`alloc`/`panic`/`diverge`.
 - **L3 path IDENTICAL.** `forge check` (the Verus L3 proof) is target-independent — Verus verifies the
-  SAME lowered program regardless of the eventual codegen target. `--target kernel` touches ONLY
+  SAME lowered program regardless of the eventual codegen target. `--target freestanding` touches ONLY
   `forge build` (the rustc codegen side), never `forge check`. (`.design/verified/exec-stmt-tv.md`
   "Kernel convergence" note: 2.2.1/2.2.2 are TV over the SAME lowering target as the rest of the
   toolchain.)
@@ -92,7 +92,7 @@ Conclusion: the L1 LIBRARY body is `alloc`-clean; the std-only emissions are exa
 
 The existing build is `pub fn build_file(path, entry, sandbox, out)` → `emit_source(path, entry,
 sandbox)` (which calls `thermite_lower::lower_l1` + `effect_wrappers::emit_mod_os` + optional
-`synthesize_entry_main`) → `invoke_rustc(crate_name, source, crate_type)`. `--target kernel` forks at
+`synthesize_entry_main`) → `invoke_rustc(crate_name, source, crate_type)`. `--target freestanding` forks at
 three named seams (the builder adds a `BuildTarget` enum — `Std` (default) | `Kernel` — threaded
 through these):
 
@@ -114,7 +114,7 @@ through these):
 
 ## Requirements
 
-- **REQ-1 (`--target kernel` verb fork)** — `forge build --target kernel <file>` selects the kernel
+- **REQ-1 (`--target freestanding` verb fork)** — `forge build --target freestanding <file>` selects the kernel
   emission profile: a `BuildTarget` (`Std`/`Kernel`) threaded `cli::run_build` → `build::build_file` →
   `emit_source` → `invoke_rustc`. The default (`Std`) is byte-unchanged (the existing `forge build`
   corpus is unaffected). Derived from `thermite-design.md` §3 (rustc is the codegen backend; the
@@ -129,7 +129,7 @@ through these):
   structured `ForgeError` (a NAMED-effect, nonzero-exit, NO-artifact reject) BEFORE codegen — kernel
   code has no ambient userspace syscall surface, and `time`/`rand` carry std-bodied effect wrappers
   (`clock_gettime`/`getrandom`) with no kernel ambient clock/entropy (OQ-2, amended by #198).
-  `--target kernel` + `--entry` is likewise a usage error. Derived from §13 (kernel scope) + the
+  `--target freestanding` + `--entry` is likewise a usage error. Derived from §13 (kernel scope) + the
   `sandbox.rs` `fx`→syscall mapping being a USERSPACE concept. **Blocker #164.**
 - **REQ-4 (L1 runtime checks in the kernel profile)** — the always-active `thermite_check!` /
   `thermite_contract_violation` (`panic!`) is emitted UNCHANGED; under `#![no_std]` / `panic=abort` it
@@ -138,20 +138,20 @@ through these):
   Forge does NOT emit the `#[panic_handler]` / `#[global_allocator]` (the kernel host supplies them —
   OQ-1). Derived from §6 (L1 always-active checks). **Blocker #164.**
 - **REQ-5 (L3 verification path identical)** — `forge check` (the Verus L3 proof) is UNTOUCHED by
-  `--target kernel`: Verus verifies the same lowered program regardless of codegen target. The kernel
+  `--target freestanding`: Verus verifies the same lowered program regardless of codegen target. The kernel
   target is a `forge build` (rustc) concern only. Derived from `thermite-design.md` §3/§6 +
   `.design/verified/exec-stmt-tv.md` "Kernel convergence" note (TV/verification is over the SAME
   lowering target). **Blocker #164.**
 
 ## Acceptance criteria
 
-- **AC-1 (pure fn → kernel rlib compiles `no_std`)** — `forge build --target kernel sum.th` (the
+- **AC-1 (pure fn → kernel rlib compiles `no_std`)** — `forge build --target freestanding sum.th` (the
   corpus `sum`, `fx pure`) emits a `#![no_std]` + `extern crate alloc;` rlib and rustc exits 0
   (`--crate-type=rlib -C panic=abort`), producing `libsum_build.rlib`. The emitted source contains
   `#![no_std]` and `extern crate alloc;` and NO `fn main` / NO seccomp prelude. (Verification: a
   `forge/tests/kernel_target.rs` freestanding-compile check shelling the real `rustc` with the kernel
   profile flags.)
-- **AC-2 (ambient-`fx` fn → structured refusal)** — `forge build --target kernel` on a fn carrying
+- **AC-2 (ambient-`fx` fn → structured refusal)** — `forge build --target freestanding` on a fn carrying
   `fx read(src)` (the oracle `rf` shape) returns a `ForgeError` naming the rejected effect, nonzero
   exit, NO artifact — NOT a silent build. A `fx write`/`net`/`term`/`time`/`rand` fn refuses
   identically (the admitted-`fx time` boundary `effect_link_demo.th` is REFUSED naming `time`, the
@@ -225,8 +225,8 @@ Drop guard (`build.rs` `invoke_rustc`, #53).
 
 A single builder dispatch delivers the whole v1:
 
-1. **The verb fork** — a `BuildTarget` enum (`Std`/`Kernel`) + the `--target kernel` CLI flag
-   (`cli.rs` `Command::Build` + `run_build`), threaded into `build::build_file`. `--target kernel` +
+1. **The verb fork** — a `BuildTarget` enum (`Std`/`Freestanding`) + the `--target freestanding` CLI flag
+   (`cli.rs` `Command::Build` + `run_build`), threaded into `build::build_file`. `--target freestanding` +
    `--entry` is a usage error (REQ-1/REQ-3).
 2. **The `no_std` emission profile** — the kernel prelude prepend in `emit_source`, the
    `synthesize_entry_main`/seccomp suppression, and the `-C panic=abort` + forced-`rlib` in
@@ -264,11 +264,11 @@ in `build.rs` — `build.rs` already carries multiple routes: `build.md`, `08-ru
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (`--target kernel` verb fork) | SHIPPED | `build.rs` `enum BuildTarget { Std, Kernel }` threaded `cli::run_build` → `build::build_file` → `emit_source` → `invoke_rustc`; `cli.rs` parses `--target std\|kernel` (default `Std`, unknown/missing value → `Usage`). Consumer: `cli::run_build`. Verified by `cli::tests::parses_build_target_flag` + `forge/tests/kernel_target.rs::pure_fn_builds_no_std_kernel_rlib`; the std default is byte-unchanged (`default_target_source_is_byte_identical_to_no_target_flag` + the unaffected `build_conformance` suite, AC-4). |
+| REQ-1 (`--target freestanding` verb fork) | SHIPPED | `build.rs` `enum BuildTarget { Std, Freestanding }` threaded `cli::run_build` → `build::build_file` → `emit_source` → `invoke_rustc`; `cli.rs` parses `--target std\|kernel` (default `Std`, unknown/missing value → `Usage`). Consumer: `cli::run_build`. Verified by `cli::tests::parses_build_target_flag` + `forge/tests/kernel_target.rs::pure_fn_builds_no_std_kernel_rlib`; the std default is byte-unchanged (`default_target_source_is_byte_identical_to_no_target_flag` + the unaffected `build_conformance` suite, AC-4). |
 | REQ-2 (`no_std + alloc` emission profile) | SHIPPED | `emit_source` prepends `KERNEL_PRELUDE` (`#![no_std]` + `extern crate alloc;` + `use alloc::vec::Vec;`) under `BuildTarget::Kernel`, reuses `lower_l1`'s output VERBATIM, emits NO `synthesize_entry_main`; `invoke_rustc` forces `--crate-type=rlib` + `-C panic=abort`. Consumer: `cli::run_build`. Verified by `kernel_target.rs::pure_fn_builds_no_std_kernel_rlib` (rustc exit 0 + reconstructed-source freestanding compile) + `pure_and_alloc_fx_fns_build_for_kernel`. |
-| REQ-3 (ambient-syscall `fx` reject) | SHIPPED | `reject_ambient_fx_for_kernel` scans EVERY `Item::Fn`'s `sandbox::transitive_fx` for `KERNEL_REJECTED_FX = ["read","write","net","term","time","rand"]` → a NAMED-effect `ForgeError::Usage` (nonzero exit, NO artifact) BEFORE codegen; `--target kernel` + `--entry` is likewise a `ForgeError::Usage`. Consumer: `build_file`. Verified by `kernel_target.rs::ambient_read_fx_fn_is_refused` + `ambient_write_net_term_fx_refuse_identically` + `kernel_target_with_entry_is_usage_error` + `divergence_kernel_time_boundary.rs` (the `fx time` boundary refused naming `time`, #198); `pure`/`alloc`/`panic`/`diverge` admit (OQ-2 amended by #198; `pure_and_alloc_fx_fns_build_for_kernel`). |
+| REQ-3 (ambient-syscall `fx` reject) | SHIPPED | `reject_ambient_fx_for_freestanding` scans EVERY `Item::Fn`'s `sandbox::transitive_fx` for `KERNEL_REJECTED_FX = ["read","write","net","term","time","rand"]` → a NAMED-effect `ForgeError::Usage` (nonzero exit, NO artifact) BEFORE codegen; `--target freestanding` + `--entry` is likewise a `ForgeError::Usage`. Consumer: `build_file`. Verified by `kernel_target.rs::ambient_read_fx_fn_is_refused` + `ambient_write_net_term_fx_refuse_identically` + `kernel_target_with_entry_is_usage_error` + `divergence_kernel_time_boundary.rs` (the `fx time` boundary refused naming `time`, #198); `pure`/`alloc`/`panic`/`diverge` admit (OQ-2 amended by #198; `pure_and_alloc_fx_fns_build_for_kernel`). |
 | REQ-4 (L1 runtime checks in the kernel profile) | SHIPPED | `lower_l1`'s `thermite_check!` / `thermite_contract_violation` (`panic!`) is emitted UNCHANGED (NOT stripped, NOT `debug_assert!`); under `#![no_std]`/`panic=abort` it routes to the host `#[panic_handler]` (OQ-1: forge emits neither handler nor allocator — the test supplies the stand-in). Consumer: `emit_source` (no strip). Verified by `kernel_target.rs::l1_checks_emitted_verbatim_in_kernel_source` (macro + handler + `panic!` present, no `debug_assert!`, compiles with a test `#[panic_handler]`/`#[global_allocator]`). |
-| REQ-5 (L3 verification path identical) | SHIPPED | `--target kernel` touches ONLY `build.rs`/`cli.rs` (the rustc codegen side); NO edit to `check.rs` or the L3 lowering. The existing `forge check` suites stay green (no diff). Verified: no `check.rs` change in the increment + the full `cargo test -p forge` green. |
+| REQ-5 (L3 verification path identical) | SHIPPED | `--target freestanding` touches ONLY `build.rs`/`cli.rs` (the rustc codegen side); NO edit to `check.rs` or the L3 lowering. The existing `forge check` suites stay green (no diff). Verified: no `check.rs` change in the increment + the full `cargo test -p forge` green. |
 
 ## OQ resolutions (this increment)
 

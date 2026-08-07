@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: e2910830dad12dd9dea025ee1bd16766ea03aeae27d830c52c7a27eae2209def
+audited-content-sha256: 94fd2883c53122d9ae324b12cb5865246af05110382d91d38fae6f7349d6cc08 (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: e2910830dad12dd9dea025ee1bd16766ea03aeae27d830c52c7a27eae2209def)
 decision: qualify invariant field paths in the canonical invariant lowerer
 issue: github:dollspace-gay/Thermite#110
 governs:

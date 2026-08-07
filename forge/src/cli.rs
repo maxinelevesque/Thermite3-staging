@@ -358,14 +358,12 @@ enum Command {
         /// `./<PATH>` runs directly — no `/tmp/..._build_out_<pid>/` path / wrapper
         /// script). `None` keeps the existing stable /tmp output path.
         out: Option<PathBuf>,
-        /// `--target std|kernel` (#197; `.design/build/kernel-target.md` REQ-1): the
+        /// `--target std|kernel` (#197; `.design/build/freestanding-target.md` REQ-1): the
         /// codegen profile. The default ([`BuildTarget::Std`]) is the unchanged
-        /// hosted build; `--target kernel` emits a freestanding `no_std + alloc`
+        /// hosted build; `--target freestanding` emits a freestanding `no_std + alloc`
         /// library rlib (no `main`/seccomp, `panic=abort`) and refuses ambient-syscall
-        /// `fx` rows. `--target kernel` + `--entry` is a usage error.
+        /// `fx` rows. `--target freestanding` + `--entry` is a usage error.
         target: BuildTarget,
-        /// Frozen platform profile required by `--target kernel-image`.
-        platform: Option<String>,
     },
     /// `forge verify-build <bundle-dir> [--replay] [--json]` validates the
     /// canonical receipt and all bound files, and optionally reproduces the
@@ -905,7 +903,6 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             let mut self_test = false;
             let mut out: Option<PathBuf> = None;
             let mut target = BuildTarget::Std;
-            let mut platform = None;
             let mut level = BuildLevel::L1;
             let mut exports = Vec::new();
             let mut composition_exports = Vec::new();
@@ -961,33 +958,25 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                         crate_name = Some(value.to_string());
                     }
                     "--target" => {
-                        // `--target std|kernel` (#197; `.design/build/kernel-target.md`
+                        // `--target std|kernel` (#197; `.design/build/freestanding-target.md`
                         // REQ-1). The value is a separate token; a missing or unknown
-                        // value is a Usage error, never a silent default. `kernel`
-                        // selects the freestanding no_std+alloc rlib profile.
+                        // value is a Usage error, never a silent default.
+                        // `freestanding` selects the no_std+alloc rlib profile.
                         let value = iter.next().ok_or_else(|| {
                             ForgeError::Usage(
-                                "`--target` requires a value (`std`, `kernel`, or `kernel-image`)"
-                                    .to_string(),
+                                "`--target` requires a value (`std` or `freestanding`)".to_string(),
                             )
                         })?;
                         target = match value.as_str() {
                             "std" => BuildTarget::Std,
-                            "kernel" => BuildTarget::Kernel,
-                            "kernel-image" => BuildTarget::KernelImage,
+                            "freestanding" => BuildTarget::Freestanding,
                             other => {
                                 return Err(ForgeError::Usage(format!(
-                                    "unknown `--target` value `{other}` (expected `std`, \
-                                     `kernel`, or `kernel-image`)"
+                                    "unknown `--target` value `{other}` \
+                                     (expected `std` or `freestanding`)"
                                 )));
                             }
                         };
-                    }
-                    "--platform" => {
-                        let value = iter.next().ok_or_else(|| {
-                            ForgeError::Usage("`--platform` requires a profile name".to_string())
-                        })?;
-                        platform = Some(value.to_string());
                     }
                     "--entry" => {
                         let value = iter.next().ok_or_else(|| {
@@ -1044,29 +1033,6 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                         .to_string(),
                 )
             })?;
-            if matches!(target, BuildTarget::KernelImage) {
-                if !matches!(level, BuildLevel::L3) {
-                    return Err(ForgeError::Usage(
-                        "`--target kernel-image` requires `--level l3`".to_string(),
-                    ));
-                }
-                if platform.as_deref() != Some("x86_64-pc-uefi-smp-v1") {
-                    return Err(ForgeError::Usage(
-                        "`--target kernel-image` requires `--platform \
-                         x86_64-pc-uefi-smp-v1`"
-                            .to_string(),
-                    ));
-                }
-                if out.is_none() {
-                    return Err(ForgeError::Usage(
-                        "`--target kernel-image` requires `--out <image.img>`".to_string(),
-                    ));
-                }
-            } else if platform.is_some() {
-                return Err(ForgeError::Usage(
-                    "`--platform` is valid only with `--target kernel-image`".to_string(),
-                ));
-            }
             match level {
                 BuildLevel::L3 => {
                     if entry.is_some() || sandbox_flag_seen {
@@ -1118,7 +1084,6 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                 },
                 out,
                 target,
-                platform,
             })
         }
         ForgeMethod::VerifyBuild => {
@@ -1753,7 +1718,6 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             sandbox,
             out,
             target,
-            platform,
         } => run_build(BuildRun {
             file: &file,
             level,
@@ -1766,7 +1730,6 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             sandbox,
             out: out.as_deref(),
             target,
-            platform: platform.as_deref(),
         }),
         Command::VerifyBuild {
             bundle,
@@ -2463,7 +2426,6 @@ struct BuildRun<'a> {
     sandbox: build::SandboxConfig,
     out: Option<&'a Path>,
     target: BuildTarget,
-    platform: Option<&'a str>,
 }
 
 fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
@@ -2479,37 +2441,7 @@ fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
         sandbox,
         out,
         target,
-        platform,
     } = request;
-    if matches!(target, BuildTarget::KernelImage) {
-        let output = out.ok_or_else(|| {
-            ForgeError::Usage("`--target kernel-image` requires `--out <image.img>`".to_string())
-        })?;
-        let receipt = crate::kernel_image::build_image(crate::kernel_image::ImageBuildRequest {
-            source: file,
-            composition_exports,
-            composition_shells,
-            platform: platform.ok_or_else(|| {
-                ForgeError::Usage("`--target kernel-image` requires `--platform`".to_string())
-            })?,
-            output,
-        })?;
-        if json {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&receipt).map_err(|error| {
-                    ForgeError::RustcOutput {
-                        detail: format!("failed to serialize kernel-image receipt: {error}"),
-                    }
-                })?
-            );
-        } else {
-            println!("bootable kernel image: {}", receipt.image_path);
-            println!("image sha256: {}", receipt.image_sha256);
-            println!("assurance scope: {}", receipt.assurance_scope);
-        }
-        return Ok(ExitCode::SUCCESS);
-    }
     if matches!(level, BuildLevel::L1) {
         let manifest = build::build_file(file, entry, sandbox, out, target)?;
         if json {
@@ -2526,8 +2458,7 @@ fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
 
     let verified_target = match target {
         BuildTarget::Std => crate::verified_build::VerifiedTarget::Std,
-        BuildTarget::Kernel => crate::verified_build::VerifiedTarget::Kernel,
-        BuildTarget::KernelImage => unreachable!("handled above"),
+        BuildTarget::Freestanding => crate::verified_build::VerifiedTarget::Freestanding,
     };
     let outcome = if composition_exports.is_empty() {
         crate::verified_build::build_file(file, exports, crate_name, out, verified_target)?
@@ -2574,29 +2505,6 @@ fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
 }
 
 fn run_verify_build(bundle: &Path, replay: bool, json: bool) -> Result<ExitCode, ForgeError> {
-    let is_kernel_image = bundle.extension().and_then(|value| value.to_str()) == Some("img")
-        || bundle
-            .file_name()
-            .and_then(|value| value.to_str())
-            .is_some_and(|value| value.ends_with(".receipt.json"));
-    if is_kernel_image {
-        let report = crate::kernel_image::validate_image(bundle, replay)?;
-        if json {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&report).map_err(|error| {
-                    ForgeError::RustcOutput {
-                        detail: format!("failed to serialize kernel-image validation: {error}"),
-                    }
-                })?
-            );
-        } else {
-            println!("valid bootable kernel image: {}", report.image);
-            println!("binding sha256: {}", report.binding_sha256);
-            println!("replayed: {}", report.replayed);
-        }
-        return Ok(ExitCode::SUCCESS);
-    }
     let report = crate::verified_build::validate_bundle(bundle, replay)?;
     if json {
         println!(
@@ -4009,7 +3917,6 @@ mod tests {
                 },
                 out: None,
                 target: BuildTarget::Std,
-                platform: None,
             })
         );
         // --no-sandbox opts out.
@@ -4080,7 +3987,7 @@ mod tests {
         ));
     }
 
-    // #197 (`.design/build/kernel-target.md` REQ-1): `--target std|kernel` parses to
+    // #197 (`.design/build/freestanding-target.md` REQ-1): `--target std|kernel` parses to
     // the codegen profile; the default is `Std`; an unknown / missing value is a
     // Usage error, never a silent default.
     #[test]
@@ -4093,10 +4000,10 @@ mod tests {
         };
         // The default (no `--target`) is the unchanged std profile.
         assert_eq!(target_of(&["build", "a.th"]), Some(BuildTarget::Std));
-        // `--target kernel` selects the freestanding profile.
+        // `--target freestanding` selects the freestanding profile.
         assert_eq!(
-            target_of(&["build", "a.th", "--target", "kernel"]),
-            Some(BuildTarget::Kernel)
+            target_of(&["build", "a.th", "--target", "freestanding"]),
+            Some(BuildTarget::Freestanding)
         );
         // `--target std` is the explicit-default form.
         assert_eq!(
@@ -4130,7 +4037,7 @@ mod tests {
                 "--crate-name",
                 "verified_a",
                 "--target",
-                "kernel",
+                "freestanding",
                 "--out",
                 "a.verified",
                 "--json"
@@ -4147,8 +4054,7 @@ mod tests {
                 json: true,
                 sandbox: build::SandboxConfig::default(),
                 out: Some(PathBuf::from("a.verified")),
-                target: BuildTarget::Kernel,
-                platform: None,
+                target: BuildTarget::Freestanding,
             })
         );
         assert_eq!(
@@ -4174,7 +4080,7 @@ mod tests {
                 "--compose-shell",
                 "probe_shell.rs",
                 "--target",
-                "kernel",
+                "freestanding",
             ]))
             .ok(),
             Some(Command::Build {
@@ -4188,8 +4094,7 @@ mod tests {
                 json: false,
                 sandbox: build::SandboxConfig::default(),
                 out: None,
-                target: BuildTarget::Kernel,
-                platform: None,
+                target: BuildTarget::Freestanding,
             })
         );
         for args in [
@@ -4216,78 +4121,6 @@ mod tests {
                 "probe_step",
                 "--compose-shell",
                 "probe_shell.rs",
-            ],
-        ] {
-            assert!(matches!(
-                parse_args(&argv(&args)),
-                Err(ForgeError::Usage(_))
-            ));
-        }
-    }
-
-    #[test]
-    fn parses_frozen_kernel_image_surface_and_rejects_incomplete_profiles() {
-        assert_eq!(
-            parse_args(&argv(&[
-                "build",
-                "kernel.th",
-                "--level",
-                "l3",
-                "--target",
-                "kernel-image",
-                "--platform",
-                "x86_64-pc-uefi-smp-v1",
-                "--compose-export",
-                "kernel_step",
-                "--compose-shell",
-                "platform_shell.rs",
-                "--out",
-                "dist/kernel.img",
-            ]))
-            .ok(),
-            Some(Command::Build {
-                file: PathBuf::from("kernel.th"),
-                level: BuildLevel::L3,
-                exports: Vec::new(),
-                composition_exports: vec!["kernel_step".to_string()],
-                composition_shells: vec![PathBuf::from("platform_shell.rs")],
-                crate_name: None,
-                entry: None,
-                json: false,
-                sandbox: build::SandboxConfig::default(),
-                out: Some(PathBuf::from("dist/kernel.img")),
-                target: BuildTarget::KernelImage,
-                platform: Some("x86_64-pc-uefi-smp-v1".to_string()),
-            })
-        );
-        for args in [
-            vec![
-                "build",
-                "kernel.th",
-                "--level",
-                "l3",
-                "--target",
-                "kernel-image",
-                "--compose-export",
-                "kernel_step",
-                "--compose-shell",
-                "platform_shell.rs",
-                "--out",
-                "dist/kernel.img",
-            ],
-            vec![
-                "build",
-                "kernel.th",
-                "--level",
-                "l3",
-                "--target",
-                "kernel-image",
-                "--platform",
-                "x86_64-pc-uefi-smp-v1",
-                "--compose-export",
-                "kernel_step",
-                "--compose-shell",
-                "platform_shell.rs",
             ],
         ] {
             assert!(matches!(

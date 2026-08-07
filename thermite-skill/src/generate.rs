@@ -64,7 +64,7 @@
 use thermite_spec::schemes::{SchemeResult, SchemeSig, StepShape};
 use thermite_spec::{ArgKind, CombinatorSig, ResultKind};
 use thermite_syntax::ast::{
-    BinOp, Effect, Expr, IndexArg, Item, Pattern, PlatformDomain, PrimType, SlicePat, Type, UnaryOp,
+    BinOp, Effect, Expr, IndexArg, Item, Pattern, PrimType, SlicePat, Type, UnaryOp,
 };
 use thermite_syntax::lexer::Span;
 
@@ -853,28 +853,6 @@ fn render_effect_arm(effect: &Effect) -> SkillFragment {
             description: "controls the terminal (raw mode via the `ioctl` syscall)",
             example: "fx term",
         },
-        Effect::Platform(domain) => match domain {
-            PlatformDomain::Boot => platform_fragment("platform(boot)"),
-            PlatformDomain::Memory => platform_fragment("platform(memory)"),
-            PlatformDomain::Mmio => platform_fragment("platform(mmio)"),
-            PlatformDomain::Pio => platform_fragment("platform(pio)"),
-            PlatformDomain::Irq => platform_fragment("platform(irq)"),
-            PlatformDomain::Cpu => platform_fragment("platform(cpu)"),
-            PlatformDomain::Atomic => platform_fragment("platform(atomic)"),
-            PlatformDomain::Smp => platform_fragment("platform(smp)"),
-            PlatformDomain::Dma => platform_fragment("platform(dma)"),
-            PlatformDomain::Clock => platform_fragment("platform(clock)"),
-            PlatformDomain::Entropy => platform_fragment("platform(entropy)"),
-            PlatformDomain::Power => platform_fragment("platform(power)"),
-        },
-    }
-}
-
-fn platform_fragment(fragment: &'static str) -> SkillFragment {
-    SkillFragment {
-        fragment,
-        description: "uses one frozen kernel platform authority domain",
-        example: "fx platform(memory)",
     }
 }
 
@@ -1138,18 +1116,6 @@ fn effect_inventory() -> Vec<Effect> {
         Effect::Panic,
         Effect::Diverge,
         Effect::Term,
-        Effect::Platform(PlatformDomain::Boot),
-        Effect::Platform(PlatformDomain::Memory),
-        Effect::Platform(PlatformDomain::Mmio),
-        Effect::Platform(PlatformDomain::Pio),
-        Effect::Platform(PlatformDomain::Irq),
-        Effect::Platform(PlatformDomain::Cpu),
-        Effect::Platform(PlatformDomain::Atomic),
-        Effect::Platform(PlatformDomain::Smp),
-        Effect::Platform(PlatformDomain::Dma),
-        Effect::Platform(PlatformDomain::Clock),
-        Effect::Platform(PlatformDomain::Entropy),
-        Effect::Platform(PlatformDomain::Power),
     ]
 }
 

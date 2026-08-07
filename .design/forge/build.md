@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 4f266ec27c8b5bab0e66de73c5450b2fc40c3ca891fdfea97ac7163422f06e46
+audited-content-sha256: 171858be2a5df849043d667b857f6ad08a94ae6561b1df814de77d3c0f5faa3b (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 4f266ec27c8b5bab0e66de73c5450b2fc40c3ca891fdfea97ac7163422f06e46)
 governs: forge/src/build.rs
 thesis-refs:
   - thermite-design.md §3
@@ -33,7 +33,7 @@ the #57 seccomp sandbox consumes.
 This component is SHIPPED: `forge/src/build.rs` implements every REQ below (see the
 REQ status table), grounded against real `rustc` (see Verification). Since the
 bootstrap pin the pipeline also gained the #195 open-hole refusal and the
-`--target kernel` fork (#197/#198 — governed by `.design/build/kernel-target.md`,
+`--target freestanding` fork (#197/#198 — governed by `.design/build/freestanding-target.md`,
 not this doc); see the Amendment below.
 
 > **Appendix B note.** `forge build` is **not** in the v0.1 command surface listed in
@@ -59,8 +59,8 @@ not this doc); see the Amendment below.
 > 3. *Post-pin drift* (`5cda1db8..HEAD`, 3 commits: #195/#197/#198): `pub fn
 >    build_file in build.rs` and `pub fn emit_source in build.rs` gained a trailing
 >    `target: BuildTarget` parameter, and `build_file` now REFUSES (a) ambient-`fx`
->    fns / `--entry` under `--target kernel` (#197/#198 — governed by
->    `.design/build/kernel-target.md`, NOT this doc) and (b) any open-holed item
+>    fns / `--entry` under `--target freestanding` (#197/#198 — governed by
+>    `.design/build/freestanding-target.md`, NOT this doc) and (b) any open-holed item
 >    BEFORE lowering (#193/#195 — the shared `goal_repl::open_hole_reason`, governed
 >    by `.design/forge/goal-repl.md`). The std-target emission this doc governs is
 >    byte-unchanged (`kernel_target::default_target_source_is_byte_identical_to_no_target_flag`).

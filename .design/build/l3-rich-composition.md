@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: cef3f68835ed4cd28d8457fde798db3026de833b6e31fb7230ac7b0e68206de4
+audited-content-sha256: 948855c1f8be66f5afed04277dbdd57e0be065fe843cff052df561dcff5dc7c3 (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: cef3f68835ed4cd28d8457fde798db3026de833b6e31fb7230ac7b0e68206de4)
 decision: one canonical Verus crate with crate-visible rich Thermite roots and public shell exports
 issue: github:dollspace-gay/Thermite#104
 governs:

@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 79022d928164cbe53fa1393a2b73f1ab45ee25bd9a63231679aadb2536140474
+audited-content-sha256: 7854c7f56a9d5f2feb3f82310e7ca6bec25a6c58dffe7281830e76937992a48a (re-pinned 2026-08-07 for the comment that removal orphaned: dropping `Effect::Platform(_)` from `effect_row_is_maximal` left its two-line comment dangling before the closing brace, and rustfmt resolves that by reflowing it onto the preceding arm, where it then falsely describes `Effect::Term`; the comment is deleted, no behavior changed. prior: 9e08be813bc4f9406900c1fa06a90e71b6248e242b547fadaeb583ca3335d04d, itself re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 79022d928164cbe53fa1393a2b73f1ab45ee25bd9a63231679aadb2536140474)
 governs: forge/src/vacuity.rs
 thesis-refs:
   - thermite-design.md §7

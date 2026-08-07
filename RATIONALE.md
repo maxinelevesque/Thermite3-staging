@@ -746,20 +746,20 @@ README's "Deferred" list and the verified-docs coverage sections.
 
 ## The kernel target
 
-**Definition.** `forge build --target kernel`, a freestanding `no_std + alloc`,
+**Definition.** `forge build --target freestanding`, a freestanding `no_std + alloc`,
 OS-less library build profile, the road toward a verified microkernel (§13).
 
 **Mechanism.** A codegen-profile fork of `forge build` (`forge/src/build.rs`,
-`enum BuildTarget { Std, Kernel }`): emits a `#![no_std]` + `extern crate alloc;`
+`enum BuildTarget { Std, Freestanding }`): emits a `#![no_std]` + `extern crate alloc;`
 rlib (`--crate-type=rlib -C panic=abort`), reusing `thermite_lower::lower_l1`'s
 output verbatim (the L1 checks + `TString`/`TVec`/`TMap` wrappers resolve against
 `alloc`), with **no** `main` and **no** seccomp sandbox. It adds one new reject:
-`reject_ambient_fx_for_kernel` scans every function's `transitive_fx` for
+`reject_ambient_fx_for_freestanding` scans every function's `transitive_fx` for
 `KERNEL_REJECTED_FX = ["read","write","net","term","time","rand"]` and refuses
 before codegen, because kernel code has no ambient userspace syscall surface (and
 no ambient clock/entropy). The admit set is exactly `pure`/`alloc`/`panic`/`diverge`.
 The L3 verification path is *target-independent* (untouched). See
-[`.design/build/kernel-target.md`](.design/build/kernel-target.md).
+[`.design/build/freestanding-target.md`](.design/build/freestanding-target.md).
 
 **Why this design.** Because rustc is the codegen backend (§3), a "target" is a
 rustc-invocation + crate-prelude choice rather than a compiler change, so the same
@@ -842,7 +842,7 @@ and check [1]'s coverage grows.
   REQ-2.
 - **The microkernel**: the kernel target's destination, a verified, OS-less
   microkernel linked from proven Thermite rlibs (§13).
-  [`.design/build/kernel-target.md`](.design/build/kernel-target.md).
+  [`.design/build/freestanding-target.md`](.design/build/freestanding-target.md).
 
 ---
 

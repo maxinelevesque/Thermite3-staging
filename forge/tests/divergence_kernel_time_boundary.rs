@@ -1,24 +1,24 @@
 //! Re-pinned to the amended authority (orchestrator decision, #198; the #186
-//! precedent): `forge build --target kernel` on the `fx time` corpus program
+//! precedent): `forge build --target freestanding` on the `fx time` corpus program
 //! `conformance/effect_link_demo.th` (`#[boundary("os::now")] fn now`, `fx time`)
 //! now emits the structured named refusal — exit nonzero, no artifact, naming
 //! `time` — not a leaked raw rustc `E0433`, and not a build.
 //!
 //! Why (the amendment): the original critic pin (#198, against forge at 14070625)
-//! observed `forge build conformance/effect_link_demo.th --target kernel` leak a raw
+//! observed `forge build conformance/effect_link_demo.th --target freestanding` leak a raw
 //! `error[E0433]: cannot find module or crate `std`` from the emitted `mod os`
 //! `std::time::SystemTime::now()` wrapper inside the `#![no_std]` kernel crate. That
 //! falsified the design's OQ-2 premise ("`time`/`rand` are benign for the kernel —
 //! no syscall mapping"): an admitted-effect boundary carries a std-bodied wrapper.
 //!
-//! Amended authority (R-CHAR-3 trace — `.design/build/kernel-target.md`):
+//! Amended authority (R-CHAR-3 trace — `.design/build/freestanding-target.md`):
 //!   - OQ-2 (resolved — REJECT; amended by #198): "`time`/`rand` MOVE INTO the reject
 //!     set: the v1 kernel admit set is now EXACTLY `pure`/`alloc`/`panic`/`diverge`,
 //!     and `KERNEL_REJECTED_FX = [\"read\",\"write\",\"net\",\"term\",\"time\",\"rand\"]`."
 //!     A kernel has no ambient clock (`clock_gettime`) or entropy (`getrandom`) any
 //!     more than it has `read`/`write` (the critic's own observation).
 //!   - REQ-3: a kernel refusal is "a named-effect, nonzero-exit, NO-artifact
-//!     structured `ForgeError`" — so `effect_link_demo.th --target kernel` returns
+//!     structured `ForgeError`" — so `effect_link_demo.th --target freestanding` returns
 //!     a refusal naming `time`, exit 2, no artifact, and no raw `E0433` reaches
 //!     the user (the std-bodied wrapper is refused before codegen).
 //!
@@ -40,7 +40,7 @@ fn corpus_dir() -> PathBuf {
         .join("conformance")
 }
 
-/// `.design/build/kernel-target.md` OQ-2 (amended by #198) + REQ-3: `time` is now on
+/// `.design/build/freestanding-target.md` OQ-2 (amended by #198) + REQ-3: `time` is now on
 /// the kernel reject list (`KERNEL_REJECTED_FX`), so the `fx time` corpus program
 /// `conformance/effect_link_demo.th` must be refused with the structured named-effect
 /// error (exit nonzero, no artifact, naming `time`) — not built, and not a
@@ -53,7 +53,7 @@ fn admitted_time_fx_boundary_is_refused_for_kernel() {
         .arg("build")
         .arg(&demo)
         .arg("--target")
-        .arg("kernel")
+        .arg("freestanding")
         .arg("--json")
         .output()
         .unwrap_or_else(|e| panic!("spawning `forge build` failed: {e}"));
@@ -64,7 +64,7 @@ fn admitted_time_fx_boundary_is_refused_for_kernel() {
     // with the structured refusal (not exit 0, not a leaked E0433).
     assert!(
         !out.status.success(),
-        "`forge build --target kernel` on the `fx time` corpus program must be REFUSED \
+        "`forge build --target freestanding` on the `fx time` corpus program must be REFUSED \
          (kernel-target.md OQ-2 amended by #198: time/rand are REJECTED — std-bodied \
          effect wrappers, no kernel ambient clock/entropy):\nstdout:{stdout}\nstderr:{stderr}"
     );

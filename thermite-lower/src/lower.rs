@@ -280,7 +280,7 @@ impl From<L3ExportVisibility> for L3FnVisibility {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum L3LibraryTarget {
     Std,
-    Kernel,
+    Freestanding,
 }
 
 impl std::fmt::Display for LowerError {
@@ -341,7 +341,6 @@ fn effect_atom_name(effect: &thermite_syntax::ast::Effect) -> String {
         Effect::Panic => "panic".to_string(),
         Effect::Diverge => "diverge".to_string(),
         Effect::Term => "term".to_string(),
-        Effect::Platform(domain) => format!("platform({})", domain.surface()),
     }
 }
 
@@ -733,17 +732,17 @@ fn lower_with_profile(
     });
     let mut out = String::new();
     if let Some((_, target)) = &library {
-        if matches!(target, L3LibraryTarget::Kernel) {
+        if matches!(target, L3LibraryTarget::Freestanding) {
             out.push_str("#![no_std]\n");
         }
         out.push_str("#![crate_type = \"rlib\"]\n");
-        if matches!(target, L3LibraryTarget::Kernel) && program_needs_kernel_alloc(program) {
+        if matches!(target, L3LibraryTarget::Freestanding) && program_needs_kernel_alloc(program) {
             out.push_str("extern crate alloc;\nuse alloc::vec::Vec;\n");
         }
     }
     if matches!(
         library.as_ref().map(|(_, target)| target),
-        Some(L3LibraryTarget::Kernel)
+        Some(L3LibraryTarget::Freestanding)
     ) {
         out.push_str("use verus_builtin::*;\nuse verus_builtin_macros::*;\n");
     } else {
@@ -790,7 +789,7 @@ fn lower_with_profile(
     // Empty when the program uses no `Vec` (byte-stable for the existing corpus).
     let kernel_minimal_collections = matches!(
         library.as_ref().map(|(_, target)| target),
-        Some(L3LibraryTarget::Kernel)
+        Some(L3LibraryTarget::Freestanding)
     );
     let vec_wrappers = emit_vec_wrappers(program, kernel_minimal_collections)?;
     out.push_str(&vec_wrappers);

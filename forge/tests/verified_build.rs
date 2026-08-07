@@ -474,7 +474,7 @@ fn kernel_bundle_final_links_into_a_separate_no_std_consumer() {
         "--crate-name",
         "kernel_identity",
         "--target",
-        "kernel",
+        "freestanding",
         "--out",
         &bundle_s,
     ]));
@@ -561,7 +561,7 @@ fn every_strict_refusal_publishes_nothing() {
         (
             "kernel_ambient.th",
             "reads_clock_without_using_it",
-            Some("kernel"),
+            Some("freestanding"),
             "ambient",
         ),
         (

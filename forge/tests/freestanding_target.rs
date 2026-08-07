@@ -1,13 +1,13 @@
-//! Conformance test for `forge build --target kernel` (issue #197) against the
+//! Conformance test for `forge build --target freestanding` (issue #197) against the
 //! external truth: the real `rustc` compiler (a freestanding `#![no_std]`
-//! invocation) + the hand-derived design `.design/build/kernel-target.md`. The
+//! invocation) + the hand-derived design `.design/build/freestanding-target.md`. The
 //! kernel target emits a freestanding `no_std + alloc` library rlib (no `main`, no
 //! seccomp prelude, `panic=abort`) suitable for linking into a verified
 //! microkernel, and refuses a fn whose transitive `fx` carries an ambient-syscall
 //! effect (`read`/`write`/`net`/`term`).
 //!
 //! Verification is by the design's ACs:
-//!   - AC-1 — `forge build --target kernel sum.th` (the pure corpus `sum`) emits a
+//!   - AC-1 — `forge build --target freestanding sum.th` (the pure corpus `sum`) emits a
 //!     `#![no_std]` + `extern crate alloc;` rlib and rustc exits 0; the emitted
 //!     source contains `#![no_std]`/`extern crate alloc;` and no `fn main` / no
 //!     seccomp prelude (`PR_SET_SECCOMP`).
@@ -29,7 +29,7 @@
 //! `thermite_lower::lower_l1`'s output — independently (the prelude is taken from the
 //! design doc, not copied from forge output — R-CHAR-3), then shells the real `rustc`
 //! with `-C panic=abort` + a test panic_handler/allocator stub. This is the
-//! N-version check: forge's own `--target kernel` also compiles the source internally
+//! N-version check: forge's own `--target freestanding` also compiles the source internally
 //! (AC-1, exit 0), and the reconstructed-source compile cross-checks the no_std-ness.
 //!
 //! `rustc` is always installed (no skip). `unwrap`/`expect`/`panic!` are fine here —
@@ -63,7 +63,7 @@ fn run_forge_build(args: &[&str]) -> (bool, String, String) {
     )
 }
 
-/// The design-pinned freestanding prelude (`.design/build/kernel-target.md` REQ-2),
+/// The design-pinned freestanding prelude (`.design/build/freestanding-target.md` REQ-2),
 /// transcribed from the design — not copied from forge output (R-CHAR-3). The kernel
 /// crate is `#![no_std]` with `extern crate alloc;` and the bare `Vec` resolved from
 /// the alloc prelude; `String` is the L1 emission's `use TString as String;` alias
@@ -163,13 +163,13 @@ fn write_fixture(name: &str, body: &str) -> PathBuf {
 // ---- AC-1: pure fn → kernel rlib compiles no_std --------------------------------
 
 #[test]
-fn pure_fn_builds_no_std_kernel_rlib() {
+fn pure_fn_builds_no_std_freestanding_rlib() {
     let sum = corpus_dir().join("sum.th");
     let (ok, stdout, stderr) =
-        run_forge_build(&[sum.to_str().unwrap(), "--target", "kernel", "--json"]);
+        run_forge_build(&[sum.to_str().unwrap(), "--target", "freestanding", "--json"]);
     assert!(
         ok,
-        "forge build --target kernel sum.th must succeed (rustc exit 0):\n\
+        "forge build --target freestanding sum.th must succeed (rustc exit 0):\n\
          stdout:{stdout}\nstderr:{stderr}"
     );
 
@@ -273,10 +273,11 @@ fn ambient_read_fx_fn_is_refused() {
     // The corpus `effect_demo.th` carries `read_small`/`read_doubled` with `fx
     // read(stdin)` — an ambient userspace syscall the kernel target refuses.
     let demo = corpus_dir().join("effect_demo.th");
-    let (ok, stdout, stderr) = run_forge_build(&[demo.to_str().unwrap(), "--target", "kernel"]);
+    let (ok, stdout, stderr) =
+        run_forge_build(&[demo.to_str().unwrap(), "--target", "freestanding"]);
     assert!(
         !ok,
-        "forge build --target kernel on a `fx read` program must FAIL (no artifact):\n\
+        "forge build --target freestanding on a `fx read` program must FAIL (no artifact):\n\
          stdout:{stdout}\nstderr:{stderr}"
     );
     assert!(
@@ -296,7 +297,8 @@ fn ambient_write_net_term_fx_refuse_identically() {
         "write_fx",
         "#[boundary(\"os::write\")] fn put() -> bool\n  req true\n  ens true\n  fx  write(stdout)\n  ;\n",
     );
-    let (ok_w, _so, se_w) = run_forge_build(&[write_th.to_str().unwrap(), "--target", "kernel"]);
+    let (ok_w, _so, se_w) =
+        run_forge_build(&[write_th.to_str().unwrap(), "--target", "freestanding"]);
     let _ = std::fs::remove_file(&write_th);
     assert!(
         !ok_w,
@@ -309,7 +311,8 @@ fn ambient_write_net_term_fx_refuse_identically() {
         "net_fx",
         "#[boundary(\"os::net\")] fn dial() -> bool\n  req true\n  ens true\n  fx  net(socket)\n  ;\n",
     );
-    let (ok_n, _so2, se_n) = run_forge_build(&[net_th.to_str().unwrap(), "--target", "kernel"]);
+    let (ok_n, _so2, se_n) =
+        run_forge_build(&[net_th.to_str().unwrap(), "--target", "freestanding"]);
     let _ = std::fs::remove_file(&net_th);
     assert!(!ok_n, "a `fx net` fn must be refused for the kernel target");
     assert!(se_n.contains("net"), "the refusal names `net`:\n{se_n}");
@@ -319,7 +322,8 @@ fn ambient_write_net_term_fx_refuse_identically() {
         "term_fx",
         "#[boundary(\"os::raw_mode_on\")] fn raw() -> bool\n  req true\n  ens true\n  fx  term\n  ;\n",
     );
-    let (ok_t, _so3, se_t) = run_forge_build(&[term_th.to_str().unwrap(), "--target", "kernel"]);
+    let (ok_t, _so3, se_t) =
+        run_forge_build(&[term_th.to_str().unwrap(), "--target", "freestanding"]);
     let _ = std::fs::remove_file(&term_th);
     assert!(
         !ok_t,
@@ -329,7 +333,7 @@ fn ambient_write_net_term_fx_refuse_identically() {
 }
 
 #[test]
-fn pure_and_alloc_fx_fns_build_for_kernel() {
+fn pure_and_alloc_fx_fns_build_for_freestanding() {
     // `sum` is `fx pure` → admitted (built above). `string_demo` carries `fx alloc`
     // fns → admitted (alloc is on the kernel admit list, OQ-2) and the `use TString
     // as String;` alias compiles under no_std (it does not collide with the prelude,
@@ -338,7 +342,7 @@ fn pure_and_alloc_fx_fns_build_for_kernel() {
     let (ok, stdout, stderr) = run_forge_build(&[
         string_demo.to_str().unwrap(),
         "--target",
-        "kernel",
+        "freestanding",
         "--json",
     ]);
     assert!(
@@ -350,21 +354,21 @@ fn pure_and_alloc_fx_fns_build_for_kernel() {
     assert_eq!(v["crate_type"], "rlib");
 }
 
-// ---- AC-3: --target kernel + --entry is a usage error ----------------------------
+// ---- AC-3: --target freestanding + --entry is a usage error ----------------------------
 
 #[test]
-fn kernel_target_with_entry_is_usage_error() {
+fn freestanding_target_with_entry_is_usage_error() {
     let sum = corpus_dir().join("sum.th");
     let (ok, stdout, stderr) = run_forge_build(&[
         sum.to_str().unwrap(),
         "--target",
-        "kernel",
+        "freestanding",
         "--entry",
         "sum",
     ]);
     assert!(
         !ok,
-        "`--target kernel --entry` must be a usage error (a kernel crate is a \
+        "`--target freestanding --entry` must be a usage error (a kernel crate is a \
          library):\nstdout:{stdout}\nstderr:{stderr}"
     );
     assert!(

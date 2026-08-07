@@ -386,7 +386,7 @@ fn assemble(
     }));
     let lower_target = match target.target {
         VerifiedTarget::Std => L3LibraryTarget::Std,
-        VerifiedTarget::Kernel => L3LibraryTarget::Kernel,
+        VerifiedTarget::Freestanding => L3LibraryTarget::Freestanding,
     };
     let lowered_thermite =
         thermite_lower::lower_l3_library(&selected_program, &lower_exports, lower_target)

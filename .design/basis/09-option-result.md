@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 49c3911fe674113b046c0056a739441f36e45cd4a445001ede0ebedf327bd89e (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: cb269714cf940c160499d742c3fab8dde4e4edf85b66706bf40a65430b44092c (re-pinned 2026-08-07 for the comment that removal orphaned: dropping `Effect::Platform(_)` from `effect_row_is_maximal` left its two-line comment dangling before the closing brace, and rustfmt resolves that by reflowing it onto the preceding arm, where it then falsely describes `Effect::Term`; the comment is deleted, no behavior changed. prior: 50c270e352c0dec450568cd62093353eac8b4836704cb267d9a105e4e3487c54, itself re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 49c3911fe674113b046c0056a739441f36e45cd4a445001ede0ebedf327bd89e)
 governs: thermite-syntax/src/ast.rs
 governs: thermite-syntax/src/parser.rs
 governs: thermite-spec/src/validator.rs
