@@ -159,9 +159,37 @@ distinction a textual count cannot make.
 | `req true` | 100 |
 | `ens true` | 2 |
 
-The volume is not there. **1,527 further clause sites live inside Rust string
-literals**, across 450 `.th` fragments in 111 test files. Three quarters of the
-migration is in the test suite.
+The volume is not there. **2,153 further clause sites live inside Rust string
+literals**, across 596 `.th` fragments. And a third population this proposal
+originally missed entirely: **210 clause sites in 57 Thermite programs stored as
+JSON string values** under a `program` key in 18 conformance case files, parsed
+by the test suite at run time. `.fixture` files carry none. No `.cert.json`
+appears in the scan either — the clause keywords there are prose inside
+diagnostics and do not parse — so certificates really are unaffected, as this
+proposal said.
+
+**Total: 2,910 clause sites, not the 2,074 this document first claimed.** Four
+fifths of the migration is outside the `.th` corpus.
+
+> **Revised, and the revision is the point.** The first published figures were
+> 547 + 1,527 = 2,074. The `.th` count was right; the rest was undercounted by
+> the tooling that produced it, in four ways that share a shape — each one
+> silent, none of them arithmetic. A literal was decided to be a *candidate*
+> before the front end ever saw it, by a line-anchored regex, so a literal
+> opening with an attribute (`#[boundary(...)] fn ...`) or spanning source lines
+> via `\`-continuations was never considered at all: **87 literals, 353 sites**.
+> The literal scanner treated every apostrophe as opening a char literal, so a
+> Rust lifetime (`&'static`, `impl<'a>`) desynchronised it and every string after
+> one in that file was never yielded: **66 literals, 273 sites**. `proof` and
+> `witness` were missing from the declaration vocabulary the scan matched on:
+> **3 sites**. And the JSON population above was named by nobody.
+>
+> None of these appear as declines. They are invisible — neither migrated nor
+> refused, with no counter moving. That is worth stating in the proposal rather
+> than the implementation, because it is the same failure this document already
+> warns about under *A note on checking*, one stage earlier: a tool that
+> enumerates its declines honestly still reports nothing about a population it
+> filtered out before the decline logic ran.
 
 ## The compiler change
 
@@ -174,7 +202,22 @@ to check the estimate.
 | `TokKind` variants | 5, keeping their names, so 53 downstream references do not move |
 | `parse_contract` (`parser.rs:1420`) | accept the row first, one or more `requires`, `measures` last |
 | `validate_segments` (`address.rs:331`, `:347`) | 2 lines |
+| clause names CONSTRUCTED as data | 3 sites, in 11 files — see below |
 | clause names in diagnostic strings | several in `parser.rs`, user-facing |
+
+**A row this table first omitted.** A clause name is not only a keyword; it is
+also an *address segment*, and the front end builds those as strings. Three
+places construct one: the loop measure at `address.rs:286`
+(`format!("{loop_addr}.dec")`), the `ClauseSelector` family strings in
+`parse_clause_selector`, and their doc comments. None is a keyword, so none is
+visible to a rename scoped by `keyword_kind` — and all of them must agree with
+`validate_segments` or the address stops resolving. Missing them is not
+cosmetic: `addresses_of` emits `sum.loop#1.dec` and `f.proof.ens#2`, which the
+same crate's `resolve` rejects as `Malformed` under the migrated allowlist,
+while the correct spelling returns `NotFound`. The clause is unaddressable in
+either spelling, in a module whose own doc says resolution is bidirectional and
+never panics. The same names are pinned in test expectations and printed in
+`forge edit`'s help text across 11 files.
 
 **The spike measured 63 insertions and 62 deletions across five files** in
 `thermite-syntax` — lexer, parser, addresses, AST and lib. `fx` is removed as a
@@ -219,9 +262,10 @@ Measured on a `git archive` export of the pin:
 |---|---|
 | `.th` corpus | **66 of 67 migrate**, with no clause keyword surviving |
 | the one decline | `conformance/parse/recover_per_item.th`, whose purpose is to not parse |
-| `.th` fragments in Rust literals | **450 migrate**, carrying 1,527 clause sites |
-| declined, carrying no clause keyword | 340, where declining costs nothing |
+| `.th` fragments in Rust literals | **596 migrate**, carrying 2,153 clause sites |
+| declined, byte-identical through the rewriter | 857 |
 | declined and clause-bearing | **43**: `format!` templates, assertion prose, and fixtures invalid on purpose |
+| Thermite programs in JSON conformance cases | **57 migrate**, carrying 210 clause sites across 18 files |
 
 Those 43 are a hand-reviewable list rather than a residue, and they are listed in
 the implementation PR rather than here.
