@@ -33,8 +33,8 @@ gauntlet:
 	cargo test --workspace
 	cargo clippy --workspace --all-targets -- -D warnings
 	cargo fmt --all --check
-	python3 tooling/req-status.py
-	tooling/reqs check
+	uv run python tooling/req-status.py
+	uv run tooling/reqs check
 
 check:
 	cargo build --workspace
@@ -83,31 +83,31 @@ doc-drift-ci:
 	cleanup() { git worktree remove -f "$$tmp_dir" >/dev/null 2>&1 || rm -rf "$$tmp_dir"; }; \
 	trap cleanup EXIT HUP INT TERM; \
 	git worktree add --detach --quiet "$$tmp_dir" "$$merge_sha"; \
-	python3 "$$tmp_dir/tooling/doc-drift.py" --root "$$tmp_dir"
+	uv run python "$$tmp_dir/tooling/doc-drift.py" --root "$$tmp_dir"
 
 doc-drift-worktree:
-	@python3 tooling/doc-drift.py
+	@uv run python tooling/doc-drift.py
 
 # The gate's own oracle fixture suite (hand-authored expected values, R-CHAR-3).
 doc-drift-test:
-	@python3 -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s tooling/tests -v
 
 # Source-comment REQ-status inventory/contradiction lint. Complements
 # doc-drift's audited-sha freshness check by catching semantic contradictions in
 # `//! | REQ | SHIPPED/NOT-STARTED | evidence |` rows.
 req-status:
-	@python3 tooling/req-status.py
+	@uv run python tooling/req-status.py
 
 req-status-test:
-	@python3 -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s tooling/tests -v
 
 # Canonical REQ registry + generated status views. `--check` validates the
 # machine-readable registry and fails if checked-in generated views are stale.
 req-registry:
-	@tooling/reqs check
+	@uv run tooling/reqs check
 
 req-registry-test:
-	@python3 -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s tooling/tests -v
 
 # The gate that guards the gates (crosslink #93). doc-drift pins the CONTENT of
 # what the routes govern; this asserts the two agent-facing hooks are actually
@@ -116,7 +116,7 @@ req-registry-test:
 # Not part of `make audit`: hook wiring is a development-discipline invariant,
 # not a link in the proof-trust chain (the doc-drift decision-5 precedent).
 control-plane:
-	@python3 tooling/control-plane-check.py
+	@uv run python tooling/control-plane-check.py
 
 control-plane-test:
-	@python3 -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s tooling/tests -v

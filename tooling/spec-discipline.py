@@ -89,6 +89,31 @@ def write_state(repo_root, state):
 
 # --- route table -------------------------------------------------------
 
+def require_toml_reader():
+    """Refuse to run without a TOML reader, naming the real cause.
+
+    Without `tomllib` the route table loads EMPTY, and an empty table makes
+    every gated file look unrouted — so the hook blocks with "no route table
+    entry matches", which sends the reader to `spec-routes.toml` to add a route
+    that is already there. Fail closed, but say why. `tomllib` is 3.11+; the
+    repo pins its interpreter in `.python-version` and CI and `make` reach it
+    through `uv run`.
+    """
+    if tomllib is None:
+        print(
+            "spec-discipline: no TOML reader (tomllib is 3.11+, this is "
+            f"{sys.version_info.major}.{sys.version_info.minor}).\n"
+            "\n"
+            "The route table cannot be read, so every gated path would look\n"
+            "unrouted and every edit would be refused for the wrong reason.\n"
+            "\n"
+            "Run the hook under the pinned interpreter:\n"
+            "\n"
+            "  uv run python tooling/spec-discipline.py\n"
+        )
+        sys.exit(2)
+
+
 def load_routes(repo_root):
     p = routes_path(repo_root)
     if not p.exists() or not tomllib:
@@ -247,6 +272,7 @@ def main():
     if not is_gated_path(rel):
         sys.exit(0)
 
+    require_toml_reader()
     routes = load_routes(repo_root)
     matched = find_routes(rel, routes)
 
