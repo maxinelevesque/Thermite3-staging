@@ -95,7 +95,7 @@ contracts (symbol anchors into the example sources); the held-out suites target 
 Compose `fn fields(s: String, sep: u64) -> Vec<String>` (`examples/parser/parse_lines.th`,
 ens `result.len() == 1 + count_sep(s, sep)`) → the calculator's parse/add front
 (`fn add(a: String, b: String) -> Option<u64>` in `examples/calculator/calc.th`, req
-`all_digits(a) && a.len() >= 1 && parse_be(a) <= 9223372036854775807 && ...`, ens pinning
+`all_digits(a) && a.len() >= 1 && parse_be(a) <= 9223372036854775807 && ...`, ensures pinning
 `Some(parse_be(a) + parse_be(b))`) → `fn format(n: u64) -> String`
 (`examples/formatter/format.th`, ens `parse_be(result) == n`). **Task:** given a two-field
 digit CSV line (`"2,3"`), return the formatted sum (`"5"`); malformed input (wrong field
@@ -104,23 +104,23 @@ task statement.
 
 Designed seams: (a) the **separator representation mismatch** — `fields` takes the
 separator as a **byte** (`sep: u64`, `','` = 44) while `has_sep(s: &String, sep: &String)`
-takes it as a **String**; (b) `add`'s `req` chain (`all_digits` excludes the empty field
+takes it as a **String**; (b) `add`'s `requires` chain (`all_digits` excludes the empty field
 `"2,,3"` only via `a.len() >= 1`; the `parse_be(_) <= i64::MAX` bound excludes overflow);
 (c) the exact-field-count obligation derived from `fields`' count ens.
 
 ### T2 — `calc_insert`: the calculator embedded in the editor
 
 Compose the editor's verified edit core (`fn insert_str(b: Buffer, ins: String) -> Buffer`
-in `examples/editor/editor.th`, req `b.text.len() + ins.len() <= 1_000_000`, ens exact
-text-growth and cursor-advance; `struct Buffer ... inv cursor <= text.len() && text.len()
-<= 1_000_000`) with the calculator's `add_vals` (req each operand `<= 9223372036854775807`,
-ens pins the sum and forbids `None`) and the formatter's decimal emission. **Task:** given
+in `examples/editor/editor.th`, req `b.text.len() + ins.len() <= 1_000_000`, ensures exact
+text-growth and cursor-advance; `struct Buffer ... keeps cursor <= text.len() && text.len()
+<= 1_000_000`) with the calculator's `add_vals` (requires each operand `<= 9223372036854775807`,
+ensures pins the sum and forbids `None`) and the formatter's decimal emission. **Task:** given
 a `Buffer` and two `u64` operands, insert the formatted decimal sum at the cursor,
 preserving the `Buffer` invariant; reject (no-op or loud error per the task statement) when
 the insertion would exceed capacity.
 
-Designed seams: (a) the **capacity obligation** — `insert_str`'s req needs an UPPER bound
-on the formatted sum's length, but `format`'s ens gives only a length FLOOR
+Designed seams: (a) the **capacity obligation** — `insert_str`'s requires needs an UPPER bound
+on the formatted sum's length, but `format`'s ensures gives only a length FLOOR
 (`result.len() >= 1`); the ≤20-digit u64 bound lives in the C4 `u64_to_string` contract
 (the `render_frame` discharge precedent, blocker #105) and the composer must find and
 thread it; (b) the near-capacity boundary (`text.len() = 999_981` + a 20-digit sum); (c)
@@ -136,10 +136,10 @@ convention). **Task:** produce the status string for any valid `Buffer`.
 
 Designed seams: (a) the **0-based/1-based off-by-one**, pinned by `to_1based`'s exact ens;
 (b) the **strict-bound boundary** — `to_1based` requires `x < 1_000_000`, but
-`cursor_row`'s ens gives only `result <= b.cursor` and the `Buffer` invariant allows
+`cursor_row`'s ensures gives only `result <= b.cursor` and the `Buffer` invariant allows
 `cursor == text.len() == 1_000_000` (an all-newline buffer makes the row hit exactly
 1_000_000), so the composition's precondition is NOT dischargeable for every valid
-`Buffer` — the composer must either narrow its own req or clamp, and a counterexample at
+`Buffer` — the composer must either narrow its own requires or clamp, and a counterexample at
 the exact boundary is what `forge check` surfaces; (c) col-after-newline (col resets to 0
 at a line start — `spec_line_start` jumps to `i + 1` past a newline).
 
@@ -155,7 +155,7 @@ deliberately excluded so neither arm touches trusted I/O).
 **Arm A — contract-carrying (the Thermite discipline).** The agent receives:
 `THERMITE.skill.md` (the §10 skill — the language onboarding IS part of the system under
 test), the task statement, and the **contract pack**: each needed component's signature +
-`req`/`ens`/`fx` + the named spec fns its contracts mention (`parse_be`, `all_digits`,
+`!`/`requires`/`ensures` + the named spec fns its contracts mention (`parse_be`, `all_digits`,
 `count_sep`, `contains_sub`, `spec_line_start`, the C4 length bound) — **bodies withheld**
 (this operationalizes pillar §2.6 literally: the caller composes through the contract,
 never the body). The agent writes the composed Thermite `fn`(s); the harness concatenates
@@ -169,7 +169,7 @@ verbatim, and the **signature pack**: the same components as an opaque pre-compi
 library (built by the harness from the SAME lowered component sources, with the L1 runtime
 contract checks COMPILED OUT — the baseline must not silently inherit contract enforcement;
 this is the "normal crates.io dependency" condition) with bare Rust signatures + one-line
-doc comments (no `req`/`ens`/`fx`). The agent writes conventional Rust glue plus its own
+doc comments (no `!`/`requires`/`ensures`). The agent writes conventional Rust glue plus its own
 `#[cfg(test)]` suite. The arm's gate: its own tests green. Compose-time defects = its own
 test failures during the session.
 

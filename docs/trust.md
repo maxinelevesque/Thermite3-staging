@@ -2,11 +2,11 @@
 
 ## The runtime cage
 
-`fx` is enforced at runtime as well as statically. When you build a binary,
+`!` is enforced at runtime as well as statically. When you build a binary,
 Thermite derives a syscall filter (seccomp-BPF, the kernel mechanism Docker and
 Chrome use) from the declared effects. A function that declared `pure` and then
 opens a network connection is killed by the OS mid-syscall. The static effect
-check and the runtime cage come from the same `fx` declaration.
+check and the runtime cage come from the same `!` declaration.
 
 ## Re-deriving the trust chain
 

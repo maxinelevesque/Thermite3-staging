@@ -3,16 +3,16 @@
 // out-of-cage clauses no longer degrade DOWN the ladder — each ESCALATES to the engine
 // that grounds it, and the item certifies at the MIN over its clauses.
 //
-// `isqrt_class` is keyed on the INTEGER-SQUARE-ROOT characterization: its `req` states
+// `isqrt_class` is keyed on the INTEGER-SQUARE-ROOT characterization: its `requires` states
 // that `r` is the integer sqrt of `n` — `r*r <= n < (r+1)*(r+1)` (the `r <= 10^8` guard
 // bounds the squared term to a non-overflowing range for the executable covenant; the
 // real relaxation is unaffected). Its two L4 clauses are NON-TRIVIAL nlsat-earned
-// consequences of that characterization — neither restates `req`; each needs the
+// consequences of that characterization — neither restates `requires`; each needs the
 // real-arithmetic squeeze the [`NlsatEngine`] (Z3 nlsat, QF_NRA) decides:
 //
-//   * `ens#0  2*r <= n + 1`            — the LOWER squeeze: from `r*r <= n` and the real
+//   * `ensures#0  2*r <= n + 1`            — the LOWER squeeze: from `r*r <= n` and the real
 //                                         fact `(r-1)^2 >= 0` (so `2*r <= r*r + 1 <= n + 1`).
-//   * `ens#1  n < 2*r*r + 2*r + 1`     — the UPPER squeeze: from `n < (r+1)^2 = r*r+2*r+1`
+//   * `ensures#1  n < 2*r*r + 2*r + 1`     — the UPPER squeeze: from `n < (r+1)^2 = r*r+2*r+1`
 //                                         and `r*r >= 0` (so `n < r*r+2*r+1 <= 2*r*r+2*r+1`).
 //
 // Each is real-valid (QF_NRA-`unsat` over its negation) and, by the kernel-checked
@@ -20,7 +20,7 @@
 // confirm these are EARNED: `r <= n` — the naive guess — is NOT real-valid, since `0<r<1`
 // has `r > r*r`, so nlsat returns a `RealWitness`, never a false L4.)
 //
-//   * `ens#2  result*2 + (n + r) % 2 == n + r`
+//   * `ensures#2  result*2 + (n + r) % 2 == n + r`
 //                                       — NOT relaxable (the `%` is not a polynomial atom —
 //                                         `relax::classify_fn` rejects it), so it routes to
 //                                         the Lean engine. It is the div/mod identity pinning

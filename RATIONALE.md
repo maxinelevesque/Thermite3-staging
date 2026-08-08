@@ -26,14 +26,14 @@ establish.
 
 ---
 
-## The contract (`req` / `ens` / `fx`)
+## The contract (`requires` / `ensures` / `!`)
 
 **Definition.** Pre/postconditions plus an effect annotation: **design-by-contract**
 (Meyer/Eiffel) realized as machine-checked **Hoare logic** (Hoare 1969;
-modern push-button precedent: Dafny, Verus, F*). `req` is the precondition, `ens`
+modern push-button precedent: Dafny, Verus, F*). `requires` is the precondition, `ensures`
 the postcondition (over a distinguished `result` binding and the function's
 parameters; Thermite has no `old(_)` pre-state construct, and the spec grammar
-exposes `result` plus the in-scope parameters and nothing more), and `fx` is an
+exposes `result` plus the in-scope parameters and nothing more), and `!` is an
 **effect row** (its own entry below). Thermite's departure from the lineage is
 that all three are **mandatory syntax**: omitting one is a compile error rather
 than a lint.
@@ -41,8 +41,8 @@ than a lint.
 **Mechanism.** The contract is parsed into `Contract { req, ens, fx }` clauses
 (`thermite-syntax/src/ast.rs`); `thermite-spec`'s `validate` (`validator.rs`)
 enforces that every contract-position expression stays inside the frozen
-sublanguage; `thermite-lower` lowers `req`/`ens` to Verus `requires`/`ensures`
-and `fx` to a compile-time subsumption check (`effects.rs`) plus a runtime
+sublanguage; `thermite-lower` lowers `requires`/`ensures` to Verus `requires`/`ensures`
+and `!` to a compile-time subsumption check (`effects.rs`) plus a runtime
 sandbox (`forge/src/sandbox.rs`). See
 [`.design/spec/spectherm-combinators.md`](.design/spec/spectherm-combinators.md),
 [`.design/lower/effect-subsumption.md`](.design/lower/effect-subsumption.md).
@@ -58,7 +58,7 @@ below) is meaningless if a function can score perfectly by declaring no contract
 at all. Making the contract mandatory closes that escape before the battery runs.
 
 **Limits / failure modes.** A *stated* contract does not guarantee *correct
-intent*: `ens` can be mechanically satisfiable yet say the wrong thing (`ens true`
+intent*: `ensures` can be mechanically satisfiable yet say the wrong thing (`ensures true`
 is the degenerate case). Mandatoriness buys presence rather than meaning; the
 battery (below) attacks the weak-but-present case, and the gap between the formal
 spec and the human's actual intent is the irreducible residual (`thermite-design.md`
@@ -66,7 +66,7 @@ spec and the human's actual intent is the irreducible residual (`thermite-design
 
 **Direction.** Strengthening probes (§7 step 5,
 [`.design/forge/strengthening-probes.md`](.design/forge/strengthening-probes.md))
-*propose* a tighter `ens` that still proves against the unchanged body, moving a
+*propose* a tighter `ensures` that still proves against the unchanged body, moving a
 present-but-weak contract toward a stronger one without authoring it for the user.
 
 ---
@@ -122,7 +122,7 @@ counterexample, `.design/forge/degrade-ladder.md` OQ-2).
 (see the Lean proof spine entry). L2 is bounded and can miss a bug above its size
 bound (this is by design, the BMC tradeoff). L1 catches violations only at
 runtime, on the inputs actually executed. L0 is trusted, with no further check. A
-`fx diverge` function is *capped* at L1 (partial correctness) because it may not
+`! diverge` function is *capped* at L1 (partial correctness) because it may not
 terminate, so it cannot claim L3-total: a structural cap decided before the prover
 runs, distinct from a timeout degrade (`.design/forge/degrade-ladder.md` REQ-9).
 
@@ -147,7 +147,7 @@ routes automatically when a clause qualifies.
 
 **Definition.** A **seccomp-BPF syscall filter**, the same in-kernel
 system-call filtering mechanism Docker and Chrome use to confine processes. The
-`fx` row is compiled to a syscall **allowlist**; a syscall outside it makes the
+`!` row is compiled to a syscall **allowlist**; a syscall outside it makes the
 Linux kernel kill the process with `SIGSYS`. This is the README's "cage."
 
 **Mechanism.** `forge/src/sandbox.rs`: `emit_sandbox_prelude` hand-builds a
@@ -172,11 +172,11 @@ boundary, with no trusted supervisor process and minimal runtime cost.
   adds a supervisor to the trusted base and a context-switch per call.
 - **LSM / AppArmor** are system-administrator policy, configured out-of-band and
   not derived from or pinned to the program's own declared effects; they would
-  decouple the runtime grant from the compile-time `fx` row.
+  decouple the runtime grant from the compile-time `!` row.
 - **containers** confine at the wrong granularity (a whole filesystem/network
   namespace) rather than the per-function effect set.
 - **seccomp-BPF** runs *in-kernel* with no supervisor, and the filter is a pure
-  function of the verified `fx` row: the same `transitive_fx` walk the
+  function of the verified `!` row: the same `transitive_fx` walk the
   compile-time subsumption check uses, read forward. The grant *is* the
   verified effects. That direct derivation is why seccomp was chosen here.
 
@@ -197,7 +197,7 @@ boundary, with no trusted supervisor process and minimal runtime cost.
   implementation choice rather than a mechanism ceiling, so the `term`→`ioctl`
   grant is currently `ioctl`-*broad* (any cmd), documented as the v1 scope
   (`.design/forge/runtime-sandbox.md` OQ-5). **Path-scoping is enforced at the
-  language level** (the `fx read(path)` row, compile-time) because seccomp
+  language level** (the `! read(path)` row, compile-time) because seccomp
   *structurally cannot* read the path string; with seccomp as the coarse syscall
   backstop, the two layers are complementary rather than redundant.
 - **Memory safety is not this layer's job**; that is Rust's borrow checker /
@@ -205,20 +205,20 @@ boundary, with no trusted supervisor process and minimal runtime cost.
   SOTA finding #7).
 - **Pure Thermite never *triggers* it.** A pure program issues no disallowed
   syscall, so the filter never fires; the cage's value is confining
-  `#[boundary]`/`#[slag]` foreign bodies to their declared `fx`, plus a
+  `#[boundary]`/`#[slag]` foreign bodies to their declared `!`, plus a
   defense-in-depth backstop against a miscompilation. Demonstrated by an explicit
   `--sandbox-self-test` probe (a denied `openat` → exit 159 = 128+SIGSYS, versus a
   clean pure run).
 
 **This is a genuine extension (asserted by absence, survey pending).** The
-*hybrid* (a static effect row (`fx`) that is *both* the compile-time subsumption
+*hybrid* (a static effect row (`!`) that is *both* the compile-time subsumption
 lattice *and* the source of the runtime syscall allowlist) has no analogue in the
 surveyed effect literature (Koka/Eff/Frank do row effects; seccomp/CHERI do
 confinement; no surveyed system derives the second from the first). The survey is
 explicit that this is **asserted by absence and still needs its own targeted
 survey** of the row-effect + seccomp/CHERI literature to confirm (survey gap #3),
 [`.design/research/formal-methods-sota.md`](.design/research/formal-methods-sota.md)
-terminology-map row "static effect-rows (`fx`) + seccomp confinement."
+terminology-map row "static effect-rows (`!`) + seccomp confinement."
 
 **Direction.** A scalar-argument-filtering build (a `BPF_JEQ` on the `ioctl` cmd
 register, a scalar, so this is within classic seccomp-BPF's ability, narrowing
@@ -238,7 +238,7 @@ attest *intent*.
 **Mechanism.** `struct Certificate { item, level, solver_time_ms,
 contract_quality, effects, slag, obligations, suggested_move, … }`
 (`forge/src/manifest.rs`), serialized with `serde_json`. Key fields: `level`
-(`L0..L4`, the ladder rung); `effects` (the `fx` row); `contract_quality`
+(`L0..L4`, the ladder rung); `effects` (the `!` row); `contract_quality`
 (`tautology`, `vacuous_precondition`, `mutants_killed: String` e.g. `"17/18"`,
 `survivor`), the battery scores; `obligations: Vec<ObligationResult>`, per
 proof obligation, `Discharged` or `Failed` with a `location` + a concrete
@@ -288,7 +288,7 @@ This is the README's "you can't cheat the grade."
 successful L3 proof:
 
 - **structural triage** (`vacuity::triage`, `forge/src/vacuity.rs`): rejects
-  `ens true`, result-omitting, req-implied, and unjustified-maximal-`fx`
+  `ensures true`, result-omitting, req-implied, and unjustified-maximal-`!`
   contracts;
 - **solver vacuity** (`vacuity_solver::solver_vacuity_check`): two
   inverted-polarity Verus harnesses detect semantic tautology / unsatisfiable
@@ -303,7 +303,7 @@ successful L3 proof:
   `RejectReason { cause: "WeakContract" }` + the surviving mutant as a precise
   strengthening prompt;
 - **equivalent-mutant exclusion** (`equivalent-mutants.md`, `#101`): a survivor
-  Verus proves *observably equivalent to the real body under `req`* is dropped
+  Verus proves *observably equivalent to the real body under `requires`* is dropped
   from the denominator (it was never evidence of weakness). This is
   sound-but-incomplete: a survivor is excluded **only** on a Verus *proof* of
   equivalence, so a genuinely distinguishing survivor is never excluded.
@@ -315,14 +315,14 @@ See [`.design/forge/mutation-scoring.md`](.design/forge/mutation-scoring.md),
 
 **Why this design.** A *mandatory* contract creates a Goodhart pressure: when the
 metric is "has a proven contract," the cheapest way to score is a contract so
-weak it proves trivially (`ens true`, or `ens result <= huge_bound`). Vacuity
+weak it proves trivially (`ensures true`, or `ensures result <= huge_bound`). Vacuity
 detection catches the *syntactically/semantically* trivial cases; mutation
 scoring catches the harder case, a contract that is non-vacuous yet still fails to
 constrain the body, by checking whether it can distinguish the real body from a
 sabotaged one. The kill-ratio *floor* (rather than 100%) is the concession that
 some mutants are equivalent or unreachable; the *equivalent-mutant exclusion*
-makes the floor fair (otherwise an honest forced-output function, `req x == 0,
-ens result == 0`, is falsely flagged `WeakContract` because its `return 0` mutant
+makes the floor fair (otherwise an honest forced-output function, `requires x == 0,
+ensures result == 0`, is falsely flagged `WeakContract` because its `return 0` mutant
 is *genuinely* indistinguishable). The polarity is inverted by design: a prover
 *success* on a mutant is the failing case, which is why the battery is a real
 adversary rather than a rubber stamp.
@@ -364,7 +364,7 @@ present *and* non-empty (`None` → `MissingField`, empty-after-`trim` →
 `EmptyField`). A valid `#[slag]` item is **L3-exempt but L1-enforced**: `forge
 check` does not invoke Verus on it; it certifies `Level::L1` with `slag: true`
 and the metadata in the certificate, and its contract is still compiled to runtime
-checks. It is the only construct that justifies a maximal `fx` row (the §7.1(d)
+checks. It is the only construct that justifies a maximal `!` row (the §7.1(d)
 vacuity interaction), and it remains subject to the vacuity triage rules (a) /
 (b) / (c): slag exempts a body from *proving*, never from *stating and checking*.
 See [`.design/forge/slag.md`](.design/forge/slag.md).
@@ -426,7 +426,7 @@ variance). The restriction is what makes proof automation *predictable*, and
 predictable automation is what makes the Lean proof spine and the mutation battery
 *feasible* (see the frozen-subset entry). What is excluded: anonymous nested
 quantification (`forall_in(xs, |x| exists_in(ys, |y| …))`), raw `forall`/`exists`,
-and unbounded recursion without a `dec` measure.
+and unbounded recursion without a `measures` measure.
 
 **Limits / failure modes.** The fragment is *deliberately* less expressive than
 full first-order logic: a property no combination of the eight combinators (plus
@@ -434,7 +434,7 @@ named `spec fn`s) can express simply cannot be stated. Adding a combinator is a
 slow, budget-gated RFC rather than a user-level abstraction (§11), so
 expressiveness grows only by deliberate design amendment. The invariant is "every
 quantifier is a bounded combinator with a frozen trigger; composition is named
-(`spec fn`, each `dec`-measured) and never anonymous"; depth is named and bounded
+(`spec fn`, each `measures`-measured) and never anonymous"; depth is named and bounded
 rather than zero (`spectherm-combinators.md` "Thesis-clarification note").
 
 **This is a genuine extension (with the survey's hedge).** The caged quantifier
@@ -452,7 +452,7 @@ implementation over-permitted nested quantification.
 
 ---
 
-## The effect row (`fx`)
+## The effect row (`!`)
 
 **Definition.** An **effect system** (algebraic/row effects: Koka, Eff, Frank,
 F* effects) realized as a static lattice over a fixed atom set, with both a
@@ -478,7 +478,7 @@ because every callee's declared row must *already* subsume its own callees
 (checked when that callee is analyzed), so direct checking composes to transitive
 correctness (`effect-subsumption.md` OQ-2). This is the §9 "trust is invariant
 under composition" property: a caller reasons through a callee's *contract* (here
-its `fx` row) rather than its body. Path granularity (`write("/tmp")` ⊄
+its `!` row) rather than its body. Path granularity (`write("/tmp")` ⊄
 `write("/etc")`) is deferred to a future path lattice; v0.1 is atom-kind level and
 explicit about what it enforces (`effect-subsumption.md` OQ-1).
 
@@ -693,7 +693,7 @@ are future work; the goal REPL is the v0.1 surface of the §5.1 dialogue.
 
 **Definition.** Thermite is a deliberately **small, frozen language**: a fixed
 sublanguage of constructs (the eight combinators, a bounded exec expression set,
-straight-line bodies + v1 `while`, `dec`-measured spec functions, the nine effect
+straight-line bodies + v1 `while`, `measures`-measured spec functions, the nine effect
 atoms). CakeML's "end-to-end verified compilation of a real language, but only
 over a *fixed subset*" (POPL'14, SOTA finding #5) is the existence proof that a
 frozen subset can be carried to a universal correctness theorem.
@@ -764,9 +764,9 @@ The L3 verification path is *target-independent* (untouched). See
 **Why this design.** Because rustc is the codegen backend (§3), a "target" is a
 rustc-invocation + crate-prelude choice rather than a compiler change, so the same
 verified, L1-lowered program links into a kernel as into a userspace binary. The
-ambient-`fx` reject is the principled boundary: a syscall mapping is a userspace
+ambient-`!` reject is the principled boundary: a syscall mapping is a userspace
 seccomp concept with no kernel analogue, and the #198 amendment moved
-`time`/`rand` into the reject set after a real `fx time` boundary leaked a
+`time`/`rand` into the reject set after a real `! time` boundary leaked a
 std-bodied `SystemTime::now()` (`E0433`) into the `no_std` crate; the doc adapts
 to the code (R-DOC-1), documenting the reject the code now enforces.
 

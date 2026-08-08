@@ -5,7 +5,7 @@
 // three-conjunct splice (AC-14) — head/ins/tail concatenated, each window pinned by
 // one `bytes_eq` conjunct, all discharged by ONE auto-emitted `lemma_bytes_eq_bridge`
 // citation with ZERO per-conjunct glue. Both certify L3 (the prove-once bridge laws
-// REQ-18 + the contract-keyed body-start citation REQ-19); both carry `fx alloc` (the
+// REQ-18 + the contract-keyed body-start citation REQ-19); both carry `! alloc` (the
 // constructing slice/concat). `buf_prefix_pin` exercises the FIELD-ACCESS operand
 // shape (#279) — the editor wraps its `String` in a `Buf { text: String }` ADT, so its
 // pins name `result.text`/`b.text` (field accesses, NOT bare paths); the byte-view

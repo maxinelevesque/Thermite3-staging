@@ -6,7 +6,7 @@
 enum ParseErr { NotDigit, Overflow, Empty }
 
 // AC-1: Some(_) constructs (the seeded built-in variant) and the payload-in-contract
-// `ens match result { Some(v) => ..., None => true }` projects the Some payload. The
+// `ensures match result { Some(v) => ..., None => true }` projects the Some payload. The
 // Some-arm predicate `v == 5` is mutation-killable (a Some(0) mutant violates it) -> L3.
 fn make_some() -> Option<u64>
   ! pure
@@ -28,7 +28,7 @@ fn small(x: u64) -> Option<u64>
 }
 
 // AC-2: Result<u64, ParseErr> parses (the two-arg Type::Result); Ok(_) constructs
-// (the seeded Ok/Err); the payload `ens match result { Ok(v) => ..., Err(_) => true }`
+// (the seeded Ok/Err); the payload `ensures match result { Ok(v) => ..., Err(_) => true }`
 // projects the Ok payload. Ok(7) with `v == 7` is mutation-killable -> L3.
 fn ok_seven() -> Result<u64, ParseErr>
   ! pure

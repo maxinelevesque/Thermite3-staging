@@ -71,17 +71,17 @@ Umbrella: `.design/thermite2-program.md` (REQ-1). Baseline:
   and a reference-style spelling (following `lean/Thermite/RefEncode.lean`).
   Apply each shape's templates to (a) every combinator-bearing clause in
   `conformance/*.th` — which the plan analysis confirms is **only
-  `binary_search.th`, 4 clauses** (`req sorted`, the `ens` None-arm
-  `forall_in`, `inv forall_below`, `inv forall_from`) — and (b) a
+  `binary_search.th`, 4 clauses** (`requires sorted`, the `ensures` None-arm
+  `forall_in`, `keeps forall_below`, `keeps forall_from`) — and (b) a
   generator-drawn sample of instances of those same shapes from
   `thermite-tv/src/gen.rs`'s `gen_combinator` (≥ 5 per shape), so the
   denominator is ≥ ~30 rather than 4. Fixture home:
   `thermite-tv/tests/fixtures/strat_probe/`, one file per instance pair,
-  README naming the source: a scheme-validated address for `inv`
-  clauses (`binary_search.loop#1.inv#2`/`inv#3`) and an informal
-  designation for `req`/`ens` clauses (`binary_search.req`,
+  README naming the source: a scheme-validated address for `keeps`
+  clauses (`binary_search.loop#1.keeps#2`/`keeps#3`) and an informal
+  designation for `requires`/`ensures` clauses (`binary_search.req`,
   `binary_search.ens.None`), since `thermite-syntax/src/address.rs`
-  addresses loop/inv/dec but not req/ens.
+  addresses loop/inv/measures but not req/ens.
 - REQ-6: A prototype normalizer at `thermite-tv/src/normalize.rs` —
   experimental, exported but not referenced by any TV pipeline code path —
   implementing the four passes from metatheory §8.2 layer 1: NNF, prenex,
@@ -134,7 +134,7 @@ Umbrella: `.design/thermite2-program.md` (REQ-1). Baseline:
   `binary_search.th` clauses and to ≥5 generator-drawn instances per
   shape, yielding ≥ ~30 fixture pairs under
   `thermite-tv/tests/fixtures/strat_probe/`; the README lists each
-  source (scheme-validated address for `inv`, informal for `req`/`ens`);
+  source (scheme-validated address for `keeps`, informal for `requires`/`ensures`);
   `cargo test -p thermite-tv` passes the normalizer unit tests.
   (REQ-5, REQ-6)
 - [ ] AC-6: No module in the TV pipeline path imports

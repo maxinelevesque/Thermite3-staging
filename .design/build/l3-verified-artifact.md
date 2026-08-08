@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 46ee0151535566ef908765f13a921ed530117ff5535a70ec5fa4934c5baa4073
+audited-content-sha256: ee43a873297bc6f87489a809a76de171007907b21d22a3024d1b5e700e4e9cd2 (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: 46ee0151535566ef908765f13a921ed530117ff5535a70ec5fa4934c5baa4073)
 decision: Option A — compile the canonical Verus executable body that was verified
 issue: github:dollspace-gay/Thermite#101, github:dollspace-gay/Thermite#103, github:dollspace-gay/Thermite#104, github:dollspace-gay/Thermite#108, github:dollspace-gay/Thermite#111
 governs:
@@ -273,7 +273,7 @@ no skipped-success state.
 | Closure | complete and end-to-end | unresolved/cross-file calls, indirect-call uncertainty |
 | Source completeness | complete | body/proof holes, missing generated definitions |
 | Escape-hatch scan | none reachable | `#[slag]`, `#[boundary]`, `external_body`, `assume`, `admit`, axiom injection |
-| Termination | verified form | `fx diverge`, `decreases *`, no-decreases exemptions |
+| Termination | verified form | `! diverge`, `decreases *`, no-decreases exemptions |
 | Function certificates | L3 or stronger, not degraded | L0/L1/L2, timeout degradation, reject/counterexample |
 | Contract TV | faithful for every reachable clause | divergent, unsupported, skipped, unverifiable |
 | Exec-expression TV | faithful for every reachable expression class | divergent, unsupported, skipped, unverifiable |

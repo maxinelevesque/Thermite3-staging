@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 58d8755d00550c507a768a19c5c0c7d15d135c78cd4538eb02efe1518210840e
+audited-content-sha256: 9509ebdf0974f43cfe294fa660ee48448044e9b4f7e223dc106a78190c6d35a2 (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: 58d8755d00550c507a768a19c5c0c7d15d135c78cd4538eb02efe1518210840e)
 decision: preserve verifier counts when present and represent frontend counts as unknown
 issue: github:dollspace-gay/Thermite#111
 governs:

@@ -23,7 +23,7 @@ verified microkernel. It is a NEW fork of the existing `forge build` verb (`buil
 `emit_source` / `invoke_rustc` in `build.rs`): the L1 lowering and the verification (L3) path are
 **target-independent** (Verus and `thermite_lower::lower_l1` are the same), so the kernel target
 changes only the EMISSION PROFILE (the crate prelude + the rustc invocation) and adds one new
-**reject**: an `fx` row carrying an ambient-syscall effect (`read`/`write`/`net`/`term`/`time`/`rand`)
+**reject**: an `!` row carrying an ambient-syscall effect (`read`/`write`/`net`/`term`/`time`/`rand`)
 is refused, because kernel code has no ambient userspace syscall surface (and no ambient clock/entropy
 — OQ-2, amended by #198).
 
@@ -48,7 +48,7 @@ sandbox code.
 - **`panic=abort`.** A freestanding crate cannot unwind; the rustc invocation pins `-C panic=abort`
   (and the kernel host supplies the `#[panic_handler]` / `#[global_allocator]` — they are NOT emitted
   by forge, see OQ-1).
-- **REJECT ambient-syscall `fx` rows.** A fn whose transitive `fx` carries
+- **REJECT ambient-syscall `!` rows.** A fn whose transitive `!` carries
   `read`/`write`/`net`/`term`/`time`/`rand` is refused with a structured `ForgeError` BEFORE codegen —
   kernel code has no ambient userspace syscall (the `read`/`write`/`net`/`term` → syscall-allowlist
   mapping in `sandbox.rs` is a USERSPACE seccomp concept with no kernel analogue, and `time`/`rand`
@@ -96,8 +96,8 @@ sandbox)` (which calls `thermite_lower::lower_l1` + `effect_wrappers::emit_mod_o
 three named seams (the builder adds a `BuildTarget` enum — `Std` (default) | `Kernel` — threaded
 through these):
 
-1. **`build_file` — reject `--entry` + ambient `fx`.** Before `emit_source`, a kernel build with
-   `entry.is_some()` is a `ForgeError::Usage`; and each fn's transitive `fx` (reusing
+1. **`build_file` — reject `--entry` + ambient `!`.** Before `emit_source`, a kernel build with
+   `entry.is_some()` is a `ForgeError::Usage`; and each fn's transitive `!` (reusing
    `sandbox::transitive_fx` / `manifest::effects_of`) is scanned for `read`/`write`/`net`/`term` →
    structured refusal (the `reachable_boundary_targets` + `build_functions` projections already walk
    the program; the reject reuses that walk). NO seccomp (`sandbox_record` is `installed: false`,
@@ -105,8 +105,8 @@ through these):
 2. **`emit_source` — the kernel prelude.** PREPEND the `#![no_std]` / `extern crate alloc;` /
    `use alloc::{vec::Vec, string::String};` prelude to `lower_l1`'s output instead of (or in addition
    to) the `effect_wrappers::emit_mod_os` block; emit NO `synthesize_entry_main`. (`emit_mod_os` is the
-   `os::<name>` userspace-syscall wrapper module — a kernel build with no ambient-syscall `fx` reaches
-   it with an EMPTY target set, so it emits nothing; the ambient-`fx` reject above guarantees this.)
+   `os::<name>` userspace-syscall wrapper module — a kernel build with no ambient-syscall `!` reaches
+   it with an EMPTY target set, so it emits nothing; the ambient-`!` reject above guarantees this.)
 3. **`invoke_rustc` — `panic=abort` + `--crate-type=rlib`.** Add `-C panic=abort` to the rustc
    `Command`; force `CrateType::Rlib` (a kernel target is never `Bin`). `--edition 2021` /
    `--crate-name` / `SOURCE_DATE_EPOCH=0` / `--remap-path-prefix` are unchanged (reproducibility is
@@ -124,13 +124,13 @@ through these):
   verbatim (the L1 checks + `TString`/`TVec`/`TMap` wrappers resolve against `alloc`). No `main`, no
   `synthesize_entry_main`, no seccomp prelude. Compiled `--crate-type=rlib -C panic=abort`. Derived
   from §3 + the emitted-std-surface grounding above. **Blocker #164.**
-- **REQ-3 (ambient-syscall `fx` reject)** — a fn whose transitive `fx` (via `sandbox::transitive_fx` /
+- **REQ-3 (ambient-syscall `!` reject)** — a fn whose transitive `!` (via `sandbox::transitive_fx` /
   `manifest::effects_of`) carries `read`/`write`/`net`/`term`/`time`/`rand` is refused with a
   structured `ForgeError` (a NAMED-effect, nonzero-exit, NO-artifact reject) BEFORE codegen — kernel
   code has no ambient userspace syscall surface, and `time`/`rand` carry std-bodied effect wrappers
   (`clock_gettime`/`getrandom`) with no kernel ambient clock/entropy (OQ-2, amended by #198).
   `--target kernel` + `--entry` is likewise a usage error. Derived from §13 (kernel scope) + the
-  `sandbox.rs` `fx`→syscall mapping being a USERSPACE concept. **Blocker #164.**
+  `sandbox.rs` `!`→syscall mapping being a USERSPACE concept. **Blocker #164.**
 - **REQ-4 (L1 runtime checks in the kernel profile)** — the always-active `thermite_check!` /
   `thermite_contract_violation` (`panic!`) is emitted UNCHANGED; under `#![no_std]` / `panic=abort` it
   routes to the kernel host's `#[panic_handler]` rather than std's unwinder. The L1 assurance rung
@@ -146,16 +146,16 @@ through these):
 ## Acceptance criteria
 
 - **AC-1 (pure fn → kernel rlib compiles `no_std`)** — `forge build --target kernel sum.th` (the
-  corpus `sum`, `fx pure`) emits a `#![no_std]` + `extern crate alloc;` rlib and rustc exits 0
+  corpus `sum`, `! pure`) emits a `#![no_std]` + `extern crate alloc;` rlib and rustc exits 0
   (`--crate-type=rlib -C panic=abort`), producing `libsum_build.rlib`. The emitted source contains
   `#![no_std]` and `extern crate alloc;` and NO `fn main` / NO seccomp prelude. (Verification: a
   `forge/tests/kernel_target.rs` freestanding-compile check shelling the real `rustc` with the kernel
   profile flags.)
-- **AC-2 (ambient-`fx` fn → structured refusal)** — `forge build --target kernel` on a fn carrying
-  `fx read(src)` (the oracle `rf` shape) returns a `ForgeError` naming the rejected effect, nonzero
-  exit, NO artifact — NOT a silent build. A `fx write`/`net`/`term`/`time`/`rand` fn refuses
-  identically (the admitted-`fx time` boundary `effect_link_demo.th` is REFUSED naming `time`, the
-  #198 amendment); a `fx pure`/`alloc`/`diverge` fn builds. (Verification: a `kernel_target.rs` reject
+- **AC-2 (ambient-`!` fn → structured refusal)** — `forge build --target kernel` on a fn carrying
+  `! read(src)` (the oracle `rf` shape) returns a `ForgeError` naming the rejected effect, nonzero
+  exit, NO artifact — NOT a silent build. A `! write`/`net`/`term`/`time`/`rand` fn refuses
+  identically (the admitted-`! time` boundary `effect_link_demo.th` is REFUSED naming `time`, the
+  #198 amendment); a `! pure`/`alloc`/`diverge` fn builds. (Verification: a `kernel_target.rs` reject
   case + a `pure`/`alloc` accept case + the `divergence_kernel_time_boundary.rs` `time`-refusal pin.)
 - **AC-3 (L1 checks fire in the kernel profile — documented)** — the kernel rlib's emitted source
   carries the always-active `thermite_check!` / `thermite_contract_violation` (`panic!`) verbatim
@@ -184,8 +184,8 @@ the std target and with `forge check`; §3's realization note (rustc is the code
 "target" is purely a rustc-invocation + crate-prelude choice, not a compiler change.
 
 The three fork seams are `pub fn build_file`, `pub fn emit_source`, and `invoke_rustc` (all in
-`build.rs`; see "The fork point" above). The ambient-`fx` reject reuses `sandbox::transitive_fx`
-(itself reusing `closure::reachable_in_file_fns` + `manifest::effects_of`) — the SAME transitive-`fx`
+`build.rs`; see "The fork point" above). The ambient-`!` reject reuses `sandbox::transitive_fx`
+(itself reusing `closure::reachable_in_file_fns` + `manifest::effects_of`) — the SAME transitive-`!`
 walk the #57 seccomp allowlist is derived from (`forge/src/sandbox.rs` `pub fn transitive_fx`), read
 in REVERSE: where the userspace target MAPS `read`/`write`/`net`/`term` to syscall numbers, the kernel
 target REJECTS them. The seccomp emission (`sandbox::emit_sandbox_prelude`, `SandboxConfig`,
@@ -194,7 +194,7 @@ target REJECTS them. The seccomp emission (`sandbox::emit_sandbox_prelude`, `San
 
 The `no_std` prelude is a fixed string prepended in `emit_source` (parallel to the existing
 `effect_wrappers::emit_mod_os` prepend); `emit_mod_os` emits the `os::<name>` USERSPACE syscall
-wrappers and, because the ambient-`fx` reject (REQ-3) guarantees no `read`/`write`/`net`/`term`
+wrappers and, because the ambient-`!` reject (REQ-3) guarantees no `read`/`write`/`net`/`term`
 boundary survives, reaches the kernel build with an empty target set (it emits nothing — the pure
 corpus is byte-unaffected, `build.rs` `reachable_boundary_targets`). The `-C panic=abort` +
 `--crate-type=rlib` are added to the `invoke_rustc` `Command` under the kernel target; `--edition`,
@@ -208,8 +208,8 @@ The increment ships a `forge/tests/kernel_target.rs` conformance test shelling t
 
 - AC-1: `sum.th` → kernel rlib, rustc exit 0, emitted source asserted to contain `#![no_std]` /
   `extern crate alloc;` and NOT `fn main` / NOT `PR_SET_SECCOMP`.
-- AC-2: a `fx read(src)`/`time` fn → `ForgeError` naming the effect, no artifact; a `fx pure`/`alloc`
-  fn builds. (The `fx time` boundary `effect_link_demo.th` refusal is pinned by
+- AC-2: a `! read(src)`/`time` fn → `ForgeError` naming the effect, no artifact; a `! pure`/`alloc`
+  fn builds. (The `! time` boundary `effect_link_demo.th` refusal is pinned by
   `divergence_kernel_time_boundary.rs`, #198.)
 - AC-3: the emitted kernel source contains `thermite_check` + `panic!`; the freestanding compile
   links a test-supplied `#[panic_handler]` (the kernel-host stand-in) so the `no_std` rlib genuinely
@@ -230,7 +230,7 @@ A single builder dispatch delivers the whole v1:
    `--entry` is a usage error (REQ-1/REQ-3).
 2. **The `no_std` emission profile** — the kernel prelude prepend in `emit_source`, the
    `synthesize_entry_main`/seccomp suppression, and the `-C panic=abort` + forced-`rlib` in
-   `invoke_rustc` (REQ-2/REQ-4). The ambient-`fx` reject in `build_file` reusing `transitive_fx`
+   `invoke_rustc` (REQ-2/REQ-4). The ambient-`!` reject in `build_file` reusing `transitive_fx`
    (REQ-3).
 3. **The freestanding compile-check test** — `forge/tests/kernel_target.rs` (AC-1..AC-3) +
    confirming the std default + L3 path are byte-stable (AC-4/AC-5).
@@ -246,7 +246,7 @@ in `build.rs` — `build.rs` already carries multiple routes: `build.md`, `08-ru
   future `--target kernel-bin` profile emits a default abort handler is OUT of v1.
 - **OQ-2 (non-ambient effect atoms) — RESOLVED (REJECT; amended by #198).** The original v1 premise —
   "`time`/`rand` are benign for the kernel because the kernel emission carries no syscall mapping" —
-  was FALSIFIED by #198: an admitted `fx time` boundary (`#[boundary("os::now")]`) carries a
+  was FALSIFIED by #198: an admitted `! time` boundary (`#[boundary("os::now")]`) carries a
   std-bodied effect wrapper (`effect_wrappers::WRAPPERS` `os::now` = `std::time::SystemTime::now()`),
   which `emit_mod_os` emits into the `#![no_std]` kernel crate and leaks a raw rustc `E0433`. A kernel
   has no ambient clock (`clock_gettime`) or entropy (`getrandom`) any more than it has `read`/`write`,
@@ -266,7 +266,7 @@ in `build.rs` — `build.rs` already carries multiple routes: `build.md`, `08-ru
 |---|---|---|
 | REQ-1 (`--target kernel` verb fork) | SHIPPED | `build.rs` `enum BuildTarget { Std, Kernel }` threaded `cli::run_build` → `build::build_file` → `emit_source` → `invoke_rustc`; `cli.rs` parses `--target std\|kernel` (default `Std`, unknown/missing value → `Usage`). Consumer: `cli::run_build`. Verified by `cli::tests::parses_build_target_flag` + `forge/tests/kernel_target.rs::pure_fn_builds_no_std_kernel_rlib`; the std default is byte-unchanged (`default_target_source_is_byte_identical_to_no_target_flag` + the unaffected `build_conformance` suite, AC-4). |
 | REQ-2 (`no_std + alloc` emission profile) | SHIPPED | `emit_source` prepends `KERNEL_PRELUDE` (`#![no_std]` + `extern crate alloc;` + `use alloc::vec::Vec;`) under `BuildTarget::Kernel`, reuses `lower_l1`'s output VERBATIM, emits NO `synthesize_entry_main`; `invoke_rustc` forces `--crate-type=rlib` + `-C panic=abort`. Consumer: `cli::run_build`. Verified by `kernel_target.rs::pure_fn_builds_no_std_kernel_rlib` (rustc exit 0 + reconstructed-source freestanding compile) + `pure_and_alloc_fx_fns_build_for_kernel`. |
-| REQ-3 (ambient-syscall `fx` reject) | SHIPPED | `reject_ambient_fx_for_kernel` scans EVERY `Item::Fn`'s `sandbox::transitive_fx` for `KERNEL_REJECTED_FX = ["read","write","net","term","time","rand"]` → a NAMED-effect `ForgeError::Usage` (nonzero exit, NO artifact) BEFORE codegen; `--target kernel` + `--entry` is likewise a `ForgeError::Usage`. Consumer: `build_file`. Verified by `kernel_target.rs::ambient_read_fx_fn_is_refused` + `ambient_write_net_term_fx_refuse_identically` + `kernel_target_with_entry_is_usage_error` + `divergence_kernel_time_boundary.rs` (the `fx time` boundary refused naming `time`, #198); `pure`/`alloc`/`panic`/`diverge` admit (OQ-2 amended by #198; `pure_and_alloc_fx_fns_build_for_kernel`). |
+| REQ-3 (ambient-syscall `!` reject) | SHIPPED | `reject_ambient_fx_for_kernel` scans EVERY `Item::Fn`'s `sandbox::transitive_fx` for `KERNEL_REJECTED_FX = ["read","write","net","term","time","rand"]` → a NAMED-effect `ForgeError::Usage` (nonzero exit, NO artifact) BEFORE codegen; `--target kernel` + `--entry` is likewise a `ForgeError::Usage`. Consumer: `build_file`. Verified by `kernel_target.rs::ambient_read_fx_fn_is_refused` + `ambient_write_net_term_fx_refuse_identically` + `kernel_target_with_entry_is_usage_error` + `divergence_kernel_time_boundary.rs` (the `! time` boundary refused naming `time`, #198); `pure`/`alloc`/`panic`/`diverge` admit (OQ-2 amended by #198; `pure_and_alloc_fx_fns_build_for_kernel`). |
 | REQ-4 (L1 runtime checks in the kernel profile) | SHIPPED | `lower_l1`'s `thermite_check!` / `thermite_contract_violation` (`panic!`) is emitted UNCHANGED (NOT stripped, NOT `debug_assert!`); under `#![no_std]`/`panic=abort` it routes to the host `#[panic_handler]` (OQ-1: forge emits neither handler nor allocator — the test supplies the stand-in). Consumer: `emit_source` (no strip). Verified by `kernel_target.rs::l1_checks_emitted_verbatim_in_kernel_source` (macro + handler + `panic!` present, no `debug_assert!`, compiles with a test `#[panic_handler]`/`#[global_allocator]`). |
 | REQ-5 (L3 verification path identical) | SHIPPED | `--target kernel` touches ONLY `build.rs`/`cli.rs` (the rustc codegen side); NO edit to `check.rs` or the L3 lowering. The existing `forge check` suites stay green (no diff). Verified: no `check.rs` change in the increment + the full `cargo test -p forge` green. |
 
@@ -277,7 +277,7 @@ in `build.rs` — `build.rs` already carries multiple routes: `build.md`, `08-ru
   needs them). The `kernel_target.rs` freestanding-compile supplies a test
   `#[panic_handler]` + a `NullAlloc` `#[global_allocator]` (the kernel-host stand-in).
 - **OQ-2 (REJECT; amended by #198)** — the original "benign" resolution was FALSIFIED:
-  an admitted `fx time` boundary carries a std-bodied effect wrapper
+  an admitted `! time` boundary carries a std-bodied effect wrapper
   (`os::now` = `std::time::SystemTime::now()`) that leaks a raw rustc `E0433` into the
   `#![no_std]` crate. `time`/`rand` therefore JOIN the reject set — a kernel has no
   ambient clock (`clock_gettime`) or entropy (`getrandom`) any more than `read`/`write`.

@@ -92,7 +92,7 @@ certificate gained a family of ADDITIVE fields — see the Amendment.
 - REQ-2 (which fields #5 produces NOW): in #5 the certificate carries real,
   derived values for `item`, `level`, `effects`, `slag`, and the per-obligation
   results. `item` is the checked item's name; `level` is L3 iff verus reports 0
-  errors (`.design/forge/check.md` REQ-5); `effects` is the item's `fx` row
+  errors (`.design/forge/check.md` REQ-5); `effects` is the item's `!` row
   (lowercased combinator-free strings, e.g. `["pure"]`); `slag` is `false` in
   #5 (`#[slag]` handling is issue #6 / §8).
   Source: `conformance/sum.cert.json` (`item`/`level`/`effects`/`slag` are the

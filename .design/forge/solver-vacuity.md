@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 90b8325951b0f625a693baf07776da39d0b95fbe (re-pinned 2026-06-17 after merging main into the #275 vacuity-fix branch: governed source carries #51's topology-stable doc-drift change + #275's ADT-deps/compile-error vacuity fix, both net-additive; the REQs this doc governs are unchanged.)
-audited-content-sha256: b94ec724e79313dae40144e6558258861253603740d035bae8b504c96cecfe47
+audited-content-sha256: 8e5e82ff22bf710581eb3668cfb8cef49ce404d255affd9d8f35c7c10d37b445 (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: b94ec724e79313dae40144e6558258861253603740d035bae8b504c96cecfe47)
 governs: forge/src/vacuity_solver.rs
 thesis-refs:
   - thermite-design.md §7
@@ -21,18 +21,18 @@ thesis-refs:
 battery — **step 2 (tautology)** and **step 3 (vacuity / unsat-precondition)** —
 run as a gate stage inside `forge check` AFTER #6's free structural triage
 (`forge/src/vacuity.rs`) passes. A contract that survives the free syntactic
-checks may still be *semantically* vacuous: an `ens` that holds for an arbitrary
-result (so it says nothing about what the function DOES), or a `req` that is
+checks may still be *semantically* vacuous: an `ensures` that holds for an arbitrary
+result (so it says nothing about what the function DOES), or a `requires` that is
 unsatisfiable (so the function can never be called and the contract is vacuously
 true). These are the SOLVER counterparts of #6's syntactic moves: #6 catches
-`ens true` / `x == x` / `ens` literally equal to a `req` conjunct; #13 catches
-the logical versions the syntax misses (`ens result >= 0` for a `u32` result;
-`req x > 0 && x < 0`). This is the anti-Goodhart machinery (`goal.md` R-DEFER-9:
+`ensures true` / `x == x` / `ensures` literally equal to a `requires` conjunct; #13 catches
+the logical versions the syntax misses (`ensures result >= 0` for a `u32` result;
+`requires x > 0 && x < 0`). This is the anti-Goodhart machinery (`goal.md` R-DEFER-9:
 the battery exists precisely to catch the gaming move of a logically-vacuous
 contract).
 
 Both checks reuse the EXISTING verus contract lowering
-(`thermite_lower::lower` already lowers `req`/`ens` to Verus exprs) and forge's
+(`thermite_lower::lower` already lowers `requires`/`ensures` to Verus exprs) and forge's
 existing `run_verus` driver (`check.rs`). They build a one-query verus
 **harness** per check, interpret verus PROVING the harness as "vacuous → reject",
 and set `contract_quality.{tautology, vacuous_precondition}` to the
@@ -53,11 +53,11 @@ of this query family.** An outside review (item 6) surfaced the gap the gate
 checks cannot see: a contract can be non-tautological, non-vacuous, mutation-
 scored — and still admit MANY results per input. Motivating finding:
 `examples/editor/editor.th::move_up` is L3-proven against
-`ens result.text.len() == b.text.len() && result.cursor <= b.cursor`, which the
+`ensures result.text.len() == b.text.len() && result.cursor <= b.cursor`, which the
 IDENTITY body also satisfies (`result.cursor` admits both the true up-target and
 `b.cursor` itself for any row ≥ 1 input — and `result.text` admits any same-
 length bytes). The tightness signal is ONE extra solver query per checked `fn`
-asking "can TWO DISTINCT results satisfy `ens` for the SAME `req`-satisfying
+asking "can TWO DISTINCT results satisfy `ensures` for the SAME `requires`-satisfying
 input?" — and its answer is a **REPORT-ONLY certificate field, NEVER a gate**:
 many specs are intentionally relational/bounds-shaped (`binary_search` returning
 ANY matching index is correct-by-design), so looseness is a review signal for
@@ -83,14 +83,14 @@ below; all NOT-STARTED, blocker #271.
 ## Requirements
 
 - **REQ-1 (TAUTOLOGY harness builder — §7 step 2):** build a verus harness that
-  decides "is `ens` implied by `req` alone, for an ARBITRARY result (not the
-  computed one)?" The harness ASSUMES `req`, binds `result` to an
-  unconstrained/arbitrary value of the return type, and ASSERTS every `ens`
+  decides "is `ensures` implied by `requires` alone, for an ARBITRARY result (not the
+  computed one)?" The harness ASSUMES `requires`, binds `result` to an
+  unconstrained/arbitrary value of the return type, and ASSERTS every `ensures`
   clause — WITHOUT the function body. The grounded encoding (see *Ground the
   harnesses*) is a verus `proof fn taut_check(<params>, result: <RET>)
   requires <lowered req>, ensures <lowered ens>, { }` — `result` as a `proof fn`
   parameter is universally quantified, i.e. arbitrary, and the empty body forces
-  verus to discharge the ensures from the requires + types alone. The `req`/`ens`
+  verus to discharge the ensures from the requires + types alone. The `requires`/`ensures`
   exprs are lowered by reusing `thermite_lower::lower` (SPEC-context lowering,
   the same `requires`/`ensures` text `lower_fn` emits) so the harness's contract
   text is byte-identical to the real item's. Spec-fn dependencies the contract
@@ -101,19 +101,19 @@ below; all NOT-STARTED, blocker #271.
   ADT-returning / ADT-taking harness (`result: Account`, `a: Shape`) compiles
   instead of hitting `E0425` (without the decls the harness failed to elaborate
   and its compile error was silently read as a clean verdict — the #275 hole).
-  A multi-line `ens` (a `match result { … }`) is spliced back VERBATIM, not
+  A multi-line `ensures` (a `match result { … }`) is spliced back VERBATIM, not
   re-emitted per physical line, so it reconstructs as valid Verus. Source:
-  `thermite-design.md` §7 step 2 ("is `ens`
-  provable from `req` + types **without the function body**? If yes, the contract
+  `thermite-design.md` §7 step 2 ("is `ensures`
+  provable from `requires` + types **without the function body**? If yes, the contract
   says nothing about the implementation → reject with the proof as the
   explanation").
 - **REQ-2 (VACUOUS-PRECONDITION harness builder — §7 step 3):** build a verus
-  harness that decides "is `req` unsatisfiable?" The harness ASSUMES `req` and
+  harness that decides "is `requires` unsatisfiable?" The harness ASSUMES `requires` and
   ASSERTS `false`. The grounded encoding is a verus `proof fn vacuity_check(
   <params>) requires <lowered req>, { assert(false); }`. If verus proves it, the
-  assumed `req` is contradictory (unsat) and the precondition is vacuous. The
-  `req` expr is lowered by reusing `thermite_lower::lower` (same SPEC-context
-  lowering). Source: `thermite-design.md` §7 step 3 ("is `req` satisfiable? An
+  assumed `requires` is contradictory (unsat) and the precondition is vacuous. The
+  `requires` expr is lowered by reusing `thermite_lower::lower` (same SPEC-context
+  lowering). Source: `thermite-design.md` §7 step 3 ("is `requires` satisfiable? An
   unsatisfiable precondition verifies everything about the empty set → reject
   with the unsat core").
 - **REQ-3 (interpretation — verus verdict → vacuity, never a false clean):**
@@ -138,17 +138,17 @@ below; all NOT-STARTED, blocker #271.
   `thermite-design.md` §7; `goal.md` R-CODE-4.
 - **REQ-4 (the value-add over #6 — semantic detection #6 cannot reach):** a
   contract that PASSES #6's syntactic triage but IS a semantic tautology / has an
-  unsat precondition is caught by #13. Grounded (see below): `ens result >= 0`
+  unsat precondition is caught by #13. Grounded (see below): `ensures result >= 0`
   with `result: u32` passes #6 (`Binary{Ge, Path([result]), IntLit(0)}` is not a
-  `BoolLit(true)`, not an identity, not a `req` conjunct) yet verus PROVES the
-  tautology harness; `req x > 0 && x < 0` passes #6 (no `BoolLit(false)`, the
+  `BoolLit(true)`, not an identity, not a `requires` conjunct) yet verus PROVES the
+  tautology harness; `requires x > 0 && x < 0` passes #6 (no `BoolLit(false)`, the
   `&&` chain is not a syntactic contradiction #6 checks for) yet verus PROVES the
   vacuity harness. This is the reason #13 exists distinct from #6. Source:
   `thermite-design.md` §7 steps 1 vs 2–3.
 - **REQ-5 (gate wiring — AFTER #6, verdict-in-cert):** the two checks run in
   `check::check_file`'s per-item path, AFTER `gate_fn`'s #6 structural triage
   returns `ProceedToL3` (a contract still must survive the free checks first) and
-  before/at L3 certification. A detected tautology or unsat-req short-circuits the
+  before/at L3 certification. A detected tautology or unsat-requires short-circuits the
   item to a non-certified `Certificate::rejected` (`Level::L0` +
   `RejectReason { cause }`) — a contract-certification failure surfaced INSIDE the
   certificate (§7 "a function does not certify until its contract certifies"),
@@ -162,7 +162,7 @@ below; all NOT-STARTED, blocker #271.
   "not a *syntactic* tautology / vacuity"). #13 makes the `true` detection real
   (solver-confirmed) and re-asserts the `false` as SOLVER-confirmed on a clean
   pass: a clean tautology check → `tautology = false` (now meaning "verus could
-  not prove `ens` for an arbitrary result"); a detected tautology → `tautology =
+  not prove `ensures` for an arbitrary result"); a detected tautology → `tautology =
   true` on the reject cert. Likewise for `vacuous_precondition`. NO frozen schema
   field is added or renamed (R-SPEC-2); #13 only changes which producer sets the
   two existing bools and the strength of the claim. `mutants_killed`/`survivor`
@@ -181,7 +181,7 @@ below; all NOT-STARTED, blocker #271.
 ### The SPEC-TIGHTNESS SIGNAL (#271 — all NOT-STARTED, blocker #271)
 
 Provenance: outside review item 6; the motivating finding is the L3-proven
-`move_up` whose ens the identity body satisfies. Thesis anchor: `thermite-design.md`
+`move_up` whose ensures the identity body satisfies. Thesis anchor: `thermite-design.md`
 §7 — the battery's residue paragraph ("what the battery cannot check — whether
 the contract is the property the *user* wanted — is exactly the residue surfaced
 for review"). Tightness is a SURFACED-FOR-REVIEW signal in precisely that sense:
@@ -202,17 +202,17 @@ bounds-shaped contracts).
   proof fn tight_check(<lowered params>, r1: <RET>, r2: <RET>)
       requires
           <lowered req>,
-          <lowered ens with result := r1>,
-          <lowered ens with result := r2>,
+          <lowered ensures with result := r1>,
+          <lowered ensures with result := r2>,
   { assert(r1 == r2); }      // structs: assert(r1 =~= r2)
   ```
 
   verus PROVING the assert means the postcondition pins a UNIQUE result for every
-  `req`-satisfying input (the spec is FUNCTIONAL → `tight`); a genuine
+  `requires`-satisfying input (the spec is FUNCTIONAL → `tight`); a genuine
   `assertion failed` counterexample is a witness input admitting two distinct
-  results (→ `loose`). The `<lowered ens with result := rN>` copies are the
-  VERBATIM `extract_lowered_fn`-extracted ens lines with the `result` identifier
-  renamed at identifier boundaries (`result` is the reserved ens binder; an
+  results (→ `loose`). The `<lowered ensures with result := rN>` copies are the
+  VERBATIM `extract_lowered_fn`-extracted ensures lines with the `result` identifier
+  renamed at identifier boundaries (`result` is the reserved ensures binder; an
   occurrence preceded by `.` is a FIELD access and is NOT renamed — OQ-7). The
   harness reuses the REQ-1/REQ-2 extraction, frame, spec-fn weaving, and the
   `run_harness` scratch-dir/seed/rlimit discipline unchanged. Source: outside
@@ -281,7 +281,7 @@ bounds-shaped contracts).
 - **REQ-12 (wiring + cost + cache — rides the existing pass):** the tightness
   query runs INSIDE the proof-cache MISS branch of `check::check_file`'s
   per-item loop, immediately after `solver_vacuity_check` returns `Clean` (so it
-  never runs on a known-degenerate contract — an unsat `req` would spuriously
+  never runs on a known-degenerate contract — an unsat `requires` would spuriously
   prove the tightness assert, the same false-premise hazard the CHECK-ORDER pin
   documents) and before the L3 proof; the verdict is attached to WHATEVER cert
   the L3 path produces (`Certificate::with_spec_tightness`, builder-style like
@@ -292,7 +292,7 @@ bounds-shaped contracts).
   is part of the stored cert, preserving the cache-hit verus-free invariant,
   `proof-cache.md` AC-1). Cache-key interaction: the verdict is a deterministic
   function of EXACTLY the existing 5-input key (the item's lowered source —
-  which fixes `req`/`ens` — the pinned seed, the verus version, the thermite
+  which fixes `requires`/`ensures` — the pinned seed, the verus version, the thermite
   version, and `CHECK_SCHEMA_VERSION`), so NO new key input is needed; the
   builder BUMPS the module-internal `CHECK_SCHEMA_VERSION` (the #49 precedent in
   `cache.rs`) so every pre-amendment cache entry (which would deserialize with
@@ -322,8 +322,8 @@ the verus harness verdicts are GROUNDED (the real verus outputs are pasted in
 
 - **AC-1 (accept: the corpus passes BOTH checks, still L3):** `conformance/sum.th`
   (`sum`) and `conformance/binary_search.th` (`binary_search`) PASS the tautology
-  check (verus FAILS to prove `ens` for an arbitrary result) AND the vacuity check
-  (verus FAILS to prove `assert(false)` under their satisfiable `req`s), so both
+  check (verus FAILS to prove `ensures` for an arbitrary result) AND the vacuity check
+  (verus FAILS to prove `assert(false)` under their satisfiable `requires`s), so both
   certify L3 with `contract_quality.tautology == false` and
   `vacuous_precondition == false` — SOLVER-confirmed. Grounded: `sum`'s
   `ensures result as nat == spec_sum(xs@)` does NOT hold for arbitrary
@@ -332,12 +332,12 @@ the verus harness verdicts are GROUNDED (the real verus outputs are pasted in
   ("assertion failed").
 - **AC-2 (reject: TAUTOLOGY detected):**
   `conformance/solver-vacuity/tautology.th` — a `fn nonneg(x: u32) -> u32
-  req x > 0 ens result >= 0 fx pure { x }` → verus PROVES the tautology harness →
+  requires x > 0 ensures result >= 0 ! pure { x }` → verus PROVES the tautology harness →
   `contract_quality.tautology == true`, cert `Level::L0`,
   `RejectReason { cause: "SemanticTautology" }`. The item does NOT certify.
 - **AC-3 (reject: VACUOUS PRECONDITION detected):**
   `conformance/solver-vacuity/vacuous.th` — a `fn unreachable_fn(x: u32) -> u32
-  req x > 0 && x < 0 ens result == x fx pure { x }` → verus PROVES the vacuity
+  requires x > 0 && x < 0 ensures result == x ! pure { x }` → verus PROVES the vacuity
   harness → `contract_quality.vacuous_precondition == true`, cert `Level::L0`,
   `RejectReason { cause: "VacuousPrecondition" }`. The item does NOT certify.
 - **AC-4 (the #6-passes-but-#13-catches value-add):** BOTH AC-2's `tautology.th`
@@ -369,7 +369,7 @@ TODAY, which is load-bearing for the never-a-gate claims.
   verdict field). Grounded: the `move_up`-shaped harness (length-pinned text,
   upper-bounded cursor, struct result, `assert(r1 =~= r2)`) FAILS on real verus
   (`errors: 1`, "assertion failed") — for any row ≥ 1 input, `r1.cursor` = the
-  true up-target and `r2.cursor = b.cursor` both satisfy the ens (and the text
+  true up-target and `r2.cursor = b.cursor` both satisfy the ensures (and the text
   bytes are free up to length). Because `Buffer` is a struct return, this AC
   mechanically forces the REQ-11 ADT weave (a builder inheriting #275 would
   report `undetermined`, failing the AC).
@@ -378,7 +378,7 @@ TODAY, which is load-bearing for the never-a-gate claims.
   `result.balance == a.balance + amount` fully pins the single field) reports
   `spec_tightness: "tight"`. Grounded: the fully-pinned-struct harness PROVES
   `assert(r1 =~= r2)` on real verus (`success: true, errors: 0`). This is the
-  "tightened move_up" shape: same struct-return machinery, ens pins every field.
+  "tightened move_up" shape: same struct-return machinery, ensures pins every field.
 - **AC-9 (the scalar FUNCTIONAL spec reports tight — `sum`):**
   `conformance/sum.th`'s `sum` reports `spec_tightness: "tight"`. Grounded: the
   harness with `r1 as nat == spec_sum(xs@)` and `r2 as nat == spec_sum(xs@)` as
@@ -387,9 +387,9 @@ TODAY, which is load-bearing for the never-a-gate claims.
   `conformance/binary_search.th`'s `binary_search` reports
   `spec_tightness: "loose"` AND still certifies L3 with both gate bools `false`
   — the never-a-gate property asserted on a CORPUS item. Hand-derived: under
-  `req sorted(haystack)` with duplicates allowed (`[3, 3]` is sorted),
+  `requires sorted(haystack)` with duplicates allowed (`[3, 3]` is sorted),
   `Some(0)` and `Some(1)` both satisfy the `Some(i) ⇒ haystack[i] == needle`
-  ens for `needle = 3`. Grounded on the simplified Option-result shape: the
+  ensures for `needle = 3`. Grounded on the simplified Option-result shape: the
   any-matching-index harness FAILS `assert(r1 == r2)` (`errors: 1`).
 - **AC-11 (the honest third value):** a unit test over the tightness
   interpretation: a synthetic timeout summary (error + a solver-resource
@@ -423,13 +423,13 @@ Both harnesses are a single `proof fn` inside the standard
 with the combinator defs + spec-fn dependencies woven in (REQ-1/REQ-2).
 
 **Tautology harness (assume-req / arbitrary-result / assert-ens).** Built from a
-`FnItem`'s lowered `req`/`ens` (reuse `thermite_lower::lower`'s SPEC-context
+`FnItem`'s lowered `requires`/`ensures` (reuse `thermite_lower::lower`'s SPEC-context
 emission — the exact `requires`/`ensures` text `lower_fn in lower.rs` produces):
 
 ```rust
 proof fn taut_check(<lowered params>, result: <lowered RET>)
     requires <lowered req>,
-    ensures <lowered ens clauses, comma-separated>,
+    ensures <lowered ensures clauses, comma-separated>,
 { }
 ```
 
@@ -437,15 +437,15 @@ The arbitrary-`result` encoding is the load-bearing decision (OQ-4): `result` is
 a **`proof fn` parameter** (universally quantified — verus must discharge the
 `ensures` for EVERY value of `result`), and the body is EMPTY (no function body
 constrains `result`). If verus discharges the `ensures` with `0 errors`, then
-`ens` holds for an arbitrary result given `req` + types → the postcondition says
+`ensures` holds for an arbitrary result given `requires` + types → the postcondition says
 nothing about what the function computes → TAUTOLOGY. The params keep their real
-types (slice params lower to `&[T]` in the exec-signature position; their `req`
+types (slice params lower to `&[T]` in the exec-signature position; their `requires`
 mentions lower in spec position via `xs@` exactly as `lower_fn` emits) so the
 harness's contract text is identical to the real item's. The function body that
 WOULD constrain `result` is deliberately absent — that is the whole point of "is
-`ens` provable WITHOUT the body" (§7 step 2).
+`ensures` provable WITHOUT the body" (§7 step 2).
 
-**Vacuity harness (assume-req / assert-false).** Built from the lowered `req`:
+**Vacuity harness (assume-req / assert-false).** Built from the lowered `requires`:
 
 ```rust
 proof fn vacuity_check(<lowered params>)
@@ -453,9 +453,9 @@ proof fn vacuity_check(<lowered params>)
 { assert(false); }
 ```
 
-If verus proves `assert(false)` under the assumed `req`, the `req` is
+If verus proves `assert(false)` under the assumed `requires`, the `requires` is
 self-contradictory (unsat) → the function can never be called → VACUOUS
-precondition (§7 step 3). The `ens`/`result` binder is irrelevant here (the
+precondition (§7 step 3). The `ensures`/`result` binder is irrelevant here (the
 emptiness is in the precondition), so the harness omits the return binder.
 
 ### The tightness harness (#271, NOT-STARTED — third member, same machinery)
@@ -464,8 +464,8 @@ emptiness is in the precondition), so the harness omits the return binder.
 proof fn tight_check(<lowered params>, r1: <RET>, r2: <RET>)
     requires
         <lowered req>,
-        <ens lines, result := r1>,
-        <ens lines, result := r2>,
+        <ensures lines, result := r1>,
+        <ensures lines, result := r2>,
 { assert(r1 == r2); }    // struct RET: assert(r1 =~= r2)
 ```
 
@@ -477,7 +477,7 @@ witness of two distinct admissible results (`loose`); inconclusive →
 `undetermined` (REQ-9 — note the polarity table is RICHER than the gate's,
 because for a report a misread timeout would be a WRONG `loose` claim, not a
 missed detection). Construction deltas vs. REQ-1/REQ-2: (a) TWO result binders
-instead of one, via the same `append_result_param` shape; (b) the ens lines move
+instead of one, via the same `append_result_param` shape; (b) the ensures lines move
 from `ensures` to `requires` position, duplicated under the `result → r1/r2`
 identifier-boundary rename (OQ-7); (c) the equality form is type-directed
 (`==` scalar/datatype, `=~=` struct — REQ-11); (d) the sub-program weave must
@@ -509,7 +509,7 @@ separates a counterexample from a VIR/spawn error.
 
 | verus run | tightness harness |
 |---|---|
-| PROVED (`success && errors == 0`) | `tight` (the ens is functional) |
+| PROVED (`success && errors == 0`) | `tight` (the ensures is functional) |
 | FAILED, genuine counterexample (`errors >= 1`, no resource report) | `loose` (two admissible results witnessed) |
 | TIMEOUT (`errors >= 1` WITH a `profile::parse_profile` resource report) | `undetermined` — a hard query is not evidence of looseness |
 | COMPILE-class (`!success && errors == 0`, the grounded E0425 signature) / VIR | `undetermined` — a non-verdict never masquerades as a verdict |
@@ -549,7 +549,7 @@ and (#271) carries the held tightness verdict (REQ-12).
 ### Why this composes with the existing toolchain
 
 - **Lowering reuse:** the harnesses are NOT a second lowering — they call
-  `thermite_lower::lower` (or thread a lowered req/ens string the same emitter
+  `thermite_lower::lower` (or thread a lowered req/ensures string the same emitter
   produces), so the contract text verus sees is identical to the real proof's
   (`pub fn lower in lower.rs`, `lower_fn`'s `requires`/`ensures` emission, the
   `xs@` SPEC-context slice view in `lower_expr`). No new SpecTherm semantics.
@@ -558,7 +558,7 @@ and (#271) carries the held tightness verdict (REQ-12).
   `parse_summary` in `check.rs`); #13 reuses that machinery for its one-query
   runs rather than reinventing exit-status handling (R-CODE-4 for free).
 - **Spec-fn weaving:** the harness sub-program includes the file's `spec fn`s and
-  combinator defs exactly as `check::item_subprogram` does, so a `req`/`ens` that
+  combinator defs exactly as `check::item_subprogram` does, so a `requires`/`ensures` that
   calls `spec_sum`/`sorted` still lowers and resolves. CAVEAT (#275, grounded):
   the shipped weave passes SpecFns ONLY — an ADT-returning fn's harness omits the
   `struct`/`enum` decls and dies at `E0425`, which the gate's `interpret_summary`
@@ -630,7 +630,7 @@ postcondition`; `verification-results`:
 hold for an arbitrary `result`, so the postcondition genuinely constrains the
 computation.
 
-**Vacuity harness — PROVES on an unsat req (`x > 0 && x < 0`):**
+**Vacuity harness — PROVES on an unsat requires (`x > 0 && x < 0`):**
 
 ```rust
 proof fn vacuity_check(x: u32)
@@ -640,10 +640,10 @@ proof fn vacuity_check(x: u32)
 verus `verification-results`:
 `{ "encountered-error": false, "encountered-vir-error": false, "success": true, "verified": 1, "errors": 0 }`
 → PROVED → **unsat precondition detected** (`assert(false)` discharged because the
-assumed `req` is contradictory). (Verus accepts a comma-separated `requires x > 0,
+assumed `requires` is contradictory). (Verus accepts a comma-separated `requires x > 0,
 x < 0,` as a conjunction — the same shape `lower_fn` emits for an `&&` chain.)
 
-**Vacuity harness — FAILS on a satisfiable req (`sum`'s real req):**
+**Vacuity harness — FAILS on a satisfiable requires (`sum`'s real req):**
 
 ```rust
 proof fn vacuity_check(xs: &[u32])
@@ -653,7 +653,7 @@ proof fn vacuity_check(xs: &[u32])
 verus stderr: `error: assertion failed --> ...:7:12`; `verification-results`:
 `{ "encountered-error": true, "success": false, "verified": 0, "errors": 1 }`
 → FAILED → **not vacuous** (clean). And `requires true { assert(false); }` likewise
-FAILS (`success: false, errors: 1`) — a trivially-satisfiable req is not vacuous.
+FAILS (`success: false, errors: 1`) — a trivially-satisfiable requires is not vacuous.
 
 ### Ground the tightness harness (#271 — REAL verus, same binary/version, 2026-06-12)
 
@@ -671,7 +671,7 @@ proof fn tight_check(xs: &[u32], r1: u64, r2: u64)
 `{ "success": true, "verified": 2, "errors": 0, "encountered-vir-error": false }`
 → PROVED → **tight**.
 
-**LOOSE on the `move_up`-shaped struct bounds ens (AC-7):**
+**LOOSE on the `move_up`-shaped struct bounds ensures (AC-7):**
 
 ```rust
 pub struct Buffer { pub text: Seq<u8>, pub cursor: u64 }
@@ -686,7 +686,7 @@ stderr `error: assertion failed`;
 → FAILED → **loose** (the identity result and the true up-target both satisfy the
 ens; even the text BYTES are free up to length).
 
-**TIGHT on the fully-pinned struct ens (the `deposit` shape — AC-8 + the REQ-11
+**TIGHT on the fully-pinned struct ensures (the `deposit` shape — AC-8 + the REQ-11
 `=~=` any-field-differs decision):**
 
 ```rust
@@ -729,7 +729,7 @@ P` fixture sails past the #13 stage to step-4 mutation scoring). The tightness
 interpretation maps this signature to `undetermined` (REQ-9) and the tightness
 builder weaves ADT decls so it does not arise (REQ-11; AC-7 forces it).
 
-### How to build a harness from a `FnItem`'s lowered `req`/`ens` (REQ-1/REQ-2)
+### How to build a harness from a `FnItem`'s lowered `requires`/`ensures` (REQ-1/REQ-2)
 
 1. Reuse `thermite_lower`'s SPEC-context emission for the contract text: the
    `requires <req>` and `ensures <ens>,` lines are exactly what `lower_fn in
@@ -740,12 +740,12 @@ builder weaves ADT decls so it does not arise (REQ-11; AC-7 forces it).
 2. Emit the item's parameter list (exec spelling, `lower_type`) as the harness
    `proof fn` params; for the tautology harness append `result: <lowered RET>`
    as a trailing param (the arbitrary-result binder).
-3. For the tautology harness, body = empty `{ }`; ensures = the lowered `ens`
+3. For the tautology harness, body = empty `{ }`; ensures = the lowered `ensures`
    clauses. For the vacuity harness, drop the `result` binder + ensures and use
    body `{ assert(false); }`.
 4. Wrap in the standard frame and weave in `spec fn` deps + combinator defs the
    contract references (the `check::item_subprogram` + `emit_combinator_defs`
-   pattern), so a `req sorted(haystack)` / `ens result == spec_sum(xs)` resolves.
+   pattern), so a `requires sorted(haystack)` / `ensures result == spec_sum(xs)` resolves.
 5. Run through forge's `run_verus`-class invocation with the pinned seed; map the
    outcome per the REQ-3 table.
 
@@ -759,35 +759,35 @@ type-directed equality in the body; the weave extended with
 Both parse clean under `thermite_syntax::parse` and `forge check` runs them
 today (verified: each currently certifies **L3** with `tautology: false`,
 `vacuous_precondition: false` — i.e. they PASS #6's triage, which is exactly the
-AC-4 gap #13 closes). Grammar-legal: no `%`, `dec` only on loops (none here),
-comma-separated effects, `req`/`ens`/`fx` all present. These are the REJECT
+AC-4 gap #13 closes). Grammar-legal: no `%`, `measures` only on loops (none here),
+comma-separated effects, `!`/`requires`/`ensures` all present. These are the REJECT
 fixtures the orchestrator authors; the ACCEPT side reuses `conformance/sum.th` /
 `binary_search.th`.
 
 **`tautology.th`** — reject (SemanticTautology), AC-2 + AC-4:
 ```thermite
 fn nonneg(x: u32) -> u32
-  req x > 0
-  ens result >= 0
-  fx  pure
+  requires x > 0
+  ensures result >= 0
+  !  pure
 { x }
 ```
-Grounded: `ens#0.expr = Binary { op: Ge, lhs: Path(["result"]), rhs: IntLit(0) }`
-— NOT a `BoolLit(true)`, NOT an identity, NOT a `req` conjunct (so #6 `Passed`).
+Grounded: `ensures#0.expr = Binary { op: Ge, lhs: Path(["result"]), rhs: IntLit(0) }`
+— NOT a `BoolLit(true)`, NOT an identity, NOT a `requires` conjunct (so #6 `Passed`).
 But `result >= 0` holds for every `u32` → the tautology harness PROVES → #13
 rejects. `forge check` TODAY: `L3`, `tautology: false` (the gap).
 
 **`vacuous.th`** — reject (VacuousPrecondition), AC-3 + AC-4:
 ```thermite
 fn unreachable_fn(x: u32) -> u32
-  req x > 0 && x < 0
-  ens result == x
-  fx  pure
+  requires x > 0 && x < 0
+  ensures result == x
+  !  pure
 { x }
 ```
 Grounded: `req.expr = Binary { op: And, lhs: Binary{Gt, Path(["x"]), IntLit(0)},
-rhs: Binary{Lt, Path(["x"]), IntLit(0)} }`. The `ens result == x` is non-trivial
-and mentions `result` (so #6 `Passed` on (a)/(b)/(c); `fx pure` is not maximal so
+rhs: Binary{Lt, Path(["x"]), IntLit(0)} }`. The `ensures result == x` is non-trivial
+and mentions `result` (so #6 `Passed` on (a)/(b)/(c); `! pure` is not maximal so
 (d) passes). But `x > 0 && x < 0` is unsat → the vacuity harness PROVES → #13
 rejects. `forge check` TODAY: `L3`, `vacuous_precondition: false` (the gap).
 
@@ -869,10 +869,10 @@ conformance_ops = ["tautology", "vacuous", "corpus_sum", "corpus_binary_search"]
   scope grows (e.g. the editor's `render_frame -> String` would then report
   loose, which is true and useful).
 - **OQ-7 (#271 — the `result → rN` rename edge):** the rename is an
-  identifier-boundary textual substitution over the VERBATIM lowered ens lines;
+  identifier-boundary textual substitution over the VERBATIM lowered ensures lines;
   an occurrence preceded by `.` is a FIELD access (a user struct field may be
   named `result`) and must NOT be renamed. The cleaner long-term form is a
-  binder-name parameter on the lowering `Ctx` (emit the ens directly under the
+  binder-name parameter on the lowering `Ctx` (emit the ensures directly under the
   `rN` name) — builder's call; the textual form is acceptable v1 because
   `result` is a reserved contract binder in the grammar (no param can shadow it).
 - **OQ-8 (#271 — `forge audit` surfacing):** copy `spec_tightness` into the
@@ -893,16 +893,16 @@ conformance_ops = ["tautology", "vacuous", "corpus_sum", "corpus_binary_search"]
   COMPILE error (`errors: 0`, the E0425 signature) — see the #275 row note below.
 - **CHECK-ORDER (resolved; a soundness precedence, NOT a §7 listing change):** the
   UNSAT-PRECONDITION check runs BEFORE the tautology check, the reverse of §7's
-  step-2/step-3 listing. The two are not independent — an unsatisfiable `req` makes
+  step-2/step-3 listing. The two are not independent — an unsatisfiable `requires` makes
   EVERY `ensures` vacuously provable, so the tautology harness ALSO proves on a
-  vacuous-`req` contract (a false premise proves anything). Running tautology first
+  vacuous-`requires` contract (a false premise proves anything). Running tautology first
   would MISLABEL a vacuous precondition as a `SemanticTautology`; the genuine root
-  cause is the unsat `req`. So vacuity is checked first and reported as
+  cause is the unsat `requires`. So vacuity is checked first and reported as
   `VacuousPrecondition`; the tautology check then runs only on a SATISFIABLE
-  precondition, where a proved `ens`-for-arbitrary-result is a genuine tautology.
+  precondition, where a proved `ensures`-for-arbitrary-result is a genuine tautology.
   This is an ordering precedence WITHIN the SOLVER stage; both checks and both
   causes are unchanged. Pinned in `vacuity_solver::solver_vacuity_check`. The same
-  precedence extends to the #271 tightness query (an unsat `req` would spuriously
+  precedence extends to the #271 tightness query (an unsat `requires` would spuriously
   prove `assert(r1 == r2)`), which is why it runs only after a `Clean` (REQ-12).
 - **GATE-PLACEMENT (resolved; OQ-2-adjacent):** the two queries run INSIDE the
   proof-cache MISS branch (after the cache lookup, before the L3 proof), so the
@@ -954,7 +954,7 @@ are specified not to inherit it (REQ-9/REQ-11).
 | REQ | Status | Evidence |
 |---|---|---|
 | REQ-1 (tautology harness builder) | SHIPPED | `vacuity_solver::build_tautology_harness` lowers the real `FnItem` (+ spec fns) via `thermite_lower::lower` and rebuilds `proof fn taut_check(<params>, result: <RET>) requires ..; ensures ..; { }` (`extract_lowered_fn` reuses the verbatim `requires`/`ensures`). Consumer: `check::check_file`. Grounded: PROVES on `result >= 0`/`u32`, FAILS on `sum`'s ens. CAVEAT #275: the weave is SpecFn-only — an ADT-signature fn's harness hits `E0425` (no real query runs). |
-| REQ-2 (vacuity harness builder) | SHIPPED | `vacuity_solver::build_vacuity_harness` reuses the same extraction → `proof fn vac_check(<params>) requires ..; { assert(false); }`. Consumer: `check::check_file`. Grounded: PROVES on `x>5 && x<3`, FAILS on `sum`'s `req`. CAVEAT #275: same SpecFn-only weave. |
+| REQ-2 (vacuity harness builder) | SHIPPED | `vacuity_solver::build_vacuity_harness` reuses the same extraction → `proof fn vac_check(<params>) requires ..; { assert(false); }`. Consumer: `check::check_file`. Grounded: PROVES on `x>5 && x<3`, FAILS on `sum`'s `requires`. CAVEAT #275: same SpecFn-only weave. |
 | REQ-3 (verdict interpretation, R-CODE-4) | SHIPPED | `vacuity_solver::interpret_summary`: PROVED (`success && errors==0`) → DETECTED; FAILED → CLEAN; VIR error → `ForgeError::VerusOutput`; `run_harness` surfaces verus-absent / unparseable as `ForgeError`, never a silent clean. CAVEAT #275 (grounded): the FAILED arm also absorbs the COMPILE-error class (`!success && errors==0`, E0425) as CLEAN — a non-verdict read as a verdict on ADT-signature fns. |
 | REQ-4 (value-add over #6) | SHIPPED | the `semantic_tautology` / `vacuous_precondition` fixtures PASS `vacuity::triage` (no #6 syntactic cause) yet `solver_vacuity_check` rejects them with the SOLVER causes — asserted by `forge/tests/solver_vacuity_conformance.rs` against `conformance/solver-vacuity/cases.json`. |
 | REQ-5 (gate wiring, verdict-in-cert) | SHIPPED | `check::check_file` calls `vacuity_solver::solver_vacuity_check` after #6 `gate_fn` returns `ProceedToL3` (inside the cache-miss branch, before L3); a `Detected` → `Certificate::rejected_vacuity` (`Level::L0` + cause), a `Clean` proceeds to L3. |

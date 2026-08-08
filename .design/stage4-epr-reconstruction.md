@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 842320f86217266716ff38b2e6d278d6d2afac06016e1fe9aa1ab54cde41caee (re-pinned 2026-08-06: `.github/workflows/ci.yml` gains one step, the RFC front-matter gate (#127). Nothing else this document governs changed, and the pipeline it describes is unaffected) (re-pinned 2026-08-01 after restoring the Rust cache before the pinned Stage 4 tools; Gate G4 identities remain enforced)
+audited-content-sha256: 34d29a283b500fd031013fc3ae8b67065e7d3314738af6272df9ccc6365554bd (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: 842320f86217266716ff38b2e6d278d6d2afac06016e1fe9aa1ab54cde41caee, previously (re-pinned 2026-08-06: `.github/workflows/ci.yml` gains one step, the RFC front-matter gate (#127). Nothing else this document governs changed, and the pipeline it describes is unaffected) (re-pinned 2026-08-01 after restoring the Rust cache before the pinned Stage 4 tools; Gate G4 identities remain enforced))
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see tooling/spec-routes.toml)
 -->

@@ -25,7 +25,7 @@ the parser deferred "downstream/forge":
 (2) **L3-exempt / L1-enforced** certification — a valid `#[slag]` item is NOT
 sent to `verus`; it certifies at **L1** (the runtime-contract rung, §6) with
 `slag: true` and its metadata in the certificate;
-(3) it is the ONLY justification for a maximal `fx` row (the §7.1 (d)
+(3) it is the ONLY justification for a maximal `!` row (the §7.1 (d)
 interaction, `.design/forge/vacuity-triage.md`);
 (4) it is VISIBLE in the audit surface (the certificate carries `slag: true` +
 the reason/owner/review). The polarity inversion is the point (§8):
@@ -58,7 +58,7 @@ hatch", milestone #1).
   `slag: true`. This is the ONE place a v0.1 certificate carries `L1`: it is a
   deliberate down-rung, not a degrade (the L3→L2→L1 degrade ladder is #10).
   Source: `thermite-design.md` §8, §6.
-- **REQ-3 (slag justifies a maximal `fx` row — the §7.1 (d) interaction):** slag
+- **REQ-3 (slag justifies a maximal `!` row — the §7.1 (d) interaction):** slag
   is the ONLY thing that justifies a maximal effect row. The structural triage
   rule (d) (`.design/forge/vacuity-triage.md` REQ-4) rejects a maximal
   `EffectRow::Set` (all 8 `Effect` variant kinds) on a NON-slag item; on a
@@ -100,7 +100,7 @@ hatch", milestone #1).
 
 ACs tie to a `conformance/slag/` oracle (authored by the orchestrator). Each
 fixture is PARSE-VERIFIED below. Grammar limits hit while authoring (noted): no
-`%` operator exists; `spec fn` requires a mandatory `dec`; effect rows use
+`%` operator exists; `spec fn` requires a mandatory `measures`; effect rows use
 COMMA separators (no `+`, no `fx *`); slag field values are double-quoted string
 literals.
 
@@ -117,10 +117,10 @@ literals.
   parses to `None`) → rejected naming `owner`.
 - **AC-3 (slag still subject to vacuity (a)/(b)/(c)):**
   `conformance/slag/slag_vacuous.th` — a valid-fielded `#[slag]` item with
-  `ens true` → rejected by triage rule (a) (`.design/forge/vacuity-triage.md`),
+  `ensures true` → rejected by triage rule (a) (`.design/forge/vacuity-triage.md`),
   demonstrating slag exempts proving but not stating (REQ-3, §8).
-- **AC-4 (slag justifies maximal `fx`):** `conformance/slag/maximal_fx.th` — a
-  valid-fielded `#[slag]` item whose row is all 8 `Effect` kinds and whose `ens`
+- **AC-4 (slag justifies maximal `!`):** `conformance/slag/maximal_fx.th` — a
+  valid-fielded `#[slag]` item whose row is all 8 `Effect` kinds and whose `ensures`
   mentions `result` non-trivially → certifies L1 with `slag: true` (passes (d)
   because slag is present; passes (a)/(b)/(c)). The non-slag counterpart is
   `conformance/vacuity/maximal_fx.th`, which is REJECTED (d).
@@ -141,7 +141,7 @@ literals.
   `SlagError::MissingField { field }` / `SlagError::EmptyField { field }`.
 - `SlagMeta` is the validated metadata carried into the certificate (REQ-4).
 - The slag CERT helper builds the `L1` `slag: true` certificate for a validated,
-  triage-passing item (REQ-2): `Level::L1`, `effects` from the item's `fx` row
+  triage-passing item (REQ-2): `Level::L1`, `effects` from the item's `!` row
   (`manifest::effects_of`), `slag: true`, the metadata, and a single discharged
   obligation noting "contract enforced at L1 (slag); proof exempt by fiat" — NOT
   a `verus` obligation (no proof was run). The L1 RUNTIME-CHECK compilation of
@@ -219,14 +219,14 @@ grammar (the design comments are dropped; `u32::MAX as usize` parses as a
        owner  = "agent:forge-7/session-2026-06-04",
        review = "required")]
 fn simd_sum(xs: &[u32]) -> u64
-  req xs.len() <= 1000000
-  ens result == spec_sum(xs)
-  fx  pure
+  requires xs.len() <= 1000000
+  ensures result == spec_sum(xs)
+  !  pure
 { 0 }
 ```
 Grounded: `slag = Some(SlagAttr { reason: Some("vendored SIMD ..."), owner:
 Some("agent:forge-7/session-2026-06-04"), review: Some("required") })`;
-`ens#0.expr = Binary{Eq, Path(["result"]), Call{Path(["spec_sum"]),
+`ensures#0.expr = Binary{Eq, Path(["result"]), Call{Path(["spec_sum"]),
 [Path(["xs"])]}}` (mentions `result`, non-trivial). (Grammar note: `1_000_000`
 also parses — digit separators are lexed — but `1000000` is used to avoid the
 observation #37 separator caveat.)
@@ -235,9 +235,9 @@ observation #37 separator caveat.)
 ```thermite
 #[slag(reason = "", owner = "agent:forge-7", review = "required")]
 fn f(xs: &[u32]) -> u64
-  req true
-  ens result == 0
-  fx  pure
+  requires true
+  ensures result == 0
+  !  pure
 { 0 }
 ```
 Grounded: `slag = Some(SlagAttr { reason: Some(""), owner: Some("agent:forge-7"),
@@ -248,9 +248,9 @@ review: Some("required") })` → `reason` present but empty → `SlagError::Empt
 ```thermite
 #[slag(reason = "x", review = "required")]
 fn f(xs: &[u32]) -> u64
-  req true
-  ens result == 0
-  fx  pure
+  requires true
+  ensures result == 0
+  !  pure
 { 0 }
 ```
 Grounded: `slag = Some(SlagAttr { reason: Some("x"), owner: None, review:
@@ -262,12 +262,12 @@ Some("required") })` → `owner` is `None` → `SlagError::MissingField
 ```thermite
 #[slag(reason = "x", owner = "y", review = "required")]
 fn f(xs: &[u32]) -> u64
-  req true
-  ens true
-  fx  pure
+  requires true
+  ensures true
+  !  pure
 { 0 }
 ```
-Grounded: fields all `Some(non-empty)`; `ens#0.expr = BoolLit(true)` → passes
+Grounded: fields all `Some(non-empty)`; `ensures#0.expr = BoolLit(true)` → passes
 slag validation, then triage rule (a) rejects (`.design/forge/vacuity-triage.md`
 REQ-1). Demonstrates slag exempts proving, not stating (§8).
 
@@ -275,13 +275,13 @@ REQ-1). Demonstrates slag exempts proving, not stating (§8).
 ```thermite
 #[slag(reason = "vendored hardware path", owner = "agent:forge-7", review = "required")]
 fn f(x: u32) -> u32
-  req true
-  ens result == x
-  fx  read(a), write(b), net(c), alloc, time, rand, panic, diverge
+  requires true
+  ensures result == x
+  !  read(a), write(b), net(c), alloc, time, rand, panic, diverge
 { x }
 ```
 Grounded: `slag = Some(...)`; `fx = Set([Read("a"), Write("b"), Net("c"), Alloc,
-Time, Rand, Panic, Diverge])` (all 8 kinds); `ens#0.expr = Binary{Eq,
+Time, Rand, Panic, Diverge])` (all 8 kinds); `ensures#0.expr = Binary{Eq,
 Path(["result"]), Path(["x"])}`. Passes slag validation, triage (a)/(b)/(c), and
 (d)-is-skipped (slag present) → L1, `slag: true`.
 
@@ -320,6 +320,6 @@ Path(["result"]), Path(["x"])}`. Passes slag validation, triage (a)/(b)/(c), and
 |---|---|---|
 | REQ-1 (mandatory-field validation) | SHIPPED | `pub fn validate(&SlagAttr) -> Result<SlagMeta, SlagError>` in `slag.rs` (`validate_field`: `None` → `MissingField`, empty-after-`trim` → `EmptyField`); consumer `check::gate_fn`. Verified: `slag::tests::{all_present_non_empty_ok, empty_reason_rejected, missing_owner_rejected, whitespace_only_is_empty, validated_fields_are_trimmed, reason_checked_first}` + conformance `empty_reason`/`missing_owner`. |
 | REQ-2 (L3-exempt / L1-enforced / `slag: true`) | SHIPPED | `Certificate::slag_l1` (manifest.rs) emits `Level::L1` + `slag: true` + a fiat-trusted obligation; `check::gate_fn` builds it WITHOUT invoking `lower`/`run_verus`. Verified: `slag_accepts_certify_l1_slag_true` (`simd_sum_l1`, `slag_justifies_maximal_fx` → L1, slag:true, no verus). |
-| REQ-3 (slag justifies maximal `fx`) | SHIPPED | `vacuity::triage` skips rule (d) when `item.slag.is_some()`; `slag::validate` (run first in `gate_fn`) gates whether that skip is honored. Verified: `vacuity::tests::maximal_fx_with_slag_passes_d` + conformance `slag_justifies_maximal_fx` accept vs. non-slag `maximal_fx_no_slag` reject. |
+| REQ-3 (slag justifies maximal `!`) | SHIPPED | `vacuity::triage` skips rule (d) when `item.slag.is_some()`; `slag::validate` (run first in `gate_fn`) gates whether that skip is honored. Verified: `vacuity::tests::maximal_fx_with_slag_passes_d` + conformance `slag_justifies_maximal_fx` accept vs. non-slag `maximal_fx_no_slag` reject. |
 | REQ-4 (audit visibility — cert metadata) | SHIPPED | `SlagMeta { reason, owner, review }` (manifest.rs) carried via the additive `Certificate.slag_meta: Option<SlagMeta>` (OQ-1 ratified — `skip_serializing_if`, golden still deserializes); `cli::render_human` prints it. Verified: `manifest::tests::slag_l1_cert_shape` + `slag_accepts` asserts `slag_meta` present. |
 | REQ-5 (typed verdict + check integration) | SHIPPED | `SlagError` + `Result<SlagMeta, SlagError>`; `check::gate_fn` composes validate → triage(a/b/c) → `slag_l1` short-circuit; a `slag.is_none()` item takes the normal L3 path. Verified: the slag conformance tests + the corpus L3 tests (non-slag untouched). |
