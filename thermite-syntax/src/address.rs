@@ -18,7 +18,7 @@
 //!
 //! | ID | Status | Owner | Title | Follow-up |
 //! |---|---|---|---|---|
-//! | REQ-SYNTAX-ADDRESS-DEC | shipped | `thermite-syntax/src/address.rs` | Semantic address dec segment |  |
+//! | REQ-SYNTAX-ADDRESS-DEC | shipped | `thermite-syntax/src/address.rs` | Semantic address measures segment |  |
 //! | REQ-SYNTAX-ADDRESS-DETERMINISTIC-RESOLVE | shipped | `thermite-syntax/src/address.rs` | Semantic address bidirectional resolution |  |
 //! | REQ-SYNTAX-ADDRESS-GRAMMAR | shipped | `thermite-syntax/src/address.rs` | Semantic address grammar |  |
 //! | REQ-SYNTAX-ADDRESS-HOLES | shipped | `thermite-syntax/src/address.rs` | Semantic address holes |  |

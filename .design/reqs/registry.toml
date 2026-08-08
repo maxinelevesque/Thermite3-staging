@@ -1453,7 +1453,7 @@ note = "Forge check boundary L1 row replaced by a generated canonical reference.
 
 [[legacy_mapping]]
 path = "forge/src/check.rs"
-label = "check.md REQ-8 (`fx diverge` caps at L1, mutation/strengthen exempt — the #16 mirror)"
+label = "check.md REQ-8 (`! diverge` caps at L1, mutation/strengthen exempt — the #16 mirror)"
 id = "REQ-FORGE-CHECK-DIVERGE-L1"
 replacement_view = "forge-check-diverge-status"
 note = "Forge check diverge L1 cap row replaced by a generated canonical reference."
@@ -1677,7 +1677,7 @@ note = "L1 spec-fn executable row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-lower/src/l1.rs"
-label = "REQ-5 (`dec`/termination L1 scope)"
+label = "REQ-5 (`measures`/termination L1 scope)"
 id = "REQ-LOWER-L1-DEC-SCOPE"
 replacement_view = "thermite-lower-l1-core-status"
 note = "L1 termination-scope row replaced by a generated canonical reference."
@@ -1691,7 +1691,7 @@ note = "L1 golden-contract row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-lower/src/l1.rs"
-label = "REQ-7 (`fx`/effect at L1 deferred to #21)"
+label = "REQ-7 (`!`/effect at L1 deferred to #21)"
 id = "REQ-LOWER-L1-EFFECT-SCOPE"
 replacement_view = "thermite-lower-l1-core-status"
 note = "L1 effect-scope row replaced by a generated canonical reference."
@@ -1936,7 +1936,7 @@ note = "Deferred recursion-scheme exec mirror row replaced by a generated canoni
 
 [[legacy_mapping]]
 path = "thermite-lower/src/lower.rs"
-label = "REQ-5 (`Vec<T>` → vstd-`Vec` newtype; push/get/len; `fx alloc`; backing-agnostic)"
+label = "REQ-5 (`Vec<T>` → vstd-`Vec` newtype; push/get/len; `! alloc`; backing-agnostic)"
 id = "REQ-LOWER-COLLECTIONS-VEC"
 replacement_view = "thermite-lower-collections-status"
 note = "Collections Vec row replaced by a generated canonical reference."
@@ -1992,7 +1992,7 @@ note = "Vec method-cage row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-lower/src/lower.rs"
-label = "REQ-4 (`Map<K,V>` → Vec-of-pairs `TMap` wrapper + spec view; `insert`/`get`/`contains_key`/`len`; `fx alloc`)"
+label = "REQ-4 (`Map<K,V>` → Vec-of-pairs `TMap` wrapper + spec view; `insert`/`get`/`contains_key`/`len`; `! alloc`)"
 id = "REQ-LOWER-MAP-WRAPPER"
 replacement_view = "thermite-lower-map-status"
 note = "Bounded Map wrapper row replaced by a generated canonical reference."
@@ -2069,14 +2069,14 @@ note = "String spec-scanning lowerer row replaced by a generated canonical refer
 
 [[legacy_mapping]]
 path = "thermite-lower/src/lower.rs"
-label = "REQ-7 (`push_byte`/`from_byte` — verified byte-builder; `fx alloc`)"
+label = "REQ-7 (`push_byte`/`from_byte` — verified byte-builder; `! alloc`)"
 id = "REQ-STRING-BYTE-BUILDER"
 replacement_view = "thermite-lower-string-status"
 note = "String byte-builder lowerer row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-lower/src/lower.rs"
-label = "REQ-8 (`u64_to_string` — decimal formatting, ROUND-TRIP contract; `fx alloc`)"
+label = "REQ-8 (`u64_to_string` — decimal formatting, ROUND-TRIP contract; `! alloc`)"
 id = "REQ-STRING-U64-TO-STRING"
 replacement_view = "thermite-lower-string-status"
 note = "String decimal-formatting lowerer row replaced by a generated canonical reference."
@@ -2104,14 +2104,14 @@ note = "String find lowerer row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-lower/src/lower.rs"
-label = "REQ-15 (`split` — split on a separator byte → `Vec<String>`; `fx alloc`)"
+label = "REQ-15 (`split` — split on a separator byte → `Vec<String>`; `! alloc`)"
 id = "REQ-STRING-SPLIT"
 replacement_view = "thermite-lower-string-status"
 note = "String split lowerer row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-lower/src/lower.rs"
-label = "REQ-16 (`trim` — strip leading/trailing ASCII whitespace → `String`; `fx alloc`)"
+label = "REQ-16 (`trim` — strip leading/trailing ASCII whitespace → `String`; `! alloc`)"
 id = "REQ-STRING-TRIM"
 replacement_view = "thermite-lower-string-status"
 note = "String trim lowerer row replaced by a generated canonical reference."
@@ -2265,14 +2265,14 @@ note = "Sealed-construction validator row replaced by a generated canonical refe
 
 [[legacy_mapping]]
 path = "thermite-spec/src/validator.rs"
-label = "REQ-7 (`push_byte`/`from_byte` — verified byte-builder; `fx alloc`)"
+label = "REQ-7 (`push_byte`/`from_byte` — verified byte-builder; `! alloc`)"
 id = "REQ-STRING-BYTE-BUILDER"
 replacement_view = "thermite-spec-validator-string-status"
 note = "String byte-builder validator row replaced by a generated reference to the shared string requirement."
 
 [[legacy_mapping]]
 path = "thermite-spec/src/validator.rs"
-label = "REQ-8 (`u64_to_string` — decimal formatting, ROUND-TRIP contract; `fx alloc`)"
+label = "REQ-8 (`u64_to_string` — decimal formatting, ROUND-TRIP contract; `! alloc`)"
 id = "REQ-STRING-U64-TO-STRING"
 replacement_view = "thermite-spec-validator-string-status"
 note = "String decimal-formatting validator row replaced by a generated reference to the shared string requirement."
@@ -2300,14 +2300,14 @@ note = "String find validator row replaced by a generated reference to the share
 
 [[legacy_mapping]]
 path = "thermite-spec/src/validator.rs"
-label = "REQ-15 (`split` — split on a separator byte → `Vec<String>`; `fx alloc`)"
+label = "REQ-15 (`split` — split on a separator byte → `Vec<String>`; `! alloc`)"
 id = "REQ-STRING-SPLIT"
 replacement_view = "thermite-spec-validator-string-status"
 note = "String split validator row replaced by a generated reference to the shared string requirement."
 
 [[legacy_mapping]]
 path = "thermite-spec/src/validator.rs"
-label = "REQ-16 (`trim` — strip leading/trailing ASCII whitespace → `String`; `fx alloc`)"
+label = "REQ-16 (`trim` — strip leading/trailing ASCII whitespace → `String`; `! alloc`)"
 id = "REQ-STRING-TRIM"
 replacement_view = "thermite-spec-validator-string-status"
 note = "String trim validator row replaced by a generated reference to the shared string requirement."
@@ -2321,14 +2321,14 @@ note = "bytes_eq validator cage row replaced by a generated canonical reference.
 
 [[legacy_mapping]]
 path = "thermite-spec/src/validator.rs"
-label = "REQ-3 (built-in-variant registry + spec-`match`-in-`ens` payload projection)"
+label = "REQ-3 (built-in-variant registry + spec-`match`-in-`ensures` payload projection)"
 id = "REQ-SPEC-VALIDATOR-OPTRES-BUILTINS"
 replacement_view = "thermite-spec-validator-option-result-status"
 note = "Option/Result validator built-in row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-spec/src/validator.rs"
-label = "REQ-2 (`dec` mandatory for a recursive `fn`; the self-call validator rule)"
+label = "REQ-2 (`measures` mandatory for a recursive `fn`; the self-call validator rule)"
 id = "REQ-SPEC-VALIDATOR-RECURSION-DECREASES"
 replacement_view = "thermite-spec-validator-recursion-tuples-status"
 note = "Plain-recursion validator decreases row replaced by a generated canonical reference."
@@ -2454,7 +2454,7 @@ note = "Goal REPL hole AST row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-syntax/src/ast.rs"
-label = "REQ-1 SURFACE (struct items + `inv` clause)"
+label = "REQ-1 SURFACE (struct items + `keeps` clause)"
 id = "REQ-SYNTAX-ADT-STRUCT"
 replacement_view = "thermite-syntax-ast-adt-status"
 note = "ADT struct surface row replaced by a generated canonical reference."
@@ -2524,7 +2524,7 @@ note = "Result surface AST row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-syntax/src/ast.rs"
-label = "REQ-1 (`fn` `dec` clause — AST)"
+label = "REQ-1 (`fn` `measures` clause — AST)"
 id = "REQ-SYNTAX-RECURSION-DEC"
 replacement_view = "thermite-syntax-ast-recursion-tuples-status"
 note = "Recursive fn dec AST row replaced by a generated canonical reference."
@@ -2678,10 +2678,10 @@ note = "Result parser row replaced by a generated reference to the canonical Res
 
 [[legacy_mapping]]
 path = "thermite-syntax/src/parser.rs"
-label = "REQ-1 (`fn` `dec` clause parse)"
+label = "REQ-1 (`fn` `measures` clause parse)"
 id = "REQ-SYNTAX-RECURSION-DEC"
 replacement_view = "thermite-syntax-parser-recursion-tuples-status"
-note = "Recursive fn dec parser row replaced by a generated reference to the canonical recursion requirement."
+note = "Recursive fn measures parser row replaced by a generated reference to the canonical recursion requirement."
 
 [[legacy_mapping]]
 path = "thermite-syntax/src/parser.rs"
@@ -2923,17 +2923,17 @@ note = "Semantic-address loop-numbering row replaced by a generated canonical re
 
 [[legacy_mapping]]
 path = "thermite-syntax/src/address.rs"
-label = "REQ-3 (inv numbering)"
+label = "REQ-3 (keeps numbering)"
 id = "REQ-SYNTAX-ADDRESS-INV-NUMBERING"
 replacement_view = "thermite-syntax-address-status"
 note = "Semantic-address invariant-numbering row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-syntax/src/address.rs"
-label = "REQ-4 (dec address)"
+label = "REQ-4 (measures address)"
 id = "REQ-SYNTAX-ADDRESS-DEC"
 replacement_view = "thermite-syntax-address-status"
-note = "Semantic-address dec row replaced by a generated canonical reference."
+note = "Semantic-address measures row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "thermite-syntax/src/address.rs"
@@ -3189,7 +3189,7 @@ note = "Source-comment status row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "forge/src/build.rs"
-label = "REQ-3 (ambient-syscall `fx` reject)"
+label = "REQ-3 (ambient-syscall `!` reject)"
 id = "REQ-FORGE-BUILD-KERNEL-FX-REJECT"
 replacement_view = "forge-build-kernel-status"
 note = "Source-comment status row replaced by a generated canonical reference."
@@ -3469,7 +3469,7 @@ note = "Source-comment status row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "forge/src/vacuity.rs"
-label = "REQ-3 (ens-implied-by-req reject (c))"
+label = "REQ-3 (ens-implied-by-requires reject (c))"
 id = "REQ-FORGE-VACUITY-ENS-IMPLIED-BY-REQ"
 replacement_view = "forge-vacuity-status"
 note = "Source-comment status row replaced by a generated canonical reference."
@@ -3931,14 +3931,14 @@ note = "Source-comment status row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "forge/src/sandbox.rs"
-label = "REQ-2 (transitive-`fx` derivation via `closure.rs`)"
+label = "REQ-2 (transitive-`!` derivation via `closure.rs`)"
 id = "REQ-FORGE-SANDBOX-TRANSITIVE-FX"
 replacement_view = "forge-sandbox-status"
 note = "Source-comment status row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "forge/src/sandbox.rs"
-label = "REQ-3 (`fx` → syscall allowlist mapping)"
+label = "REQ-3 (`!` → syscall allowlist mapping)"
 id = "REQ-FORGE-SANDBOX-SYSCALL-MAP"
 replacement_view = "forge-sandbox-status"
 note = "Source-comment status row replaced by a generated canonical reference."
@@ -4029,7 +4029,7 @@ note = "Source-comment status row replaced by a generated canonical reference."
 
 [[legacy_mapping]]
 path = "forge/src/slag.rs"
-label = "REQ-3 (slag justifies maximal `fx`)"
+label = "REQ-3 (slag justifies maximal `!`)"
 id = "REQ-FORGE-SLAG-MAXIMAL-FX"
 replacement_view = "forge-slag-status"
 note = "Source-comment status row replaced by a generated canonical reference."
@@ -4362,7 +4362,7 @@ title = "Mandatory contract AST node"
 owner = "thermite-syntax/src/ast.rs"
 status = "shipped"
 scope = "syntax"
-summary = "`Contract` keeps `req`, non-empty `ens`, and `fx` structurally present so mandatory function contracts are not optional in the AST."
+summary = "`Contract` keeps `requires`, non-empty `ensures`, and `!` structurally present so mandatory function contracts are not optional in the AST."
 aliases = ["thermite-syntax/src/ast.rs REQ-2 (contract node, mandatory fields)"]
 contributors = [".design/syntax/ast.md", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/conformance.rs"]
 generated_to = ["status", "thermite-syntax-ast-core-status"]
@@ -4639,7 +4639,7 @@ owner = "thermite-syntax/src/ast.rs"
 status = "shipped"
 scope = "syntax"
 summary = "`StructItem` and `FieldDef` represent product types and optional invariant clauses at the syntax boundary."
-aliases = ["thermite-syntax/src/ast.rs REQ-1 SURFACE (struct items + `inv` clause)"]
+aliases = ["thermite-syntax/src/ast.rs REQ-1 SURFACE (struct items + `keeps` clause)"]
 contributors = [".design/basis/01-adts.md", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/adt_parse.rs"]
 generated_to = ["status", "thermite-syntax-ast-adt-status"]
 
@@ -4828,7 +4828,7 @@ owner = "thermite-syntax/src/ast.rs"
 status = "shipped"
 scope = "syntax"
 summary = "`FnItem.dec` records the optional decreases clause for recursive exec functions while keeping non-recursive functions byte-stable."
-aliases = ["thermite-syntax/src/ast.rs REQ-1 (`fn` `dec` clause - AST)"]
+aliases = ["thermite-syntax/src/ast.rs REQ-1 (`fn` `measures` clause - AST)"]
 contributors = [".design/basis/10-recursion-tuples.md", "thermite-syntax/src/parser.rs", "forge/tests/recursion_conformance.rs"]
 generated_to = ["status", "thermite-syntax-ast-recursion-tuples-status", "thermite-syntax-parser-recursion-tuples-status"]
 
@@ -6008,7 +6008,7 @@ owner = "thermite-lower/src/lower.rs"
 status = "shipped"
 scope = "lower"
 summary = "`Vec<T>` lowers to a bounded Verus `TVec` wrapper with capacity, length, get, and push contracts."
-aliases = ["thermite-lower/src/lower.rs REQ-5 (`Vec<T>` → vstd-`Vec` newtype; push/get/len; `fx alloc`; backing-agnostic)"]
+aliases = ["thermite-lower/src/lower.rs REQ-5 (`Vec<T>` → vstd-`Vec` newtype; push/get/len; `! alloc`; backing-agnostic)"]
 contributors = [".design/basis/04-collections.md", "thermite-lower/tests/collections_conformance.rs"]
 generated_to = ["status", "thermite-lower-collections-status"]
 
@@ -6203,7 +6203,7 @@ owner = "thermite-lower/src/lower.rs"
 status = "shipped"
 scope = "lower"
 summary = "`Map<K,V>` lowers to a bounded Vec-of-pairs `TMap` wrapper with spec views, get, contains_key, len, and insert contracts."
-aliases = ["thermite-lower/src/lower.rs REQ-4 (`Map<K,V>` → Vec-of-pairs `TMap` wrapper + spec view; `insert`/`get`/`contains_key`/`len`; `fx alloc`)"]
+aliases = ["thermite-lower/src/lower.rs REQ-4 (`Map<K,V>` → Vec-of-pairs `TMap` wrapper + spec view; `insert`/`get`/`contains_key`/`len`; `! alloc`)"]
 contributors = [".design/basis/13-map.md", "forge/tests/map_conformance.rs"]
 generated_to = ["status", "thermite-lower-map-status"]
 
@@ -6485,8 +6485,8 @@ status = "shipped"
 scope = "lower"
 summary = "`String::from_byte` and `push_byte` are validated as contract-visible byte-builder operations and lower to verified allocation-backed string constructors."
 aliases = [
-  "thermite-lower/src/lower.rs REQ-7 (`push_byte`/`from_byte` — verified byte-builder; `fx alloc`)",
-  "thermite-spec/src/validator.rs REQ-7 (`push_byte`/`from_byte` — verified byte-builder; `fx alloc`)",
+  "thermite-lower/src/lower.rs REQ-7 (`push_byte`/`from_byte` — verified byte-builder; `! alloc`)",
+  "thermite-spec/src/validator.rs REQ-7 (`push_byte`/`from_byte` — verified byte-builder; `! alloc`)",
 ]
 contributors = [".design/basis/07-strings.md", "thermite-spec/src/validator.rs", "forge/tests/string_format_conformance.rs"]
 generated_to = ["status", "thermite-lower-string-status", "thermite-spec-validator-string-status"]
@@ -6514,8 +6514,8 @@ status = "shipped"
 scope = "lower"
 summary = "`u64_to_string` and `to_string` support emit the decimal formatter, round-trip spec functions, and validator cage entries needed for contracts to name them."
 aliases = [
-  "thermite-lower/src/lower.rs REQ-8 (`u64_to_string` — decimal formatting, ROUND-TRIP contract; `fx alloc`)",
-  "thermite-spec/src/validator.rs REQ-8 (`u64_to_string` — decimal formatting, ROUND-TRIP contract; `fx alloc`)",
+  "thermite-lower/src/lower.rs REQ-8 (`u64_to_string` — decimal formatting, ROUND-TRIP contract; `! alloc`)",
+  "thermite-spec/src/validator.rs REQ-8 (`u64_to_string` — decimal formatting, ROUND-TRIP contract; `! alloc`)",
 ]
 contributors = [".design/basis/07-strings.md", "thermite-spec/src/validator.rs", "forge/tests/string_format_conformance.rs", "forge/tests/divergence_numfmt_display_order.rs"]
 generated_to = ["status", "thermite-lower-string-status", "thermite-spec-validator-string-status"]
@@ -6635,8 +6635,8 @@ status = "shipped"
 scope = "lower"
 summary = "`split` is validated as a contract-visible allocation operation and lowers to a bounded `Vec<String>` splitter with count and separator-free spec support."
 aliases = [
-  "thermite-lower/src/lower.rs REQ-15 (`split` — split on a separator byte → `Vec<String>`; `fx alloc`)",
-  "thermite-spec/src/validator.rs REQ-15 (`split` — split on a separator byte → `Vec<String>`; `fx alloc`)",
+  "thermite-lower/src/lower.rs REQ-15 (`split` — split on a separator byte → `Vec<String>`; `! alloc`)",
+  "thermite-spec/src/validator.rs REQ-15 (`split` — split on a separator byte → `Vec<String>`; `! alloc`)",
 ]
 contributors = [".design/basis/07-strings.md", "thermite-spec/src/validator.rs", "forge/tests/string_search_conformance.rs"]
 generated_to = ["status", "thermite-lower-string-status", "thermite-spec-validator-string-status"]
@@ -6664,8 +6664,8 @@ status = "shipped"
 scope = "lower"
 summary = "`trim` is validated as a contract-visible allocation operation and lowers to verified leading/trailing ASCII whitespace stripping."
 aliases = [
-  "thermite-lower/src/lower.rs REQ-16 (`trim` — strip leading/trailing ASCII whitespace → `String`; `fx alloc`)",
-  "thermite-spec/src/validator.rs REQ-16 (`trim` — strip leading/trailing ASCII whitespace → `String`; `fx alloc`)",
+  "thermite-lower/src/lower.rs REQ-16 (`trim` — strip leading/trailing ASCII whitespace → `String`; `! alloc`)",
+  "thermite-spec/src/validator.rs REQ-16 (`trim` — strip leading/trailing ASCII whitespace → `String`; `! alloc`)",
 ]
 contributors = [".design/basis/07-strings.md", "thermite-spec/src/validator.rs", "forge/tests/string_search_conformance.rs"]
 generated_to = ["status", "thermite-lower-string-status", "thermite-spec-validator-string-status"]
@@ -6873,12 +6873,12 @@ note = "AC-12 live (z3-gated): live_nlsat_isqrt_characterization_is_proved, live
 
 [[requirement]]
 id = "REQ-S1-9"
-title = "Lemma library mechanics — namespace, certified-only citation, dedup-on-burn, dec wf accessibility cache"
+title = "Lemma library mechanics — namespace, certified-only citation, dedup-on-burn, measures wf accessibility cache"
 owner = ".design/stage1-forge-tier.md"
 status = "shipped"
 scope = "forge"
-summary = "The lemma library mechanics (increment 3, REQ-9 — the LAST stage-1 feature increment; it trails usage because it reasons about already-discharged lemma certificates). (1) PER-PROJECT LEMMA NAMESPACE (Q1): a project's top-level `lemma` items form a namespace (`lemma_library::LemmaLibrary`, built from the parsed program + the settled cert collection); ONLY a top-level `lemma` enters it, never a proof-local `have`/`let` binding, so the namespace is the SOLE cross-function citation surface (Q6: no cross-function sharing except via a lemma; a `proof for f` block's several `ens#k` obligations share that one function's local context, structurally enforced by building the namespace from top-level lemmas only). (2) CERTIFIED-ONLY CITATION RESOLUTION (AC-13): a `simp [ … ]` citation resolves against the frozen battery OR a CERTIFIED project lemma; a citation to a project lemma that did NOT certify is REFUSED, named (`lemma_library::enforce_citations` → `UncertifiedCitation`, cause `UncertifiedLemmaCitation`). The frozen-battery gate is taught to DEFER a project-lemma citation (`battery::enforce_with_project_lemmas`) so the certified-only resolution decides it on the forge/Lean path (`check::apply_lemma_library`, run after the lemma discharge pass). (3) DEDUP-ON-BURN BY STATEMENT HASH (Q1 / AC-13): `lemma_library::statement_hash` hashes a lemma's params + `req` + `ens` (NAME- and PROOF-excluded, span-free), so two identical-statement lemmas under different names are ONE proven fact — only the first (canonical) is stored and a citation to the duplicate is REWRITTEN to the canonical (`rewrite_citations`), applied to the burn receipt's `cited_lemmas` (oracle-excluded, so the v1 goldens stay byte-identical). (4) DEC WF ACCESSIBILITY CACHE (Q7 / AC-13): a `dec wf <rel>` measure's accessibility proof is content-addressed by the (relation, carrier) pair (`cache::accessibility_cache_key` + `AccessibilityProof` + `load_accessibility`/`store_accessibility`), invalidated by the same `CHECK_SCHEMA_VERSION` gate key as the per-item proof cache; a write-through pass (`accessibility::cache_dec_wf_accessibility`) populates it on the forge path so a `dec wf` re-check on an unchanged (relation, carrier) HITS the cache (the cross-invocation hit the per-item proof cache uses, observable via the cache layer). (5) REVIEW SURFACING: a certified `lemma` carrying a burn receipt surfaces in `forge review` like any certified item (`review::BurnedLemma`, the `burned_lemmas` partition + the human render). All additive: no v1 corpus item is forge-tier / uses `dec wf` / cites a project lemma, so the v1 oracle is untouched. AC-13: citing an uncertified lemma fails with the lemma named; burning a statement-hash duplicate rewrites the citation (two identical lemmas under different names → one stored); a dec wf re-check hits the accessibility cache."
-aliases = ["lemma library", "lemma library mechanics", "certified-only citation", "dedup-on-burn", "statement hash", "dec wf accessibility cache", "burned lemmas", "REQ-9"]
+summary = "The lemma library mechanics (increment 3, REQ-9 — the LAST stage-1 feature increment; it trails usage because it reasons about already-discharged lemma certificates). (1) PER-PROJECT LEMMA NAMESPACE (Q1): a project's top-level `lemma` items form a namespace (`lemma_library::LemmaLibrary`, built from the parsed program + the settled cert collection); ONLY a top-level `lemma` enters it, never a proof-local `have`/`let` binding, so the namespace is the SOLE cross-function citation surface (Q6: no cross-function sharing except via a lemma; a `proof for f` block's several `ensures#k` obligations share that one function's local context, structurally enforced by building the namespace from top-level lemmas only). (2) CERTIFIED-ONLY CITATION RESOLUTION (AC-13): a `simp [ … ]` citation resolves against the frozen battery OR a CERTIFIED project lemma; a citation to a project lemma that did NOT certify is REFUSED, named (`lemma_library::enforce_citations` → `UncertifiedCitation`, cause `UncertifiedLemmaCitation`). The frozen-battery gate is taught to DEFER a project-lemma citation (`battery::enforce_with_project_lemmas`) so the certified-only resolution decides it on the forge/Lean path (`check::apply_lemma_library`, run after the lemma discharge pass). (3) DEDUP-ON-BURN BY STATEMENT HASH (Q1 / AC-13): `lemma_library::statement_hash` hashes a lemma's params + `requires` + `ensures` (NAME- and PROOF-excluded, span-free), so two identical-statement lemmas under different names are ONE proven fact — only the first (canonical) is stored and a citation to the duplicate is REWRITTEN to the canonical (`rewrite_citations`), applied to the burn receipt's `cited_lemmas` (oracle-excluded, so the v1 goldens stay byte-identical). (4) DEC WF ACCESSIBILITY CACHE (Q7 / AC-13): a `measures wf <rel>` measure's accessibility proof is content-addressed by the (relation, carrier) pair (`cache::accessibility_cache_key` + `AccessibilityProof` + `load_accessibility`/`store_accessibility`), invalidated by the same `CHECK_SCHEMA_VERSION` gate key as the per-item proof cache; a write-through pass (`accessibility::cache_dec_wf_accessibility`) populates it on the forge path so a `measures wf` re-check on an unchanged (relation, carrier) HITS the cache (the cross-invocation hit the per-item proof cache uses, observable via the cache layer). (5) REVIEW SURFACING: a certified `lemma` carrying a burn receipt surfaces in `forge review` like any certified item (`review::BurnedLemma`, the `burned_lemmas` partition + the human render). All additive: no v1 corpus item is forge-tier / uses `measures wf` / cites a project lemma, so the v1 oracle is untouched. AC-13: citing an uncertified lemma fails with the lemma named; burning a statement-hash duplicate rewrites the citation (two identical lemmas under different names → one stored); a measures wf re-check hits the accessibility cache."
+aliases = ["lemma library", "lemma library mechanics", "certified-only citation", "dedup-on-burn", "statement hash", "measures wf accessibility cache", "burned lemmas", "REQ-9"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
@@ -6909,12 +6909,12 @@ note = "(2)/(3) the check.rs forge/Lean-path pass (after lemma discharge): the c
 [[requirement.evidence]]
 kind = "symbol"
 target = "AccessibilityProof"
-note = "(4) the dec wf accessibility cache record (cache.rs): (relation, carrier, well_founded), content-addressed by accessibility_cache_key, CHECK_SCHEMA_VERSION-invalidated like a Certificate"
+note = "(4) the measures wf accessibility cache record (cache.rs): (relation, carrier, well_founded), content-addressed by accessibility_cache_key, CHECK_SCHEMA_VERSION-invalidated like a Certificate"
 
 [[requirement.evidence]]
 kind = "symbol"
 target = "cache_dec_wf_accessibility"
-note = "(4) the write-through pass (accessibility.rs): extracts (relation, carrier) of each dec wf measure and discharges-or-serves its accessibility proof through the cache so a re-check hits"
+note = "(4) the write-through pass (accessibility.rs): extracts (relation, carrier) of each measures wf measure and discharges-or-serves its accessibility proof through the cache so a re-check hits"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -6929,7 +6929,7 @@ note = "AC-13 hermetic units: statement_hash excludes name+proof; uncertified-ci
 [[requirement.evidence]]
 kind = "test"
 target = "forge/src/cache.rs"
-note = "AC-13 hermetic units: the dec wf accessibility re-check HITS the cache (load after store, flagged cached:true); schema-invalidated; corrupt entry is a miss"
+note = "AC-13 hermetic units: the measures wf accessibility re-check HITS the cache (load after store, flagged cached:true); schema-invalidated; corrupt entry is a miss"
 
 [[requirement]]
 id = "REQ-S1-10"
@@ -6937,7 +6937,7 @@ title = "G1 gate artifact — the isqrt_class example, the golden cert, the seve
 owner = ".design/stage1-forge-tier.md"
 status = "partial"
 scope = "forge"
-summary = "The G1 gate ARTIFACT (REQ-10 / AC-14): a real end-to-end demonstration that the forge tier holds together — out-of-cage clauses no longer degrade DOWN the ladder; each ESCALATES to the engine that grounds it, and the item certifies at the MIN over its clauses. (1) THE isqrt_class EXAMPLE (`conformance/forge/isqrt_class.th`): a SINGLE `fn isqrt_class(n, r)` keyed on the integer-square-root characterization `req r*r <= n && n < (r+1)*(r+1)` (with an `r <= 10^8` guard bounding the squared term for the executable covenant; the real relaxation is unaffected), whose three `ens` clauses sit at the three forge rungs, GROUNDED in `relax::classify_fn`: two RELAXABLE clauses that are NON-TRIVIAL nlsat-earned consequences of that characterization — `2*r <= n+1` (the LOWER squeeze, from `r*r<=n` and `(r-1)^2>=0`) and `n < 2*r*r + 2*r + 1` (the UPPER squeeze, from `n<(r+1)^2` and `r*r>=0`); NEITHER restates `req`, and the naive `r <= n` is correctly a RealWitness (false over ℝ for 0<r<1), never a false L4 — both route to the `NlsatEngine` real relaxation and, real-valid by the kernel-checked `r_relax_sound`, certify L4. One NON-relaxable clause (`result*2 + (n+r)%2 == n+r` — the `%` is not a polynomial atom) routes to the Lean engine, discharged L3 by the author `proof for isqrt_class { ens#2 by { simp […]; omega } }`. Item level = MIN = L3 (clauses L4, L4, L3). The `witness { inhabit …; falsify N; }` block makes it covenant-routed. (2) THE PER-CLAUSE HYBRID ROUTE (`--engine forge`, `check::forge_gate_check`/`forge_gate_item_cert`): classifies each `ens` per clause (a synthetic single-`ens` `fn` through `classify_fn`), discharges relaxable clauses via `NlsatEngine::discharge_relax` (L4) and the non-relaxable clause via the author-proof Lean discharge (reusing `lean_export::export_lemma` with `result` substituted by the body — L3 + burn), gates the covenant before the burn (R-COV-1), pins the definition-tower meaning audit, and mutation-scores the L3 clause by re-elaboration (reusing the FROZEN `mutation::generate` catalogue). The resulting certificate populates ALL FOUR forge-tier evidence blocks: `covenant_evidence` (from the witness), the axiom-gate record (`engine_attribution` + per-clause `engine`/`trust`), the re-elaboration `contract_quality.mutants_killed` (anti-Goodhart), and the `burn` receipt (proof tokens + cited frozen simp-lemmas). (3) THE GOLDEN CERT + ORACLE (`conformance/forge/isqrt_class.cert.json` + `forge/tests/g1_gate.rs`, verus+lake-guarded): asserts item level L3, the three clauses' engine attribution nlsat / nlsat / lean, and all four evidence blocks present + populated, pinned against the committed golden. (4) THE SEVEN-VERDICT HERMETIC SUITE (`forge/src/seven_verdicts.rs`): one named test per `verdict::CertVerdict` (Proved, Counterexample, RealWitness, CovenantRefuted, Stuck, KernelBudget, Timeout), each exercising its verdict at the production boundary so the gate's 'seven hermetic tests' claim is literally met — the RealWitness producer runs in CI (z3-gated + an UNGATED structural `classify_sat` test in engine.rs), and KernelBudget gains its e2e exercise (the `lean_unverifiable_cert` cert builder). (5) ZERO v1 REGRESSION: `--engine forge` is a new additive route; the v1 corpus selects the default Verus path, so every `conformance/**/*.cert.json` oracle subset is byte-identical (verified)."
+summary = "The G1 gate ARTIFACT (REQ-10 / AC-14): a real end-to-end demonstration that the forge tier holds together — out-of-cage clauses no longer degrade DOWN the ladder; each ESCALATES to the engine that grounds it, and the item certifies at the MIN over its clauses. (1) THE isqrt_class EXAMPLE (`conformance/forge/isqrt_class.th`): a SINGLE `fn isqrt_class(n, r)` keyed on the integer-square-root characterization `requires r*r <= n && n < (r+1)*(r+1)` (with an `r <= 10^8` guard bounding the squared term for the executable covenant; the real relaxation is unaffected), whose three `ensures` clauses sit at the three forge rungs, GROUNDED in `relax::classify_fn`: two RELAXABLE clauses that are NON-TRIVIAL nlsat-earned consequences of that characterization — `2*r <= n+1` (the LOWER squeeze, from `r*r<=n` and `(r-1)^2>=0`) and `n < 2*r*r + 2*r + 1` (the UPPER squeeze, from `n<(r+1)^2` and `r*r>=0`); NEITHER restates `requires`, and the naive `r <= n` is correctly a RealWitness (false over ℝ for 0<r<1), never a false L4 — both route to the `NlsatEngine` real relaxation and, real-valid by the kernel-checked `r_relax_sound`, certify L4. One NON-relaxable clause (`result*2 + (n+r)%2 == n+r` — the `%` is not a polynomial atom) routes to the Lean engine, discharged L3 by the author `proof for isqrt_class { ensures#2 by { simp […]; omega } }`. Item level = MIN = L3 (clauses L4, L4, L3). The `witness { inhabit …; falsify N; }` block makes it covenant-routed. (2) THE PER-CLAUSE HYBRID ROUTE (`--engine forge`, `check::forge_gate_check`/`forge_gate_item_cert`): classifies each `ensures` per clause (a synthetic single-`ensures` `fn` through `classify_fn`), discharges relaxable clauses via `NlsatEngine::discharge_relax` (L4) and the non-relaxable clause via the author-proof Lean discharge (reusing `lean_export::export_lemma` with `result` substituted by the body — L3 + burn), gates the covenant before the burn (R-COV-1), pins the definition-tower meaning audit, and mutation-scores the L3 clause by re-elaboration (reusing the FROZEN `mutation::generate` catalogue). The resulting certificate populates ALL FOUR forge-tier evidence blocks: `covenant_evidence` (from the witness), the axiom-gate record (`engine_attribution` + per-clause `engine`/`trust`), the re-elaboration `contract_quality.mutants_killed` (anti-Goodhart), and the `burn` receipt (proof tokens + cited frozen simp-lemmas). (3) THE GOLDEN CERT + ORACLE (`conformance/forge/isqrt_class.cert.json` + `forge/tests/g1_gate.rs`, verus+lake-guarded): asserts item level L3, the three clauses' engine attribution nlsat / nlsat / lean, and all four evidence blocks present + populated, pinned against the committed golden. (4) THE SEVEN-VERDICT HERMETIC SUITE (`forge/src/seven_verdicts.rs`): one named test per `verdict::CertVerdict` (Proved, Counterexample, RealWitness, CovenantRefuted, Stuck, KernelBudget, Timeout), each exercising its verdict at the production boundary so the gate's 'seven hermetic tests' claim is literally met — the RealWitness producer runs in CI (z3-gated + an UNGATED structural `classify_sat` test in engine.rs), and KernelBudget gains its e2e exercise (the `lean_unverifiable_cert` cert builder). (5) ZERO v1 REGRESSION: `--engine forge` is a new additive route; the v1 corpus selects the default Verus path, so every `conformance/**/*.cert.json` oracle subset is byte-identical (verified)."
 remaining_scope = "Gate DECLARATION only — the artifact is shipped, but the G1 gate (REQ-10) is not declared closed here: flipping the README/docs headline (\"out-of-cage no longer degrades\") is the separate R-GATE-1 step (changes at gate time, not merge time), and the thermite2 governance docs (thermite2-semantics.md / the R-rules / skill v2) are separate authoring steps. This entry covers ONLY the isqrt_class example + golden cert + the seven-verdict suite + zero-v1-regression; it does NOT mark the headline flipped."
 aliases = ["G1 gate", "G1 gate artifact", "isqrt_class example", "isqrt_class", "seven-verdict hermetic suite", "seven hermetic tests", "REQ-10", "AC-14", "--engine forge"]
 generated_to = ["status"]
@@ -6945,7 +6945,7 @@ generated_to = ["status"]
 [[requirement.evidence]]
 kind = "file"
 target = "conformance/forge/isqrt_class.th"
-note = "(1) the isqrt_class example: a single fn keyed on the integer-sqrt characterization (req r*r<=n && n<(r+1)^2) with two NON-TRIVIAL nlsat-earned L4 consequences (2*r<=n+1, n<2*r*r+2*r+1 — not req restatements) + one non-relaxable `%` L3 clause, a witness covenant, and the `proof for isqrt_class { ens#2 }` author proof"
+note = "(1) the isqrt_class example: a single fn keyed on the integer-sqrt characterization (requires r*r<=n && n<(r+1)^2) with two NON-TRIVIAL nlsat-earned L4 consequences (2*r<=n+1, n<2*r*r+2*r+1 — not requires restatements) + one non-relaxable `%` L3 clause, a witness covenant, and the `proof for isqrt_class { ensures#2 }` author proof"
 
 [[requirement.evidence]]
 kind = "file"
@@ -6960,7 +6960,7 @@ note = "(2) the `--engine forge` G1 gate pass (check.rs): per-fn dispatch to the
 [[requirement.evidence]]
 kind = "symbol"
 target = "forge_gate_item_cert"
-note = "(2) the per-clause hybrid assembly: classify each ens (synthetic single-ens fn), nlsat L4 vs author-proof Lean L3 + burn, covenant-before-burn, meaning audit, re-elaboration mutation, min-level cert with all four evidence blocks"
+note = "(2) the per-clause hybrid assembly: classify each ensures (synthetic single-ensures fn), nlsat L4 vs author-proof Lean L3 + burn, covenant-before-burn, meaning audit, re-elaboration mutation, min-level cert with all four evidence blocks"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -7262,7 +7262,7 @@ title = "THERMITE.skill.md v2 — the agent-facing Stage-1 forge-tier section"
 owner = ".design/thermite2-program.md"
 status = "shipped"
 scope = "thermite-skill"
-summary = "The skill-v2 deliverable (umbrella thermite2-program.md REQ-8 / AC-13): the thermite-skill GENERATOR emits a new `## 6. Forge tier (Stage-1)` section so an agent reading THERMITE.skill.md at session start holds the SHIPPED forge tier in context, all under the unchanged ≤6,000-token §2.2 hard budget (CI `--check-budget`). Four content areas, each grounded in shipped forge code: (1) THE SEVEN VERDICTS — the closed `verdict::CertVerdict` set (Proved/Counterexample/RealWitness/CovenantRefuted/Stuck/KernelBudget/Timeout) with the agent action per verdict (Stuck → add the missing simp bridge from the frozen battery; CovenantRefuted → the falsify counterexample IS the bug; RealWitness → ens false over ℝ, escalated UP, add the integrality req; KernelBudget/Timeout are budget/resource events, not refutations). (2) ROUTING + PER-CLAUSE ATTRIBUTION — a relaxable polynomial clause → the nlsat engine at L4 (solver(nlsat)+spine-lemma(kernel)); an in-cage v1 contract → verus at L3; a lemma/`proof for` → the lean engine at L3; reading the per-clause engine/trust/verdict; `--engine forge|nlsat|verus|lean`. (3) COVENANT AUTHORING — the `witness { inhabit (..); falsify N; }` covenant-before-burn gate (≥1 author inhabit, each arity/type-matched + req-satisfying; falsify draws SplitMix64 inputs and a req-satisfying ens-breaker is a CovenantRefuted hit). (4) FORGE-TIER VERBS + BURN RECEIPT — `forge goal --proof`, `forge fill <f>.?pN`, `proof for`/`lemma`, and the oracle-excluded burn receipt (committed proof-token count + cited lemmas + optional authoring spend). The generator stays the source of truth (THERMITE.skill.md is regenerated, never hand-edited); the new content fits the budget by tightening curated prose + rendering the leaf inventories terse, with the Type::Unit parse-clean pin preserved. NOT in scope: the §6 metrics dashboard (REQ-7), the README headline flip (R-GATE-1), the stage-2 restratify recipe."
+summary = "The skill-v2 deliverable (umbrella thermite2-program.md REQ-8 / AC-13): the thermite-skill GENERATOR emits a new `## 6. Forge tier (Stage-1)` section so an agent reading THERMITE.skill.md at session start holds the SHIPPED forge tier in context, all under the unchanged ≤6,000-token §2.2 hard budget (CI `--check-budget`). Four content areas, each grounded in shipped forge code: (1) THE SEVEN VERDICTS — the closed `verdict::CertVerdict` set (Proved/Counterexample/RealWitness/CovenantRefuted/Stuck/KernelBudget/Timeout) with the agent action per verdict (Stuck → add the missing simp bridge from the frozen battery; CovenantRefuted → the falsify counterexample IS the bug; RealWitness → ensures false over ℝ, escalated UP, add the integrality req; KernelBudget/Timeout are budget/resource events, not refutations). (2) ROUTING + PER-CLAUSE ATTRIBUTION — a relaxable polynomial clause → the nlsat engine at L4 (solver(nlsat)+spine-lemma(kernel)); an in-cage v1 contract → verus at L3; a lemma/`proof for` → the lean engine at L3; reading the per-clause engine/trust/verdict; `--engine forge|nlsat|verus|lean`. (3) COVENANT AUTHORING — the `witness { inhabit (..); falsify N; }` covenant-before-burn gate (≥1 author inhabit, each arity/type-matched + req-satisfying; falsify draws SplitMix64 inputs and a req-satisfying ens-breaker is a CovenantRefuted hit). (4) FORGE-TIER VERBS + BURN RECEIPT — `forge goal --proof`, `forge fill <f>.?pN`, `proof for`/`lemma`, and the oracle-excluded burn receipt (committed proof-token count + cited lemmas + optional authoring spend). The generator stays the source of truth (THERMITE.skill.md is regenerated, never hand-edited); the new content fits the budget by tightening curated prose + rendering the leaf inventories terse, with the Type::Unit parse-clean pin preserved. NOT in scope: the §6 metrics dashboard (REQ-7), the README headline flip (R-GATE-1), the stage-2 restratify recipe."
 remaining_scope = "Skill-v2 section ONLY. The README/docs headline flip (\"out-of-cage no longer degrades\", R-GATE-1) and the §6 metrics dashboard (REQ-7) are separate program steps, not covered by this entry."
 aliases = ["skill v2", "skill-v2", "THERMITE.skill.md v2", "forge-tier skill section", "AC-13 skill", "the seven verdicts skill section"]
 generated_to = ["status"]
@@ -7374,7 +7374,7 @@ title = "Covenant engine — inhabit/falsify producer + before-burn gate"
 owner = ".design/stage1-forge-tier.md"
 status = "shipped"
 scope = "forge"
-summary = "The covenant engine (increment 2b) consumes the foundation's discharge-threaded CovenantRecord and the 2a-parsed witness block: a forge-routed fn's author inhabit witnesses are type-checked and EXECUTED against req (a witness not satisfying req is a loud covenant error, never dropped), and the falsify run rides the thermite-tv SplitMix64 Rng over the item's executable semantics (a deterministic in-Rust evaluator, the dual of exec_ref_value) — a req-satisfying input whose body violates ens is CovenantRefuted with the concrete counterexample, the never-degrades hard-fail treatment. Covenant-before-burn is enforced structurally (R-COV-1): covenant_gate invokes the L3 burn closure ONLY on a validated covenant (closure-instrumented), and a forge-routed item missing an author witness is refused before burn, named. The deterministic covenant evidence block (witness count, falsify generated/refuted counts, fixed seed; Q3 default falsify 50_000 when unstated) is oracle-included in the certificate (Q-ORACLE); v1 items carry no covenant, so the 7 v1 golden certs stay byte-identical."
+summary = "The covenant engine (increment 2b) consumes the foundation's discharge-threaded CovenantRecord and the 2a-parsed witness block: a forge-routed fn's author inhabit witnesses are type-checked and EXECUTED against requires (a witness not satisfying requires is a loud covenant error, never dropped), and the falsify run rides the thermite-tv SplitMix64 Rng over the item's executable semantics (a deterministic in-Rust evaluator, the dual of exec_ref_value) — a req-satisfying input whose body violates ensures is CovenantRefuted with the concrete counterexample, the never-degrades hard-fail treatment. Covenant-before-burn is enforced structurally (R-COV-1): covenant_gate invokes the L3 burn closure ONLY on a validated covenant (closure-instrumented), and a forge-routed item missing an author witness is refused before burn, named. The deterministic covenant evidence block (witness count, falsify generated/refuted counts, fixed seed; Q3 default falsify 50_000 when unstated) is oracle-included in the certificate (Q-ORACLE); v1 items carry no covenant, so the 7 v1 golden certs stay byte-identical."
 aliases = ["covenant engine", "covenant-before-burn", "REQ-4"]
 generated_to = ["status"]
 
@@ -7396,7 +7396,7 @@ note = "the producer + falsify driver + the covenant-before-burn gate"
 [[requirement.evidence]]
 kind = "symbol"
 target = "analyze_covenant"
-note = "inhabit-against-req execution + the falsify run"
+note = "inhabit-against-requires execution + the falsify run"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -7454,7 +7454,7 @@ title = "Anti-Goodhart at L3 — re-elaboration + definition-tower budget"
 owner = ".design/stage1-forge-tier.md"
 status = "shipped"
 scope = "forge"
-summary = "Three anti-Goodhart defenses on the forge-tier (L3) discharge path (increment 2d), each a CERTIFY-TIME gate on the --engine lean/auto route (the Verus default path is untouched, so the 7 v1 golden certs stay byte-identical; none lives in `forge audit`, whose gates-nothing projection invariant is preserved, #274). (a) ARBITRARY-RESULT RE-ELABORATION (tautology): the L3 counterpart of vacuity_solver::build_tautology_harness. `export_arbitrary_result_harness` re-emits the obligation theorem with `result` bound to a fresh universally-quantified `(r : Int)` instead of the body's stabilized value (byte-identical req/ens/R_item otherwise — only the result binder differs), and DRIVES THE EXISTING discharge path (the same #print-axioms probe + run_lake; no new elaborator). If the `ens` still kernel-accepts for an arbitrary result it is a body-ignoring tautology → `gate_arbitrary_result_tautology` refuses (SemanticTautology + contract_quality.tautology). Polarity mirrors the Verus harness: proves → reject; elaboration failure → clean (the safe completeness gap); env/refusal → skip (never rejects). (b) RE-ELABORATION MUTATION: the L3 counterpart of the Verus mutation gate. `reelaboration_mutants` reuses the FROZEN mutation::generate operator catalogue + MUTANT_CAP 64 UNCHANGED — the catalogue is SHARED, never forked (pinned by a test) — and the per-mutant kill check is a re-elaboration through the existing Lean discharge path (a decidable type-check, not a Verus solver run); survivors count against the floor (Budd-Angluin), killed/scored reported in the certificate. The ≤64 re-typechecks are a post-proof quality gate (parallel to the shipped Verus mutation_score), NOT inside the per-clause KernelBudget. (c) DEFINITION-TOWER BUDGET (Q2 default depth 4 / 40 definitions): `meaning::build_tower` computes the contract's spec-fn meaning tower (rooted at req∪ens, cycle-guarded depth); `gate_definition_tower` refuses an over-budget tower at certify time (DefinitionTowerBudget) and pins the unfolded-tower hash (Certificate.meaning_audit, oracle-included per Q-ORACLE, None for v1). `forge audit --meaning` is the read-only companion printing the tower + hash, gating nothing."
+summary = "Three anti-Goodhart defenses on the forge-tier (L3) discharge path (increment 2d), each a CERTIFY-TIME gate on the --engine lean/auto route (the Verus default path is untouched, so the 7 v1 golden certs stay byte-identical; none lives in `forge audit`, whose gates-nothing projection invariant is preserved, #274). (a) ARBITRARY-RESULT RE-ELABORATION (tautology): the L3 counterpart of vacuity_solver::build_tautology_harness. `export_arbitrary_result_harness` re-emits the obligation theorem with `result` bound to a fresh universally-quantified `(r : Int)` instead of the body's stabilized value (byte-identical req/ens/R_item otherwise — only the result binder differs), and DRIVES THE EXISTING discharge path (the same #print-axioms probe + run_lake; no new elaborator). If the `ensures` still kernel-accepts for an arbitrary result it is a body-ignoring tautology → `gate_arbitrary_result_tautology` refuses (SemanticTautology + contract_quality.tautology). Polarity mirrors the Verus harness: proves → reject; elaboration failure → clean (the safe completeness gap); env/refusal → skip (never rejects). (b) RE-ELABORATION MUTATION: the L3 counterpart of the Verus mutation gate. `reelaboration_mutants` reuses the FROZEN mutation::generate operator catalogue + MUTANT_CAP 64 UNCHANGED — the catalogue is SHARED, never forked (pinned by a test) — and the per-mutant kill check is a re-elaboration through the existing Lean discharge path (a decidable type-check, not a Verus solver run); survivors count against the floor (Budd-Angluin), killed/scored reported in the certificate. The ≤64 re-typechecks are a post-proof quality gate (parallel to the shipped Verus mutation_score), NOT inside the per-clause KernelBudget. (c) DEFINITION-TOWER BUDGET (Q2 default depth 4 / 40 definitions): `meaning::build_tower` computes the contract's spec-fn meaning tower (rooted at req∪ens, cycle-guarded depth); `gate_definition_tower` refuses an over-budget tower at certify time (DefinitionTowerBudget) and pins the unfolded-tower hash (Certificate.meaning_audit, oracle-included per Q-ORACLE, None for v1). `forge audit --meaning` is the read-only companion printing the tower + hash, gating nothing."
 aliases = ["anti-Goodhart", "re-elaboration", "arbitrary-result re-elaboration", "re-elaboration mutation", "definition-tower budget", "meaning audit", "forge audit --meaning", "REQ-6"]
 generated_to = ["status"]
 
@@ -7481,7 +7481,7 @@ note = "defense (a): runs the arbitrary-result harness through the existing #pri
 [[requirement.evidence]]
 kind = "symbol"
 target = "gate_arbitrary_result_tautology"
-note = "defense (a): the certify-time tautology gate — a body-ignoring ens that re-elaborates for an arbitrary result is refused (SemanticTautology). AC-10 body-ignoring-ens clause"
+note = "defense (a): the certify-time tautology gate — a body-ignoring ensures that re-elaborates for an arbitrary result is refused (SemanticTautology). AC-10 body-ignoring-ensures clause"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -7509,7 +7509,7 @@ title = "forge goal --proof / forge fill UX + burn receipts"
 owner = ".design/stage1-forge-tier.md"
 status = "shipped"
 scope = "forge"
-summary = "The forge-tier goal/fill UX (increment 2e) + the L3 burn receipt. (1) PROOF VIEW: `forge goal --proof` (the goal-only `--proof` flag) renders a forge-routed goal — a `lemma` or a `proof for f` obligation — WITH ITS HYPOTHESES IN SCOPE: the typed parameter binders + the `req` precondition the proof may assume (`h_req`, omitted when `req` is the trivial `true`), then the `⊢ goal` (a lemma's `ens`, or a proof-for's `ens#k` resolved 0-based against `f`'s contract), then the open `?pN` holes as the `forge fill` operands. The hypothesis context is derived structurally from the contract (the same data the Lean discharge binds — params as free inputs, `req` as the assumption), so the view needs no live elaborator. (2) FILL: `fill_hole` accepts the 2a `?pN` proof-hole addresses (a `<lemma>.proof.?pN` / `<f>.proof.<clause>.?pN`), not just body `?N`: `span_of_address`→`proof_hole_span` resolves the splice target on the forge item's proof block, the tactics are spliced + re-parsed (a malformed fill is reported), and the re-check (the Lean path) re-presents the proof view + the verdict — the 2c frozen battery refuses an unlisted tactic (cite-unlisted → refused, named), an open-hole short-circuit re-presents a hole the fill introduced (the §5.1 loop). (3) DISCHARGE + BURN: a clean (hole-free, battery-clean) `lemma` is the forge tier's self-contained goal — `export_lemma` emits the `∀ params, req → ens` theorem over the kernel-proven denotation spine (the SAME `encode_expr`/`build_registry`/`R_item` framing as the fn-contract path MINUS the body/result, so u64 overflow is modeled faithfully; a naive ℕ/ℤ encoding would be unsound), proved by the author's frozen-battery tactics; `discharge_source` runs lake + the SAME certify-time `#print axioms` gate every Lean path runs. On `Proven` it certifies L3 (the interactive trust profile — the proof is author-authored) and the certificate carries the BURN RECEIPT (`burn.proof_tokens` = the project lexer's token count over the committed proof text; `burn.cited_lemmas` = the frozen simp-lemma citations; an optional `burn.authoring_tokens` absent unless the harness supplies it). Per Q-BURN the receipt is ORACLE-EXCLUDED (re-authoring a proof changes its token count without changing the claim — like solver_time_ms), so it is NOT in `Certificate::oracle_subset` and the 7 v1 golden certs stay byte-identical. The lemma discharge lives on the Lean path only (`check_file_with_engine`/`check_file_lean`); the default Verus `check_file` is untouched (a forge-tier lemma has no Verus consumer). AC-11: the merge example (`conformance/forge/merge.th`, a merge-loop progress lemma `i < n → i + 1 <= n`) renders its hypotheses under `forge goal --proof`, `forge fill merge_advance.proof.?p0 \"<tactics>\"` closes it end to end, and the resulting certificate certifies L3 with the burn receipt (token count + cited lemmas)."
+summary = "The forge-tier goal/fill UX (increment 2e) + the L3 burn receipt. (1) PROOF VIEW: `forge goal --proof` (the goal-only `--proof` flag) renders a forge-routed goal — a `lemma` or a `proof for f` obligation — WITH ITS HYPOTHESES IN SCOPE: the typed parameter binders + the `requires` precondition the proof may assume (`h_req`, omitted when `requires` is the trivial `true`), then the `⊢ goal` (a lemma's `ensures`, or a proof-for's `ensures#k` resolved 0-based against `f`'s contract), then the open `?pN` holes as the `forge fill` operands. The hypothesis context is derived structurally from the contract (the same data the Lean discharge binds — params as free inputs, `requires` as the assumption), so the view needs no live elaborator. (2) FILL: `fill_hole` accepts the 2a `?pN` proof-hole addresses (a `<lemma>.proof.?pN` / `<f>.proof.<clause>.?pN`), not just body `?N`: `span_of_address`→`proof_hole_span` resolves the splice target on the forge item's proof block, the tactics are spliced + re-parsed (a malformed fill is reported), and the re-check (the Lean path) re-presents the proof view + the verdict — the 2c frozen battery refuses an unlisted tactic (cite-unlisted → refused, named), an open-hole short-circuit re-presents a hole the fill introduced (the §5.1 loop). (3) DISCHARGE + BURN: a clean (hole-free, battery-clean) `lemma` is the forge tier's self-contained goal — `export_lemma` emits the `∀ params, req → ens` theorem over the kernel-proven denotation spine (the SAME `encode_expr`/`build_registry`/`R_item` framing as the fn-contract path MINUS the body/result, so u64 overflow is modeled faithfully; a naive ℕ/ℤ encoding would be unsound), proved by the author's frozen-battery tactics; `discharge_source` runs lake + the SAME certify-time `#print axioms` gate every Lean path runs. On `Proven` it certifies L3 (the interactive trust profile — the proof is author-authored) and the certificate carries the BURN RECEIPT (`burn.proof_tokens` = the project lexer's token count over the committed proof text; `burn.cited_lemmas` = the frozen simp-lemma citations; an optional `burn.authoring_tokens` absent unless the harness supplies it). Per Q-BURN the receipt is ORACLE-EXCLUDED (re-authoring a proof changes its token count without changing the claim — like solver_time_ms), so it is NOT in `Certificate::oracle_subset` and the 7 v1 golden certs stay byte-identical. The lemma discharge lives on the Lean path only (`check_file_with_engine`/`check_file_lean`); the default Verus `check_file` is untouched (a forge-tier lemma has no Verus consumer). AC-11: the merge example (`conformance/forge/merge.th`, a merge-loop progress lemma `i < n → i + 1 <= n`) renders its hypotheses under `forge goal --proof`, `forge fill merge_advance.proof.?p0 \"<tactics>\"` closes it end to end, and the resulting certificate certifies L3 with the burn receipt (token count + cited lemmas)."
 aliases = ["forge goal --proof", "forge fill", "proof view", "burn receipt", "burn.proof_tokens", "hypotheses in scope", "?pN fill", "lemma discharge", "REQ-7"]
 generated_to = ["status"]
 
@@ -7536,7 +7536,7 @@ note = "(2) resolves a ?pN proof-hole address to the hole token's byte span on t
 [[requirement.evidence]]
 kind = "symbol"
 target = "export_lemma"
-note = "(3) emits the forge-tier lemma's ∀ params, req → ens theorem over the denotation spine (the fn-contract framing minus body/result), proved by the author's frozen-battery tactics; the canonical thermite_obligation_<lemma> name anchors the axiom gate"
+note = "(3) emits the forge-tier lemma's ∀ params, req → ensures theorem over the denotation spine (the fn-contract framing minus body/result), proved by the author's frozen-battery tactics; the canonical thermite_obligation_<lemma> name anchors the axiom gate"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -7574,15 +7574,15 @@ title = "Forge-tier surface syntax"
 owner = ".design/stage1-forge-tier.md"
 status = "partial"
 scope = "syntax"
-summary = "thermite-syntax parses the forge-tier surface forms beside `fn` — `prop fn`, `lemma … req … ens … proof { … }`, `proof for f { ens#k by { … } }`, `witness { inhabit (…); falsify N; }`, `?pN` proof holes, refinement-type sugar `x: T{P}` (folded to req/ens in a NEW post-parse desugar pass), and the ASCII `dec lex(…)` / `dec wf <rel>` measures (Q-DECWF, no Unicode operator lexing) — into the AST (grouped under one additive `Item::Forge` variant), with semantic addressing (`f.proof.ens#k`, the `?pN` form, `witness#N`) and the hole-gating surface (an open `?pN` blocks build + certification). Proof-block tactic content is captured VERBATIM (not structurally parsed — that is the frozen battery, REQ-5). Always-on, no feature flag; gating is forge-side via holes/routing. Byte-stable: no conformance `.th` uses the new syntax, so the oracle is unchanged."
-remaining_scope = "Surface only — the SEMANTIC consumers of the parsed forms are later increments and are NOT built here: covenant inhabit/falsify execution (increment 2b, REQ-S1-4), the frozen tactic battery that parses proof-block content (2c, REQ-5), anti-Goodhart re-elaboration (2d, REQ-6), the goal/fill proof view that fills `?pN` (2e, REQ-7), the relax engine (2f, REQ-8b), and the lemma-library mechanics that consume `lemma`/`proof`/`dec wf` (3, REQ-9). The forge dispatches every `Item::Forge` through an inert arm today (no v1 cert/lowering consumer), EXCEPT the AC-7 open-`?pN` build/cert refusal which is wired."
-aliases = ["surface syntax", "forge-tier syntax", "prop fn", "lemma", "proof for", "witness", "?pN proof holes", "refinement sugar", "dec wf", "dec lex", "REQ-3"]
+summary = "thermite-syntax parses the forge-tier surface forms beside `fn` — `prop fn`, `lemma … req … ens … proof { … }`, `proof for f { ensures#k by { … } }`, `witness { inhabit (…); falsify N; }`, `?pN` proof holes, refinement-type sugar `x: T{P}` (folded to req/ensures in a NEW post-parse desugar pass), and the ASCII `measures lex(…)` / `measures wf <rel>` measures (Q-DECWF, no Unicode operator lexing) — into the AST (grouped under one additive `Item::Forge` variant), with semantic addressing (`f.proof.ensures#k`, the `?pN` form, `witness#N`) and the hole-gating surface (an open `?pN` blocks build + certification). Proof-block tactic content is captured VERBATIM (not structurally parsed — that is the frozen battery, REQ-5). Always-on, no feature flag; gating is forge-side via holes/routing. Byte-stable: no conformance `.th` uses the new syntax, so the oracle is unchanged."
+remaining_scope = "Surface only — the SEMANTIC consumers of the parsed forms are later increments and are NOT built here: covenant inhabit/falsify execution (increment 2b, REQ-S1-4), the frozen tactic battery that parses proof-block content (2c, REQ-5), anti-Goodhart re-elaboration (2d, REQ-6), the goal/fill proof view that fills `?pN` (2e, REQ-7), the relax engine (2f, REQ-8b), and the lemma-library mechanics that consume `lemma`/`proof`/`measures wf` (3, REQ-9). The forge dispatches every `Item::Forge` through an inert arm today (no v1 cert/lowering consumer), EXCEPT the AC-7 open-`?pN` build/cert refusal which is wired."
+aliases = ["surface syntax", "forge-tier syntax", "prop fn", "lemma", "proof for", "witness", "?pN proof holes", "refinement sugar", "measures wf", "measures lex", "REQ-3"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "file"
 target = "thermite-syntax/src/parser.rs"
-note = "forge-item productions, proof-block scanner, dec lex/wf, refinement capture"
+note = "forge-item productions, proof-block scanner, measures lex/wf, refinement capture"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -7597,7 +7597,7 @@ note = "the new post-parse refinement desugar pass (x: T{P} -> req/ens)"
 [[requirement.evidence]]
 kind = "symbol"
 target = "parse_dec_clause"
-note = "dec lex(...) (registry-free call) + dec wf <rel> (ASCII, Q-DECWF)"
+note = "measures lex(...) (registry-free call) + measures wf <rel> (ASCII, Q-DECWF)"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -7617,7 +7617,7 @@ note = "refinement-type sugar desugar pass"
 [[requirement.evidence]]
 kind = "test"
 target = "thermite-syntax/tests/dec_forms.rs"
-note = "dec lex(...) / dec wf <rel> measure forms"
+note = "measures lex(...) / measures wf <rel> measure forms"
 
 [[requirement]]
 id = "REQ-TV-CONTRACT-REF-ENCODER"
@@ -8657,7 +8657,7 @@ owner = "thermite-spec/src/validator.rs"
 status = "shipped"
 scope = "spec"
 summary = "The validator seeds Option/Result built-in variants for construction, exhaustiveness, `is`, and spec-match payload contracts."
-aliases = ["thermite-spec/src/validator.rs REQ-3 (built-in-variant registry + spec-`match`-in-`ens` payload projection)"]
+aliases = ["thermite-spec/src/validator.rs REQ-3 (built-in-variant registry + spec-`match`-in-`ensures` payload projection)"]
 contributors = [".design/basis/09-option-result.md", "forge/tests/option_result_conformance.rs"]
 generated_to = ["status", "thermite-spec-validator-option-result-status"]
 
@@ -8677,8 +8677,8 @@ title = "Recursive fn decreases validation"
 owner = "thermite-spec/src/validator.rs"
 status = "shipped"
 scope = "spec"
-summary = "Direct self-recursive functions without `dec` are rejected before L3 unless they explicitly declare `fx diverge`."
-aliases = ["thermite-spec/src/validator.rs REQ-2 (`dec` mandatory for a recursive `fn`; the self-call validator rule)"]
+summary = "Direct self-recursive functions without `measures` are rejected before L3 unless they explicitly declare `! diverge`."
+aliases = ["thermite-spec/src/validator.rs REQ-2 (`measures` mandatory for a recursive `fn`; the self-call validator rule)"]
 contributors = [".design/basis/10-recursion-tuples.md", "forge/tests/recursion_conformance.rs"]
 generated_to = ["status", "thermite-spec-validator-recursion-tuples-status"]
 
@@ -9537,8 +9537,8 @@ title = "Diverge L1 partial-correctness cap"
 owner = "forge/src/check.rs"
 status = "shipped"
 scope = "forge"
-summary = "Non-boundary, non-slag `fx diverge` functions route to an honest L1 partial-correctness cap and skip Verus-total, mutation, and strengthening gates while preserving non-diverge rejection behavior."
-aliases = ["forge/src/check.rs check.md REQ-8 (`fx diverge` caps at L1, mutation/strengthen exempt — the #16 mirror)"]
+summary = "Non-boundary, non-slag `! diverge` functions route to an honest L1 partial-correctness cap and skip Verus-total, mutation, and strengthening gates while preserving non-diverge rejection behavior."
+aliases = ["forge/src/check.rs check.md REQ-8 (`! diverge` caps at L1, mutation/strengthen exempt — the #16 mirror)"]
 contributors = [".design/forge/check.md", ".design/forge/degrade-ladder.md", "forge/tests/editor_runs.rs"]
 generated_to = ["status", "forge-check-diverge-status"]
 
@@ -9849,7 +9849,7 @@ title = "L1 runtime check emission entry"
 owner = "thermite-lower/src/l1.rs"
 status = "shipped"
 scope = "lower"
-summary = "`lower_l1` emits runnable Rust with entry `req`, loop `inv`, and exit `ens` checks woven into each function, including non-Copy `ens` snapshot handling and string literal materialization."
+summary = "`lower_l1` emits runnable Rust with entry `requires`, loop `keeps`, and exit `ensures` checks woven into each function, including non-Copy `ensures` snapshot handling and string literal materialization."
 aliases = ["thermite-lower/src/l1.rs REQ-1 (L1 check-emission entry point)"]
 contributors = [".design/lower/l1-runtime-checks.md", "thermite-lower/tests/l1_conformance.rs", "forge/tests/editor_runs.rs"]
 generated_to = ["status", "thermite-lower-l1-core-status"]
@@ -9862,7 +9862,7 @@ note = "public L1 runtime-check lowering entry"
 [[requirement.evidence]]
 kind = "symbol"
 target = "lower_fn_l1"
-note = "weaves req/ens and body checks"
+note = "weaves req/ensures and body checks"
 
 [[requirement.evidence]]
 kind = "test"
@@ -9953,8 +9953,8 @@ title = "L1 termination-scope honesty"
 owner = "thermite-lower/src/l1.rs"
 status = "shipped"
 scope = "lower"
-summary = "`lower_loop_l1` emits invariant checks but no runtime `dec` guarantee, keeping termination as an L3/L2 obligation rather than overclaiming at L1."
-aliases = ["thermite-lower/src/l1.rs REQ-5 (`dec`/termination L1 scope)"]
+summary = "`lower_loop_l1` emits invariant checks but no runtime `measures` guarantee, keeping termination as an L3/L2 obligation rather than overclaiming at L1."
+aliases = ["thermite-lower/src/l1.rs REQ-5 (`measures`/termination L1 scope)"]
 contributors = [".design/lower/l1-runtime-checks.md", "thermite-lower/tests/l1_conformance.rs"]
 generated_to = ["status", "thermite-lower-l1-core-status"]
 
@@ -9971,7 +9971,7 @@ note = "scope-honesty regression test"
 [[requirement.evidence]]
 kind = "test"
 target = "thermite-lower/tests/l1_conformance.rs"
-note = "no runtime dec guarantee conformance"
+note = "no runtime measures guarantee conformance"
 
 [[requirement]]
 id = "REQ-LOWER-L1-GOLDEN"
@@ -10005,8 +10005,8 @@ title = "L1 effect-scope boundary"
 owner = "thermite-lower/src/l1.rs"
 status = "shipped"
 scope = "lower"
-summary = "The v0.1 L1 path emits no runtime `fx`/syscall sandbox, leaving effect enforcement to compile-time subsumption and the deferred runtime sandbox work."
-aliases = ["thermite-lower/src/l1.rs REQ-7 (`fx`/effect at L1 deferred to #21)"]
+summary = "The v0.1 L1 path emits no runtime `!`/syscall sandbox, leaving effect enforcement to compile-time subsumption and the deferred runtime sandbox work."
+aliases = ["thermite-lower/src/l1.rs REQ-7 (`!`/effect at L1 deferred to #21)"]
 contributors = [".design/lower/l1-runtime-checks.md", ".design/lower/effect-subsumption.md", "thermite-lower/tests/l1_conformance.rs"]
 generated_to = ["status", "thermite-lower-l1-core-status"]
 
@@ -10733,7 +10733,7 @@ title = "Semantic address grammar"
 owner = "thermite-syntax/src/address.rs"
 status = "shipped"
 scope = "syntax"
-summary = "Semantic addresses consist of an item name followed by `loop#N`, `inv#M`, `dec`, or hole segments, with parser and display support."
+summary = "Semantic addresses consist of an item name followed by `loop#N`, `keeps#M`, `measures`, or hole segments, with parser and display support."
 aliases = ["thermite-syntax/src/address.rs REQ-1 (address grammar)"]
 contributors = [".design/syntax/semantic-addressing.md", "thermite-syntax/tests/conformance.rs"]
 generated_to = ["status", "thermite-syntax-address-status"]
@@ -10785,8 +10785,8 @@ title = "Semantic address invariant numbering"
 owner = "thermite-syntax/src/address.rs"
 status = "shipped"
 scope = "syntax"
-summary = "Loop invariants receive 1-based `inv#M` addresses in source order under their owning loop address."
-aliases = ["thermite-syntax/src/address.rs REQ-3 (inv numbering)"]
+summary = "Loop invariants receive 1-based `keeps#M` addresses in source order under their owning loop address."
+aliases = ["thermite-syntax/src/address.rs REQ-3 (keeps numbering)"]
 contributors = [".design/syntax/semantic-addressing.md", "thermite-syntax/tests/conformance.rs"]
 generated_to = ["status", "thermite-syntax-address-status"]
 
@@ -10803,28 +10803,28 @@ note = "stores invariant address text"
 [[requirement.evidence]]
 kind = "test"
 target = "thermite-syntax/tests/conformance.rs"
-note = "inv#2/inv#3 conformance"
+note = "keeps#2/keeps#3 conformance"
 
 [[requirement]]
 id = "REQ-SYNTAX-ADDRESS-DEC"
-title = "Semantic address dec segment"
+title = "Semantic address measures segment"
 owner = "thermite-syntax/src/address.rs"
 status = "shipped"
 scope = "syntax"
 summary = "Each loop's termination metric resolves to a single `<loop>.dec` segment rather than an ordinal metric namespace."
-aliases = ["thermite-syntax/src/address.rs REQ-4 (dec address)"]
+aliases = ["thermite-syntax/src/address.rs REQ-4 (measures address)"]
 contributors = [".design/syntax/semantic-addressing.md", "thermite-syntax/tests/conformance.rs"]
 generated_to = ["status", "thermite-syntax-address-status"]
 
 [[requirement.evidence]]
 kind = "symbol"
 target = "emit_loop"
-note = "emits dec address entries"
+note = "emits measures address entries"
 
 [[requirement.evidence]]
 kind = "symbol"
 target = "AddrKind::Dec"
-note = "dec address kind"
+note = "measures address kind"
 
 [[requirement.evidence]]
 kind = "test"
@@ -11930,7 +11930,7 @@ owner = "forge/src/build.rs"
 status = "shipped"
 scope = "forge"
 summary = "`reject_ambient_fx_for_kernel` rejects kernel builds whose transitive effects require hosted ambient syscalls or an entry binary."
-aliases = ["forge/src/build.rs REQ-3 (ambient-syscall `fx` reject)"]
+aliases = ["forge/src/build.rs REQ-3 (ambient-syscall `!` reject)"]
 contributors = [".design/forge/build.md", ".design/build/kernel-target.md", "forge/tests/build_conformance.rs", "forge/tests/kernel_target.rs"]
 generated_to = ["status", "forge-build-kernel-status"]
 
@@ -13654,7 +13654,7 @@ generated_to = ["status", "forge-vacuity-status"]
 [[requirement.evidence]]
 kind = "symbol"
 target = "ens_is_trivially_true"
-note = "trivial-ens detector"
+note = "trivial-ensures detector"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -13699,7 +13699,7 @@ owner = "forge/src/vacuity.rs"
 status = "shipped"
 scope = "forge"
 summary = "Ensures clauses equal to the whole precondition or one of its conjunctions are rejected by structural triage."
-aliases = ["forge/src/vacuity.rs REQ-3 (ens-implied-by-req reject (c))"]
+aliases = ["forge/src/vacuity.rs REQ-3 (ens-implied-by-requires reject (c))"]
 contributors = [".design/forge/vacuity-triage.md", "forge/tests/vacuity_slag_conformance.rs", "conformance/vacuity/triage.json"]
 generated_to = ["status", "forge-vacuity-status"]
 
@@ -15415,7 +15415,7 @@ owner = "forge/src/sandbox.rs"
 status = "shipped"
 scope = "forge"
 summary = "Sandbox effect rows are derived from the entry plus its in-file reachable functions using the closure walker."
-aliases = ["forge/src/sandbox.rs REQ-2 (transitive-`fx` derivation via `closure.rs`)"]
+aliases = ["forge/src/sandbox.rs REQ-2 (transitive-`!` derivation via `closure.rs`)"]
 contributors = [".design/forge/runtime-sandbox.md", "forge/src/closure.rs", "forge/tests/sandbox_conformance.rs"]
 generated_to = ["status", "forge-sandbox-status"]
 
@@ -15441,7 +15441,7 @@ owner = "forge/src/sandbox.rs"
 status = "shipped"
 scope = "forge"
 summary = "Effect tokens map to a pinned x86_64 syscall allowlist with pure baseline and effect-specific widening."
-aliases = ["forge/src/sandbox.rs REQ-3 (`fx` → syscall allowlist mapping)"]
+aliases = ["forge/src/sandbox.rs REQ-3 (`!` → syscall allowlist mapping)"]
 contributors = [".design/forge/runtime-sandbox.md", "forge/tests/sandbox_conformance.rs"]
 generated_to = ["status", "forge-sandbox-status"]
 
@@ -15779,7 +15779,7 @@ owner = "forge/src/slag.rs"
 status = "shipped"
 scope = "forge"
 summary = "A valid slag attribute is the justification that lets structural vacuity triage skip only the maximal-effect rule."
-aliases = ["forge/src/slag.rs REQ-3 (slag justifies maximal `fx`)"]
+aliases = ["forge/src/slag.rs REQ-3 (slag justifies maximal `!`)"]
 contributors = [".design/forge/slag.md", ".design/forge/vacuity-triage.md", "forge/tests/vacuity_slag_conformance.rs"]
 generated_to = ["status", "forge-slag-status"]
 
@@ -16012,7 +16012,7 @@ title = "Registry-termination class and full-position closure"
 owner = "forge/src/obligation.rs"
 status = "shipped"
 scope = "forge"
-summary = "Registry-termination obligations are minted when the full req/ens/body/dec called-spec-function closure is non-empty."
+summary = "Registry-termination obligations are minted when the full req/ens/body/measures called-spec-function closure is non-empty."
 aliases = ["forge/src/obligation.rs REQ-1.2 (the REGISTRY-TERMINATION class + the full-expression-position closure)"]
 contributors = [".design/verified/proof-backends.md", "forge/src/check.rs"]
 generated_to = ["status", "forge-obligation-status"]
@@ -17764,7 +17764,7 @@ title = "Clause keywords are full words"
 owner = ".design/rfcs"
 status = "not_started"
 scope = "syntax"
-summary = "req/ens/inv/dec are spelled requires/ensures/keeps/measures, so a clause keyword carries the pretraining prior its meaning deserves."
+summary = "req/ens/inv/measures are spelled requires/ensures/keeps/measures, so a clause keyword carries the pretraining prior its meaning deserves."
 remaining_scope = "Rename five entries in keyword_kind, keeping the TokKind variant names so downstream references do not move, and rename the clause names carried as strings in parser diagnostics. Proposed by RFC-6; not accepted."
 contributors = [".design/rfcs/0006-full-words.md"]
 generated_to = ["status"]
@@ -17797,7 +17797,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "syntax"
 summary = "The contract is ordered the effect row, then the bare clauses, then measures, and one or more requires is accepted to match ensures."
-remaining_scope = "Reorder the parse_contract state machine. Today it enforces req x1, ens x1+, fx x1, with a recursive fn carrying dec after the row. Proposed by RFC-6; not accepted."
+remaining_scope = "Reorder the parse_contract state machine. Today it enforces requires x1, ensures x1+, fx x1, with a recursive fn carrying measures after the row. Proposed by RFC-6; not accepted."
 contributors = [".design/rfcs/0006-full-words.md"]
 generated_to = ["status"]
 
@@ -17829,7 +17829,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "syntax"
 summary = "requires nothing is clause-level sugar for requires true, leaving true legal inside expressions."
-remaining_scope = "Accept the keyword in clause position. Adoption across the 100 existing req true sites is a second pass rather than a correctness condition, since a naive rewriter emits requires true and that stays legal. Proposed by RFC-6; not accepted."
+remaining_scope = "Accept the keyword in clause position. Adoption across the 100 existing requires true sites is a second pass rather than a correctness condition, since a naive rewriter emits requires true and that stays legal. Proposed by RFC-6; not accepted."
 contributors = [".design/rfcs/0006-full-words.md"]
 generated_to = ["status"]
 
