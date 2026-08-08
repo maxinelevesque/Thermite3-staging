@@ -47,8 +47,7 @@ fn parse_src(src: &str) -> Program {
 
 /// The `to_string` program both lowerings materialize the generated `u64_to_string`
 /// from (it names `parse_be` + uses `n.to_string()`, so `program_uses_numfmt` fires).
-const TOSTRING_SRC: &str =
-    "fn show(n: u64) -> String\n  ! alloc
+const TOSTRING_SRC: &str = "fn show(n: u64) -> String\n  ! alloc
   requires true\n  ensures parse_be(result) == n\n{ n.to_string() }\n";
 
 #[test]

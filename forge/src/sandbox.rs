@@ -663,7 +663,8 @@ mod tests {
     // widens. Anchored to the oracle's `rf` fixture shape.
     #[test]
     fn transitive_fx_carries_read() {
-        let prog = parse("fn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }");
+        let prog =
+            parse("fn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }");
         let fx = transitive_fx(&prog, "rf");
         assert!(fx.contains("read(src)"), "rf declares read(src): {fx:?}");
         assert!(syscall_allowlist(&fx).contains(&257), "→ openat widened");

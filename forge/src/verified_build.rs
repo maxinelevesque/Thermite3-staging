@@ -2017,7 +2017,11 @@ fn expected_tv_inventory(
         if !closure.functions.contains(&function.name) {
             continue;
         }
-        expect_tv(&mut expected, "contract", format!("{}.requires", function.name));
+        expect_tv(
+            &mut expected,
+            "contract",
+            format!("{}.requires", function.name),
+        );
         for index in 0..function.contract.ens.len() {
             expect_tv(
                 &mut expected,
@@ -4301,11 +4305,13 @@ mod tests {
 
     #[test]
     fn normalized_program_digest_ignores_only_source_presentation() {
-        let compact = parse("fn id(x: u64) -> u64 ! pure requires x < 10 ensures result == 10 { 1_0 }");
+        let compact =
+            parse("fn id(x: u64) -> u64 ! pure requires x < 10 ensures result == 10 { 1_0 }");
         let presented_differently = parse(
             "\nfn id ( x : u64 ) -> u64\n  ! pure\n  requires x < 10\n  ensures result == 10\n{ 10 }\n",
         );
-        let changed = parse("fn id(x: u64) -> u64 ! pure requires x < 10 ensures result == 11 { 10 }");
+        let changed =
+            parse("fn id(x: u64) -> u64 ! pure requires x < 10 ensures result == 11 { 10 }");
         assert_eq!(
             normalized_program_sha256(&compact),
             normalized_program_sha256(&presented_differently)

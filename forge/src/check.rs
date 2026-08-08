@@ -7606,7 +7606,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     /// shape): `result >= x` is the body-constraining clause, `x + 0` the identity body.
     #[cfg(feature = "bv")]
     fn parse_succ_ge() -> thermite_syntax::FnItem {
-        let src = "fn succ_ge(x: u64) -> u64 ! pure requires true ensures@bv64 result >= x { x + 0 }";
+        let src =
+            "fn succ_ge(x: u64) -> u64 ! pure requires true ensures@bv64 result >= x { x + 0 }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         parsed
@@ -7762,7 +7763,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     #[cfg(feature = "bv")]
     #[test]
     fn ac5_non_result_bv_clause_has_no_scoreable_mutant() {
-        let src = "fn commute(a: u64, b: u64) -> u64 ! pure requires true ensures@bv64 a + b == b + a \
+        let src =
+            "fn commute(a: u64, b: u64) -> u64 ! pure requires true ensures@bv64 a + b == b + a \
                    { a + b }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);

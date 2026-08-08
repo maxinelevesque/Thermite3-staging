@@ -120,7 +120,8 @@ fn three_var_product_chain_emits_one_aid_per_subproduct() {
 /// obligation stands; no fabricated assert (#196, R-DEFER-9).
 #[test]
 fn unbounded_factor_emits_no_aid() {
-    let src = "fn nm(n: u64, m: u64) -> u64 ! pure requires n <= 30 ensures result == n * m { n * m }";
+    let src =
+        "fn nm(n: u64, m: u64) -> u64 ! pure requires n <= 30 ensures result == n * m { n * m }";
     let l3 = lower(src);
     assert!(
         !l3.contains("by(nonlinear_arith)"),

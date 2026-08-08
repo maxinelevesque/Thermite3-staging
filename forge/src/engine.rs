@@ -3279,9 +3279,10 @@ mod tests {
             eprintln!("SKIP: z3 not present — the live nlsat relax route is not run.");
             return;
         }
-        let program =
-            parse_program("fn sq(n: u64) -> u64\n  ! pure
-  requires true\n  ensures n * n != 2\n{ n }\n");
+        let program = parse_program(
+            "fn sq(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
+        );
         let engine = NlsatEngine::new(program.clone());
         match engine.discharge_relax(fn_of(&program, "sq")) {
             NlsatOutcome::RealWitness { point } => {
@@ -3311,9 +3312,10 @@ mod tests {
     // z3 being installed); the z3 end-to-end run is `live_nlsat_n_squared_ne_two_is_real_witness`.
     #[test]
     fn classify_sat_real_only_model_is_real_witness() {
-        let program =
-            parse_program("fn sq(n: u64) -> u64\n  ! pure
-  requires true\n  ensures n * n != 2\n{ n }\n");
+        let program = parse_program(
+            "fn sq(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
+        );
         let f = fn_of(&program, "sq");
         // The real countermodel of `n*n ≠ 2` over ℝ: n = √2 (and `result` unconstrained).
         let mut model = BTreeMap::new();
@@ -3759,7 +3761,8 @@ mod tests {
     // engine maps it to Unknown. Expected from §4.1.3 (R-CHAR-3). No lake needed.
     #[test]
     fn optres_result_item_refuses_export() {
-        let src = "fn maybe(x: u32) -> Option<u32> ! pure requires true ensures true { let y = x; y }";
+        let src =
+            "fn maybe(x: u32) -> Option<u32> ! pure requires true ensures true { let y = x; y }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "maybe", vec![]);
         if let Some(item) = crate::lean_export::find_item(&p, "maybe") {
@@ -4809,7 +4812,8 @@ mod tests {
     // REQ-2(c)/§2(d) (R-CHAR-3).
     #[test]
     fn lean_engine_fills_trust_and_evidence_slots() {
-        let p = parse_program("fn id(x: u64) -> u64 ! pure requires true ensures result == x { x }");
+        let p =
+            parse_program("fn id(x: u64) -> u64 ! pure requires true ensures result == x { x }");
         let o = fn_obligation(&p, "id", vec![]);
         let engine = LeanEngine::new(p, lean_root());
         assert_eq!(engine.name(), EngineName::LeanAuto);
@@ -4835,10 +4839,12 @@ mod tests {
     // only delta is the ens RHS (`>= a` vs `>= b`); the content hash distinguishes them.
     #[test]
     fn evidence_key_differs_on_different_ens() {
-        let p1 =
-            parse_program("fn m(a: u32, b: u32) -> u32 ! pure requires true ensures result >= a { a }");
-        let p2 =
-            parse_program("fn m(a: u32, b: u32) -> u32 ! pure requires true ensures result >= b { a }");
+        let p1 = parse_program(
+            "fn m(a: u32, b: u32) -> u32 ! pure requires true ensures result >= a { a }",
+        );
+        let p2 = parse_program(
+            "fn m(a: u32, b: u32) -> u32 ! pure requires true ensures result >= b { a }",
+        );
         let o1 = fn_obligation(&p1, "m", vec![]);
         let o2 = fn_obligation(&p2, "m", vec![]);
         let e1 = LeanEngine::new(p1, lean_root());
@@ -4870,7 +4876,8 @@ mod tests {
         let nested_file = nested.join("x.lean");
         let _ = std::fs::write(&nested_file, "-- exec v1\n");
 
-        let p = parse_program("fn id(x: u64) -> u64 ! pure requires true ensures result == x { x }");
+        let p =
+            parse_program("fn id(x: u64) -> u64 ! pure requires true ensures result == x { x }");
         let o = fn_obligation(&p, "id", vec![]);
         let e_before = LeanEngine::new(p.clone(), tmp.clone());
         let k_before = e_before.evidence_key(&o);

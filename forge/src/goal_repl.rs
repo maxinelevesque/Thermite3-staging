@@ -1018,7 +1018,8 @@ mod tests {
     // §7 battery line.
     #[test]
     fn goal_render_discharged() {
-        let program = parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
+        let program =
+            parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
         let cert = {
             let mut c = sum_cert_l3();
             c.item = "f".to_string();
@@ -1037,7 +1038,8 @@ mod tests {
     // property 2).
     #[test]
     fn goal_render_counterexample() {
-        let program = parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
+        let program =
+            parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
         let cert = Certificate::new(
             "f",
             Level::L0,
@@ -1098,7 +1100,8 @@ mod tests {
     // REQ-3 / REQ-7: a bad address resolves to a structured error, never a panic.
     #[test]
     fn edit_bad_address_is_structured_error() {
-        let program = parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
+        let program =
+            parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
         // A well-formed but absent address → NotFound; a malformed one → Malformed.
         assert!(matches!(
             address::resolve(&program, "f.loop#9"),
@@ -1133,7 +1136,8 @@ mod tests {
     // operand. A non-trivial `req` is bound as `h_req`.
     #[test]
     fn proof_view_renders_lemma_hypotheses_goal_and_holes() {
-        let program = parse_ok("lemma le_id(a: u64, b: u64) requires a <= b ensures a <= b proof { ?p0 }");
+        let program =
+            parse_ok("lemma le_id(a: u64, b: u64) requires a <= b ensures a <= b proof { ?p0 }");
         let ForgeItem::Lemma(l) = first_forge(&program) else {
             panic!("expected a lemma");
         };

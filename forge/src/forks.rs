@@ -455,7 +455,8 @@ mod tests {
     // the additive discipline that keeps v1 goldens byte-identical.
     #[test]
     fn section_omitted_for_v1_corpus() {
-        let program = parse("fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }");
+        let program =
+            parse("fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }");
         let cert = Certificate::new("f", Level::L3, vec!["pure".to_string()], 0, vec![]);
         assert!(
             SemanticForks::build(&[cert], &program).is_none(),

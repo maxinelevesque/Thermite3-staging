@@ -422,7 +422,8 @@ mod tests {
             "the Obligation is a comparable neutral value (REQ-1)"
         );
         // A different item is not equal (the value carries real content).
-        let p2 = parse_one("fn other(y: u64) -> u64 ! pure requires true ensures result == y { y }");
+        let p2 =
+            parse_one("fn other(y: u64) -> u64 ! pure requires true ensures result == y { y }");
         let o2 = Obligation::contract_for_fn(fn_item(&p2, "other"), vec![]);
         assert_ne!(o, o2);
     }

@@ -4214,7 +4214,9 @@ mod tests {
     // `result >= a` is `Expr.cmp CmpOp.ge (var "result") (var "a")`.
     #[test]
     fn encode_scalar_comparison_arm_by_arm() {
-        let p = parse_one("fn max2(a: u32, b: u32) -> u32 ! pure requires true ensures result >= a { a }");
+        let p = parse_one(
+            "fn max2(a: u32, b: u32) -> u32 ! pure requires true ensures result >= a { a }",
+        );
         let f = match find_item(&p, "max2").unwrap() {
             Item::Fn(f) => f,
             _ => unreachable!(),
@@ -4366,7 +4368,8 @@ mod tests {
     // Expected from §4.1.2 (R-CHAR-3): the bridge resolves the Pin H concern.
     #[test]
     fn bool_result_item_exports_via_bindbool() {
-        let p = parse_one("fn t(a: u32) -> bool ! pure requires true ensures result == true { true }");
+        let p =
+            parse_one("fn t(a: u32) -> bool ! pure requires true ensures result == true { true }");
         let o = fn_obl(&p, "t", vec![]);
         if let Some(item) = find_item(&p, "t") {
             match export_item(&o, &p, item) {
@@ -4457,7 +4460,9 @@ mod tests {
     // and keeps the byte-identical `req`/`ens`/`R_item` of the obligation.
     #[test]
     fn arbitrary_result_harness_binds_result_to_a_fresh_binder() {
-        let p = parse_one("fn f(x: u32) -> u32 ! pure requires x > 0 ensures result == x + 1 { x + 1 }");
+        let p = parse_one(
+            "fn f(x: u32) -> u32 ! pure requires x > 0 ensures result == x + 1 { x + 1 }",
+        );
         let o = fn_obl(&p, "f", vec![]);
         let item = find_item(&p, "f").expect("fn f present");
 

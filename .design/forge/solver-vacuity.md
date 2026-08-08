@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 90b8325951b0f625a693baf07776da39d0b95fbe (re-pinned 2026-06-17 after merging main into the #275 vacuity-fix branch: governed source carries #51's topology-stable doc-drift change + #275's ADT-deps/compile-error vacuity fix, both net-additive; the REQs this doc governs are unchanged.)
-audited-content-sha256: 8e5e82ff22bf710581eb3668cfb8cef49ce404d255affd9d8f35c7c10d37b445 (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: b94ec724e79313dae40144e6558258861253603740d035bae8b504c96cecfe47)
+audited-content-sha256: ec430e0250984519ddccb2be958973cab4fb3c1e9a97249ab19f7dddf005e3d3 (re-pinned 2026-08-08 for rustfmt only: migrating `req`/`ens`/`fx` to `requires`/`ensures`/`!` lengthened call sites past the width, so rustfmt re-wrapped them and added trailing commas. No governed file changed meaning; the wrapped lines are `parse_program(...)`-style test fixtures. prior: 8e5e82ff22bf710581eb3668cfb8cef49ce404d255affd9d8f35c7c10d37b445, previously (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: b94ec724e79313dae40144e6558258861253603740d035bae8b504c96cecfe47))
 governs: forge/src/vacuity_solver.rs
 thesis-refs:
   - thermite-design.md §7

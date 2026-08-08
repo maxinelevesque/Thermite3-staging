@@ -146,8 +146,7 @@ const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    ! pure
 const LOOSE: &str = "fn loose(x: u64) -> u64\n    ! pure
     requires x <= 100\n    ensures result <= 1000\n{\n    let y: u64 = x + 0;\n    y\n}\n";
 
-const REFUSE: &str =
-    "fn refuse(x: u64) -> u64\n    ! pure
+const REFUSE: &str = "fn refuse(x: u64) -> u64\n    ! pure
     requires x == 0\n    ensures result == 0\n{\n    x\n}\n";
 
 const ADD: &str = "fn add(a: u64, b: u64) -> u64\n    ! pure

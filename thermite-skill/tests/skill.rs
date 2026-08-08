@@ -254,7 +254,9 @@ fn forge_slag_grammar_markers_present() {
             "skill is missing slag field `{field}`"
         );
     }
-    for kw in ["requires", "ensures", "!", "keeps", "measures", "spec fn", "#[slag]"] {
+    for kw in [
+        "requires", "ensures", "!", "keeps", "measures", "spec fn", "#[slag]",
+    ] {
         assert!(skill.contains(kw), "skill is missing grammar marker `{kw}`");
     }
 }

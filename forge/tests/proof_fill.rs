@@ -51,7 +51,10 @@ fn proof_view_renders_hypotheses_for_a_forge_routed_goal() {
     );
     let (out, err, ok) = run_forge(&["goal", th.to_str().unwrap(), "--proof"]);
     assert!(ok, "`forge goal --proof` should succeed: {out}{err}");
-    assert!(out.contains("PROOF VIEW — proof for maxv.ensures#0"), "{out}");
+    assert!(
+        out.contains("PROOF VIEW — proof for maxv.ensures#0"),
+        "{out}"
+    );
     assert!(out.contains("hypotheses in scope:"), "{out}");
     assert!(out.contains("x : u64") && out.contains("y : u64"), "{out}");
     // `ensures#0` is the first ensures clause (0-based), `result >= x`.

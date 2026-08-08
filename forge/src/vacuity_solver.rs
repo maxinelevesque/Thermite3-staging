@@ -813,8 +813,9 @@ mod tests {
     // `result`/`ens` binder. The `req` text is reused verbatim from the lowering.
     #[test]
     fn vacuity_harness_assumes_req_asserts_false() {
-        let (f, specs) =
-            fn_and_specs("fn f(x: u32) -> u32 ! pure requires x > 5 && x < 3 ensures result == x { x }");
+        let (f, specs) = fn_and_specs(
+            "fn f(x: u32) -> u32 ! pure requires x > 5 && x < 3 ensures result == x { x }",
+        );
         let h = build_vacuity_harness(&f, &specs, &[]).expect("build vac harness");
         assert!(h.contains("proof fn vac_check(x: u32)"), "harness:\n{h}");
         assert!(h.contains("requires x > 5 && x < 3,"), "harness:\n{h}");
