@@ -1,6 +1,6 @@
 name: generated-tv
 
-# The rotating-seed off-corpus translation-validation job (thermite2-program.md
+# The rotating-seed off-corpus translation-validation job (docs/v2/program.md
 # REQ-2c / AC-4). `forge tv --generated` discharges the per-clause production-vs-
 # reference equivalence obligation over a deterministically GENERATED clause space
 # — the off-corpus escape hatch that catches lowering divergences the fixed

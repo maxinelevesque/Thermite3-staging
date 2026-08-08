@@ -1,8 +1,8 @@
 <!--
-  thermite2-semantics.md — the single normative home for the shipped Stage-1
-  semantics (.design/thermite2-program.md REQ-8 / AC-13).
+  docs/v2/semantics.md — the single normative home for the shipped Stage-1
+  semantics (docs/v2/program.md REQ-8 / AC-13).
   Baseline: dollspace-gay/Thermite @ c46da3ac or later (the program re-baseline).
-  Authority: thermite-design.md (the product thesis) → .design/thermite2-program.md
+  Authority: thermite-design.md (the product thesis) → docs/v2/program.md
   (the program umbrella) → this doc (the Stage-1 semantics of record) → the shipped
   forge/lean/thermite-lower code it consolidates.
 -->
@@ -38,7 +38,7 @@ The five areas it fixes:
    (solver vs kernel-grounded) (§5).
 
 This doc states semantics; it does not re-specify the program sequencing
-(`.design/thermite2-program.md` owns that) nor the per-component REQ tables
+(`docs/v2/program.md` owns that) nor the per-component REQ tables
 (`.design/stage1-forge-tier.md` and the `.design/reqs/` registry own those).
 
 ---
@@ -393,7 +393,7 @@ proofs trust, which is the point of recording the profile rather than a bare lev
 
 - `thermite-design.md` — the product thesis and the §6 ladder / §7 battery / §8
   `#[slag]` framing this doc's Stage-1 conventions extend.
-- `.design/thermite2-program.md` — the program umbrella (REQ-8 / AC-13); owns
+- `docs/v2/program.md` — the program umbrella (REQ-8 / AC-13); owns
   sequencing and gates.
 - `.design/stage1-forge-tier.md` — the Stage-1 forge-tier design doc; owns the
   per-increment REQ tables.

@@ -137,7 +137,7 @@ fn surface_construct_coverage() {
     );
 }
 
-/// The Stage-1 forge-tier section (skill v2; umbrella `.design/thermite2-program.md`
+/// The Stage-1 forge-tier section (skill v2; umbrella `docs/v2/program.md`
 /// REQ-8 / AC-13) teaches the agent the SHIPPED forge tier. Its four mandated
 /// content areas must each be present, with expected strings derived from the
 /// shipped forge code — not copied from `generate.rs` (R-CHAR-3):

@@ -23,7 +23,7 @@
 //! The source-level value conventions this context split realizes — casts are
 //! value-preserving in spec position and truncating in exec position (under the
 //! no-overflow source obligation), and `div`/`rem` are partial with a source-side
-//! divisor obligation — are stated normatively in `thermite2-semantics.md` §4 (the
+//! divisor obligation — are stated normatively in `docs/v2/semantics.md` §4 (the
 //! audit F2 corners). This module lowers them; the semantics doc is the authority.
 //!
 //! ## Proof aids are shape-keyed, not program-keyed (REQ-7)

@@ -1,5 +1,5 @@
 //! `forge/src/metrics.rs` — the §6 metrics dashboard (umbrella
-//! `.design/thermite2-program.md` REQ-7 / AC-12: "From M1, `forge` emits the
+//! `docs/v2/program.md` REQ-7 / AC-12: "From M1, `forge` emits the
 //! routing-reason and verdict telemetry fields the §6 dashboard needs — cage-vs-forge
 //! share by reason, verdict counts, TV phase split — and the audit prints them").
 //!

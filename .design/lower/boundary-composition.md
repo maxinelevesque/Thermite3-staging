@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: b3815c637126440260faab077a4af6fba8049e55892f257369a7c68a49d19e5b (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: b695da1b202c0b04c467c1553aaefece94978a3ab23709445ffbf68d7198ed6a)
+audited-content-sha256: ac3ee6b7b2dbad717dc057d0154fb63e2f24fd80f9a03c5273c17cb3738a42da (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: b3815c637126440260faab077a4af6fba8049e55892f257369a7c68a49d19e5b, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: b695da1b202c0b04c467c1553aaefece94978a3ab23709445ffbf68d7198ed6a))
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9

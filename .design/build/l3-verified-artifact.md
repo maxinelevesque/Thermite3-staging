@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: c5ad43230ea492bb869efdac76935eac697a3a6c4c3d7d5ca411d6958f060e46 (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 46ee0151535566ef908765f13a921ed530117ff5535a70ec5fa4934c5baa4073)
+audited-content-sha256: 292396538e65cde488319c3b3b296463a84ec6b3bda4f3386db3380675001f05 (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: c5ad43230ea492bb869efdac76935eac697a3a6c4c3d7d5ca411d6958f060e46, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 46ee0151535566ef908765f13a921ed530117ff5535a70ec5fa4934c5baa4073))
 decision: Option A — compile the canonical Verus executable body that was verified
 issue: github:dollspace-gay/Thermite#101, github:dollspace-gay/Thermite#103, github:dollspace-gay/Thermite#104, github:dollspace-gay/Thermite#108, github:dollspace-gay/Thermite#111
 governs:

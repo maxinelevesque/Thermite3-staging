@@ -35,7 +35,7 @@ doc excludes it. Gate G2 is the certificate `trust:` flip from
 [1′][4′][8][9] green in one run. The spec of record for the mathematics
 is the metatheory sketch in GH issue #2; this doc caches its adaptation
 to the tree, re-grounded against G1 reality at the re-pass (2026-06-19).
-Umbrella: `.design/thermite2-program.md` (REQ-10).
+Umbrella: `docs/v2/program.md` (REQ-10).
 
 ## Requirements
 
@@ -362,6 +362,6 @@ normalizer.
 
 *Stage-2 spec (re-pass complete, G1 re-pass 2026-06-19 — all four input
 dependencies resolved, architecture and (R2) grammar re-grounded against
-G1 reality, kickoff-ready) · child of `.design/thermite2-program.md`
+G1 reality, kickoff-ready) · child of `docs/v2/program.md`
 (REQ-10) · spec of record: the stage-2 metatheory sketch, GH issue #2 ·
 gate: G2 · baseline `dollspace-gay/Thermite @ 904ee01c`.*

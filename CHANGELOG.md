@@ -131,7 +131,7 @@ relax routing to the new L4 rung. Declared on `main`.
   nlsat, QF_NRA) with an integrality check, producing `RealWitness` for
   true-over-ℤ/false-over-ℝ claims. `Level::L4` (L3 = solver proof; L4 =
   kernel-grounded: nlsat + spine lemma).
-- **Governance**: `thermite2-semantics.md` (the normative semantics home), the
+- **Governance**: `docs/v2/semantics.md` (the normative semantics home), the
   R-rule register, the §6 metrics dashboard (`forge audit --metrics`, gating
   nothing), and the G1 gate artifact (the merge-class example certifying L4/L4/L3
   + the seven-verdict hermetic suite).
