@@ -50,8 +50,18 @@ events**. Classified by whether the document's claims were actually falsified:
 | | findings | |
 |---|---|---|
 | **Confirmed true** | 28 | anchor branch; documents describing `req`/`ens`/`fx` after RFC-6 deleted that surface |
-| **Undetermined** | 7 | anchor branch; pins moved, but these documents quote no surface, so falsification needs reading each one |
-| **Confirmed false** | 6 | claims verified still true by other means |
+| **Confirmed false** | 13 | claims verified still true |
+
+An earlier revision of this document left 7 of those 13 **undetermined**, because
+resolving them meant reading each one, and disclosed that §3 would weaken if a
+meaningful share turned out to be true. They have since been read. All 7 are
+false positives, and the test was narrower than reading prose: for each, ask what
+the anchor actually *changed* in the files that document governs. Every changed
+line in `verified_build.rs`, `composition.rs`, `cli.rs`, `closure.rs` and
+`thermite-syntax/src/lib.rs` is the RFC-6 rename — including the ones that do not
+look like it, which are clause names built as data (`format!("{}.ens#{}")` →
+`.ensures#`) and one module doc comment. No behaviour moved, and none of the
+seven documents quotes an address segment, so none was falsified.
 
 The gate is not useless — 28 real findings in one firing is a good day for any
 tripwire, and this proposal does not touch that path. The problem is the 6.
@@ -77,7 +87,9 @@ DRIFT.** The check was right.
 
 ## 3. The false positives are structural, which is why this is fixable
 
-The six do not scatter. They come from exactly two shapes:
+The thirteen do not scatter. They come from three shapes, which are one root
+cause wearing three faces — **the pin digests more than the document depends
+on**:
 
 * **(i) A whole-file pin over a file that accumulates third-party content.**
   Configuration files grow entries that belong to other tools. Any pin over the
@@ -86,6 +98,10 @@ The six do not scatter. They come from exactly two shapes:
 * **(ii) A whole-file pin over source, where formatting and comments move bytes
   without moving meaning.** Rust source is re-wrapped by `rustfmt` as a matter of
   course; comments are edited constantly.
+* **(iii) A whole-file pin over source touched by a semantics-preserving global
+  rename.** RFC-6 renamed the clause surface; six documents about verified
+  builds, the CLI and closure analysis drifted without any of their claims
+  moving, because the rename passed through files they govern.
 
 Both are properties of the *pin's shape*, not of the change that tripped it. And
 neither shape overlaps with the 28 true findings, which came from a semantic
@@ -176,10 +192,11 @@ context than an inline one.
 * **Anchors rot.** A `doc:begin` comment can be moved, deleted, or wrapped around
   the wrong thing, and nothing proposed here detects an anchor that no longer
   surrounds what the document discusses.
-* **The 7 undetermined findings are still undetermined.** This document does not
-  claim they are false. Reading them is work nobody has done, and if a
-  meaningful share turn out to be true, §3's claim that false positives are
-  confined to two shapes weakens accordingly.
+* **The false-positive rate is measured on one fork over one day.** 41 findings
+  is enough to show the shapes are real and not enough to size them. A project
+  whose docs are pinned more narrowly, or which reformats less, would see a
+  different ratio — and the 28 true findings all came from a single event, a
+  surface rename, which is not a routine occurrence.
 
 ## 7. Sequence
 
