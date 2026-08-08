@@ -4,7 +4,7 @@
 tier: 3-component
 status: shipped
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 / AC-8 (#349), the automated Rust→Lean obligation exporter: the change to this doc's governed file (cli.rs) is the additive `forge smt-export [<file>] [--out <path>]` subcommand (`Command::SmtExport` → `run_smt_export`, emitting the `(P_prod) ⟺ (P_ref)` `by smt` Lean theorems + `#print axioms` probes via `lean_smt_export.rs`); every other subcommand + flag parse is unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-21 stage-2 REQ-8 / AC-8 (#330) `forge strat-faithful-tv`; 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `forge strat-tv` + `ForgeError::StratDifferential`; 2026-06-18 umbrella REQ-2c / AC-4 rotating-seed `--seed` flag on `forge tv`; §6 metrics dashboard `--metrics` value)
-audited-content-sha256: 28fe8e827370bbaec158e6d2938ba48f2711c14445badfbdf1f7dedd406f3f9c (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: b412ca0108ddb5fc0ed7a18617d653c706d7f5790d75f9fefdfea6a28433c52a)
+audited-content-sha256: 93f32d0322be592441665e98b469e143865ef11e0ad99abb7914a4301227766e (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: 28fe8e827370bbaec158e6d2938ba48f2711c14445badfbdf1f7dedd406f3f9c, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: b412ca0108ddb5fc0ed7a18617d653c706d7f5790d75f9fefdfea6a28433c52a))
 governs: forge/src/cli.rs
 thesis-refs:
   - thermite-design.md §5
@@ -234,7 +234,7 @@ The methods fall into five families, each with its own exit-code convention
    `fn tv_report_json` / `exec_tv_report_json` / `body_tv_report_json in
    cli.rs`. `forge tv --seed <u64>` overrides the off-corpus generator seed
    (`--generated` space) — the lever the rotating-seed scheduled-CI watchdog
-   uses (`thermite2-program.md` REQ-2c, `.github/workflows/generated-tv.yml`);
+   uses (`docs/v2/program.md` REQ-2c, `.github/workflows/generated-tv.yml`);
    absent, it rides the pinned deterministic `TV_DEFAULT_SEED`, and the corpus
    phase always does, so the fixed corpus gate stays reproducible.
 3. **View/build verbs** — `review` (`run_review`: artifact emission +

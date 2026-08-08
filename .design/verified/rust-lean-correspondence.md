@@ -159,7 +159,7 @@ corresponding table section and requires re-audit (see "Drift" below).**
 >   unchanged. The arm tables stand verbatim.
 > - **The Lean spine `1438dc5f` → `b6038651` is comment-only on every modified file, plus 7 NEW files.**
 >   (`033d9fb2` was the post-#53-merge last-touch; merging current `origin/main` 904ee01c into this branch
->   added the #314 commit `b6038651` "point module headers at thermite2-semantics.md", a module-header
+>   added the #314 commit `b6038651` "point module headers at docs/v2/semantics.md", a module-header
 >   doc-comment touch to `Ast.lean`/`Denote.lean`/`Relax.lean` — VERIFIED CODE-IDENTICAL by the same
 >   comment-stripped diff, so the spine pin advances `033d9fb2 → b6038651` with no arm-table impact.)
 >   `git diff --name-status` shows 7 ADDED — `Exec/WhileBody.lean` + `PinWhile{Composition,DecShape,

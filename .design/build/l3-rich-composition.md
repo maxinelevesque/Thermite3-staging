@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 948855c1f8be66f5afed04277dbdd57e0be065fe843cff052df561dcff5dc7c3 (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: cef3f68835ed4cd28d8457fde798db3026de833b6e31fb7230ac7b0e68206de4)
+audited-content-sha256: 35a0aef378335e7ca7b47f3e78ef6e2c8c3f5fbc713abda186a353f1da696f43 (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: 948855c1f8be66f5afed04277dbdd57e0be065fe843cff052df561dcff5dc7c3, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: cef3f68835ed4cd28d8457fde798db3026de833b6e31fb7230ac7b0e68206de4))
 decision: one canonical Verus crate with crate-visible rich Thermite roots and public shell exports
 issue: github:dollspace-gay/Thermite#104
 governs:

@@ -23,7 +23,7 @@ source of sequencing truth in the `.design/` tree.
 | Stage-2 metatheory sketch | GH issue #2, comment 2 | The S₂ fragment, T1-S/T2-S/T3-C/T4-R/T5-X, `lean/Thermite/Strat/` module plan, negative-pin battery, audit checks [1′][4′][8][9] |
 | Program plan | GH issue #2, comment 3 | SPIKE-1/SPIKE-2, stage-1 work breakdown (9 items), milestone tree + gates, debt interleave, Q1–Q10 register, metrics, governance deliverables |
 | Appendix A | GH issue #2, comment 4 | The walls W1–W26, the C1–C4 configuration space, the fallback atlas F-A…F-J and the global retreat order |
-| This doc | `.design/thermite2-program.md` | Program index, re-baseline, requirement/acceptance framing for the scaffolding work |
+| This doc | `docs/v2/program.md` | Program index, re-baseline, requirement/acceptance framing for the scaffolding work |
 
 ## Requirements
 
@@ -73,7 +73,7 @@ source of sequencing truth in the `.design/` tree.
   instrumented from M1 so v2.1 fragment-widening decisions are
   evidence-driven.
 - REQ-8: The governance deliverables exist by their owning milestones:
-  `thermite2-semantics.md` (single normative semantics home),
+  `docs/v2/semantics.md` (single normative semantics home),
   `goal.md` R-rule candidates (R-SIDE-1, R-COV-1, R-BV-1, R-VERDICT-1,
   R-GATE-1), `THERMITE.skill.md` v2 (the agent-facing loop: verdicts, routing
   reasons, restratify recipe, covenant authoring), and RFC thread hygiene
@@ -141,15 +141,15 @@ source of sequencing truth in the `.design/` tree.
 - [x] AC-12: From M1, `forge` emits the routing-reason and verdict telemetry
   fields the §6 dashboard needs (cage-vs-forge share by reason, verdict
   counts, TV phase split), and the audit prints them. (REQ-7)
-- [x] AC-13: `thermite2-semantics.md` exists and module-header comments in
+- [x] AC-13: `docs/v2/semantics.md` exists and module-header comments in
   `lean/Thermite/` and `thermite-lower/` point at it rather than restating
   conventions; `goal.md` contains the five R-rule candidates; the issue #2
   body carries a changelog table. (REQ-8)
 - [x] AC-14: Every program document merged into `.design/` after this one
   states baseline `c46da3ac` or later and links this umbrella. (REQ-9) —
-  `thermite2-semantics.md`, `.design/stage1-forge-tier.md`, and
+  `docs/v2/semantics.md`, `.design/stage1-forge-tier.md`, and
   `.design/m0-spikes.md` each cite baseline `c46da3ac` (or later) and link
-  `.design/thermite2-program.md`.
+  `docs/v2/program.md`.
 - [x] AC-15: `.design/` contains a stage-1 design doc before the first
   stage-1 implementation issue is worked, and likewise for stages 2 and 3.
   (REQ-10)

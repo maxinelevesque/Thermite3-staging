@@ -12,7 +12,7 @@ design — risk row 3, fallback F-C — by measuring the syntactic-equality
 hit rate of a prototype normalizer over the conformance corpus's
 combinator contracts in raw-quantifier form. Both gate M0: no stage-1 or
 stage-2 implementation issue opens until both acceptance criteria are met.
-Umbrella: `.design/thermite2-program.md` (REQ-1). Baseline:
+Umbrella: `docs/v2/program.md` (REQ-1). Baseline:
 `dollspace-gay/Thermite @ c46da3ac` or later.
 
 ## Requirements
@@ -216,6 +216,6 @@ design time.
 
 ---
 
-*M0 spike spec · child of `.design/thermite2-program.md` (REQ-1) ·
+*M0 spike spec · child of `docs/v2/program.md` (REQ-1) ·
 sources: RFC-1 program plan §1, metatheory sketch §4/§8.2/§11 ·
 baseline `dollspace-gay/Thermite @ c46da3ac`.*

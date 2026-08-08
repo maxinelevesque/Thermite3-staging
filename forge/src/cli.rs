@@ -391,7 +391,7 @@ enum Command {
         generated: Option<usize>,
         /// `--seed <u64>` — the generator seed for the `--generated` space. `None`
         /// uses the pinned [`TV_DEFAULT_SEED`] (deterministic, for the corpus gate);
-        /// a rotating value (the scheduled-CI job, `thermite2-program.md` REQ-2c)
+        /// a rotating value (the scheduled-CI job, `docs/v2/program.md` REQ-2c)
         /// walks a different slice of the off-corpus clause space each run, surfacing
         /// seed-dependent lowering divergences the fixed-seed gate would never reach.
         seed: Option<u64>,
@@ -3780,7 +3780,7 @@ mod tests {
         ));
     }
 
-    // REQ-2c (`thermite2-program.md` AC-4): `forge tv --seed <u64>` sets the
+    // REQ-2c (`docs/v2/program.md` AC-4): `forge tv --seed <u64>` sets the
     // off-corpus generator seed (the rotating-seed scheduled-CI lever); the default
     // (no flag) is `None` (→ the pinned `TV_DEFAULT_SEED`); a missing / non-numeric
     // value is a Usage error, never a silent default (REQ-8 flag discipline).

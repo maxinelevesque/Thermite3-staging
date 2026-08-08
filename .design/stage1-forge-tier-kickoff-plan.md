@@ -12,7 +12,7 @@ increments.
 clusters and AC-1..AC-14 are the contract; its Architecture section grounds
 every increment in the existing tree at the cited files. This plan does **not**
 restate the REQs; it sequences them into committable increments and pins the
-per-increment verification. The umbrella is `.design/thermite2-program.md`
+per-increment verification. The umbrella is `docs/v2/program.md`
 (REQ-3); the gate is **G1**.
 
 Two design questions are already **resolved** in the spec — do not re-litigate:

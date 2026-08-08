@@ -1,4 +1,4 @@
-//! AC-12 (umbrella `.design/thermite2-program.md` REQ-7): the §6 metrics dashboard.
+//! AC-12 (umbrella `docs/v2/program.md` REQ-7): the §6 metrics dashboard.
 //! Drives the built `forge` binary with `audit --metrics` and asserts that forge emits
 //! the routing-reason + verdict + TV-phase telemetry and the audit prints the dashboard
 //! — and, critically, that the dashboard gates nothing (#274,

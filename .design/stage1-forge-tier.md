@@ -11,7 +11,7 @@ lands at gate G1: out-of-cage no longer degrades down the ladder — it
 escalates up to the forge. This doc covers the program plan §2's nine work
 items as REQ clusters, grounded against the tree at `c46da3ac`, with the
 Q-register defaults (Q1–Q4, Q6–Q8) adopted inline. Umbrella:
-`.design/thermite2-program.md` (REQ-3); predecessor gate: M0
+`docs/v2/program.md` (REQ-3); predecessor gate: M0
 (`.design/m0-spikes.md`).
 
 ## Requirements
@@ -402,7 +402,7 @@ plumbing reuse `Certificate::with_engine_attribution` unchanged.
 
 ---
 
-*Stage-1 spec · child of `.design/thermite2-program.md` (REQ-3) ·
+*Stage-1 spec · child of `docs/v2/program.md` (REQ-3) ·
 sources: RFC-1 §4/§5/§8/§9/§10/§12, program plan §2/§5, metatheory §7 ·
 gate: G1 · baseline `dollspace-gay/Thermite @ c46da3ac`.*
 
