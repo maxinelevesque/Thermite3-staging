@@ -206,7 +206,7 @@ The v1 toolchain this program extends is shipped and audited in-tree:
 | stage | Rust surfaces | Lean surfaces | gate |
 |---|---|---|---|
 | M0 spikes | none (SPIKE-2 prototype normalizer may live under `thermite-tv/` or a scratch crate; throwaway) | SPIKE-1 toy outside `lean/Thermite/` proper | both spike ACs |
-| Stage 1 | `forge/src/` (verdicts in manifest/check/engine, `lean_export.rs` hardening, covenant engine, battery registry, `goal_repl.rs`), `thermite-syntax/` (prop fn, lemma, proof blocks, `?pN` holes, witness blocks, refinement sugar, `measures lex`/`measures wf`) | `r_relax_sound` + `rencode_sound` (small Mathlib island) | G1 |
+| Stage 1 | `forge/src/` (verdicts in manifest/check/engine, `lean_export.rs` hardening, covenant engine, battery registry, `goal_repl.rs`), `thermite-syntax/` (prop fn, lemma, proof blocks, `?pN` holes, witness blocks, refinement sugar, `dec lex`/`dec wf`) | `r_relax_sound` + `rencode_sound` (small Mathlib island) | G1 |
 | Stage 2 | `thermite-spec/` classifier (+ NNF/graph mirror), `thermite-lower/` quantifier emission, `thermite-tv/` strat reference encoder + two-phase TV + binder productions | `lean/Thermite/Strat/` (the §10.1 module plan, ≈5.5k loc) | G2 |
 | Stage 3 | `@bv` lowering + the three locks; reconstruction default-on | none new | G3 |
 
@@ -238,8 +238,8 @@ Program documents merged after this one cite `c46da3ac` or later.
 | Q3 | `falsify` 50,000 fixed-seed; witnesses may be generator-synthesized but ≥1 author-stated | M1 exit |
 | Q4 | KernelBudget 30s elaboration, per-clause | M1 exit |
 | Q5 | Corpus-mimicking + uniform-random generator arms; measure kill/disagreement per arm | M2b |
-| Q6 | One `proof for f` block may discharge several `ensures#k` with shared local lemmas; no cross-function sharing except via `lemma` | M1 exit |
-| Q7 | `measures wf` accessibility proofs cached by (relation, carrier) hash | M1 exit |
+| Q6 | One `proof for f` block may discharge several `ens#k` with shared local lemmas; no cross-function sharing except via `lemma` | M1 exit |
+| Q7 | `dec wf` accessibility proofs cached by (relation, carrier) hash | M1 exit |
 | Q8 | RealWitness integrality search: rounding + radius-2 box, 1s budget | M1 exit |
 | Q9 | `forge review` gets a "semantic forks and definition towers" section | G3 / G2 |
 | Q10 | Seq-sort quantifiers stay out until S₂.0 telemetry exists | post-G2 |
