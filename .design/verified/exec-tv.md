@@ -18,7 +18,7 @@ step-1-sibling: .design/verified/contract-tv.md (crosslink #139 — CONTRACT-pos
 ## Summary
 
 Step-1 contract-TV (`.design/verified/contract-tv.md`) certifies that the emitted Verus *contract*
-(`req`/`ens`/`inv`/`dec`) MEANS the same thing as the source contract. It does NOT cover the EXEC
+(`requires`/`ensures`/`keeps`/`measures`) MEANS the same thing as the source contract. It does NOT cover the EXEC
 BODY: a function body lowers exec expressions (`lower_expr` under `Ctx::exec()` — real `u64`/`usize`
 arithmetic, the exec method calls, slice indexing, the always-active runtime overflow checks, NO
 slice→`@`/`nat` rewrites). The #122 (`(n - 1) as nat` paren) and #146 (`x as u32 < 33` cast-`<`
@@ -159,7 +159,7 @@ CAUGHT (not coerced away):
 ## Acceptance criteria
 
 - **AC-1 (faithful exec expr → verified)** — the exec-fn obligation for `(n - 1) as u64` under
-  `req n >= 1`, production `(n - 1) as u64`, reference `(n - 1) as u64`, discharges as `success:
+  `requires n >= 1`, production `(n - 1) as u64`, reference `(n - 1) as u64`, discharges as `success:
   true, verified: 1, errors: 0`. GROUNDED below.
 - **AC-2 (#122 cast-paren infidelity → caught)** — (a) the paren-drop form `n - 1 as u8` for source
   `(n - 1) as u8` (`n: u64`, target `u8`) fails verus with `E0308 mismatched types`; (b) the
@@ -170,7 +170,7 @@ CAUGHT (not coerced away):
 - **AC-4 (overflow-distinguishing infidelity → caught)** — production `a.wrapping_add(b)` against the
   bounded `u64` reference `a + b` fails with `postcondition not satisfied`; the faithful bounded
   checked-add (`requires a + b <= u64::MAX`) VERIFIES. GROUNDED below.
-- **AC-5 (usize indexing exec expr discharges)** — `xs[i] as u64` (`i: usize`, `xs: &[u32]`, `req i <
+- **AC-5 (usize indexing exec expr discharges)** — `xs[i] as u64` (`i: usize`, `xs: &[u32]`, `requires i <
   xs.len()`) against reference `xs[i as int] as u64` VERIFIES; an off-by-one production (`xs[i + 1]`)
   FAILS `postcondition not satisfied`. GROUNDED below.
 - **AC-6 (independence is structural)** — `thermite-tv` keeps NO `thermite-lower` dependency; a
@@ -202,7 +202,7 @@ subset, NOT a re-implementation of `lower_block`/`lower_stmt`/the loop machinery
 
 **The exec-fn obligation shape (REQ-2).** For a source exec expr with free vars (the body params it
 reads — `u64`/`usize`/`&[u32]`/...) + a return type (the exec value's type), under the enclosing
-`req` as a `requires`:
+`requires` as a `requires`:
 
 ```verus
 fn tv_exec_wrap(<params>) -> (result: <ret>)
@@ -257,7 +257,7 @@ error: postcondition not satisfied
 "verification-results": { "success": false, "verified": 0, "errors": 1 }
 ```
 
-**AC-3 (#146 cast-`<`).** Faithful `(x as u32) < 33` (`x: u64`, `req x <= 1000`, reference `(x as
+**AC-3 (#146 cast-`<`).** Faithful `(x as u32) < 33` (`x: u64`, `requires x <= 1000`, reference `(x as
 u32) < 33`):
 
 ```
@@ -291,9 +291,9 @@ The faithful bounded checked-add (`requires a + b <= u64::MAX`, production `a + 
 This is the EXEC-value-semantics teeth: a `nat`-coerced reference would mask the wrap point; the
 bounded `u64` reference catches it.
 
-**AC-5 (usize indexing).** Faithful `xs[i] as u64` (`i: usize`, `xs: &[u32]`, `req i < xs.len()`,
+**AC-5 (usize indexing).** Faithful `xs[i] as u64` (`i: usize`, `xs: &[u32]`, `requires i < xs.len()`,
 reference `xs[i as int] as u64`) → `verified: 1, errors: 0`. Off-by-one production (`xs[i + 1] as
-u64`, `req i + 1 < xs.len()`) → `error: postcondition not satisfied`.
+u64`, `requires i + 1 < xs.len()`) → `error: postcondition not satisfied`.
 
 These confirm the load-bearing feasibility questions: (1) Verus DOES discharge `ensures result ==
 <reference>` for a production-lowered EXEC expr wrapped as an exec fn (AC-1/3/4/5 verify; the

@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: cef3f68835ed4cd28d8457fde798db3026de833b6e31fb7230ac7b0e68206de4
+audited-content-sha256: d7feaabaf25fa1d6f34d92c653ebf7cc483f70115c76b7a903b3da5a41c5b58c (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: cef3f68835ed4cd28d8457fde798db3026de833b6e31fb7230ac7b0e68206de4)
 decision: one canonical Verus crate with crate-visible rich Thermite roots and public shell exports
 issue: github:dollspace-gay/Thermite#104
 governs:

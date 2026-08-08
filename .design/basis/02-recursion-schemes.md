@@ -204,7 +204,7 @@ inlines the per-use step into a generated `decreases`-bearing loop (the SHIPPED
 `conformance/sum.th` while-loop shape — the prover handles a simple monomorphic
 loop trivially, whereas Verus exec higher-order functions are heavy). The two are
 the §4.2 dual, tied by an `ensures result == fold_list(l, …)`. The exec form
-carries `fx alloc` (Stage 1 REQ-3, SHIPPED in `effects.rs`) when it constructs
+carries `! alloc` (Stage 1 REQ-3, SHIPPED in `effects.rs`) when it constructs
 over a heap-allocated `List`.
 
 ## The build layer map (mirrors Stage 1's 1a/1b/1c)
@@ -228,9 +228,9 @@ validator → 1c lowering). Each layer is a separately-verifiable cut:
   `.design/spec/spectherm-combinators.md` REQ-6); (ii) REJECTS a scheme call
   NESTED inside another scheme's step closure (the flat-closure cage, REQ-2/REQ-4)
   with a span-bearing `SpecError`; (iii) enforces that the step closure body is
-  flat (no combinator, no nested scheme — REQ-2). The structural-`dec` enforcement
+  flat (no combinator, no nested scheme — REQ-2). The structural-`measures` enforcement
   (REQ-5) is INHERITED from Stage 1's validator (a recursive `spec fn` already must
-  carry a `dec`); the generated `fold_<e>` is checked exactly as a hand-written
+  carry a `measures`); the generated `fold_<e>` is checked exactly as a hand-written
   recursive `spec fn`. Deliverable: `tree_fold.th` validates; the
   nested-scheme-in-step negative REJECTS with the new `SpecError` variant. This is
   the analogue of Stage 1b (#65 — the `NonExhaustiveMatch`/`UnknownVariant` checks).
@@ -287,8 +287,8 @@ validator → 1c lowering). Each layer is a separately-verifiable cut:
   form (the verified primitive — total, terminating via `decreases <value>`,
   carrying NO effect row, the L1-fallback-bearing contract definition) AND, where
   the scheme collapses a structure to a value used in an EXEC body, an exec form
-  (`fx`-carrying: a `fold`/`map` constructing a result over a heap-allocated
-  `List` carries `fx alloc` per Stage 1 REQ-3, the constructing effect). The spec
+  (`!`-carrying: a `fold`/`map` constructing a result over a heap-allocated
+  `List` carries `! alloc` per Stage 1 REQ-3, the constructing effect). The spec
   form is primary; the exec form is its compiled mirror, related by an `ensures`
   tying the exec result to the spec fold (`result == fold_list(l, …)`). **RESOLVED
   (#62 design-refinement, OQ-2): the RUNNABLE (exec) fold is MONOMORPHIZED** — the
@@ -298,7 +298,7 @@ validator → 1c lowering). Each layer is a separately-verifiable cut:
   scheme stays higher-order / parametric** (a Verus `spec_fn` step — the verified
   engine, GROUNDED above, `9 verified 0 errors`) and is UNAFFECTED: the exec/spec
   split is exactly the §4.2 dual. Derived from §4.2 ("Spec functions are
-  executable" — the L1 rung), §4.1 (`fx` rows), Stage 1 REQ-3 (SHIPPED), and the
+  executable" — the L1 rung), §4.1 (`!` rows), Stage 1 REQ-3 (SHIPPED), and the
   #62 monomorphized-exec resolution.
 
 ### Validator / the SpecTherm cage — the structural-quantification bridge (governs `thermite-spec/src/validator.rs`, `thermite-spec/src/schemes.rs`)
@@ -312,7 +312,7 @@ validator → 1c lowering). Each layer is a separately-verifiable cut:
   `for_all` / `exists` scheme call** lowering to a generated `for_all_<e>` carrying
   its own `decreases <value>` measure (§4.2 "Genuine nested quantification is
   written as a named `spec fn` … which may itself quantify, but carries its own
-  `dec` measure"). The validator ACCEPTS a scheme call (resolved via the
+  `measures` measure"). The validator ACCEPTS a scheme call (resolved via the
   `schemes.rs` registry) as a named-composition leaf (mirroring the combinator-call
   accept of `.design/spec/spectherm-combinators.md` REQ-6) and REJECTS a scheme
   call NESTED inside another scheme's step closure (the flat-closure rule, REQ-2)
@@ -323,17 +323,17 @@ validator → 1c lowering). Each layer is a separately-verifiable cut:
   `.design/spec/spectherm-combinators.md` REQ-6.
 
 - **REQ-5 (scheme termination is structural — `decreases <value>`, validator
-  enforces a `dec`):** A generated scheme `spec fn` over a recursive ADT carries
+  enforces a `measures`):** A generated scheme `spec fn` over a recursive ADT carries
   `decreases l` on the datatype VALUE (Stage 1 REQ-10, SHIPPED: Verus's built-in
   structural order, no manual measure), recursing through `Box` with `*tail`. The
-  validator enforces the §4.2/§4.1 rule "no spec-level recursion without a `dec`
+  validator enforces the §4.2/§4.1 rule "no spec-level recursion without a `measures`
   measure" for every scheme exactly as for an ordinary `spec fn` — this rule is
   INHERITED from Stage 1's SHIPPED validator (a recursive `spec fn` already must
-  carry a structural `dec`). A scheme whose generated definition lacks the
-  structural `dec` is a `SpecError`. GROUNDED: every generated scheme form
+  carry a structural `measures`). A scheme whose generated definition lacks the
+  structural `measures` is a `SpecError`. GROUNDED: every generated scheme form
   (`fold_list`/`map_list`/`for_all_list`) verified with `decreases l`; a
   `fold_list` with NO `decreases` is REJECTED by Verus (negative control). Derived
-  from §4.2 ("No spec-level recursion without a `dec` measure"), §4.1 (termination
+  from §4.2 ("No spec-level recursion without a `measures` measure"), §4.1 (termination
   by default), Stage 1 REQ-10 (SHIPPED).
 
 ### Verus lowering — schemes + the discharged induction + fusion (governs `thermite-lower/src/lower.rs`)
@@ -393,8 +393,8 @@ validator → 1c lowering). Each layer is a separately-verifiable cut:
   REQ-9) and `thermite-spec::SpecError` enums with span-bearing variants for the
   new failure modes (a scheme nested in a step closure — REQ-4; an un-lowerable
   scheme over a non-ADT value), reusing `thermite_syntax::lexer::Span`. The
-  structural-`dec` reject (REQ-5) reuses Stage 1's existing recursive-`spec fn`
-  `dec` diagnostic. No `unwrap`/`expect`/`panic!` in production (R-CODE-2 /
+  structural-`measures` reject (REQ-5) reuses Stage 1's existing recursive-`spec fn`
+  `measures` diagnostic. No `unwrap`/`expect`/`panic!` in production (R-CODE-2 /
   R-APG-1). Derived from R-CODE-2, the existing error-enum discipline in
   `validator.rs` / `lower.rs`.
 
@@ -466,7 +466,7 @@ this doc and confirmed to pass `verus`; certificate goldens at
 - **AC-6 (reject + no-panic cases):** Crafted negatives reject with the right
   structured variant: a scheme nested in a step closure → the REQ-4/REQ-9 cage
   `SpecError`; a scheme over a non-ADT value → `LowerError`; a generated scheme
-  `spec fn` lacking its structural `dec` → the Stage-1 recursive-`spec fn` `dec`
+  `spec fn` lacking its structural `measures` → the Stage-1 recursive-`spec fn` `measures`
   `SpecError` (inherited). Lowering never panics; lowering the corpus returns `Ok`.
   Hand-derived expectations (R-CHAR-3), never read back from the toolchain's own
   output. (REQ-5, REQ-9.)
@@ -482,8 +482,8 @@ ADTs:
   (`thermite-syntax/src/ast.rs`, anchor `enum Expr` / `Closure`). `parser.rs` needs
   no new node — a scheme call parses as an ordinary call; the scheme-ness is a
   validator/registry concern. The mandatory-contract discipline is unchanged: a
-  generated scheme `spec fn` carries a `dec`, no `req`/`ens`/`fx` (it is spec); an
-  exec scheme form (REQ-3) carries `fx` per Stage 1 REQ-3.
+  generated scheme `spec fn` carries a `measures`, no `!`/`requires`/`ensures` (it is spec); an
+  exec scheme form (REQ-3) carries `!` per Stage 1 REQ-3.
 
 - **`thermite-spec`** — a NEW `thermite-spec/src/schemes.rs` registry (the analogue
   of `combinators.rs`'s `static REGISTRY` + `pub fn lookup`) holds each scheme's
@@ -494,7 +494,7 @@ ADTs:
   (`walk_expr_inner` — SHIPPED Stage 1 REQ-7, admits `Match`/`Field`/`Is`/`Deref`
   as flat built-ins) is UNCHANGED: a scheme call joins combinator calls and named
   `spec fn` calls as a named-composition accept; a scheme nested in a closure body
-  is the only NEW reject. New `SpecError` variants (REQ-9). The structural-`dec`
+  is the only NEW reject. New `SpecError` variants (REQ-9). The structural-`measures`
   enforcement (REQ-5) is inherited from Stage 1's SHIPPED recursive-`spec fn` check.
 
 - **`thermite-lower`** — `lower.rs` gains `lower_scheme_defs` (GENERATE the
@@ -701,7 +701,7 @@ authored by the orchestrator from this doc before the builder runs (R-CHAR-3).
 | REQ-2 (the step — flat per-node closure) | SHIPPED | #70. `validator::check_scheme` requires an `Expr::Closure` step of `SchemeSig::step_shape.arity()` params (`SchemeStepShape`) and walks the body in `in_scheme_step` mode; `walk_call` rejects a nested scheme/combinator there with `SpecError::NestedScheme`. Verified: `scheme_validate.rs::reject_cases_yield_the_oracle_error` (`nested_scheme_in_step` → "nested"). |
 | REQ-3 (spec form + exec form — exec MONOMORPHIZED, RESOLVED) | NOT-STARTED | epic **#62** Stage 2c. The SPEC scheme (the generated higher-order `fold_<e>` with the step passed as a `spec_fn`, the verified engine) is SHIPPED (REQ-6). The MONOMORPHIZED EXEC mirror is NOT implemented: the v0.1 corpus `list_fold.th` is SPEC-ONLY (all three items are `spec fn`), so no exec scheme is exercised yet. The exec mirror lands when a corpus exec fn folds an ADT. |
 | REQ-4 (cage bridge — named structural quantification) | SHIPPED | #70. `validator::walk_call` ACCEPTS a top-level scheme call as a named-composition leaf (via `schemes::lookup`) and REJECTS a scheme nested in a step / combinator closure (`NestedScheme`); the caged-flat walk (`walk_expr_inner`, Stage 1 REQ-7) is unchanged. The generated `for_all_list` cage form verifies. Verified: `scheme_validate.rs::list_fold_validates` (`for_all(l, |x| x > 0)` validates). |
-| REQ-5 (structural `decreases <value>` enforcement) | SHIPPED | #70. Each generated scheme `spec fn` (`emit_scheme_spec_fn`) + the law (`emit_fold_bound_law`) carries `decreases l` over the datatype value, inheriting Stage 1's recursive-`spec fn` `dec` discipline. Verified: real `verus --no-cheating` `verified, 0 errors` on the emitted `list_fold.th`; the negative-control no-`decreases` fold is rejected by Verus (grounded during authoring). |
+| REQ-5 (structural `decreases <value>` enforcement) | SHIPPED | #70. Each generated scheme `spec fn` (`emit_scheme_spec_fn`) + the law (`emit_fold_bound_law`) carries `decreases l` over the datatype value, inheriting Stage 1's recursive-`spec fn` `measures` discipline. Verified: real `verus --no-cheating` `verified, 0 errors` on the emitted `list_fold.th`; the negative-control no-`decreases` fold is rejected by Verus (grounded during authoring). |
 | REQ-6 (scheme → generated Verus recursive `spec fn` + `decreases <value>`) | SHIPPED | #70. `thermite_lower::lower::emit_scheme_defs` GENERATES `fold_<e>`/`for_all_<e>`/… (`emit_scheme_spec_fn`, `decreases l`, `*tail`, `Box::new`) + the measure `<e>_len`; a scheme CALL lowers via `lower_scheme_call` to a call of the generated fn with the step lowered to a typed `spec_fn` (`lower_step_closure`). Consumer: `lower`. Verified: `thermite-lower/tests/adt_schemes_conformance.rs::list_fold_lowers_to_generated_schemes_and_verifies_l3` (real `verus --no-cheating` `verified, 0 errors`). |
 | REQ-7 (induction-discharged-once contract shape — the multiplier) | SHIPPED | #70. `emit_fold_bound_law` GENERATES `fold_bound_<e>` (single `decreases l` induction, parametric in `f` + a per-node premise); an instance bound is proven by CITING it with NO fresh induction. Consumer: `lower`. Verified: `adt_schemes_conformance.rs::multiplier_instance_cites_the_generated_law_no_fresh_induction` (`verus --no-cheating` `verified, 0 errors`; the instance proof cites `fold_bound_list`, no `decreases`) + `negative_control_premise_removed_fails_verus` (premise removed → verus error; the induction is real). |
 | REQ-8 (fusion / composition laws) | NOT-STARTED | epic **#62** Stage 2c. `map_<e>` generation is shipped (`emit_scheme_spec_fn` `SameAdt`), but no fusion-law (`map_preserves_len_<e>`, `fold∘map`, `map∘map`) emission yet; the v0.1 corpus `list_fold.th` does not exercise `map`/fusion (OQ-3 — the fusion family ships when a pipeline corpus program exercises it). GROUNDED during authoring (`map_preserves_len_list` `0 errors`). |

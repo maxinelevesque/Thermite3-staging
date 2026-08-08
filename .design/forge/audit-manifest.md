@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: f07b4f4149f471a3c37d5443a6e1178e3e7deec4845c9941a327a9aa5f65150f
+audited-content-sha256: bda2a902327f127e161e17ecdb49add32cff4564c9b356d8834d1c38694b4757 (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: f07b4f4149f471a3c37d5443a6e1178e3e7deec4845c9941a327a9aa5f65150f)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6
@@ -114,7 +114,7 @@ amendment — next heading):
    - `slag_blocks` — every `#[slag]` fn: `name` + its `reason`/`owner`/`review`
      (from `Certificate.slag_meta` — §8's mandatory justification),
    - `boundary_contracts` — every `#[boundary]` fn: `name` + the foreign
-     `boundary_target` + its enforced contract (the `req`/`ens`/`fx`, §9
+     `boundary_target` + its enforced contract (the `!`/`requires`/`ensures`, §9
      per-function contracts),
    - `toolchain` — the toolchain identity: the `verus` version
      (`resolve_verus_version` in `check.rs`) and the `thermite`/`forge` version
@@ -416,7 +416,7 @@ hand-derived from `thermite-design.md`, never copied from forge output).
   `#[boundary("crate::path")]` fn emits a `tcb` whose `slag_blocks` lists the
   slag fn with its `reason`/`owner`/`review` (from `slag_meta`) and whose
   `boundary_contracts` lists the boundary fn with its `boundary_target` + its
-  enforced `req`/`ens`/`fx`. The §8/§9 "grep slag"-complete fiat-trust
+  enforced `!`/`requires`/`ensures`. The §8/§9 "grep slag"-complete fiat-trust
   enumeration — nothing omitted (R-DEFER-9). The slag/boundary fns certify L1
   (their existing `Certificate::slag_l1`/`boundary_l1` verdicts, unchanged).
 - **AC-3 (degraded / to-boundary project → project_assurance reflects it):** a
@@ -639,7 +639,7 @@ identity and the cache provenance agree.
 |---|---|---|
 | REQ-1 (AuditManifest v1 schema + version tag) | SHIPPED | `struct AuditManifest { manifest_version, functions, project_assurance, tcb }` in `audit.rs`; `manifest_version` is `MANIFEST_VERSION` (`"v1"`) with `#[serde(default)]` for additive evolution. Built by `AuditManifest::from_certificates`; consumer `cli::run_audit` (`--json` + `cli::render_audit`). Oracle: `forge/tests/audit_conformance.rs::corpus_empty_tcb` asserts `manifest_version == "v1"`. |
 | REQ-2 (`forge audit <file>` command) | SHIPPED | `cli::parse_args`'s `"audit"` verb → `Command::Audit { file, json }`; `cli::run_audit` runs `check::check_file` (the default-config pipeline, no extra verification, OQ-3) and emits `--json` or `render_audit`. Oracle: `audit_conformance.rs` drives the built binary with `forge audit <file> --json`. |
-| REQ-3 (TCB enumeration = slag ∪ boundary ∪ toolchain) | SHIPPED | `Tcb::from_certificates` enumerates every `cert.slag` → `SlagBlock` (reason/owner/review from `slag_meta`), every `cert.boundary` → `BoundaryContract` (target + `req`/`ens`/`fx` looked up in the program), and `Toolchain` (always present). Oracle: `audit_conformance.rs::slag_boundary_tcb` asserts BOTH `vendored` + `ext_f` enumerated (R-DEFER-9); `corpus_empty_tcb` asserts the empty-but-toolchain pure state. |
+| REQ-3 (TCB enumeration = slag ∪ boundary ∪ toolchain) | SHIPPED | `Tcb::from_certificates` enumerates every `cert.slag` → `SlagBlock` (reason/owner/review from `slag_meta`), every `cert.boundary` → `BoundaryContract` (target + `!`/`requires`/`ensures` looked up in the program), and `Toolchain` (always present). Oracle: `audit_conformance.rs::slag_boundary_tcb` asserts BOTH `vendored` + `ext_f` enumerated (R-DEFER-9); `corpus_empty_tcb` asserts the empty-but-toolchain pure state. |
 | REQ-4 (aggregation, never re-derivation) | SHIPPED | `AuditManifest::from_certificates` reads only the cert collection + `AssuranceManifest::aggregate(&certs)` + the parsed program (boundary contract text) + the two version strings; it owns no prover invocation. `cli::run_audit` calls `check::check_file` once and projects its certs. |
 | REQ-5 (project assurance embedded) | SHIPPED | `ProjectAssuranceSection::from_assurance` embeds `AssuranceManifest::aggregate` — the `ProjectAssurance` headline, the `ProjectScope`, and the lowered-assurance fn names (from `FunctionAssurance.lowered_assurance`). Oracle: `audit_conformance.rs::corpus_empty_tcb` asserts the L3/end-to-end headline; unit test `lowered_assurance_listed_in_project_section`. |
 | REQ-6 (determinism) | SHIPPED | the manifest is a pure function of its inputs; `functions`/TCB lists in cert/source order; `solver_time_ms` structurally absent; `mutants_killed`/`survivor` carried but oracle-shape-asserted (OQ-2). Oracle: `audit_conformance.rs::audit_is_deterministic` (two runs → byte-identical `--json`) + unit test `manifest_is_deterministic`. |

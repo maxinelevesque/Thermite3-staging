@@ -35,7 +35,7 @@ governs:
   - platform/x86_64-pc-uefi-smp-v1/runtime/Cargo.*
   - platform/x86_64-pc-uefi-smp-v1/runtime/src/*
   - .github/workflows/ci.yml
-audited-content-sha256: dc0cbb1ef5f1f1cdf2c92a3013cec0626dee0d83378927657cdd772e7445342c (re-pinned 2026-08-06: `.github/workflows/ci.yml` gains one step, the RFC front-matter gate (#127). Nothing else this document governs changed, and the pipeline it describes is unaffected)
+audited-content-sha256: bfb19f100266dd60949c7a73ff0bb086fcac9cfab1e6aa28902bb0fcb6b8682c (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: dc0cbb1ef5f1f1cdf2c92a3013cec0626dee0d83378927657cdd772e7445342c, previously (re-pinned 2026-08-06: `.github/workflows/ci.yml` gains one step, the RFC front-matter gate (#127). Nothing else this document governs changed, and the pipeline it describes is unaffected))
 extends:
   - .design/build/kernel-target.md
   - .design/build/l3-rich-composition.md

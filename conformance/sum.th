@@ -21,7 +21,7 @@ fn sum(xs: &[u32]) -> u64
     keeps acc <= i as u64 * u32::MAX as u64
     measures xs.len() - i
   {
-    acc = acc + xs[i] as u64;   // overflow: discharged from inv#3 + req
+    acc = acc + xs[i] as u64;   // overflow: discharged from keeps#3 + req
     i = i + 1;
   }
   acc

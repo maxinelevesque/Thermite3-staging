@@ -71,20 +71,20 @@ Thermite lowers to Rust MIR, inheriting the borrow checker, the optimizer, and `
 
 ```thermite
 fn binary_search(haystack: &[u32], needle: u32) -> Option<usize>
-  req sorted(haystack)
-  ens match result {
+  requires sorted(haystack)
+  ensures match result {
         Some(i) => i < haystack.len() && haystack[i] == needle,
         None    => forall_in(haystack, |x| x != needle),
       }
-  fx  pure
+  !  pure
 {
   let mut lo: usize = 0;
   let mut hi: usize = haystack.len();
   loop
-    inv lo <= hi && hi <= haystack.len()
-    inv forall_below(haystack, lo, |x| x < needle)
-    inv forall_from(haystack, hi, |x| x > needle)
-    dec hi - lo
+    keeps lo <= hi && hi <= haystack.len()
+    keeps forall_below(haystack, lo, |x| x < needle)
+    keeps forall_from(haystack, hi, |x| x > needle)
+    measures hi - lo
   {
     if lo == hi { return None; }
     let mid = lo + (hi - lo) / 2;
@@ -96,19 +96,19 @@ fn binary_search(haystack: &[u32], needle: u32) -> Option<usize>
 
 Anatomy:
 
-- **`req`** — precondition. Mandatory keyword; `req true` must be written explicitly if there is genuinely no precondition, so absence is always a parse error, never an implicit default.
-- **`ens`** — postcondition. Mandatory. Must mention `result` unless the return type is `()` (structurally enforced — see §7).
-- **`fx`** — effect row. Mandatory. One of `pure`, or a set drawn from `{read(path), write(path), net(domain), alloc, time, rand, panic}`. The runtime enforces the row as a sandbox: a function declared `fx pure` that attempts I/O is killed at the syscall boundary, not trusted at the type level alone. Effect rows compose: a caller's row must subsume every callee's row, checked at compile time.
-- **`inv` / `dec`** — loop invariants and a decreases-measure. Mandatory on every `loop`/`while`. Termination is proved by default; divergence requires `fx diverge` in the row.
+- **`requires`** — precondition. Mandatory keyword; `requires true` must be written explicitly if there is genuinely no precondition, so absence is always a parse error, never an implicit default.
+- **`ensures`** — postcondition. Mandatory. Must mention `result` unless the return type is `()` (structurally enforced — see §7).
+- **`!`** — effect row. Mandatory. One of `pure`, or a set drawn from `{read(path), write(path), net(domain), alloc, time, rand, panic}`. The runtime enforces the row as a sandbox: a function declared `! pure` that attempts I/O is killed at the syscall boundary, not trusted at the type level alone. Effect rows compose: a caller's row must subsume every callee's row, checked at compile time.
+- **`keeps` / `measures`** — loop invariants and a decreases-measure. Mandatory on every `loop`/`while`. Termination is proved by default; divergence requires `! diverge` in the row.
 
 ### 4.2 The spec sublanguage is small by design
 
 Contracts are written in **SpecTherm**, a restricted total language:
 
 - **No general quantifiers.** Quantification is only available through a fixed library of bounded combinators (`forall_in`, `forall_below`, `exists_in`, `count_where`, `sorted`, `permutation_of`, `disjoint`, …), each with hand-tuned, frozen SMT triggers. Undecidability lives in quantifier instantiation; Thermite locks the cage.
-- **Closure bodies are flat predicates.** A combinator's predicate-closure body (`|x| …`) may use comparisons, arithmetic, boolean/logical operators, field/index access, and calls to *named* `spec fn`s — but it may **not** contain another combinator. This is what makes "locks the cage" precise: there are no *anonymous* nested quantifiers, so the frozen trigger on a combinator's predicate application fully controls its instantiation. Genuine nested quantification is written as a named `spec fn` — which may itself quantify (boundedly), but carries its own `dec` measure and appears by name in the audit surface. Stated exactly: *every quantifier is a bounded combinator with a frozen trigger; composition happens only through named `spec fn`s, never anonymous nested quantifiers.*
+- **Closure bodies are flat predicates.** A combinator's predicate-closure body (`|x| …`) may use comparisons, arithmetic, boolean/logical operators, field/index access, and calls to *named* `spec fn`s — but it may **not** contain another combinator. This is what makes "locks the cage" precise: there are no *anonymous* nested quantifiers, so the frozen trigger on a combinator's predicate application fully controls its instantiation. Genuine nested quantification is written as a named `spec fn` — which may itself quantify (boundedly), but carries its own `measures` measure and appears by name in the audit surface. Stated exactly: *every quantifier is a bounded combinator with a frozen trigger; composition happens only through named `spec fn`s, never anonymous nested quantifiers.*
 - **Spec functions are executable.** Every `spec fn` is total, terminating (checked), and compilable to a runtime check. This guarantees the L1 fallback rung always exists for every contract, and it keeps the solver on predictable ground.
-- **No spec-level recursion without a `dec` measure**, same as code.
+- **No spec-level recursion without a `measures` measure**, same as code.
 
 The expressiveness ceiling is a feature. A contract you can't write in SpecTherm is a contract the solver was going to choke on; the language refuses the bet upfront instead of letting the agent discover the timeout three hours in.
 
@@ -119,13 +119,13 @@ Every item and every block has a stable address:
 ```
 binary_search                  — the function
 binary_search.loop#1           — its first loop
-binary_search.loop#1.inv#2     — the second invariant
+binary_search.loop#1.keeps#2     — the second invariant
 ```
 
 The toolchain's edit operations take addresses, not string matches:
 
 ```
-forge edit binary_search.loop#1.inv#2 --replace "forall_from(haystack, hi, |x| x > needle)"
+forge edit binary_search.loop#1.keeps#2 --replace "forall_from(haystack, hi, |x| x > needle)"
 forge insert-after binary_search --item "fn linear_search ..."
 ```
 
@@ -215,7 +215,7 @@ Rules:
   certify at L4 only after replay of the actual `req → clause` obligation;
   false clauses return concrete countermodels.
 - The certificate attached to a build artifact lists every function's level, every `#[slag]` block, and the contract-quality scores from §7. This manifest **is** the deliverable's trust statement.
-- **`#[slag]`, the L0 row, and L1 enforcement.** The L0 row measures assurance about the *body*: nothing is proved about the implementation — it is trusted by fiat. But a `#[slag]` function's *contract* is still mandatory and is enforced at runtime (§8), so its certificate carries level **L1** with a `slag: true` flag — `L1` because the contract is L1-checked at the call site, `slag` because the body is unproven. The L0 row therefore names the body-proof aspect (recorded by the `slag` flag), never an unchecked contract: slag exempts *proving*, never *stating and checking*. (`fx` effect rows are likewise enforced — at compile time in v0.1, at the syscall boundary later — independent of the proof level.)
+- **`#[slag]`, the L0 row, and L1 enforcement.** The L0 row measures assurance about the *body*: nothing is proved about the implementation — it is trusted by fiat. But a `#[slag]` function's *contract* is still mandatory and is enforced at runtime (§8), so its certificate carries level **L1** with a `slag: true` flag — `L1` because the contract is L1-checked at the call site, `slag` because the body is unproven. The L0 row therefore names the body-proof aspect (recorded by the `slag` flag), never an unchecked contract: slag exempts *proving*, never *stating and checking*. (`!` effect rows are likewise enforced — at compile time in v0.1, at the syscall boundary later — independent of the proof level.)
 
 ---
 
@@ -226,14 +226,14 @@ A mandatory gate creates pressure to game it: weaken the postcondition until it'
 Deterministic checks, in order of cost:
 
 1. **Structural triage** (free):
-   - `ens` simplifies to `true` → reject.
-   - `ens` does not mention `result` (non-unit return) → reject.
-   - `ens` is syntactically implied by `req` alone → reject.
+   - `ensures` simplifies to `true` → reject.
+   - `ensures` does not mention `result` (non-unit return) → reject.
+   - `ensures` is syntactically implied by `requires` alone → reject.
    - Effect row is maximal (`fx *`) without `#[slag]` justification → reject.
-2. **Tautology check** (one solver query per contract): is `ens` provable from `req` + types **without the function body**? If yes, the contract says nothing about the implementation → reject with the proof as the explanation.
-3. **Vacuity check** (one query): is `req` satisfiable? An unsatisfiable precondition verifies everything about the empty set → reject with the unsat core.
+2. **Tautology check** (one solver query per contract): is `ensures` provable from `requires` + types **without the function body**? If yes, the contract says nothing about the implementation → reject with the proof as the explanation.
+3. **Vacuity check** (one query): is `requires` satisfiable? An unsatisfiable precondition verifies everything about the empty set → reject with the unsat core.
 4. **Mutation scoring** (parallel, budgeted): Forge generates N mutants of the body (operator flips, off-by-ones, early returns, branch swaps — fixed deterministic mutator set, seeded from the lockfile) and re-verifies each against the contract. The **kill ratio** is recorded in the certificate. A configurable floor (default 60%) gates certification; below it, Forge reports exactly which mutants survived, which tells the agent *which behavior the contract fails to constrain* — a precise prompt for strengthening.
-5. **Strengthening probes** (budgeted): template-based tightenings of `ens` (tighter bounds, added conjuncts from the SpecTherm combinator library) are tried automatically; if a strictly stronger contract proves with no body change, Forge suggests it.
+5. **Strengthening probes** (budgeted): template-based tightenings of `ensures` (tighter bounds, added conjuncts from the SpecTherm combinator library) are tried automatically; if a strictly stronger contract proves with no body change, Forge suggests it.
 
 What the battery cannot check — whether the contract is the property the *user* wanted — is the residue surfaced for review: the certificate includes the full spec layer (typically a few percent of total line count), pre-screened to be non-vacuous, non-trivially-weak, and mutation-scored. The reviewer's job is reduced to reading declarative statements and asking "is this what I meant?" That review slot is pluggable: a human, or a critic model whose only question is spec-intent alignment.
 
@@ -248,9 +248,9 @@ Slag is the waste product of a thermite burn — the part that didn't become wel
        owner  = "agent:forge-7/session-2026-06-04",
        review = "required")]
 fn simd_sum(xs: &[u32]) -> u64
-  req xs.len() <= u32::MAX as usize
-  ens result == spec_sum(xs)          // contract still mandatory — enforced at L1
-  fx  pure
+  requires xs.len() <= u32::MAX as usize
+  ensures result == spec_sum(xs)          // contract still mandatory — enforced at L1
+  !  pure
 { ... }
 ```
 
@@ -269,7 +269,7 @@ The polarity inversion is the point: in every mainstream language, verification 
 
 Thermite gets Rust's ecosystem, but never silently inherits its trust assumptions.
 
-- A `crates.io` dependency is imported through a **boundary module**: each foreign function used must be given a Thermite signature with `req`/`ens`/`fx`, enforced at L1 (runtime checks on every crossing) since the foreign body can't be proved.
+- A `crates.io` dependency is imported through a **boundary module**: each foreign function used must be given a Thermite signature with `!`/`requires`/`ensures`, enforced at L1 (runtime checks on every crossing) since the foreign body can't be proved.
 - Boundary modules are slag-adjacent: they appear in the audit manifest with per-function contracts, so the trusted computing base is enumerable — it is exactly (slag blocks ∪ boundary contracts ∪ the toolchain itself).
 - Pure-Thermite transitive closures can be certified end-to-end; the manifest distinguishes "verified to the boundary" from "verified, period."
 
@@ -331,7 +331,7 @@ Thermite explicitly does not try to be:
 
 ```thermite
 spec fn spec_sum(xs: &[u32]) -> u64
-  dec xs.len()
+  measures xs.len()
 {
   match xs {
     []          => 0,
@@ -340,20 +340,20 @@ spec fn spec_sum(xs: &[u32]) -> u64
 }
 
 fn sum(xs: &[u32]) -> u64
-  req xs.len() <= 1_000_000
-  ens result == spec_sum(xs)
-  ens result <= xs.len() as u64 * u32::MAX as u64
-  fx  pure
+  requires xs.len() <= 1_000_000
+  ensures result == spec_sum(xs)
+  ensures result <= xs.len() as u64 * u32::MAX as u64
+  !  pure
 {
   let mut acc: u64 = 0;
   let mut i: usize = 0;
   while i < xs.len()
-    inv i <= xs.len()
-    inv acc == spec_sum(&xs[..i])
-    inv acc <= i as u64 * u32::MAX as u64
-    dec xs.len() - i
+    keeps i <= xs.len()
+    keeps acc == spec_sum(&xs[..i])
+    keeps acc <= i as u64 * u32::MAX as u64
+    measures xs.len() - i
   {
-    acc = acc + xs[i] as u64;   // overflow: discharged from inv#3 + req
+    acc = acc + xs[i] as u64;   // overflow: discharged from keeps#3 + req
     i = i + 1;
   }
   acc
@@ -371,7 +371,7 @@ Certificate (excerpt of build manifest):
     "tautology": false,
     "vacuous_precondition": false,
     "mutants_killed": "17/18",
-    "survivor": "mutant#11: `i = i + 1` → `i = i + 2` survives ens but killed by inv#2"
+    "survivor": "mutant#11: `i = i + 1` → `i = i + 2` survives ensures but killed by keeps#2"
   },
   "effects": ["pure"],
   "slag": false

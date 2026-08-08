@@ -65,7 +65,7 @@ escalating in loudness:
   `slag` flag). The data half this stage pins is therefore handled-or-loud at BOTH
   compile time (exhaustiveness) and run time (the L1 contract).
 - **Kill scream (effect-confinement) — the #57 seccomp sandbox.** Code exceeding
-  its declared `fx` is `SIGSYS`-killed at the syscall boundary
+  its declared `!` is `SIGSYS`-killed at the syscall boundary
   (`.design/forge/runtime-sandbox.md`). The `Alloc` effect this stage first
   exercises (REQ-3) participates: a constructing `fn` is confined to its declared
   `alloc` allowlist.
@@ -86,7 +86,7 @@ were considered:
 
 - **(a) `Box<T>`** — introduce `Box<T>` as the first heap primitive, tied to the
   EXISTING `Alloc` effect (`thermite-syntax/src/ast.rs` `Effect::Alloc`; the
-  `fx alloc` row of §4.1). Verus models recursive ADTs with `Box` natively.
+  `! alloc` row of §4.1). Verus models recursive ADTs with `Box` natively.
 - **(b) bounded-depth inline types** — no indirection; a fixed maximum depth.
 - **(c) arena / index representation** — store nodes in a `Vec`, recurse through
   `usize` indices.
@@ -104,12 +104,12 @@ keystone (it inverts the dependency order — R-DEFER-7).
 
 **Effect-row consequence (the load-bearing rule this stage pins).** Constructing
 a `Box<T>` allocates, so any `fn` that **constructs** a boxed value carries
-`fx alloc` (§4.1: "`alloc`" is a member of the effect set; "a caller's row must
+`! alloc` (§4.1: "`alloc`" is a member of the effect set; "a caller's row must
 subsume every callee's row"). A `spec fn` (e.g. `len`, `sum_list`) carries NO
 effect row — it never constructs, only `match`-destructures, and runs in spec
 context where `Box<T>` is a transparent wrapper Verus dereferences with `*`
 (GROUNDED: the `decreases` recursion uses `*tail`, no `alloc`). The exec-position
-construction of a `List`/`Tree` is what carries `fx alloc`; the spec-position
+construction of a `List`/`Tree` is what carries `! alloc`; the spec-position
 reasoning over one is `pure`. This is the first non-`pure` corpus program and the
 first exercise of `Effect::Alloc`.
 
@@ -162,7 +162,7 @@ node `Box(Box<Type>)` or a `Generic { name: "Box", arg }` reusing the existing
   to itself through `Box<T>`: `enum List { Nil, Cons(u64, Box<List>) }`, `enum
   Tree { Leaf(u64), Node(Box<Tree>, Box<Tree>) }`. The AST `enum Type` gains the
   `Box` indirection (OQ-1: a dedicated `Type::Box(Box<Type>)` or `Generic { name:
-  "Box", arg }`). A `fn` constructing a boxed value carries `fx alloc`
+  "Box", arg }`). A `fn` constructing a boxed value carries `! alloc`
   (`Effect::Alloc`, already in `ast.rs`); the effect-subsumption check
   (`.design/lower/effect-subsumption.md`) must accept `alloc` in a caller's row
   when a callee constructs. Derived from §4.1 (the `alloc` effect; row
@@ -217,7 +217,7 @@ node `Box(Box<Type>)` or a `Generic { name: "Box", arg }` reusing the existing
   "caged-flat" accept set already lists `Match`/`If`/`Field`). A property that
   must quantify over a RECURSIVE structure's elements (e.g. "every node of a
   `Tree` is `< CAP`") is NOT an anonymous nested quantifier — it is written as a
-  NAMED `spec fn` carrying its own `dec` measure (the structural recursion of
+  NAMED `spec fn` carrying its own `measures` measure (the structural recursion of
   Stage 2; §4.2 "composition happens only through named `spec fn`s"). The
   validator's caged-flat walk (REQ-6 of the combinator doc) is UNCHANGED by ADTs:
   a `match`/`Field`/`is` inside a closure body stays flat; a recursive
@@ -227,7 +227,7 @@ node `Box(Box<Type>)` or a `Generic { name: "Box", arg }` reusing the existing
 ### Verus lowering (governs `thermite-lower/src/lower.rs`)
 
 - **REQ-8 (struct → Verus struct; type-invariant → enforced predicate):** A
-  `StructItem` lowers to a Verus `struct` with the same fields; its `inv` clause
+  `StructItem` lowers to a Verus `struct` with the same fields; its `keeps` clause
   lowers to a `pub open spec fn well_formed(&self) -> bool { <inv> }` (the
   data-invariant predicate), referenced in the `requires`/`ensures` of every `fn`
   that takes or returns the struct (so Verus enforces it at construction and use).
@@ -255,7 +255,7 @@ node `Box(Box<Type>)` or a `Generic { name: "Box", arg }` reusing the existing
   l { Nil => 0, Cons(_, tail) => 1 + len(*tail) } }` and `sum_list`, plus a
   `proof fn` by structural induction, verified `0 errors`. The exec-position
   construction of a boxed value lowers to `Box::new(..)` and the owning `fn`
-  emits no Verus effect annotation but carries `fx alloc` at the Thermite layer
+  emits no Verus effect annotation but carries `! alloc` at the Thermite layer
   (REQ-3). Derived from §3, §4.1 (`alloc`, termination by default), §6, and the
   GROUNDED recursive-`List` proof.
 
@@ -297,8 +297,8 @@ to pass `verus` (the forms below are the verified seed). The certificate goldens
 live at `conformance/bank_account.cert.json` / `conformance/list_sum.cert.json`.
 
 - **AC-1 (struct + invariant parses, validates, lowers, certifies L3):** Parsing
-  `bank_account.th` yields an `Item::Struct` with an `inv` clause; the validator
-  accepts its contracts (field access well-formed, `req`/`ens` in the cage); the
+  `bank_account.th` yields an `Item::Struct` with an `keeps` clause; the validator
+  accepts its contracts (field access well-formed, `requires`/`ensures` in the cage); the
   lowerer emits a Verus `struct` + `well_formed` predicate; running the real
   `verus` binary on the emitted output exits 0 with `N verified, 0 errors`; the
   emitted certificate matches `bank_account.cert.json` (L3, non-vacuous).
@@ -313,12 +313,12 @@ live at `conformance/bank_account.cert.json` / `conformance/list_sum.cert.json`.
 
 - **AC-3 (recursive `List` + terminating fold parses, validates, lowers,
   certifies L3):** Parsing `list_sum.th` yields a recursive `Item::Enum` with a
-  `Box` recursive occurrence; the constructing exec `fn` carries `fx alloc` and
-  passes effect-subsumption; the `spec fn sum_list` carries a `dec` and the
+  `Box` recursive occurrence; the constructing exec `fn` carries `! alloc` and
+  passes effect-subsumption; the `spec fn sum_list` carries a `measures` and the
   lowerer emits `decreases l` over the datatype value with `*tail` recursion;
   `verus` certifies L3 (`N verified, 0 errors`). (REQ-3, REQ-4, REQ-10.)
 
-- **AC-4 (`is` discrimination in a contract):** A `fn` whose `ens` mentions
+- **AC-4 (`is` discrimination in a contract):** A `fn` whose `ensures` mentions
   `result is Circle` (or a struct-variant test) parses to `Expr::Is`, validates
   against the declared variant set (REQ-6), and lowers to the Verus `is`
   discriminant — `verus` certifies it. A crafted `result is Nonexistent` rejects
@@ -351,8 +351,8 @@ The component spans three crates, all additively:
   indirection (OQ-1). `parser.rs` gains `parse_struct`/`parse_enum`/`parse_match`
   (the last already partially present for the slice `match` of Appendix A) and
   struct/enum-pattern parsing. The mandatory-contract discipline of `Contract`
-  (`ast.md` REQ-2) is unchanged — a `struct`/`enum` item carries no `req`/`ens`/
-  `fx`; only `fn` does.
+  (`ast.md` REQ-2) is unchanged — a `struct`/`enum` item carries no `requires`/`ensures`/
+  `!`; only `fn` does.
 
 - **`thermite-spec`** — `validator.rs` gains the enum-variant-set collection (a
   pass over `Item::Enum` mirroring the existing `spec fn` name collection,
@@ -490,7 +490,7 @@ induction native) arrive together, exactly the basis thesis.
 
 - **Stage 4 (collections — Vec/Map):** consumes the `Box`/`alloc` heap primitive
   of REQ-3. `Vec`/`Map` are the same `Alloc`-effect heap generalized; the
-  effect-row rule (a constructing `fn` carries `fx alloc`) and the
+  effect-row rule (a constructing `fn` carries `! alloc`) and the
   effect-subsumption acceptance of `alloc` (REQ-3) are reused verbatim. Option (c)
   for recursive types (arena/index) was REJECTED precisely because it would invert
   this dependency (collections-before-keystone).
@@ -563,9 +563,9 @@ authored by the orchestrator from this doc before the builder runs (R-CHAR-3).
 | REQ-5 (exhaustiveness checking in the validator) | SHIPPED | epic **#62** Stage 1b (#65). `thermite-spec/src/validator.rs`: the declaration pre-pass `Validator::new` collects `enums` (name → variant order) + `variant_to_enum`; `check_match_exhaustiveness` (reached from the caged `walk_expr_inner` `Match` arm AND the exec-body `scan_expr_for_loops` `Match` arm) emits `SpecError::NonExhaustiveMatch { missing }` (declaration order), `SpecError::UnreachableArm` (variant twice / arm after wildcard), and `SpecError::UnknownVariant` (undeclared variant in a pattern); a slice/`Option` `match` is inert (no regression). Consumer: `pub fn validate`. Verification: `thermite-spec/tests/adt_validate.rs` over `conformance/adt-validate/cases.json` — `non_exhaustive_match` → `missing:[Rect]`, `unreachable_redundant_arm` → `UnreachableArm`, `unknown_variant_pattern` → `UnknownVariant{Square}`; `shape`/`list_sum` accept. The Verus LOWERING of `match` (REQ-9) stays Stage 1c. |
 | REQ-6 (well-formed field/variant access + `is`) | SHIPPED | epic **#62** Stage 1b (#65). `validator.rs`: the pre-pass collects `struct_fields` (every `struct`/struct-variant field); `check_field` (on `Expr::Field` + `Expr::StructLit` field names, both walks) → `SpecError::UnknownField` (inert when no struct declared); `check_variant_ref` (on `Expr::Is`, both walks) → `SpecError::UnknownVariant` for an undeclared variant. Consumer: `pub fn validate`. Verification: `tests/adt_validate.rs` — `unknown_field` → `UnknownField{bogus}`, `unknown_variant_is` → `UnknownVariant{Triangle}`; `bank_account`/`shape` accept. The Verus LOWERING of `is` (REQ-9) stays Stage 1c. |
 | REQ-7 (ADT predicates fit the SpecTherm cage) | SHIPPED | epic **#62** Stage 1b (#65). The caged-flat walk (`.design/spec/spectherm-combinators.md` REQ-6) shipped under #40; in `validator.rs`'s `walk_expr_inner`, `Expr::Match`/`Field`/`Is`/`Deref` recurse operands WITHOUT setting `in_combinator_closure` and WITHOUT resolving as combinators, so they are admitted as FLAT built-ins inside a combinator predicate-closure body unchanged. No recursive scheme exists yet to nest in a closure (forward-declared; schemes are Stage 2). Verification: the combinator cage tests (`tests/combinators_conformance.rs`, `divergence_nesting.rs`) stay green. |
-| REQ-8 (struct → Verus struct; invariant → predicate) | SHIPPED | epic **#62** Stage 1c (#67). `thermite-lower/src/lower.rs`: `lower_struct` emits a `pub struct` + `pub` fields + `impl { pub open spec fn well_formed(&self) -> bool { <inv with self.field> } }` (`lower_inv_expr`); **OQ-3 RESOLVED — automatic threading**: `lower_fn_signature` weaves `<param>.well_formed()` / `result.well_formed()` into `requires`/`ensures` for every invariant-bearing struct param/return (the `inv_structs` set built in `lower`). The `pub` visibility tier is the recorded grounding finding. L1 mirror: `l1.rs::lower_struct_l1` emits the `well_formed` method + `lower_fn_l1` weaves the always-active `thermite_check!`. Consumer: `pub fn lower` / `pub fn lower_l1`. Verification: real verus `1 verified, 0 errors` on the emitted `bank_account` lowering + cert oracle (`conformance/bank_account.cert.json` L3/pure/non-vacuous) — `thermite-lower/tests/adt_lower_conformance.rs::bank_account_lowers_struct_invariant_and_verifies_l3`, `deposit_matches_cert_oracle_stable_subset`, `bank_account_l1_compiles_and_runs`, `bank_account_l1_req_check_fires`. |
+| REQ-8 (struct → Verus struct; invariant → predicate) | SHIPPED | epic **#62** Stage 1c (#67). `thermite-lower/src/lower.rs`: `lower_struct` emits a `pub struct` + `pub` fields + `impl { pub open spec fn well_formed(&self) -> bool { <keeps with self.field> } }` (`lower_inv_expr`); **OQ-3 RESOLVED — automatic threading**: `lower_fn_signature` weaves `<param>.well_formed()` / `result.well_formed()` into `requires`/`ensures` for every invariant-bearing struct param/return (the `inv_structs` set built in `lower`). The `pub` visibility tier is the recorded grounding finding. L1 mirror: `l1.rs::lower_struct_l1` emits the `well_formed` method + `lower_fn_l1` weaves the always-active `thermite_check!`. Consumer: `pub fn lower` / `pub fn lower_l1`. Verification: real verus `1 verified, 0 errors` on the emitted `bank_account` lowering + cert oracle (`conformance/bank_account.cert.json` L3/pure/non-vacuous) — `thermite-lower/tests/adt_lower_conformance.rs::bank_account_lowers_struct_invariant_and_verifies_l3`, `deposit_matches_cert_oracle_stable_subset`, `bank_account_l1_compiles_and_runs`, `bank_account_l1_req_check_fires`. |
 | REQ-9 (enum → Verus enum; `match` → `match`; `is`) | SHIPPED | epic **#62** Stage 1c (#67). `lower.rs`: `lower_enum` emits a Verus `enum` (unit/tuple/struct variants); `lower_match`/`lower_pattern` emit ENUM-QUALIFIED arms via the program `(variant,enum)` map (`qualify_variant_path`) incl. `Pattern::Struct` (`Rect { w, h }`/`..`); `Expr::Is`→`(s is Circle)` the Verus-native discriminant. L1 mirror: `l1.rs` `lower_enum_l1`/`lower_match_exec`/`lower_pattern_exec` + `Expr::Is`→`matches!(s, Shape::Circle { .. })`. Consumer: `pub fn lower`/`pub fn lower_l1`. Verification: real verus `1 verified, 0 errors` on the emitted `shape` lowering + cert oracle (`conformance/shape.cert.json` L3/pure/non-vacuous) — `shape_lowers_enum_match_is_and_verifies_l3`, `is_circle_matches_cert_oracle_stable_subset`, `shape_l1_compiles_and_runs`, `shape_l1_ens_check_fires_on_a_lying_body`. |
-| REQ-10 (recursive type → Verus recursive enum; `Box`; structural `decreases`) | SHIPPED | epic **#62** Stage 1c (#67). `lower.rs`: `lower_enum` emits `Cons(u64, Box<List>)` (`lower_type` `Type::Box`→`Box<…>`); a `spec fn` of the ADT-fold-sum shape (`is_adt_fold_sum`) lowers `-> nat` with `decreases l` over the datatype VALUE (Verus's built-in structural order) and `Expr::Deref`→`*t`, integer casts coerced `as nat` (`Ctx::nat_ret`). Consumer: `pub fn lower`. Verification: real verus `1 verified, 0 errors` on the emitted `list_sum` lowering (the recursive spec fn terminates + totals) — `list_sum_lowers_recursive_box_and_verifies_l3`. The `fx alloc` effect-row for an exec `Box`-constructor is forward-ready (`effects.rs` accepts `alloc`); the corpus `list_sum` is spec-fn-only (`pure`), so no exec `alloc` is exercised this stage. |
+| REQ-10 (recursive type → Verus recursive enum; `Box`; structural `decreases`) | SHIPPED | epic **#62** Stage 1c (#67). `lower.rs`: `lower_enum` emits `Cons(u64, Box<List>)` (`lower_type` `Type::Box`→`Box<…>`); a `spec fn` of the ADT-fold-sum shape (`is_adt_fold_sum`) lowers `-> nat` with `decreases l` over the datatype VALUE (Verus's built-in structural order) and `Expr::Deref`→`*t`, integer casts coerced `as nat` (`Ctx::nat_ret`). Consumer: `pub fn lower`. Verification: real verus `1 verified, 0 errors` on the emitted `list_sum` lowering (the recursive spec fn terminates + totals) — `list_sum_lowers_recursive_box_and_verifies_l3`. The `! alloc` effect-row for an exec `Box`-constructor is forward-ready (`effects.rs` accepts `alloc`); the corpus `list_sum` is spec-fn-only (`pure`), so no exec `alloc` is exercised this stage. |
 | REQ-11 (`LowerError`/`SpecError` extension, no panics) | SHIPPED | epic **#62** Stage 1c (#67). The lowering reuses the existing `LowerError` (`Unsupported`/`TooDeep`) — no new lower variant was needed (the validator #65 already owns the `SpecError` reject cases REQ-5/REQ-6); no `unwrap`/`expect`/`panic!` added in `lower.rs`/`l1.rs`/`l2.rs`. Verification: `cargo clippy --workspace --all-targets -- -D warnings` PASS + the anti-pattern-gate. |
 | REQ-12 (handled-or-loud — compile-time tooth via exhaustive `match`) | SHIPPED | epic **#62** Stage 1c (#67). The named compile-time tooth is the #65 validator's `SpecError::NonExhaustiveMatch` (REQ-5, SHIPPED); Stage 1c's L3/L1 lowering of an ACCEPTED `match` preserves it — every arm is emitted, a non-exhaustive `match` never reaches the lowerer (it dies at the validator), and the runtime tooth (the §6 L1 contract) rides an ADT contract exactly as a scalar one (`shape_l1_ens_check_fires_on_a_lying_body`: a lying ADT body ABORTS, observable). The kill tooth is #57 (`.design/forge/runtime-sandbox.md`, SHIPPED). |
 
@@ -609,12 +609,12 @@ authored by the orchestrator from this doc before the builder runs (R-CHAR-3).
   for the corpus (the orchestrator's `bank_account.th` golden pins the verified
   output); a real design call for the builder.
 
-- **OQ-4 (`fx alloc` as the first non-`pure` corpus program):** REQ-3 makes a
-  list-constructing `fn` the first `fx alloc` corpus entry, exercising
+- **OQ-4 (`! alloc` as the first non-`pure` corpus program):** REQ-3 makes a
+  list-constructing `fn` the first `! alloc` corpus entry, exercising
   `Effect::Alloc` and effect-subsumption (`.design/lower/effect-subsumption.md`)
   for the first time. If the orchestrator prefers to keep Stage 1's corpus
   `pure`, the constructing `fn` can be a `spec fn`-only fold over a list built in
   the spec layer (no `alloc`), deferring the exec `alloc` exercise — but that
-  weakens the "program anything" exec story. RECOMMEND shipping the `fx alloc`
+  weakens the "program anything" exec story. RECOMMEND shipping the `! alloc`
   exec constructor so the heap primitive is exercised end-to-end at the keystone.
   Not a blocker.

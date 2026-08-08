@@ -94,8 +94,8 @@ exec language v1.
 | block tail value | `Block.tail: Option<Box<Expr>>` | trailing expr = the block's value (`lower_block_inner`) | the body's RESULT (final-state projection) |
 | expression statement | `Stmt::Expr(e)` | `<e>;` | a side-effecting exec expr (a non-tail call) |
 | `return` | `Stmt::Return(Option<Expr>)` | `return [<e>];` | early exit with a value (straight-line: TAIL position only — see OUT) |
-| `while` with `inv`/`dec` | `Stmt::Loop(LoopNode { kind: While(..), invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed, not in 2.2.1 |
-| `loop` with `inv`/`dec` | `Stmt::Loop(LoopNode { kind: Loop, invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed |
+| `while` with `keeps`/`measures` | `Stmt::Loop(LoopNode { kind: While(..), invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed, not in 2.2.1 |
+| `loop` with `keeps`/`measures` | `Stmt::Loop(LoopNode { kind: Loop, invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed |
 | `break` | `Stmt::Break` | `break;` (`lower_stmt`) | **step 2.2.2** — loop-control only |
 | `continue` | `Stmt::Continue` | `continue;` (`lower_stmt`) | **step 2.2.2** — loop-control only |
 
@@ -240,7 +240,7 @@ is an EXEC `fn` (not `proof`/`spec`), so the always-active runtime overflow chec
 ## Acceptance criteria
 
 - **AC-1 (faithful straight-line body → verified)** — the body obligation for `{ let a = x + 1; let b
-  = a * 2; b }` (`x: u64`, `req x <= 1000`, reference `body_ref(x) = ((x as nat) + 1) * 2`, production
+  = a * 2; b }` (`x: u64`, `requires x <= 1000`, reference `body_ref(x) = ((x as nat) + 1) * 2`, production
   the faithful `let a = x + 1; let b = a * 2; b`) discharges as `success: true, verified: 1, errors:
   0`. GROUNDED below.
 - **AC-2 (dropped-statement infidelity → counterexample)** — the SAME obligation with production
@@ -406,7 +406,7 @@ as the kernel target.
 Three post-pin commits hardened the REQ-5 phase WITHOUT changing the four-way
 contract:
 
-- **#189** — `body_tv` gates the spec-fn-helper `req` and NEVER maps a verus
+- **#189** — `body_tv` gates the spec-fn-helper `requires` and NEVER maps a verus
   frame/compile abort of the obligation SCAFFOLD to `Divergent`: a discharge
   failure is `Unverifiable`; `Divergent` is reserved for a real counterexample /
   a non-compiling PRODUCTION body (R-HONEST-3).

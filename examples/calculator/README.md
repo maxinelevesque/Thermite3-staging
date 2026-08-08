@@ -7,11 +7,11 @@
 
 ```thermite
 fn add(a: String, b: String) -> Option<u64>
-  req all_digits(a) && a.len() >= 1 && parse_be(a) <= 9223372036854775807
+  requires all_digits(a) && a.len() >= 1 && parse_be(a) <= 9223372036854775807
    && all_digits(b) && b.len() >= 1 && parse_be(b) <= 9223372036854775807
-  ens result is Some
-  ens match result { Some(v) => v == parse_be(a) + parse_be(b), None => true }
-  fx  pure
+  ensures result is Some
+  ensures match result { Some(v) => v == parse_be(a) + parse_be(b), None => true }
+  !  pure
 {
   match parse_u64(a) {
     Some(x) => match parse_u64(b) { Some(y) => Some(x + y), None => None },

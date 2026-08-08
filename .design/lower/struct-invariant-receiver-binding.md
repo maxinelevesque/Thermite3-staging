@@ -22,7 +22,7 @@ Every bare path naming a declared struct field in a type invariant lowers as a
 field of the invariant predicate receiver. This rule applies through unary
 expressions as well as binary expressions, calls, casts, field access, and
 method calls. For example,
-`inv !panic_latched || !reschedule_pending` becomes
+`keeps !panic_latched || !reschedule_pending` becomes
 `!self.panic_latched || !self.reschedule_pending` inside
 `well_formed(&self)`.
 

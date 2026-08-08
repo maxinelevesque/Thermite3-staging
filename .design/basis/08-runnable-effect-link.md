@@ -31,7 +31,7 @@ certifies L1, the pure caller composes to L3 + `to-the-boundary`) but `forge bui
 
 The wrappers are the **TRUSTED-by-fiat TCB** (you cannot prove the kernel): the
 audit manifest (#15) enumerates the boundaries, the #57 seccomp filter confines them
-to exactly their declared `fx` syscalls. The LINK is a **`forge build` (running)
+to exactly their declared `!` syscalls. The LINK is a **`forge build` (running)
 concern only** — `forge check` (verification) is UNCHANGED and independent (GROUNDED:
 the same program still certifies L1 boundary + L3 to-boundary before and after the
 link exists).
@@ -90,7 +90,7 @@ So the link is: `lower_boundary_fn_l1` already emits `let result = os::now(args)
 The wrappers v1 ships match exactly the Stage 3 v1 primitive families
 (`03-effect-stdlib.md` Resolution 3) plus what the build/run demo needs:
 
-| `os::<name>` target | Effect (`fx`) | Wrapper body (real `std`) | Return | `fx`→syscall (the #57 table) |
+| `os::<name>` target | Effect (`!`) | Wrapper body (real `std`) | Return | `!`→syscall (the #57 table) |
 |---|---|---|---|---|
 | `os::now` | `time` | `std::time::SystemTime::now().duration_since(UNIX_EPOCH).map(\|d\| d.as_secs())` | `u64` (no failure arm) | `clock_gettime` 228, `clock_nanosleep` 230 |
 | `os::read_byte` | `read(input)` | `std::io::stdin().read(&mut [0u8;1])` → byte or EOF sentinel | `u64` (closed: EOF) | + `openat` 257, `lseek` 8, `newfstatat` 262, `statx` 332 |
@@ -107,12 +107,12 @@ input, no failure arm); `os::read_byte` is the closed-outcome-set (EOF) demo —
 ### The seccomp confinement of the linked wrappers (#57 still applies)
 
 The link does NOT widen the trust boundary: the linked wrapper runs UNDER the SAME
-#57 `fx`-derived seccomp filter `synthesize_entry_main` already installs (GROUNDED in
+#57 `!`-derived seccomp filter `synthesize_entry_main` already installs (GROUNDED in
 `03-effect-stdlib.md` AC-3, the shipped `forge/src/sandbox.rs`). The prelude is the
 FIRST statement of the generated `main`, so the entry — *and the `os::<name>` wrapper
-body it reaches* — runs confined to its transitive `fx` allowlist. A `time` program is
+body it reaches* — runs confined to its transitive `!` allowlist. A `time` program is
 confined to `baseline ∪ {clock_gettime, clock_nanosleep}`; the linked `os::now`'s
-`clock_gettime` is ALLOWED, but an out-of-`fx` syscall (e.g. `openat`) is
+`clock_gettime` is ALLOWED, but an out-of-`!` syscall (e.g. `openat`) is
 `SIGSYS`-killed (GROUNDED below: exit 159 = 128 + 31). The wrapper is trusted-by-fiat
 to do its declared effect; the kernel ENFORCES that it does no more. This is the
 second half of the §9 honesty story made RUNNABLE: the assumed contract says "this
@@ -123,7 +123,7 @@ only reads the clock," and the seccomp filter kills it if it tries anything else
 | Layer | Deliverable | Mechanism |
 |---|---|---|
 | **8a** | the wrapper stdlib (`thermite-stdlib/src/effect/{read,write,time}.rs`: real `std`/`libc` syscall wrappers for the v1 `os::<name>` targets) + the `forge build` LINK (emit a `mod os { … }` keyed off the program's reachable `#[boundary("os::…")]` targets, ahead of `lower_boundary_fn_l1`'s `os::<name>()` call) | NEW: the wrapper bodies + the `forge/src/build.rs` emit-table + target-reachability keying |
-| **8b** | the RUN + sandbox-confinement DEMO (a verified program calling an effect primitive `forge build --entry`s → COMPILES + RUNS + does real I/O; the #57 filter confines the linked wrapper; an out-of-`fx` syscall → SIGSYS) | NEW corpus + a build/run test over the SHIPPED #57 `sandbox::emit_sandbox_prelude` + the 8a link |
+| **8b** | the RUN + sandbox-confinement DEMO (a verified program calling an effect primitive `forge build --entry`s → COMPILES + RUNS + does real I/O; the #57 filter confines the linked wrapper; an out-of-`!` syscall → SIGSYS) | NEW corpus + a build/run test over the SHIPPED #57 `sandbox::emit_sandbox_prelude` + the 8a link |
 
 8a touches `forge/src/build.rs` (the link emit) + the new `thermite-stdlib` crate.
 8b is a corpus + a `build_conformance`-style test. No NEW mechanism is invented in
@@ -163,16 +163,16 @@ SOURCE and the emit that makes `os::<name>` resolve.
   executes the linked `os::<name>` wrapper, performs the REAL syscall (reads the clock,
   reads stdin, writes stdout), and produces correct output (GROUNDED: `os::now` →
   a live Unix timestamp; `os::read_byte` of byte 'A' → `doubled() = 130`, EOF → `0`).
-  The L1 `thermite_check!` on the wrapper's `ens` still fires on a violation (REQ-4 of
+  The L1 `thermite_check!` on the wrapper's `ensures` still fires on a violation (REQ-4 of
   `build.md` is preserved). Derived from §1 (the unlock: a verified program that RUNS
   + does I/O) + `build.md` REQ-3/REQ-4 (the `--entry` runnable form + baked-in checks).
 
 - **REQ-4 (the linked wrapper is #57-seccomp-CONFINED — the live foreign-body run):**
-  the linked `os::<name>` wrapper runs UNDER the SHIPPED #57 `fx`-derived seccomp
+  the linked `os::<name>` wrapper runs UNDER the SHIPPED #57 `!`-derived seccomp
   filter (`sandbox::emit_sandbox_prelude` installed FIRST in the generated `main`,
-  `forge/src/build.rs` `synthesize_entry_main`): the wrapper's declared-`fx` syscalls
+  `forge/src/build.rs` `synthesize_entry_main`): the wrapper's declared-`!` syscalls
   are ALLOWED (a `time` program's `clock_gettime`; a `read` program's `openat`/`read`),
-  but a syscall OUTSIDE the entry's transitive `fx` allowlist is `SIGSYS`-killed (exit
+  but a syscall OUTSIDE the entry's transitive `!` allowlist is `SIGSYS`-killed (exit
   159, GROUNDED). This makes the §9 "killed at the syscall boundary" REAL for the
   LIVE foreign body, not just the `--sandbox-self-test` probe Stage 3 used. The #57
   allowlist derivation is UNCHANGED (`sandbox::transitive_fx`/`syscall_allowlist`
@@ -194,7 +194,7 @@ SOURCE and the emit that makes `os::<name>` resolve.
   and that trust is HONEST exactly because (a) the #15 audit manifest enumerates each
   reached boundary (name + assumed contract + foreign target + effect — GROUNDED:
   `boundary: now -> os::now (req=… ens=… fx=[time])`), and (b) the #57 seccomp filter
-  confines each wrapper to its declared `fx` (REQ-4). A program is `verified pure logic
+  confines each wrapper to its declared `!` (REQ-4). A program is `verified pure logic
   (L3) + this enumerated, contracted, confined effect base` (§1/§9). The link does not
   enlarge the TCB beyond the boundaries the manifest already enumerates — it makes that
   same enumerated base RUNNABLE. Derived from §1 + §9 ("the TCB is exactly (slag ∪
@@ -213,14 +213,14 @@ toolchain output blindly. The two grounded programs:
 // time_demo.th — the minimal effect primitive (no input, no failure arm)
 #[boundary("os::now")]
 fn now() -> u64
-  req true
-  ens result < 4000000000
-  fx  time
+  requires true
+  ensures result < 4000000000
+  !  time
 ;
 fn elapsed_ok() -> u64
-  req true
-  ens result < 4000000000
-  fx  time
+  requires true
+  ensures result < 4000000000
+  !  time
 {
   now()
 }
@@ -230,14 +230,14 @@ fn elapsed_ok() -> u64
 // read_demo.th — the closed-outcome-set (EOF) effect primitive over stdin
 #[boundary("os::read_byte")]
 fn read_byte() -> u64
-  req true
-  ens result <= 256          // 256 = the EOF sentinel; closes the outcome SET
-  fx  read(input)
+  requires true
+  ensures result <= 256          // 256 = the EOF sentinel; closes the outcome SET
+  !  read(input)
 ;
 fn doubled() -> u64
-  req true
-  ens result < 512           // holds whether a byte (<256 ⇒ v+v<512) or EOF (0)
-  fx  read(input)
+  requires true
+  ensures result < 512           // holds whether a byte (<256 ⇒ v+v<512) or EOF (0)
+  !  read(input)
 {
   let v = read_byte();
   if v < 256 { v + v } else { 0 }   // BOTH outcomes handled
@@ -264,7 +264,7 @@ fn doubled() -> u64
 - **AC-3 (the linked wrapper is #57-seccomp-CONFINED — the LIVE foreign body,
   GROUNDED):** the `--entry elapsed_ok` binary, run under the default #57 sandbox (ON
   for `--entry`), executes the linked `os::now`'s `clock_gettime` SUCCESSFULLY (it is in
-  the `time`-widened allowlist: `baseline ∪ {228, 230}`) — exit 0. An out-of-`fx`
+  the `time`-widened allowlist: `baseline ∪ {228, 230}`) — exit 0. An out-of-`!`
   syscall under the SAME `time` filter (the `--sandbox-self-test` `openat` probe, NOT
   in the `time` allowlist) is `SIGSYS`-KILLED (exit 159 = 128 + 31, the `#57`
   `pure_probe_killed` precedent). GROUNDED: the `time`-confined run prints its timestamp
@@ -288,11 +288,11 @@ fn doubled() -> u64
   boundary made runnable.
 
 - **AC-6 (the baked-in L1 check still fires on the linked wrapper, GROUNDED-by-shape):**
-  a corrupted `os::now` wrapper or a primitive whose `ens` is violated at runtime
+  a corrupted `os::now` wrapper or a primitive whose `ensures` is violated at runtime
   ABORTS with the always-active `thermite L1 contract violation [ens]` diagnostic and a
   non-zero exit (`build.md` REQ-4 / AC-4, preserved through the link) — the foreign
-  body is trusted-by-fiat but its assumed `ens` is L1-CHECKED on every crossing
-  (`lower_boundary_fn_l1`'s exit `ens`-check, `thermite-lower/src/l1.rs`).
+  body is trusted-by-fiat but its assumed `ensures` is L1-CHECKED on every crossing
+  (`lower_boundary_fn_l1`'s exit `ensures`-check, `thermite-lower/src/l1.rs`).
 
 - **AC-7 (corpus + verification corpus unaffected):** the pure corpus (`sum`,
   `binary_search`) builds + runs IDENTICALLY (no `mod os` emitted — no boundary target
@@ -341,7 +341,7 @@ forge audit <same program>  →  tcb: now -> os::now (…)   [UNCHANGED by the l
   target string). Stage 8 makes the target RESOLVE; the lowering is unchanged.
 - **The confinement** is `sandbox::emit_sandbox_prelude` over `transitive_fx` /
   `syscall_allowlist` in `forge/src/sandbox.rs` (SHIPPED, verbatim — the linked wrapper
-  runs under the same filter the entry's `fx` derives).
+  runs under the same filter the entry's `!` derives).
 - **The verification surface** (`#16` `gate_fn` BoundaryL1, `#52` `lower_external_body_fn`
   weave, `#17` `AssuranceScope::ToBoundary`, `#15` `AuditManifest.tcb`) is UNTOUCHED —
   `forge check` never emits `mod os` and never invokes rustc.
@@ -372,7 +372,7 @@ reusing the `build.rs` + `sandbox.rs` patterns. Discharge commands:
   → `doubled() = 0` (AC-2); run under the default sandbox → exit 0, run the
   `--sandbox-self-test` `openat` probe under the `time` filter → exit 159 (AC-3); `forge
   check … --mutation-floor 0` → the unchanged L1 + L3 cert (AC-4); `forge audit` → the
-  `tcb` enumeration (AC-5); a violating-`ens` wrapper → the `[ens]` abort (AC-6); `sum`
+  `tcb` enumeration (AC-5); a violating-`ensures` wrapper → the `[ens]` abort (AC-6); `sum`
   builds + runs unchanged (AC-7).
 - `cargo clippy -p forge -p thermite-stdlib --all-targets -- -D warnings`, `cargo fmt
   --check` (the gauntlet).
@@ -436,7 +436,7 @@ exit: 0
 Bad system call (core dumped)
 exit: 159                         ← 128 + 31 (SIGSYS), the #57 pure_probe_killed precedent
 ```
-The linked foreign body runs confined to EXACTLY its declared `fx` — `clock_gettime`
+The linked foreign body runs confined to EXACTLY its declared `!` — `clock_gettime`
 allowed, `openat` (out of the `time` row) killed. This is the live-foreign-body
 confinement OQ-4 deferred, now REAL.
 
@@ -468,7 +468,7 @@ the repo tree (#53 — compiled binaries are large).
   RUNS today). A richer `Option<u64>`/`Result` return (the `03-effect-stdlib.md`
   centerpiece) is the more honest closed-outcome-set shape and grounds on the SHIPPED
   built-in `Option` verification path; the runnable wrapper for it returns the Rust
-  `Option`. v1 may ship either; the user-enum-match-in-`ens` lowering caveat
+  `Option`. v1 may ship either; the user-enum-match-in-`ensures` lowering caveat
   (`03-effect-stdlib.md` OQ-5) still applies — use `Option`/`Result` or the sentinel,
   not a user enum, until that lowering is fixed.
 
@@ -528,5 +528,5 @@ does NOT author the oracle, the golden, the routes, or the wrappers (R-DOC-1).
 | REQ-2 (`forge build` LINKS via emit-`mod os` keyed off boundary targets) | SHIPPED | `build::reachable_boundary_targets` collects the distinct `BoundaryAttr.target` over the program's `#[boundary]` `Item::Fn`s (every one is lowered with an `os::<name>(args)` crossing by `lower_l1`); `effect_wrappers::emit_mod_os` assembles a sorted, deterministic `mod os { … }` carrying EXACTLY those wrappers; `build::emit_source` PREPENDS it to `lower_l1`'s output, closing the GROUNDED `E0433`. Consumer: `build::emit_source` → `build::build_file` → `cli::run_build`. Verified by `effect_link_conformance::elapsed_ok_builds_and_runs` (rustc exit 0, no `E0433`) + `effect_wrappers::tests::{emits_only_named_wrappers,emission_is_sorted_deterministic}` (minimal-TCB keying + R-CODE-5 determinism). |
 | REQ-3 (a verified program COMPILES + RUNS + does real I/O) | SHIPPED | `forge build effect_link_demo.th --entry elapsed_ok` compiles + the binary RUNS the linked `os::now`'s real `clock_gettime` → prints `elapsed_ok() = <live Unix timestamp>` (e.g. `1780780684`), exit 0; `os::read_byte` over stdin → `doubled() = 130` (byte `A`) / `0` (EOF, the handled arm). Verified by `effect_link_conformance::elapsed_ok_builds_and_runs` (run exit 0, output a u64 in `(0, 4_000_000_000)`) + `read_byte_links_and_runs_both_arms`. THE UNLOCK: a verified Thermite program runs + does real I/O. |
 | REQ-4 (the linked wrapper is #57-seccomp-CONFINED) | SHIPPED | the linked `os::now` runs UNDER the SHIPPED #57 `sandbox::emit_sandbox_prelude` (installed FIRST in `synthesize_entry_main`'s `main`, UNCHANGED): the `time` allowlist INCLUDES host-native `clock_gettime` (x86_64 228 / aarch64 113) → the live `os::now` runs clean (exit 0), and EXCLUDES host-native `openat` (x86_64 257 / aarch64 56) → the `--sandbox-self-test` probe under the SAME `time` filter is `SIGSYS`-KILLED (exit 159). Verified by `effect_link_conformance::sandbox_confines_the_linked_wrapper` (the live-foreign-body confinement OQ-4 deferred, now real). The #57 allowlist derivation is verbatim. |
-| REQ-5 (verification UNCHANGED — link is build-only) | SHIPPED | `forge check effect_link_demo.th --mutation-floor 0` certifies `now` at `L1` + `boundary` + `boundary_target os::now` + `fx time`, and `elapsed_ok` at `L3` + `assurance_scope to_boundary { via: now }` — IDENTICAL to the pre-link cert (the link lives in `build::emit_source` codegen + rustc; `forge check` never emits `mod os` or invokes rustc). Verified by `effect_link_conformance::verify_unchanged` (the before/after invariance now PINNED by the Stage-8 oracle). `forge check`/lowering-for-check is untouched. |
+| REQ-5 (verification UNCHANGED — link is build-only) | SHIPPED | `forge check effect_link_demo.th --mutation-floor 0` certifies `now` at `L1` + `boundary` + `boundary_target os::now` + `! time`, and `elapsed_ok` at `L3` + `assurance_scope to_boundary { via: now }` — IDENTICAL to the pre-link cert (the link lives in `build::emit_source` codegen + rustc; `forge check` never emits `mod os` or invokes rustc). Verified by `effect_link_conformance::verify_unchanged` (the before/after invariance now PINNED by the Stage-8 oracle). `forge check`/lowering-for-check is untouched. |
 | REQ-6 (the wrappers are the TRUSTED-by-fiat TCB — enumerated + confined) | SHIPPED | the linked `os::now` IS exactly the boundary the SHIPPED #15 `AuditManifest.tcb` enumerates (`boundary: now -> os::now (req=… ens=[result < 4000000000] fx=[time])`, the `forge check` cert's `boundary`/`boundary_target`/`effects` fields, PINNED by `verify_unchanged`) made RUNNABLE under the #57 confinement (REQ-4). `emit_mod_os` emits ONLY the wrappers the program names (minimal TCB), so the link does not enlarge the TCB beyond the enumerated boundaries. Verified by `effect_link_conformance::{verify_unchanged,sandbox_confines_the_linked_wrapper}` + `effect_wrappers::tests::emits_only_named_wrappers`. |

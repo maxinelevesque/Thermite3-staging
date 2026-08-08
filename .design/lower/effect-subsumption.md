@@ -1,4 +1,4 @@
-# Compile-Time Effect-Row Subsumption (`fx`)
+# Compile-Time Effect-Row Subsumption (`!`)
 <!--
 tier: 3-component
 status: draft
@@ -14,20 +14,20 @@ thesis-refs:
 ## Summary
 
 `thermite-lower::effects` enforces the **effect-row subsumption rule** at compile
-time: *a caller's `fx` row must subsume every callee's row* (`thermite-design.md
+time: *a caller's `!` row must subsume every callee's row* (`thermite-design.md
 §4.1`: "Effect rows compose: a caller's row must subsume every callee's row,
-checked at compile time"). `fx pure` permits nothing; a `pure` function that
+checked at compile time"). `! pure` permits nothing; a `pure` function that
 calls an effectful one is a compile-time rejection. In v0.1 this is the
 **compile-time check ONLY** — the runtime syscall sandbox (§4.1 "killed at the
 syscall boundary") is DEFERRED to issue #21 (`goal.md` "EXCLUDED from the
-kernel: runtime effect sandbox (compile-time `fx` subsumption only in v0.1)").
+kernel: runtime effect sandbox (compile-time `!` subsumption only in v0.1)").
 This component is the static half, fully implemented (R-SPEC-5: implement the
 v0.1 form fully, do not stub the deferred form).
 
 This component is **SHIPPED** (issue **#4**, extended by #38/#16/#60/#106):
 `thermite-lower/src/effects.rs` implements the check and every REQ below is
 **SHIPPED** (REQ-status table). The corpus programs (`sum`, `binary_search`)
-are both `fx pure` with no internal calls to effectful functions, so they are
+are both `! pure` with no internal calls to effectful functions, so they are
 the ACCEPT baseline; reject cases are crafted fixtures. AMENDED at the #262
 re-audit: the atom set is now NINE kinds — the #106 terminal-control effect
 `Term` joined the original eight — and `subsumes` delegates its bit-level
@@ -56,17 +56,17 @@ subset test to the Verus-verified `thermite_verified::subsumes_masks` (epic
   every callee's row").
 
 - **REQ-3 (the check entry point + call graph):** `check_effects(program) ->
-  Result<(), Vec<LowerError>>` (the name→`fx` map is built internally over the
+  Result<(), Vec<LowerError>>` (the name→`!` map is built internally over the
   program's items) walks every `FnItem` body, and for each
   `Expr::Call`/`Expr::MethodCall` whose callee resolves to another declared
   `FnItem` (by name), checks that the *caller's* `Contract.fx` subsumes the
   *callee's* `Contract.fx` (REQ-2). It accumulates one structured error per
   violation (crisp feedback, §2.4) rather than failing on the first. A
-  `spec fn` carries no `fx` (`ast.rs` `struct SpecFnItem` has no `fx`) and is pure
+  `spec fn` carries no `!` (`ast.rs` `struct SpecFnItem` has no `!`) and is pure
   by construction (§4.2 spec sublanguage is total/effect-free) — calls to a
   `spec fn` from any row are always permitted. Calls to combinators are likewise
   pure. Derived from §4.1 + `ast.rs` (`FnItem.contract.fx`, `SpecFnItem` has no
-  `fx`).
+  `!`).
 
 - **REQ-4 (structured rejection, `LowerError`):** A subsumption violation returns
   a span-bearing `LowerError::EffectNotSubsumed { caller, callee, missing:
@@ -86,7 +86,7 @@ subset test to the Verus-verified `thermite_verified::subsumes_masks` (epic
   Derived from §7.1 + issue #6 ownership.
 
 - **REQ-6 (runtime sandbox deferred to #21 — recorded boundary):** The runtime
-  enforcement of `fx` (§4.1 "killed at the syscall boundary, not trusted at the
+  enforcement of `!` (§4.1 "killed at the syscall boundary, not trusted at the
   type level alone") is OUT of v0.1 scope (issue #21). v0.1 ships compile-time
   subsumption only; this component emits NO runtime sandbox and inserts NO
   syscall interception. R-SPEC-5: the v0.1 form (compile-time check) is
@@ -102,7 +102,7 @@ subset test to the Verus-verified `thermite_verified::subsumes_masks` (epic
   (R-CHAR-3). (REQ-1, REQ-2)
 
 - **AC-2 (corpus accepts):** `check_effects` over the parsed `conformance/sum.th`
-  and `conformance/binary_search.th` returns `Ok(())` — both are `fx pure`, call
+  and `conformance/binary_search.th` returns `Ok(())` — both are `! pure`, call
   only the pure `spec_sum` / combinators, and so trivially subsume. (REQ-2, REQ-3)
 
 - **AC-3 (crafted accept cases):** Hand-crafted fixtures accept: a `fx {alloc}`
@@ -112,9 +112,9 @@ subset test to the Verus-verified `thermite_verified::subsumes_masks` (epic
 
 - **AC-4 (crafted reject cases — the right missing-effect set):** Hand-crafted
   fixtures reject with `EffectNotSubsumed` naming the right `missing` atoms: a
-  `fx pure` caller calling a `fx {alloc}` callee → `missing: [Alloc]`; a
+  `! pure` caller calling a `fx {alloc}` callee → `missing: [Alloc]`; a
   `fx {read(x)}` caller calling a `fx {read(x), net(d)}` callee → `missing:
-  [Net(d)]`; a `fx pure` caller calling a `fx {panic}` callee → `missing:
+  [Net(d)]`; a `! pure` caller calling a `fx {panic}` callee → `missing:
   [Panic]`. Each fixture's expected variant + missing set is hand-derived
   (R-CHAR-3). (REQ-4)
 
@@ -136,7 +136,7 @@ subset test to the Verus-verified `thermite_verified::subsumes_masks` (epic
 enum. Symbol anchors: `enum EffectRow { Pure, Set(Vec<Effect>) }` and `enum
 Effect { Read, Write, Net, Alloc, Time, Rand, Panic, Diverge, Term }` in
 `thermite-syntax/src/ast.rs`; `struct FnItem` (`.contract.fx`), `struct
-SpecFnItem` (no `fx`); `fn lookup` in `thermite-spec/src/combinators.rs` (to
+SpecFnItem` (no `!`); `fn lookup` in `thermite-spec/src/combinators.rs` (to
 classify a callee as a pure combinator).
 
 ### The effect lattice (REQ-1)
@@ -156,7 +156,7 @@ classify a callee as a pure combinator).
   several effectful calls — its required caller row is the union of callee rows).
 - The atomic set is exactly `enum Effect`'s NINE variants (the #106 `Term`
   included). `Diverge` is the termination-escape effect (§4.1 "divergence
-  requires `fx diverge`"); `Term` (#106) is the terminal-control effect; each
+  requires `! diverge`"); `Term` (#106) is the terminal-control effect; each
   sits in the lattice like any other atom for subsumption purposes.
 
 ### The subsumption check (REQ-2/REQ-3)
@@ -201,8 +201,8 @@ without specifying path-granular ordering.
 
 ### Corpus baseline
 
-Both corpus programs are `fx pure` (`conformance/sum.th` line 14
-`fx  pure`; `conformance/binary_search.th` line 7 `fx  pure`) and call only the
+Both corpus programs are `! pure` (`conformance/sum.th` line 14
+`!  pure`; `conformance/binary_search.th` line 7 `!  pure`) and call only the
 pure `spec_sum` and the combinators (`sorted`, `forall_in`, `forall_below`,
 `forall_from`) — all pure. So `check_effects` returns `Ok(())` for the entire
 corpus (AC-2); the reject cases are necessarily crafted fixtures (AC-4), as the
@@ -237,7 +237,7 @@ are crafted unit fixtures, hand-derived from §4.1 (R-CHAR-3).
 |---|---|---|
 | REQ-1 (effect lattice) | SHIPPED | `enum EffectKind` (the 9 atoms, incl. the #106 `Term`) + `fn effects` (powerset projection of `EffectRow`) in `effects.rs`; consumer `subsumes`/`missing_atoms`; asserted by `tests/effects.rs::lattice_law_*` (AC-1). |
 | REQ-2 (subsumption accept relation) | SHIPPED | `pub fn subsumes` in `effects.rs` (`effects(callee) ⊆ effects(caller)`; `Pure` subsumes only `Pure`; since #60 the subset test delegates to the Verus-verified `thermite_verified::subsumes_masks` over `u16` masks, anchored by `tests/effects_verified.rs`); consumer `check_effects::check_call`; asserted by `lattice_law_table` + `crafted_accepts` (AC-1/AC-3). |
-| REQ-3 (check entry point + call graph) | SHIPPED | `pub fn check_effects` in `effects.rs` builds a name→`fx` map over `FnItem`s (`SpecFnItem`/`thermite_spec::lookup` combinators noted pure) and walks each body's `Expr` tree (`check_block`/`check_expr`) per `Call`/`MethodCall`; consumer `tests/effects.rs` + the `pub use` lowering-pipeline surface; asserted by `corpus_accepts` (AC-2) + `crafted_rejects` (AC-4). |
+| REQ-3 (check entry point + call graph) | SHIPPED | `pub fn check_effects` in `effects.rs` builds a name→`!` map over `FnItem`s (`SpecFnItem`/`thermite_spec::lookup` combinators noted pure) and walks each body's `Expr` tree (`check_block`/`check_expr`) per `Call`/`MethodCall`; consumer `tests/effects.rs` + the `pub use` lowering-pipeline surface; asserted by `corpus_accepts` (AC-2) + `crafted_rejects` (AC-4). |
 | REQ-4 (structured rejection, `LowerError`) | SHIPPED | `LowerError::EffectNotSubsumed { caller, callee, missing, span }` in `lower.rs` (`Display` arm + `effect_atom_name`); produced by `check_call`; `missing` = `effects(callee) \ effects(caller)`; asserted by `reject_*` (AC-4). |
 | REQ-5 (maximal-row / slag boundary) | SHIPPED | boundary recorded — `effects.rs` enforces subsumption only; no maximal-row judgement in the file (that is forge's vacuity stage #6). |
 | REQ-6 (runtime sandbox deferred to #21) | SHIPPED | boundary recorded — `effects.rs` returns `Result<(), Vec<LowerError>>` with NO codegen / NO syscall-sandbox path (AC-6); the sandbox stays deferred to #21 (R-SPEC-5). |
@@ -261,7 +261,7 @@ are crafted unit fixtures, hand-derived from §4.1 (R-CHAR-3).
   blocker.
 
 - **OQ-3 (no effectful corpus program — reject coverage):** The v0.1 corpus is
-  entirely `fx pure`, so the ACCEPT path (AC-2) has corpus coverage but the
+  entirely `! pure`, so the ACCEPT path (AC-2) has corpus coverage but the
   REJECT path (AC-4) is covered only by crafted fixtures. This is acceptable
   (the fixtures are hand-derived from §4.1, R-CHAR-3), but it means the
   subsumption-reject logic has no conformance-corpus anchor until an effectful

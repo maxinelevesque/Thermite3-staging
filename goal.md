@@ -32,7 +32,7 @@ Build leaves first. **Do not leapfrog (R-DEFER-7).** The v0.1 kernel (crosslink 
 
 Dependency order (work top to bottom):
 
-1. **thermite-syntax** — lexer, recovering parser, AST, stable semantic addressing (`loop#1.inv#2`). The foundation. (issues #1 scaffold, #3 parser)
+1. **thermite-syntax** — lexer, recovering parser, AST, stable semantic addressing (`loop#1.keeps#2`). The foundation. (issues #1 scaffold, #3 parser)
 2. **thermite-spec** — the SpecTherm combinator registry: each combinator with a frozen SMT trigger + a Verus definition (L3) + an executable form (L1). (issue #2)
 3. **thermite-lower** — lowering Thermite AST → Verus-annotated Rust source; L1 runtime-check compilation. (issue #4)
 4. **forge** — the CLI: `forge new`, `forge check` (run the ladder, structured per-obligation JSON + counterexamples), structural vacuity triage, `#[slag]`, proof cache, pinned seeds. (issues #5, #6, #8)
@@ -40,7 +40,7 @@ Dependency order (work top to bottom):
 
 The exact crate/file layout is fixed by scaffold issue #1 and recorded in `tooling/spec-routes.toml`; that route table is the authoritative module map.
 
-EXCLUDED from the kernel (deferred, tracked in issue #21): runtime effect sandbox (compile-time `fx` subsumption only in v0.1), true MIR-level lowering (transpile to Verus instead), Lean-style incremental goal-state holes (`forge check` is whole-item in v0.1).
+EXCLUDED from the kernel (deferred, tracked in issue #21): runtime effect sandbox (compile-time `!` subsumption only in v0.1), true MIR-level lowering (transpile to Verus instead), Lean-style incremental goal-state holes (`forge check` is whole-item in v0.1).
 
 ---
 
@@ -148,7 +148,7 @@ Close the crosslink issue (`--kind result` comment first).
 - **R-TONE-1**: prose — doc comments, design docs, and module/header comments — follows [`.design/tone-and-voice.md`](.design/tone-and-voice.md): affirmative not defensive, plain not emphatic, narrative only in intros/conclusions. No antithesis pairs ("not X — Y"), virtue adverbs ("honestly"/"loudly"), rhetorical bold/ALL-CAPS for emphasis, or cute asides. `exactly`/`precisely` only where they disambiguate (e.g. an iff), not as emphasis. This is a register rule; it never changes a claim, identifier, or guarantee.
 
 ### Spec-mirror (default = match the design contract; deviate only for these)
-- **R-SPEC-1 (MATCH — surface semantics)**: the surface grammar, mandatory `req`/`ens`/`fx` and `inv`/`dec`, the SpecTherm combinator set and their frozen triggers, and the ladder semantics match `thermite-design.md` §4/§6 exactly. "One way to do everything" (pillar §2.3) — no alternate syntaxes, no config knobs the design doesn't sanction.
+- **R-SPEC-1 (MATCH — surface semantics)**: the surface grammar, mandatory `!`/`requires`/`ensures` and `keeps`/`measures`, the SpecTherm combinator set and their frozen triggers, and the ladder semantics match `thermite-design.md` §4/§6 exactly. "One way to do everything" (pillar §2.3) — no alternate syntaxes, no config knobs the design doesn't sanction.
 - **R-SPEC-2 (MATCH — certificate contract)**: certificate/manifest fields, assurance levels (L0–L3), vacuity-battery outputs, and `#[slag]` metadata match the design (§6, §7, §8, Appendix A). The certificate IS the deliverable; its shape is a contract.
 - **R-SPEC-3 (MATCH — toolchain output schema)**: `forge` JSON schemas (goal/obligation/counterexample/manifest, §5.1) are stable contracts. Changing a field is a design-doc amendment, not a code-local choice.
 - **R-SPEC-4 (DEVIATE — only via design amendment)**: if the implementation reveals the design is wrong/underspecified, STOP, dispatch acto-doc-author to amend `.design/` (and escalate a `thermite-design.md` note if the thesis is affected), THEN implement. Never let code silently define the contract.

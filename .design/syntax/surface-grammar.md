@@ -31,13 +31,13 @@ This doc is GREENFIELD / FORWARD-LOOKING: no parser code exists. Every REQ is
 
 The grammar enforces **clause PRESENCE and structure only**. It does NOT enforce:
 
-- that `ens` mentions `result` (a §7 structural-vacuity check; forge, issue #6),
+- that `ensures` mentions `result` (a §7 structural-vacuity check; forge, issue #6),
 - that combinators come from the fixed SpecTherm set (a §4.2 *semantic* check),
-- that `req`/`inv` are non-vacuous, that types resolve, that effects subsume,
+- that `requires`/`keeps` are non-vacuous, that types resolve, that effects subsume,
 - **the partiality obligations of `/`/`%`/`<<`/`>>`** (`ast.md` REQ-11): the
   grammar parses `a / b` regardless; the divide-by-zero / shift-bound obligation
   is a §7 PROOF obligation discharged at verification, not a parse rule.
-- **whether a `continue` preserves the loop invariant / respects `dec`, or
+- **whether a `continue` preserves the loop invariant / respects `measures`, or
   whether `break` exits soundly** (#93): the grammar parses `break;`/`continue;`
   inside a loop body; the invariant-at-continue and decreases-interaction
   semantics are §7 PROOF obligations Verus checks on the lowered loop
@@ -45,8 +45,8 @@ The grammar enforces **clause PRESENCE and structure only**. It does NOT enforce
   break/continue rule is `break`/`continue` must appear inside a loop body
   (`parser.md` REQ-10).
 
-The grammar's job: a `fn` without all three of `req`/`ens`/`fx`, or a `loop`/
-`while` missing `inv`/`dec`, is a **parse error** (§4.1). A combinator call like
+The grammar's job: a `fn` without all three of `!`/`requires`/`ensures`, or a `loop`/
+`while` missing `keeps`/`measures`, is a **parse error** (§4.1). A combinator call like
 `forall_in(haystack, |x| ...)` parses as a generic call expression.
 
 ## Requirements
@@ -64,7 +64,7 @@ The grammar's job: a `fn` without all three of `req`/`ens`/`fx`, or a `loop`/
 
 - **REQ-3 (loop/while with mandatory inv* + exactly one dec):** Both `loop { }`
   and `while EXPR { }` carry one-or-more `inv EXPR` clauses then exactly one
-  `dec EXPR`, then the body. Missing `inv` or missing/duplicate `dec` is a parse
+  `dec EXPR`, then the body. Missing `keeps` or missing/duplicate `measures` is a parse
   error. Derived from §4.1 and the corpus loops.
 
 - **REQ-4 (statement grammar):** A block `{ }` is a sequence of statements with
@@ -110,7 +110,7 @@ The grammar's job: a `fn` without all three of `req`/`ens`/`fx`, or a `loop`/
   is therefore an accepted primitive in a char/byte context. Derived from the
   corpus signatures and §4.4.
 
-- **REQ-9 (effect-row grammar):** An `fx` row is `pure` or a set drawn from
+- **REQ-9 (effect-row grammar):** An `!` row is `pure` or a set drawn from
   `{read(path), write(path), net(domain), alloc, time, rand, panic, diverge}`.
   Derived from §4.1.
 
@@ -149,18 +149,18 @@ The grammar's job: a `fn` without all three of `req`/`ens`/`fx`, or a `loop`/
   statement (the editor's quit-flag workaround); #93 makes them real keywords
   + statements (`lexer.md` REQ-10, `ast.md` REQ-12). The VERIFICATION semantics
   (the loop invariant must hold at every `continue` and at re-entry; `continue`
-  must respect the `dec` measure; `break` exits and the post-loop facts come from
-  the loop `ensures`; a `fx diverge` loop's break/continue are unconstrained by
-  `dec`) are §7 PROOF obligations on the lowered loop, owned + GROUNDED in
+  must respect the `measures` measure; `break` exits and the post-loop facts come from
+  the loop `ensures`; a `! diverge` loop's break/continue are unconstrained by
+  `measures`) are §7 PROOF obligations on the lowered loop, owned + GROUNDED in
   `verus-lowering.md` REQ-12, NOT grammar rules. Derived from §4.1 (the loop
-  model; "Termination is proved by default; divergence requires `fx diverge`")
+  model; "Termination is proved by default; divergence requires `! diverge`")
   + R-DEFER-9 (break/continue must not launder the invariant / decreases).
 
 ## Acceptance criteria
 
 - **AC-1 (both corpus programs accept):** The grammar accepts `sum.th` and
   `binary_search.th` in full. (REQ-1..REQ-9)
-- **AC-2 (missing clause rejects):** Removing `req`/`ens`/`fx`/`inv`/`dec`
+- **AC-2 (missing clause rejects):** Removing `!`/`requires`/`ensures`/`keeps`/`measures`
   yields a parse error. (REQ-2, REQ-3)
 - **AC-3 (no extra constructs):** No production for `struct`-as-Rust-generics,
   `impl`, `trait`, `use`, `mod`, macro, `for`, `unsafe`, an explicit lifetime
@@ -180,16 +180,16 @@ The grammar's job: a `fn` without all three of `req`/`ens`/`fx`, or a `loop`/
 - **AC-7 (partiality is a §7 obligation, not a parse rule — GROUNDED):** `a / b`
   / `a % b` parse regardless of whether `b` can be zero; the divide-by-zero
   obligation is discharged (or fails) at verification. GROUNDED: `a % b` with
-  `req b != 0` certifies L3; without it, L0. (Scope boundary; `ast.md` REQ-11.)
+  `requires b != 0` certifies L3; without it, L0. (Scope boundary; `ast.md` REQ-11.)
 - **AC-8 (`break`/`continue` parse + in-loop rule + verification — NEW, #93):**
   A `while … { … break; }` parses with a `break;` statement in the loop body;
   `continue;` likewise; both require a trailing `;`. A `break;`/`continue;`
   OUTSIDE any loop is a parse error (`parser.md` REQ-10). GROUNDED (the §7
-  semantics, `verus-lowering.md`): a terminating `while` with `dec` whose
+  semantics, `verus-lowering.md`): a terminating `while` with `measures` whose
   `continue` preserves the invariant + decreases certifies L3; a `continue` that
   breaks the invariant — or that does not decrease the measure — is L0; a `break`
-  early-exit with the loop `ensures` certifies L3; a `fx diverge` loop with
-  `break`/`continue` (no `dec`) certifies (capped at L1 by the #88 gate). (REQ-11)
+  early-exit with the loop `ensures` certifies L3; a `! diverge` loop with
+  `break`/`continue` (no `measures`) certifies (capped at L1 by the #88 gate). (REQ-11)
 
 ## Architecture
 
@@ -337,8 +337,8 @@ No standalone grammar binary; the parser is the executable grammar.
 | REQ | Status | Evidence |
 |---|---|---|
 | REQ-1 (item grammar) | SHIPPED | `parse_item` in `parser.rs` admits `fn`/`spec fn`/`#[slag] fn` (+ basis `struct`/`enum`). |
-| REQ-2 (mandatory contract clauses) | SHIPPED | `parse_contract`/`parse_spec_fn` enforce `req`→`ens`+→`fx` and spec-fn `dec`. |
-| REQ-3 (loop/while + inv* + one dec) | SHIPPED | `parse_loop` requires `inv`+ then one `dec`. |
+| REQ-2 (mandatory contract clauses) | SHIPPED | `parse_contract`/`parse_spec_fn` enforce `requires`→`ensures`+→`!` and spec-fn `measures`. |
+| REQ-3 (loop/while + inv* + one dec) | SHIPPED | `parse_loop` requires `keeps`+ then one `measures`. |
 | REQ-4 (statement grammar) | SHIPPED | `parse_block`/`parse_let`/`parse_return`/`parse_if_stmt` + tail expr. The `break ;`/`continue ;` additions are REQ-11 (#93, NOT-STARTED). |
 | REQ-5 — base expr grammar | SHIPPED | precedence ladder `parse_or`→…→`parse_postfix`→`parse_primary` in `parser.rs`; corpus exprs round-trip. |
 | REQ-5 — char/hex/binary literals (#91/#92) | SHIPPED | the lexer emits the SAME `TokKind::Int` for `'A'`/`0x1b`/`0b101` (`lexer.rs` `lex_char`/`lex_int`); `parse_primary`'s literal arm is UNCHANGED (it consumes any `Int`), so all radices+char build `Expr::IntLit` (test `char_hex_binary_parse_to_intlit_no_new_variant`). `''`/`0x`/`'é'` are lex errors (`malformed_literals_are_structured_diagnostics_not_panic`). |

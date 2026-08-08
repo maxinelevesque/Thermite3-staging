@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: f81b6903366ceec0ce435089c7f021c8c25f951c51aa3d2d08ca8a73ea08e5e3
+audited-content-sha256: 8da1d4582be2963ee8a14104f35672d689b70a2f5770afc6e8cb32088d620fa7 (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: f81b6903366ceec0ce435089c7f021c8c25f951c51aa3d2d08ca8a73ea08e5e3)
 decision: explicit pinned vstd proof-model import plus deterministic no_std erased link metadata
 issue: github:dollspace-gay/Thermite#108
 governs:
