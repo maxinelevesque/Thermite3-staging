@@ -1112,8 +1112,9 @@ mod tests {
     // a certified item does (the "like any certified item" rule).
     #[test]
     fn uncertified_lemma_does_not_surface_as_burned() {
-        let program =
-            parse_ok("lemma bad(n: u32) requires n > 0 ensures n >= 1 proof { simp [Thermite.denote] }");
+        let program = parse_ok(
+            "lemma bad(n: u32) requires n > 0 ensures n >= 1 proof { simp [Thermite.denote] }",
+        );
         let rejected = Certificate::rejected(
             "bad".to_string(),
             vec!["pure".to_string()],

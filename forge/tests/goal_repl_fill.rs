@@ -163,7 +163,9 @@ fn hole_outside_fn_body_statement_position_is_a_structured_parse_error_not_a_pan
         spec.errors
     );
     // expression position: rejected (a `?N` is not a primary expression).
-    let expr = parse("fn f(n: u32) -> u32 ! pure requires true ensures result == n { let x: u32 = ?0; x }");
+    let expr = parse(
+        "fn f(n: u32) -> u32 ! pure requires true ensures result == n { let x: u32 = ?0; x }",
+    );
     assert!(
         !expr.is_clean(),
         "a hole in expression position is a parse error"

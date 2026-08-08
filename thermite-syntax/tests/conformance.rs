@@ -559,7 +559,8 @@ fn int_literal_preserves_value_and_raw() {
     // hand-derived from the source, never copied from the parser (R-CHAR-3).
     use thermite_syntax::ast::{BinOp, Expr};
 
-    let src = "fn f(xs: &[u32]) -> u32 ! pure requires xs.len() <= 1_000_000 ensures result == 0 { 0 }";
+    let src =
+        "fn f(xs: &[u32]) -> u32 ! pure requires xs.len() <= 1_000_000 ensures result == 0 { 0 }";
     let result = parse(src);
     assert!(result.is_clean(), "fixture should parse clean: {result:?}");
 

@@ -71,7 +71,8 @@ fn multiple_param_refinements_chain_into_req() {
 
 #[test]
 fn both_param_and_return_refinements_desugar() {
-    let src = "fn f(x: u64{x > 0}) -> u64{result >= x} ! pure requires true ensures result == x { x }";
+    let src =
+        "fn f(x: u64{x > 0}) -> u64{result >= x} ! pure requires true ensures result == x { x }";
     let f = single_fn(src);
     assert!(f.refinements.is_empty());
     assert_eq!(f.contract.req.text, "(true) && (x > 0)");

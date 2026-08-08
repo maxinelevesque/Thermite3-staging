@@ -879,8 +879,9 @@ mod tests {
     // definition (R-CHAR-3), not forge stdout.
     #[test]
     fn probe_pure_int_tail_is_auto() {
-        let program =
-            parse_program("fn count(n: u32) -> u32 ! pure requires n < 100 ensures result == n { n }");
+        let program = parse_program(
+            "fn count(n: u32) -> u32 ! pure requires n < 100 ensures result == n { n }",
+        );
         let row = LeanFragmentRow::probe("count", &program);
         assert!(
             row.exportable,

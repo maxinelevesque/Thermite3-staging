@@ -526,9 +526,10 @@ mod tests {
     // AC-12: `relaxable` rejects a div-containing clause (`%`, `<<`, casts likewise).
     #[test]
     fn relaxable_rejects_div_mod_shift_cast() {
-        let div =
-            parse_one("fn g(n: u64) -> u64\n  ! pure
-  requires true\n  ensures result == n / 2\n{ n }\n");
+        let div = parse_one(
+            "fn g(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n / 2\n{ n }\n",
+        );
         let v = classify_fn(fn_item(&div, "g"));
         assert!(!v.is_relaxable(), "a `/` clause is NOT relaxable");
         match v {
@@ -536,9 +537,10 @@ mod tests {
             RelaxVerdict::Relaxable => unreachable!(),
         }
 
-        let rem =
-            parse_one("fn g(n: u64) -> u64\n  ! pure
-  requires true\n  ensures result == n % 2\n{ n }\n");
+        let rem = parse_one(
+            "fn g(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n % 2\n{ n }\n",
+        );
         assert!(
             !classify_fn(fn_item(&rem, "g")).is_relaxable(),
             "`%` rejected"
@@ -579,8 +581,10 @@ mod tests {
     // relaxable: a `≠` of polynomial terms.
     #[test]
     fn relaxable_admits_n_squared_ne_two() {
-        let p = parse_one("fn sq(n: u64) -> u64\n  ! pure
-  requires true\n  ensures n * n != 2\n{ n }\n");
+        let p = parse_one(
+            "fn sq(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
+        );
         let f = fn_item(&p, "sq");
         assert_eq!(classify_fn(f), RelaxVerdict::Relaxable);
         // It renders to a QF_NRA query negating `n*n != 2` → `(= (* n n) 2.0)`.
@@ -599,8 +603,10 @@ mod tests {
     // Counterexample).
     #[test]
     fn integrality_check_n_squared_ne_two_is_real_only() {
-        let p = parse_one("fn sq(n: u64) -> u64\n  ! pure
-  requires true\n  ensures n * n != 2\n{ n }\n");
+        let p = parse_one(
+            "fn sq(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
+        );
         let f = fn_item(&p, "sq");
         for n in -1..=3i128 {
             let mut a = BTreeMap::new();

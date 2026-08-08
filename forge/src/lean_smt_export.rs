@@ -1164,7 +1164,10 @@ info: 'thermite_valid_example' depends on axioms: [propext,\n\
         assert!(evidence.checker.contains("omega"));
         assert!(evidence.solver_query_sha256.is_none());
 
-        let false_clause = ens_expr("fn p(a: u64) -> u64 ! pure requires true ensures a < a { a }", "p");
+        let false_clause = ens_expr(
+            "fn p(a: u64) -> u64 ! pure requires true ensures a < a { a }",
+            "p",
+        );
         let invalid = reconstruct_validity(
             &SmtValidityObligation {
                 item: "lia_false".to_string(),

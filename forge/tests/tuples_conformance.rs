@@ -128,8 +128,10 @@ fn tuple_type_disambiguation_unit_grouping_tuple() {
     }
 
     // The unit `()` return stays `Type::Unit` (the disambiguation did not break it).
-    let unit = thermite_syntax::parse("fn log() -> ()\n  ! pure
-  requires true\n  ensures true\n{ }\n");
+    let unit = thermite_syntax::parse(
+        "fn log() -> ()\n  ! pure
+  requires true\n  ensures true\n{ }\n",
+    );
     assert!(
         unit.is_clean(),
         "`()` unit return still parses: {:?}",

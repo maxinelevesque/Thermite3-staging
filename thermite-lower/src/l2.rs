@@ -613,9 +613,10 @@ mod tests {
     // inference, so it is `Unsupported`.
     #[test]
     fn unlowerable_is_err_not_panic() {
-        let p =
-            parse("fn f(p: &u32) -> u32\n  ! pure
-  requires true\n  ensures result == 0\n{\n  0\n}\n");
+        let p = parse(
+            "fn f(p: &u32) -> u32\n  ! pure
+  requires true\n  ensures result == 0\n{\n  0\n}\n",
+        );
         let r = lower_l2(&p);
         assert!(
             matches!(r, Err(LowerError::Unsupported { .. })),

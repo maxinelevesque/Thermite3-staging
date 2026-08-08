@@ -166,7 +166,9 @@ fn proof_obligation_clause_and_hole_addresses() {
         AddrKind::Forge
     );
     assert_eq!(
-        resolve(&result.program, "f.proof.ensures#2.?p3").unwrap().kind,
+        resolve(&result.program, "f.proof.ensures#2.?p3")
+            .unwrap()
+            .kind,
         AddrKind::ProofHole
     );
 }

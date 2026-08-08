@@ -257,8 +257,7 @@ fn unknown_combinator_is_err_not_panic() {
     // calls an unregistered name shaped like a combinator. Easiest: parse a
     // program whose req is `bogus_comb(xs)` — but the corpus combinators are
     // registry-checked at #2; here we assert the API surface returns Result.
-    let src =
-        "fn f(xs: &[u32]) -> u64\n  ! pure
+    let src = "fn f(xs: &[u32]) -> u64\n  ! pure
   requires notacombinator(xs)\n  ensures result == 0\n{ 0 }\n";
     let parsed = thermite_syntax::parse(src);
     // The lowerer treats `notacombinator` as an ordinary call (it is only an

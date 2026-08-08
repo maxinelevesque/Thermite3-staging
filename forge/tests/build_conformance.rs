@@ -330,8 +330,7 @@ fn ens_violation_fires_at_runtime() {
     if !linux_build_run_supported("ens_violation_fires_at_runtime") {
         return;
     }
-    let prog =
-        "fn bad(x: u32) -> u32\n  ! pure
+    let prog = "fn bad(x: u32) -> u32\n  ! pure
   requires x < 100\n  ensures result == x\n{\n  x + 1\n}\n";
     let fixture = write_fixture("bad", prog);
     let (ok, stdout, stderr) =

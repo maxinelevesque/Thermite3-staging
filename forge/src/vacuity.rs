@@ -572,7 +572,9 @@ mod tests {
     // REQ-2: a `result` buried in a nested call/method-call is found (not (b)).
     #[test]
     fn nested_result_mention_passes_b() {
-        let f = fn_item("fn f(xs: &[u32]) -> u64 ! pure requires true ensures result == helper(xs) { 0 }");
+        let f = fn_item(
+            "fn f(xs: &[u32]) -> u64 ! pure requires true ensures result == helper(xs) { 0 }",
+        );
         assert_ne!(cause_tag(&f).as_deref(), Some("EnsOmitsResult"));
     }
 

@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 9ea2dc22080bb66ae2401858743234e95523404bad99df2b8adb56f31f7292c3 (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: b695da1b202c0b04c467c1553aaefece94978a3ab23709445ffbf68d7198ed6a, previously (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered))
+audited-content-sha256: 7a9c67baf70ac999571f97094080c131e989e62a7aa339614af346d86806cd99 (re-pinned 2026-08-08 for rustfmt only: migrating `req`/`ens`/`fx` to `requires`/`ensures`/`!` lengthened call sites past the width, so rustfmt re-wrapped them and added trailing commas. No governed file changed meaning; the wrapped lines are `parse_program(...)`-style test fixtures. prior: 9ea2dc22080bb66ae2401858743234e95523404bad99df2b8adb56f31f7292c3, previously (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: b695da1b202c0b04c467c1553aaefece94978a3ab23709445ffbf68d7198ed6a, previously (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)))
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9

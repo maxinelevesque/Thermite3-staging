@@ -1295,7 +1295,8 @@ mod tests {
     //   - family 3: one IntLit `1` (1->2, 1->0).
     #[test]
     fn frozen_set_and_order_for_small_fn() {
-        let f = parse_fn("fn f(x: u32) -> u32 ! pure requires x < 10 ensures result == x { x + 1 }");
+        let f =
+            parse_fn("fn f(x: u32) -> u32 ! pure requires x < 10 ensures result == x { x + 1 }");
         let mutants = generate(&f, 0, &[]);
         let descs: Vec<&str> = mutants.iter().map(|m| m.desc.as_str()).collect();
         assert_eq!(
@@ -1498,7 +1499,9 @@ mod tests {
     // REQ-1 (OQ-3): an `Option` return type's early-return mutant is `return None`.
     #[test]
     fn option_return_early_return_is_none() {
-        let f = parse_fn("fn g(x: u32) -> Option<usize> ! pure requires x < 10 ensures true { Some(0) }");
+        let f = parse_fn(
+            "fn g(x: u32) -> Option<usize> ! pure requires x < 10 ensures true { Some(0) }",
+        );
         let mutants = generate(&f, 0, &[]);
         assert!(
             mutants
@@ -1559,7 +1562,8 @@ mod tests {
     // body differs.
     #[test]
     fn mutant_keeps_contract_changes_only_body() {
-        let f = parse_fn("fn f(x: u32) -> u32 ! pure requires x < 10 ensures result == x { x + 1 }");
+        let f =
+            parse_fn("fn f(x: u32) -> u32 ! pure requires x < 10 ensures result == x { x + 1 }");
         let mutants = generate(&f, 0, &[]);
         for m in &mutants {
             assert_eq!(m.item.contract, f.contract, "contract untouched");

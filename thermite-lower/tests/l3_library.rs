@@ -64,7 +64,8 @@ fn kernel_library_is_no_std_and_adds_alloc_only_when_needed() {
     assert!(!pure.contains("use vstd::"));
     assert!(!pure.contains("fn main"));
 
-    let allocating = parse("fn keep(s: String) -> String ! alloc requires true ensures result == s { s }");
+    let allocating =
+        parse("fn keep(s: String) -> String ! alloc requires true ensures result == s { s }");
     let allocating_export = [L3Export {
         source_name: "keep".to_string(),
         public_name: "keep".to_string(),
