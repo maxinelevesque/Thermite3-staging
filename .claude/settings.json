@@ -83,22 +83,6 @@
           }
         ],
         "matcher": "startup|resume"
-      },
-      {
-        "hooks": [
-          {
-            "command": "day hook session-start",
-            "type": "command"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "command": "day hook session-notice",
-            "type": "command"
-          }
-        ]
       }
     ],
     "UserPromptSubmit": [
