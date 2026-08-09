@@ -818,7 +818,7 @@ fn registry_is_recursive(called: &[String], decls: &BTreeMap<String, SpecFnItem>
     fn callees(s: &SpecFnItem, decls: &BTreeMap<String, SpecFnItem>) -> Vec<String> {
         let mut out = Vec::new();
         collect_block_calls(&s.body, decls, &mut out);
-        collect_expr_calls(&s.dec.expr, decls, &mut out);
+        collect_expr_calls(&s.measures.expr, decls, &mut out);
         out
     }
     // DFS with a "currently on the stack" set → a back edge is a cycle.
@@ -2341,7 +2341,7 @@ fn export_item_with_mode(
                 Some(f.contract.requires.expr.clone()),
                 f.contract.ensures.iter().map(|c| c.expr.clone()).collect(),
                 body,
-                f.dec.as_ref().map(|c| c.expr.clone()),
+                f.measures.as_ref().map(|c| c.expr.clone()),
                 f.params.clone(),
             )
         }
@@ -2371,7 +2371,13 @@ fn export_item_with_mode(
                 lhs: Box::new(Expr::Path(vec!["result".to_string()])),
                 rhs: Box::new(body.clone()),
             }];
-            (None, ens, body, Some(s.dec.expr.clone()), s.params.clone())
+            (
+                None,
+                ens,
+                body,
+                Some(s.measures.expr.clone()),
+                s.params.clone(),
+            )
         }
         Item::Struct(_) | Item::Enum(_) => {
             return Err(ExportRefusal::OutOfFragment(
@@ -2432,7 +2438,7 @@ fn export_item_with_mode(
         if let Some(d) = decls.get(&n) {
             let mut sub = Vec::new();
             collect_all_block_call_names(&d.body, &mut sub);
-            collect_all_call_names(&d.dec.expr, &mut sub);
+            collect_all_call_names(&d.measures.expr, &mut sub);
             for c in sub {
                 if present.insert(c.clone()) {
                     worklist.push(c);
@@ -2583,7 +2589,7 @@ fn export_straight_line_body(
     // or `Expr.boolVar "result"` (bool) — the spine's bool-result read.
     let req = f.contract.requires.expr.clone();
     let ens: Vec<Expr> = f.contract.ensures.iter().map(|c| c.expr.clone()).collect();
-    let dec = f.dec.as_ref().map(|c| c.expr.clone());
+    let dec = f.measures.as_ref().map(|c| c.expr.clone());
     let params = f.params.clone();
 
     // The contract-side env coercion frame (sorts free names: slice→seqVar, etc.).
@@ -2607,7 +2613,7 @@ fn export_straight_line_body(
         if let Some(d) = decls.get(&n) {
             let mut sub = Vec::new();
             collect_all_block_call_names(&d.body, &mut sub);
-            collect_all_call_names(&d.dec.expr, &mut sub);
+            collect_all_call_names(&d.measures.expr, &mut sub);
             for c in sub {
                 if present.insert(c.clone()) {
                     worklist.push(c);
@@ -2861,7 +2867,7 @@ fn recognize_while_body(body_block: &Block) -> Result<WhileBodyShape<'_>, Export
         prefix,
         cond,
         loop_body: &loop_node.body,
-        dec: &loop_node.dec.expr,
+        dec: &loop_node.measures.expr,
         invs: &loop_node.invs,
         tail,
     })
@@ -3137,7 +3143,7 @@ fn export_while_body(
         if let Some(d) = decls.get(&n) {
             let mut sub = Vec::new();
             collect_all_block_call_names(&d.body, &mut sub);
-            collect_all_call_names(&d.dec.expr, &mut sub);
+            collect_all_call_names(&d.measures.expr, &mut sub);
             for c in sub {
                 if present.insert(c.clone()) {
                     worklist.push(c);

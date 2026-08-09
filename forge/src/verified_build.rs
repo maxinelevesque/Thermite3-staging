@@ -1597,7 +1597,7 @@ fn planned_node_parts(item: &Item) -> PlannedNodeParts {
                 .as_ref()
                 .map(|body| sha256(format!("{body:#?}").as_bytes())),
             contract_sha256: Some(sha256(
-                format!("{:#?}:{:#?}", function.contract, function.dec).as_bytes(),
+                format!("{:#?}:{:#?}", function.contract, function.measures).as_bytes(),
             )),
             effects_sha256: Some(sha256(
                 format!("{:#?}", function.contract.effects).as_bytes(),
@@ -1607,7 +1607,7 @@ fn planned_node_parts(item: &Item) -> PlannedNodeParts {
             source_start: Some(function.span.start as u64),
             source_end: Some(function.span.end() as u64),
             body_sha256: Some(sha256(format!("{:#?}", function.body).as_bytes())),
-            contract_sha256: Some(sha256(format!("{:#?}", function.dec).as_bytes())),
+            contract_sha256: Some(sha256(format!("{:#?}", function.measures).as_bytes())),
             effects_sha256: Some(sha256(b"spec-pure")),
         },
         Item::Struct(item) => PlannedNodeParts {
@@ -1615,7 +1615,7 @@ fn planned_node_parts(item: &Item) -> PlannedNodeParts {
             source_end: Some(item.span.end() as u64),
             body_sha256: None,
             contract_sha256: item
-                .inv
+                .keeps
                 .as_ref()
                 .map(|inv| sha256(format!("{inv:#?}").as_bytes())),
             effects_sha256: None,
@@ -2123,7 +2123,7 @@ fn expected_contract_loops(
                 expect_tv(
                     expected,
                     "contract",
-                    format!("{function}.loop#{current}.dec"),
+                    format!("{function}.loop#{current}.measures"),
                 );
                 expected_contract_loops(expected, function, &node.body, loop_index);
             }

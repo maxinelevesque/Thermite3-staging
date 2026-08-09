@@ -233,7 +233,7 @@ fn invariant_struct_names(program: &Program) -> Vec<&str> {
         .items
         .iter()
         .filter_map(|item| match item {
-            Item::Struct(s) if s.inv.is_some() => Some(s.name.as_str()),
+            Item::Struct(s) if s.keeps.is_some() => Some(s.name.as_str()),
             _ => None,
         })
         .collect()
@@ -282,7 +282,7 @@ fn lower_struct_l1(s: &StructItem) -> Result<String, LowerError> {
         writeln!(out, "    {}: {ty},", field.name).ok();
     }
     out.push_str("}\n");
-    if let Some(inv) = &s.inv {
+    if let Some(inv) = &s.keeps {
         let field_names: Vec<&str> = s.fields.iter().map(|f| f.name.as_str()).collect();
         let body = lower_inv_expr_l1(&inv.expr, &field_names, 0, s.span)?;
         writeln!(out, "\nimpl {} {{", s.name).ok();
@@ -464,7 +464,7 @@ pub(crate) fn emit_combinator_l1_defs(program: &Program) -> Result<String, Lower
                 }
             }
             Item::SpecFn(s) => {
-                collect_combinators_in_expr(&s.dec.expr, s.span, &mut names);
+                collect_combinators_in_expr(&s.measures.expr, s.span, &mut names);
                 collect_combinators_in_block_specs(&s.body, s.span, &mut names);
             }
             // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum`
@@ -601,7 +601,7 @@ fn collect_combinators_in_block_specs(block: &Block, span: Span, acc: &mut Vec<(
                 for inv in &l.invs {
                     collect_combinators_in_expr(&inv.expr, span, acc);
                 }
-                collect_combinators_in_expr(&l.dec.expr, span, acc);
+                collect_combinators_in_expr(&l.measures.expr, span, acc);
                 collect_combinators_in_block_specs(&l.body, span, acc);
             }
             Stmt::If { then, else_, .. } => {

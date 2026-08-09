@@ -365,8 +365,8 @@ fn tv_block_loops(
                     );
                 }
                 tv_clause(
-                    &node.dec,
-                    &format!("{}.loop#{}.dec", f.name, this),
+                    &node.measures,
+                    &format!("{}.loop#{}.measures", f.name, this),
                     f,
                     nat_fns,
                     base_frame,

@@ -372,7 +372,7 @@ fn spec_fn_edges(spec_decls: &BTreeMap<&str, &SpecFnItem>) -> BTreeMap<String, B
         .map(|(name, decl)| {
             let mut callees: BTreeSet<String> = BTreeSet::new();
             crate::check::collect_block_spec_fn_calls(&decl.body, spec_decls, &mut callees);
-            crate::check::collect_expr_spec_fn_calls(&decl.dec.expr, spec_decls, &mut callees);
+            crate::check::collect_expr_spec_fn_calls(&decl.measures.expr, spec_decls, &mut callees);
             ((*name).to_string(), callees)
         })
         .collect()
@@ -528,7 +528,7 @@ mod tests {
                 ensures: Vec::new(),
                 effects: thermite_syntax::EffectRow::Pure,
             },
-            dec: None,
+            measures: None,
             body: Some(thermite_syntax::Block {
                 stmts: Vec::new(),
                 tail: None,

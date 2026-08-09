@@ -104,7 +104,7 @@ pub struct SpecFnDecl {
     pub signature: String,
     /// The `dec` decreases-measure clause text (verbatim `Clause.text`), e.g.
     /// `xs.len()`. The well-formedness measure, read from the declaration.
-    pub dec: String,
+    pub measures: String,
 }
 
 impl SpecFnDecl {
@@ -121,7 +121,7 @@ impl SpecFnDecl {
                 render_params(&s.params),
                 render_type(&s.ret),
             ),
-            dec: s.dec.text.clone(),
+            measures: s.measures.text.clone(),
         }
     }
 }
@@ -692,7 +692,7 @@ fn collect_stmt_callee_names(
             for inv in &loop_node.invs {
                 collect_callee_names(&inv.expr, out);
             }
-            collect_callee_names(&loop_node.dec.expr, out);
+            collect_callee_names(&loop_node.measures.expr, out);
             collect_block_callee_names(&loop_node.body, out);
         }
         Stmt::Expr(e) => collect_callee_names(e, out),
@@ -961,7 +961,7 @@ mod tests {
         let decl = &sum.spec_layer.referenced_spec_fns[0];
         assert_eq!(decl.name, "spec_sum");
         assert_eq!(decl.signature, "spec fn spec_sum(xs: &[u32]) -> u64");
-        assert_eq!(decl.dec, "xs.len()");
+        assert_eq!(decl.measures, "xs.len()");
 
         // No body tokens anywhere in the serialized artifact (R-DEFER-9 / the
         // "no bodies" rule): sum's accumulator loop + spec_sum's match arms.

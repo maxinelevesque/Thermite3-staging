@@ -489,7 +489,7 @@ fn collect_verified_calls(item: &Item) -> Vec<VerifiedCall> {
             for ens in &f.contract.ensures {
                 collect_verified_expr_calls(&ens.expr, &mut calls);
             }
-            if let Some(dec) = &f.dec {
+            if let Some(dec) = &f.measures {
                 collect_verified_expr_calls(&dec.expr, &mut calls);
             }
             if let Some(body) = &f.body {
@@ -497,11 +497,11 @@ fn collect_verified_calls(item: &Item) -> Vec<VerifiedCall> {
             }
         }
         Item::SpecFn(s) => {
-            collect_verified_expr_calls(&s.dec.expr, &mut calls);
+            collect_verified_expr_calls(&s.measures.expr, &mut calls);
             collect_verified_block_calls(&s.body, &mut calls);
         }
         Item::Struct(s) => {
-            if let Some(inv) = &s.inv {
+            if let Some(inv) = &s.keeps {
                 collect_verified_expr_calls(&inv.expr, &mut calls);
             }
         }
@@ -534,7 +534,7 @@ fn collect_verified_block_calls(block: &Block, calls: &mut Vec<VerifiedCall>) {
                 for inv in &node.invs {
                     collect_verified_expr_calls(&inv.expr, calls);
                 }
-                collect_verified_expr_calls(&node.dec.expr, calls);
+                collect_verified_expr_calls(&node.measures.expr, calls);
                 if let thermite_syntax::LoopKind::While(cond) = &node.kind {
                     collect_verified_expr_calls(cond, calls);
                 }
@@ -686,7 +686,7 @@ fn walk_stmt(stmt: &Stmt, in_file: &BTreeSet<&str>, out: &mut Vec<String>) {
             for inv in &node.invs {
                 walk_expr(&inv.expr, in_file, out);
             }
-            walk_expr(&node.dec.expr, in_file, out);
+            walk_expr(&node.measures.expr, in_file, out);
             if let thermite_syntax::LoopKind::While(cond) = &node.kind {
                 walk_expr(cond, in_file, out);
             }

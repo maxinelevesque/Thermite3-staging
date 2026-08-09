@@ -677,7 +677,7 @@ pub fn check_file_with_options(
         //     is why the single-ADT corpus never exercised the gap.
         // This is the same under-approximated-closure class the proof-backends
         // build-blocker note records for `reachable_spec_fn_deps` walking
-        // `decl.body` without `decl.dec`.
+        // `decl.body` without `decl.measures`.
         //
         // For a checked `Item::SpecFn` the referrers are its own reachable spec-fn
         // closure alone (which includes the spec fn itself) — #71's distinct
@@ -1669,7 +1669,7 @@ fn bv_check(base: Vec<Certificate>, program: &Program, include_epr_only: bool) -
             }
             Some(Item::Struct(s)) => {
                 let tags = s
-                    .inv
+                    .keeps
                     .as_ref()
                     .and_then(|inv| inv.bv)
                     .map(|tag| vec![(format!("{}::inv#0", s.name), tag)])
@@ -1715,7 +1715,7 @@ fn lemma_has_bv_tag(l: &thermite_syntax::LemmaItem) -> bool {
 pub fn program_has_bv_tag(program: &Program) -> bool {
     program.items.iter().any(|item| match item {
         Item::Fn(f) => fn_has_bv_tag(f),
-        Item::Struct(s) => s.inv.as_ref().is_some_and(|inv| inv.bv.is_some()),
+        Item::Struct(s) => s.keeps.as_ref().is_some_and(|inv| inv.bv.is_some()),
         Item::Forge(thermite_syntax::ForgeItem::Lemma(l)) => lemma_has_bv_tag(l),
         _ => false,
     })
@@ -4859,7 +4859,7 @@ fn mutual_recursion_cycle_fns(program: &Program) -> std::collections::BTreeSet<S
         let cycle_missing_dec = std::iter::once(f.name.clone())
             .chain(scc)
             .filter_map(|name| fns.get(name.as_str()).copied())
-            .any(|m| !fn_is_diverge(m) && m.dec.is_none());
+            .any(|m| !fn_is_diverge(m) && m.measures.is_none());
         if cycle_missing_dec {
             members.insert(f.name.clone());
         }
@@ -5055,7 +5055,7 @@ pub(crate) fn contract_obligation(program: &Program, item: &Item) -> crate::obli
 ///
 /// Why the existing `reachable_spec_fn_deps` is not enough (the #226 finding).
 /// `reachable_spec_fn_deps` (the #71 weaving helper) seeds at a start spec-fn and
-/// its closure step walks `decl.body` only — it never walks `decl.dec`, and for an
+/// its closure step walks `decl.body` only — it never walks `decl.measures`, and for an
 /// exec `fn` it does not even seed from the contract clauses. The §4 hard gate /
 /// REQ-1.2 require the full expression-position closure: the seed is the spec-fn
 /// calls in `req ∪ ens ∪ body ∪ dec(item)` and the closure step walks each reached
@@ -5086,7 +5086,7 @@ fn reachable_spec_fn_names_full(program: &Program, f: &thermite_syntax::FnItem) 
     if let Some(body) = &f.body {
         collect_block_spec_fn_calls(body, &spec_decls, &mut seed);
     }
-    if let Some(dec) = &f.dec {
+    if let Some(dec) = &f.measures {
         collect_expr_spec_fn_calls(&dec.expr, &spec_decls, &mut seed);
     }
 
@@ -5138,7 +5138,7 @@ fn reachable_spec_fn_names_full_spec(
         .collect();
     let mut seed: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     collect_block_spec_fn_calls(&s.body, &spec_decls, &mut seed);
-    collect_expr_spec_fn_calls(&s.dec.expr, &spec_decls, &mut seed);
+    collect_expr_spec_fn_calls(&s.measures.expr, &spec_decls, &mut seed);
     reachable_spec_fn_names_from_seed(&spec_decls, seed, program)
 }
 
@@ -5163,7 +5163,7 @@ fn reachable_spec_fn_names_from_seed(
             let mut callees: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
             // The closure step walks `body ∪ dec` (the #226 fix — not body-only).
             collect_block_spec_fn_calls(&decl.body, spec_decls, &mut callees);
-            collect_expr_spec_fn_calls(&decl.dec.expr, spec_decls, &mut callees);
+            collect_expr_spec_fn_calls(&decl.measures.expr, spec_decls, &mut callees);
             for callee in callees {
                 if !reached.contains(&callee) {
                     worklist.push(callee);
@@ -5227,7 +5227,7 @@ fn collect_stmt_spec_fn_calls(
             for inv in &node.invs {
                 collect_expr_spec_fn_calls(&inv.expr, spec_decls, out);
             }
-            collect_expr_spec_fn_calls(&node.dec.expr, spec_decls, out);
+            collect_expr_spec_fn_calls(&node.measures.expr, spec_decls, out);
             if let thermite_syntax::LoopKind::While(cond) = &node.kind {
                 collect_expr_spec_fn_calls(cond, spec_decls, out);
             }
@@ -5443,7 +5443,7 @@ fn collect_item_adt_refs(
                 collect_type_adt_refs(&p.ty, adt_decls, out);
             }
             collect_type_adt_refs(&s.ret, adt_decls, out);
-            collect_expr_adt_refs(&s.dec.expr, adt_decls, out);
+            collect_expr_adt_refs(&s.measures.expr, adt_decls, out);
             collect_block_adt_refs(&s.body, adt_decls, out);
         }
         // A struct/enum decl's own field types are followed by the type-graph
@@ -5723,7 +5723,7 @@ fn collect_stmt_adt_refs(
             for inv in &node.invs {
                 collect_expr_adt_refs(&inv.expr, adt_decls, out);
             }
-            collect_expr_adt_refs(&node.dec.expr, adt_decls, out);
+            collect_expr_adt_refs(&node.measures.expr, adt_decls, out);
             if let thermite_syntax::LoopKind::While(cond) = &node.kind {
                 collect_expr_adt_refs(cond, adt_decls, out);
             }

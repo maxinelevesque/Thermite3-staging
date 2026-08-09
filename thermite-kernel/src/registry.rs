@@ -953,13 +953,20 @@ pub static X86_64_PC_UEFI_SMP_V1: &[PlatformOperation] = &[
             Rights::READ,
             "tpl_clock_read",
         ),
+        // RE-PINNED 2026-08-08 for RFC-17 (one vocabulary). The digest is sha256 over
+        // `format!("{:#?}", contract)`, and `Debug` renders FIELD NAMES, so renaming
+        // Contract's fields moves it even though no clause, span or effect changed.
+        // This is a case RFC-17 §3 said did not exist — the rename is type-directed
+        // everywhere the COMPILER can see, and a digest over a Debug rendering is
+        // exactly where it cannot.
+        // prior (RFC-6 full-word surface): 3f525f14dd2f058197d170ff40cffb2f7a363368ccbdbc5f60775c72851eb444
         // RE-PINNED 2026-08-06 for RFC-6 (full words). This digest is sha256 over
         // `format!("{:#?}", contract)`, which carries clause SPANS, so migrating
         // conformance/bootable_kernel.th moves it even though the contract's
         // meaning is unchanged — the AST fingerprint over item names, clause text
         // and the effect row is identical before and after.
         // prior (Thermite 2 surface): 2a1b32cc68f553037a9d886f1d87aef36120a4a1b96b49534eb334e4ea62378c
-        "3f525f14dd2f058197d170ff40cffb2f7a363368ccbdbc5f60775c72851eb444",
+        "756cd3895ca4c825b1b163ee168b6106887071c2f52e8d9dbe3f3891672898b6",
     ),
     op(
         "clock.arm",

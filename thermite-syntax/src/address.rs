@@ -286,7 +286,7 @@ fn emit_loop(loop_addr: &str, lp: &LoopNode, out: &mut Vec<AddressEntry>) {
         addr: format!("{loop_addr}.measures"),
         kind: AddrKind::Dec,
         surface_keyword: None,
-        text: Some(lp.dec.text.clone()),
+        text: Some(lp.measures.text.clone()),
     });
 }
 

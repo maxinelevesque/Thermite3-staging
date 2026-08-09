@@ -255,7 +255,7 @@ pub struct LoopObligations {
     pub cond: String,
     /// The conjoined loop `inv` over the free cells — the preservation obligation's
     /// `requires inv` guard and (negated-cond conjunct) the exit characterization.
-    pub inv: String,
+    pub keeps: String,
     /// Preservation (`loop-tv.md` REQ-2.2): per-cell, the single-iteration stepped
     /// value — the shipped [`body_ref_state`] step of the loop body (the loop body
     /// is a straight-line `Block`). `step_cells[i]` is the closed form cell `i` holds
@@ -397,7 +397,7 @@ pub fn loop_ref_obligations(
         cells,
         entry_pred,
         cond,
-        inv,
+        keeps: inv,
         step_cells,
         inv_at_step,
     })
@@ -1149,7 +1149,7 @@ mod tests {
                 span,
                 bv: None,
             }],
-            dec: Clause {
+            measures: Clause {
                 expr: int(0),
                 text: "0".to_string(),
                 span,

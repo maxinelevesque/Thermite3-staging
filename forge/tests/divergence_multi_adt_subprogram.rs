@@ -22,7 +22,7 @@
 //! One ADT masks all of it: the only ADT is the checked item, which the ADT arm
 //! pushes itself, so the decl is present by construction. This is the same
 //! under-approximated-closure class `.design/verified/proof-backends.md` records
-//! for `reachable_spec_fn_deps` walking `decl.body` without `decl.dec`.
+//! for `reachable_spec_fn_deps` walking `decl.body` without `decl.measures`.
 //!
 //! The authority (R-CHAR-3): expected level L3 is the design contract —
 //! `.design/forge/check.md` REQ-5 (L3 iff verus reports 0 errors) +

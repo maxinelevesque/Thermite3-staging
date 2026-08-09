@@ -1123,7 +1123,7 @@ fn walk_block(block: &Block, f: &mut impl FnMut(&Expr)) {
                 for inv in &loop_.invs {
                     walk_expr(&inv.expr, f);
                 }
-                walk_expr(&loop_.dec.expr, f);
+                walk_expr(&loop_.measures.expr, f);
                 walk_block(&loop_.body, f);
             }
         }
@@ -1550,7 +1550,7 @@ fn write_stmt(stmt: &Stmt, out: &mut String) {
                 write_expr(&inv.expr, out);
             }
             out.push(' ');
-            write_expr(&loop_.dec.expr, out);
+            write_expr(&loop_.measures.expr, out);
             out.push(' ');
             write_block(&loop_.body, out);
             out.push(')');

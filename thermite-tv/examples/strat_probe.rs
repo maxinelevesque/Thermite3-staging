@@ -224,7 +224,7 @@ fn corpus_instances() -> Vec<Instance> {
                 rhs: "needle".into(),
             }),
         },
-        // inv forall_below(haystack, lo, |x| x < needle)  — loop#1.inv#2
+        // inv forall_below(haystack, lo, |x| x < needle)  — loop#1.keeps#2
         Instance {
             shape: "forall_below".into(),
             source: "binary_search.loop#1.keeps#2".into(),
@@ -238,7 +238,7 @@ fn corpus_instances() -> Vec<Instance> {
                 rhs: "needle".into(),
             }),
         },
-        // inv forall_from(haystack, hi, |x| x > needle)  — loop#1.inv#3
+        // inv forall_from(haystack, hi, |x| x > needle)  — loop#1.keeps#3
         Instance {
             shape: "forall_from".into(),
             source: "binary_search.loop#1.keeps#3".into(),

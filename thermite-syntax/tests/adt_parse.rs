@@ -46,7 +46,7 @@ fn bank_account_parses_struct_with_inv_and_struct_lit() {
     assert_eq!(s.fields[0].ty, Type::Prim(PrimType::U64), "balance: u64");
     // The `inv` type-invariant clause is present with the verbatim text.
     let inv: &Clause = s
-        .inv
+        .keeps
         .as_ref()
         .expect("Account carries inv: Some(_) (REQ-1)");
     assert_eq!(
@@ -274,7 +274,7 @@ fn list_sum_parses_recursive_box_enum_and_deref() {
     assert_eq!(sf.name, "sum_list");
     assert_eq!(sf.params.len(), 1);
     assert_eq!(sf.params[0].name, "l");
-    assert_eq!(sf.dec.text, "l", "dec l (the datatype value)");
+    assert_eq!(sf.measures.text, "l", "dec l (the datatype value)");
 
     let arms = match sf.body.tail.as_deref() {
         Some(Expr::Match { scrutinee, arms }) => {

@@ -932,7 +932,7 @@ fn lower_with_profile(
         .items
         .iter()
         .filter_map(|item| match item {
-            Item::Struct(s) if s.inv.is_some() => Some(s.name.as_str()),
+            Item::Struct(s) if s.keeps.is_some() => Some(s.name.as_str()),
             _ => None,
         })
         .collect();
@@ -1232,7 +1232,7 @@ fn lower_struct(
     // struct without an invariant is a plain `pub struct` (no predicate, nothing
     // to thread — the OQ-3 threading in `lower_fn_signature` keys on `inv_structs`
     // which is exactly the invariant-bearing set).
-    if let Some(inv) = &s.inv {
+    if let Some(inv) = &s.keeps {
         let field_names: Vec<&str> = s.fields.iter().map(|f| f.name.as_str()).collect();
         // The subset of fields whose type reaches `String` (REQ-4): a `String`
         // field's `<field>.len()` / `<field>.byte_at(i)` inside the spec-position
@@ -1791,7 +1791,7 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
                 }
             }
             Item::SpecFn(s) => {
-                collect_combinators_in_expr(&s.dec.expr, s.span, &mut names);
+                collect_combinators_in_expr(&s.measures.expr, s.span, &mut names);
                 collect_combinators_in_block_specs(&s.body, s.span, &mut names);
             }
             // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum`
@@ -1946,7 +1946,7 @@ fn collect_combinators_in_block_specs(block: &Block, span: Span, acc: &mut Vec<(
                 for inv in &l.invs {
                     collect_combinators_in_expr(&inv.expr, span, acc);
                 }
-                collect_combinators_in_expr(&l.dec.expr, span, acc);
+                collect_combinators_in_expr(&l.measures.expr, span, acc);
                 collect_combinators_in_block_specs(&l.body, span, acc);
             }
             Stmt::If { then, else_, .. } => {
@@ -2649,7 +2649,7 @@ fn lower_spec_fn(
         write!(
             out,
             ") -> {ret}\n    decreases {}\n",
-            spec_dec(&s.dec, &s.params, spec_fn_param_types)
+            spec_dec(&s.measures, &s.params, spec_fn_param_types)
         )
         .ok();
     }
@@ -3036,7 +3036,7 @@ fn lower_fn(
     // exemption above (`#[verifier::exec_allows_no_decreases_clause]`, #88) lets a
     // diverge fn recurse without a `dec` (L1-capped, partial correctness only);
     // such a fn carries `dec = None`, so this block emits nothing.
-    if let Some(dec) = &f.dec {
+    if let Some(dec) = &f.measures {
         let measure = spec_dec(dec, &f.params, spec_fn_param_types);
         writeln!(out, "    decreases {measure}").ok();
     }
@@ -9452,7 +9452,7 @@ fn lower_loop(
     // still prove termination → L3): the exemption is diverge-only and is not a
     // termination-proof escape hatch.
     if !fn_is_diverge(f) {
-        let dec = lower_expr(&l.dec.expr, spec, 0, f.span)?;
+        let dec = lower_expr(&l.measures.expr, spec, 0, f.span)?;
         writeln!(out, "{ipad}decreases {dec},").map_err(|_| fmt_err())?;
     }
 
@@ -10479,7 +10479,7 @@ mod exec_body_tests {
                 span: zero_span(),
                 bv: None,
             }],
-            dec: Clause {
+            measures: Clause {
                 expr: int(0),
                 text: "0".to_string(),
                 span: zero_span(),

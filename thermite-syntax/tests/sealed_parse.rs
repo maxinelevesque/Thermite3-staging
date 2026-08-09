@@ -50,7 +50,7 @@ fn sealed_with_an_inv_clause_still_parses() {
     };
     assert!(s.sealed);
     assert!(
-        s.inv.is_some(),
+        s.keeps.is_some(),
         "the `inv` clause is preserved under the seal"
     );
 }

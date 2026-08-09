@@ -55,7 +55,7 @@ fn fn_with_body(name: &str, effects: EffectRow, body: Block) -> Item {
             ensures: vec![true_clause()],
             effects,
         },
-        dec: None,
+        measures: None,
         body: Some(body),
         holes: Vec::new(),
         refinements: Vec::new(),
@@ -84,7 +84,7 @@ fn divergence_while_condition_callee_is_checked() {
     let while_loop = Stmt::Loop(LoopNode {
         kind: LoopKind::While(Box::new(call("effectful"))),
         invs: vec![true_clause()],
-        dec: true_clause(),
+        measures: true_clause(),
         body: Block {
             stmts: vec![],
             tail: None,

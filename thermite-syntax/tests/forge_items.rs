@@ -52,7 +52,7 @@ fn prop_fn_parses_to_propfn_item() {
     assert_eq!(p.name, "sorted");
     assert_eq!(p.params.len(), 1);
     assert_eq!(p.params[0].name, "xs");
-    assert!(p.dec.is_none());
+    assert!(p.measures.is_none());
 }
 
 #[test]

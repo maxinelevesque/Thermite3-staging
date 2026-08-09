@@ -935,7 +935,7 @@ impl<'a> Parser<'a> {
             params,
             ret,
             contract,
-            dec,
+            measures: dec,
             body,
             holes,
             refinements,
@@ -965,7 +965,7 @@ impl<'a> Parser<'a> {
             name,
             params,
             ret,
-            dec,
+            measures: dec,
             body,
             span,
         }))
@@ -995,7 +995,7 @@ impl<'a> Parser<'a> {
         Ok(Item::Struct(StructItem {
             name,
             fields,
-            inv,
+            keeps: inv,
             sealed,
             span,
         }))
@@ -1106,7 +1106,7 @@ impl<'a> Parser<'a> {
             name,
             params,
             ret,
-            dec,
+            measures: dec,
             body,
             span,
         })
@@ -2067,7 +2067,7 @@ impl<'a> Parser<'a> {
             Stmt::Loop(LoopNode {
                 kind: LoopKind::While(Box::new(cond)),
                 invs,
-                dec,
+                measures: dec,
                 body,
                 span,
             }),
@@ -2203,7 +2203,7 @@ impl<'a> Parser<'a> {
         Ok(LoopNode {
             kind: LoopKind::While(Box::new(cond)),
             invs,
-            dec,
+            measures: dec,
             body,
             span: start.to(self.prev_span()),
         })
@@ -2384,7 +2384,7 @@ impl<'a> Parser<'a> {
         Ok(LoopNode {
             kind,
             invs,
-            dec,
+            measures: dec,
             body,
             span: start.to(self.prev_span()),
         })
