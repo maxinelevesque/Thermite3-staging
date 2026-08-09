@@ -203,7 +203,7 @@ fn corpus_instances() -> Vec<Instance> {
         // req sorted(haystack)
         Instance {
             shape: "sorted".into(),
-            source: "binary_search.req".into(),
+            source: "binary_search.requires".into(),
             origin: "corpus",
             slice_a: "haystack".into(),
             slice_b: None,
@@ -213,7 +213,7 @@ fn corpus_instances() -> Vec<Instance> {
         // ens match None => forall_in(haystack, |x| x != needle)
         Instance {
             shape: "forall_in".into(),
-            source: "binary_search.ens.None".into(),
+            source: "binary_search.ensures.None".into(),
             origin: "corpus",
             slice_a: "haystack".into(),
             slice_b: None,
@@ -224,10 +224,10 @@ fn corpus_instances() -> Vec<Instance> {
                 rhs: "needle".into(),
             }),
         },
-        // inv forall_below(haystack, lo, |x| x < needle)  — loop#1.inv#2
+        // inv forall_below(haystack, lo, |x| x < needle)  — loop#1.keeps#2
         Instance {
             shape: "forall_below".into(),
-            source: "binary_search.loop#1.inv#2".into(),
+            source: "binary_search.loop#1.keeps#2".into(),
             origin: "corpus",
             slice_a: "haystack".into(),
             slice_b: None,
@@ -238,10 +238,10 @@ fn corpus_instances() -> Vec<Instance> {
                 rhs: "needle".into(),
             }),
         },
-        // inv forall_from(haystack, hi, |x| x > needle)  — loop#1.inv#3
+        // inv forall_from(haystack, hi, |x| x > needle)  — loop#1.keeps#3
         Instance {
             shape: "forall_from".into(),
-            source: "binary_search.loop#1.inv#3".into(),
+            source: "binary_search.loop#1.keeps#3".into(),
             origin: "corpus",
             slice_a: "haystack".into(),
             slice_b: None,
@@ -794,7 +794,7 @@ fn render_readme(pairs: &[Pair], report: &Report) -> String {
     );
     let _ = writeln!(
         s,
-        "(`binary_search.loop#1.inv#2` = `forall_below`, `inv#3` = `forall_from`)"
+        "(`binary_search.loop#1.keeps#2` = `forall_below`, `inv#3` = `forall_from`)"
     );
     let _ = writeln!(
         s,
@@ -802,7 +802,7 @@ fn render_readme(pairs: &[Pair], report: &Report) -> String {
     );
     let _ = writeln!(
         s,
-        "address): `binary_search.req`, `binary_search.ens.None`. Generated"
+        "address): `binary_search.requires`, `binary_search.ensures.None`. Generated"
     );
     let _ = writeln!(
         s,

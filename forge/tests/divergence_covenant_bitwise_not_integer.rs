@@ -101,9 +101,9 @@ fn first_cert(program: &str, name: &str) -> Value {
 /// trailing `witness` block.
 const FLIP_WITH_WITNESS: &str = "\
 fn flipbits(x: u32) -> u32
-    req true
-    ens result == !x
-    fx pure
+    ! pure
+    requires true
+    ensures result == !x
 { !x }
 
 witness { inhabit (5); falsify 20; }
@@ -113,9 +113,9 @@ witness { inhabit (5); falsify 20; }
 /// is Verus-native; ast.md OQ-4 — it certifies under Verus's type-directed `!`).
 const FLIP_NO_WITNESS: &str = "\
 fn flipbits(x: u32) -> u32
-    req true
-    ens result == !x
-    fx pure
+    ! pure
+    requires true
+    ensures result == !x
 { !x }
 ";
 

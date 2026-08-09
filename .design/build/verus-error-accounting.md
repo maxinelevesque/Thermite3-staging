@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 5215750004a77e7900d1680f31d5fbe12f4746d4676d597b1ff9fe2bd942140e (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 58d8755d00550c507a768a19c5c0c7d15d135c78cd4538eb02efe1518210840e)
+audited-content-sha256: 507b82598c08e11659751b02128e847ad747dc28dc70215dfd5826ccf4913b08 (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: 5215750004a77e7900d1680f31d5fbe12f4746d4676d597b1ff9fe2bd942140e, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 58d8755d00550c507a768a19c5c0c7d15d135c78cd4538eb02efe1518210840e))
 decision: preserve verifier counts when present and represent frontend counts as unknown
 issue: github:dollspace-gay/Thermite#111
 governs:

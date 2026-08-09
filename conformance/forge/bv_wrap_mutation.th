@@ -1,6 +1,6 @@
 // bv_wrap_mutation.th — the stage-3 lock 2 (bv-semantics mutation) fixture
 // (`.design/stage3-bv-reconstruction.md` REQ-4 / AC-5). A `@bv`-tagged `fn` whose
-// `ens` clause CONSTRAINS the body via `result`, so the frozen mutation battery has a
+// `ensures` clause CONSTRAINS the body via `result`, so the frozen mutation battery has a
 // real discriminator — and one of its frozen mutants is WRAP-EXPLOITING: equivalent at
 // unbounded semantics (it survives the unbounded check) but distinguishable at width
 // (the bv-semantics mutation run kills it).
@@ -24,7 +24,7 @@
 // (`+` binds tighter than `>=`, so the clause needs no parens — and a `@bvN` clause
 // cannot open with `(`, which the REQ-1 tag grammar reads as the `(nowrap)` modifier.)
 fn succ_ge(x: u64) -> u64
-    req true
-    ens@bv64 result >= x
-    fx pure
+    ! pure
+    requires true
+    ensures@bv64 result >= x
 { x + 0 }

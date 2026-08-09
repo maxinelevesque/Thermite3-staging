@@ -214,7 +214,9 @@ fn confirm_byte_at_bound_is_load_bearing() {
     let fixture = std::env::temp_dir().join(format!("forge_div_str_oob_{}.th", std::process::id()));
     std::fs::write(
         &fixture,
-        "fn oob_byte_at_no_req(s: String) -> u64\n  req true\n  ens result == s.byte_at(0)\n  fx  pure\n{\n  s.byte_at(0)\n}\n\nfn oob_byte_at_offbyone(s: String, i: usize) -> u64\n  req i <= s.len()\n  ens result == s.byte_at(i)\n  fx  pure\n{\n  s.byte_at(i)\n}\n",
+        "fn oob_byte_at_no_req(s: String) -> u64\n  ! pure
+  requires true\n  ensures result == s.byte_at(0)\n{\n  s.byte_at(0)\n}\n\nfn oob_byte_at_offbyone(s: String, i: usize) -> u64\n  ! pure
+  requires i <= s.len()\n  ensures result == s.byte_at(i)\n{\n  s.byte_at(i)\n}\n",
     )
     .expect("write fixture");
     let certs = check_json_file(&fixture);

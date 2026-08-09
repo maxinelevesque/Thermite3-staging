@@ -8,10 +8,10 @@ number.
 
 ```thermite
 fn format(n: u64) -> String
-  req true
-  ens parse_be(result) == n
-  ens result.len() >= 1
-  fx  alloc
+  requires true
+  ensures parse_be(result) == n
+  ensures result.len() >= 1
+  !  alloc
 { n.to_string() }
 ```
 

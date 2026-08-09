@@ -4,7 +4,7 @@
   "parses_ok": false,
   "min_error_count": 1,
   "errors": [
-    { "item": "broken", "kind": "missing-mandatory-clause", "clause": "ens" }
+    { "item": "broken", "kind": "missing-mandatory-clause", "clause": "ensures" }
   ],
   "recovered_items": ["ok"],
   "recovered_item_facts": [

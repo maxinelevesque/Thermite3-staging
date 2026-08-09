@@ -54,7 +54,7 @@ fn lower(src: &str) -> String {
 /// (see the post-fix note above).
 const NONLINEAR_REQ_PROGRAM: &str = "\
 spec fn s_dec(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -64,16 +64,16 @@ spec fn s_dec(n: u32) -> u32
 }
 
 fn sum_b(xs: &[u32], k: u32) -> u64
-  req s_dec(k + 0) == 0 && xs.len() <= 1_000_000
-  ens result <= xs.len() as u64 * u32::MAX as u64
-  fx  pure
+  ! pure
+  requires s_dec(k + 0) == 0 && xs.len() <= 1_000_000
+  ensures result <= xs.len() as u64 * u32::MAX as u64
 {
   let mut acc: u64 = 0;
   let mut i: usize = 0;
   while i < xs.len()
-    inv i <= xs.len()
-    inv acc <= i as u64 * u32::MAX as u64
-    dec xs.len() - i
+    keeps i <= xs.len()
+    keeps acc <= i as u64 * u32::MAX as u64
+    measures xs.len() - i
   {
     acc = acc + xs[i] as u64;
     i = i + 1;
@@ -106,7 +106,7 @@ fn nonlinear_overflow_assert_req_hypothesis_casts_to_declared_param_type() {
 /// struct invariant — the `lower_inv_expr` / `well_formed()` path.
 const STRUCT_INV_PROGRAM: &str = "\
 spec fn s_dec(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -117,7 +117,7 @@ spec fn s_dec(n: u32) -> u32
 
 struct Counter {
   x: u32,
-} inv s_dec(x + 0) == 0
+} keeps s_dec(x + 0) == 0
 ";
 
 #[test]

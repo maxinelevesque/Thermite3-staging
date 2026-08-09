@@ -125,7 +125,7 @@ primary sources.
 | "translation validation as existential→universal" | the TV-vs-verified-compilation axis (Leroy: verified validator ≡ verified compiler) | CORRECTLY uses the field's axis |
 | **"caged quantifier fragment"** (bounded combinators + frozen triggers) | a deliberate decidability/automation lever | **GENUINE EXTENSION** — no direct analogue in the surveyed verified-compilation lit; needs a targeted survey to confirm novelty |
 | **"anti-Goodhart battery"** (mutation-kill-ratio + vacuity/tautology detection) | spec-quality / spec-mutation / vacuity detection | **GENUINE EXTENSION** — no analogue in the surveyed verified-compilation lit |
-| **static effect-rows (`fx`) + seccomp confinement** | algebraic/row effects (Koka/Eff/Frank) + capability/sandbox confinement (seccomp/CHERI) — but the *hybrid* | **GENUINE EXTENSION** — the surveyed effect lit (Iris/separation logic) does not combine static effect typing with runtime syscall confinement |
+| **static effect-rows (`!`) + seccomp confinement** | algebraic/row effects (Koka/Eff/Frank) + capability/sandbox confinement (seccomp/CHERI) — but the *hybrid* | **GENUINE EXTENSION** — the surveyed effect lit (Iris/separation logic) does not combine static effect typing with runtime syscall confinement |
 
 ## Architecture implications (for step 3, epic #169)
 

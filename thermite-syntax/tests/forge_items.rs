@@ -5,7 +5,7 @@
 //! These items are PARSE-only in this increment (their semantic consumers are the
 //! covenant engine 2b, the tactic battery 2c, the proof view 2e, the lemma library
 //! 3); the tests here are their consumers — they assert the parsed AST shape and
-//! the semantic addresses (`f.proof.ens#k`, `?pN`). R-CHAR-3: expected shapes are
+//! the semantic addresses (`f.proof.ensures#k`, `?pN`). R-CHAR-3: expected shapes are
 //! hand-derived from the grammar, not copied from the parser's output. `tests/` is
 //! ungated, so `unwrap`/`panic` are fine.
 
@@ -52,7 +52,7 @@ fn prop_fn_parses_to_propfn_item() {
     assert_eq!(p.name, "sorted");
     assert_eq!(p.params.len(), 1);
     assert_eq!(p.params[0].name, "xs");
-    assert!(p.dec.is_none());
+    assert!(p.measures.is_none());
 }
 
 #[test]
@@ -72,14 +72,14 @@ fn prop_fn_is_addressed_by_name() {
 
 #[test]
 fn lemma_parses_with_req_ens_and_proof_block() {
-    let src = "lemma add_id(a: u64) req true ens a == a proof { omega }";
+    let src = "lemma add_id(a: u64) requires true ensures a == a proof { omega }";
     let forge = single_forge_item(src);
     let ForgeItem::Lemma(l) = forge else {
         panic!("expected a Lemma, got {forge:?}");
     };
     assert_eq!(l.name, "add_id");
     assert_eq!(l.params.len(), 1);
-    assert_eq!(l.ens.len(), 1);
+    assert_eq!(l.ensures.len(), 1);
     // The proof block captures verbatim tactic text (not structurally parsed) and
     // has no open holes here.
     assert_eq!(l.proof.text, "omega");
@@ -88,7 +88,7 @@ fn lemma_parses_with_req_ens_and_proof_block() {
 
 #[test]
 fn lemma_proof_block_captures_proof_holes() {
-    let src = "lemma l(a: u64) req true ens a == a proof { induction a; ?p0 }";
+    let src = "lemma l(a: u64) requires true ensures a == a proof { induction a; ?p0 }";
     let forge = single_forge_item(src);
     let ForgeItem::Lemma(l) = forge else {
         panic!("expected a Lemma, got {forge:?}");
@@ -102,7 +102,7 @@ fn lemma_proof_block_captures_proof_holes() {
 
 #[test]
 fn lemma_proof_hole_is_addressed() {
-    let src = "lemma l(a: u64) req true ens a == a proof { ?p0 }";
+    let src = "lemma l(a: u64) requires true ensures a == a proof { ?p0 }";
     let addrs = address_set(src);
     assert!(addrs.contains(&"l".to_string()), "lemma root: {addrs:?}");
     assert!(
@@ -116,14 +116,14 @@ fn lemma_proof_hole_is_addressed() {
 
 #[test]
 fn lemma_missing_ens_is_a_structured_error() {
-    let src = "lemma l(a: u64) req true proof { omega }";
+    let src = "lemma l(a: u64) requires true proof { omega }";
     let result = parse(src);
     assert!(
         result
             .errors
             .iter()
-            .any(|e| matches!(e, SyntaxError::MissingClause { clause, .. } if clause == "ens")),
-        "expected a MissingClause(ens), got: {:?}",
+            .any(|e| matches!(e, SyntaxError::MissingClause { clause, .. } if clause == "ensures")),
+        "expected a MissingClause(ensures), got: {:?}",
         result.errors
     );
 }
@@ -134,14 +134,14 @@ fn lemma_missing_ens_is_a_structured_error() {
 
 #[test]
 fn proof_item_parses_obligations() {
-    let src = "proof for binary_search { ens#0 by { omega } ens#1 by { nlinarith } }";
+    let src = "proof for binary_search { ensures#0 by { omega } ensures#1 by { nlinarith } }";
     let forge = single_forge_item(src);
     let ForgeItem::Proof(p) = forge else {
         panic!("expected a Proof, got {forge:?}");
     };
     assert_eq!(p.target, "binary_search");
     assert_eq!(p.obligations.len(), 2);
-    assert_eq!(p.obligations[0].clause.keyword, "ens");
+    assert_eq!(p.obligations[0].clause.keyword, "ensures");
     assert_eq!(p.obligations[0].clause.index, Some(0));
     assert_eq!(p.obligations[0].proof.text, "omega");
     assert_eq!(p.obligations[1].clause.index, Some(1));
@@ -150,23 +150,25 @@ fn proof_item_parses_obligations() {
 
 #[test]
 fn proof_obligation_clause_and_hole_addresses() {
-    let src = "proof for f { ens#2 by { ?p3 } }";
+    let src = "proof for f { ensures#2 by { ?p3 } }";
     let addrs = address_set(src);
     assert!(
-        addrs.contains(&"f.proof.ens#2".to_string()),
+        addrs.contains(&"f.proof.ensures#2".to_string()),
         "obligation address: {addrs:?}"
     );
     assert!(
-        addrs.contains(&"f.proof.ens#2.?p3".to_string()),
+        addrs.contains(&"f.proof.ensures#2.?p3".to_string()),
         "proof-hole address: {addrs:?}"
     );
     let result = parse(src);
     assert_eq!(
-        resolve(&result.program, "f.proof.ens#2").unwrap().kind,
+        resolve(&result.program, "f.proof.ensures#2").unwrap().kind,
         AddrKind::Forge
     );
     assert_eq!(
-        resolve(&result.program, "f.proof.ens#2.?p3").unwrap().kind,
+        resolve(&result.program, "f.proof.ensures#2.?p3")
+            .unwrap()
+            .kind,
         AddrKind::ProofHole
     );
 }
@@ -208,7 +210,7 @@ fn witness_is_addressed_by_number() {
 fn body_hole_inside_proof_block_is_structured_error() {
     // A proof block admits only proof holes `?pN`; a body hole `?N` there is the
     // mirror error of ProofHoleOutsideProofBlock.
-    let src = "lemma l(a: u64) req true ens a == a proof { ?0 }";
+    let src = "lemma l(a: u64) requires true ensures a == a proof { ?0 }";
     let result = parse(src);
     assert!(
         result
@@ -224,7 +226,7 @@ fn body_hole_inside_proof_block_is_structured_error() {
 fn nested_braces_in_proof_block_are_balanced() {
     // A proof block tracks brace depth so a nested `by { … }` / `calc { … }` does
     // not prematurely close it.
-    let src = "lemma l(a: u64) req true ens a == a proof { calc { a == a by { refl } } }";
+    let src = "lemma l(a: u64) requires true ensures a == a proof { calc { a == a by { refl } } }";
     let forge = single_forge_item(src);
     let ForgeItem::Lemma(l) = forge else {
         panic!("expected a Lemma");
@@ -237,8 +239,8 @@ fn nested_braces_in_proof_block_are_balanced() {
 fn forge_items_do_not_disturb_v1_items_in_a_mixed_program() {
     // A program mixing a v1 `fn` with forge items parses; the v1 fn keeps
     // its ordinary address and the forge items add theirs.
-    let src = "fn id(x: u64) -> u64 req true ens result == x fx pure { x }\n\
-               lemma l(a: u64) req true ens a == a proof { omega }\n\
+    let src = "fn id(x: u64) -> u64 ! pure requires true ensures result == x { x }\n\
+               lemma l(a: u64) requires true ensures a == a proof { omega }\n\
                witness { inhabit (1); falsify 5; }";
     let addrs = address_set(src);
     assert!(addrs.contains(&"id".to_string()));

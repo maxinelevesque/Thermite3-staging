@@ -101,7 +101,7 @@ fn level_of(certs: &[Value], item: &str) -> String {
 /// #230 visibility tier) keeps it from certifying.
 const COUNTER_PROGRAM: &str = "\
 spec fn s_dec(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -112,7 +112,7 @@ spec fn s_dec(n: u32) -> u32
 
 struct Counter {
   x: u32,
-} inv s_dec(x + 0) == 0
+} keeps s_dec(x + 0) == 0
 ";
 
 #[test]

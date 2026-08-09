@@ -330,8 +330,8 @@ fn ens_violation_fires_at_runtime() {
     if !linux_build_run_supported("ens_violation_fires_at_runtime") {
         return;
     }
-    let prog =
-        "fn bad(x: u32) -> u32\n  req x < 100\n  ens result == x\n  fx  pure\n{\n  x + 1\n}\n";
+    let prog = "fn bad(x: u32) -> u32\n  ! pure
+  requires x < 100\n  ensures result == x\n{\n  x + 1\n}\n";
     let fixture = write_fixture("bad", prog);
     let (ok, stdout, stderr) =
         run_forge_build(&[fixture.to_str().unwrap(), "--entry", "bad", "--json"]);
@@ -435,7 +435,8 @@ fn rebuilt_library_is_byte_identical() {
 
 #[test]
 fn uncompilable_lowering_is_nonzero_exit() {
-    let prog = "fn f(x: u32) -> u32\n  req x < 100\n  ens result == nonexistent_thing\n  fx  pure\n{\n  x\n}\n";
+    let prog = "fn f(x: u32) -> u32\n  ! pure
+  requires x < 100\n  ensures result == nonexistent_thing\n{\n  x\n}\n";
     let fixture = write_fixture("uncompilable", prog);
     let (ok, stdout, stderr) = run_forge_build(&[fixture.to_str().unwrap(), "--json"]);
     assert!(

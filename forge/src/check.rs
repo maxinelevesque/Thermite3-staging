@@ -419,7 +419,7 @@ pub fn check_file_with_options(
             if mutual_missing_dec_fns.contains(&f.name) {
                 certs.push(Certificate::rejected(
                     f.name.clone(),
-                    effects_of(&f.contract.fx),
+                    effects_of(&f.contract.effects),
                     false,
                     RejectReason {
                         cause: "MutualRecursionMissingDecreases".to_string(),
@@ -451,7 +451,7 @@ pub fn check_file_with_options(
             if let Some(detail) = crate::goal_repl::open_hole_reason(f) {
                 certs.push(Certificate::rejected(
                     f.name.clone(),
-                    effects_of(&f.contract.fx),
+                    effects_of(&f.contract.effects),
                     f.slag.is_some(),
                     RejectReason {
                         cause: "OpenHole".to_string(),
@@ -582,7 +582,7 @@ pub fn check_file_with_options(
         if let Item::Fn(f) = item {
             if let Some(witness) = covenant_bindings.get(&f.name) {
                 use crate::covenant_engine::{analyze_covenant, covenant_gate, CovenantGate};
-                let effects = effects_of(&f.contract.fx);
+                let effects = effects_of(&f.contract.effects);
                 let gate = covenant_gate(analyze_covenant(f, witness), |record| {
                     debug_assert!(
                         record.declared,
@@ -677,7 +677,7 @@ pub fn check_file_with_options(
         //     is why the single-ADT corpus never exercised the gap.
         // This is the same under-approximated-closure class the proof-backends
         // build-blocker note records for `reachable_spec_fn_deps` walking
-        // `decl.body` without `decl.dec`.
+        // `decl.body` without `decl.measures`.
         //
         // For a checked `Item::SpecFn` the referrers are its own reachable spec-fn
         // closure alone (which includes the spec fn itself) — #71's distinct
@@ -765,7 +765,7 @@ pub fn check_file_with_options(
                 };
                 let cert = Certificate::rejected_vacuity(
                     f.name.clone(),
-                    effects_of(&f.contract.fx),
+                    effects_of(&f.contract.effects),
                     RejectReason {
                         cause: cause.tag().to_string(),
                         detail: cause.detail(),
@@ -879,7 +879,7 @@ pub fn check_file_with_options(
                     &cache_dir,
                     use_cache,
                 )?;
-                let effects = effects_of(&f.contract.fx);
+                let effects = effects_of(&f.contract.effects);
                 if score.meets_floor(options.mutation_floor) {
                     // #14 §7 step 5 — strengthening probe
                     // (`.design/forge/strengthening-probes.md` REQ-5). The item is a
@@ -1486,7 +1486,7 @@ fn nlsat_l4_cert(
     let solver_input = crate::relax::nlsat_solver_input(f);
     let obligations = f
         .contract
-        .ens
+        .ensures
         .iter()
         .enumerate()
         .map(|(index, clause)| {
@@ -1669,7 +1669,7 @@ fn bv_check(base: Vec<Certificate>, program: &Program, include_epr_only: bool) -
             }
             Some(Item::Struct(s)) => {
                 let tags = s
-                    .inv
+                    .keeps
                     .as_ref()
                     .and_then(|inv| inv.bv)
                     .map(|tag| vec![(format!("{}::inv#0", s.name), tag)])
@@ -1707,7 +1707,7 @@ fn bv_attribution() -> crate::engine::EngineAttribution {
 /// REQ-2 / AC-2)? The bit-vector route discharges such a lemma directly, with no author
 /// proof block.
 fn lemma_has_bv_tag(l: &thermite_syntax::LemmaItem) -> bool {
-    l.ens.iter().any(|c| c.bv.is_some())
+    l.ensures.iter().any(|c| c.bv.is_some())
 }
 
 /// Whether the program has a tagged postcondition, lemma conclusion, or invariant.
@@ -1715,7 +1715,7 @@ fn lemma_has_bv_tag(l: &thermite_syntax::LemmaItem) -> bool {
 pub fn program_has_bv_tag(program: &Program) -> bool {
     program.items.iter().any(|item| match item {
         Item::Fn(f) => fn_has_bv_tag(f),
-        Item::Struct(s) => s.inv.as_ref().is_some_and(|inv| inv.bv.is_some()),
+        Item::Struct(s) => s.keeps.as_ref().is_some_and(|inv| inv.bv.is_some()),
         Item::Forge(thermite_syntax::ForgeItem::Lemma(l)) => lemma_has_bv_tag(l),
         _ => false,
     })
@@ -1747,7 +1747,7 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
 
         let mut reconstructed = Vec::new();
         let mut terminal = None;
-        for (index, clause) in function.contract.ens.iter().enumerate() {
+        for (index, clause) in function.contract.ensures.iter().enumerate() {
             let Some(outcome) = epr_clause_outcome(program, function, index, clause) else {
                 continue;
             };
@@ -1804,7 +1804,7 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
             continue;
         }
 
-        let every_clause_reconstructed = reconstructed.len() == function.contract.ens.len();
+        let every_clause_reconstructed = reconstructed.len() == function.contract.ensures.len();
         if every_clause_reconstructed {
             // A base-engine counterexample contradicting a kernel-checked EPR proof
             // is a soundness alarm, not permission to silently replace either
@@ -1848,7 +1848,7 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
 fn fn_has_epr_clause(program: &Program, function: &thermite_syntax::FnItem) -> bool {
     function
         .contract
-        .ens
+        .ensures
         .iter()
         .enumerate()
         .any(|(index, clause)| {
@@ -1882,7 +1882,7 @@ fn epr_candidate(
             let raw = thermite_spec::s2_recon_from_obligation(
                 program,
                 function,
-                &function.contract.req,
+                &function.contract.requires,
                 clause,
                 address,
             )
@@ -1898,7 +1898,7 @@ fn epr_candidate(
     let recon = match thermite_spec::s2_recon_from_obligation(
         program,
         function,
-        &function.contract.req,
+        &function.contract.requires,
         &grounded_clause,
         address,
     ) {
@@ -1928,7 +1928,7 @@ fn epr_clause_outcome(
         Ok(Some(recon)) => Some(crate::epr_reconstruct::reconstruct(
             &recon,
             function,
-            &function.contract.req,
+            &function.contract.requires,
             clause,
         )),
         Ok(None) => None,
@@ -2100,7 +2100,7 @@ fn fn_has_bv_tag(f: &thermite_syntax::FnItem) -> bool {
 }
 
 fn fn_has_bv_ens_tag(f: &thermite_syntax::FnItem) -> bool {
-    f.contract.ens.iter().any(|c| c.bv.is_some())
+    f.contract.ensures.iter().any(|c| c.bv.is_some())
 }
 
 /// Tagged loop invariants in address order.
@@ -2299,13 +2299,13 @@ fn bv_fn_cert(
     let effects = base.effects.clone();
     let slag = f.slag.is_some();
     let vars: Vec<String> = f.params.iter().map(|p| p.name.clone()).collect();
-    let req = &f.contract.req.expr;
+    let req = &f.contract.requires.expr;
     let bv_attr = bv_attribution();
-    let mut obligations = Vec::with_capacity(f.contract.ens.len());
+    let mut obligations = Vec::with_capacity(f.contract.ensures.len());
     let mut item_level = Level::L4;
     let mut item_attr: Option<crate::engine::EngineAttribution> = None;
 
-    for (k, ens) in f.contract.ens.iter().enumerate() {
+    for (k, ens) in f.contract.ensures.iter().enumerate() {
         if let Some(tag) = &ens.bv {
             let clause_expr = match ground_result_in_clause(f, &ens.expr) {
                 Ok(e) => e,
@@ -2552,7 +2552,7 @@ fn bv_mutation_score(
     // `(tag, clause expr)` pair in the filter so the discharge needs no re-unwrap.
     let result_clauses: Vec<(&thermite_syntax::BvTag, &thermite_syntax::Expr)> = f
         .contract
-        .ens
+        .ensures
         .iter()
         .filter_map(|c| match &c.bv {
             Some(tag) if expr_mentions_result(&c.expr) => Some((tag, &c.expr)),
@@ -2564,7 +2564,7 @@ fn bv_mutation_score(
     }
 
     let vars: Vec<String> = f.params.iter().map(|p| p.name.clone()).collect();
-    let req = &f.contract.req.expr;
+    let req = &f.contract.requires.expr;
     let mutants = crate::mutation::generate(f, 0, adt_deps);
     // The original body's effective result — the reference for the observable-equivalence
     // exclusion below (#101, at width).
@@ -2669,11 +2669,11 @@ fn bv_lemma_cert(
     use crate::bitvector::BvOutcome;
     let effects = vec!["pure".to_string()];
     let vars: Vec<String> = l.params.iter().map(|p| p.name.clone()).collect();
-    let req = &l.req.expr;
+    let req = &l.requires.expr;
     let bv_attr = bv_attribution();
-    let mut obligations = Vec::with_capacity(l.ens.len());
+    let mut obligations = Vec::with_capacity(l.ensures.len());
 
-    for (k, ens) in l.ens.iter().enumerate() {
+    for (k, ens) in l.ensures.iter().enumerate() {
         let Some(tag) = &ens.bv else {
             return Certificate::rejected(
                 l.name.clone(),
@@ -3007,7 +3007,7 @@ fn lia_replay_req(f: &thermite_syntax::FnItem) -> thermite_syntax::Expr {
     use thermite_syntax::{BinOp, Expr};
 
     crate::relax::integer_vars(f).into_iter().rev().fold(
-        f.contract.req.expr.clone(),
+        f.contract.requires.expr.clone(),
         |req, variable| {
             let nonnegative = Expr::Binary {
                 op: BinOp::Ge,
@@ -3309,7 +3309,7 @@ fn forge_gate_item_cert(
     _base: Certificate,
 ) -> Certificate {
     use crate::engine::Verdict;
-    let effects = effects_of(&f.contract.fx);
+    let effects = effects_of(&f.contract.effects);
 
     // (1) Covenant gate (covenant-before-burn, R-COV-1). A forge gate item carries a
     // `witness` block: its author `inhabit` witnesses are executed against `req` and the
@@ -3370,11 +3370,11 @@ fn forge_gate_item_cert(
     // (over a synthetic single-clause `fn`): a relaxable clause routes to nlsat (L4), a
     // non-relaxable clause to the author-proof Lean discharge (L3 + burn). The item level
     // is the min over the clauses.
-    let mut obligations = Vec::with_capacity(f.contract.ens.len());
+    let mut obligations = Vec::with_capacity(f.contract.ensures.len());
     let mut item_level = Level::L4;
     let mut burn: Option<crate::burn::BurnReceipt> = None;
     let mut l3_clause: Option<(usize, &thermite_syntax::Clause, String)> = None;
-    for (k, ens) in f.contract.ens.iter().enumerate() {
+    for (k, ens) in f.contract.ensures.iter().enumerate() {
         let synth = single_ens_fn(f, ens);
         if crate::relax::classify_fn(&synth).is_relaxable() {
             // Relaxable polynomial side-condition → nlsat real relaxation → L4.
@@ -3558,7 +3558,7 @@ fn single_ens_fn(
     ens: &thermite_syntax::Clause,
 ) -> thermite_syntax::FnItem {
     let mut synth = f.clone();
-    synth.contract.ens = vec![ens.clone()];
+    synth.contract.ensures = vec![ens.clone()];
     synth
 }
 
@@ -3570,7 +3570,7 @@ fn forge_proof_text_for(program: &Program, fn_name: &str, index: usize) -> Optio
         if let Item::Forge(thermite_syntax::ForgeItem::Proof(p)) = item {
             if p.target == fn_name {
                 for ob in &p.obligations {
-                    if ob.clause.keyword == "ens" && ob.clause.index == Some(index as u32) {
+                    if ob.clause.keyword == "ensures" && ob.clause.index == Some(index as u32) {
                         return Some(ob.proof.text.clone());
                     }
                 }
@@ -3729,8 +3729,8 @@ fn synth_l3_lemma(
     thermite_syntax::LemmaItem {
         name: format!("{}__gate_ens{k}", f.name),
         params: f.params.clone(),
-        req: f.contract.req.clone(),
-        ens: vec![Clause {
+        requires: f.contract.requires.clone(),
+        ensures: vec![Clause {
             expr: subst_ens,
             text: format!("{}::ens#{k} (result := body)", f.name),
             span,
@@ -4397,7 +4397,7 @@ pub fn check_l2_file(path: impl AsRef<Path>) -> Result<Vec<Certificate>, ForgeEr
         let harness = thermite_lower::lower_l2(&sub).map_err(ForgeError::Lower)?;
         let bound = thermite_lower::bound_string(&sub);
         let l2 = crate::kani::run_kani(&harness, &f.name, &bound)?;
-        let effects = effects_of(&f.contract.fx);
+        let effects = effects_of(&f.contract.effects);
         certs.push(crate::kani::assemble_l2_certificate(&f.name, effects, &l2));
     }
     Ok(certs)
@@ -4445,7 +4445,7 @@ enum GateOutcome {
 /// SlagL1 (level L1, slag:true, slag_meta)
 /// ```
 fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
-    let effects = effects_of(&f.contract.fx);
+    let effects = effects_of(&f.contract.effects);
 
     // #16 boundary (FFI) path, detected first (`.design/boundary/ffi-boundary.md`
     // REQ-5, §9): a `#[boundary("crate::path")]` fn's foreign body is unproven, so
@@ -4596,7 +4596,7 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
 /// that declares `fx diverge`, never to a normal fn (R-DEFER-9).
 fn fn_is_diverge(f: &thermite_syntax::FnItem) -> bool {
     use thermite_syntax::ast::{Effect, EffectRow};
-    matches!(&f.contract.fx, EffectRow::Set(es) if es.contains(&Effect::Diverge))
+    matches!(&f.contract.effects, EffectRow::Set(es) if es.contains(&Effect::Diverge))
 }
 
 /// Build a `fx diverge` partial-correctness L1 certificate (`.design/forge/check.md`
@@ -4859,7 +4859,7 @@ fn mutual_recursion_cycle_fns(program: &Program) -> std::collections::BTreeSet<S
         let cycle_missing_dec = std::iter::once(f.name.clone())
             .chain(scc)
             .filter_map(|name| fns.get(name.as_str()).copied())
-            .any(|m| !fn_is_diverge(m) && m.dec.is_none());
+            .any(|m| !fn_is_diverge(m) && m.measures.is_none());
         if cycle_missing_dec {
             members.insert(f.name.clone());
         }
@@ -5055,7 +5055,7 @@ pub(crate) fn contract_obligation(program: &Program, item: &Item) -> crate::obli
 ///
 /// Why the existing `reachable_spec_fn_deps` is not enough (the #226 finding).
 /// `reachable_spec_fn_deps` (the #71 weaving helper) seeds at a start spec-fn and
-/// its closure step walks `decl.body` only — it never walks `decl.dec`, and for an
+/// its closure step walks `decl.body` only — it never walks `decl.measures`, and for an
 /// exec `fn` it does not even seed from the contract clauses. The §4 hard gate /
 /// REQ-1.2 require the full expression-position closure: the seed is the spec-fn
 /// calls in `req ∪ ens ∪ body ∪ dec(item)` and the closure step walks each reached
@@ -5079,14 +5079,14 @@ fn reachable_spec_fn_names_full(program: &Program, f: &thermite_syntax::FnItem) 
     // Seed: the spec-fn calls in `req ∪ ens ∪ body ∪ dec(item)` (the full
     // expression-position seed, #226).
     let mut seed: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    collect_expr_spec_fn_calls(&f.contract.req.expr, &spec_decls, &mut seed);
-    for ens in &f.contract.ens {
+    collect_expr_spec_fn_calls(&f.contract.requires.expr, &spec_decls, &mut seed);
+    for ens in &f.contract.ensures {
         collect_expr_spec_fn_calls(&ens.expr, &spec_decls, &mut seed);
     }
     if let Some(body) = &f.body {
         collect_block_spec_fn_calls(body, &spec_decls, &mut seed);
     }
-    if let Some(dec) = &f.dec {
+    if let Some(dec) = &f.measures {
         collect_expr_spec_fn_calls(&dec.expr, &spec_decls, &mut seed);
     }
 
@@ -5112,8 +5112,8 @@ fn reachable_spec_fn_names_full_lemma(
         })
         .collect();
     let mut seed: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    collect_expr_spec_fn_calls(&l.req.expr, &spec_decls, &mut seed);
-    for ens in &l.ens {
+    collect_expr_spec_fn_calls(&l.requires.expr, &spec_decls, &mut seed);
+    for ens in &l.ensures {
         collect_expr_spec_fn_calls(&ens.expr, &spec_decls, &mut seed);
     }
     reachable_spec_fn_names_from_seed(&spec_decls, seed, program)
@@ -5138,7 +5138,7 @@ fn reachable_spec_fn_names_full_spec(
         .collect();
     let mut seed: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     collect_block_spec_fn_calls(&s.body, &spec_decls, &mut seed);
-    collect_expr_spec_fn_calls(&s.dec.expr, &spec_decls, &mut seed);
+    collect_expr_spec_fn_calls(&s.measures.expr, &spec_decls, &mut seed);
     reachable_spec_fn_names_from_seed(&spec_decls, seed, program)
 }
 
@@ -5163,7 +5163,7 @@ fn reachable_spec_fn_names_from_seed(
             let mut callees: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
             // The closure step walks `body ∪ dec` (the #226 fix — not body-only).
             collect_block_spec_fn_calls(&decl.body, spec_decls, &mut callees);
-            collect_expr_spec_fn_calls(&decl.dec.expr, spec_decls, &mut callees);
+            collect_expr_spec_fn_calls(&decl.measures.expr, spec_decls, &mut callees);
             for callee in callees {
                 if !reached.contains(&callee) {
                     worklist.push(callee);
@@ -5227,7 +5227,7 @@ fn collect_stmt_spec_fn_calls(
             for inv in &node.invs {
                 collect_expr_spec_fn_calls(&inv.expr, spec_decls, out);
             }
-            collect_expr_spec_fn_calls(&node.dec.expr, spec_decls, out);
+            collect_expr_spec_fn_calls(&node.measures.expr, spec_decls, out);
             if let thermite_syntax::LoopKind::While(cond) = &node.kind {
                 collect_expr_spec_fn_calls(cond, spec_decls, out);
             }
@@ -5430,8 +5430,8 @@ fn collect_item_adt_refs(
                 collect_type_adt_refs(&p.ty, adt_decls, out);
             }
             collect_type_adt_refs(&f.ret, adt_decls, out);
-            collect_expr_adt_refs(&f.contract.req.expr, adt_decls, out);
-            for ens in &f.contract.ens {
+            collect_expr_adt_refs(&f.contract.requires.expr, adt_decls, out);
+            for ens in &f.contract.ensures {
                 collect_expr_adt_refs(&ens.expr, adt_decls, out);
             }
             if let Some(body) = &f.body {
@@ -5443,7 +5443,7 @@ fn collect_item_adt_refs(
                 collect_type_adt_refs(&p.ty, adt_decls, out);
             }
             collect_type_adt_refs(&s.ret, adt_decls, out);
-            collect_expr_adt_refs(&s.dec.expr, adt_decls, out);
+            collect_expr_adt_refs(&s.measures.expr, adt_decls, out);
             collect_block_adt_refs(&s.body, adt_decls, out);
         }
         // A struct/enum decl's own field types are followed by the type-graph
@@ -5723,7 +5723,7 @@ fn collect_stmt_adt_refs(
             for inv in &node.invs {
                 collect_expr_adt_refs(&inv.expr, adt_decls, out);
             }
-            collect_expr_adt_refs(&node.dec.expr, adt_decls, out);
+            collect_expr_adt_refs(&node.measures.expr, adt_decls, out);
             if let thermite_syntax::LoopKind::While(cond) = &node.kind {
                 collect_expr_adt_refs(cond, adt_decls, out);
             }
@@ -6278,7 +6278,7 @@ fn parse_span(line: &str) -> Option<String> {
 ///   witnesses (the existing #5 path), no profile.
 fn assemble_certificate(item: &Item, verus: &VerusResult) -> Certificate {
     let effects = match item {
-        Item::Fn(f) => effects_of(&f.contract.fx),
+        Item::Fn(f) => effects_of(&f.contract.effects),
         // `spec fn`s have no `fx` row (§4.2) — they are pure by construction.
         Item::SpecFn(_) => vec!["pure".to_string()],
         // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum` type
@@ -6432,7 +6432,7 @@ fn ladder_for_timeout(
         (other, _) => other,
     };
 
-    let effects = effects_of(&f.contract.fx);
+    let effects = effects_of(&f.contract.effects);
     let l1_effects = effects.clone();
     let fname = f.name.clone();
 
@@ -6880,9 +6880,9 @@ mod tests {
     fn reelaboration_mutation_shares_the_frozen_catalogue_not_forked() {
         let src = "\
 fn to_1based(x: u32) -> u32
-  req x < 1000
-  ens result == x + 1
-  fx pure
+  ! pure
+  requires x < 1000
+  ensures result == x + 1
 { x + 1 }
 ";
         let parsed = thermite_syntax::parse(src);
@@ -6940,12 +6940,12 @@ fn to_1based(x: u32) -> u32
         // (`dec tree_size(xs)`), never from its body — the #226 measure-position
         // case. The full closure must still reach `tree_size`.
         let src = "\
-spec fn tree_size(xs: &[u32]) -> u64 dec xs.len() { xs.len() as u64 }
+spec fn tree_size(xs: &[u32]) -> u64 measures xs.len() { xs.len() as u64 }
 fn measured(xs: &[u32]) -> u64
-  req xs.len() <= 10
-  ens result == xs.len() as u64
-  fx pure
-  dec tree_size(xs)
+  ! pure
+  requires xs.len() <= 10
+  ensures result == xs.len() as u64
+  measures tree_size(xs)
 { xs.len() as u64 }
 ";
         let parsed = thermite_syntax::parse(src);
@@ -6990,7 +6990,7 @@ fn measured(xs: &[u32]) -> u64
     // non-empty). Expected from REQ-1.2's assignment condition (R-CHAR-3).
     #[test]
     fn spec_fn_free_item_has_no_registry_termination() {
-        let src = "fn add(x: u64, y: u64) -> u64 req x < 100 ens result == x + y fx pure { x + y }";
+        let src = "fn add(x: u64, y: u64) -> u64 ! pure requires x < 100 ensures result == x + y { x + y }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         let mut add: Option<&Item> = None;
@@ -7170,11 +7170,15 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
         const THERMITE: &str = "0.0.0-test";
 
         // Two independent `fn`s; `g` does not reference `f`. Original program.
-        let src_v1 = "fn f(x: u64) -> u64\n  req x < 10\n  ens result == x\n  fx  pure\n{\n  x\n}\n\
-                      fn g(y: u64) -> u64\n  req y < 10\n  ens result == y\n  fx  pure\n{\n  y\n}\n";
+        let src_v1 = "fn f(x: u64) -> u64\n  ! pure
+  requires x < 10\n  ensures result == x\n{\n  x\n}\n\
+                      fn g(y: u64) -> u64\n  ! pure
+  requires y < 10\n  ensures result == y\n{\n  y\n}\n";
         // Same `g`, but `f`'s body/contract edited.
-        let src_v2 = "fn f(x: u64) -> u64\n  req x < 20\n  ens result == x\n  fx  pure\n{\n  x\n}\n\
-                      fn g(y: u64) -> u64\n  req y < 10\n  ens result == y\n  fx  pure\n{\n  y\n}\n";
+        let src_v2 = "fn f(x: u64) -> u64\n  ! pure
+  requires x < 20\n  ensures result == x\n{\n  x\n}\n\
+                      fn g(y: u64) -> u64\n  ! pure
+  requires y < 10\n  ensures result == y\n{\n  y\n}\n";
 
         let key_of = |src: &str, target: &str| -> Option<String> {
             let parsed = thermite_syntax::parse(src);
@@ -7259,8 +7263,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     // other (non-final) cert first.
     #[test]
     fn apply_lemma_library_refuses_uncertified_citation_named() {
-        let src = "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-                   lemma user(n: u32) req n > 0 ens n >= 1 proof { simp [melems_cons]; omega }";
+        let src = "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+                   lemma user(n: u32) requires n > 0 ensures n >= 1 proof { simp [melems_cons]; omega }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture parses: {:?}", parsed.errors);
         // `melems_cons` did not certify; `user` carries some placeholder cert.
@@ -7293,8 +7297,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     // intact (no spurious refusal).
     #[test]
     fn apply_lemma_library_passes_certified_citation() {
-        let src = "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-                   lemma user(n: u32) req n > 0 ens n >= 1 proof { simp [melems_cons]; omega }";
+        let src = "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+                   lemma user(n: u32) requires n > 0 ensures n >= 1 proof { simp [melems_cons]; omega }";
         let parsed = thermite_syntax::parse(src);
         let certs = vec![certified_l3("melems_cons"), certified_l3("user")];
         let library = crate::lemma_library::LemmaLibrary::build(&parsed.program, &certs);
@@ -7308,9 +7312,9 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     // rewrite is oracle-excluded (the burn receipt is), so the oracle subset is unchanged.
     #[test]
     fn apply_lemma_library_rewrites_burn_citation_to_canonical() {
-        let src = "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-                   lemma melems_cons_dup(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-                   lemma user(n: u32) req n > 0 ens n >= 1 proof { simp [melems_cons_dup]; omega }";
+        let src = "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+                   lemma melems_cons_dup(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+                   lemma user(n: u32) requires n > 0 ensures n >= 1 proof { simp [melems_cons_dup]; omega }";
         let parsed = thermite_syntax::parse(src);
         let user_before = certified_l3("user").with_burn(crate::burn::BurnReceipt::for_proof_text(
             "simp [melems_cons_dup]; omega",
@@ -7446,8 +7450,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
         assert!(supported.bv_shadow.is_some() && bitwise.bv_shadow.is_some());
 
         let parsed = thermite_syntax::parse(
-            "fn linear(a: u64, b: u64) -> u64 req a <= b \
-             ens a + 1 <= b + 1 fx pure { a }",
+            "fn linear(a: u64, b: u64) -> u64 ! pure requires a <= b \
+             ensures a + 1 <= b + 1 { a }",
         );
         assert!(
             parsed.is_clean(),
@@ -7498,10 +7502,10 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
         use thermite_syntax::{BvWidth, Item};
 
         let parsed = thermite_syntax::parse(
-            "struct Word { bits: u64 } inv@bv8 bits + 255 == bits - 1\n\
-             fn f(x: u64) -> u64 req x <= 2 ens result == 2 fx pure {\n\
+            "struct Word { bits: u64 } keeps@bv8 bits + 255 == bits - 1\n\
+             fn f(x: u64) -> u64 ! pure requires x <= 2 ensures result == 2 {\n\
                let mut i: u64 = x;\n\
-               while i < 2 inv@bv16 i + 65535 == i - 1 inv i <= 2 dec 2 - i {\n\
+               while i < 2 keeps@bv16 i + 65535 == i - 1 keeps i <= 2 measures 2 - i {\n\
                  i = i + 1;\n\
                }\n\
                i\n\
@@ -7602,7 +7606,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     /// shape): `result >= x` is the body-constraining clause, `x + 0` the identity body.
     #[cfg(feature = "bv")]
     fn parse_succ_ge() -> thermite_syntax::FnItem {
-        let src = "fn succ_ge(x: u64) -> u64 req true ens@bv64 result >= x fx pure { x + 0 }";
+        let src =
+            "fn succ_ge(x: u64) -> u64 ! pure requires true ensures@bv64 result >= x { x + 0 }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         parsed
@@ -7651,7 +7656,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
             .expect("the mutant body has an effective result");
 
         // The tagged clause `result >= x` grounded by the mutant body → `x + 1 >= x`.
-        let ens = &f.contract.ens[0];
+        let ens = &f.contract.ensures[0];
         assert!(ens.bv.is_some(), "the fixture clause is @bv-tagged");
         let grounded = substitute_result_with_body(&ens.expr, &result_expr);
 
@@ -7676,7 +7681,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
         // unbounded path) proves it → the mutant survives the unbounded check.
         let synth = thermite_syntax::FnItem {
             contract: thermite_syntax::Contract {
-                ens: vec![thermite_syntax::Clause {
+                ensures: vec![thermite_syntax::Clause {
                     expr: grounded.clone(),
                     text: "result >= x [result := x + 1]".to_string(),
                     span: thermite_syntax::Span::new(0, 0),
@@ -7758,7 +7763,8 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     #[cfg(feature = "bv")]
     #[test]
     fn ac5_non_result_bv_clause_has_no_scoreable_mutant() {
-        let src = "fn commute(a: u64, b: u64) -> u64 req true ens@bv64 a + b == b + a fx pure \
+        let src =
+            "fn commute(a: u64, b: u64) -> u64 ! pure requires true ensures@bv64 a + b == b + a \
                    { a + b }";
         let parsed = thermite_syntax::parse(src);
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
@@ -7830,8 +7836,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
             return;
         }
         let cert = bv_fn_cert_from(
-            "fn add_nowrap(a: u64, b: u64) -> u64 req true ens@bv64(nowrap) result == a + b \
-             fx pure { a + b }",
+            "fn add_nowrap(a: u64, b: u64) -> u64 ! pure requires true ensures@bv64(nowrap) result == a + b { a + b }",
             "add_nowrap",
         );
         // A witnessed nowrap overflow must not certify (the promise is violated).
@@ -7873,7 +7878,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     #[test]
     fn ac6_nowrap_body_without_arithmetic_holds_and_records_discharged() {
         let cert = bv_fn_cert_from(
-            "fn idem(a: u64) -> u64 req true ens@bv64(nowrap) result == a fx pure { a }",
+            "fn idem(a: u64) -> u64 ! pure requires true ensures@bv64(nowrap) result == a { a }",
             "idem",
         );
         assert!(
@@ -7913,7 +7918,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     #[test]
     fn bare_bv_clause_records_no_nowrap_obligation() {
         let cert = bv_fn_cert_from(
-            "fn idem(a: u64) -> u64 req true ens@bv64 result == a fx pure { a }",
+            "fn idem(a: u64) -> u64 ! pure requires true ensures@bv64 result == a { a }",
             "idem",
         );
         assert!(
@@ -7972,9 +7977,10 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     fn epr_route_fixture() -> (Program, Certificate) {
         let parsed = thermite_syntax::parse(
             "fn epr_route(xs: Vec<u64>) -> u64\n\
-             req xs.len() > 0\n\
-             ens forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+             ! pure
+requires xs.len() > 0\n\
+             ensures forall (i : usize) in xs. xs[i] == xs[i]\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         let base = Certificate::rejected(
@@ -7992,9 +7998,10 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     fn epr_false_route_fixture() -> (Program, Certificate) {
         let parsed = thermite_syntax::parse(
             "fn epr_false(xs: Vec<u64>) -> u64\n\
-             req xs.len() > 0\n\
-             ens forall (i : usize) in xs. xs[i] != xs[i]\n\
-             fx pure { 0 }",
+             ! pure
+requires xs.len() > 0\n\
+             ensures forall (i : usize) in xs. xs[i] != xs[i]\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         let base = Certificate::rejected(
@@ -8013,15 +8020,16 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
     fn automatic_route_does_not_model_result_as_an_unconstrained_sequence() {
         let parsed = thermite_syntax::parse(
             "fn format(n: u64) -> String\n\
-             req true\n\
-             ens result.len() >= 1\n\
-             fx alloc { n.to_string() }",
+             ! alloc
+requires true\n\
+             ensures result.len() >= 1\n\
+              { n.to_string() }",
         );
         assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
         let Item::Fn(function) = &parsed.program.items[0] else {
             panic!("fixture must contain a function");
         };
-        let clause = &function.contract.ens[0];
+        let clause = &function.contract.ensures[0];
         let grounded =
             ground_result_in_clause(function, &clause.expr).expect("result has a source body");
         assert!(

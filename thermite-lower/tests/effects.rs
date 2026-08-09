@@ -36,7 +36,7 @@ fn true_clause() -> Clause {
 /// A `fn` named `name` with effect row `fx` whose body is `{ <calls>; }`,
 /// one bare-expression `Call` per callee name in `calls`. This is the minimal
 /// caller→callee call-graph fixture the checker walks (REQ-3).
-fn fn_calling(name: &str, fx: EffectRow, calls: &[&str]) -> Item {
+fn fn_calling(name: &str, effects: EffectRow, calls: &[&str]) -> Item {
     let stmts = calls
         .iter()
         .map(|callee| {
@@ -53,11 +53,11 @@ fn fn_calling(name: &str, fx: EffectRow, calls: &[&str]) -> Item {
         params: vec![],
         ret: Type::Unit,
         contract: Contract {
-            req: true_clause(),
-            ens: vec![true_clause()],
-            fx,
+            requires: true_clause(),
+            ensures: vec![true_clause()],
+            effects,
         },
-        dec: None,
+        measures: None,
         body: Some(Block { stmts, tail: None }),
         holes: Vec::new(),
         refinements: Vec::new(),
@@ -267,7 +267,7 @@ fn crafted_accepts() {
         name: "spec_helper".to_string(),
         params: vec![],
         ret: Type::Prim(PrimType::Bool),
-        dec: true_clause(),
+        measures: true_clause(),
         body: Block {
             stmts: vec![],
             tail: Some(Box::new(Expr::BoolLit(true))),
@@ -454,11 +454,11 @@ fn deeply_nested_body_returns_result_not_panic() {
         params: vec![],
         ret: Type::Unit,
         contract: Contract {
-            req: true_clause(),
-            ens: vec![true_clause()],
-            fx: pure(),
+            requires: true_clause(),
+            ensures: vec![true_clause()],
+            effects: pure(),
         },
-        dec: None,
+        measures: None,
         body: Some(Block {
             stmts: vec![],
             tail: Some(Box::new(expr)),
@@ -487,7 +487,8 @@ fn parser_parses_effectful_rows() {
     // checker is not blocked on a parser gap; the fixtures above build AST
     // directly only for hermeticity, not out of necessity). Hand-derived
     // expected row: {alloc}.
-    let src = "fn f() -> ()\n  req true\n  ens true\n  fx alloc\n{\n}\n";
+    let src = "fn f() -> ()\n  ! alloc
+  requires true\n  ensures true\n{\n}\n";
     let parsed = thermite_syntax::parse(src);
     assert!(
         parsed.errors.is_empty(),
@@ -495,7 +496,7 @@ fn parser_parses_effectful_rows() {
         parsed.errors
     );
     match &parsed.program.items[0] {
-        Item::Fn(f) => assert_eq!(f.contract.fx, set(vec![Effect::Alloc])),
+        Item::Fn(f) => assert_eq!(f.contract.effects, set(vec![Effect::Alloc])),
         other => panic!("expected a fn item, got {other:?}"),
     }
 }

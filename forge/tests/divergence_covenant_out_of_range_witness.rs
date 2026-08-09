@@ -98,9 +98,9 @@ fn first_cert(program: &str, name: &str) -> Value {
 /// real `u32` (`x as u32 == x`), yet the out-of-domain witness manufactures a refutation.
 const OOB_WITNESS: &str = "\
 fn f(x: u32) -> u32
-    req true
-    ens result == x
-    fx pure
+    ! pure
+    requires true
+    ensures result == x
 { x as u32 }
 
 witness { inhabit (4294967296); falsify 100; }
@@ -111,9 +111,9 @@ witness { inhabit (4294967296); falsify 100; }
 /// isolating the divergence to the missing parameter-width check in `bind_params`.
 const INRANGE_WITNESS: &str = "\
 fn f(x: u32) -> u32
-    req true
-    ens result == x
-    fx pure
+    ! pure
+    requires true
+    ensures result == x
 { x as u32 }
 
 witness { inhabit (5); falsify 100; }

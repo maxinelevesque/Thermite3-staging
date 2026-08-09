@@ -25,7 +25,7 @@ use thermite_syntax::ast::{BinOp, Expr, Item};
 /// emitted Verus/L1 expression would itself be a behavior change.
 #[test]
 fn divergence_lowering_emits_value_not_raw() {
-    let src = "fn f(x: u32) -> u32 req x <= 1_000 ens result == 0 fx pure { 0 }";
+    let src = "fn f(x: u32) -> u32 ! pure requires x <= 1_000 ensures result == 0 { 0 }";
     let parsed = thermite_syntax::parse(src);
     assert!(parsed.is_clean(), "fixture must parse clean: {parsed:?}");
 
@@ -37,9 +37,9 @@ fn divergence_lowering_emits_value_not_raw() {
     };
     let Expr::Binary {
         rhs, op: BinOp::Le, ..
-    } = &f.contract.req.expr
+    } = &f.contract.requires.expr
     else {
-        panic!("expected a `<=` req, got {:?}", f.contract.req.expr);
+        panic!("expected a `<=` req, got {:?}", f.contract.requires.expr);
     };
     match rhs.as_ref() {
         Expr::IntLit { value, raw } => {

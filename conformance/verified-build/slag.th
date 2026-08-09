@@ -1,12 +1,12 @@
 #[slag(reason = "test crossing", owner = "thermite", review = "required")]
 fn vendored(x: u64) -> u64
-  req true
-  ens result == x
-  fx pure
+  ! pure
+  requires true
+  ensures result == x
 { x }
 
 fn slag_root(x: u64) -> u64
-  req true
-  ens result == x
-  fx pure
+  ! pure
+  requires true
+  ensures result == x
 { vendored(x) }

@@ -33,7 +33,7 @@ THERMITE_EDITOR_FILE=mydoc.txt ./nano
 ```
 
 The editor sets terminal raw mode itself and runs under the default seccomp
-filter. Its declared `fx` effects permit the required file and terminal calls.
+filter. Its declared `!` effects permit the required file and terminal calls.
 
 Keys: type to insert, Enter for a newline, arrows to move, Backspace to delete,
 Ctrl-S to save, and Ctrl-Q to quit.

@@ -1,5 +1,5 @@
 spec fn spec_sum(xs: &[u32]) -> u64
-  dec xs.len()
+  measures xs.len()
 {
   match xs {
     []          => 0,
@@ -8,20 +8,20 @@ spec fn spec_sum(xs: &[u32]) -> u64
 }
 
 fn sum(xs: &[u32]) -> u64
-  req xs.len() <= 1_000_000
-  ens result == spec_sum(xs)
-  ens result <= xs.len() as u64 * u32::MAX as u64
-  fx  pure
+  ! pure
+  requires xs.len() <= 1_000_000
+  ensures result == spec_sum(xs)
+  ensures result <= xs.len() as u64 * u32::MAX as u64
 {
   let mut acc: u64 = 0;
   let mut i: usize = 0;
   while i < xs.len()
-    inv i <= xs.len()
-    inv acc == spec_sum(&xs[..i])
-    inv acc <= i as u64 * u32::MAX as u64
-    dec xs.len() - i
+    keeps i <= xs.len()
+    keeps acc == spec_sum(&xs[..i])
+    keeps acc <= i as u64 * u32::MAX as u64
+    measures xs.len() - i
   {
-    acc = acc + xs[i] as u64;   // overflow: discharged from inv#3 + req
+    acc = acc + xs[i] as u64;   // overflow: discharged from keeps#3 + req
     i = i + 1;
   }
   acc

@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 5bcd49d68c389c80bb808a09af0265e1c2a19b16fb2d80c3ed173a028bb61459 (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 8b588be0a47a86ca4c78c6a8330e918d824ba62f4dea2c8c1b8866488e90d67e)
+audited-content-sha256: 831f9833d91da98bc36ab95e631dd312b54ea4d5ea6669030c563970f185651b (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: 5bcd49d68c389c80bb808a09af0265e1c2a19b16fb2d80c3ed173a028bb61459, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 8b588be0a47a86ca4c78c6a8330e918d824ba62f4dea2c8c1b8866488e90d67e))
 governs: thermite-syntax/src/ast.rs
 thesis-refs:
   - thermite-design.md §4.1
@@ -21,7 +21,7 @@ type** consumed downstream by thermite-lower (issue #4, AST → Verus source) an
 forge (issues #5/#6, the ladder + vacuity battery). Its node set mirrors the
 surface grammar (`surface-grammar.md`) one-for-one. Certain nodes are
 **addressable** — they carry a stable semantic address (`semantic-addressing.md`,
-e.g. `binary_search.loop#1.inv#2`) so `forge edit`/`forge insert-after` and the
+e.g. `binary_search.loop#1.keeps#2`) so `forge edit`/`forge insert-after` and the
 per-item proof cache key off structure, not string matches (§4.3).
 
 This doc's REQs are SHIPPED (`thermite-syntax/src/ast.rs`, issue #3 + the
@@ -53,7 +53,7 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/ast.rs`, issue #3 + the
 >   additionally has `Unit`, `Named`, `Box`, `Vec`, `String`, `Option`,
 >   `Result(_, _)`, `Map(_, _)` (the two-arg nodes), and `Tuple(Vec<Type>)`
 >   (01-adts / 04-collections / 07-strings / 09-option-result / 13-map /
->   10-recursion-tuples). `enum Effect` gained the ninth atom `Term` (`fx term`,
+>   10-recursion-tuples). `enum Effect` gained the ninth atom `Term` (`! term`,
 >   #106/#132 — `.design/sandbox/runtime-sandbox.md`).
 > - **Shape corrections against the tree:** `Contract` carries `req: Clause` and
 >   `ens: Vec<Clause>` (a `Clause` wraps the parsed `expr` + the verbatim `text`
@@ -70,8 +70,8 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/ast.rs`, issue #3 + the
 - **REQ-1 (item nodes):** An `Item` is one of `Fn` (with optional `#[slag]`
   attribute), or `SpecFn`. `Fn` holds: name, params, return type, the contract
   (`Contract`), and a body `Block`. `SpecFn` holds: name, params, return type,
-  the `dec` measure expression, and a body `Block` (no `Contract`; spec fns
-  carry only `dec`). Derived from §4.1, §4.2 (Appendix A `spec_sum`), §8.
+  the `measures` measure expression, and a body `Block` (no `Contract`; spec fns
+  carry only `measures`). Derived from §4.1, §4.2 (Appendix A `spec_sum`), §8.
 
 - **REQ-2 (contract node, mandatory fields):** `Contract` is a struct with a
   `req: Expr`, a non-empty `ens: Vec<Expr>` (one-or-more), and an `fx: EffectRow`
@@ -96,7 +96,7 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/ast.rs`, issue #3 + the
 
 - **REQ-5 (loop nodes, addressable):** `Loop { invs: Vec<Expr>, dec: Expr,
   body: Block }` and `While { cond: Expr, invs: Vec<Expr>, dec: Expr, body:
-  Block }`. `invs` is non-empty and `dec` is a single `Expr` (structurally
+  Block }`. `invs` is non-empty and `measures` is a single `Expr` (structurally
   encoding §4.1's mandatory inv*+one-dec). These are ADDRESSABLE nodes (REQ-8).
   In v0.1 a loop appears as a statement/expression position within a body.
   Derived from §4.1 + corpus `loop`/`while`.
@@ -156,7 +156,7 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/ast.rs`, issue #3 + the
 
 - **REQ-8 (addressable nodes carry an address):** The node types that
   `semantic-addressing.md` numbers — `Item` (root = function name), `Loop`/
-  `While` (`loop#N`), and the `inv`/`dec` clauses — are addressable. The AST is
+  `While` (`loop#N`), and the `keeps`/`measures` clauses — are addressable. The AST is
   the substrate addresses are computed over. Derived from §4.3.
 
 - **REQ-9 (spans + boundary-type stability):** Every node carries the source
@@ -192,13 +192,13 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/ast.rs`, issue #3 + the
   runtime panic" — the same teeth):
   - **`/` and `%` require a NONZERO divisor.** The lowering emits the bare
     Verus `/`/`%`, and Verus AUTOMATICALLY raises a "possible division by zero"
-    obligation at the operator site. The caller discharges it with `req divisor
+    obligation at the operator site. The caller discharges it with `requires divisor
     != 0` (or a proven-nonzero context, e.g. the literal `2` in `(hi - lo) / 2`).
     A `/`/`%` whose divisor cannot be proven nonzero is L0 (fails verification) —
     the obligation BITES, it is not optional.
   - **`<<` and `>>` require a BOUNDED shift amount** (`< bit width`). Verus
     AUTOMATICALLY raises a "possible bit shift underflow/overflow" obligation;
-    the caller discharges it with `req amount < 64` (for `u64`, the relevant
+    the caller discharges it with `requires amount < 64` (for `u64`, the relevant
     width). An unbounded shift is L0.
 
   The AST itself carries no obligation field — the obligation is INHERENT to the
@@ -223,7 +223,7 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/ast.rs`, issue #3 + the
 
   **The verification semantics live downstream, NOT in the AST.** The AST only
   records "here is a `break`/`continue`". WHETHER a `continue` preserves the loop
-  invariant, respects the `decreases`, or sits in a `fx diverge` loop is a
+  invariant, respects the `decreases`, or sits in a `! diverge` loop is a
   VERUS-checked property of the LOWERED loop (`verus-lowering.md` #93, REQ-11
   there), not an AST field. The parser additionally enforces that `break`/
   `continue` appear only INSIDE a loop body (`parser.md` REQ-10) — a structural,
@@ -234,8 +234,8 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/ast.rs`, issue #3 + the
 ## Acceptance criteria
 
 - **AC-1 (corpus AST shapes):** Parsing `conformance/sum.th` yields a `SpecFn`
-  `spec_sum` and a `Fn` `sum` whose `Contract` has `req`, two `ens`, `fx = Pure`,
-  and a `While` with three `invs` + a `dec`. (REQ-1, REQ-2, REQ-5, REQ-7)
+  `spec_sum` and a `Fn` `sum` whose `Contract` has `requires`, two `ensures`, `fx = Pure`,
+  and a `While` with three `invs` + a `measures`. (REQ-1, REQ-2, REQ-5, REQ-7)
 - **AC-1b (`1_000_000` parses to value + raw — #37):** parses to
   `Expr::IntLit { value: 1000000, raw: "1_000_000" }`; lowering still emits
   `1000000` (no golden churn). (REQ-6)
@@ -243,21 +243,21 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/ast.rs`, issue #3 + the
   `Expr::IntLit { value: 65, raw: "'A'" }`, `0x1b` to `{ value: 27, raw:
   "0x1b" }`, `0b101` to `{ value: 5, raw: "0b101" }` — all `Expr::IntLit`, NO
   new variant. Lowering emits the decimal `value` (`65`/`27`/`5`). GROUNDED:
-  each certifies its `ens result == <decimal>` at L3 (Verification). (REQ-6)
+  each certifies its `ensures result == <decimal>` at L3 (Verification). (REQ-6)
 - **AC-2 (mandatory fields non-optional):** `Contract.req: Expr` (not `Option`),
   `ens: Vec<Expr>` non-empty, `fx: EffectRow` (not `Option`). (REQ-2)
 - **AC-3 (one call syntax distinction):** `haystack.len()` → `MethodCall`,
   `forall_in(...)` → `Call`, `u32::MAX` → `Path`. (REQ-6)
-- **AC-4 (addressable nodes resolve):** the corpus loops + `inv`/`dec` clauses
+- **AC-4 (addressable nodes resolve):** the corpus loops + `keeps`/`measures` clauses
   number per `semantic-addressing.md`. (REQ-8)
 - **AC-5 (operator set is exhaustive — #92):** `BinOp` has the 18 variants
   of REQ-10 (incl. `Rem`/`Shl`/`Shr`/`BitAnd`/`BitOr`/`BitXor`); `UnaryOp` has
   `Not`. A fn `a % b` parses to `Binary { op: BinOp::Rem, .. }`, `a << k` to
   `Shl`, `a & b` to `BitAnd`, `!a` to `Unary { op: UnaryOp::Not, .. }`. (REQ-10)
 - **AC-6 (partial-operator obligations bite — GROUNDED, #92):** A fn
-  `fn modulo(a,b)->u64 req b != 0 ens result == a % b { a % b }` certifies L3;
-  the SAME fn WITHOUT `req b != 0` is L0 ("possible division by zero"). A fn
-  `a << k req k < 64` certifies L3; without the bound it is L0 ("possible bit
+  `fn modulo(a,b)->u64 requires b != 0 ensures result == a % b { a % b }` certifies L3;
+  the SAME fn WITHOUT `requires b != 0` is L0 ("possible division by zero"). A fn
+  `a << k requires k < 64` certifies L3; without the bound it is L0 ("possible bit
   shift underflow/overflow"). (REQ-11)
 - **AC-7 (`Break`/`Continue` statement nodes — NEW, #93):** A `while` body
   containing `break;` parses to a `Stmt::Break` in the body's `stmts`; `continue;`
@@ -340,7 +340,7 @@ AST field encodes the obligation; it is a property of the emitted Verus operator
 
 **Break/continue verification semantics (REQ-12) live in the LOWERING, not the
 AST.** The AST is shape-only. The invariant-at-`continue`, `decreases`
-interaction, break-exit reasoning, and `fx diverge` cases are all VERUS-checked
+interaction, break-exit reasoning, and `! diverge` cases are all VERUS-checked
 properties of the lowered loop, owned + GROUNDED in `verus-lowering.md` (#93). No
 AST field carries them.
 
@@ -360,26 +360,26 @@ The END-TO-END operator + obligation grounding (AC-1c, AC-6) is discharged by
 certifying. GROUNDED with real `verus 0.2026.05.24` (the #92 amendment):
 
 ```
-% with `req b != 0`, `ens result == a % b`     -> 1 verified, 0 errors  (L3)
-% WITHOUT the req                               -> 0 verified, 1 errors  ("possible division by zero", L0)
-/ with `req b != 0`, `ens result == a / b`     -> 1 verified, 0 errors  (L3)
-/ WITHOUT the req                               -> 0 verified, 1 errors  ("possible division by zero", L0)
-<< with `req k < 64`, `ens result == a << k`   -> 1 verified, 0 errors  (L3)
+% with `requires b != 0`, `ensures result == a % b`     -> 1 verified, 0 errors  (L3)
+% WITHOUT the requires                               -> 0 verified, 1 errors  ("possible division by zero", L0)
+/ with `requires b != 0`, `ensures result == a / b`     -> 1 verified, 0 errors  (L3)
+/ WITHOUT the requires                               -> 0 verified, 1 errors  ("possible division by zero", L0)
+<< with `requires k < 64`, `ensures result == a << k`   -> 1 verified, 0 errors  (L3)
 << WITHOUT the bound                            -> 0 verified, 1 errors  ("possible bit shift underflow/overflow", L0)
->> with `req k < 64`  / & / | / ^ / !u64 / !bool -> 6 verified, 0 errors (L3)
+>> with `requires k < 64`  / & / | / ^ / !u64 / !bool -> 6 verified, 0 errors (L3)
 char 'A'==65 / hex 0x1b==27 / bin 0b101==5      -> 3 verified, 0 errors  (L3)
 'A'==66 (wrong code)                            -> 0 verified, 1 errors  (non-vacuous, L0)
 ```
 
-The `ens` clauses are NON-VACUOUS (`result == <expr>`/`result == <code>`), so a
-wrong value is rejected — the §7 vacuity gate (which rejects `ens true`) is
+The `ensures` clauses are NON-VACUOUS (`result == <expr>`/`result == <code>`), so a
+wrong value is rejected — the §7 vacuity gate (which rejects `ensures true`) is
 respected.
 
 The `break`/`continue` END-TO-END verification semantics (AC-7's downstream
 meaning) are owned + GROUNDED in `verus-lowering.md` (#93): a terminating
 `continue` that preserves the invariant + decreases certifies L3; a `continue`
 that breaks the invariant or fails to decrease the measure is L0; a `break`
-early-exit with the loop `ensures` certifies L3; a `fx diverge` loop with
+early-exit with the loop `ensures` certifies L3; a `! diverge` loop with
 `break`/`continue` certifies (no decreases, capped at L1 by the #88 gate).
 
 ## REQ status
@@ -398,7 +398,7 @@ early-exit with the loop `ensures` certifies L3; a `fx diverge` loop with
 | REQ-8 (addressable nodes) | SHIPPED | `Item`/`LoopNode`/`Clause` keep source order; numbered by `address.rs`. |
 | REQ-9 (spans + boundary stability) | SHIPPED | `Span` on `FnItem`/`SpecFnItem`/`LoopNode`/`SlagAttr`/`Clause`. |
 | REQ-10 (binary + unary operator set, #92) | SHIPPED | `enum BinOp` in `ast.rs` gains `Rem`/`Shl`/`Shr`/`BitAnd`/`BitOr`/`BitXor`; the NEW `enum UnaryOp { Not }` + `Expr::Unary { op, expr }` node carry the prefix `!`. Built by the `parser.rs` precedence ladder (`parse_mul`+`%`, `parse_shift`/`parse_bitand`/`parse_bitxor`/`parse_bitor`, `parse_unary`); the match-arm ripple is closed across lower/l1/effects/validator/mutation/vacuity/closure/review/check/strengthen/skill (no `_`/panic — see commit). Tests `each_new_operator_parses_to_its_binop_node` (parser). GROUNDED L3 for all 7 forms (`forge/tests/operators_conformance.rs`). |
-| REQ-11 (partial-operator obligations, #92) | SHIPPED | `binop` in `lower.rs`/`l1.rs` emits the BARE Verus `%`/`<<`/`>>` (no `external`/`assume` — R-DEFER-9), so Verus raises the div-by-zero / shift-bound obligation at the operator site. GROUNDED (real verus): `a % b` WITH `req b != 0` → L3, WITHOUT → L0; `a << k` WITH `req k < 64` → L3, unbounded → L0 (`forge/tests/operators_conformance.rs::rem_with_nonzero_req_certifies_l3` / `rem_without_nonzero_req_is_l0` / `shifts_and_bitwise_certify_l3` / `shift_without_bound_is_l0`). The existing `/` already bit; `%`/shifts inherit the same Verus-native obligation. |
+| REQ-11 (partial-operator obligations, #92) | SHIPPED | `binop` in `lower.rs`/`l1.rs` emits the BARE Verus `%`/`<<`/`>>` (no `external`/`assume` — R-DEFER-9), so Verus raises the div-by-zero / shift-bound obligation at the operator site. GROUNDED (real verus): `a % b` WITH `requires b != 0` → L3, WITHOUT → L0; `a << k` WITH `requires k < 64` → L3, unbounded → L0 (`forge/tests/operators_conformance.rs::rem_with_nonzero_req_certifies_l3` / `rem_without_nonzero_req_is_l0` / `shifts_and_bitwise_certify_l3` / `shift_without_bound_is_l0`). The existing `/` already bit; `%`/shifts inherit the same Verus-native obligation. |
 | REQ-12 (`Break`/`Continue` statement nodes, #93) | SHIPPED | `enum Stmt` in `ast.rs` gains the payload-less `Break`/`Continue` variants (the loop-control statements). Built by `parse_break_continue` in `parser.rs` (`parser.md` REQ-10). The `Stmt` ripple is closed across every exhaustive `match Stmt` in the workspace with the layer-neutral leaf value (NO `_`/panic): `lower.rs`/`l1.rs` emit `break;`/`continue;`; `l2.rs` routes through `lower_stmt_l1`; `effects.rs` (no effect), `validator.rs` (no cage/ADT node), `mutation.rs` (no mutant — OQ-4), `vacuity.rs`/`closure.rs`/`review.rs`/`check.rs` (leaf walks); `address.rs` (non-addressable leaf, the existing `_ => {}`); `thermite-skill/src/generate.rs` (the loop-control prose). Tests: `forge/tests/break_continue_conformance.rs::break_and_continue_inside_a_loop_parse_cleanly_as_stmt_nodes` asserts the `Stmt::Break`/`Continue` shape; the lowering/verification semantics are GROUNDED in `verus-lowering.md` REQ-12 (continue+inv/dec → L3, bad continue → L0, break → L3, diverge loop → L1). |
 
 ## Open questions (for the orchestrator)

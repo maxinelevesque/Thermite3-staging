@@ -15,10 +15,10 @@
   ],
   "reject": [
     { "name": "missing_arm", "expect_error_contains": "NonExhaustive",
-      "program": "#[boundary(\"os::read_small\")] fn read_small() -> Option<u64> req true ens match result { Some(v) => v < 256, None => true } fx read(stdin) ; fn bad() -> Option<u64> req true ens match result { Some(v) => v < 512, None => true } fx read(stdin) { match read_small() { Some(v) => Some(v + v) } }",
+      "program": "#[boundary(\"os::read_small\")] fn read_small() -> Option<u64> ! read(stdin) requires true ensures match result { Some(v) => v < 256, None => true } ; fn bad() -> Option<u64> ! read(stdin) requires true ensures match result { Some(v) => v < 512, None => true } { match read_small() { Some(v) => Some(v + v) } }",
       "why": "bad's match on read_small()'s Option misses the None arm -> NonExhaustiveMatch (handled-or-loud: every modeled outcome handled, enforced at validation). The compile-time tooth." },
     { "name": "overclaim_soundness", "expect_level": "L0",
-      "program": "#[boundary(\"os::read_small\")] fn read_small() -> Option<u64> req true ens match result { Some(v) => v < 256, None => true } fx read(stdin) ; fn liar() -> Option<u64> req true ens match result { Some(v) => v < 100, None => true } fx read(stdin) { match read_small() { Some(v) => Some(v), None => None } }",
+      "program": "#[boundary(\"os::read_small\")] fn read_small() -> Option<u64> ! read(stdin) requires true ensures match result { Some(v) => v < 256, None => true } ; fn liar() -> Option<u64> ! read(stdin) requires true ensures match result { Some(v) => v < 100, None => true } { match read_small() { Some(v) => Some(v), None => None } }",
       "why": "liar claims its result's Some is < 100, but read_small only guarantees < 256 -> the ens is NOT discharged through the boundary's contract -> L0 counterexample (a false claim about a world value is caught, NOT laundered to L3). R-DEFER-9." }
   ],
   "tcb": [

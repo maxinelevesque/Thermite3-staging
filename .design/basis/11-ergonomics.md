@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: ca909eb631ebf8456f7f9a423f4e8875bc61795dae9527065c0b3c517f1cd5fd (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: cb269714cf940c160499d742c3fab8dde4e4edf85b66706bf40a65430b44092c, previously (re-pinned 2026-08-07 for the formatting fix that followed the kernel removal: the comment orphaned by dropping `Effect::Platform(_)` from `effect_row_is_maximal` is deleted, and rustfmt re-wraps the `pub use ast::{...}` list in thermite-syntax/src/lib.rs after the rename lengthened neighbouring lines; comments and line breaks only, no behavior changed. prior: 50c270e352c0dec450568cd62093353eac8b4836704cb267d9a105e4e3487c54, itself re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 49c3911fe674113b046c0056a739441f36e45cd4a445001ede0ebedf327bd89e))
+audited-content-sha256: abbdd8ac938a826a1a5e8db3f299bda6a9629c19a2b723fd2d6c1fae2fdaedf4 (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: ca909eb631ebf8456f7f9a423f4e8875bc61795dae9527065c0b3c517f1cd5fd, previously (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: cb269714cf940c160499d742c3fab8dde4e4edf85b66706bf40a65430b44092c, previously (re-pinned 2026-08-07 for the formatting fix that followed the kernel removal: the comment orphaned by dropping `Effect::Platform(_)` from `effect_row_is_maximal` is deleted, and rustfmt re-wraps the `pub use ast::{...}` list in thermite-syntax/src/lib.rs after the rename lengthened neighbouring lines; comments and line breaks only, no behavior changed. prior: 50c270e352c0dec450568cd62093353eac8b4836704cb267d9a105e4e3487c54, itself re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 49c3911fe674113b046c0056a739441f36e45cd4a445001ede0ebedf327bd89e)))
 governs: thermite-syntax/src/parser.rs
 governs: thermite-syntax/src/ast.rs
 governs: thermite-lower/src/lower.rs
@@ -21,8 +21,8 @@ thesis-refs:
 C10 adds five binding/control-flow ergonomics that AI agents reach for
 constantly — tuple destructuring `let (x, y) = e`, `for i in 0..n` loops, match
 guards `x if cond =>`, or-patterns `1 | 2 =>`, and `if let` / `while let`. Each
-is **SUGAR** over machinery Thermite already ships and proves: `while`+`inv`/
-`dec` (loop lowering, `lower_loop` in `lower.rs`), `match` (`lower_match`),
+is **SUGAR** over machinery Thermite already ships and proves: `while`+`keeps`/
+`measures` (loop lowering, `lower_loop` in `lower.rs`), `match` (`lower_match`),
 tuple projection (`Expr::TupleProj`), and the ADT/`Option` exhaustiveness checker
 (`check_match_exhaustiveness` in `validator.rs`). The C10 principle, lifted from
 §4.4 ("One desugaring, always explicit") and §2.3 ("one way to do everything"):
@@ -42,7 +42,7 @@ blocked on the C10 build (#112) plus per-feature prereqs filed below.
 | Surface | Desugars to (shipped core) | New AST? | Pure-desugar or new lowering? |
 |---|---|---|---|
 | `let (x, y) = e;` | `let t = e; let x = t.0; let y = t.1;` (`Expr::TupleProj`) | `Pattern::Tuple` (parse-only; lowered away) | **pure-desugar** — parse → existing `Let`+`TupleProj` |
-| `for i in 0..n inv … { B }` | `let mut i = 0; while i < n inv … dec n-i { B; i = i + 1; }` | `Stmt::For` (parse-only; lowered away) | **pure-desugar** — parse → existing `LoopNode`(`While`) |
+| `for i in 0..n inv … { B }` | `let mut i = 0; while i < n inv … measures n-i { B; i = i + 1; }` | `Stmt::For` (parse-only; lowered away) | **pure-desugar** — parse → existing `LoopNode`(`While`) |
 | `x if cond =>` | Verus-native guarded arm `pat if cond => …` | `guard: Option<Expr>` on `MatchArm` | **new lowering** — `lower_match` emits the `if` clause |
 | `1 \| 2 =>` | Verus-native or-pattern `1 \| 2 => …` | `Pattern::Or(Vec<Pattern>)` | **new lowering** — `lower_pattern` emits the `\|` join |
 | `if let P = e { T } else { E }` | `match e { P => T, _ => E }` | `Stmt::IfLet` / expr form (parse-only) | **pure-desugar** — parse → existing `Expr::Match` |
@@ -68,31 +68,31 @@ already lower and verify.
   transform). Derived from §4.4 ("One desugaring, always explicit") + §2.3.
 
 - **REQ-2 (`for i in 0..n` loops):** A `for` loop over a bounded integer range
-  `lo..hi` is sugar over the SHIPPED `while`+`inv`/`dec` core. Surface:
+  `lo..hi` is sugar over the SHIPPED `while`+`keeps`/`measures` core. Surface:
   ```thermite
   for i in 0..n
-    inv acc == i
+    keeps acc == i
   { acc = acc + 1; }
   ```
-  It DESUGARS to `let mut i = 0; while i < n inv … dec n - i { B; i = i + 1; }`
+  It DESUGARS to `let mut i = 0; while i < n inv … measures n - i { B; i = i + 1; }`
   — i.e. a `LoopNode { kind: While(i < hi), invs, dec, body }` whose body is the
   user body with `i = i + 1;` appended (a `Stmt::Assign`), and whose loop variable
   is initialized by a preceding `Stmt::Let { mutable: true, .. }`.
-  - **Inv/dec surface (PINNED).** The user supplies the loop **invariant** via a
-    `for … inv …` clause, mirroring `while`'s mandatory `inv` (§4.1: "Mandatory
-    on every `loop`/`while`"). At least one `inv` is required (the for-loop is a
-    loop; the mandatory-inv rule of §4.1 carries unchanged). The **`dec` is
+  - **Inv/measures surface (PINNED).** The user supplies the loop **invariant** via a
+    `for … inv …` clause, mirroring `while`'s mandatory `keeps` (§4.1: "Mandatory
+    on every `loop`/`while`"). At least one `keeps` is required (the for-loop is a
+    loop; the mandatory-keeps rule of §4.1 carries unchanged). The **`measures` is
     AUTOMATIC** for a bounded range `lo..hi`: the desugar synthesizes
-    `dec hi - i` (the monotone, range-bounded measure), so the user does NOT write
-    a `dec` for a `for`. This is the ONE place an ergonomic supplies a clause the
+    `measures hi - i` (the monotone, range-bounded measure), so the user does NOT write
+    a `measures` for a `for`. This is the ONE place an ergonomic supplies a clause the
     user omits — and it is sound because the range bound makes the measure
     canonical (`hi - i` strictly decreases each `i = i + 1`, floored at 0).
     A `for` over a non-range iterator is OUT of v0.1 scope (no general `Iter` in
     v0.1, §4.4); only the integer-range form is admitted.
   - New AST: `Stmt::For { var, lo, hi, invs, body }` (parse-only; the desugar to
     a `LoopNode`(`While`) discharges it before `lower_loop`, so no new lowering
-    arm is required — `lower_loop` already threads `inv`→`invariant` /
-    `dec`→`decreases`). Derived from §4.1 (the loop model; termination proved by
+    arm is required — `lower_loop` already threads `keeps`→`invariant` /
+    `measures`→`decreases`). Derived from §4.1 (the loop model; termination proved by
     default) + §4.4 + §2.3.
 
 - **REQ-3 (match guards `x if cond =>`):** A match arm accepts an optional guard
@@ -134,7 +134,7 @@ already lower and verify.
     `loop`+`break` form fails to carry the post-exit fact without an explicit loop
     `ensures` (GROUNDED below: the `loop+break` shape is L0 on the obvious
     postcondition; the `while (e is Some)` shape is L3). The user supplies the
-    loop `inv`/`dec` exactly as for a `while` (mandatory, §4.1).
+    loop `keeps`/`measures` exactly as for a `while` (mandatory, §4.1).
   - New AST: `Stmt::IfLet` / `Expr::IfLet` and `Stmt::WhileLet` (parse-only; the
     desugar discharges them before lowering). Derived from §4.4 + §4.1 +
     `.design/basis/09-option-result.md` (`Option`/`match`).
@@ -143,19 +143,19 @@ already lower and verify.
 
 - **AC-1 (tuple destructuring → L3):** `let t = swap(a, b); let x = t.0; let y =
   t.1;` (the desugar of `let (x, y) = swap(a, b);`) using `y` certifies L3.
-  GROUNDED: `swap` with `ens r.0 == b, r.1 == a` + a consumer returning `y` with
-  `ens r == a` → `2 verified, 0 errors`. (REQ-1)
-- **AC-2 (`for` over a range → L3; auto-dec proves):** the desugar
-  `let mut acc = 0; let mut i = 0; while i < n inv acc == i, i <= n dec n - i {
-  acc = acc + 1; i = i + 1; }` with `ens r == n` certifies L3 — the user `inv`
-  + the AUTO-`dec n - i` discharge termination. GROUNDED: `2 verified, 0 errors`.
+  GROUNDED: `swap` with `ensures r.0 == b, r.1 == a` + a consumer returning `y` with
+  `ensures r == a` → `2 verified, 0 errors`. (REQ-1)
+- **AC-2 (`for` over a range → L3; auto-measures proves):** the desugar
+  `let mut acc = 0; let mut i = 0; while i < n keeps acc == i, i <= n measures n - i {
+  acc = acc + 1; i = i + 1; }` with `ensures r == n` certifies L3 — the user `keeps`
+  + the AUTO-`measures n - i` discharge termination. GROUNDED: `2 verified, 0 errors`.
   (REQ-2)
 - **AC-2b (a bad `for`-inv → L0):** the SAME loop with the body stepping
-  `acc = acc + 2` while the inv still claims `acc == i` FAILS verification
-  (`invariant not satisfied`, L0) — the inv obligation BITES through the desugar,
+  `acc = acc + 2` while the keeps still claims `acc == i` FAILS verification
+  (`invariant not satisfied`, L0) — the keeps obligation BITES through the desugar,
   it is not laundered. GROUNDED: `1 verified, 1 errors`. (REQ-2)
 - **AC-3 (guarded match → L3):** `match x { n if n < 10 => 0, _ => 1 }` with a
-  non-vacuous `ens r == (if x < 10 { 0 } else { 1 })` certifies L3. GROUNDED
+  non-vacuous `ensures r == (if x < 10 { 0 } else { 1 })` certifies L3. GROUNDED
   (part of the `3 verified, 0 errors` guards/or/if-let batch). (REQ-3)
 - **AC-3b (a guard does NOT complete a match → compile error):** `match e {
   Some(v) if v < 10 => v, None => 0 }` over an `Option` is NON-EXHAUSTIVE — the
@@ -163,24 +163,24 @@ already lower and verify.
   (matching Verus's `error[E0004]: non-exhaustive patterns: Some(_) not
   covered`). GROUNDED. (REQ-3)
 - **AC-4 (or-pattern → L3; covers its listed cases):** `match x { 1 | 2 => true,
-  _ => false }` with `ens r == (x == 1 || x == 2)` certifies L3; and `match e {
+  _ => false }` with `ensures r == (x == 1 || x == 2)` certifies L3; and `match e {
   Some(_) | None => 0 }` over an `Option` is EXHAUSTIVE (the or-pattern covers
   both variants). GROUNDED: the first in the `3 verified, 0 errors` batch, the
   second `1 verified, 0 errors`. (REQ-4)
 - **AC-5 (`if let` → L3):** `match e { Some(v) => v, None => 0 }` (the desugar of
-  `if let Some(v) = e { v } else { 0 }`) with `ens r == (match e { Some(v) => v,
+  `if let Some(v) = e { v } else { 0 }`) with `ensures r == (match e { Some(v) => v,
   None => 0 })` certifies L3. GROUNDED (part of the `3 verified, 0 errors`
   batch). (REQ-5)
-- **AC-6 (`while let` → L3 via `while (cond)`):** the `while cur > 0 inv count +
-  cur == n, cur <= n dec cur { count += 1; cur -= 1; }` desugar (of `while let
-  Some(_) = …`) with `ens r == n` certifies L3 (`2 verified, 0 errors`); the
+- **AC-6 (`while let` → L3 via `while (cond)`):** the `while cur > 0 keeps count +
+  cur == n, cur <= n measures cur { count += 1; cur -= 1; }` desugar (of `while let
+  Some(_) = …`) with `ensures r == n` certifies L3 (`2 verified, 0 errors`); the
   `loop { match … None => break }` alternative FAILS the same postcondition
   (L0) — pinning the `while (cond)` form as canonical. GROUNDED. (REQ-5)
 
 ## Architecture
 
 All five ergonomics live at the **parser + lower** boundary; the verification
-core (Verus's `while`/`match`/projection + the §4.1 `inv`/`dec` obligations +
+core (Verus's `while`/`match`/projection + the §4.1 `keeps`/`measures` obligations +
 the §4.2 vacuity gate) is UNCHANGED — that is the C10 thesis (§4.4 "one
 desugaring, always explicit").
 
@@ -192,7 +192,7 @@ before lowering) rewrites it into nodes that ALREADY lower and verify:
   `Expr::TupleProj`, `lower_expr` in `lower.rs`).
 - `Stmt::For` → a `Stmt::Let{mutable}` (the loop var) + a `LoopNode{ kind:
   While(var < hi), invs, dec: hi - var, body: B ++ [var = var + 1] }` (reuses
-  `lower_loop`, which threads `inv`→`invariant` / `dec`→`decreases`).
+  `lower_loop`, which threads `keeps`→`invariant` / `measures`→`decreases`).
 - `Stmt::IfLet` → `Expr::Match` (reuses `lower_match`); `Stmt::WhileLet` → a
   `LoopNode{ kind: While(e is Variant), .. }` + a payload re-bind `Let` (reuses
   `lower_loop` + `Expr::Is`, the SHIPPED discriminant test).
@@ -232,13 +232,13 @@ REQ-5, `check_match_exhaustiveness`) is PRESERVED, not relaxed:
   alternative; an `Or` over a strict subset of variants still leaves the rest
   uncovered (a `NonExhaustiveMatch` unless a `Wildcard`/`Or` closes them).
 
-**For-loop inv/dec story (REQ-2).** The user writes the `inv` (mandatory, §4.1);
-the `dec` is AUTOMATIC for a bounded range — the desugar synthesizes
-`dec hi - var`, the canonical monotone measure (strictly decreases on each
+**For-loop inv/measures story (REQ-2).** The user writes the `keeps` (mandatory, §4.1);
+the `measures` is AUTOMATIC for a bounded range — the desugar synthesizes
+`measures hi - var`, the canonical monotone measure (strictly decreases on each
 `var = var + 1`, floored at 0). This is the only ergonomic that supplies an
 omitted clause, and it is sound precisely because the range bound makes the
 measure canonical — there is no agent choice to get wrong. A `for` whose user
-`inv` does not hold is L0 (AC-2b), so the obligation still bites end-to-end.
+`keeps` does not hold is L0 (AC-2b), so the obligation still bites end-to-end.
 
 ## Verification
 
@@ -253,32 +253,32 @@ the SAME Verus the hand-written core would — a `for` golden diffs against the
 equivalent `while` golden.
 
 **END-TO-END GROUNDING (real `verus 0.2026.05.24.ecee80a`, this iteration).**
-Each desugaring was lowered to the Verus its rewrite implies and run; the `ens`
+Each desugaring was lowered to the Verus its rewrite implies and run; the `ensures`
 are NON-VACUOUS (`r == n` / `r == <match>`), so a wrong value is rejected:
 
 ```
-REQ-1  tuple destructuring  let t=swap(a,b); let x=t.0; let y=t.1; ens r==a   -> 2 verified, 0 errors   (L3)
-REQ-2  for→while  acc==i inv + AUTO dec n-i, ens r==n                          -> 2 verified, 0 errors   (L3)
-REQ-2  bad for-inv (body steps acc+2, inv still acc==i)                        -> 1 verified, 1 errors   ("invariant not satisfied", L0)
-REQ-3  guarded match  n if n<10 => 0, _ => 1, ens r==(if x<10 {0} else {1})    -> in 3 verified, 0 errors (L3)
+REQ-1  tuple destructuring  let t=swap(a,b); let x=t.0; let y=t.1; ensures r==a   -> 2 verified, 0 errors   (L3)
+REQ-2  for→while  acc==i inv + AUTO measures n-i, ensures r==n                          -> 2 verified, 0 errors   (L3)
+REQ-2  bad for-keeps (body steps acc+2, keeps still acc==i)                        -> 1 verified, 1 errors   ("invariant not satisfied", L0)
+REQ-3  guarded match  n if n<10 => 0, _ => 1, ensures r==(if x<10 {0} else {1})    -> in 3 verified, 0 errors (L3)
 REQ-3  guard non-exhaustive  Some(v) if v<10 => v, None => 0  (no Some(_))      -> error[E0004]: non-exhaustive patterns: `Some(_)` not covered
-REQ-4  or-pattern  1 | 2 => true, _ => false, ens r==(x==1||x==2)              -> in 3 verified, 0 errors (L3)
+REQ-4  or-pattern  1 | 2 => true, _ => false, ensures r==(x==1||x==2)              -> in 3 verified, 0 errors (L3)
 REQ-4  or-pattern exhaustive  Some(_) | None => 0  over Option                  -> 1 verified, 0 errors   (L3)
-REQ-5  if let  match e { Some(v)=>v, None=>0 }, ens r==match e {...}           -> in 3 verified, 0 errors (L3)
-REQ-5  while let (while cond)  while cur>0 inv count+cur==n dec cur, ens r==n   -> 2 verified, 0 errors   (L3)
+REQ-5  if let  match e { Some(v)=>v, None=>0 }, ensures r==match e {...}           -> in 3 verified, 0 errors (L3)
+REQ-5  while let (while cond)  while cur>0 keeps count+cur==n measures cur, ensures r==n   -> 2 verified, 0 errors   (L3)
 REQ-5  while let (loop+break) — the rejected alternative form                   -> 1 verified, 1 errors   ("postcondition not satisfied", L0)
 ```
 
 The two L0 lines (bad for-inv, loop+break while-let) are the NEGATIVE controls:
 they confirm the desugar does NOT launder the obligation (R-DEFER-9) and pin the
-canonical forms (auto-`dec`, `while (cond)`).
+canonical forms (auto-`measures`, `while (cond)`).
 
 ## REQ status
 
 | REQ | Status | Evidence |
 |---|---|---|
 | REQ-1 (tuple destructuring `let (x,y)=e`) | SHIPPED | #112. PURE-DESUGAR in the parser (OQ-1 parser-site — NO new AST node). `parser::parse_let` returns `Vec<Stmt>`; a `(` after `let [mut]` routes to `parse_let_tuple_destructure`, desugaring `let (x, y) = e;` to a fresh temp `let __td<n> = e;` + per-element `let x = __td<n>.0;` (reusing the SHIPPED `Expr::TupleProj`, C9-B; `_` drops an element). Consumer: `lower_stmt` (the projection `let`s lower unchanged). Verified: `forge/tests/ergonomics_conformance.rs::req1_tuple_destructuring_certifies_l3` (real verus L3). |
-| REQ-2 (`for i in 0..n` loop) | SHIPPED | #112. PURE-DESUGAR in the parser (NO new AST node — `for`/`in` are CONTEXTUAL identifiers matched by name, NOT reserved keywords, so `lexer.rs` is untouched). `parser::parse_for` (dispatched on `Ident("for")` at statement head) desugars `for i in lo..hi inv … { B }` to `let mut i = lo;` + `LoopNode { While(i < hi), invs: <user>, dec: hi - i, body: B ++ [i = i + 1;] }` — the AUTO-`dec hi - i` is a real `dec` `Clause` (`lower_loop` emits it as `decreases`, R-DEFER-9). A user `dec` on a `for` is rejected. Consumer: `lower_loop`. Verified: `forge/tests/ergonomics_conformance.rs::req2_for_range_certifies_l3` (L3) + `req2_bad_for_inv_is_l0` (a bad inv → L0). |
+| REQ-2 (`for i in 0..n` loop) | SHIPPED | #112. PURE-DESUGAR in the parser (NO new AST node — `for`/`in` are CONTEXTUAL identifiers matched by name, NOT reserved keywords, so `lexer.rs` is untouched). `parser::parse_for` (dispatched on `Ident("for")` at statement head) desugars `for i in lo..hi inv … { B }` to `let mut i = lo;` + `LoopNode { While(i < hi), invs: <user>, dec: hi - i, body: B ++ [i = i + 1;] }` — the AUTO-`measures hi - i` is a real `measures` `Clause` (`lower_loop` emits it as `decreases`, R-DEFER-9). A user `measures` on a `for` is rejected. Consumer: `lower_loop`. Verified: `forge/tests/ergonomics_conformance.rs::req2_for_range_certifies_l3` (L3) + `req2_bad_for_inv_is_l0` (a bad inv → L0). |
 | REQ-3 (match guards `x if cond =>`) | SHIPPED | #112. NEW field `MatchArm.guard: Option<Expr>` (`ast.rs`). `parser::parse_match` parses an optional `if <cond>` (no-struct-literal head) before `=>`; `lower::lower_match` / `l1::lower_match_exec` emit the Verus/Rust-native guarded arm `pat if <guard> => body`; `validator::check_match_exhaustiveness` treats a guarded arm as covering NONE of its cases (a guard does NOT complete a match). The guard `Expr` is walked by every effect/combinator/spec-fn/result-mention/callee walk (lower/l1/validator/check/review/mutation/vacuity/closure). Consumer: `lower`/`validate`. Verified: `forge/tests/ergonomics_conformance.rs::req3_guarded_match_certifies_l3` (L3) + `req3_guarded_only_arm_is_non_exhaustive` (`NonExhaustiveMatch`). |
 | REQ-4 (or-patterns `1 \| 2 =>`) | SHIPPED | #112. NEW variant `Pattern::Or(Vec<Pattern>)` (`ast.rs`). `parser::parse_pattern` parses a `\|`-joined alternation (flat — a single alt stays the bare pattern, byte-stable); `lower::lower_pattern` / `l1::lower_pattern_exec` emit `p0 \| p1 \| …`; `validator::collect_covered_variants` counts EACH alternative toward the covered-variant set (union — `Some(_) \| None` is exhaustive). The new variant rippled to every exhaustive `match Pattern` (lower/l1/validator/check/generate) with honest arms — NO `_`/panic. Consumer: `lower_match`/`validate`. Verified: `forge/tests/ergonomics_conformance.rs::req4_or_pattern_certifies_l3` (L3) + `req4_or_pattern_exhaustive_via_union`. |
 | REQ-5 (`if let` / `while let`) | SHIPPED | #112. PURE-DESUGAR in the parser (NO new AST node). `parser::parse_if_let` (dispatched on `if` then `let` via `peek_nth`) desugars `if let P = e { T } else { E }` to the SHIPPED `Expr::Match { e, [P => T, _ => E] }` (value form, mandatory `else`); `parser::parse_while_let` desugars `while let Variant(_) = e inv … dec … { B }` to a `LoopNode { While(e is Variant), … }` (the canonical `while (cond)` form, NOT loop+break — the GROUNDED L3 vs L0 pin). Consumer: `lower_match`/`lower_loop`. Verified: `forge/tests/ergonomics_conformance.rs::req5_if_let_certifies_l3` + `req5_while_let_certifies_l3` (L3). |

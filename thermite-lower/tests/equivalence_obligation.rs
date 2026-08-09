@@ -106,9 +106,11 @@ fn early_return_body(real: &Block, lit: u128) -> Block {
     body
 }
 
-const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    req x == 0\n    ens result == 0\n    fx pure\n{\n    let y: u64 = x + 0;\n    y\n}\n";
+const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    ! pure
+    requires x == 0\n    ensures result == 0\n{\n    let y: u64 = x + 0;\n    y\n}\n";
 
-const LOOSE: &str = "fn loose(x: u64) -> u64\n    req x <= 100\n    ens result <= 1000\n    fx pure\n{\n    let y: u64 = x + 0;\n    y\n}\n";
+const LOOSE: &str = "fn loose(x: u64) -> u64\n    ! pure
+    requires x <= 100\n    ensures result <= 1000\n{\n    let y: u64 = x + 0;\n    y\n}\n";
 
 #[test]
 fn equivalent_early_return_verifies() {
@@ -176,7 +178,8 @@ fn non_scalar_return_is_unsupported() {
     // A non-scalar (slice) return is out of the OQ-1 scalar scope: the seam
     // returns `Unsupported` so the caller leaves the survivor counted (the
     // sound-but-incomplete fallback), never a panic, never a spurious exclusion.
-    let src = "fn head(xs: &[u32]) -> &[u32]\n    req true\n    ens true\n    fx pure\n{\n    &xs[..0]\n}\n";
+    let src = "fn head(xs: &[u32]) -> &[u32]\n    ! pure
+    requires true\n    ensures true\n{\n    &xs[..0]\n}\n";
     let f = parse_fn(src);
     let body = f.body.clone().unwrap();
     let res = thermite_lower::lower_equivalence_obligation(&f, &body, &[]);
@@ -194,11 +197,11 @@ fn non_scalar_return_is_unsupported() {
 /// The §9 direct-composition fixture verbatim from `conformance/composition/
 /// cases.json` (`verifies_to_boundary`): a `#[boundary]` `ext_id` whose contract
 /// pins its result, and `caller` whose body is `{ ext_id(x) }`.
-const DIRECT_COMPOSITION: &str = "#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ; fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }";
+const DIRECT_COMPOSITION: &str = "#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ; fn caller(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) }";
 
 /// The AC-8 weak-callee fixture: `ext_weak`'s `ens` does not pin its result
 /// (`result <= 100`), so the identity mutant of `wcaller` is unprovable.
-const WEAK_COMPOSITION: &str = "#[boundary(\"ext::ext_weak\")] fn ext_weak(x: u32) -> u32 req x < 100 ens result <= 100 fx pure ; fn wcaller(x: u32) -> u32 req x < 100 ens result <= 100 fx pure { ext_weak(x) }";
+const WEAK_COMPOSITION: &str = "#[boundary(\"ext::ext_weak\")] fn ext_weak(x: u32) -> u32 ! pure requires x < 100 ensures result <= 100 ; fn wcaller(x: u32) -> u32 ! pure requires x < 100 ensures result <= 100 { ext_weak(x) }";
 
 /// Parse `src` and return `(the named fn, every OTHER fn as the woven closure)`.
 /// The closure mirrors `forge::check::reachable_fn_deps` (every in-file fn the

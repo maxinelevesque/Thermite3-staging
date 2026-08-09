@@ -91,7 +91,7 @@ fn level_of(certs: &[Value], item: &str) -> String {
 /// arm is `1 + count(n - 1)`. Certifies L3 (was E0308/L0).
 const COUNT_PROGRAM: &str = "\
 spec fn count(n: u64) -> u64
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -109,13 +109,13 @@ spec fn count(n: u64) -> u64
 /// (compile-time E0425), not a termination failure.
 const DEC_DEP_PROGRAM: &str = "\
 spec fn measure(n: u64) -> nat
-  dec n
+  measures n
 {
   n as nat
 }
 
 spec fn walk(n: u64) -> u64
-  dec measure(n)
+  measures measure(n)
 {
   if n == 0 {
     0

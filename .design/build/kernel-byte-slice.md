@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 3e1c3a1fbe2bf788326d6cbfc46e2ed1697a5ce4a369634faac1ee8cf006f6e8 (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: f81b6903366ceec0ce435089c7f021c8c25f951c51aa3d2d08ca8a73ea08e5e3)
+audited-content-sha256: 2a71db355ec7fc53b0a982fd29c41aa0694676d97038af4e3f24e3acc328488b (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: 3e1c3a1fbe2bf788326d6cbfc46e2ed1697a5ce4a369634faac1ee8cf006f6e8, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: f81b6903366ceec0ce435089c7f021c8c25f951c51aa3d2d08ca8a73ea08e5e3))
 decision: explicit pinned vstd proof-model import plus deterministic no_std erased link metadata
 issue: github:dollspace-gay/Thermite#108
 governs:

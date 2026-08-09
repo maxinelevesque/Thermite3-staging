@@ -62,7 +62,7 @@ fn has_int_literal_arith_result(src: &str) -> bool {
 
 const COUNT_U64: &str = "\
 spec fn count(n: u64) -> u64
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -74,7 +74,7 @@ spec fn count(n: u64) -> u64
 
 const COUNT_U32: &str = "\
 spec fn count(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -86,7 +86,7 @@ spec fn count(n: u32) -> u32
 
 const COUNT_USIZE: &str = "\
 spec fn count(n: usize) -> usize
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -101,7 +101,7 @@ spec fn count(n: usize) -> usize
 // must not gain a narrowing cast (byte-stability — the `spec_line_start` shape).
 const NO_ARITH_RESULT: &str = "\
 spec fn pick(n: u64, acc: u64) -> u64
-  dec n
+  measures n
 {
   if n == 0 {
     acc

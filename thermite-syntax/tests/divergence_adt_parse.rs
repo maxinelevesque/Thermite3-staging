@@ -41,9 +41,9 @@ fn divergence_clause_match_arm_body_struct_lit_parses() {
 struct Point { x: u64, }
 enum E { A, B, }
 fn f(e: E) -> bool
-  req true
-  ens match e { A => Point { x: 1 }, B => Point { x: 2 }, } is A
-  fx  pure
+  ! pure
+  requires true
+  ensures match e { A => Point { x: 1 }, B => Point { x: 2 }, } is A
 { true }
 ";
     let r = parse(src);
@@ -66,7 +66,7 @@ fn f(e: E) -> bool
         Item::Fn(f) => f,
         other => panic!("item[2] must be the `fn f`, got {other:?}"),
     };
-    let ens = &f.contract.ens[0].expr;
+    let ens = &f.contract.ensures[0].expr;
     let scrutinee = match ens {
         Expr::Is { scrutinee, .. } => scrutinee.as_ref(),
         other => panic!("ens must be an `Expr::Is`, got {other:?}"),

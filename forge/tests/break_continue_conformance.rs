@@ -132,15 +132,15 @@ fn continue_preserving_invariant_and_decreases_certifies_l3() {
     let certs = check_program(
         "cont_ok",
         "fn sum_to(n: u64) -> u64\n  \
-           req n <= 100000\n  \
-           ens result == n * 2\n  \
-           fx pure\n{\n  \
+           ! pure
+  requires n <= 100000\n  \
+           ensures result == n * 2\n{\n  \
              let mut i: u64 = 0;\n  \
              let mut c: u64 = 0;\n  \
              while i < n\n    \
-               inv i <= n\n    \
-               inv c == i * 2\n    \
-               dec n - i\n  \
+               keeps i <= n\n    \
+               keeps c == i * 2\n    \
+               measures n - i\n  \
              {\n    \
                c = c + 1;\n    \
                i = i + 1;\n    \
@@ -175,15 +175,15 @@ fn continue_breaking_invariant_is_l0() {
     let certs = check_program(
         "cont_bad_inv",
         "fn bad_inv(n: u64) -> u64\n  \
-           req n <= 100000\n  \
-           ens result == n * 2\n  \
-           fx pure\n{\n  \
+           ! pure
+  requires n <= 100000\n  \
+           ensures result == n * 2\n{\n  \
              let mut i: u64 = 0;\n  \
              let mut c: u64 = 0;\n  \
              while i < n\n    \
-               inv i <= n\n    \
-               inv c == i * 2\n    \
-               dec n - i\n  \
+               keeps i <= n\n    \
+               keeps c == i * 2\n    \
+               measures n - i\n  \
              {\n    \
                c = c + 1;\n    \
                if i < n {\n      continue;\n    }\n    \
@@ -217,13 +217,13 @@ fn continue_not_decreasing_measure_is_l0() {
     let certs = check_program(
         "cont_bad_dec",
         "fn bad_dec(n: u64) -> u64\n  \
-           req n <= 100000\n  \
-           ens result <= n\n  \
-           fx pure\n{\n  \
+           ! pure
+  requires n <= 100000\n  \
+           ensures result <= n\n{\n  \
              let mut i: u64 = 0;\n  \
              while i < n\n    \
-               inv i <= n\n    \
-               dec n - i\n  \
+               keeps i <= n\n    \
+               measures n - i\n  \
              {\n    \
                if i < n {\n      continue;\n    }\n    \
                i = i + 1;\n  }\n  \
@@ -257,15 +257,15 @@ fn break_early_exit_certifies_l3() {
     let certs = check_program(
         "break_ok",
         "fn const_break(n: u64) -> u64\n  \
-           req n <= 100000\n  \
-           ens result == 5\n  \
-           fx pure\n{\n  \
+           ! pure
+  requires n <= 100000\n  \
+           ensures result == 5\n{\n  \
              let mut i: u64 = 0;\n  \
              let mut c: u64 = 5;\n  \
              while i < n\n    \
-               inv i <= n\n    \
-               inv c == 5\n    \
-               dec n - i\n  \
+               keeps i <= n\n    \
+               keeps c == 5\n    \
+               measures n - i\n  \
              {\n    \
                if i == 3 {\n      break;\n    }\n    \
                i = i + 1;\n  }\n  \
@@ -302,13 +302,13 @@ fn diverge_loop_with_break_and_continue_caps_at_l1() {
     let certs = check_program(
         "diverge_bc",
         "fn event_loop(limit: u64) -> u64\n  \
-           req limit <= 100000\n  \
-           ens result <= 1\n  \
-           fx  diverge\n{\n  \
+           ! diverge
+  requires limit <= 100000\n  \
+           ensures result <= 1\n{\n  \
              let mut seen: u64 = 0;\n  \
              loop\n    \
-               inv seen <= 1\n    \
-               dec 1\n  \
+               keeps seen <= 1\n    \
+               measures 1\n  \
              {\n    \
                let k: u64 = next_key(seen);\n    \
                if k == 0 {\n      continue;\n    }\n    \
@@ -316,9 +316,9 @@ fn diverge_loop_with_break_and_continue_caps_at_l1() {
                seen = 1;\n  }\n  \
              seen\n}\n\n\
          fn next_key(s: u64) -> u64\n  \
-           req true\n  \
-           ens result == s\n  \
-           fx pure\n{\n  s\n}\n",
+           ! pure
+  requires true\n  \
+           ensures result == s\n{\n  s\n}\n",
     );
     assert_eq!(
         level(&certs, "event_loop"),
@@ -363,7 +363,7 @@ fn break_or_continue_outside_a_loop_is_a_structured_error_not_a_panic() {
     use thermite_syntax::parser::SyntaxError;
 
     let break_top =
-        "fn f(n: u64) -> u64\n  req true\n  ens result == 0\n  fx pure\n{\n  break;\n  0\n}\n";
+        "fn f(n: u64) -> u64\n  ! pure\n  requires true\n  ensures result == 0\n{\n  break;\n  0\n}\n";
     let r = thermite_syntax::parse(break_top);
     assert!(
         !r.is_clean(),
@@ -380,7 +380,7 @@ fn break_or_continue_outside_a_loop_is_a_structured_error_not_a_panic() {
     );
 
     let continue_top =
-        "fn g(n: u64) -> u64\n  req true\n  ens result == 0\n  fx pure\n{\n  continue;\n  0\n}\n";
+        "fn g(n: u64) -> u64\n  ! pure\n  requires true\n  ensures result == 0\n{\n  continue;\n  0\n}\n";
     let r2 = thermite_syntax::parse(continue_top);
     assert!(
         r2.errors
@@ -401,9 +401,10 @@ fn break_and_continue_inside_a_loop_parse_cleanly_as_stmt_nodes() {
     use thermite_syntax::ast::{Item, Stmt};
 
     let prog = "fn f(n: u64) -> u64\n  \
-                  req true\n  ens result == 0\n  fx pure\n{\n  \
+                  ! pure
+  requires true\n  ensures result == 0\n{\n  \
                     let mut i: u64 = 0;\n  \
-                    while i < n\n    inv i <= n\n    dec n - i\n  \
+                    while i < n\n    keeps i <= n\n    measures n - i\n  \
                     {\n    \
                       if i == 3 {\n      break;\n    }\n    \
                       if i == 4 {\n      continue;\n    }\n    \

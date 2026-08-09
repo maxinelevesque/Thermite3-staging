@@ -57,7 +57,7 @@ fn run_forge(args: &[&str]) -> (String, String, bool) {
 
 /// The merge example as a HOLED forge-tier lemma (the `?p0` the agent fills).
 const MERGE_HOLED: &str =
-    "lemma merge_advance(i: u64, n: u64)\n    req i < n\n    ens i + 1 <= n\n    proof { ?p0 }\n";
+    "lemma merge_advance(i: u64, n: u64)\n    requires i < n\n    ensures i + 1 <= n\n    proof { ?p0 }\n";
 
 /// The frozen-battery tactics that close the merge goal against the denotation spine.
 const MERGE_TACTICS: &str =

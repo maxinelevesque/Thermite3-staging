@@ -391,14 +391,14 @@ impl Tcb {
                 boundary_contracts.push(BoundaryContract {
                     name: cert.item.clone(),
                     target,
-                    req: contract.as_ref().map(|c| c.req.text.clone()),
-                    ens: contract
+                    requires: contract.as_ref().map(|c| c.requires.text.clone()),
+                    ensures: contract
                         .as_ref()
-                        .map(|c| c.ens.iter().map(|cl| cl.text.clone()).collect())
+                        .map(|c| c.ensures.iter().map(|cl| cl.text.clone()).collect())
                         .unwrap_or_default(),
-                    fx: contract
+                    effects: contract
                         .as_ref()
-                        .map(|c| effects_of(&c.fx))
+                        .map(|c| effects_of(&c.effects))
                         .unwrap_or_else(|| effects_of(&EffectRow::Pure)),
                 });
             }
@@ -437,12 +437,15 @@ pub struct BoundaryContract {
     pub target: String,
     /// The enforced precondition text (`req`), when resolvable from the program.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub req: Option<String>,
+    #[serde(rename = "req")]
+    pub requires: Option<String>,
     /// The enforced postcondition clauses (`ens`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub ens: Vec<String>,
+    #[serde(rename = "ens")]
+    pub ensures: Vec<String>,
     /// The declared effect row (`fx`) as tokens (e.g. `["pure"]`).
-    pub fx: Vec<String>,
+    #[serde(rename = "fx")]
+    pub effects: Vec<String>,
 }
 
 /// The toolchain identity — the irreducible §9 TCB residue (REQ-3). Every
@@ -879,8 +882,9 @@ mod tests {
     // definition (R-CHAR-3), not forge stdout.
     #[test]
     fn probe_pure_int_tail_is_auto() {
-        let program =
-            parse_program("fn count(n: u32) -> u32 req n < 100 ens result == n fx pure { n }");
+        let program = parse_program(
+            "fn count(n: u32) -> u32 ! pure requires n < 100 ensures result == n { n }",
+        );
         let row = LeanFragmentRow::probe("count", &program);
         assert!(
             row.exportable,
@@ -899,7 +903,7 @@ mod tests {
     #[test]
     fn probe_boundary_is_not_pure_contract() {
         let program = parse_program(
-            "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 req x < 100 ens result == x fx pure ;",
+            "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
         );
         let row = LeanFragmentRow::probe("bnd", &program);
         assert!(!row.exportable);
@@ -927,11 +931,11 @@ mod tests {
         for (name, src) in [
             (
                 "count",
-                "fn count(n: u32) -> u32 req n < 100 ens result == n fx pure { n }",
+                "fn count(n: u32) -> u32 ! pure requires n < 100 ensures result == n { n }",
             ),
             (
                 "bnd",
-                "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 req x < 100 ens result == x fx pure ;",
+                "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
             ),
         ] {
             let program = parse_program(src);

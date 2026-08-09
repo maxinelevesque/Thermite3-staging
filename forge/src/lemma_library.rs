@@ -74,14 +74,14 @@ pub fn statement_hash(l: &LemmaItem) -> String {
         field(&mut hasher, b"param", render_param(p).as_bytes());
     }
     // `req` — the single hypothesis clause's verbatim text.
-    field(&mut hasher, b"req", l.req.text.as_bytes());
+    field(&mut hasher, b"req", l.requires.text.as_bytes());
     // `ens` — every conclusion clause's verbatim text, in order.
     field(
         &mut hasher,
         b"ens-count",
-        &(l.ens.len() as u64).to_le_bytes(),
+        &(l.ensures.len() as u64).to_le_bytes(),
     );
-    for e in &l.ens {
+    for e in &l.ensures {
         field(&mut hasher, b"ens", e.text.as_bytes());
     }
     hex_lower(&hasher.finalize())
@@ -448,9 +448,9 @@ mod tests {
     #[test]
     fn statement_hash_excludes_name_and_proof() {
         let prog = parse_ok(
-            "lemma foo(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-             lemma bar(n: u32) req n > 0 ens n >= 1 proof { simp; omega }\n\
-             lemma baz(n: u32) req n > 1 ens n >= 1 proof { omega }",
+            "lemma foo(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+             lemma bar(n: u32) requires n > 0 ensures n >= 1 proof { simp; omega }\n\
+             lemma baz(n: u32) requires n > 1 ensures n >= 1 proof { omega }",
         );
         let lemmas: Vec<&LemmaItem> = prog
             .items
@@ -478,8 +478,8 @@ mod tests {
     #[test]
     fn uncertified_citation_is_refused_with_the_lemma_named() {
         let prog = parse_ok(
-            "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-             lemma user(n: u32) req n > 0 ens n >= 1 proof { simp [melems_cons]; omega }",
+            "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+             lemma user(n: u32) requires n > 0 ensures n >= 1 proof { simp [melems_cons]; omega }",
         );
         // `melems_cons` did not certify (absent from the cert collection).
         let lib = LemmaLibrary::build(&prog, &[]);
@@ -531,9 +531,9 @@ mod tests {
     #[test]
     fn dedup_on_burn_rewrites_citation_to_canonical() {
         let prog = parse_ok(
-            "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-             lemma melems_cons_dup(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-             lemma user(n: u32) req n > 0 ens n >= 1 proof { simp [melems_cons_dup]; omega }",
+            "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+             lemma melems_cons_dup(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+             lemma user(n: u32) requires n > 0 ensures n >= 1 proof { simp [melems_cons_dup]; omega }",
         );
         // both duplicates certify; the first in source order (`melems_cons`) is canonical.
         let lib = LemmaLibrary::build(
@@ -570,9 +570,9 @@ mod tests {
     #[test]
     fn only_top_level_lemmas_are_in_the_namespace() {
         let prog = parse_ok(
-            "fn f(n: u32) -> u32 req n > 0 ens result >= 1 fx pure { n }\n\
-             lemma shared(n: u32) req n > 0 ens n >= 1 proof { omega }\n\
-             proof for f { ens#0 by { exact local_fact } }",
+            "fn f(n: u32) -> u32 ! pure requires n > 0 ensures result >= 1 { n }\n\
+             lemma shared(n: u32) requires n > 0 ensures n >= 1 proof { omega }\n\
+             proof for f { ensures#0 by { exact local_fact } }",
         );
         let lib = LemmaLibrary::build(&prog, &[certified("shared")]);
         // A top-level lemma IS in the namespace (the cross-function shareable surface).

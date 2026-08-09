@@ -84,7 +84,8 @@ fn divergence_to_string_display_order_msb_first() {
     // displayed bytes round-trip against a big-endian parse. `u64_to_string` now
     // reverses the LSB construction buffer, carrying the proof via the
     // `parse_be(seq_reverse(s)) == parse_le(s)` bridge.
-    let program = "fn show42() -> String\n  req true\n  ens parse_be(result) == 42\n  fx alloc\n{ let n: u64 = 42; n.to_string() }\n";
+    let program = "fn show42() -> String\n  ! alloc
+  requires true\n  ensures parse_be(result) == 42\n{ let n: u64 = 42; n.to_string() }\n";
     let fixture =
         std::env::temp_dir().join(format!("forge_numfmt_order_{}.th", std::process::id()));
     std::fs::write(&fixture, program).expect("write fixture");

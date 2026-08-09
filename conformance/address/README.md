@@ -6,12 +6,12 @@ Each `<name>.addresses.json` file describes the addresses expected for
 `.design/syntax/semantic-addressing.md`.
 
 The `addresses` array lists valid addresses in document order. Entries for
-`inv` and `dec` nodes also include the source text that the address must resolve
+`keeps` and `measures` nodes also include the source text that the address must resolve
 to. The `must_error` array contains invalid or out-of-range addresses that must
 produce a structured error.
 
 Addresses are one-based and follow source order within their enclosing item.
-For `binary_search`, `inv#2` resolves to `forall_below` and `inv#3` resolves to
+For `binary_search`, `keeps#2` resolves to `forall_below` and `keeps#3` resolves to
 `forall_from`. This corrects the reversed labels in the illustrative
 `thermite-design.md` §4.3 example.
 

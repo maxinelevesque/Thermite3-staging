@@ -3,9 +3,9 @@
 Thermite is a programming language for code that must explain why it is
 correct. Functions state:
 
-- `req`: what callers must establish;
-- `ens`: what the function guarantees;
-- `fx`: what the function may affect.
+- `requires`: what callers must establish;
+- `ensures`: what the function guarantees;
+- `!`: what the function may affect.
 
 Forge checks those contracts, returns concrete counterexamples when they fail,
 and records the result in an assurance manifest. The long-term goal is simple:
@@ -20,15 +20,15 @@ seccomp-backed runtime path are Linux-oriented.
 
 ```thermite
 fn sum(xs: &[u32]) -> u64
-  req xs.len() <= 1_000_000
-  ens result == spec_sum(xs)
-  fx  pure
+  requires xs.len() <= 1_000_000
+  ensures result == spec_sum(xs)
+  !  pure
 {
   let mut acc: u64 = 0;
   let mut i: usize = 0;
   while i < xs.len()
-    inv acc == spec_sum(&xs[..i])
-    dec xs.len() - i
+    keeps acc == spec_sum(&xs[..i])
+    measures xs.len() - i
   {
     acc = acc + xs[i] as u64;
     i = i + 1;
@@ -39,7 +39,7 @@ fn sum(xs: &[u32]) -> u64
 
 `forge check` proves the contract or reports why it could not. `forge build`
 lowers the program to Rust with runtime contract checks; hosted executables are
-confined by an `fx`-derived seccomp filter unless the sandbox is explicitly
+confined by an `!`-derived seccomp filter unless the sandbox is explicitly
 disabled.
 
 ## Install

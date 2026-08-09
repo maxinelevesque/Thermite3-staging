@@ -4,7 +4,7 @@ enum List {
 }
 
 spec fn sum_list(l: List) -> u64
-  dec l
+  measures l
 {
   match l {
     Nil        => 0,

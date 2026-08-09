@@ -66,7 +66,7 @@ L3→L2→L1 degrade (issue #10). #11 produces; #10 degrades; #18 retries.
   into one or more `SuggestedMove`s (`manifest.rs`, the §5.1 reserved slot) /
   structured prompt strings naming the top-instantiated quantifier and its
   trigger, the instantiation share, and a heuristic hint (trigger-loop suspicion
-  when one quantifier dominates the budget; "add a `dec` / split the trigger /
+  when one quantifier dominates the budget; "add a `measures` / split the trigger /
   introduce a lemma" templates). Deterministic given a `SolverProfile` (the
   RENDERING is deterministic; the input profile is not). Derived from §5.1 pillar
   3 ("reserves a `suggested_move` slot populated by deterministic heuristics …

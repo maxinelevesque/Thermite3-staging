@@ -1123,7 +1123,7 @@ fn walk_block(block: &Block, f: &mut impl FnMut(&Expr)) {
                 for inv in &loop_.invs {
                     walk_expr(&inv.expr, f);
                 }
-                walk_expr(&loop_.dec.expr, f);
+                walk_expr(&loop_.measures.expr, f);
                 walk_block(&loop_.body, f);
             }
         }
@@ -1550,7 +1550,7 @@ fn write_stmt(stmt: &Stmt, out: &mut String) {
                 write_expr(&inv.expr, out);
             }
             out.push(' ');
-            write_expr(&loop_.dec.expr, out);
+            write_expr(&loop_.measures.expr, out);
             out.push(' ');
             write_block(&loop_.body, out);
             out.push(')');
@@ -1694,7 +1694,7 @@ mod tests {
         from_clause(
             &parsed.program,
             function,
-            &function.contract.req,
+            &function.contract.requires,
             SourceAddress {
                 item: function.name.clone(),
                 clause: clause.to_string(),
@@ -1705,10 +1705,11 @@ mod tests {
     #[test]
     fn source_quantifier_preserves_values_domains_and_de_bruijn_indices() {
         let recon = bridge(
-            "spec fn widen(x: u32) -> u64 dec x { x as u64 }\n\
+            "spec fn widen(x: u32) -> u64 measures x { x as u64 }\n\
              fn f(xs: Vec<u32>, needle: u64) -> u64\n\
-               req forall (i : usize) in xs. widen(xs[i]) != needle\n\
-               ens result == 0 fx pure { 0 }",
+               ! pure
+requires forall (i : usize) in xs. widen(xs[i]) != needle\n\
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect("bridge");
@@ -1731,8 +1732,9 @@ mod tests {
     fn obligation_bridge_binds_the_counterexample_polarity() {
         let parsed = parse(
             "fn f(x: u64) -> u64\n\
-             req x > 0\n\
-             ens result >= x fx pure { x }",
+             ! pure
+requires x > 0\n\
+             ensures result >= x { x }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(function) = &parsed.program.items[0] else {
@@ -1741,8 +1743,8 @@ mod tests {
         let recon = from_obligation(
             &parsed.program,
             function,
-            &function.contract.req,
-            &function.contract.ens[0],
+            &function.contract.requires,
+            &function.contract.ensures[0],
             SourceAddress {
                 item: "f".to_string(),
                 clause: "ens#0".to_string(),
@@ -1762,10 +1764,11 @@ mod tests {
     #[test]
     fn literals_are_valued_and_constant_ids_do_not_alias() {
         let recon = bridge(
-            "spec fn id(x: u64) -> u64 dec x { x }\n\
+            "spec fn id(x: u64) -> u64 measures x { x }\n\
              fn f(a: u64, b: u64) -> u64\n\
-               req id(a) == b && b != 17\n\
-               ens result == 0 fx pure { 0 }",
+               ! pure
+requires id(a) == b && b != 17\n\
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect("bridge");
@@ -1778,14 +1781,14 @@ mod tests {
     #[test]
     fn qfree_leaf_retains_a_deterministic_source_ast() {
         let a = bridge(
-            "spec fn id(x: u64) -> u64 dec x { x }\n\
-             fn f(x: u64) -> u64 req x + x == 6 ens result == 0 fx pure { 0 }",
+            "spec fn id(x: u64) -> u64 measures x { x }\n\
+             fn f(x: u64) -> u64 ! pure requires x + x == 6 ensures result == 0 { 0 }",
             "req",
         )
         .expect("bridge");
         let b = bridge(
-            "spec fn id(x: u64) -> u64 dec x { x }\n\
-             fn f(x: u64) -> u64 req x + x == 6 ens result == 0 fx pure { 0 }",
+            "spec fn id(x: u64) -> u64 measures x { x }\n\
+             fn f(x: u64) -> u64 ! pure requires x + x == 6 ensures result == 0 { 0 }",
             "req",
         )
         .expect("bridge");
@@ -1799,8 +1802,9 @@ mod tests {
     fn repeated_qfree_source_expressions_share_one_canonical_atom() {
         let parsed = parse(
             "fn f(x: u64) -> u64\n\
-             req x + x == 6\n\
-             ens x + x == 6 fx pure { x }",
+             ! pure
+requires x + x == 6\n\
+             ensures x + x == 6 { x }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(function) = &parsed.program.items[0] else {
@@ -1809,8 +1813,8 @@ mod tests {
         let recon = from_obligation(
             &parsed.program,
             function,
-            &function.contract.req,
-            &function.contract.ens[0],
+            &function.contract.requires,
+            &function.contract.ensures[0],
             SourceAddress {
                 item: "f".to_string(),
                 clause: "ens#0".to_string(),
@@ -1829,15 +1833,16 @@ mod tests {
 
         let parsed = parse(
             "fn f(x: u64) -> u64\n\
-             req x + x == 6\n\
-             ens x + x == 6 fx pure { x }",
+             ! pure
+requires x + x == 6\n\
+             ensures x + x == 6 { x }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(parsed_function) = &parsed.program.items[0] else {
             panic!("expected function");
         };
         let mut function = parsed_function.clone();
-        function.contract.ens[0].bv = Some(BvTag {
+        function.contract.ensures[0].bv = Some(BvTag {
             width: BvWidth::W64,
             nowrap: false,
             span: Span::new(0, 0),
@@ -1845,8 +1850,8 @@ mod tests {
         let recon = from_obligation(
             &parsed.program,
             &function,
-            &function.contract.req,
-            &function.contract.ens[0],
+            &function.contract.requires,
+            &function.contract.ensures[0],
             SourceAddress {
                 item: "f".to_string(),
                 clause: "ens#0".to_string(),
@@ -1871,8 +1876,9 @@ mod tests {
 
         let parsed = parse(
             "fn f(x: u64) -> u64\n\
-             req x / 2 == 3\n\
-             ens result == 0 fx pure { 0 }",
+             ! pure
+requires x / 2 == 3\n\
+             ensures result == 0 { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(parsed_function) = &parsed.program.items[0] else {
@@ -1881,7 +1887,7 @@ mod tests {
         let untagged = from_clause(
             &parsed.program,
             parsed_function,
-            &parsed_function.contract.req,
+            &parsed_function.contract.requires,
             SourceAddress {
                 item: "f".to_string(),
                 clause: "req".to_string(),
@@ -1895,7 +1901,7 @@ mod tests {
         ));
 
         let mut function = parsed_function.clone();
-        function.contract.req.bv = Some(BvTag {
+        function.contract.requires.bv = Some(BvTag {
             width: BvWidth::W32,
             nowrap: false,
             span: Span::new(0, 0),
@@ -1903,7 +1909,7 @@ mod tests {
         let tagged = from_clause(
             &parsed.program,
             &function,
-            &function.contract.req,
+            &function.contract.requires,
             SourceAddress {
                 item: "f".to_string(),
                 clause: "req".to_string(),
@@ -1920,15 +1926,16 @@ mod tests {
     #[test]
     fn admitted_bridge_covers_the_complete_formula_relation_and_term_inventory() {
         let recon = bridge(
-            "spec fn widen(x: u32) -> u64 dec x { x as u64 }\n\
+            "spec fn widen(x: u32) -> u64 measures x { x as u64 }\n\
              fn f(xs: Vec<u32>, x: u64, flag: bool) -> u64\n\
-               req (((x == 0 || x != 1) && !(x < 2)) && x <= 3 && x > 4 && \
+               ! pure
+requires (((x == 0 || x != 1) && !(x < 2)) && x <= 3 && x > 4 && \
                  (x as u64) >= 5) && \
                  flag == true && \
                  forall (i : usize) in xs. \
                    ((i + 1 < xs.len()) || \
                     (widen(xs[i]) <= x * 2 && xs[i - 1] == 0))\n\
-               ens result == 0 fx pure { 0 }",
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect("complete constructor bridge");
@@ -1951,10 +1958,11 @@ mod tests {
     #[test]
     fn admitted_bridge_covers_existential_opaque_binders() {
         let recon = bridge(
-            "spec fn keep(x: Key) -> Key dec 0 { x }\n\
+            "spec fn keep(x: Key) -> Key measures 0 { x }\n\
              fn f(keys: Vec<Key>, needle: Key) -> u64\n\
-               req exists (key : Key) in keys. key == needle\n\
-               ens result == 0 fx pure { 0 }",
+               ! pure
+requires exists (key : Key) in keys. key == needle\n\
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect("existential opaque bridge");
@@ -1970,10 +1978,11 @@ mod tests {
     #[test]
     fn non_qfree_source_nodes_are_refused_instead_of_hidden_as_atoms() {
         let non_unary = bridge(
-            "spec fn pair(x: u64, y: u64) -> u64 dec x { x }\n\
+            "spec fn pair(x: u64, y: u64) -> u64 measures x { x }\n\
              fn f(x: u64) -> u64\n\
-               req pair(x, x) == x\n\
-               ens result == 0 fx pure { 0 }",
+               ! pure
+requires pair(x, x) == x\n\
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect_err("a non-unary call is outside both EPR terms and scalar QF replay");
@@ -1983,20 +1992,22 @@ mod tests {
         ));
 
         let field = bridge(
-            "spec fn keep(x: u64) -> u64 dec x { x }\n\
+            "spec fn keep(x: u64) -> u64 measures x { x }\n\
              fn f(x: u64) -> u64\n\
-               req x.value == 0\n\
-               ens result == 0 fx pure { 0 }",
+               ! pure
+requires x.value == 0\n\
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect_err("field access is not a scalar QF leaf");
         assert!(matches!(field, BridgeError::UnsupportedTerm { .. }));
 
         let unknown = bridge(
-            "spec fn keep(x: u64) -> u64 dec x { x }\n\
+            "spec fn keep(x: u64) -> u64 measures x { x }\n\
              fn f(x: u64) -> u64\n\
-               req ghost / 2 == 0\n\
-               ens result == 0 fx pure { 0 }",
+               ! pure
+requires ghost / 2 == 0\n\
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect_err("QF fallback cannot invent an undeclared source value");
@@ -2009,10 +2020,11 @@ mod tests {
     #[test]
     fn bound_multiplication_and_width_changing_casts_reach_named_classifier_refusals() {
         let multiplication = bridge(
-            "spec fn keep(x: u64) -> u64 dec x { x }\n\
+            "spec fn keep(x: u64) -> u64 measures x { x }\n\
              fn f(xs: Vec<u64>) -> u64\n\
-               req forall (i : usize) in xs. i * 2 < xs.len()\n\
-               ens result == 0 fx pure { 0 }",
+               ! pure
+requires forall (i : usize) in xs. i * 2 < xs.len()\n\
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect("bound multiplication has a canonical form before classification");
@@ -2022,10 +2034,11 @@ mod tests {
         );
 
         let cast = bridge(
-            "spec fn keep(x: u32) -> u32 dec x { x }\n\
+            "spec fn keep(x: u32) -> u32 measures x { x }\n\
              fn f(xs: Vec<u32>) -> u64\n\
-               req forall (i : usize) in xs. (i as u32) < xs[i]\n\
-               ens result == 0 fx pure { 0 }",
+               ! pure
+requires forall (i : usize) in xs. (i as u32) < xs[i]\n\
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect("width-changing cast has a canonical form before classification");
@@ -2038,10 +2051,11 @@ mod tests {
     #[test]
     fn unsupported_bound_term_is_a_named_refusal_not_qfree() {
         let error = bridge(
-            "spec fn id(x: usize) -> usize dec x { x }\n\
+            "spec fn id(x: usize) -> usize measures x { x }\n\
              fn f(xs: Vec<u64>) -> u64\n\
-               req forall (i : usize) in xs. xs[i / 2] == 0\n\
-               ens result == 0 fx pure { 0 }",
+               ! pure
+requires forall (i : usize) in xs. xs[i / 2] == 0\n\
+               ensures result == 0 { 0 }",
             "req",
         )
         .expect_err("bound division is outside the S₂.0 term language");

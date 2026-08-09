@@ -105,9 +105,9 @@ fn first_cert(program: &str, name: &str) -> Value {
 /// generator drawing some `x != 0`.
 const ALWAYS_ZERO_STMT_IF: &str = "\
 fn alwayszero(x: u64) -> u64
-    req true
-    ens result == 0
-    fx pure
+    ! pure
+    requires true
+    ensures result == 0
 { if x > 0 { x } else { x } 0 }
 
 witness { inhabit (0); falsify 1000; }
@@ -118,9 +118,9 @@ witness { inhabit (0); falsify 1000; }
 /// to the `Stmt::If` evaluation.
 const ALWAYS_ZERO_PLAIN: &str = "\
 fn alwayszero(x: u64) -> u64
-    req true
-    ens result == 0
-    fx pure
+    ! pure
+    requires true
+    ensures result == 0
 { 0 }
 
 witness { inhabit (0); falsify 1000; }

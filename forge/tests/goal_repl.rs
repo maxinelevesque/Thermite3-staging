@@ -192,7 +192,7 @@ fn edit_splices_clause_and_rechecks() {
     let run = run_forge(&[
         "edit",
         tmp.to_str().unwrap(),
-        "binary_search.loop#1.inv#2",
+        "binary_search.loop#1.keeps#2",
         "--replace",
         "forall_below(haystack, lo, |x| x < needle)",
     ]);

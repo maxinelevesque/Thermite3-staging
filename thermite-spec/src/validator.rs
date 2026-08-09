@@ -889,8 +889,8 @@ impl Validator {
             }
             match item {
                 Item::Fn(f) => {
-                    self.walk_clause(&f.contract.req);
-                    for clause in &f.contract.ens {
+                    self.walk_clause(&f.contract.requires);
+                    for clause in &f.contract.ensures {
                         self.walk_clause(clause);
                     }
                     // REQ-3: a `fn` body is executable surface code, not a
@@ -920,7 +920,10 @@ impl Validator {
                         // that calls each other (neither calls itself directly) is not
                         // a direct self-call, so it is not flagged here; it reaches
                         // Verus and is rejected there (no false L3, no crash).
-                        if f.dec.is_none() && !fn_is_diverge(f) && block_calls_name(body, &f.name) {
+                        if f.measures.is_none()
+                            && !fn_is_diverge(f)
+                            && block_calls_name(body, &f.name)
+                        {
                             self.errors.push(SpecError::MissingDecreases {
                                 name: f.name.clone(),
                                 span: f.span,
@@ -931,7 +934,7 @@ impl Validator {
                 Item::SpecFn(s) => {
                     // A `spec fn` body is itself a contract-position expression
                     // tree (REQ-3) — fully caged; its `dec` measure is a clause.
-                    self.walk_clause(&s.dec);
+                    self.walk_clause(&s.measures);
                     self.walk_block(&s.body, s.span);
                 }
                 // Basis Stage 1b (`.design/basis/01-adts.md` REQ-5/REQ-6): the
@@ -945,7 +948,7 @@ impl Validator {
                 // `match`/`is` sites. The 1a `UnsupportedAdt` gate is gone: a
                 // well-formed ADT now validates.
                 Item::Struct(s) => {
-                    if let Some(inv) = &s.inv {
+                    if let Some(inv) = &s.keeps {
                         self.walk_clause(inv);
                     }
                 }
@@ -1015,7 +1018,7 @@ impl Validator {
                 for inv in &loop_node.invs {
                     self.walk_clause(inv);
                 }
-                self.walk_clause(&loop_node.dec);
+                self.walk_clause(&loop_node.measures);
                 // The loop body is still executable surface code: scan it
                 // structurally for further nested loops, do not cage it.
                 self.scan_block_for_loops(&loop_node.body, loop_node.span);
@@ -1180,7 +1183,7 @@ impl Validator {
                 for inv in &loop_node.invs {
                     self.walk_clause(inv);
                 }
-                self.walk_clause(&loop_node.dec);
+                self.walk_clause(&loop_node.measures);
                 self.walk_block(&loop_node.body, loop_node.span);
             }
             Stmt::Let { init, .. } => self.walk_expr(init, span),
@@ -1902,7 +1905,7 @@ fn collect_covered_variants<'p>(pattern: &'p Pattern, out: &mut Vec<&'p str>) {
 /// of truth for the §4.1 termination exemption).
 fn fn_is_diverge(f: &thermite_syntax::ast::FnItem) -> bool {
     use thermite_syntax::ast::{Effect, EffectRow};
-    matches!(&f.contract.fx, EffectRow::Set(es) if es.contains(&Effect::Diverge))
+    matches!(&f.contract.effects, EffectRow::Set(es) if es.contains(&Effect::Diverge))
 }
 
 /// True iff `block` contains a direct call to `name` — the self-reference test

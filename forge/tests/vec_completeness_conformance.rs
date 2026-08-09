@@ -121,9 +121,9 @@ fn assert_verifies(label: &str, emitted: &str) {
 
 const VEC_U64_OPS: &str = r#"
 fn build_u64(i: usize, x: u64) -> u64
-  req true
-  ens true
-  fx alloc
+  ! alloc
+  requires true
+  ensures true
 {
     let mut v: Vec<u64> = Vec::new();
     v.push(7);
@@ -176,9 +176,9 @@ fn vec_u64_ops_certify_l3() {
 
 const VEC_INSERT_OOB: &str = r#"
 fn bad_insert(i: usize, x: u64) -> u64
-  req true
-  ens true
-  fx alloc
+  ! alloc
+  requires true
+  ensures true
 {
     let mut v: Vec<u64> = Vec::new();
     v.insert(i, x);
@@ -220,9 +220,9 @@ fn vec_insert_without_oob_guard_fails_verus_l0() {
 
 const VEC_STRING: &str = r#"
 fn build_str() -> u64
-  req true
-  ens true
-  fx alloc
+  ! alloc
+  requires true
+  ensures true
 {
     let mut v: Vec<String> = Vec::new();
     let s = String::from_byte(65);
@@ -269,9 +269,9 @@ const VEC_STRUCT: &str = r#"
 struct Point { x: u64, y: u64 }
 
 fn build_struct() -> u64
-  req true
-  ens true
-  fx alloc
+  ! alloc
+  requires true
+  ensures true
 {
     let mut v: Vec<Point> = Vec::new();
     v.push(Point { x: 3, y: 4 });
@@ -313,9 +313,9 @@ fn vec_struct_borrow_get_certifies_l3() {
 
 const VEC_NESTED: &str = r#"
 fn build_nested() -> u64
-  req true
-  ens true
-  fx alloc
+  ! alloc
+  requires true
+  ensures true
 {
     let mut outer: Vec<Vec<u64> > = Vec::new();
     let inner: Vec<u64> = Vec::new();
@@ -360,9 +360,9 @@ fn vec_nested_borrow_get_certifies_l3() {
 
 const VEC_LOCAL_NEW: &str = r#"
 fn local_only(x: u64) -> u64
-  req x < 1000000
-  ens true
-  fx alloc
+  ! alloc
+  requires x < 1000000
+  ensures true
 {
     let mut v: Vec<u64> = Vec::new();
     v.push(x);
@@ -396,9 +396,9 @@ fn local_vec_new_no_param_certifies_l3() {
 fn non_vec_program_emits_no_vec_wrapper() {
     let src = r#"
 fn add(a: u64, b: u64) -> u64
-  req a < 1000 && b < 1000
-  ens result == a + b
-  fx pure
+  ! pure
+  requires a < 1000 && b < 1000
+  ensures result == a + b
 {
     a + b
 }

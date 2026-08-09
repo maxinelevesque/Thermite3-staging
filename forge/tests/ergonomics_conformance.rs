@@ -121,7 +121,9 @@ fn req1_tuple_destructuring_certifies_l3() {
     }
     let certs = check_program(
         "destr",
-        "fn swap(a: u64, b: u64) -> (u64, u64)\n  req true\n  ens result.0 == b\n  ens result.1 == a\n  fx pure\n{ (b, a) }\nfn use_it(a: u64, b: u64) -> u64\n  req true\n  ens result == a\n  fx pure\n{ let (x, y) = swap(a, b);\n y }\n",
+        "fn swap(a: u64, b: u64) -> (u64, u64)\n  ! pure
+  requires true\n  ensures result.0 == b\n  ensures result.1 == a\n{ (b, a) }\nfn use_it(a: u64, b: u64) -> u64\n  ! pure
+  requires true\n  ensures result == a\n{ let (x, y) = swap(a, b);\n y }\n",
     );
     let use_it = cert_for(&certs, "use_it");
     assert_eq!(
@@ -140,7 +142,8 @@ fn req1_tuple_destructuring_certifies_l3() {
 fn req1_tuple_destructure_desugars_to_temp_plus_projections() {
     use thermite_syntax::{Expr, Item, Stmt};
     let parsed = thermite_syntax::parse(
-        "fn f(a: u64, b: u64) -> u64\n  req true\n  ens result == a\n  fx pure\n{ let (x, _) = g(a, b);\n x }\n",
+        "fn f(a: u64, b: u64) -> u64\n  ! pure
+  requires true\n  ensures result == a\n{ let (x, _) = g(a, b);\n x }\n",
     );
     assert!(parsed.is_clean(), "must parse: {:?}", parsed.errors);
     let Item::Fn(f) = &parsed.program.items[0] else {
@@ -186,7 +189,8 @@ fn req2_for_range_certifies_l3() {
     }
     let certs = check_program(
         "for",
-        "fn count(n: u64) -> u64\n  req true\n  ens result == n\n  fx pure\n{ let mut acc: u64 = 0;\n for i in 0..n inv acc == i inv i <= n { acc = acc + 1; }\n acc }\n",
+        "fn count(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n\n{ let mut acc: u64 = 0;\n for i in 0..n keeps acc == i keeps i <= n { acc = acc + 1; }\n acc }\n",
     );
     let count = cert_for(&certs, "count");
     assert_eq!(
@@ -211,7 +215,8 @@ fn req2_bad_for_inv_is_l0() {
     }
     let certs = check_program(
         "forbad",
-        "fn count(n: u64) -> u64\n  req true\n  ens result == n\n  fx pure\n{ let mut acc: u64 = 0;\n for i in 0..n inv acc == i inv i <= n { acc = acc + 2; }\n acc }\n",
+        "fn count(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n\n{ let mut acc: u64 = 0;\n for i in 0..n keeps acc == i keeps i <= n { acc = acc + 2; }\n acc }\n",
     );
     let count = cert_for(&certs, "count");
     assert_ne!(
@@ -254,7 +259,8 @@ fn req3_guarded_match_certifies_l3() {
     }
     let certs = check_program(
         "guard",
-        "fn small(x: u64) -> bool\n  req true\n  ens result == (x < 10)\n  fx pure\n{ match x { n if n < 10 => true, _ => false } }\n",
+        "fn small(x: u64) -> bool\n  ! pure
+  requires true\n  ensures result == (x < 10)\n{ match x { n if n < 10 => true, _ => false } }\n",
     );
     let small = cert_for(&certs, "small");
     assert_eq!(
@@ -275,7 +281,7 @@ fn req3_guarded_match_certifies_l3() {
 #[test]
 fn req3_guarded_only_arm_is_non_exhaustive() {
     let parsed = thermite_syntax::parse(
-        "enum Maybe { Yes(u64), No } fn f(m: Maybe) -> u64 req true ens result == result fx pure { match m { Yes(v) if v < 10 => v, No => 0 } }",
+        "enum Maybe { Yes(u64), No } fn f(m: Maybe) -> u64 ! pure requires true ensures result == result { match m { Yes(v) if v < 10 => v, No => 0 } }",
     );
     assert!(parsed.is_clean(), "must parse: {:?}", parsed.errors);
     let errors = match validate(&parsed.program) {
@@ -312,7 +318,8 @@ fn req4_or_pattern_certifies_l3() {
     }
     let certs = check_program(
         "orpat",
-        "fn is12(x: u64) -> bool\n  req true\n  ens result == (x == 1 || x == 2)\n  fx pure\n{ match x { 1 | 2 => true, _ => false } }\n",
+        "fn is12(x: u64) -> bool\n  ! pure
+  requires true\n  ensures result == (x == 1 || x == 2)\n{ match x { 1 | 2 => true, _ => false } }\n",
     );
     let is12 = cert_for(&certs, "is12");
     assert_eq!(
@@ -335,7 +342,7 @@ fn req4_or_pattern_certifies_l3() {
 fn req4_or_pattern_exhaustive_via_union() {
     // The union `Yes(_) | No` closes the match, so it validates clean.
     let exhaustive = thermite_syntax::parse(
-        "enum Maybe { Yes(u64), No } fn f(m: Maybe) -> u64 req true ens result == result fx pure { match m { Yes(_) | No => 0 } }",
+        "enum Maybe { Yes(u64), No } fn f(m: Maybe) -> u64 ! pure requires true ensures result == result { match m { Yes(_) | No => 0 } }",
     );
     assert!(exhaustive.is_clean(), "must parse: {:?}", exhaustive.errors);
     assert!(
@@ -347,7 +354,7 @@ fn req4_or_pattern_exhaustive_via_union() {
 
     // A strict subset `A | B` over `{A, B, C}` still leaves `C` uncovered.
     let subset = thermite_syntax::parse(
-        "enum Tri { A, B, C } fn f(t: Tri) -> u64 req true ens result == result fx pure { match t { A | B => 0 } }",
+        "enum Tri { A, B, C } fn f(t: Tri) -> u64 ! pure requires true ensures result == result { match t { A | B => 0 } }",
     );
     assert!(subset.is_clean(), "must parse: {:?}", subset.errors);
     let errors = validate(&subset.program).expect_err("A | B over {A,B,C} is non-exhaustive");
@@ -378,7 +385,8 @@ fn req5_if_let_certifies_l3() {
     }
     let certs = check_program(
         "iflet",
-        "fn unwrap_or(o: Option<u64>) -> u64\n  req true\n  ens result == match o { Some(v) => v, None => 0 }\n  fx pure\n{ if let Some(v) = o { v } else { 0 } }\n",
+        "fn unwrap_or(o: Option<u64>) -> u64\n  ! pure
+  requires true\n  ensures result == match o { Some(v) => v, None => 0 }\n{ if let Some(v) = o { v } else { 0 } }\n",
     );
     let f = cert_for(&certs, "unwrap_or");
     assert_eq!(
@@ -405,7 +413,8 @@ fn req5_while_let_certifies_l3() {
     }
     let certs = check_program(
         "whilelet",
-        "fn drain(start: Option<u64>) -> u64\n  req true\n  ens result <= 1\n  fx pure\n{ let mut cur: Option<u64> = start;\n let mut c: u64 = 0;\n while let Some(_) = cur inv c <= 1 inv !(cur is Some) || (c == 0) dec 1 - c { c = 1; cur = None; }\n c }\n",
+        "fn drain(start: Option<u64>) -> u64\n  ! pure
+  requires true\n  ensures result <= 1\n{ let mut cur: Option<u64> = start;\n let mut c: u64 = 0;\n while let Some(_) = cur keeps c <= 1 keeps !(cur is Some) || (c == 0) measures 1 - c { c = 1; cur = None; }\n c }\n",
     );
     let drain = cert_for(&certs, "drain");
     assert_eq!(
@@ -423,7 +432,8 @@ fn req5_while_let_certifies_l3() {
 fn req5_while_let_desugars_to_while_is_variant() {
     use thermite_syntax::{Expr, Item, LoopKind, Stmt};
     let parsed = thermite_syntax::parse(
-        "fn drain(start: Option<u64>) -> u64\n  req true\n  ens result <= 1\n  fx pure\n{ let mut cur: Option<u64> = start;\n let mut c: u64 = 0;\n while let Some(_) = cur inv c <= 1 dec 1 - c { cur = None; }\n c }\n",
+        "fn drain(start: Option<u64>) -> u64\n  ! pure
+  requires true\n  ensures result <= 1\n{ let mut cur: Option<u64> = start;\n let mut c: u64 = 0;\n while let Some(_) = cur keeps c <= 1 measures 1 - c { cur = None; }\n c }\n",
     );
     assert!(parsed.is_clean(), "must parse: {:?}", parsed.errors);
     let Item::Fn(f) = &parsed.program.items[0] else {

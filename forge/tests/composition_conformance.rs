@@ -316,8 +316,8 @@ fn weak_callee_identity_survivor_stays_counted_and_gates() {
     }
     // ext_weak's `ens result <= 100` is too weak to pin `real == x`, so wcaller's
     // identity mutant `return x` is a counted survivor → wcaller gates WeakContract.
-    let program = "#[boundary(\"ext::ext_weak\")] fn ext_weak(x: u32) -> u32 req x < 100 ens result <= 100 fx pure ; \
-         fn wcaller(x: u32) -> u32 req x < 100 ens result <= 100 fx pure { ext_weak(x) }";
+    let program = "#[boundary(\"ext::ext_weak\")] fn ext_weak(x: u32) -> u32 ! pure requires x < 100 ensures result <= 100 ; \
+         fn wcaller(x: u32) -> u32 ! pure requires x < 100 ensures result <= 100 { ext_weak(x) }";
     let path = write_temp_program("weak_callee_caller", program);
     let (_code, certs, stderr) = run_check_json(&path);
     let _ = std::fs::remove_file(&path);
@@ -370,7 +370,7 @@ fn lying_regular_fn_is_caught_never_laundered_to_l3() {
     }
     // A regular fn (no #[boundary]/#[slag]) whose body returns `x` but whose `ens`
     // claims `result == x + 1`. It must be fully proved and fail.
-    let program = "fn liar(x: u32) -> u32 req x < 100 ens result == x + 1 fx pure { x }";
+    let program = "fn liar(x: u32) -> u32 ! pure requires x < 100 ensures result == x + 1 { x }";
     let path = write_temp_program("lying_regular_fn", program);
     let (_code, certs, stderr) = run_check_json(&path);
     let _ = std::fs::remove_file(&path);

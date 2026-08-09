@@ -6,13 +6,13 @@
   ],
   "to_boundary": [
     { "name": "direct_boundary_caller", "fn": "caller", "via": "ext_id",
-      "program": "#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ; fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }",
+      "program": "#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ; fn caller(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) }",
       "why": "caller's body calls ext_id (a #[boundary] fn, foreign unproven body) -> caller is TO-THE-BOUNDARY via ext_id. (caller may itself be L3-proved against ext_id's contract — scope is orthogonal to level.)" },
     { "name": "transitive_boundary_caller", "fn": "h", "via": "ext_id",
-      "program": "#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ; fn g(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) } fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }",
+      "program": "#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ; fn g(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) } fn h(x: u32) -> u32 ! pure requires x < 100 ensures result == x { g(x) }",
       "why": "h -> g -> ext_id: the transitive closure of h reaches the boundary -> h is TO-THE-BOUNDARY (transitive, via ext_id)." },
     { "name": "slag_caller", "fn": "caller", "via": "vendored",
-      "program": "#[slag(reason = \"hand-tuned\", owner = \"agent:x\", review = \"required\")] fn vendored(x: u32) -> u32 req x < 100 ens result == x fx pure { x } fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { vendored(x) }",
+      "program": "#[slag(reason = \"hand-tuned\", owner = \"agent:x\", review = \"required\")] fn vendored(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x } fn caller(x: u32) -> u32 ! pure requires x < 100 ensures result == x { vendored(x) }",
       "why": "caller calls vendored (a #[slag] fn, trusted-by-fiat body) -> caller is TO-THE-BOUNDARY via vendored (slag is in the closure)." }
   ]
 }

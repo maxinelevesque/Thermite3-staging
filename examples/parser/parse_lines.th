@@ -4,9 +4,9 @@
 // `count_sep` has no L1 lowering, so the runnable entry uses a simpler length
 // postcondition.
 fn fields(s: String, sep: u64) -> Vec<String>
-  req true
-  ens result.len() == 1 + count_sep(s, sep)
-  fx  alloc
+  ! alloc
+  requires true
+  ensures result.len() == 1 + count_sep(s, sep)
 {
   s.split(sep)
 }
@@ -14,18 +14,18 @@ fn fields(s: String, sep: u64) -> Vec<String>
 // Report whether `s` contains `sep`; the postcondition fixes the result to the
 // specification-level substring relation.
 fn has_sep(s: &String, sep: &String) -> bool
-  req true
-  ens result == contains_sub(s, sep)
-  fx  pure
+  ! pure
+  requires true
+  ensures result == contains_sub(s, sep)
 {
   s.contains(sep)
 }
 
 // Runnable fixed-input entry: split "a,b,c" on comma (byte 44).
 fn split_abc() -> Vec<String>
-  req true
-  ens result.len() >= 1
-  fx  alloc
+  ! alloc
+  requires true
+  ensures result.len() >= 1
 {
   let s: String = "a,b,c";
   s.split(44)

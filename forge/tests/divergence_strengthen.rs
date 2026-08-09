@@ -158,21 +158,21 @@ fn every_surfaced_suggestion_is_adoptable_l3() {
             label: "sub",
             item: "f",
             header:
-                "fn f(a: u32, b: u32) -> u32 req b <= a && a <= 10 ens result <= 1000000 fx pure",
+                "fn f(a: u32, b: u32) -> u32 ! pure requires b <= a && a <= 10 ensures result <= 1000000",
             body: "a - b",
         },
         Fixture {
             label: "bare",
             item: "f",
             header:
-                "fn f(a: u32, b: u32) -> u32 req a <= 10 && b <= 10 ens result <= 1000000 fx pure",
+                "fn f(a: u32, b: u32) -> u32 ! pure requires a <= 10 && b <= 10 ensures result <= 1000000",
             body: "a",
         },
         Fixture {
             label: "addtwo",
             item: "f",
             header:
-                "fn f(a: u32, b: u32) -> u32 req a <= 10 && b <= 10 ens result <= 1000000 fx pure",
+                "fn f(a: u32, b: u32) -> u32 ! pure requires a <= 10 && b <= 10 ensures result <= 1000000",
             body: "a + b",
         },
     ];

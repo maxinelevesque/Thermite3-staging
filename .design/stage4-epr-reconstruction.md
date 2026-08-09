@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: a2006a732dff1a7a13f11568a5adbdd291a6f66736ea6af05fdd8bb3ac287e9c (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: adba1a733f08c9644914fad439fcaf367e972adeebc3039b37fd9dea8c8c233f)
+audited-content-sha256: cd8ddad18a7bd790eb874a477d9030e9b7060b03645005887a90f6de1741f2b1 (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: a2006a732dff1a7a13f11568a5adbdd291a6f66736ea6af05fdd8bb3ac287e9c, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: adba1a733f08c9644914fad439fcaf367e972adeebc3039b37fd9dea8c8c233f))
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see tooling/spec-routes.toml)
 -->

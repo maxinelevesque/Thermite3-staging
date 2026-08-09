@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 9f2cf770c54e003ab79b0721e4107a9c3eb21c602cf3132fd8a0c3d477f32e2a (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 8aa61468b27badfd855e56329d70b032526b4b77ce68ff5350d787b2f2e2f516)
+audited-content-sha256: 841dab2e8d4fd0ed0e98324480e49ffd800e96e746931996101486a1e5bda8be (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: 9f2cf770c54e003ab79b0721e4107a9c3eb21c602cf3132fd8a0c3d477f32e2a, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 8aa61468b27badfd855e56329d70b032526b4b77ce68ff5350d787b2f2e2f516))
 governs: thermite-skill/src/generate.rs
 thesis-refs:
   - thermite-design.md §2.2
@@ -332,7 +332,7 @@ without exposing Forge internals.
 - **AC-4 (Forge / slag / grammar-keyword coverage):** for every entry in
   `ForgeMethod::ALL`, `generate()` contains its verb and synopsis. The test also
   checks the three mandatory slag fields and grammar clause keywords
-  (`req`/`ens`/`fx`/`inv`/`dec`/`spec fn`/`#[slag]`). Adding a Forge method
+  (`!`/`requires`/`ensures`/`keeps`/`measures`/`spec fn`/`#[slag]`). Adding a Forge method
   expands this check automatically.
 
 - **AC-9 (recursion-scheme coverage — every entry in `schemes::all()`, with an
@@ -424,7 +424,7 @@ posture).
 ### `render_grammar`'s construct inventory — the EXHAUSTIVE matches (REQ-10)
 
 The surface-grammar section keeps its curated narrative scaffolding (the
-contract-first framing, the clause-order rules, the loop `inv`/`dec` rule, the
+contract-first framing, the clause-order rules, the loop `keeps`/`measures` rule, the
 "removed from Rust" motivation, the one-call-syntax rule) but its CONSTRUCT
 INVENTORY is driven by exhaustive `match`es. Five (plus two leaf) renderer
 functions — `render_type_arm(&Type)`, `render_expr_arm(&Expr)`,

@@ -1,6 +1,6 @@
-# strat_probe fixture — binary_search.loop#1.inv#2
+# strat_probe fixture — binary_search.loop#1.keeps#2
 shape: forall_below
-source: binary_search.loop#1.inv#2
+source: binary_search.loop#1.keeps#2
 origin: corpus
 hit: true
 --- production ---

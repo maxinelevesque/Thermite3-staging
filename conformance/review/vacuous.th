@@ -1,1 +1,1 @@
-fn f(x: u32) -> u32 req true ens true fx pure { x }
+fn f(x: u32) -> u32 ! pure requires true ensures true { x }

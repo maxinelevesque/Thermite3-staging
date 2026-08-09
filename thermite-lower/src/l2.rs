@@ -287,7 +287,7 @@ fn emit_harness(f: &FnItem) -> Result<String, LowerError> {
     }
 
     // (2) assume the `req` (omit a literal-`true` empty contract).
-    let req = lower_expr_exec(&f.contract.req.expr, 0, f.span, NO_VARIANTS)?;
+    let req = lower_expr_exec(&f.contract.requires.expr, 0, f.span, NO_VARIANTS)?;
     if req != "true" {
         writeln!(out, "    kani::assume({req});").ok();
     }
@@ -303,7 +303,7 @@ fn emit_harness(f: &FnItem) -> Result<String, LowerError> {
 
     // (4) assert each `ens` against `result`, in source order (REQ-1, no
     // weakening, R-DEFER-9).
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let cond = lower_expr_exec(&ens.expr, 0, f.span, NO_VARIANTS)?;
         writeln!(out, "    assert!({cond});").ok();
     }
@@ -530,7 +530,8 @@ mod tests {
     #[test]
     fn bound_is_type_derived_not_name_derived() {
         let p = parse(
-            "fn f(xs: &[u32], k: u32) -> u64\n  req k < 10\n  ens result == k as u64\n  fx pure\n{\n  k as u64\n}\n",
+            "fn f(xs: &[u32], k: u32) -> u64\n  ! pure
+  requires k < 10\n  ensures result == k as u64\n{\n  k as u64\n}\n",
         );
         let out = lower_l2(&p).expect("lower_l2");
         assert!(out.contains("const N: usize = 4;"), "slice bound N:\n{out}");
@@ -554,7 +555,8 @@ mod tests {
     #[test]
     fn unwind_bound_is_shape_keyed() {
         let while_fn = parse(
-            "fn g(xs: &[u32]) -> u64\n  req true\n  ens result >= 0\n  fx pure\n{\n  let mut a: u64 = 0;\n  let mut i: usize = 0;\n  while i < xs.len()\n    inv i <= xs.len()\n    dec xs.len() - i\n  {\n    a = a + xs[i] as u64;\n    i = i + 1;\n  }\n  a\n}\n",
+            "fn g(xs: &[u32]) -> u64\n  ! pure
+  requires true\n  ensures result >= 0\n{\n  let mut a: u64 = 0;\n  let mut i: usize = 0;\n  while i < xs.len()\n    keeps i <= xs.len()\n    measures xs.len() - i\n  {\n    a = a + xs[i] as u64;\n    i = i + 1;\n  }\n  a\n}\n",
         );
         if let Item::Fn(f) = &while_fn.items[0] {
             if let Some(body) = f.body.as_ref() {
@@ -562,7 +564,8 @@ mod tests {
             }
         }
         let loop_fn = parse(
-            "fn h(xs: &[u32]) -> usize\n  req true\n  ens result <= xs.len()\n  fx pure\n{\n  let mut i: usize = 0;\n  loop\n    inv i <= xs.len()\n    dec xs.len() - i\n  {\n    if i == xs.len() { return i; }\n    i = i + 1;\n  }\n}\n",
+            "fn h(xs: &[u32]) -> usize\n  ! pure
+  requires true\n  ensures result <= xs.len()\n{\n  let mut i: usize = 0;\n  loop\n    keeps i <= xs.len()\n    measures xs.len() - i\n  {\n    if i == xs.len() { return i; }\n    i = i + 1;\n  }\n}\n",
         );
         if let Item::Fn(f) = &loop_fn.items[0] {
             if let Some(body) = f.body.as_ref() {
@@ -610,8 +613,10 @@ mod tests {
     // inference, so it is `Unsupported`.
     #[test]
     fn unlowerable_is_err_not_panic() {
-        let p =
-            parse("fn f(p: &u32) -> u32\n  req true\n  ens result == 0\n  fx pure\n{\n  0\n}\n");
+        let p = parse(
+            "fn f(p: &u32) -> u32\n  ! pure
+  requires true\n  ensures result == 0\n{\n  0\n}\n",
+        );
         let r = lower_l2(&p);
         assert!(
             matches!(r, Err(LowerError::Unsupported { .. })),

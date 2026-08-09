@@ -407,9 +407,11 @@ fn read_byte_links_and_runs_both_arms() {
         return;
     }
     // The design's read_demo (08-runnable-effect-link.md AC-2), hand-derived.
-    let prog = "#[boundary(\"os::read_byte\")] fn read_byte() -> u64\n  req true\n  \
-                ens result <= 256\n  fx  read(input)\n  ;\n\n\
-                fn doubled() -> u64\n  req true\n  ens result < 512\n  fx  read(input)\n{\n  \
+    let prog = "#[boundary(\"os::read_byte\")] fn read_byte() -> u64\n  ! read(input)
+  requires true\n  \
+                ensures result <= 256\n  ;\n\n\
+                fn doubled() -> u64\n  ! read(input)
+  requires true\n  ensures result < 512\n{\n  \
                 let v = read_byte();\n  if v < 256 { v + v } else { 0 }\n}\n";
     let fixture = std::env::temp_dir().join(format!("effect_link_read_{}.th", std::process::id()));
     std::fs::write(&fixture, prog).expect("write read fixture");

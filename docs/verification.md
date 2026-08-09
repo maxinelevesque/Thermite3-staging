@@ -12,7 +12,7 @@ contract monitoring. L0 is the trusted-by-fiat `#[slag]` annotation.
 
 ## Grading the contract, not only the proof
 
-A clause that asserts nothing (`ens true`) would pass trivially. Every contract
+A clause that asserts nothing (`ensures true`) would pass trivially. Every contract
 therefore goes through an anti-Goodhart battery: it is checked for emptiness
 (vacuity detection), then run against mutant copies of the code that introduce
 bugs (mutation testing). A contract that fails to catch the mutants is rejected.

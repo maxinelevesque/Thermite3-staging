@@ -46,19 +46,21 @@ fn run_forge(args: &[&str]) -> (String, String, bool) {
 fn proof_view_renders_hypotheses_for_a_forge_routed_goal() {
     let th = temp_th(
         "view",
-        "fn maxv(x: u64, y: u64) -> u64 req true ens result >= x ens result >= y \
-         fx pure { if x > y { x } else { y } }\n\
-         proof for maxv { ens#0 by { ?p0 } }",
+        "fn maxv(x: u64, y: u64) -> u64 ! pure requires true ensures result >= x ensures result >= y { if x > y { x } else { y } }\n\
+         proof for maxv { ensures#0 by { ?p0 } }",
     );
     let (out, err, ok) = run_forge(&["goal", th.to_str().unwrap(), "--proof"]);
     assert!(ok, "`forge goal --proof` should succeed: {out}{err}");
-    assert!(out.contains("PROOF VIEW — proof for maxv.ens#0"), "{out}");
+    assert!(
+        out.contains("PROOF VIEW — proof for maxv.ensures#0"),
+        "{out}"
+    );
     assert!(out.contains("hypotheses in scope:"), "{out}");
     assert!(out.contains("x : u64") && out.contains("y : u64"), "{out}");
-    // `ens#0` is the first ens clause (0-based), `result >= x`.
+    // `ensures#0` is the first ensures clause (0-based), `result >= x`.
     assert!(out.contains("\u{22a2} goal: result >= x"), "{out}");
     assert!(
-        out.contains("maxv.proof.ens#0.?p0"),
+        out.contains("maxv.proof.ensures#0.?p0"),
         "the fill operand: {out}"
     );
     let _ = std::fs::remove_file(&th);
@@ -70,7 +72,7 @@ fn proof_view_renders_hypotheses_for_a_forge_routed_goal() {
 fn fill_closes_a_proof_hole_and_commits_the_tactics() {
     let th = temp_th(
         "close",
-        "lemma le_id(a: u64, b: u64) req a <= b ens a <= b proof { ?p0 }",
+        "lemma le_id(a: u64, b: u64) requires a <= b ensures a <= b proof { ?p0 }",
     );
     let (out, err, ok) = run_forge(&["fill", th.to_str().unwrap(), "le_id.proof.?p0", "omega"]);
     assert!(
@@ -95,7 +97,7 @@ fn fill_closes_a_proof_hole_and_commits_the_tactics() {
 fn fill_with_an_unlisted_tactic_is_refused_by_the_battery() {
     let th = temp_th(
         "battery",
-        "lemma le_id(a: u64, b: u64) req a <= b ens a <= b proof { ?p0 }",
+        "lemma le_id(a: u64, b: u64) requires a <= b ensures a <= b proof { ?p0 }",
     );
     // `sorry` is not in the frozen allowlist.
     let (out, err, _ok) = run_forge(&["fill", th.to_str().unwrap(), "le_id.proof.?p0", "sorry"]);
@@ -113,7 +115,7 @@ fn fill_with_an_unlisted_tactic_is_refused_by_the_battery() {
 fn fill_introducing_a_new_hole_re_presents_it() {
     let th = temp_th(
         "loop",
-        "lemma le_id(a: u64, b: u64) req a <= b ens a <= b proof { ?p0 }",
+        "lemma le_id(a: u64, b: u64) requires a <= b ensures a <= b proof { ?p0 }",
     );
     let (out, err, ok) = run_forge(&[
         "fill",
@@ -138,7 +140,7 @@ fn fill_introducing_a_new_hole_re_presents_it() {
 fn fill_on_a_non_hole_address_is_an_honest_error() {
     let th = temp_th(
         "nonhole",
-        "fn f(n: u32) -> u32 req true ens result == n fx pure { n }",
+        "fn f(n: u32) -> u32 ! pure requires true ensures result == n { n }",
     );
     let (out, err, ok) = run_forge(&["fill", th.to_str().unwrap(), "f", "omega"]);
     assert!(!ok, "filling a non-hole address must fail");
