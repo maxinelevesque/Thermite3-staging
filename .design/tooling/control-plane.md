@@ -8,7 +8,8 @@ governs: tooling/control-plane-check.py + the control-plane files it and
          the `make control-plane` Makefile target and its CI step. Explicitly
          NOT `scripts/audit.sh`, which this component leaves byte-identical
          (the doc-drift decision-5 precedent).
-audited-content-sha256: 02b575b6618dad4ce42323ea0eca0cff763b854058c8e367bc9669ea21aaeadb
+pin-extract: .claude/settings.json=claude-hooks
+audited-content-sha256: 2505e4bb72334b0f037e8da049ac4b46eda24c3eb3a7d81f5fc43d746b40edf8 (re-pinned 2026-08-08 for RFC-16 layer 1: this doc now declares `pin-extract: .claude/settings.json=claude-hooks`, so the digest covers the hook entries this repository OWNS - those whose command references a path under tooling/ - rather than the whole settings file. A second tool's wiring can no longer drift it, which is the false positive measured on 2026-08-07 where control-plane-check.py exited 0 on both sides of the move.)
 re-pinned: 2026-08-07, from cdce9510c89d0bd00fb08a9a441e07a8299ad4eb71e43e20d4c29e928797b59e.
   The content pin digests the WHOLE of .claude/settings.json, so it moves on any
   addition to the file, not only on a change to the three wirings this document
