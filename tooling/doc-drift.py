@@ -20,6 +20,7 @@ Customize ``ROUTES_RELPATH`` and the pin expressions below when adapting it.
 """
 
 import hashlib
+import json
 import re
 import subprocess
 import sys
@@ -279,8 +280,134 @@ def _content_paths(root, pattern):
     return [pattern] if p.is_file() else []
 
 
-def _content_digest(root, patterns):
-    """Deterministic aggregate digest for a doc's governed file set."""
+# --- narrowing: anchors and extractions (RFC-16 §5.1) -----------------------
+
+# `doc:begin(<doc-relpath>[#label])` ... `doc:end` in a governed file narrows
+# what that doc's pin digests to the enclosed region. A file with no anchor
+# naming this doc is digested whole, so every existing pin keeps its value and
+# this ships without a flag day.
+ANCHOR_BEGIN_RE = re.compile(rb"doc:begin\(\s*([^)\s#]+)(?:#[^)\s]*)?\s*\)")
+ANCHOR_END_RE = re.compile(rb"doc:end\b")
+
+# `pin-extract: <governed-path>=<extractor>` in a doc's header narrows that ONE
+# file to the part the doc actually audits. Extractors live in EXTRACTORS.
+PIN_EXTRACT_RE = re.compile(r"^pin-extract:\s*(\S+?)\s*=\s*(\S+)\s*$", re.MULTILINE)
+
+
+def _extract_claude_hooks(data, relpath):
+    """The hook entries this repository OWNS, as canonical JSON bytes.
+
+    A settings file accumulates entries from whatever tooling a contributor
+    installs. Digesting the whole file conflates "the audited control plane
+    changed" with "somebody else's tool is also installed" — measured: sixteen
+    additive lines wiring a second agent harness moved this doc's pin while
+    `control-plane-check.py` exited 0 on both sides.
+
+    Ownership is decided by the command referencing a path under `tooling/`,
+    which is exactly the set `control-plane-check.py` verifies.
+    """
+    try:
+        parsed = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise EnvironmentError3(f"pin-extract claude-hooks: {relpath} is not JSON: {exc}") from exc
+    owned = []
+    hooks = parsed.get("hooks")
+    if isinstance(hooks, dict):
+        for event in sorted(hooks):
+            entries = hooks.get(event)
+            if not isinstance(entries, list):
+                continue
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                for hook in entry.get("hooks", []) or []:
+                    command = (hook or {}).get("command", "")
+                    if isinstance(command, str) and "tooling/" in command:
+                        owned.append(
+                            {"event": event, "matcher": entry.get("matcher"), "command": command}
+                        )
+    owned.sort(key=lambda h: (h["event"], h["matcher"] or "", h["command"]))
+    return json.dumps(owned, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+EXTRACTORS = {"claude-hooks": _extract_claude_hooks}
+
+
+def extract_pin_config(root, doc_relpath):
+    """`{governed-path: extractor-name}` declared in `doc_relpath`'s header."""
+    try:
+        text = (root / doc_relpath).read_text(encoding="utf-8", errors="replace")
+    except (OSError, FileNotFoundError):
+        return {}
+    config = {}
+    for path, name in PIN_EXTRACT_RE.findall(text):
+        if name not in EXTRACTORS:
+            raise EnvironmentError3(
+                f"{doc_relpath}: pin-extract names unknown extractor `{name}` "
+                f"(known: {', '.join(sorted(EXTRACTORS))})"
+            )
+        config[path] = name
+    return config
+
+
+def _anchored_regions(data, doc_relpath):
+    """Concatenated regions of `data` anchored to `doc_relpath`, or None.
+
+    None means "no anchor names this doc", which is the whole-file default.
+    An anchor opened and never closed is a defect rather than an empty region:
+    it would silently shrink what the pin covers, which is the failure this
+    mechanism exists to avoid.
+    """
+    target = doc_relpath.encode("utf-8")
+    regions, depth, start, found = [], 0, None, False
+    for m in re.finditer(rb"doc:begin\([^)]*\)|doc:end\b", data):
+        token = m.group(0)
+        if token.startswith(b"doc:begin"):
+            begin = ANCHOR_BEGIN_RE.match(token)
+            if begin is None or begin.group(1) != target:
+                continue
+            found = True
+            if depth == 0:
+                start = m.end()
+            depth += 1
+        elif depth:
+            depth -= 1
+            if depth == 0:
+                regions.append(data[start : m.start()])
+    if not found:
+        return None
+    if depth:
+        raise EnvironmentError3(
+            f"unclosed `doc:begin({doc_relpath})` — an anchor without its "
+            f"`doc:end` would silently narrow the pin"
+        )
+    return b"".join(regions)
+
+
+def _digest_subject(root, relpath, doc_relpath, extractors):
+    """(bytes, mode) actually digested for one governed file."""
+    try:
+        data = (root / relpath).read_bytes()
+    except OSError as exc:
+        raise EnvironmentError3(
+            f"could not read governed file for content hash {relpath}: {exc}"
+        ) from exc
+    name = extractors.get(relpath)
+    if name is not None:
+        return EXTRACTORS[name](data, relpath), f"extract:{name}"
+    regions = _anchored_regions(data, doc_relpath)
+    if regions is not None:
+        return regions, "anchored"
+    return data, None
+
+
+def _content_digest(root, patterns, doc_relpath=None, extractors=None):
+    """Deterministic aggregate digest for a doc's governed file set.
+
+    With no anchors and no `pin-extract`, this is byte-for-byte the v1 digest,
+    so existing pins are unaffected.
+    """
+    extractors = extractors or {}
     digest = hashlib.sha256()
     digest.update(b"doc-drift-content-v1\0")
     for pattern in patterns:
@@ -295,12 +422,13 @@ def _content_digest(root, patterns):
             digest.update(b"file\0")
             digest.update(relpath.encode("utf-8", errors="surrogateescape"))
             digest.update(b"\0")
-            try:
-                data = (root / relpath).read_bytes()
-            except OSError as exc:
-                raise EnvironmentError3(
-                    f"could not read governed file for content hash {relpath}: {exc}"
-                ) from exc
+            data, mode = _digest_subject(root, relpath, doc_relpath, extractors)
+            if mode is not None:
+                # Only narrowed files carry a mode marker, so an un-narrowed
+                # file's contribution is identical to the v1 digest.
+                digest.update(b"mode\0")
+                digest.update(mode.encode("ascii"))
+                digest.update(b"\0")
             digest.update(hashlib.sha256(data).hexdigest().encode("ascii"))
             digest.update(b"\0")
     return digest.hexdigest()
@@ -334,7 +462,9 @@ def evaluate(root):
             continue
 
         if content_pin is not None:
-            current = _content_digest(root, files)
+            current = _content_digest(
+                root, files, doc, extract_pin_config(root, doc)
+            )
             if current == content_pin:
                 lines.append(f"{CURRENT}  {doc}  (content-sha256 {content_pin})")
                 continue
