@@ -108,9 +108,9 @@ fn first_cert(program: &str, name: &str) -> Value {
 /// non-`mut` binding as a loud covenant error (outside the executable fragment).
 const ASSIGN_IMMUTABLE: &str = "\
 fn setone(x: u64) -> u64
-    req true
-    ens result == 1
-    fx pure
+    ! pure
+    requires true
+    ensures result == 1
 { let r = 0; if x > 0 { r = 1; } else { r = 1; } r }
 
 witness { inhabit (0); falsify 1000; }
@@ -122,9 +122,9 @@ witness { inhabit (0); falsify 1000; }
 /// divergence to the dropped `Stmt::Let.mutable` flag in `covenant_eval`.
 const ASSIGN_MUT_CONTROL: &str = "\
 fn setone(x: u64) -> u64
-    req true
-    ens result == 1
-    fx pure
+    ! pure
+    requires true
+    ensures result == 1
 { let mut r = 0; if x > 0 { r = 1; } else { r = 1; } r }
 
 witness { inhabit (0); falsify 1000; }

@@ -177,7 +177,8 @@ fn good_ens_ge_x_is_clean_l3() {
     }
     let c = check(
         "ge_x",
-        "fn keep(x: u32) -> u32\n  req x > 0\n  ens result >= x\n  fx pure\n{ x }\n",
+        "fn keep(x: u32) -> u32\n  ! pure
+  requires x > 0\n  ensures result >= x\n{ x }\n",
     );
     assert_eq!(
         level(&c),
@@ -205,7 +206,8 @@ fn good_ens_eq_x_satisfiable_conjunction_is_clean_l3() {
     }
     let c = check(
         "eq_x",
-        "fn id1(x: u32) -> u32\n  req x > 5 && x < 100\n  ens result == x\n  fx pure\n{ x }\n",
+        "fn id1(x: u32) -> u32\n  ! pure
+  requires x > 5 && x < 100\n  ensures result == x\n{ x }\n",
     );
     assert_eq!(
         level(&c),
@@ -229,7 +231,8 @@ fn good_multiclause_constraining_ens_is_clean_l3() {
     }
     let c = check(
         "multi",
-        "fn clampy(x: u32) -> u32\n  req x > 0 && x < 50\n  ens result >= x && result <= x\n  fx pure\n{ x }\n",
+        "fn clampy(x: u32) -> u32\n  ! pure
+  requires x > 0 && x < 50\n  ensures result >= x && result <= x\n{ x }\n",
     );
     assert_eq!(
         level(&c),
@@ -256,7 +259,8 @@ fn good_slice_param_lenconstraining_ens_is_clean_l4() {
     }
     let c = check(
         "slicelen",
-        "fn firstlen(xs: &[u32]) -> usize\n  req xs.len() > 0\n  ens result == xs.len()\n  fx pure\n{ xs.len() }\n",
+        "fn firstlen(xs: &[u32]) -> usize\n  ! pure
+  requires xs.len() > 0\n  ensures result == xs.len()\n{ xs.len() }\n",
     );
     assert_eq!(
         level(&c),
@@ -291,7 +295,8 @@ fn fresh_tautology_upper_bound_is_detected() {
     }
     let c = check(
         "taut_le",
-        "fn anyu(x: u32) -> u32\n  req x > 0\n  ens result <= 4294967295\n  fx pure\n{ x }\n",
+        "fn anyu(x: u32) -> u32\n  ! pure
+  requires x > 0\n  ensures result <= 4294967295\n{ x }\n",
     );
     assert_eq!(level(&c), "L0", "a real tautology must NOT certify: {c}");
     assert!(
@@ -316,7 +321,8 @@ fn fresh_unsat_req_is_detected() {
     }
     let c = check(
         "unsat",
-        "fn dead(x: u32) -> u32\n  req x > 100 && x < 10\n  ens result == x\n  fx pure\n{ x }\n",
+        "fn dead(x: u32) -> u32\n  ! pure
+  requires x > 100 && x < 10\n  ensures result == x\n{ x }\n",
     );
     assert_eq!(
         level(&c),
@@ -354,7 +360,8 @@ fn unsat_req_with_tautological_ens_is_reported_as_vacuous_not_tautology() {
     }
     let c = check(
         "order",
-        "fn both(x: u32) -> u32\n  req x > 100 && x < 10\n  ens result <= 4294967295\n  fx pure\n{ x }\n",
+        "fn both(x: u32) -> u32\n  ! pure
+  requires x > 100 && x < 10\n  ensures result <= 4294967295\n{ x }\n",
     );
     assert_eq!(level(&c), "L0", "must not certify: {c}");
     assert_eq!(
@@ -379,7 +386,8 @@ fn tautology_with_satisfiable_req_is_reported_as_tautology() {
     }
     let c = check(
         "taut_sat",
-        "fn t(x: u32) -> u32\n  req x < 100\n  ens result >= 0\n  fx pure\n{ x }\n",
+        "fn t(x: u32) -> u32\n  ! pure
+  requires x < 100\n  ensures result >= 0\n{ x }\n",
     );
     assert_eq!(level(&c), "L0", "must not certify: {c}");
     assert_eq!(
@@ -420,7 +428,8 @@ fn adt_returning_fn_tautology_is_detected() {
     let c = check_item(
         "adt_taut",
         "struct Pair { a: u32, b: u32 }\n\
-         fn mk(x: u32) -> Pair\n  req x > 0\n  ens result.a >= 0\n  fx pure\n{ Pair { a: x, b: x } }\n",
+         fn mk(x: u32) -> Pair\n  ! pure
+  requires x > 0\n  ensures result.a >= 0\n{ Pair { a: x, b: x } }\n",
         "mk",
     );
     assert_ne!(
@@ -452,7 +461,8 @@ fn adt_taking_fn_unsat_req_is_detected() {
     let c = check_item(
         "adt_vac",
         "struct Acct { bal: u32 }\n\
-         fn f(a: Acct, x: u32) -> u32\n  req x > 100 && x < 10\n  ens result == x\n  fx pure\n{ x }\n",
+         fn f(a: Acct, x: u32) -> u32\n  ! pure
+  requires x > 100 && x < 10\n  ensures result == x\n{ x }\n",
         "f",
     );
     assert_ne!(
@@ -486,7 +496,8 @@ fn adt_returning_fn_good_contract_is_clean_l3() {
     let c = check_item(
         "adt_good",
         "struct Box1 { v: u32 }\n\
-         fn wrap(x: u32) -> Box1\n  req x < 100\n  ens result.v == x\n  fx pure\n{ Box1 { v: x } }\n",
+         fn wrap(x: u32) -> Box1\n  ! pure
+  requires x < 100\n  ensures result.v == x\n{ Box1 { v: x } }\n",
         "wrap",
     );
     assert_eq!(

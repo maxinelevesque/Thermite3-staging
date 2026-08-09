@@ -170,9 +170,12 @@ fn ac9_predicates_certify_l3_pure() {
     // inputs, the predicate is exactly the named relation).
     let certs = check_program(
         "predicates",
-        "fn pre(s: &String, p: &String) -> bool\n  req true\n  ens result == occurs_at(s, p, 0)\n  fx pure\n{ s.starts_with(p) }\n\
-         fn ends(s: &String, p: &String) -> bool\n  req true\n  ens result == occurs_at(s, p, (s.len() - p.len()))\n  fx pure\n{ s.ends_with(p) }\n\
-         fn has(s: &String, p: &String) -> bool\n  req true\n  ens result == contains_sub(s, p)\n  fx pure\n{ s.contains(p) }\n",
+        "fn pre(s: &String, p: &String) -> bool\n  ! pure
+  requires true\n  ensures result == occurs_at(s, p, 0)\n{ s.starts_with(p) }\n\
+         fn ends(s: &String, p: &String) -> bool\n  ! pure
+  requires true\n  ensures result == occurs_at(s, p, (s.len() - p.len()))\n{ s.ends_with(p) }\n\
+         fn has(s: &String, p: &String) -> bool\n  ! pure
+  requires true\n  ensures result == contains_sub(s, p)\n{ s.contains(p) }\n",
     );
     for item in ["pre", "ends", "has"] {
         let cert = cert_for(&certs, item);
@@ -205,7 +208,8 @@ fn ac9_true_case_pinned_certifies_l3() {
     }
     let certs = check_program(
         "true_case",
-        "fn pre_true(s: &String, p: &String) -> bool\n  req p.len() <= s.len() && occurs_at(s, p, 0)\n  ens result == true\n  fx pure\n{ s.starts_with(p) }\n",
+        "fn pre_true(s: &String, p: &String) -> bool\n  ! pure
+  requires p.len() <= s.len() && occurs_at(s, p, 0)\n  ensures result == true\n{ s.starts_with(p) }\n",
     );
     let cert = cert_for(&certs, "pre_true");
     assert_eq!(
@@ -232,8 +236,10 @@ fn ac10_find_certifies_l3_with_pinned_some() {
     }
     let certs = check_program(
         "find",
-        "fn at(s: &String, p: &String) -> Option<u64>\n  req true\n  ens match result { Some(i) => occurs_at(s, p, i), None => !contains_sub(s, p) }\n  fx pure\n{ s.find(p) }\n\
-         fn at_some(s: &String, p: &String) -> Option<u64>\n  req p.len() >= 1 && p.len() <= s.len() && occurs_at(s, p, 0)\n  ens result is Some\n  fx pure\n{ s.find(p) }\n",
+        "fn at(s: &String, p: &String) -> Option<u64>\n  ! pure
+  requires true\n  ensures match result { Some(i) => occurs_at(s, p, i), None => !contains_sub(s, p) }\n{ s.find(p) }\n\
+         fn at_some(s: &String, p: &String) -> Option<u64>\n  ! pure
+  requires p.len() >= 1 && p.len() <= s.len() && occurs_at(s, p, 0)\n  ensures result is Some\n{ s.find(p) }\n",
     );
     let at = cert_for(&certs, "at");
     assert_eq!(
@@ -331,7 +337,8 @@ fn ac11_split_count_bound_verifies_under_real_verus() {
     }
     let (ok, output) = verus_on_lowered(
         "split",
-        "fn parts(s: &String, sep: u64) -> Vec<String>\n  req true\n  ens result.len() == 1 + count_sep(s, sep)\n  fx alloc\n{ s.split(sep) }\n",
+        "fn parts(s: &String, sep: u64) -> Vec<String>\n  ! alloc
+  requires true\n  ensures result.len() == 1 + count_sep(s, sep)\n{ s.split(sep) }\n",
     );
     assert!(
         ok && output.contains("0 errors"),
@@ -426,7 +433,8 @@ fn ac12_trim_verifies_under_real_verus() {
     }
     let (ok, output) = verus_on_lowered(
         "trim",
-        "fn strip(s: &String) -> String\n  req true\n  ens result.len() <= s.len()\n  fx alloc\n{ s.trim() }\n",
+        "fn strip(s: &String) -> String\n  ! alloc
+  requires true\n  ensures result.len() <= s.len()\n{ s.trim() }\n",
     );
     assert!(
         ok && output.contains("0 errors"),
@@ -461,8 +469,10 @@ fn contains_name_clash_both_string_and_vec_certify() {
     // dispatch correctly (a clobber would mis-resolve one and fail verus).
     let (ok, output) = verus_on_lowered(
         "name_clash",
-        "fn str_has(s: &String, p: &String) -> bool\n  req true\n  ens result == contains_sub(s, p)\n  fx pure\n{ s.contains(p) }\n\
-         fn vec_use(x: u64) -> bool\n  req true\n  ens true\n  fx alloc\n{ let mut v: Vec<u64> = Vec::new(); v.push(7); v.contains(x) }\n",
+        "fn str_has(s: &String, p: &String) -> bool\n  ! pure
+  requires true\n  ensures result == contains_sub(s, p)\n{ s.contains(p) }\n\
+         fn vec_use(x: u64) -> bool\n  ! alloc
+  requires true\n  ensures true\n{ let mut v: Vec<u64> = Vec::new(); v.push(7); v.contains(x) }\n",
     );
     assert!(
         ok && output.contains("0 errors"),
@@ -477,7 +487,8 @@ fn contains_name_clash_both_string_and_vec_certify() {
     // predicate path), pinning the substring side independently.
     let certs = check_program(
         "name_clash_str",
-        "fn str_has(s: &String, p: &String) -> bool\n  req true\n  ens result == contains_sub(s, p)\n  fx pure\n{ s.contains(p) }\n",
+        "fn str_has(s: &String, p: &String) -> bool\n  ! pure
+  requires true\n  ensures result == contains_sub(s, p)\n{ s.contains(p) }\n",
     );
     let str_has = cert_for(&certs, "str_has");
     assert_eq!(

@@ -8,11 +8,11 @@
 // clause. The two QF_BV translation obligations are also exported as literal `BitVec 64`
 // goals and checked by Lean's kernel.
 fn mix64(a: u64, b: u64) -> u64
-    req true
-    ens@bv64 a + b == b + a
-    ens@bv64 a ^ b ^ b == a
-    ens a * 0 == 0
-    fx pure
+    ! pure
+    requires true
+    ensures@bv64 a + b == b + a
+    ensures@bv64 a ^ b ^ b == a
+    ensures a * 0 == 0
 { a + b }
 
 // Rotate-left-by-one is injective on 64-bit words. The bit-vector route discharges this
@@ -21,6 +21,6 @@ fn mix64(a: u64, b: u64) -> u64
 // parens — and a `@bvN` clause cannot open with `(`, which the REQ-1 tag grammar reads as
 // the `(nowrap)` modifier.)
 lemma rotl1_injective(x: u64, y: u64)
-    req x != y
-    ens@bv64 x << 1 | x >> 63 != y << 1 | y >> 63
+    requires x != y
+    ensures@bv64 x << 1 | x >> 63 != y << 1 | y >> 63
     proof { }

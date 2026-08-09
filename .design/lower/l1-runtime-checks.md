@@ -2,8 +2,8 @@
 <!--
 tier: 3-component
 status: draft
-audited-sha: 6b86f74476122cfddbdcf168d37a3561d2598054 (re-pinned 2026-06-16 for PR #46 after merging main: lower_l1's TString runtime gate now treats String-typed ADT declarations as TString users so ADT fields cannot name an unemitted runtime; main's inert Item::Forge skip is preserved; core req/ens/inv check emission is unchanged.)
-audited-content-sha256: 45ef0652ace83125b3bc5a129e4d71dc6d277d933a6bd6df50c656984f3ef52b
+audited-sha: 6b86f74476122cfddbdcf168d37a3561d2598054 (re-pinned 2026-06-16 for PR #46 after merging main: lower_l1's TString runtime gate now treats String-typed ADT declarations as TString users so ADT fields cannot name an unemitted runtime; main's inert Item::Forge skip is preserved; core req/ens/keeps check emission is unchanged.)
+audited-content-sha256: 998cc145d4abc11bc78540430a3d001ca9dfc42bba97c2c61b3992d313e0eff4 (re-pinned 2026-08-08 for RFC-17: the clause vocabulary moved into the AST and the token kinds - Contract/LemmaItem{req,ens,fx} and FnItem/SpecFnItem/PropFnItem/LoopNode.dec and StructItem.inv to the full words the surface already uses, plus TokKind::{Req,Ens,Fx,Inv,Dec}. Type-directed: cargo check --workspace --all-targets exiting 0 is the completeness proof. prior: 4206f6e94a8bea3316e5eea866f66d37473b37fb12a32a9105bc9a1a7f7ce9ef, previously (re-pinned 2026-08-08 for RFC-17: the AST field names and TokKind variants moved to the full words the surface already uses - Contract{req,ens,fx} to {requires,ensures,effects}, TokKind::{Req,Ens,Fx,Inv,Dec} to {Requires,Ensures,Effects,Keeps,Measures}. A type-directed rename with no semantic content: cargo check --workspace --all-targets exiting 0 IS the completeness proof, since an unrenamed site does not compile. prior: 45ef0652ace83125b3bc5a129e4d71dc6d277d933a6bd6df50c656984f3ef52b))
 governs: thermite-lower/src/l1.rs
 thesis-refs:
   - thermite-design.md §4.2
@@ -18,7 +18,7 @@ thesis-refs:
 `thermite-lower::l1` compiles a SpecTherm contract into **executable runtime
 checks** — the L1 rung of the ladder (`thermite-design.md §6`). Where
 `lower.rs` emits Verus annotations for an SMT *proof* (L3), `l1.rs` emits Rust
-that *executes* the contract: each `req`/`ens`/`inv`/`dec` clause and each
+that *executes* the contract: each `requires`/`ensures`/`keeps`/`measures` clause and each
 combinator becomes a runnable `bool` expression, and a violation is detected at
 the call site **in every build profile, not just debug** (§6 table: L1 =
 "Violations detected at the call site, in every build profile (not just
@@ -42,8 +42,8 @@ the #262 re-audit re-verified.)
 - **REQ-1 (L1 check-emission entry point):** `lower_l1(program) -> Result<String,
   LowerError>` (sharing `lower.rs`'s `LowerError`, REQ-9 there) emits, for each
   `FnItem`, a runtime-checked Rust function: the original body wrapped so that
-  every `req` clause is asserted on entry and every `ens` clause is asserted
-  against `result` on exit, and every `LoopNode`'s `inv` clauses are asserted on
+  every `requires` clause is asserted on entry and every `ensures` clause is asserted
+  against `result` on exit, and every `LoopNode`'s `keeps` clauses are asserted on
   each iteration. The check macro is **always-active** (not `debug_assert!`),
   per §6 ("in every build profile, not just debug"). Derived from §6 (the L1
   rung) + §8 (slag enforces at L1).
@@ -53,7 +53,7 @@ the #262 re-audit re-verified.)
   "<verbatim clause text>", <span/addr>); }` — an always-active check (NOT
   `debug_assert!`, which is stripped in release; §6 demands every profile). The
   violation handler is structured and deterministic (R-CODE-5): it reports the
-  clause kind (`req`/`ens`/`inv`/`dec`), the verbatim clause text (the AST
+  clause kind (`requires`/`ensures`/`keeps`/`measures`), the verbatim clause text (the AST
   `Clause.text` the parser preserved — `ast.rs` `struct Clause { text }`), and
   the semantic address. It does NOT use `panic!`/`unwrap` in the toolchain's own
   production code (R-CODE-2); the EMITTED check at the Thermite program's runtime
@@ -74,16 +74,16 @@ the #262 re-audit re-verified.)
 - **REQ-4 (`spec fn` → executable fn):** A `SpecFnItem` (e.g. `spec_sum`) lowers
   to a real, total, terminating Rust fn (§4.2 "Every `spec fn` is total,
   terminating … and compilable to a runtime check") — recursion preserved, the
-  `dec` measure NOT emitted as a runtime check on a spec fn itself (it is a
+  `measures` measure NOT emitted as a runtime check on a spec fn itself (it is a
   proof-time obligation; at L1 the fn just runs). `spec_sum`'s slice match
   `[] => 0, [head, ..t] => …` lowers to a slice-length branch over `&[u32]`.
   Derived from §4.2 + Appendix A.
 
-- **REQ-5 (`dec`/termination at L1 — honest scope):** Termination (`dec`) is a
+- **REQ-5 (`measures`/termination at L1 — honest scope):** Termination (`measures`) is a
   PROOF obligation (L3) and a BOUNDED obligation (L2, Kani #9); at **L1** a loop's
-  `dec` is NOT a totality guarantee — a runtime check cannot prove termination of
-  a still-running loop. The L1 contract therefore (a) asserts each loop `inv` per
-  iteration (REQ-1) and (b) MAY assert that the `dec` measure strictly decreased
+  `measures` is NOT a totality guarantee — a runtime check cannot prove termination of
+  a still-running loop. The L1 contract therefore (a) asserts each loop `keeps` per
+  iteration (REQ-1) and (b) MAY assert that the `measures` measure strictly decreased
   since the previous iteration as a runtime *progress* check (catching a
   non-decreasing measure at the call site), but it does not and cannot certify
   termination. This boundary is recorded so the L1 rung does not overclaim
@@ -92,17 +92,17 @@ the #262 re-audit re-verified.)
 
 - **REQ-6 (golden L1 contract):** `tests/golden/l1/sum.l1.rs` is the L1 lowering
   of `conformance/sum.th` (the route's `conformance_ops = ["sum"]`): a runnable
-  Rust file whose `sum` checks `req`/`ens`/`inv` at runtime and whose `spec_sum`
+  Rust file whose `sum` checks `requires`/`ensures`/`keeps` at runtime and whose `spec_sum`
   is an executable fn. It is hand-authored from this design (R-CHAR-3), byte-
   diffable against the emitted output, AND compiles + runs (a positive test calls
   `sum(&[..])` and observes the asserted result; a negative test that violates a
   clause triggers the violation handler). Derived from `goal.md` verification
   model (A), R-CHAR-3.
 
-- **REQ-7 (`fx`/effect at L1 — compile-time only in v0.1):** The effect row's
+- **REQ-7 (`!`/effect at L1 — compile-time only in v0.1):** The effect row's
   RUNTIME syscall sandbox (§4.1 "killed at the syscall boundary") is DEFERRED to
   issue #21 (`goal.md` "EXCLUDED from the kernel: runtime effect sandbox
-  (compile-time `fx` subsumption only in v0.1)"). At L1 in v0.1, `fx` produces
+  (compile-time `!` subsumption only in v0.1)"). At L1 in v0.1, `!` produces
   NO runtime check — the effect contract is enforced at compile time by
   `effects.rs` (`.design/lower/effect-subsumption.md`). This REQ records the
   boundary so L1 does not stub a sandbox it must not build (R-SPEC-5). Derived
@@ -113,8 +113,8 @@ the #262 re-audit re-verified.)
 - **AC-1 (`sum` L1 golden compiles, runs, checks):** `lower_l1(parse(
   "conformance/sum.th"))` equals `tests/golden/l1/sum.l1.rs` byte-for-byte; the
   golden compiles with `rustc`/`cargo`; calling the lowered `sum(&[1,2,3])`
-  returns `6` and the runtime `ens result == spec_sum(xs)` check passes; a
-  fixture that deliberately corrupts the body so `ens` is violated triggers the
+  returns `6` and the runtime `ensures result == spec_sum(xs)` check passes; a
+  fixture that deliberately corrupts the body so `ensures` is violated triggers the
   violation handler (observable, not silent). (REQ-1..REQ-4, REQ-6)
 
 - **AC-2 (checks are always-active, not `debug_assert`):** The golden contains no
@@ -134,8 +134,8 @@ the #262 re-audit re-verified.)
   the corpus inputs (e.g. `spec_sum(&[1,2,3]) == 6`); the two rungs agree on the
   spec function (§4.2 "Spec functions are executable"). (REQ-4)
 
-- **AC-5 (effect/`dec` scope honesty):** The golden emits NO runtime sandbox for
-  `fx pure` (REQ-7) and NO termination *guarantee* for `dec` (REQ-5); the doc and
+- **AC-5 (effect/`measures` scope honesty):** The golden emits NO runtime sandbox for
+  `! pure` (REQ-7) and NO termination *guarantee* for `measures` (REQ-5); the doc and
   emitted code both record these as compile-time / proof-time obligations. A
   `grep` confirms no syscall-sandbox scaffolding in the L1 output. (REQ-5, REQ-7)
 
@@ -170,8 +170,8 @@ macro_rules! thermite_check {  // always-active (NOT debug_assert)
 }
 ```
 
-A `req` becomes `thermite_check!("req", "<text>", <lowered cond>)` on entry; each
-`ens` becomes the same on exit (after `result` is bound); each loop `inv` becomes
+A `requires` becomes `thermite_check!("req", "<text>", <lowered cond>)` on entry; each
+`ensures` becomes the same on exit (after `result` is bound); each loop `keeps` becomes
 the same at the top of each iteration. `thermite_contract_violation` is the
 defined contract-failure behavior of the *generated* program (a structured abort
 / diagnostic) — this is the intended L1 runtime behavior, distinct from a
@@ -262,10 +262,10 @@ fn sum(xs: &[u32]) -> u64 {
 }
 ```
 
-Notes: the L1 `ens` checks reference the EXECUTABLE `spec_sum` and a real
+Notes: the L1 `ensures` checks reference the EXECUTABLE `spec_sum` and a real
 `&xs[..i]` slice (no `Seq`) — this is why §4.2 mandates `spec fn`s be executable:
-the same `spec_sum` text used in the contract is runnable. No `fx` check is
-emitted (REQ-7, v0.1 compile-time-only). The `dec hi - lo` / `dec xs.len() - i`
+the same `spec_sum` text used in the contract is runnable. No `!` check is
+emitted (REQ-7, v0.1 compile-time-only). The `measures hi - lo` / `measures xs.len() - i`
 is not a termination guarantee at L1 (REQ-5).
 
 ### Determinism (§5.3)
@@ -286,7 +286,7 @@ multiset to avoid iteration-order non-determinism (R-CODE-5).
 - **AC-3:** unit tests over the combinator L1 fns with hand-derived expected
   bools/counts.
 - **AC-4:** assert L1 `spec_sum(&[1,2,3]) == 6` (agrees with the L3 `Seq` form).
-- **AC-5:** `grep` confirms no syscall-sandbox scaffolding and no `dec`
+- **AC-5:** `grep` confirms no syscall-sandbox scaffolding and no `measures`
   termination guarantee in the L1 output.
 - **AC-6:** un-lowerable-construct fixture asserts `Err(LowerError)`, no toolchain
   panic.
@@ -304,13 +304,13 @@ shape above (R-CHAR-3) and compiles + runs under `rustc`
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (L1 check-emission entry point) | SHIPPED | `pub fn lower_l1` in `thermite-lower/src/l1.rs` emits each `FnItem` with `req` on entry, loop `inv` per iteration, `ens` against the bound `result` on exit; verified by `sum_l1_compiles_and_runs` in `thermite-lower/tests/l1_conformance.rs` (compile+run via `rustc`). |
+| REQ-1 (L1 check-emission entry point) | SHIPPED | `pub fn lower_l1` in `thermite-lower/src/l1.rs` emits each `FnItem` with `requires` on entry, loop `keeps` per iteration, `ensures` against the bound `result` on exit; verified by `sum_l1_compiles_and_runs` in `thermite-lower/tests/l1_conformance.rs` (compile+run via `rustc`). |
 | REQ-2 (always-active check primitive) | SHIPPED | `emit_check_macro` writes the `thermite_check!` macro (a plain `if !(cond)`, NOT `debug_assert!`) + `thermite_contract_violation` handler; asserted by `no_debug_assert_in_emission` (AC-2) + `negative_fixture_fires_violation`. |
 | REQ-3 (combinator L1 executable forms) | SHIPPED | `emit_combinator_l1_defs` reads `thermite_spec::CombinatorSig.l1` (the 8 frozen runnable forms); a combinator call lowers via `lower_expr_exec`; all 8 unit-tested over concrete slices by `combinator_l1_forms_run` (AC-3). |
 | REQ-4 (`spec fn` → executable fn) | SHIPPED | `lower_spec_fn_l1`/`slice_fold_body_l1` emit the slice-length-branch recursion over `&[u32]`; `spec_sum(&[1,2,3]) == 6` exercised in the `sum_l1_compiles_and_runs` positive harness (AC-4). |
-| REQ-5 (`dec`/termination L1 scope) | SHIPPED | `lower_loop_l1` emits `inv` checks only, no `dec` runtime check (OQ-3); `no_syscall_sandbox_and_no_dec_guarantee` confirms no `thermite_check!("dec",..)` (AC-5). |
+| REQ-5 (`measures`/termination L1 scope) | SHIPPED | `lower_loop_l1` emits `keeps` checks only, no `measures` runtime check (OQ-3); `no_syscall_sandbox_and_no_dec_guarantee` confirms no `thermite_check!("dec",..)` (AC-5). |
 | REQ-6 (golden L1 contract) | SHIPPED | `tests/golden/l1/sum.l1.rs` compiles+runs under `rustc`; the emitter's output is execution-equivalent (compiles, runs, `sum(&[1,2,3])==6`, checks fire) — verified by `sum_l1_compiles_and_runs` (verify-by-execution, AC-1). |
-| REQ-7 (`fx`/effect at L1 deferred to #21) | SHIPPED | no `fx` runtime check emitted; `no_syscall_sandbox_and_no_dec_guarantee` confirms no syscall-sandbox scaffolding (REQ-7/AC-5; sandbox itself remains on #21). |
+| REQ-7 (`!`/effect at L1 deferred to #21) | SHIPPED | no `!` runtime check emitted; `no_syscall_sandbox_and_no_dec_guarantee` confirms no syscall-sandbox scaffolding (REQ-7/AC-5; sandbox itself remains on #21). |
 
 ## Open questions (for the orchestrator before the builder runs)
 
@@ -328,8 +328,8 @@ shape above (R-CHAR-3) and compiles + runs under `rustc`
   scales better. This doc pins the inline shape for the golden; the mechanism is a
   builder call. Recorded; not a blocker.
 
-- **OQ-3 (`dec` progress check, REQ-5):** Whether to emit the optional
+- **OQ-3 (`measures` progress check, REQ-5):** Whether to emit the optional
   per-iteration "measure strictly decreased" runtime check is left open — it
   catches a class of non-termination at the call site but adds a check the design
-  does not strictly mandate. Conservative v0.1 default: emit `inv` checks only,
-  document `dec` as proof-time. Recorded; not a blocker.
+  does not strictly mandate. Conservative v0.1 default: emit `keeps` checks only,
+  document `measures` as proof-time. Recorded; not a blocker.

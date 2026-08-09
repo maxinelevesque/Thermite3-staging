@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 6b86f74476122cfddbdcf168d37a3561d2598054 (re-pinned 2026-06-16 for PR #46 after merging main: lex_string now rejects raw non-ASCII bytes with a structured SyntaxError while string contents remain Rust-String-backed; ASCII escapes and token classification are unchanged.)
-audited-content-sha256: 4b42364f2d7bfa1def7c14daa25fefb788912e99680d031c73847268050d27c3
+audited-content-sha256: b350d26d7a871819da659384a06ac6464731bc08fd2627078b6ab1a5ecb8df6c (re-pinned 2026-08-08 for RFC-17: the AST field names and TokKind variants moved to the full words the surface already uses - Contract{req,ens,fx} to {requires,ensures,effects}, TokKind::{Req,Ens,Fx,Inv,Dec} to {Requires,Ensures,Effects,Keeps,Measures}. A type-directed rename with no semantic content: cargo check --workspace --all-targets exiting 0 IS the completeness proof, since an unrenamed site does not compile. prior: ac2f2d329b90ac1d3933c8ed17ce6babeea110d3e083bf6436101ea76d62e5b8, previously (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: 4b42364f2d7bfa1def7c14daa25fefb788912e99680d031c73847268050d27c3))
 governs: thermite-syntax/src/lexer.rs
 thesis-refs:
   - thermite-design.md §4.3
@@ -58,7 +58,7 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/lexer.rs`, issue #3 + the
   > byte-strings, and lifetimes remain forbidden.
 
 - **REQ-2 (keywords, fixed closed set):** The reserved keywords are exactly:
-  `fn`, `spec`, `req`, `ens`, `fx`, `inv`, `dec`, `pure`, `let`, `mut`,
+  `fn`, `spec`, `requires`, `ensures`, `!`, `keeps`, `measures`, `pure`, `let`, `mut`,
   `return`, **`break`, `continue`** (NEW, #93), `if`, `else`, `loop`, `while`,
   `match`, `as` (plus the basis-stage `struct`/`enum`/`is`). Each is lexed as a
   distinct keyword token, never as an identifier. Effect-row names (`read`,
@@ -219,11 +219,11 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/lexer.rs`, issue #3 + the
   value: 27, raw: "0x1b" }`; `0b101` to `Int { value: 5, raw: "0b101" }`;
   `0xFF_FF` to value `65535`. Each value EQUALS the value of the equivalent
   decimal literal — verified through the lowering: `forge`/`verus` certifies
-  `ens result == 27` for a fn returning `0x1b` at L3 (the GROUNDED probe). (REQ-3)
+  `ensures result == 27` for a fn returning `0x1b` at L3 (the GROUNDED probe). (REQ-3)
 - **AC-8 (char `'A'` == 65 — #91/#92):** `'A'` lexes to `Int { value: 65,
   raw: "'A'" }`; `'\n'` to value `10`; `'\x1b'` to value `27`. Verified through
-  the lowering: a fn returning `'A'` certifies `ens result == 65` at L3 (the
-  GROUNDED probe); a fn returning `'A'` with `ens result == 66` is L0. A
+  the lowering: a fn returning `'A'` certifies `ensures result == 65` at L3 (the
+  GROUNDED probe); a fn returning `'A'` with `ensures result == 66` is L0. A
   non-ASCII / multi-byte / empty char literal is a `SyntaxError` (AC-6). (REQ-9)
 - **AC-9 (`break`/`continue` lex as keywords — NEW, #93):** `break` lexes to
   `TokKind::Break`, `continue` to `TokKind::Continue` — NOT `Ident`. A word that
@@ -282,9 +282,9 @@ stray/malformed-literal negative fixtures (AC-6), NEW radix/char fixtures
 asserting `0x1b`→27 / `0b101`→5 / `'A'`→65 with their raws (AC-7, AC-8), and a
 NEW `break`/`continue`-keyword fixture (AC-9). The END-TO-END value grounding
 (AC-7/AC-8's L3 claims) is discharged by `forge`/`thermite-lower` conformance
-probes that lower a fn returning each literal with a NON-VACUOUS `ens result ==
-<decimal>` and certify at L3 (the §7 vacuity gate rejects `ens true`); a
-wrong-code `ens` lands L0. Expected token streams / values are hand-derived from
+probes that lower a fn returning each literal with a NON-VACUOUS `ensures result ==
+<decimal>` and certify at L3 (the §7 vacuity gate rejects `ensures true`); a
+wrong-code `ensures` lands L0. Expected token streams / values are hand-derived from
 the grammar, never copied from the lexer's output (R-CHAR-3).
 
 GROUNDED (real `verus 0.2026.05.24`, this amendment):

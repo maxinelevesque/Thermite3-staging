@@ -91,10 +91,10 @@ fn lower_l1_str(src: &str) -> String {
 fn bytes_eq_l1_twin_empty_window_matches_certified_spec_value() {
     let src = r#"
 fn empty_window() -> String
-  req true
-  ens result.len() == 2
-  ens bytes_eq(result, result, 5, 5, 0)
-  fx alloc
+  ! alloc
+  requires true
+  ensures result.len() == 2
+  ensures bytes_eq(result, result, 5, 5, 0)
 {
   "ab"
 }

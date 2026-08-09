@@ -1,5 +1,5 @@
 //! `thermite-syntax` — the Thermite surface-syntax foundation: lexer, recovering
-//! parser, AST, and stable semantic addressing (`loop#1.inv#2`).
+//! parser, AST, and stable semantic addressing (`loop#1.keeps#2`).
 //!
 //! This is the leaf crate of the v0.1 kernel DAG (workspace REQ-2): it has no
 //! intra-workspace dependencies. The four modules below are the executable form

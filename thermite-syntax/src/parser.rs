@@ -873,7 +873,7 @@ impl<'a> Parser<'a> {
         // existing non-recursive fn. A self-calling fn lacking this clause (and not
         // `fx diverge`) is a validator error (REQ-2), not a parse error: the
         // grammar admits it; the cage rejects it.
-        let dec = if self.check(&TokKind::Dec) {
+        let dec = if self.check(&TokKind::Measures) {
             Some(self.parse_dec_clause()?)
         } else {
             None
@@ -935,7 +935,7 @@ impl<'a> Parser<'a> {
             params,
             ret,
             contract,
-            dec,
+            measures: dec,
             body,
             holes,
             refinements,
@@ -951,10 +951,10 @@ impl<'a> Parser<'a> {
         self.consume(&TokKind::Arrow, "`->`")?;
         let ret = self.parse_type()?;
         // A spec fn carries exactly one `dec` measure, no req/ens/fx (§4.2).
-        if !self.check(&TokKind::Dec) {
+        if !self.check(&TokKind::Measures) {
             return Err(SyntaxError::MissingClause {
                 item: name,
-                clause: "dec".to_string(),
+                clause: "measures".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -965,7 +965,7 @@ impl<'a> Parser<'a> {
             name,
             params,
             ret,
-            dec,
+            measures: dec,
             body,
             span,
         }))
@@ -986,8 +986,8 @@ impl<'a> Parser<'a> {
         let fields = self.parse_field_defs()?;
         // The optional `inv <expr>` type-invariant clause (REQ-1) follows the
         // field block. Absent -> `None` (a struct may declare no invariant).
-        let inv = if self.check(&TokKind::Inv) {
-            Some(self.parse_clause(&TokKind::Inv)?)
+        let inv = if self.check(&TokKind::Keeps) {
+            Some(self.parse_clause(&TokKind::Keeps)?)
         } else {
             None
         };
@@ -995,7 +995,7 @@ impl<'a> Parser<'a> {
         Ok(Item::Struct(StructItem {
             name,
             fields,
-            inv,
+            keeps: inv,
             sealed,
             span,
         }))
@@ -1095,7 +1095,7 @@ impl<'a> Parser<'a> {
         let params = self.parse_params()?;
         self.consume(&TokKind::Arrow, "`->`")?;
         let ret = self.parse_type()?;
-        let dec = if self.check(&TokKind::Dec) {
+        let dec = if self.check(&TokKind::Measures) {
             Some(self.parse_dec_clause()?)
         } else {
             None
@@ -1106,7 +1106,7 @@ impl<'a> Parser<'a> {
             name,
             params,
             ret,
-            dec,
+            measures: dec,
             body,
             span,
         })
@@ -1122,25 +1122,25 @@ impl<'a> Parser<'a> {
         let name = self.take_ident("a lemma name")?;
         let params = self.parse_params()?;
         // `req` — exactly one, first (the lemma's hypothesis).
-        if !self.check(&TokKind::Req) {
+        if !self.check(&TokKind::Requires) {
             return Err(SyntaxError::MissingClause {
                 item: name.clone(),
-                clause: "req".to_string(),
+                clause: "requires".to_string(),
                 span: self.peek_span(),
             });
         }
-        let req = self.parse_clause(&TokKind::Req)?;
+        let req = self.parse_clause(&TokKind::Requires)?;
         // `ens` — one or more (the lemma's conclusions).
-        if !self.check(&TokKind::Ens) {
+        if !self.check(&TokKind::Ensures) {
             return Err(SyntaxError::MissingClause {
                 item: name.clone(),
-                clause: "ens".to_string(),
+                clause: "ensures".to_string(),
                 span: self.peek_span(),
             });
         }
         let mut ens = Vec::new();
-        while self.check(&TokKind::Ens) {
-            ens.push(self.parse_clause(&TokKind::Ens)?);
+        while self.check(&TokKind::Ensures) {
+            ens.push(self.parse_clause(&TokKind::Ensures)?);
         }
         // `proof { … }` — mandatory.
         if !self.eat_contextual("proof") {
@@ -1151,18 +1151,18 @@ impl<'a> Parser<'a> {
         Ok(LemmaItem {
             name,
             params,
-            req,
-            ens,
+            requires: req,
+            ensures: ens,
             proof,
             span,
         })
     }
 
     /// Parse a `proof for f { clause by { … } … }` item (REQ-3): a proof discharging
-    /// specific contract clauses (`ens#k`) of an existing function `f`. Each
+    /// specific contract clauses (`ensures#k`) of an existing function `f`. Each
     /// obligation is a [`ClauseSelector`] + a `by { … }` proof block (with `?pN`
     /// proof holes). The clauses are resolved against `f` by the proof view
-    /// (increment 2e); here they are parsed + addressed (`f.proof.ens#k`).
+    /// (increment 2e); here they are parsed + addressed (`f.proof.ensures#k`).
     fn parse_proof_item(&mut self, start_span: Span) -> PResult<ProofItem> {
         self.expect_contextual("proof")?;
         self.expect_contextual("for")?;
@@ -1192,17 +1192,21 @@ impl<'a> Parser<'a> {
         })
     }
 
-    /// Parse a clause selector `ens#k` / `req` / `inv#k` (REQ-3): the clause family
+    /// Parse a clause selector `ensures#k` / `requires` / `keeps#k` (REQ-3): the clause family
     /// keyword (a reserved keyword, accepted by kind) plus an optional `#k` ordinal.
     fn parse_clause_selector(&mut self) -> PResult<ClauseSelector> {
-        let keyword = if self.eat(&TokKind::Ens) {
-            "ens".to_string()
-        } else if self.eat(&TokKind::Req) {
-            "req".to_string()
-        } else if self.eat(&TokKind::Inv) {
-            "inv".to_string()
+        // The family name is the SURFACE spelling, because it becomes an address
+        // segment (`f.proof.ensures#k`) and `validate_segments` allows only
+        // `ensures`/`requires`/`keeps`. Leaving the v2 spellings here emitted
+        // `f.proof.ensures#2`, which the same crate's `resolve` rejects as Malformed.
+        let keyword = if self.eat(&TokKind::Ensures) {
+            "ensures".to_string()
+        } else if self.eat(&TokKind::Requires) {
+            "requires".to_string()
+        } else if self.eat(&TokKind::Keeps) {
+            "keeps".to_string()
         } else {
-            return Err(self.unexpected("a clause family (`ens`/`req`/`inv`)"));
+            return Err(self.unexpected("a clause family (`ensures`/`requires`/`keeps`)"));
         };
         let index = if self.eat(&TokKind::Hash) {
             match self.peek().clone() {
@@ -1420,58 +1424,61 @@ impl<'a> Parser<'a> {
     /// Parse the mandatory contract `req` then `ens`+ then `fx`, in that exact
     /// order (parser.md REQ-2). Absence or misorder is a `SyntaxError`.
     fn parse_contract(&mut self, fn_name: &str) -> PResult<Contract> {
-        // `req` — exactly one, first.
-        if !self.check(&TokKind::Req) {
-            // If `ens`/`fx` appear first, that is an order error; otherwise the
-            // clause is simply absent.
-            if matches!(self.peek(), TokKind::Ens | TokKind::Fx) {
-                return Err(SyntaxError::ClauseOrder {
-                    item: fn_name.to_string(),
-                    clause: "req".to_string(),
-                    span: self.peek_span(),
-                });
-            }
+        // Thermite 3 order: the effect row first — it is part of the type —
+        // then `requires`, then `ensures`+.
+        if !self.check(&TokKind::Bang) {
             return Err(SyntaxError::MissingClause {
                 item: fn_name.to_string(),
-                clause: "req".to_string(),
-                span: self.peek_span(),
-            });
-        }
-        let req = self.parse_clause(&TokKind::Req)?;
-
-        // `ens` — one or more.
-        if !self.check(&TokKind::Ens) {
-            return Err(SyntaxError::MissingClause {
-                item: fn_name.to_string(),
-                clause: "ens".to_string(),
-                span: self.peek_span(),
-            });
-        }
-        let mut ens = Vec::new();
-        while self.check(&TokKind::Ens) {
-            ens.push(self.parse_clause(&TokKind::Ens)?);
-        }
-
-        // A stray `req` after `ens` is an order error (req must be first).
-        if self.check(&TokKind::Req) {
-            return Err(SyntaxError::ClauseOrder {
-                item: fn_name.to_string(),
-                clause: "req".to_string(),
-                span: self.peek_span(),
-            });
-        }
-
-        // `fx` — exactly one, last.
-        if !self.check(&TokKind::Fx) {
-            return Err(SyntaxError::MissingClause {
-                item: fn_name.to_string(),
-                clause: "fx".to_string(),
+                clause: "!".to_string(),
                 span: self.peek_span(),
             });
         }
         let fx = self.parse_effect_row()?;
 
-        Ok(Contract { req, ens, fx })
+        // `requires` — exactly one, after the row.
+        if !self.check(&TokKind::Requires) {
+            if matches!(self.peek(), TokKind::Ensures) {
+                return Err(SyntaxError::ClauseOrder {
+                    item: fn_name.to_string(),
+                    clause: "requires".to_string(),
+                    span: self.peek_span(),
+                });
+            }
+            return Err(SyntaxError::MissingClause {
+                item: fn_name.to_string(),
+                clause: "requires".to_string(),
+                span: self.peek_span(),
+            });
+        }
+        let req = self.parse_clause(&TokKind::Requires)?;
+
+        // `ens` — one or more.
+        if !self.check(&TokKind::Ensures) {
+            return Err(SyntaxError::MissingClause {
+                item: fn_name.to_string(),
+                clause: "ensures".to_string(),
+                span: self.peek_span(),
+            });
+        }
+        let mut ens = Vec::new();
+        while self.check(&TokKind::Ensures) {
+            ens.push(self.parse_clause(&TokKind::Ensures)?);
+        }
+
+        // A stray `req` after `ens` is an order error (req must be first).
+        if self.check(&TokKind::Requires) {
+            return Err(SyntaxError::ClauseOrder {
+                item: fn_name.to_string(),
+                clause: "requires".to_string(),
+                span: self.peek_span(),
+            });
+        }
+
+        Ok(Contract {
+            requires: req,
+            ensures: ens,
+            effects: fx,
+        })
     }
 
     /// Parse one `KEYWORD EXPR` clause, capturing the verbatim source text of
@@ -1481,7 +1488,7 @@ impl<'a> Parser<'a> {
         // Parse the tag before recording the expression span so `Clause.text`
         // remains the expression alone.
         let bv = self.parse_bv_tag()?;
-        if matches!(keyword, TokKind::Req) {
+        if matches!(keyword, TokKind::Requires) {
             if let Some(tag) = bv {
                 return Err(SyntaxError::BvTagOnPrecondition { span: tag.span });
             }
@@ -1603,7 +1610,7 @@ impl<'a> Parser<'a> {
     ///   captures it and a downstream consumer keys on the `lex` callee.
     /// - `dec <expr>` — the v1 plain measure (`dec n`, `dec hi - i`), unchanged.
     fn parse_dec_clause(&mut self) -> PResult<Clause> {
-        self.consume(&TokKind::Dec, "`dec`")?;
+        self.consume(&TokKind::Measures, "`dec`")?;
         let start = self.peek_span();
         // `dec wf <rel>`: the `wf` marker followed by a relation expression.
         if matches!(self.peek(), TokKind::Ident(w) if w == "wf") && self.nth_starts_expr(1) {
@@ -1653,16 +1660,19 @@ impl<'a> Parser<'a> {
                 | TokKind::Semi
                 | TokKind::Comma
                 | TokKind::Eof
-                | TokKind::Req
-                | TokKind::Ens
-                | TokKind::Fx
-                | TokKind::Inv
-                | TokKind::Dec
+                | TokKind::Requires
+                | TokKind::Ensures
+                | TokKind::Effects
+                | TokKind::Keeps
+                | TokKind::Measures
         )
     }
 
     fn parse_effect_row(&mut self) -> PResult<EffectRow> {
-        self.consume(&TokKind::Fx, "`fx`")?;
+        // Thermite 3: the row is marked `!` and belongs to the arrow rather than
+        // to the predicates. `Bang` is unambiguous here — a clause line never
+        // opens with one (checked across the corpus: 144 rows, 0 others).
+        self.consume(&TokKind::Bang, "`!`")?;
         if self.eat(&TokKind::Pure) {
             return Ok(EffectRow::Pure);
         }
@@ -1975,19 +1985,19 @@ impl<'a> Parser<'a> {
         })?;
         // `inv` — one or more (mandatory; the for-loop is a loop, §4.1). No `dec`;
         // it is synthesized below (REQ-2).
-        if !self.check(&TokKind::Inv) {
+        if !self.check(&TokKind::Keeps) {
             return Err(SyntaxError::MissingClause {
                 item: "for".to_string(),
-                clause: "inv".to_string(),
+                clause: "keeps".to_string(),
                 span: self.peek_span(),
             });
         }
         let mut invs = Vec::new();
-        while self.check(&TokKind::Inv) {
-            invs.push(self.parse_clause(&TokKind::Inv)?);
+        while self.check(&TokKind::Keeps) {
+            invs.push(self.parse_clause(&TokKind::Keeps)?);
         }
         // A `dec` on a `for` is an error; the `dec` is automatic (REQ-2).
-        if self.check(&TokKind::Dec) {
+        if self.check(&TokKind::Measures) {
             return Err(SyntaxError::Unexpected {
                 expected: "the loop body `{` (a `for` loop's `dec` is automatic — \
                            `dec hi - i` — so the user writes no `dec`)"
@@ -2042,7 +2052,7 @@ impl<'a> Parser<'a> {
             Stmt::Loop(LoopNode {
                 kind: LoopKind::While(Box::new(cond)),
                 invs,
-                dec,
+                measures: dec,
                 body,
                 span,
             }),
@@ -2146,22 +2156,22 @@ impl<'a> Parser<'a> {
         // The scrutinee is a no-struct-literal head.
         let scrutinee = self.with_no_struct_literal(Self::parse_expr)?;
         // `inv` — one or more (mandatory, §4.1).
-        if !self.check(&TokKind::Inv) {
+        if !self.check(&TokKind::Keeps) {
             return Err(SyntaxError::MissingClause {
                 item: "while".to_string(),
-                clause: "inv".to_string(),
+                clause: "keeps".to_string(),
                 span: self.peek_span(),
             });
         }
         let mut invs = Vec::new();
-        while self.check(&TokKind::Inv) {
-            invs.push(self.parse_clause(&TokKind::Inv)?);
+        while self.check(&TokKind::Keeps) {
+            invs.push(self.parse_clause(&TokKind::Keeps)?);
         }
         // `dec` — exactly one (mandatory, §4.1; a `while let` is a `while`).
-        if !self.check(&TokKind::Dec) {
+        if !self.check(&TokKind::Measures) {
             return Err(SyntaxError::MissingClause {
                 item: "while".to_string(),
-                clause: "dec".to_string(),
+                clause: "measures".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -2178,7 +2188,7 @@ impl<'a> Parser<'a> {
         Ok(LoopNode {
             kind: LoopKind::While(Box::new(cond)),
             invs,
-            dec,
+            measures: dec,
             body,
             span: start.to(self.prev_span()),
         })
@@ -2317,32 +2327,32 @@ impl<'a> Parser<'a> {
         };
 
         // `inv` — one or more.
-        if !self.check(&TokKind::Inv) {
+        if !self.check(&TokKind::Keeps) {
             return Err(SyntaxError::MissingClause {
                 item: "loop".to_string(),
-                clause: "inv".to_string(),
+                clause: "keeps".to_string(),
                 span: self.peek_span(),
             });
         }
         let mut invs = Vec::new();
-        while self.check(&TokKind::Inv) {
-            invs.push(self.parse_clause(&TokKind::Inv)?);
+        while self.check(&TokKind::Keeps) {
+            invs.push(self.parse_clause(&TokKind::Keeps)?);
         }
 
         // `dec` — exactly one.
-        if !self.check(&TokKind::Dec) {
+        if !self.check(&TokKind::Measures) {
             return Err(SyntaxError::MissingClause {
                 item: "loop".to_string(),
-                clause: "dec".to_string(),
+                clause: "measures".to_string(),
                 span: self.peek_span(),
             });
         }
         let dec = self.parse_dec_clause()?;
-        if self.check(&TokKind::Dec) {
+        if self.check(&TokKind::Measures) {
             // A second `dec` violates the exactly-one cardinality.
             return Err(SyntaxError::ClauseOrder {
                 item: "loop".to_string(),
-                clause: "dec".to_string(),
+                clause: "measures".to_string(),
                 span: self.peek_span(),
             });
         }
@@ -2359,7 +2369,7 @@ impl<'a> Parser<'a> {
         Ok(LoopNode {
             kind,
             invs,
-            dec,
+            measures: dec,
             body,
             span: start.to(self.prev_span()),
         })
@@ -3383,11 +3393,11 @@ fn token_text(kind: &TokKind) -> &'static str {
     match kind {
         TokKind::Fn => "fn",
         TokKind::Spec => "spec",
-        TokKind::Req => "req",
-        TokKind::Ens => "ens",
-        TokKind::Fx => "fx",
-        TokKind::Inv => "inv",
-        TokKind::Dec => "dec",
+        TokKind::Requires => "req",
+        TokKind::Ensures => "ens",
+        TokKind::Effects => "!",
+        TokKind::Keeps => "inv",
+        TokKind::Measures => "dec",
         TokKind::Pure => "pure",
         TokKind::Let => "let",
         TokKind::Mut => "mut",

@@ -263,7 +263,7 @@ fn probe_allowed_when_fx_widens() {
     // The oracle's `rf` fixture (declared inline per cases.json `program`).
     let fixture = write_fixture(
         "rf",
-        "fn rf(x: u32) -> u32 req x < 100 ens result == x fx read(src) { x }\n",
+        "fn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }\n",
     );
     let (ok, stdout, stderr) = run_forge_build(&[
         fixture.to_str().unwrap(),
@@ -321,7 +321,7 @@ fn contract_violation_panics_not_killed() {
     }
     let fixture = write_fixture(
         "bad",
-        "fn bad(x: u32) -> u32 req x < 100 ens result == x fx pure { x + 1 }\n",
+        "fn bad(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x + 1 }\n",
     );
     let (ok, stdout, stderr) = run_forge_build(&[
         fixture.to_str().unwrap(),
@@ -426,7 +426,7 @@ fn term_grant_adds_ioctl_to_the_recorded_allowlist() {
     // Manifest-only (no run): inspect the recorded allowlist. No seccomp needed.
     let term_fixture = write_fixture(
         "tf",
-        "fn tf(x: u32) -> u32 req x < 100 ens result <= x fx term { x }\n",
+        "fn tf(x: u32) -> u32 ! term requires x < 100 ensures result <= x { x }\n",
     );
     let (ok, stdout, stderr) =
         run_forge_build(&[term_fixture.to_str().unwrap(), "--entry", "tf", "--json"]);
@@ -453,7 +453,7 @@ fn term_grant_adds_ioctl_to_the_recorded_allowlist() {
     // A pure / write entry's allowlist excludes ioctl: the grant is fx-derived.
     let write_fixture_path = write_fixture(
         "wf",
-        "fn wf(x: u32) -> u32 req x < 100 ens result <= x fx write(out) { x }\n",
+        "fn wf(x: u32) -> u32 ! write(out) requires x < 100 ensures result <= x { x }\n",
     );
     let (ok2, stdout2, stderr2) = run_forge_build(&[
         write_fixture_path.to_str().unwrap(),

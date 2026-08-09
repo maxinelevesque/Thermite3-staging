@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: a6e0bbdd92681c35c3f98d4a57fea829661ef82d78233b488fb267d19ec629cc
+audited-content-sha256: 66b66dd28c5f2a6162547b51f132891e11dd6c751ebd0310c05825d895e097cb (re-pinned 2026-08-08 for RFC-17: the AST field names and TokKind variants moved to the full words the surface already uses - Contract{req,ens,fx} to {requires,ensures,effects}, TokKind::{Req,Ens,Fx,Inv,Dec} to {Requires,Ensures,Effects,Keeps,Measures}. A type-directed rename with no semantic content: cargo check --workspace --all-targets exiting 0 IS the completeness proof, since an unrenamed site does not compile. prior: 512ede32ac75e9bc8cc7ae0b9dff46871791290f6a95d93a7b13ee2fca188f8e, previously (re-pinned 2026-08-08 for rustfmt only: migrating `req`/`ens`/`fx` to `requires`/`ensures`/`!` lengthened call sites past the width, so rustfmt re-wrapped them and added trailing commas. No governed file changed meaning; the wrapped lines are `parse_program(...)`-style test fixtures. prior: b7ef4508dcaea70e6bfefbd7f93a3ff69eaa6dacededbe9247a3ad3878017646, previously (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: a6e0bbdd92681c35c3f98d4a57fea829661ef82d78233b488fb267d19ec629cc)))
 governs: thermite-lower/src/l2.rs, forge/src/kani.rs
 thesis-refs:
   - thermite-design.md §6
@@ -23,8 +23,8 @@ shipped L3 (`lower.rs` + `forge::check::run_verus`) and L1 (`l1.rs`) rungs:
 1. **`thermite-lower::lower_l2(program) -> Result<String, LowerError>`** —
    produces a **Kani proof harness**: a `#[kani::proof]` fn (with
    `#[kani::unwind(N)]` where loops/recursion need it) that creates symbolic
-   inputs (`kani::any()` + `kani::assume` bounds), `assume`s the `req`, calls the
-   *executable* contract body, and `assert`s the `ens`. The harness reuses the L1
+   inputs (`kani::any()` + `kani::assume` bounds), `assume`s the `requires`, calls the
+   *executable* contract body, and `assert`s the `ensures`. The harness reuses the L1
    executable lowering — Kani checks executable Rust like L1, but symbolically and
    bounded.
 
@@ -70,8 +70,8 @@ distinct entry). #9 does **NOT** build:
   emits a single self-contained Rust source `String` containing, for each
   `FnItem`, a `#[kani::proof]` harness fn. The harness shape (Architecture §
   "Harness shape"): create symbolic inputs from the parameter types, `kani::assume`
-  the bound predicates, `kani::assume` the `req`, call the executable body, bind
-  `result`, `assert!` each `ens`. The body and spec fns reuse the **L1 executable
+  the bound predicates, `kani::assume` the `requires`, call the executable body, bind
+  `result`, `assert!` each `ensures`. The body and spec fns reuse the **L1 executable
   lowering** (`l1.rs`), since Kani checks executable Rust (the same `spec_sum`
   recursion, the same combinator `&[u32]` loops). Derived from §6 (the L2 rung) +
   §4.2 ("spec functions are executable").
@@ -85,7 +85,7 @@ distinct entry). #9 does **NOT** build:
     is the fixed **default slice bound** (a small constant, see § "The slice bound
     `N`"); grounded working value `N = 4`;
   - integer scalars (`u32`/`u64`/`usize`) → `kani::any()` (full symbolic range)
-    unless the contract's `req` already bounds them;
+    unless the contract's `requires` already bounds them;
   - `bool` → `kani::any()`.
   The bound is a **fixed constant** (determinism, `goal.md` R-CODE-5 / §5.3). The
   certificate must state the bound explicitly (§6 / §12 "L2 and L3 are visually and
@@ -181,13 +181,13 @@ distinct entry). #9 does **NOT** build:
 - **AC-2 (`binary_search` harness verifies up to bound):** `lower_l2(parse(
   "conformance/binary_search.th"))` emits a `#[kani::proof] #[kani::unwind(6)]`
   harness with a symbolic `&[u32]` (length ≤ `N`) + symbolic `needle: u32`,
-  `assume(sorted(haystack))`, and the `Option` `ens` match as the assertion;
+  `assume(sorted(haystack))`, and the `Option` `ensures` match as the assertion;
   `run_kani` returns `Level::L2`. **Grounded:** with `N = 4`, `unwind(6)`, Kani
   reports `0 of 82 failed` / `VERIFICATION:- SUCCESSFUL`. (REQ-1, REQ-2, REQ-3,
   REQ-5)
 
 - **AC-3 (broken contract → counterexample → NOT L2):** an L2 harness over a
-  body that violates its `ens` (a `sum` body mutated to `i = i + 2`) makes
+  body that violates its `ensures` (a `sum` body mutated to `i = i + 2`) makes
   `run_kani` return a non-L2 reported certificate carrying the failed assertion +
   its location, NOT a `ForgeError` and NOT `Level::L2`. **Grounded:** the mutated
   body yields `1 of 36 failed`, `Failed Checks: assertion failed: result ==
@@ -261,10 +261,10 @@ Kani verifies **executable Rust** symbolically (CBMC over the compiled body), no
 SMT spec annotations. So the L2 body is the L1 form: real `&[u32]` slices (no
 `vstd`/`Seq`/`@`), the real recursive `spec_sum`, the real combinator loops
 (`sorted`, `forall_in`). The harness then makes the inputs *symbolic* and turns
-`req`/`ens` into `kani::assume`/`assert!`. The grounded harness for `sum` reused
+`requires`/`ensures` into `kani::assume`/`assert!`. The grounded harness for `sum` reused
 exactly the `l1.rs` `spec_sum` (`if xs.is_empty() { 0 } else { xs[0] as u64 +
 spec_sum(&xs[1..]) }`) and a `sum` body identical to the L1 lowering sans the
-per-iteration `inv` checks (Kani derives the loop bound from the unwind, not from
+per-iteration `keeps` checks (Kani derives the loop bound from the unwind, not from
 the invariant).
 
 ### Harness shape (REQ-1), pinned for `sum`
@@ -275,7 +275,7 @@ The grounded, Kani-verified `sum` harness (`N = 4`, the external truth for AC-1)
 fn spec_sum(xs: &[u32]) -> u64 {                       // reused L1 spec fn
     if xs.is_empty() { 0 } else { xs[0] as u64 + spec_sum(&xs[1..]) }
 }
-fn sum(xs: &[u32]) -> u64 {                            // reused L1 body (no inv checks)
+fn sum(xs: &[u32]) -> u64 {                            // reused L1 body (no keeps checks)
     let mut acc: u64 = 0;
     let mut i: usize = 0;
     while i < xs.len() { acc = acc + xs[i] as u64; i = i + 1; }
@@ -302,8 +302,8 @@ fn check_sum() {
 
 The grounded, Kani-verified `binary_search` harness (`N = 4`, `unwind(6)`, the
 external truth for AC-2): a symbolic `&[u32]` length ≤ `N`, a symbolic `needle:
-u32`, `kani::assume(sorted(haystack))` for the `req`, the executable
-`binary_search` body (with its `loop`), and the `Option` `ens` lowered to a
+u32`, `kani::assume(sorted(haystack))` for the `requires`, the executable
+`binary_search` body (with its `loop`), and the `Option` `ensures` lowered to a
 `match result { Some(i) => assert!(i < haystack.len() && haystack[i] == needle),
 None => assert!(forall_in(haystack, |x| x != needle)) }`. The combinator L1 forms
 (`sorted`, `forall_in`) are emitted from `CombinatorSig.l1`, exactly as the L1
@@ -316,10 +316,10 @@ SHAPE-keyed on the `struct Param`'s `struct Type` (never on the program name):
 | Param type | Symbolic construction | Bound |
 |---|---|---|
 | `&[T]` / `&mut [T]` | `let len: usize = kani::any(); kani::assume(len <= N); let data: [T; N] = kani::any(); let xs = &data[..len];` | `len ≤ N` |
-| `u32` / `u64` / `usize` | `let x: T = kani::any();` | full symbolic range (or narrowed by a `req`) |
+| `u32` / `u64` / `usize` | `let x: T = kani::any();` | full symbolic range (or narrowed by a `requires`) |
 | `bool` | `let b: bool = kani::any();` | both values |
 
-The `req` clause is `kani::assume`d AFTER the symbolic construction, so a `req`
+The `requires` clause is `kani::assume`d AFTER the symbolic construction, so a `requires`
 that further bounds an integer (e.g. `sum`'s `xs.len() <= 1_000_000`) prunes the
 search without changing the type-driven scaffolding. This is what makes the bound
 **type-driven**: the slice scaffolding is emitted purely from seeing a `&[T]`
@@ -504,7 +504,7 @@ conformance_ops = ["sum", "binary_search"]
 - **OQ-3 (non-slice loop bounds):** `K = N + 1` is derived from the slice bound
   because every corpus loop is slice-length-bounded. A future program with a loop
   bounded by an integer parameter (not a slice) would need a different unwind
-  derivation (e.g. from the integer's `req` bound). Out of the corpus's scope;
+  derivation (e.g. from the integer's `requires` bound). Out of the corpus's scope;
   recorded for when such a program enters the corpus.
 
 - **OQ-4 (temp crate vs. temp file + `--cfg kani`):** `cargo kani` expects a crate

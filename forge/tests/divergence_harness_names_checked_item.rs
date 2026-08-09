@@ -73,15 +73,15 @@ fn verus_present() -> bool {
 /// `helper_check.rs`.
 const WOVEN_AHEAD_PROGRAM: &str = "\
 spec fn helper(n: u64) -> u64
-  dec n
+  measures n
 {
   n
 }
 
 fn bad(x: u64) -> u64
-  req true
-  ens result == helper(x) + 1
-  fx  pure
+  ! pure
+  requires true
+  ensures result == helper(x) + 1
 {
   x
 }

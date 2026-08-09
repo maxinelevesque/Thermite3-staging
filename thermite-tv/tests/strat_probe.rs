@@ -150,10 +150,10 @@ fn corpus_and_generated_coverage_meets_ac5() {
         .map(|f| (f.shape.as_str(), f.source.as_str()))
         .collect();
     let expected_corpus = [
-        ("sorted", "binary_search.req"),
-        ("forall_in", "binary_search.ens.None"),
-        ("forall_below", "binary_search.loop#1.inv#2"),
-        ("forall_from", "binary_search.loop#1.inv#3"),
+        ("sorted", "binary_search.requires"),
+        ("forall_in", "binary_search.ensures.None"),
+        ("forall_below", "binary_search.loop#1.keeps#2"),
+        ("forall_from", "binary_search.loop#1.keeps#3"),
     ];
     for ec in expected_corpus {
         assert!(

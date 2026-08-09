@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 2a317137a0cf55ea61ed8b6831b93c2e6aaa8f58fcc8f1ebbe33ef8b8215b275 (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: 94fd2883c53122d9ae324b12cb5865246af05110382d91d38fae6f7349d6cc08, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: e2910830dad12dd9dea025ee1bd16766ea03aeae27d830c52c7a27eae2209def))
+audited-content-sha256: 72edf80a374ac90d33af19ddf4b351f126cdf50245f3f56da84beaabe54ec609 (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: 2a317137a0cf55ea61ed8b6831b93c2e6aaa8f58fcc8f1ebbe33ef8b8215b275, previously (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: 94fd2883c53122d9ae324b12cb5865246af05110382d91d38fae6f7349d6cc08, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: e2910830dad12dd9dea025ee1bd16766ea03aeae27d830c52c7a27eae2209def)))
 decision: qualify invariant field paths in the canonical invariant lowerer
 issue: github:dollspace-gay/Thermite#110
 governs:
@@ -22,7 +22,7 @@ Every bare path naming a declared struct field in a type invariant lowers as a
 field of the invariant predicate receiver. This rule applies through unary
 expressions as well as binary expressions, calls, casts, field access, and
 method calls. For example,
-`inv !panic_latched || !reschedule_pending` becomes
+`keeps !panic_latched || !reschedule_pending` becomes
 `!self.panic_latched || !self.reschedule_pending` inside
 `well_formed(&self)`.
 

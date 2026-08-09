@@ -15,11 +15,12 @@ enum ProbeAction {
 }
 
 fn probe_step(state: ProbeState, event: ProbeEvent) -> (ProbeState, ProbeAction)
-  req state.generation < 18_446_744_073_709_551_615
-  ens result.0.owner == state.owner
-  ens result.0.generation == state.generation + 1
-  ens result.0.payload.len() == state.payload.len()
-  ens match event {
+  ! pure
+  requires state.generation < 18_446_744_073_709_551_615
+  ensures result.0.owner == state.owner
+  ensures result.0.generation == state.generation + 1
+  ensures result.0.payload.len() == state.payload.len()
+  ensures match event {
     ProbeEvent::Tick(expected) => match result.1 {
       ProbeAction::Store { owner, generation, slot, value } =>
         owner == state.owner &&
@@ -33,7 +34,6 @@ fn probe_step(state: ProbeState, event: ProbeEvent) -> (ProbeState, ProbeAction)
       ProbeAction::Noop => true,
     },
   }
-  fx pure
 {
   match event {
     ProbeEvent::Tick(value) => (

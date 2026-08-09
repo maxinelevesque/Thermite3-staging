@@ -10,7 +10,7 @@ use thermite_syntax::{parse, FnItem, Item};
 
 /// The design's exact example program (ffi-boundary.md AC-1 / conformance cases).
 const FOREIGN_ID: &str =
-    "#[boundary(\"ext::foreign_id\")] fn foreign_id(x: u32) -> u32 req x < 100 ens result == x fx pure ;";
+    "#[boundary(\"ext::foreign_id\")] fn foreign_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;";
 
 fn first_fn(src: &str) -> (thermite_syntax::ParseResult, Option<FnItem>) {
     let r = parse(src);
@@ -47,7 +47,7 @@ fn boundary_fn_parses_with_target_and_no_body() {
         f.body
     );
     // The contract is still mandatory and parsed.
-    assert_eq!(f.contract.ens.len(), 1, "the `ens` clause is parsed");
+    assert_eq!(f.contract.ensures.len(), 1, "the `ens` clause is parsed");
 }
 
 // OQ-2 (the recovery interaction): a bodyless fn without `#[boundary]`
@@ -98,7 +98,7 @@ fn boundary_on_spec_fn_is_a_parse_error() {
 // A NORMAL bodied fn still parses (the control): `boundary: None`, `body: Some`.
 #[test]
 fn normal_bodied_fn_still_parses() {
-    let src = "fn id(x: u32) -> u32 req true ens result == x fx pure { x }";
+    let src = "fn id(x: u32) -> u32 ! pure requires true ensures result == x { x }";
     let (r, f) = first_fn(src);
     assert!(
         r.is_clean(),

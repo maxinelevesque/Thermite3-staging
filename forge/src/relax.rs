@@ -103,12 +103,12 @@ pub fn classify_fn(f: &FnItem) -> RelaxVerdict {
                 .to_string(),
         );
     }
-    if let Err(reason) = classify_prop(&f.contract.req.expr) {
+    if let Err(reason) = classify_prop(&f.contract.requires.expr) {
         return RelaxVerdict::NotRelaxable(format!(
             "the `req` clause is out of fragment: {reason}"
         ));
     }
-    for (k, ens) in f.contract.ens.iter().enumerate() {
+    for (k, ens) in f.contract.ensures.iter().enumerate() {
         if let Err(reason) = classify_prop(&ens.expr) {
             return RelaxVerdict::NotRelaxable(format!("`ens#{k}` is out of fragment: {reason}"));
         }
@@ -370,11 +370,11 @@ pub fn negated_contract_query(f: &FnItem) -> Option<String> {
         s.push_str(&format!("(assert (>= {v} 0.0))\n"));
     }
     // The precondition (the hypothesis of the universally-quantified implication).
-    let req = render_prop_smt(&f.contract.req.expr)?;
+    let req = render_prop_smt(&f.contract.requires.expr)?;
     s.push_str(&format!("(assert {req})\n"));
     // The negation of the conjoined conclusion: ¬(⋀ ens) = (or ¬ens0 ¬ens1 …).
-    let mut neg_ens = Vec::with_capacity(f.contract.ens.len());
-    for ens in &f.contract.ens {
+    let mut neg_ens = Vec::with_capacity(f.contract.ensures.len());
+    for ens in &f.contract.ensures {
         neg_ens.push(format!("(not {})", render_prop_smt(&ens.expr)?));
     }
     let neg_conj = if neg_ens.len() == 1 {
@@ -467,11 +467,11 @@ pub fn eval_contract_negation_over_ints(
     assign: &BTreeMap<String, i128>,
 ) -> Option<bool> {
     // req ∧ ¬(⋀ ens) = req ∧ (∃k. ¬ens_k).
-    if !eval_prop_int(&f.contract.req.expr, assign)? {
+    if !eval_prop_int(&f.contract.requires.expr, assign)? {
         return Some(false);
     }
     let mut any_ens_violated = false;
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         if !eval_prop_int(&ens.expr, assign)? {
             any_ens_violated = true;
         }
@@ -506,9 +506,10 @@ mod tests {
     #[test]
     fn relaxable_admits_isqrt_postconditions() {
         let p = parse_one(
-            "fn isqrt(n: u64) -> u64\n  req true\n  \
-             ens result * result <= n\n  \
-             ens n < (result + 1) * (result + 1)\n  fx pure\n{ n }\n",
+            "fn isqrt(n: u64) -> u64\n  ! pure
+  requires true\n  \
+             ensures result * result <= n\n  \
+             ensures n < (result + 1) * (result + 1)\n{ n }\n",
         );
         let f = fn_item(&p, "isqrt");
         assert_eq!(
@@ -517,7 +518,7 @@ mod tests {
             "the isqrt postconditions are relaxable (polynomial, integer-scalar)"
         );
         // Each individual ens clause is relaxable too.
-        for ens in &f.contract.ens {
+        for ens in &f.contract.ensures {
             assert!(classify_clause(ens).is_relaxable());
         }
     }
@@ -525,8 +526,10 @@ mod tests {
     // AC-12: `relaxable` rejects a div-containing clause (`%`, `<<`, casts likewise).
     #[test]
     fn relaxable_rejects_div_mod_shift_cast() {
-        let div =
-            parse_one("fn g(n: u64) -> u64\n  req true\n  ens result == n / 2\n  fx pure\n{ n }\n");
+        let div = parse_one(
+            "fn g(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n / 2\n{ n }\n",
+        );
         let v = classify_fn(fn_item(&div, "g"));
         assert!(!v.is_relaxable(), "a `/` clause is NOT relaxable");
         match v {
@@ -534,15 +537,18 @@ mod tests {
             RelaxVerdict::Relaxable => unreachable!(),
         }
 
-        let rem =
-            parse_one("fn g(n: u64) -> u64\n  req true\n  ens result == n % 2\n  fx pure\n{ n }\n");
+        let rem = parse_one(
+            "fn g(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n % 2\n{ n }\n",
+        );
         assert!(
             !classify_fn(fn_item(&rem, "g")).is_relaxable(),
             "`%` rejected"
         );
 
         let shl = parse_one(
-            "fn g(n: u64) -> u64\n  req true\n  ens result == n << 1\n  fx pure\n{ n }\n",
+            "fn g(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n << 1\n{ n }\n",
         );
         assert!(
             !classify_fn(fn_item(&shl, "g")).is_relaxable(),
@@ -550,7 +556,8 @@ mod tests {
         );
 
         let cast = parse_one(
-            "fn g(n: u64) -> u64\n  req true\n  ens result as u32 == n as u32\n  fx pure\n{ n }\n",
+            "fn g(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result as u32 == n as u32\n{ n }\n",
         );
         assert!(
             !classify_fn(fn_item(&cast, "g")).is_relaxable(),
@@ -563,7 +570,8 @@ mod tests {
     #[test]
     fn relaxable_rejects_non_integer_param() {
         let p = parse_one(
-            "fn h(xs: &[u32]) -> u64\n  req true\n  ens result == result\n  fx pure\n{ 0 }\n",
+            "fn h(xs: &[u32]) -> u64\n  ! pure
+  requires true\n  ensures result == result\n{ 0 }\n",
         );
         let v = classify_fn(fn_item(&p, "h"));
         assert!(!v.is_relaxable(), "a slice parameter is not relaxable");
@@ -573,7 +581,10 @@ mod tests {
     // relaxable: a `≠` of polynomial terms.
     #[test]
     fn relaxable_admits_n_squared_ne_two() {
-        let p = parse_one("fn sq(n: u64) -> u64\n  req true\n  ens n * n != 2\n  fx pure\n{ n }\n");
+        let p = parse_one(
+            "fn sq(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
+        );
         let f = fn_item(&p, "sq");
         assert_eq!(classify_fn(f), RelaxVerdict::Relaxable);
         // It renders to a QF_NRA query negating `n*n != 2` → `(= (* n n) 2.0)`.
@@ -592,7 +603,10 @@ mod tests {
     // Counterexample).
     #[test]
     fn integrality_check_n_squared_ne_two_is_real_only() {
-        let p = parse_one("fn sq(n: u64) -> u64\n  req true\n  ens n * n != 2\n  fx pure\n{ n }\n");
+        let p = parse_one(
+            "fn sq(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
+        );
         let f = fn_item(&p, "sq");
         for n in -1..=3i128 {
             let mut a = BTreeMap::new();
@@ -611,7 +625,8 @@ mod tests {
     #[test]
     fn integrality_check_catches_integer_counterexample() {
         let p = parse_one(
-            "fn bad(n: u64) -> u64\n  req true\n  ens result == n + 1\n  fx pure\n{ n }\n",
+            "fn bad(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n + 1\n{ n }\n",
         );
         let f = fn_item(&p, "bad");
         let mut a = BTreeMap::new();
@@ -629,9 +644,10 @@ mod tests {
     #[test]
     fn isqrt_query_is_well_formed() {
         let p = parse_one(
-            "fn isqrt(n: u64) -> u64\n  req true\n  \
-             ens result * result <= n\n  \
-             ens n < (result + 1) * (result + 1)\n  fx pure\n{ n }\n",
+            "fn isqrt(n: u64) -> u64\n  ! pure
+  requires true\n  \
+             ensures result * result <= n\n  \
+             ensures n < (result + 1) * (result + 1)\n{ n }\n",
         );
         let f = fn_item(&p, "isqrt");
         let q = negated_contract_query(f).expect("isqrt renders");

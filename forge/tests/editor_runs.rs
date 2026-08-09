@@ -424,28 +424,28 @@ fn editor_content_pins_present_in_source() {
 
     // insert_str — unchanged-prefix / inserted-run / shifted-suffix (AC-14).
     assert!(
-        src.contains("ens bytes_eq(result.text, b.text, 0, 0, b.cursor)"),
+        src.contains("ensures bytes_eq(result.text, b.text, 0, 0, b.cursor)"),
         "insert_str must pin the UNCHANGED PREFIX text[0..cursor) byte-for-byte"
     );
     assert!(
-        src.contains("ens bytes_eq(result.text, ins, b.cursor, 0, ins.len())"),
+        src.contains("ensures bytes_eq(result.text, ins, b.cursor, 0, ins.len())"),
         "insert_str must pin the INSERTED RUN ins[0..ins.len()) at the cursor"
     );
     assert!(
         src.contains(
-            "ens bytes_eq(result.text, b.text, b.cursor + ins.len(), b.cursor, b.text.len() - b.cursor)"
+            "ensures bytes_eq(result.text, b.text, b.cursor + ins.len(), b.cursor, b.text.len() - b.cursor)"
         ),
         "insert_str must pin the SHIFTED SUFFIX text[cursor..end) at cursor+ins.len()"
     );
 
     // backspace — unchanged-prefix (0..cursor-1) / shifted-suffix (AC-15).
     assert!(
-        src.contains("ens bytes_eq(result.text, b.text, 0, 0, b.cursor - 1)"),
+        src.contains("ensures bytes_eq(result.text, b.text, 0, 0, b.cursor - 1)"),
         "backspace must pin the UNCHANGED PREFIX text[0..cursor-1) byte-for-byte"
     );
     assert!(
         src.contains(
-            "ens bytes_eq(result.text, b.text, b.cursor - 1, b.cursor, b.text.len() - b.cursor)"
+            "ensures bytes_eq(result.text, b.text, b.cursor - 1, b.cursor, b.text.len() - b.cursor)"
         ),
         "backspace must pin the SHIFTED SUFFIX text[cursor..end) pulled back one byte"
     );
@@ -453,7 +453,7 @@ fn editor_content_pins_present_in_source() {
     // render_frame — the payload pin at the post-clear offset 7 (AC-15). The leading
     // `clear` is the fixed 7-byte escape, so the buffer body lands at offset 7.
     assert!(
-        src.contains("ens bytes_eq(result, b.text, 7, 0, b.text.len())"),
+        src.contains("ensures bytes_eq(result, b.text, 7, 0, b.text.len())"),
         "render_frame must pin the WHOLE buffer text VERBATIM at the post-clear offset 7"
     );
 }
@@ -510,14 +510,14 @@ fn editor_content_pins_are_nonvacuous_content_teeth() {
     // verus), never copied from forge.
     let swapped = "\
 struct Buffer { text: String, cursor: u64 }\n  \
-  inv cursor <= text.len() && text.len() <= 1_000_000\n\n\
+  keeps cursor <= text.len() && text.len() <= 1_000_000\n\n\
 fn insert_str(b: Buffer, ins: String) -> Buffer\n  \
-  req b.text.len() + ins.len() <= 1_000_000\n  \
-  ens result.text.len() == b.text.len() + ins.len()\n  \
-  ens bytes_eq(result.text, b.text, 0, 0, b.cursor)\n  \
-  ens bytes_eq(result.text, ins, b.cursor, 0, ins.len())\n  \
-  ens bytes_eq(result.text, b.text, b.cursor + ins.len(), b.cursor, b.text.len() - b.cursor)\n  \
-  fx  alloc\n{\n  \
+  ! alloc
+  requires b.text.len() + ins.len() <= 1_000_000\n  \
+  ensures result.text.len() == b.text.len() + ins.len()\n  \
+  ensures bytes_eq(result.text, b.text, 0, 0, b.cursor)\n  \
+  ensures bytes_eq(result.text, ins, b.cursor, 0, ins.len())\n  \
+  ensures bytes_eq(result.text, b.text, b.cursor + ins.len(), b.cursor, b.text.len() - b.cursor)\n{\n  \
   let n: u64 = ins.len();\n  \
   let head: String = b.text.slice(0, b.cursor);\n  \
   let tail: String = b.text.slice(b.cursor, b.text.len());\n  \
@@ -739,9 +739,9 @@ fn non_diverge_weak_contract_still_rejects_l0_weakcontract() {
     let fixture = write_fixture(
         "weak_total",
         "fn f(a: u32, b: u32) -> u32\n  \
-           req a <= 10 && b <= 10\n  \
-           ens result <= 1000000\n  \
-           fx  pure\n{\n  a + b\n}\n",
+           ! pure
+  requires a <= 10 && b <= 10\n  \
+           ensures result <= 1000000\n{\n  a + b\n}\n",
     );
     let (_code, certs) = run_check_json(&fixture);
     let cert = find_cert(&certs, "f");
@@ -775,13 +775,13 @@ fn normal_loop_without_dec_still_fails_termination() {
     let fixture = write_fixture(
         "loop_bad_dec",
         "fn spin(n: u32) -> u32\n  \
-           req true\n  \
-           ens result <= 1\n  \
-           fx  pure\n{\n  \
+           ! pure
+  requires true\n  \
+           ensures result <= 1\n{\n  \
              let mut i: u32 = 0;\n  \
              while i < n\n    \
-               inv i <= n\n    \
-               dec n\n  \
+               keeps i <= n\n    \
+               measures n\n  \
              {\n    i = i + 1;\n  }\n  \
              0\n}\n",
     );

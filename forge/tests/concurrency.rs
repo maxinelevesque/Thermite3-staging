@@ -184,7 +184,7 @@ fn oracle_subset(cert: &Value) -> (Value, Value, Value, Value, Value) {
 /// identity bounded below `1000`, hand-derived (R-CHAR-3) — it must verify.
 fn verifiable_program(name: &str) -> String {
     format!(
-        "fn {name}(x: u64) -> u64\n  req x < 1000\n  ens result == x\n  fx  pure\n{{\n  x\n}}\n"
+        "fn {name}(x: u64) -> u64\n  ! pure\n  requires x < 1000\n  ensures result == x\n{{\n  x\n}}\n"
     )
 }
 
@@ -569,12 +569,16 @@ fn editing_a_does_not_move_bs_key() {
     }
     // A two-item file: B does not reference A (independent contracts). Both verify.
     let before = "\
-fn agent_a(x: u64) -> u64\n  req x < 1000\n  ens result == x\n  fx  pure\n{\n  x\n}\n\n\
-fn agent_b(y: u64) -> u64\n  req y < 1000\n  ens result == y\n  fx  pure\n{\n  y\n}\n";
+fn agent_a(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x\n{\n  x\n}\n\n\
+fn agent_b(y: u64) -> u64\n  ! pure
+  requires y < 1000\n  ensures result == y\n{\n  y\n}\n";
     // A's body changed (a real edit by agent A); B is byte-identical.
     let after = "\
-fn agent_a(x: u64) -> u64\n  req x < 2000\n  ens result == x\n  fx  pure\n{\n  x\n}\n\n\
-fn agent_b(y: u64) -> u64\n  req y < 1000\n  ens result == y\n  fx  pure\n{\n  y\n}\n";
+fn agent_a(x: u64) -> u64\n  ! pure
+  requires x < 2000\n  ensures result == x\n{\n  x\n}\n\n\
+fn agent_b(y: u64) -> u64\n  ! pure
+  requires y < 1000\n  ensures result == y\n{\n  y\n}\n";
 
     let dir_before = unique_cache_dir("locality_before");
     let dir_after = unique_cache_dir("locality_after");
@@ -642,11 +646,13 @@ fn editing_a_referenced_dependency_does_move_bs_key() {
     // to type-check, conflating "key moved" with "verdict broke" — the `dec` edit
     // isolates the locality signal.)
     let before = "\
-spec fn dep(x: u64) -> u64\n  dec x\n{\n  x\n}\n\n\
-fn agent_b(y: u64) -> u64\n  req y < 1000\n  ens result == dep(y)\n  fx  pure\n{\n  y\n}\n";
+spec fn dep(x: u64) -> u64\n  measures x\n{\n  x\n}\n\n\
+fn agent_b(y: u64) -> u64\n  ! pure
+  requires y < 1000\n  ensures result == dep(y)\n{\n  y\n}\n";
     let after = "\
-spec fn dep(x: u64) -> u64\n  dec x + 1\n{\n  x\n}\n\n\
-fn agent_b(y: u64) -> u64\n  req y < 1000\n  ens result == dep(y)\n  fx  pure\n{\n  y\n}\n";
+spec fn dep(x: u64) -> u64\n  measures x + 1\n{\n  x\n}\n\n\
+fn agent_b(y: u64) -> u64\n  ! pure
+  requires y < 1000\n  ensures result == dep(y)\n{\n  y\n}\n";
 
     let dir_before = unique_cache_dir("locality_dep_before");
     let _ = std::fs::remove_dir_all(&dir_before);

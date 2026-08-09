@@ -74,9 +74,9 @@ fn run_verus(file: &Path) -> Option<(bool, String)> {
 /// emitted `TVecU64` wrapper carries whatever `push` ens the lowerer produces.
 const VEC_TWO_PUSH: &str = r#"
 fn two(x: u64, y: u64) -> u64
-  req x < 1000000 && y < 1000000
-  ens true
-  fx alloc
+  ! alloc
+  requires x < 1000000 && y < 1000000
+  ensures true
 {
     let mut v: Vec<u64> = Vec::new();
     v.push(x);

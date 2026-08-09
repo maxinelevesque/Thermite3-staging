@@ -140,14 +140,17 @@ fn reject_cause(cert: &Value) -> Option<String> {
         .map(|s| s.to_string())
 }
 
-const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    req x == 0\n    ens result == 0\n    fx pure\n{\n    let y: u64 = x + 0;\n    y\n}\n";
+const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    ! pure
+    requires x == 0\n    ensures result == 0\n{\n    let y: u64 = x + 0;\n    y\n}\n";
 
-const LOOSE: &str = "fn loose(x: u64) -> u64\n    req x <= 100\n    ens result <= 1000\n    fx pure\n{\n    let y: u64 = x + 0;\n    y\n}\n";
+const LOOSE: &str = "fn loose(x: u64) -> u64\n    ! pure
+    requires x <= 100\n    ensures result <= 1000\n{\n    let y: u64 = x + 0;\n    y\n}\n";
 
-const REFUSE: &str =
-    "fn refuse(x: u64) -> u64\n    req x == 0\n    ens result == 0\n    fx pure\n{\n    x\n}\n";
+const REFUSE: &str = "fn refuse(x: u64) -> u64\n    ! pure
+    requires x == 0\n    ensures result == 0\n{\n    x\n}\n";
 
-const ADD: &str = "fn add(a: u64, b: u64) -> u64\n    req a <= 10 && b <= 10\n    ens result == a + b\n    fx pure\n{\n    let s: u64 = a + b;\n    s\n}\n";
+const ADD: &str = "fn add(a: u64, b: u64) -> u64\n    ! pure
+    requires a <= 10 && b <= 10\n    ensures result == a + b\n{\n    let s: u64 = a + b;\n    s\n}\n";
 
 /// AC-1: the equivalent-mutant exclusion flips `clamp_zero` from the pre-#101
 /// `WeakContract 1/3` to a certifying `L3` `1/1` — the two proved-equivalent

@@ -931,7 +931,7 @@ fn lower_with_profile(
         .items
         .iter()
         .filter_map(|item| match item {
-            Item::Struct(s) if s.inv.is_some() => Some(s.name.as_str()),
+            Item::Struct(s) if s.keeps.is_some() => Some(s.name.as_str()),
             _ => None,
         })
         .collect();
@@ -1143,7 +1143,7 @@ fn program_needs_kernel_alloc(program: &Program) -> bool {
     program.items.iter().any(|item| match item {
         Item::Fn(function) => {
             matches!(
-                &function.contract.fx,
+                &function.contract.effects,
                 thermite_syntax::ast::EffectRow::Set(effects)
                     if effects.iter().any(|effect| matches!(
                         effect,
@@ -1231,7 +1231,7 @@ fn lower_struct(
     // struct without an invariant is a plain `pub struct` (no predicate, nothing
     // to thread — the OQ-3 threading in `lower_fn_signature` keys on `inv_structs`
     // which is exactly the invariant-bearing set).
-    if let Some(inv) = &s.inv {
+    if let Some(inv) = &s.keeps {
         let field_names: Vec<&str> = s.fields.iter().map(|f| f.name.as_str()).collect();
         // The subset of fields whose type reaches `String` (REQ-4): a `String`
         // field's `<field>.len()` / `<field>.byte_at(i)` inside the spec-position
@@ -1779,8 +1779,8 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
     for item in &program.items {
         match item {
             Item::Fn(f) => {
-                collect_combinators_in_expr(&f.contract.req.expr, f.span, &mut names);
-                for ens in &f.contract.ens {
+                collect_combinators_in_expr(&f.contract.requires.expr, f.span, &mut names);
+                for ens in &f.contract.ensures {
                     collect_combinators_in_expr(&ens.expr, f.span, &mut names);
                 }
                 // A boundary fn (ffi-boundary.md REQ-2) has `body: None` — its
@@ -1790,7 +1790,7 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
                 }
             }
             Item::SpecFn(s) => {
-                collect_combinators_in_expr(&s.dec.expr, s.span, &mut names);
+                collect_combinators_in_expr(&s.measures.expr, s.span, &mut names);
                 collect_combinators_in_block_specs(&s.body, s.span, &mut names);
             }
             // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum`
@@ -1945,7 +1945,7 @@ fn collect_combinators_in_block_specs(block: &Block, span: Span, acc: &mut Vec<(
                 for inv in &l.invs {
                     collect_combinators_in_expr(&inv.expr, span, acc);
                 }
-                collect_combinators_in_expr(&l.dec.expr, span, acc);
+                collect_combinators_in_expr(&l.measures.expr, span, acc);
                 collect_combinators_in_block_specs(&l.body, span, acc);
             }
             Stmt::If { then, else_, .. } => {
@@ -2648,7 +2648,7 @@ fn lower_spec_fn(
         write!(
             out,
             ") -> {ret}\n    decreases {}\n",
-            spec_dec(&s.dec, &s.params, spec_fn_param_types)
+            spec_dec(&s.measures, &s.params, spec_fn_param_types)
         )
         .ok();
     }
@@ -2957,7 +2957,7 @@ fn owned_string_value_names(f: &FnItem) -> Vec<&str> {
 /// only to a diverge fn (a non-diverge loop still proves termination).
 fn fn_is_diverge(f: &FnItem) -> bool {
     use thermite_syntax::ast::{Effect, EffectRow};
-    matches!(&f.contract.fx, EffectRow::Set(es) if es.contains(&Effect::Diverge))
+    matches!(&f.contract.effects, EffectRow::Set(es) if es.contains(&Effect::Diverge))
 }
 
 struct CallLoweringContext<'a> {
@@ -3035,7 +3035,7 @@ fn lower_fn(
     // exemption above (`#[verifier::exec_allows_no_decreases_clause]`, #88) lets a
     // diverge fn recurse without a `dec` (L1-capped, partial correctness only);
     // such a fn carries `dec = None`, so this block emits nothing.
-    if let Some(dec) = &f.dec {
+    if let Some(dec) = &f.measures {
         let measure = spec_dec(dec, &f.params, spec_fn_param_types);
         writeln!(out, "    decreases {measure}").ok();
     }
@@ -3156,7 +3156,7 @@ fn lower_fn_signature(
             }
         }
     }
-    let req = lower_expr(&f.contract.req.expr, spec, 0, f.span)?;
+    let req = lower_expr(&f.contract.requires.expr, spec, 0, f.span)?;
     if woven_reqs.is_empty() {
         // No woven invariant conjunct: keep the existing single-line
         // `requires <req>,` form byte-for-byte (no golden churn for the non-ADT
@@ -3187,7 +3187,7 @@ fn lower_fn_signature(
             out.push_str("        result.well_formed(),\n");
         }
     }
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let e = lower_expr(&ens.expr, spec, 0, f.span)?;
         writeln!(out, "        {e},").ok();
     }
@@ -3355,7 +3355,7 @@ fn lower_l3_export_wrapper(
         .with_spec_fn_param_types(spec_fn_param_types);
 
     let mut ensured = Vec::new();
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let lowered = lower_expr(&ens.expr, spec, 0, f.span)?;
         ensured.push(replace_ident(&lowered, "result", "value"));
     }
@@ -3374,7 +3374,7 @@ fn lower_l3_export_wrapper(
     out.push_str("            Err(_) => true,\n");
     out.push_str("        },\n");
 
-    let guard = lower_expr(&f.contract.req.expr, Ctx::exec(), 0, f.span)?;
+    let guard = lower_expr(&f.contract.requires.expr, Ctx::exec(), 0, f.span)?;
     let args = f
         .params
         .iter()
@@ -3581,7 +3581,7 @@ pub fn lower_equivalence_obligation(
     let params = obligation_param_list(&f.params)?;
     let real_value = render_body_as_spec_value(real_body, &ret_spelling, ctx, f.span)?;
     let mut_value = render_body_as_spec_value(mutant_body, &ret_spelling, ctx, f.span)?;
-    let req = lower_expr(&f.contract.req.expr, ctx, 0, f.span)?;
+    let req = lower_expr(&f.contract.requires.expr, ctx, 0, f.span)?;
 
     let name = &f.name;
     let mut out = String::new();
@@ -3718,7 +3718,7 @@ fn lower_call_bearing_equivalence_obligation(
     let mut_value = render_body_as_exec_value(mutant_body, exec, f.span)?;
     let params = obligation_param_list(&f.params)?;
     let req = lower_expr(
-        &f.contract.req.expr,
+        &f.contract.requires.expr,
         Ctx::spec(NO_SLICES, NO_SLICES),
         0,
         f.span,
@@ -6332,9 +6332,9 @@ pub(crate) fn program_uses_string_search(program: &Program) -> bool {
 
 /// True if a fn `Contract`'s `req`/`ens` uses a C5 construct (REQ-13..16).
 fn contract_uses_string_search(contract: &thermite_syntax::ast::Contract, shadow: &[&str]) -> bool {
-    expr_uses_string_search(&contract.req.expr, shadow)
+    expr_uses_string_search(&contract.requires.expr, shadow)
         || contract
-            .ens
+            .ensures
             .iter()
             .any(|c| expr_uses_string_search(&c.expr, shadow))
 }
@@ -6520,9 +6520,9 @@ fn program_uses_numfmt(program: &Program) -> bool {
 
 /// True if a fn `Contract`'s `req`/`ens` names a numfmt construct (REQ-8).
 fn contract_uses_numfmt(contract: &thermite_syntax::ast::Contract, shadow: &[&str]) -> bool {
-    expr_uses_numfmt(&contract.req.expr, shadow)
+    expr_uses_numfmt(&contract.requires.expr, shadow)
         || contract
-            .ens
+            .ensures
             .iter()
             .any(|c| expr_uses_numfmt(&c.expr, shadow))
 }
@@ -7092,9 +7092,9 @@ pub(crate) fn program_uses_parse(program: &Program) -> bool {
 }
 
 fn contract_uses_parse(contract: &thermite_syntax::ast::Contract, shadow: &[&str]) -> bool {
-    expr_uses_parse(&contract.req.expr, shadow)
+    expr_uses_parse(&contract.requires.expr, shadow)
         || contract
-            .ens
+            .ensures
             .iter()
             .any(|c| expr_uses_parse(&c.expr, shadow))
 }
@@ -7354,9 +7354,9 @@ pub(crate) fn program_uses_bytes_eq(program: &Program) -> bool {
 }
 
 fn contract_uses_bytes_eq(contract: &thermite_syntax::ast::Contract, shadow: &[&str]) -> bool {
-    expr_uses_bytes_eq(&contract.req.expr, shadow)
+    expr_uses_bytes_eq(&contract.requires.expr, shadow)
         || contract
-            .ens
+            .ensures
             .iter()
             .any(|c| expr_uses_bytes_eq(&c.expr, shadow))
 }
@@ -8945,7 +8945,7 @@ fn lower_fn_body(
 /// so their products are covered by the enclosing block's proof block.
 fn req_bounded_mul_asserts(f: &FnItem, body: &Block) -> Result<Vec<String>, LowerError> {
     let mut bounds = std::collections::BTreeMap::new();
-    collect_req_upper_bounds(&f.contract.req.expr, &mut bounds);
+    collect_req_upper_bounds(&f.contract.requires.expr, &mut bounds);
     if bounds.is_empty() {
         return Ok(vec![]);
     }
@@ -9451,7 +9451,7 @@ fn lower_loop(
     // still prove termination → L3): the exemption is diverge-only and is not a
     // termination-proof escape hatch.
     if !fn_is_diverge(f) {
-        let dec = lower_expr(&l.dec.expr, spec, 0, f.span)?;
+        let dec = lower_expr(&l.measures.expr, spec, 0, f.span)?;
         writeln!(out, "{ipad}decreases {dec},").map_err(|_| fmt_err())?;
     }
 
@@ -9601,7 +9601,7 @@ fn lift_immutable_preconds(
     spec: Ctx,
     existing_invs: &[String],
 ) -> Result<Vec<String>, LowerError> {
-    let req = lower_expr(&f.contract.req.expr, spec, 0, f.span)?;
+    let req = lower_expr(&f.contract.requires.expr, spec, 0, f.span)?;
     if req == "true" {
         return Ok(Vec::new());
     }
@@ -9613,7 +9613,7 @@ fn lift_immutable_preconds(
     // gets its `@` view (REQ-5).
     let param_names: Vec<&str> = f.params.iter().map(|p| p.name.as_str()).collect();
     let mut lifted = Vec::new();
-    for conj in split_conjuncts(&f.contract.req.expr) {
+    for conj in split_conjuncts(&f.contract.requires.expr) {
         let lowered = lower_expr(conj, spec, 0, f.span)?;
         let mentions_param = param_names.iter().any(|p| expr_mentions(conj, p));
         if mentions_param && !existing_invs.iter().any(|e| e == &lowered) {
@@ -9791,7 +9791,7 @@ fn nonlinear_overflow_assert(
     // callee's declared param type (`Ctx::spec_call_param_cast`).
     let slice = first_slice_param(&f.params).unwrap_or("xs");
     let req = lower_expr(
-        &f.contract.req.expr,
+        &f.contract.requires.expr,
         Ctx::spec_seq().with_spec_fn_param_types(spec_fn_param_types),
         0,
         f.span,
@@ -10073,7 +10073,8 @@ fn complementary_coverage_split(
     spec_fn_param_types: &[(&str, &[PrimType])],
 ) -> Result<Option<CoverageSplit>, LowerError> {
     // 1. Find a `None => forall_in(s, ptarget)` arm in some `ens`.
-    let Some((slice, ptarget)) = find_none_forall_in(&f.contract.ens, spec_fn_param_types) else {
+    let Some((slice, ptarget)) = find_none_forall_in(&f.contract.ensures, spec_fn_param_types)
+    else {
         return Ok(None);
     };
 
@@ -10477,7 +10478,7 @@ mod exec_body_tests {
                 span: zero_span(),
                 bv: None,
             }],
-            dec: Clause {
+            measures: Clause {
                 expr: int(0),
                 text: "0".to_string(),
                 span: zero_span(),

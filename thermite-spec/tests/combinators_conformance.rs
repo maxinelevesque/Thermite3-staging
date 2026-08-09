@@ -266,11 +266,11 @@ fn validate_never_panics_on_deep_nesting() {
             params: vec![],
             ret: Type::Prim(PrimType::U32),
             contract: Contract {
-                req: clause(expr),
-                ens: vec![clause(Expr::BoolLit(true))],
-                fx: EffectRow::Pure,
+                requires: clause(expr),
+                ensures: vec![clause(Expr::BoolLit(true))],
+                effects: EffectRow::Pure,
             },
-            dec: None,
+            measures: None,
             body: Some(Block {
                 stmts: vec![],
                 tail: Some(Box::new(Expr::IntLit {
@@ -300,11 +300,11 @@ fn validate_never_panics_on_malformed_but_parsed() {
     // must return Err.
     let programs = [
         // arbitrary free call in ens
-        "fn f(xs: &[u32]) -> u32 req true ens g(xs) fx pure { 0 }",
+        "fn f(xs: &[u32]) -> u32 ! pure requires true ensures g(xs) { 0 }",
         // path-qualified callee (forbidden shape)
-        "fn f(xs: &[u32]) -> u32 req u32::cmp(xs) ens result == 0 fx pure { 0 }",
+        "fn f(xs: &[u32]) -> u32 ! pure requires u32::cmp(xs) ensures result == 0 { 0 }",
         // closure outside a Pred slot
-        "fn f(xs: &[u32]) -> u32 req true ens (|x| x) == 0 fx pure { 0 }",
+        "fn f(xs: &[u32]) -> u32 ! pure requires true ensures (|x| x) == 0 { 0 }",
     ];
     for program in programs {
         let parsed = thermite_syntax::parse(program);

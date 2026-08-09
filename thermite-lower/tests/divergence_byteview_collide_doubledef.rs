@@ -77,13 +77,13 @@ fn user_isdigit_plus_genuine_parse_use_no_double_def() {
     // generated emission).
     let control = r#"
 spec fn scan(s: &String, i: u64) -> bool
-  dec i
+  measures i
 { if i == 0 { true } else { scan(s, i - 1) } }
 
 fn p(s: &String) -> Option<u64>
-  req true
-  ens true
-  fx  pure
+  ! pure
+  requires true
+  ensures true
 { parse_u64(s) }
 "#;
     // Control: the parse module is materialized under the reserved
@@ -141,13 +141,13 @@ fn p(s: &String) -> Option<u64>
 fn user_countsep_plus_genuine_split_use_no_double_def() {
     let control = r#"
 spec fn piece(s: &String, i: u64) -> u64
-  dec i
+  measures i
 { if i == 0 { 0 } else { piece(s, i - 1) } }
 
 fn p(s: &String) -> Vec<String>
-  req true
-  ens true
-  fx  alloc
+  ! alloc
+  requires true
+  ensures true
 { s.split(44) }
 "#;
     let control_src = lower_ok(control);

@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: ca909eb631ebf8456f7f9a423f4e8875bc61795dae9527065c0b3c517f1cd5fd (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: cb269714cf940c160499d742c3fab8dde4e4edf85b66706bf40a65430b44092c, previously (re-pinned 2026-08-07 for the comment that removal orphaned: dropping `Effect::Platform(_)` from `effect_row_is_maximal` left its two-line comment dangling before the closing brace, and rustfmt resolves that by reflowing it onto the preceding arm, where it then falsely describes `Effect::Term`; the comment is deleted, no behavior changed. prior: 50c270e352c0dec450568cd62093353eac8b4836704cb267d9a105e4e3487c54, itself re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 49c3911fe674113b046c0056a739441f36e45cd4a445001ede0ebedf327bd89e))
+audited-content-sha256: abbdd8ac938a826a1a5e8db3f299bda6a9629c19a2b723fd2d6c1fae2fdaedf4 (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: ca909eb631ebf8456f7f9a423f4e8875bc61795dae9527065c0b3c517f1cd5fd, previously (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: cb269714cf940c160499d742c3fab8dde4e4edf85b66706bf40a65430b44092c, previously (re-pinned 2026-08-07 for the comment that removal orphaned: dropping `Effect::Platform(_)` from `effect_row_is_maximal` left its two-line comment dangling before the closing brace, and rustfmt resolves that by reflowing it onto the preceding arm, where it then falsely describes `Effect::Term`; the comment is deleted, no behavior changed. prior: 50c270e352c0dec450568cd62093353eac8b4836704cb267d9a105e4e3487c54, itself re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 49c3911fe674113b046c0056a739441f36e45cd4a445001ede0ebedf327bd89e)))
 governs: thermite-syntax/src/ast.rs
 governs: thermite-syntax/src/parser.rs
 governs: thermite-spec/src/validator.rs
@@ -26,7 +26,7 @@ primitives the rest of the basis already leans on: a **built-in `Option<T>`**
 (constructible `Some(v)` / `None`, not just matchable) and a **built-in
 `Result<T, E>`** (the two-type-arg type + `Ok(v)` / `Err(e)` constructors +
 matching), PLUS the hard part — **payload-in-contract projection**: the ability
-for an `ens`/`req` to refer to the PAYLOAD a `Some`/`Ok` carries (`ens result is
+for an `ensures`/`requires` to refer to the PAYLOAD a `Some`/`Ok` carries (`ensures result is
 Some ==> <payload> == parse_be(s)`). This is the precise blocker on
 `parse_u64` (`.design/basis/07-strings.md` REQ-9, the C4 #94 deferral): the
 verus probe proves the round-trip contract verifies, but the Thermite surface had
@@ -43,14 +43,14 @@ enum-payload projection** in the spec sublanguage at all: `Expr::Field` is
 struct-field-only; there is no `result->Some_0` surface node and a `match` was
 never admitted as a contract-position projection of a built-in.
 
-**The surface form DECIDED here (GROUNDED, below): the spec-`match`-in-`ens`.**
+**The surface form DECIDED here (GROUNDED, below): the spec-`match`-in-`ensures`.**
 A contract projects a `Some`/`Ok` payload by `match`-ing the result:
 
 ```thermite
 fn parse_u64(s: &String) -> Option<u64>
-  req s.well_formed()
-  ens match result { Some(v) => all_digits(s) && parse_be(s) == v, None => true }
-  fx  pure
+  requires s.well_formed()
+  ensures match result { Some(v) => all_digits(s) && parse_be(s) == v, None => true }
+  !  pure
 { … }
 ```
 
@@ -62,13 +62,13 @@ flat `match` whose arms are flat predicates. Both forms verify identically in
 verus (`5 verified, 0 errors` on `parse_u64`); the spec-match form is the one that
 costs zero new surface. See the Decision section.
 
-## Decision: the payload-in-contract form — spec-`match`-in-`ens`, not a projection operator
+## Decision: the payload-in-contract form — spec-`match`-in-`ensures`, not a projection operator
 
 Two surface forms project an enum-variant payload in a contract. Both were
 **GROUNDED with the real `verus 0.2026.05.24` binary** during authoring
 (Verification, below) and both verify `parse_u64` at `5 verified, 0 errors`:
 
-- **(a) spec-`match`-in-`ens`** — `ens match result { Some(v) => <flat pred over
+- **(a) spec-`match`-in-`ensures`** — `ensures match result { Some(v) => <flat pred over
   v>, None => true }`. The payload `v` is bound by the `match` arm exactly as in
   an exec `match`; each arm body is a flat `bool` predicate.
 - **(b) a projection operator** — `result->Some_0` (Verus's native field-of-variant
@@ -76,7 +76,7 @@ Two surface forms project an enum-variant payload in a contract. Both were
   (`Expr::Project { scrutinee, variant, index }` or similar) and a NEW validator
   cage rule admitting it.
 
-**DECIDED: form (a), the spec-`match`-in-`ens`.** The decisive reasons:
+**DECIDED: form (a), the spec-`match`-in-`ensures`.** The decisive reasons:
 
 1. **Zero new AST surface.** `Expr::Match` already exists and already lowers to a
    Verus `match` (`.design/basis/01-adts.md` REQ-4/REQ-9, SHIPPED). Form (b) would
@@ -96,7 +96,7 @@ Two surface forms project an enum-variant payload in a contract. Both were
 
 Form (b) is not *wrong* — `result->Some_0` verifies — but it buys nothing the
 spec-`match` does not, at the cost of a new node + ripple + skill arm. The
-spec-`match`-in-`ens` is the lower-surface-cost, cage-native choice. (If a future
+spec-`match`-in-`ensures` is the lower-surface-cost, cage-native choice. (If a future
 cluster finds the `match` form too verbose for a deeply-nested projection, a
 projection operator is a clean additive follow-up — recorded, not v1.)
 
@@ -135,7 +135,7 @@ the least-confident point (see OQ-1).
 
 ## The §4.2 cage + handled-or-loud (the Result error arms scream)
 
-A spec-`match`-in-`ens` is a FLAT `match` (§4.2 cage, `.design/basis/01-adts.md`
+A spec-`match`-in-`ensures` is a FLAT `match` (§4.2 cage, `.design/basis/01-adts.md`
 REQ-7): its scrutinee is `result`, its arms bind a payload and evaluate a flat
 `bool` predicate (comparisons / arithmetic / named `spec fn` calls — never an
 anonymous nested quantifier). The cage is UNCHANGED; C7 admits the built-in
@@ -148,7 +148,7 @@ MODELS its failure outcomes as the `None` / `Err(e)` arm, and the consumer's
 exhaustive `match` (the COMPILE-TIME tooth, 01-adts REQ-5/REQ-12, SHIPPED) forces
 every arm to be HANDLED or an explicit `Wildcard` to SCREAM. `Result`'s `Err(e)`
 carries a *typed, named* reason — louder than `Option`'s bare `None`. The success
-arm's round-trip `ens` (`parse_be(s) == v`) is the §6 L1 contract that aborts
+arm's round-trip `ensures` (`parse_be(s) == v`) is the §6 L1 contract that aborts
 (exit 101) on a lie at runtime — GROUNDED non-vacuous: a broken `Some(0)` /
 `Ok(0)` FAILS verus (the error arm bites).
 
@@ -181,7 +181,7 @@ arm's round-trip `ens` (`parse_be(s) == v`) is the §6 L1 contract that aborts
 
 ### Validator / the SpecTherm cage (governs `thermite-spec/src/validator.rs`)
 
-- **REQ-3 (built-in-variant registry + spec-`match`-in-`ens` payload projection in
+- **REQ-3 (built-in-variant registry + spec-`match`-in-`ensures` payload projection in
   the cage):** The validator's declaration pre-pass (`Validator::new`, which today
   builds `enums` / `variant_to_enum` from `Item::Enum`,
   `.design/basis/01-adts.md` REQ-5/REQ-6 SHIPPED) SEEDS the built-in variants
@@ -189,8 +189,8 @@ arm's round-trip `ens` (`parse_be(s) == v`) is the §6 L1 contract that aborts
   registry, so construction, `match` arms, and `Expr::Is` over them are ACCEPTED
   (not `UnknownVariant`), and a `match` over them is exhaustive iff both arms (or a
   `Wildcard`) are present (REQ-5 of 01-adts, unchanged). The **payload-in-contract
-  projection** is the spec-`match`-in-`ens`: a `match result { Some(v) => <flat
-  pred over v>, None => true }` in a `req`/`ens`/`inv` clause is admitted as a FLAT
+  projection** is the spec-`match`-in-`ensures`: a `match result { Some(v) => <flat
+  pred over v>, None => true }` in a `requires`/`ensures`/`keeps` clause is admitted as a FLAT
   built-in (`.design/basis/01-adts.md` REQ-7, SHIPPED — `walk_expr_inner`'s `Match`
   arm recurses operands as a flat built-in, NOT a combinator). The bound payload
   `v` is in scope for the arm body; the arm body is a flat predicate (comparisons,
@@ -198,7 +198,7 @@ arm's round-trip `ens` (`parse_be(s) == v`) is the §6 L1 contract that aborts
   C7 adds NO new cage walk — it adds the built-in variants to the registry and
   confirms the spec-`match` is admitted. Derived from §4.2 (the cage),
   `.design/basis/01-adts.md` REQ-5/REQ-6/REQ-7, and the GROUNDED spec-`match`-in-
-  `ens` verify.
+  `ensures` verify.
 
 ### Verus lowering (governs `thermite-lower/src/lower.rs`)
 
@@ -212,7 +212,7 @@ arm's round-trip `ens` (`parse_be(s) == v`) is the §6 L1 contract that aborts
   `match` over `Option`/`Result` lowers to a Verus `match` with bare arm patterns;
   `result is Some`/`result is Ok` lowers to the Verus-native `is` discriminant
   (`.design/basis/01-adts.md` REQ-9, SHIPPED for user enums — the same path). The
-  spec-`match`-in-`ens` lowers to a Verus `match` expression in the `ensures`
+  spec-`match`-in-`ensures` lowers to a Verus `match` expression in the `ensures`
   clause (GROUNDED `5 verified, 0 errors`). The L1 mirror (`l1.rs`) lowers a
   built-in `match`/`is` exactly as the user-enum form (`matches!`). Derived from §3
   (transpile to Verus), §4.4, §6, and the GROUNDED `Option`/`Result`/`parse_u64`
@@ -222,17 +222,17 @@ arm's round-trip `ens` (`parse_be(s) == v`) is the §6 L1 contract that aborts
   With REQ-1..REQ-4 landed, `parse_u64(s: &String) -> Option<u64>` ships: the
   Horner-accumulate loop (`acc = acc*10 + digit`), the three handled-or-loud `None`
   arms (empty / non-digit / overflow — each screams BEFORE corrupting `acc`), and
-  the round-trip success contract written as the spec-`match`-in-`ens`:
+  the round-trip success contract written as the spec-`match`-in-`ensures`:
   ```thermite
-  ens match result { Some(v) => all_digits(s) && s.len() >= 1 && parse_be(s) == v, None => true }
+  ensures match result { Some(v) => all_digits(s) && s.len() >= 1 && parse_be(s) == v, None => true }
   ```
   The lowerer emits the `parse_be`/`all_digits`/`is_digit` spec fns (seeded into
   `GENERATED_SPEC_FNS` alongside the C4 `parse_le`/`pow10`, so the contract
   validates inside the cage as named `spec fn` calls — the C4 #94 precedent) plus
   the loop invariant + `decreases s.len() - i` + the subrange ghost glue. This is
-  PURE (`fx pure` — `parse_u64` reads bytes, allocates nothing). **GROUNDED `5
+  PURE (`! pure` — `parse_u64` reads bytes, allocates nothing). **GROUNDED `5
   verified, 0 errors`; the broken `Some(0)` FAILS `3 verified, 1 errors`** — the
-  round-trip ens has teeth. Derived from §4.2 (partiality, the cage),
+  round-trip ensures has teeth. Derived from §4.2 (partiality, the cage),
   `.design/basis/07-strings.md` REQ-9 (the deferred C4 contract), the
   handled-or-loud principle, and the GROUNDED `parse_u64` verify.
 
@@ -259,9 +259,9 @@ need. The ERGONOMIC layer is **DEFERRED** out of C7, honestly:
   (the `BUILTIN_METHODS` precedent), each with a GROUNDED contract.
 - **The `?` operator:** DEFERRED, and graded HARD. `?` is early-return-on-`Err`/
   `None` sugar — it desugars to a `match` that `return`s the `Err`/`None` arm.
-  This interacts with the FUNCTION's contract (the `ens` must hold on the
+  This interacts with the FUNCTION's contract (the `ensures` must hold on the
   early-return path too) and with the effect row / loop `decreases` — it is NOT a
-  local rewrite. It needs its own grounding pass (the early-return `ens`
+  local rewrite. It needs its own grounding pass (the early-return `ensures`
   obligation) and likely a new statement/expr node + a match-arm ripple. C7 does
   NOT ship `?`; the explicit `match … { Err(e) => return Err(e), Ok(v) => v }` is
   the v1 spelling. Pinned as a future cluster, not a C7 REQ. (Honest note: `?`
@@ -270,7 +270,7 @@ need. The ERGONOMIC layer is **DEFERRED** out of C7, honestly:
 ## Acceptance criteria
 
 The orchestrator authors a NEW corpus program — `conformance/option_result.th`
-(`Some`/`None`/`Ok`/`Err` construct + match + `is` + a payload-in-contract `ens`,
+(`Some`/`None`/`Ok`/`Err` construct + match + `is` + a payload-in-contract `ensures`,
 certifying L3) and extends the C4 string corpus with `conformance/parse_u64.th`
 (the `String`→`Option<u64>` parser, certifying L3 pure). Their golden lowerings
 live at `tests/golden/lower/option_result.verus.rs` / `tests/golden/lower/
@@ -279,31 +279,31 @@ pass `verus`. The cert goldens live at `conformance/option_result.cert.json` /
 `conformance/parse_u64.cert.json`.
 
 - **AC-1 (`Option` construct + payload-in-contract certifies L3):** `fn f() ->
-  Option<u64> ens match result { Some(v) => v == 5, None => true } { Some(5) }`
+  Option<u64> ensures match result { Some(v) => v == 5, None => true } { Some(5) }`
   parses (`Some(5)` → `Expr::Call`, `Option<u64>` → `Type::Option`), validates
   (the built-in variant registry accepts `Some`; the spec-`match` is a flat
-  built-in), lowers to a Verus `Option<u64>` + the spec-`match`-in-`ens`, and the
+  built-in), lowers to a Verus `Option<u64>` + the spec-`match`-in-`ensures`, and the
   real `verus` binary exits 0 with `N verified, 0 errors`. A `None`-returning fn
-  with `ens result is None ==> true` also certifies. **GROUNDED `4 verified, 0
+  with `ensures result is None ==> true` also certifies. **GROUNDED `4 verified, 0
   errors`.** (REQ-1, REQ-3, REQ-4.)
 
 - **AC-2 (`Result<T,E>` parses + construct + match + payload certifies L3):**
   `Result<u64, ParseErr>` PARSES (the two-arg `Type::Result` — the change this AC
   pins); `Ok(7)`/`Err(ParseErr::NotDigit)` construct; `match r { Ok(v) => …, Err(_)
-  => … }` validates exhaustively and lowers; `ens match result { Ok(v) => v == 7,
+  => … }` validates exhaustively and lowers; `ensures match result { Ok(v) => v == 7,
   Err(_) => true }` certifies L3. **GROUNDED `3 verified, 0 errors`** (`ok7`,
   `ok7b` via `result->Ok_0`, `errpath`). (REQ-2, REQ-3, REQ-4.)
 
 - **AC-3 (the error arms BITE — non-vacuity):** A broken `f` returning `Some(0)`
-  under `ens match result { Some(v) => v == 5, None => true }` FAILS `verus`, and a
+  under `ensures match result { Some(v) => v == 5, None => true }` FAILS `verus`, and a
   broken `Ok(0)` under the analogous `Result` ens FAILS — the payload contract is
   real, not vacuous (R-DEFER-9). **GROUNDED: `Some(0)` → `1 verified, 1 errors`;
   `Ok(0)` → `4 verified, 1 errors`.** (REQ-3, REQ-4.)
 
 - **AC-4 (`parse_u64` ships, certifies L3 pure, the C4 REQ-9 payoff):**
   `parse_u64(s: &String) -> Option<u64>` parses, validates (the spec-`match`-in-
-  `ens` round-trip is a flat built-in; `parse_be`/`all_digits` are seeded spec
-  fns), lowers to the Horner loop + the three `None` arms + the round-trip `ens`,
+  `ensures` round-trip is a flat built-in; `parse_be`/`all_digits` are seeded spec
+  fns), lowers to the Horner loop + the three `None` arms + the round-trip `ensures`,
   and the real `verus` binary exits 0 with `N verified, 0 errors`. The broken
   `parse_u64` returning `Some(0)` unconditionally FAILS. **GROUNDED `5 verified, 0
   errors`; broken → `3 verified, 1 errors`.** `.design/basis/07-strings.md` REQ-9's
@@ -315,7 +315,7 @@ pass `verus`. The cert goldens live at `conformance/option_result.cert.json` /
   `tests/golden/lower/parse_u64.verus.rs` is `38 verified, 0 errors` (`34` at the #100
   authoring; regenerated by the #130 byte-view reserved-naming and #232 pub-open
   visibility sweeps — re-run against real verus 2026-06-12, #262). The forced-None
-  refusal demo is NOT in the corpus (under `req !all_digits` the real body provably
+  refusal demo is NOT in the corpus (under `requires !all_digits` the real body provably
   returns None, so an always-None mutant is behaviorally EQUIVALENT and the §7 gate —
   which lacks equivalent-mutant exclusion — cannot distinguish it: a tracked §7
   limitation, #101, not a parse_u64 defect).
@@ -349,7 +349,7 @@ C7 spans three crates, additively, mirroring the 01-adts layer split:
   `Result`) into `enums` / `variant_to_enum`, so construction / `match` / `is` over
   them is accepted (not `UnknownVariant`) and exhaustiveness (01-adts REQ-5)
   applies. The caged-flat walk (`walk_expr_inner`'s `Match` arm, 01-adts REQ-7) is
-  UNCHANGED — a spec-`match`-in-`ens` is already an admitted flat built-in.
+  UNCHANGED — a spec-`match`-in-`ensures` is already an admitted flat built-in.
   `parse_be`/`all_digits`/`is_digit` join `GENERATED_SPEC_FNS` (the C4 precedent)
   for `parse_u64`'s contract.
 
@@ -358,7 +358,7 @@ C7 spans three crates, additively, mirroring the 01-adts layer split:
   built-in `Some`/`Ok`/`Err`/`None` UNQUALIFIED (bare names Verus's prelude
   carries) — only user-enum variants enum-qualify. `lower_match`/`lower_pattern`/
   the `Expr::Is` arm carry the built-in variant arms through unchanged. The
-  spec-`match`-in-`ens` lowers as a Verus `match` expression in `ensures`. `lower`
+  spec-`match`-in-`ensures` lowers as a Verus `match` expression in `ensures`. `lower`
   emits `parse_u64` (the Horner loop + the `parse_be`/`all_digits`/`is_digit` spec
   fns) and the `option_result` demo. The L1 mirror (`l1.rs`) lowers a built-in
   `match`/`is` exactly as the user-enum form.
@@ -379,7 +379,7 @@ forms verify (`4 verified, 0 errors`):
 
 ```verus
 fn f() -> (result: Option<u64>)
-    ensures match result { Some(v) => v == 5, None => true },   // spec-match-in-ens (DECIDED form)
+    ensures match result { Some(v) => v == 5, None => true },   // spec-match-in-ensures (DECIDED form)
 { Some(5) }
 
 fn g() -> (result: Option<u64>)
@@ -447,7 +447,7 @@ pub fn parse_u64(s: &TString) -> (result: Option<u64>)
 ```
 
 **RECORDED FINDING (the C7 stack is end-to-end feasible, the C4 blocker clears).**
-The payload-in-contract projection is expressible as a flat spec-`match`-in-`ens`
+The payload-in-contract projection is expressible as a flat spec-`match`-in-`ensures`
 with zero new AST surface; `Option` construct, `Result<T,E>` construct + match +
 payload, and `parse_u64`'s round-trip all verify NON-VACUOUSLY (every broken-body
 companion FAILS). The ONLY surface change beyond the validator registry seeding is
@@ -465,7 +465,7 @@ the parser/AST — every other C7 construct reuses an EXISTING node. `parse_u64`
   - `Result<u64, ParseErr>` construct + match + `result->Ok_0` + `is Err`
     (`ok7`/`ok7b`/`errpath`) → `3 verified, 0 errors`; broken `Ok(0)` →
     `4 verified, 1 errors`.
-  - `parse_u64` spec-`match`-in-`ens` form → `5 verified, 0 errors`; the
+  - `parse_u64` spec-`match`-in-`ensures` form → `5 verified, 0 errors`; the
     `result->Some_0` form → `5 verified, 0 errors` (both surfaces equivalent);
     broken `Some(0)` → `3 verified, 1 errors`.
   - Cheat-token grep (`assume`/`external_body`/`admit`/`verifier::external`) over
@@ -503,11 +503,11 @@ builder runs (R-CHAR-3), seeded from the GROUNDED forms above.
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (built-in `Option<T>` — `Some`/`None` construct + match + `is`) | SHIPPED | #95 C7. `enum Type` gains `Option(Box<Type>)` (`thermite-syntax/src/ast.rs`, OQ-1 dedicated node — `Option` STOPS being a string-named `Generic`); `parse_type`'s `"Option"` arm builds it (`parser.rs`). `Some(v)`/`None` reuse the EXISTING `Expr::Call`/`Path` nodes; the validator's `Validator::new` SEEDS `Some`/`None` (enum `Option`) into `enums`/`variant_to_enum` so construction/`match`/`is` ACCEPT (no `UnknownVariant`). Consumer: `lower` (`lower_type` `Type::Option` arm → Verus `Option<T>`). Verified: `forge/tests/option_result_conformance.rs::ac1_option_construct_payload_in_contract_certifies_l3` (real verus L3, `Some(5)` + the payload `ens`). |
-| REQ-2 (built-in `Result<T, E>` — type + `Ok`/`Err` construct + match + `is`) | SHIPPED | #95 C7. `enum Type` gains `Result(Box<Type>, Box<Type>)` (the FIRST two-type-arg node; `ast.rs`); `parse_type`'s `"Result"` arm parses `<T, E>` (the comma + second type, `parser.rs`). `Ok(v)`/`Err(e)` reuse `Expr::Call`; `Validator::new` seeds `Ok`/`Err` (enum `Result`). Consumer: `lower` (`lower_type` `Type::Result` arm → Verus `Result<T, E>`). Verified: `forge/tests/option_result_conformance.rs::ac2_result_two_arg_type_construct_payload_certifies_l3` (real verus L3, `Result<u64, ParseErr>` parses + `Ok(7)` + payload `ens`). |
-| REQ-3 (built-in-variant registry + spec-`match`-in-`ens` payload projection) | SHIPPED | #95 C7. `Validator::new` (`thermite-spec/src/validator.rs`) seeds the built-in variants `Some`/`None`→`Option`, `Ok`/`Err`→`Result` into `enums`/`variant_to_enum` (order `[Some, None]`/`[Ok, Err]` pins the exhaustiveness `missing` set), AFTER the user pre-pass (a user re-decl wins). The spec-`match`-in-`ens` needs NO new cage rule — `walk_expr_inner`'s `Match` arm already admits a flat `match` as a built-in (01-adts REQ-7), so `match result { Some(v) => <flat pred>, None => true }` in an `ens` is an accepted flat predicate once the variants are registered. `GENERATED_SPEC_FNS` += `all_digits`/`is_digit` for `parse_u64`'s witness. Consumer: `pub fn validate`. Verified: `forge/tests/option_result_conformance.rs` (AC-1/AC-2 L3) + `ac3_broken_some_under_payload_ens_is_rejected` (the payload constrains — non-vacuous). |
-| REQ-4 (`Option`/`Result` → Verus types; construct/match/`is`/spec-match lower) | SHIPPED | #95 C7. `lower_type` (`thermite-lower/src/lower.rs`) gains `Type::Option(T)` → `Option<T>` and `Type::Result(T, E)` → `Result<T, E>` (the Verus-native generics, no wrapper); `qualify_variant_path` leaves the built-in `Some`/`Ok`/`Err`/`None` UNQUALIFIED (they are not in the user `variants` map, so they fall through to the bare name Verus's prelude carries — GROUNDED). The L1 mirror (`l1.rs::lower_type`) lowers them as the native Rust generics; `l2.rs::type_label` labels them. The spec-`match`-in-`ens` lowers via the EXISTING `lower_expr` `Match` arm (`lower_match`). Consumer: `lower`. Verified: AC-1/AC-2/AC-4 (real verus L3 / `5 verified, 0 errors`). |
-| REQ-5 (`parse_u64` — `String`→`u64`, the C4 REQ-9 payoff, ships under C7) | SHIPPED | #95 C7, STRENGTHENED #100. `lower.rs::emit_parse_defs` emits the `is_digit`/`all_digits`/`parse_be` spec fns + the new monotonicity lemma `lemma_parse_be_prefix_le` (`parse_be(s.subrange(0,k)) <= parse_be(s)`, induction on the suffix + `by(nonlinear_arith)`) + the `parse_u64(s: &TString) -> Option<u64>` exec fn (the Horner-accumulate loop, the BE partial-value invariant + all-digits prefix witness + `decreases s.data.len() - i`, the three handled-or-loud `None` arms — empty / non-digit / overflow, each screaming BEFORE corrupting `acc`). The contract is now CALLER-USABLE (#100): (1) `(all_digits(s.data@) && s.data.len() >= 1 && parse_be(s.data@) <= u64::MAX) ==> result is Some` (a caller with that `req` discharges `ens result is Some`), (2) the round-trip success `Some(v) => all_digits(s.data@) && s.data.len() >= 1 && parse_be(s.data@) == v as nat`, (3) the refusal `result is None ==> (!all_digits || s.data.len() == 0 || parse_be > u64::MAX)` (the overflow arm lifts the prefix witness to the whole input via `lemma_parse_be_prefix_le`). The EXEC borrow-rewrite: an owned-`String` arg to `parse_u64` (which takes `&TString`) lowers to `parse_u64(&s)` (`Ctx::owned_strings`/`is_owned_string`/`with_owned_strings` + `owned_string_value_names`). Materialized when `program_uses_parse`; `parse_be` deduped against the numfmt emission. NO `assume`/`external_body`/`admit` (R-DEFER-9). Consumer: `lower`. Verified: the EXTERNAL cert oracle `forge/tests/check_conformance.rs::parse_valid_cert_matches_golden_deterministic_subset` (`forge check conformance/parse_u64.th` → `parse_valid` L3, stable subset == `conformance/parse_u64.cert.json`) + the golden lowering `tests/golden/lower/parse_u64.verus.rs` (`38 verified, 0 errors` — re-verified against real verus 2026-06-12 after the #130/#232 golden regenerations; `34` at #100: the strengthened contract + the lemma + the `parse_valid`/`parse_rejects_nondigit` callers) + `forge/tests/option_result_conformance.rs` (broken `Some(0)` FAILS, non-vacuous). **BUILD-SIDE L1-EXEC-TWIN (#104):** `forge build` lowers EVERY fn to L1 (`thermite-design.md` §6), so a contract NAMING `is_digit`/`all_digits`/`parse_be` or a body calling the free `parse_u64` needs a runnable EXEC twin to evaluate the runtime `thermite_check!` — these now exist in `thermite-lower::l1::emit_string_runtime_l1` (the C7 block gated on `program_uses_parse`), each computing the same value as its spec body over the runtime `TString` (`Vec<u8>`), NO verus proof (the L1 path is runtime-checked). The calculator acceptance program `add` (its `req`/`ens` name `all_digits`/`parse_be`, body calls `parse_u64`) now `forge build`s + RUNS end-to-end (`forge/tests/acceptance_programs.rs::calculator_string_parse_builds_and_runs_end_to_end`, 2+3→Some(5), 100+200→Some(300)); `forge check` is UNCHANGED (L3 — #104 touched only the L1/exec mirror). |
+| REQ-1 (built-in `Option<T>` — `Some`/`None` construct + match + `is`) | SHIPPED | #95 C7. `enum Type` gains `Option(Box<Type>)` (`thermite-syntax/src/ast.rs`, OQ-1 dedicated node — `Option` STOPS being a string-named `Generic`); `parse_type`'s `"Option"` arm builds it (`parser.rs`). `Some(v)`/`None` reuse the EXISTING `Expr::Call`/`Path` nodes; the validator's `Validator::new` SEEDS `Some`/`None` (enum `Option`) into `enums`/`variant_to_enum` so construction/`match`/`is` ACCEPT (no `UnknownVariant`). Consumer: `lower` (`lower_type` `Type::Option` arm → Verus `Option<T>`). Verified: `forge/tests/option_result_conformance.rs::ac1_option_construct_payload_in_contract_certifies_l3` (real verus L3, `Some(5)` + the payload `ensures`). |
+| REQ-2 (built-in `Result<T, E>` — type + `Ok`/`Err` construct + match + `is`) | SHIPPED | #95 C7. `enum Type` gains `Result(Box<Type>, Box<Type>)` (the FIRST two-type-arg node; `ast.rs`); `parse_type`'s `"Result"` arm parses `<T, E>` (the comma + second type, `parser.rs`). `Ok(v)`/`Err(e)` reuse `Expr::Call`; `Validator::new` seeds `Ok`/`Err` (enum `Result`). Consumer: `lower` (`lower_type` `Type::Result` arm → Verus `Result<T, E>`). Verified: `forge/tests/option_result_conformance.rs::ac2_result_two_arg_type_construct_payload_certifies_l3` (real verus L3, `Result<u64, ParseErr>` parses + `Ok(7)` + payload `ensures`). |
+| REQ-3 (built-in-variant registry + spec-`match`-in-`ensures` payload projection) | SHIPPED | #95 C7. `Validator::new` (`thermite-spec/src/validator.rs`) seeds the built-in variants `Some`/`None`→`Option`, `Ok`/`Err`→`Result` into `enums`/`variant_to_enum` (order `[Some, None]`/`[Ok, Err]` pins the exhaustiveness `missing` set), AFTER the user pre-pass (a user re-decl wins). The spec-`match`-in-`ensures` needs NO new cage rule — `walk_expr_inner`'s `Match` arm already admits a flat `match` as a built-in (01-adts REQ-7), so `match result { Some(v) => <flat pred>, None => true }` in an `ensures` is an accepted flat predicate once the variants are registered. `GENERATED_SPEC_FNS` += `all_digits`/`is_digit` for `parse_u64`'s witness. Consumer: `pub fn validate`. Verified: `forge/tests/option_result_conformance.rs` (AC-1/AC-2 L3) + `ac3_broken_some_under_payload_ens_is_rejected` (the payload constrains — non-vacuous). |
+| REQ-4 (`Option`/`Result` → Verus types; construct/match/`is`/spec-match lower) | SHIPPED | #95 C7. `lower_type` (`thermite-lower/src/lower.rs`) gains `Type::Option(T)` → `Option<T>` and `Type::Result(T, E)` → `Result<T, E>` (the Verus-native generics, no wrapper); `qualify_variant_path` leaves the built-in `Some`/`Ok`/`Err`/`None` UNQUALIFIED (they are not in the user `variants` map, so they fall through to the bare name Verus's prelude carries — GROUNDED). The L1 mirror (`l1.rs::lower_type`) lowers them as the native Rust generics; `l2.rs::type_label` labels them. The spec-`match`-in-`ensures` lowers via the EXISTING `lower_expr` `Match` arm (`lower_match`). Consumer: `lower`. Verified: AC-1/AC-2/AC-4 (real verus L3 / `5 verified, 0 errors`). |
+| REQ-5 (`parse_u64` — `String`→`u64`, the C4 REQ-9 payoff, ships under C7) | SHIPPED | #95 C7, STRENGTHENED #100. `lower.rs::emit_parse_defs` emits the `is_digit`/`all_digits`/`parse_be` spec fns + the new monotonicity lemma `lemma_parse_be_prefix_le` (`parse_be(s.subrange(0,k)) <= parse_be(s)`, induction on the suffix + `by(nonlinear_arith)`) + the `parse_u64(s: &TString) -> Option<u64>` exec fn (the Horner-accumulate loop, the BE partial-value invariant + all-digits prefix witness + `decreases s.data.len() - i`, the three handled-or-loud `None` arms — empty / non-digit / overflow, each screaming BEFORE corrupting `acc`). The contract is now CALLER-USABLE (#100): (1) `(all_digits(s.data@) && s.data.len() >= 1 && parse_be(s.data@) <= u64::MAX) ==> result is Some` (a caller with that `requires` discharges `ensures result is Some`), (2) the round-trip success `Some(v) => all_digits(s.data@) && s.data.len() >= 1 && parse_be(s.data@) == v as nat`, (3) the refusal `result is None ==> (!all_digits || s.data.len() == 0 || parse_be > u64::MAX)` (the overflow arm lifts the prefix witness to the whole input via `lemma_parse_be_prefix_le`). The EXEC borrow-rewrite: an owned-`String` arg to `parse_u64` (which takes `&TString`) lowers to `parse_u64(&s)` (`Ctx::owned_strings`/`is_owned_string`/`with_owned_strings` + `owned_string_value_names`). Materialized when `program_uses_parse`; `parse_be` deduped against the numfmt emission. NO `assume`/`external_body`/`admit` (R-DEFER-9). Consumer: `lower`. Verified: the EXTERNAL cert oracle `forge/tests/check_conformance.rs::parse_valid_cert_matches_golden_deterministic_subset` (`forge check conformance/parse_u64.th` → `parse_valid` L3, stable subset == `conformance/parse_u64.cert.json`) + the golden lowering `tests/golden/lower/parse_u64.verus.rs` (`38 verified, 0 errors` — re-verified against real verus 2026-06-12 after the #130/#232 golden regenerations; `34` at #100: the strengthened contract + the lemma + the `parse_valid`/`parse_rejects_nondigit` callers) + `forge/tests/option_result_conformance.rs` (broken `Some(0)` FAILS, non-vacuous). **BUILD-SIDE L1-EXEC-TWIN (#104):** `forge build` lowers EVERY fn to L1 (`thermite-design.md` §6), so a contract NAMING `is_digit`/`all_digits`/`parse_be` or a body calling the free `parse_u64` needs a runnable EXEC twin to evaluate the runtime `thermite_check!` — these now exist in `thermite-lower::l1::emit_string_runtime_l1` (the C7 block gated on `program_uses_parse`), each computing the same value as its spec body over the runtime `TString` (`Vec<u8>`), NO verus proof (the L1 path is runtime-checked). The calculator acceptance program `add` (its `requires`/`ensures` name `all_digits`/`parse_be`, body calls `parse_u64`) now `forge build`s + RUNS end-to-end (`forge/tests/acceptance_programs.rs::calculator_string_parse_builds_and_runs_end_to_end`, 2+3→Some(5), 100+200→Some(300)); `forge check` is UNCHANGED (L3 — #104 touched only the L1/exec mirror). |
 | REQ-6 (`LowerError`/`SpecError` extension, no panics) | SHIPPED | #95 C7. The C7 constructs reuse the EXISTING `LowerError` (`Unsupported`/`TooDeep`) and `SpecError` (no new validator reject mode beyond the registry seeding — a genuinely undeclared variant like `Smoe` still rejects `UnknownVariant` via `check_variant_ref`). No new variant was needed; no `unwrap`/`expect`/`panic!` in production (R-CODE-2 / R-APG-1 — the anti-pattern gate is clean over every C7 edit). Consumer: the existing error paths. Verified: `cargo clippy --workspace --all-targets -- -D warnings` clean + the gauntlet. |
 
 ## Open questions (for the orchestrator before the builder runs)
@@ -526,9 +526,9 @@ builder runs (R-CHAR-3), seeded from the GROUNDED forms above.
   `Type::Generic { name: "Option", .. }` reader, if any exist). The builder should
   grep for `Generic` readers before choosing. Not a blocker; pinned for the builder.
 
-- **OQ-2 (the spec-`match`-in-`ens` `None`/`Err` arm is `true` — vacuity-gate
+- **OQ-2 (the spec-`match`-in-`ensures` `None`/`Err` arm is `true` — vacuity-gate
   interaction):** The payload contract's failure arm is `None => true` / `Err(_) =>
-  true`. The §7 vacuity battery (which rejects `ens true`) must NOT flag the WHOLE
+  true`. The §7 vacuity battery (which rejects `ensures true`) must NOT flag the WHOLE
   spec-`match` as vacuous just because one arm is `true` — the contract is
   non-vacuous overall (the `Some`/`Ok` arm constrains the payload, GROUNDED: a
   broken body FAILS). The builder/critic should confirm the vacuity triage reasons
@@ -538,5 +538,5 @@ builder runs (R-CHAR-3), seeded from the GROUNDED forms above.
 - **OQ-3 (combinators / `?` — confirmed DEFERRED):** the doc pins `map`/`unwrap_or`/
   `and_then` and `?` OUT of C7 (Combinators section). The orchestrator confirms C7
   ships the CORE only (construct + match + `is` + payload-in-contract + `parse_u64`).
-  `?` is graded hard (early-return `ens` obligation + a likely new node + ripple) and
+  `?` is graded hard (early-return `ensures` obligation + a likely new node + ripple) and
   is the least-certain future item. Recorded; not a C7 blocker.

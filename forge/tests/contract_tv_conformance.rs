@@ -130,7 +130,7 @@ fn sum_corpus_zero_divergent() {
     // the two equivalent. inv#2 (`acc == spec_sum(&xs[..i])`) therefore discharges
     // `faithful` — a production subrange/view bug would diverge from the
     // independent reference, not a vacuous pass.
-    let inv2 = corpus_clause_verdict(&report, "sum.loop#1.inv#2");
+    let inv2 = corpus_clause_verdict(&report, "sum.loop#1.keeps#2");
     assert_eq!(
         inv2,
         Some("faithful"),
@@ -171,7 +171,7 @@ fn binary_search_corpus_zero_divergent() {
     // (`Some(i) => i < haystack.len() && haystack@[i as int] == needle, …`) ≠ P_ref
     // text (the #122 paren discipline), proven equivalent by Z3.
     assert_eq!(
-        corpus_clause_verdict(&report, "binary_search.ens#1"),
+        corpus_clause_verdict(&report, "binary_search.ensures#1"),
         Some("faithful"),
         "binary_search's Option `ens match` clause must be Checked + Faithful \
          (#150 gap #1 — the `Expr::Match`-in-ens encoding). report: {report}"
@@ -201,19 +201,19 @@ fn map_kv_corpus_zero_divergent() {
     // #150 gap #3: the Map/Option signature clauses are now checked + faithful.
     for (clause, why) in [
         (
-            "has_key.ens#1",
+            "has_key.ensures#1",
             "`result == m.contains_key(k)` — Map param + spec_contains_key",
         ),
         (
-            "build_one.ens#1",
+            "build_one.ensures#1",
             "`result.contains_key(k)` — Map RESULT spec_contains_key",
         ),
         (
-            "lookup_absent.req",
+            "lookup_absent.requires",
             "`!m.contains_key(k)` — Map param in a req",
         ),
         (
-            "lookup_absent.ens#1",
+            "lookup_absent.ensures#1",
             "`result is None` — Option result `is`",
         ),
     ] {
@@ -249,11 +249,11 @@ fn string_demo_corpus_byteview_checked() {
     // #150 gap #2: the String byte-view clauses are now checked + faithful.
     for (clause, why) in [
         (
-            "first_byte.ens#1",
+            "first_byte.ensures#1",
             "`result == s.byte_at(0)` — String spec_byte_at",
         ),
         (
-            "greeting_len.ens#1",
+            "greeting_len.ensures#1",
             "`result == s.len()` — String spec_len",
         ),
     ] {

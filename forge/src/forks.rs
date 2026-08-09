@@ -72,7 +72,7 @@ pub struct SemanticForks {
 /// One module's bv-shadow density (REQ-6 / AC-7) — a contract-bearing item (`fn` /
 /// `lemma`) and how much of its `ens` postcondition surface is a machine-semantics fork.
 /// Denominated by the `ens` clauses because the `@bv` tag attaches only to `ens` (and a
-/// lemma's `ens`) — the taggable surface (`check::fn_has_bv_tag` keys on `contract.ens`).
+/// lemma's `ens`) — the taggable surface (`check::fn_has_bv_tag` keys on `contract.ensures`).
 /// A pure parse-level fact (which clauses carry the `@bv` tag); never recomputed from a
 /// verdict (R-CODE-5).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -232,8 +232,8 @@ fn module_densities(program: &Program) -> Vec<ModuleDensity> {
         .items
         .iter()
         .filter_map(|item| match item {
-            Item::Fn(f) => density_row(&f.name, &f.contract.ens),
-            Item::Forge(thermite_syntax::ForgeItem::Lemma(l)) => density_row(&l.name, &l.ens),
+            Item::Fn(f) => density_row(&f.name, &f.contract.ensures),
+            Item::Forge(thermite_syntax::ForgeItem::Lemma(l)) => density_row(&l.name, &l.ensures),
             _ => None,
         })
         .collect()
@@ -275,9 +275,9 @@ fn burned_lemma_towers(certs: &[Certificate], program: &Program) -> Vec<LemmaTow
         }
         // The tower roots: the lemma's `req ∪ ens` (the meaning surface), as
         // `meaning::build_tower` roots a `fn`'s tower.
-        let mut roots: Vec<&Expr> = Vec::with_capacity(1 + lemma.ens.len());
-        roots.push(&lemma.req.expr);
-        roots.extend(lemma.ens.iter().map(|c| &c.expr));
+        let mut roots: Vec<&Expr> = Vec::with_capacity(1 + lemma.ensures.len());
+        roots.push(&lemma.requires.expr);
+        roots.extend(lemma.ensures.iter().map(|c| &c.expr));
         let (depth, definitions) = crate::meaning::tower_metrics(program, &roots);
         rows.push(LemmaTower {
             lemma: cert.item.clone(),
@@ -410,9 +410,9 @@ mod tests {
     #[test]
     fn burned_lemma_tower_depth_follows_the_spec_fn_chain() {
         let program = parse(
-            "spec fn a(x: u32) -> bool dec x { b(x) }\n\
-             spec fn b(x: u32) -> bool dec x { x > 0 }\n\
-             lemma deep(x: u32) req true ens a(x) proof { }",
+            "spec fn a(x: u32) -> bool measures x { b(x) }\n\
+             spec fn b(x: u32) -> bool measures x { x > 0 }\n\
+             lemma deep(x: u32) requires true ensures a(x) proof { }",
         );
         let burned = Certificate::new(
             "deep",
@@ -434,7 +434,7 @@ mod tests {
     // (certified, receipted) lemma is, mirroring `review::burned_lemma_projection`.
     #[test]
     fn uncertified_lemma_is_not_a_tower() {
-        let program = parse("lemma bad(x: u32) req true ens x >= 0 proof { }");
+        let program = parse("lemma bad(x: u32) requires true ensures x >= 0 proof { }");
         let rejected = Certificate::rejected(
             "bad".to_string(),
             vec!["pure".to_string()],
@@ -455,7 +455,8 @@ mod tests {
     // the additive discipline that keeps v1 goldens byte-identical.
     #[test]
     fn section_omitted_for_v1_corpus() {
-        let program = parse("fn f(x: u32) -> u32 req x < 100 ens result == x fx pure { x }");
+        let program =
+            parse("fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }");
         let cert = Certificate::new("f", Level::L3, vec!["pure".to_string()], 0, vec![]);
         assert!(
             SemanticForks::build(&[cert], &program).is_none(),

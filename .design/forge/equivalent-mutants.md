@@ -43,7 +43,7 @@ forced-output refusal — under a precondition that pins an output, the real bod
 and an "early-`return <that output>`" mutant are behaviorally identical, so no
 input distinguishes them, yet the equivalent mutant survives and depresses the
 ratio. The exclusion is **sound-but-incomplete**: a mutant is dropped ONLY on a
-Verus PROOF of observable equivalence under `req`; a mutant Verus cannot prove
+Verus PROOF of observable equivalence under `requires`; a mutant Verus cannot prove
 equivalent (a distinguishing input exists, or the proof times out)
 conservatively STAYS counted. A genuinely-distinguishing survivor — the symptom
 of a real `WeakContract` — is never excluded, so the exclusion cannot launder a
@@ -66,7 +66,7 @@ THROUGH the callee's contract, never its body). See *Amendment (#269)* below.
 
 - **IN:** for each mutant classified a SURVIVOR by §7 step 4 (Verus PROVED it
   against the unchanged contract), run ONE additional Verus EQUIVALENCE query —
-  "under `req`, does the mutant body produce the same observable result as the
+  "under `requires`, does the mutant body produce the same observable result as the
   real body for all inputs?". A PROVED-equivalent mutant is removed from BOTH the
   survivor set AND the `scored` denominator; an unproven one stays a counted
   survivor. The denominator/kill-ratio arithmetic + the `MutationScore` field
@@ -92,7 +92,7 @@ THROUGH the callee's contract, never its body). See *Amendment (#269)* below.
 - **REQ-1 (per-survivor Verus equivalence check — §7):** for each mutant the §7
   gate classifies a SURVIVOR (`MutantOutcome::Survived` — Verus proved it against
   the unchanged contract), the gate issues ONE further Verus query asking whether,
-  *under the function's `req`*, the mutant body's observable result equals the
+  *under the function's `requires`*, the mutant body's observable result equals the
   real body's observable result for ALL inputs. The query reuses the EXISTING
   Verus driver (`check::run_verus`-class invocation): the equivalence obligation
   is `ensures mutant_result == real_result`, discharged under `requires <the
@@ -104,7 +104,7 @@ THROUGH the callee's contract, never its body). See *Amendment (#269)* below.
 
 - **REQ-2 (PROVED-equivalent → dropped from the denominator; sound-but-
   incomplete):** if the equivalence query VERIFIES (Verus proves the mutant
-  observably equal to the real body under `req`), the mutant is a TRUE equivalent
+  observably equal to the real body under `requires`), the mutant is a TRUE equivalent
   mutant — not a contract weakness — and is removed from the kill-ratio
   DENOMINATOR (it does not count as a survivor, and it does not count as scored).
   If the query does NOT verify — Verus finds a distinguishing input
@@ -117,7 +117,7 @@ THROUGH the callee's contract, never its body). See *Amendment (#269)* below.
 
 - **REQ-3 (the soundness line — a distinguishing mutant is NEVER excluded):** the
   exclusion is gated on a Verus PROOF of equivalence, so a mutant that DIFFERS
-  from the real body under `req` (a genuinely-distinguishing survivor — exactly
+  from the real body under `requires` (a genuinely-distinguishing survivor — exactly
   the symptom of a contract too weak to pin the behavior) fails the equivalence
   query and is NEVER dropped. The kill-ratio denominator for a genuinely-weak
   contract is therefore unchanged by this component; a weak contract still gates
@@ -150,7 +150,7 @@ THROUGH the callee's contract, never its body). See *Amendment (#269)* below.
 
 - **REQ-6 (determinism + bounded cost — R-CODE-5):** the equivalence check is a
   Verus proof obligation — a deterministic function of the (mutant body, real
-  body, `req`, parameter types) under a pinned seed + rlimit + toolchain, so a
+  body, `requires`, parameter types) under a pinned seed + rlimit + toolchain, so a
   proved-equivalent exclusion is DETERMINISTIC (the same fn excludes the same
   mutants every run; `mutants_killed` stays deterministic, `mutation-scoring.md`
   REQ-8). The cost is ONE extra Verus run PER SURVIVOR (not per mutant): survivors
@@ -168,7 +168,7 @@ THROUGH the callee's contract, never its body). See *Amendment (#269)* below.
   own L3 sub-program uses (`.design/basis/05-composition.md` law 1, locality
   theorem: "a caller's proof references only the callees' CONTRACTS … never
   their bodies") — is `mutant_result == real_result` provable for all inputs
-  under `req`? The obligation is rendered NOT as the shipped self-contained
+  under `requires`? The obligation is rendered NOT as the shipped self-contained
   spec-fn pair but as an **EXEC-position proof harness**:
 
   ```verus
@@ -188,7 +188,7 @@ THROUGH the callee's contract, never its body). See *Amendment (#269)* below.
   ```
 
   A VERIFIED harness (`ensures eq` proved, `0 errors`) is a PROOF that no input
-  satisfying `req` distinguishes the mutant from the real body *given the callee
+  satisfying `requires` distinguishes the mutant from the real body *given the callee
   contracts* → exclude (REQ-2's polarity unchanged). The callee closure is the
   caller's existing `reachable_fn_deps` set (`check.rs`) — a mutant introduces no
   NEW call, so `f`'s closure covers the mutant body too. Each body renders
@@ -207,17 +207,17 @@ THROUGH the callee's contract, never its body). See *Amendment (#269)* below.
 
 - **REQ-8 (conservatism under a weak callee contract — never a false
   exclusion):** when the callee's contract is TOO WEAK to prove equivalence
-  (e.g. callee `ens result <= 100` cannot pin `real == mutant`), the harness's
+  (e.g. callee `ensures result <= 100` cannot pin `real == mutant`), the harness's
   `ensures eq` is unprovable → the probe returns NOT-equivalent → the survivor
   STAYS counted and the item still gates. The exclusion fires ONLY on a Verus
   PROOF of the harness (REQ-2/REQ-3's polarity, extended verbatim): a
   counterexample, a timeout, an unprovable-through-contracts query, or a
   mutant-side call whose `requires` cannot be discharged under the harness's
-  `req` ALL keep the survivor counted. Semantic justification: a mutant the
+  `requires` ALL keep the survivor counted. Semantic justification: a mutant the
   callee contracts CANNOT prove equivalent is either genuinely distinguishable
   or unknown — and the sound reading of unknown is "counted" (`goal.md`
   R-DEFER-9). Conversely a mutant proved equivalent modulo contracts cannot be
-  killed by ANY caller-side `ens` the verifier could check (the verifier never
+  killed by ANY caller-side `ensures` the verifier could check (the verifier never
   sees past the callee contract, §9), so counting it punishes the caller for the
   callee's contract, not its own — the precise #101 false-gating pattern.
   Source: `goal.md` R-DEFER-9; `.design/basis/05-composition.md` (locality);
@@ -251,13 +251,13 @@ identity mutant `return x` for the §9 composition fixture
 `direct_boundary_caller`, quoted verbatim):
 
 ```text
-#[boundary("ext::ext_id")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ;
-fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }
+#[boundary("ext::ext_id")] fn ext_id(x: u32) -> u32 requires x < 100 ensures result == x ! pure ;
+fn caller(x: u32) -> u32 requires x < 100 ensures result == x ! pure { ext_id(x) }
 ```
 
 The mutant `return x` PROVES against `caller`'s contract (`result == x` holds
 trivially) → SURVIVOR. It is GENUINELY equivalent to the real body *under
-`ext_id`'s assumed contract* (`ens result == x` pins `ext_id(x) == x`). But the
+`ext_id`'s assumed contract* (`ensures result == x` pins `ext_id(x) == x`). But the
 shipped probe cannot prove it: `lower_equivalence_obligation`
 (`thermite-lower/src/lower.rs`) renders BOTH bodies via
 `render_body_as_spec_value`, whose tail arm lowers the call through `lower_expr`
@@ -333,7 +333,7 @@ fn main() {}
 `ext_id`'s assumed `ensures` pins `real == x` at the call site → `eq` proves →
 the identity survivor is a TRUE equivalent (modulo the contract the whole §9
 edifice already trusts) → excluded → `caller` certifies L3 again. Under the
-WEAK-callee variant (`ens result <= 100`) nothing pins `real == x` → `eq`
+WEAK-callee variant (`ensures result <= 100`) nothing pins `real == x` → `eq`
 unprovable → counted survivor → still gates (REQ-8).
 
 ### v1 scope (decided)
@@ -363,7 +363,7 @@ are hand-derived from §7+§9; their real-verus grounding is the landing
 obligation.
 
 - **AC-1 (a forced-output fn → the equivalent mutant excluded → certifies; was
-  depressed):** the fixture `clamp_zero` (`req x == 0`, `ens result == 0`,
+  depressed):** the fixture `clamp_zero` (`requires x == 0`, `ensures result == 0`,
   body `{ let y: u64 = x + 0; y }`) scores `1/3` BEFORE this component (the
   early-`return 0` and the `x - 0` binop-flip survivors are both proved equal to
   the real body under `x == 0`; only the `x + 1` off-by-one is killed) →
@@ -372,13 +372,13 @@ obligation.
   The verdict FLIP from `WeakContract` to certify is the #101 fix.
 
 - **AC-2 (a genuinely-weak contract → STILL `WeakContract`; not laundered):** the
-  fixture `loose` (`req x <= 100`, `ens result <= 1000`, body `{ let y: u64 =
+  fixture `loose` (`requires x <= 100`, `ensures result <= 1000`, body `{ let y: u64 =
   x + 0; y }`) has a SURVIVING early-`return 0` mutant that is NOT equivalent to
   the real body (under `x <= 100`, `0 != x` for `x = 5`), so its equivalence
   query FAILS → it STAYS counted → the score remains below floor → `WeakContract`
   (`mutants_killed = "0/2"`, survivor reported). (The `x - 0` arithmetic-flip
   mutant IS proved-equivalent — `x - 0 == x + 0` for all `x`, independent of
-  `req` — and is soundly excluded, dropping the denominator 3 → 2; the
+  `requires` — and is soundly excluded, dropping the denominator 3 → 2; the
   DISTINGUISHING `return 0` survivor is what keeps the verdict `WeakContract`.)
   The exclusion does NOT launder it (R-DEFER-9).
 
@@ -386,9 +386,9 @@ obligation.
   ONLY when the equivalence query VERIFIES (`success: true, errors: 0`); a
   counterexample or timeout never excludes. A unit/conformance test asserts the
   exclusion decision is the Verus verdict, not a syntactic shape match: the
-  `return 0` mutant is excluded ONLY under `req x == 0` (which makes `0 == x`)
-  and STAYS counted under the looser `req x <= 100` (AC-2), whereas the `x - 0`
-  flip is excluded under ANY `req` (it equals `x + 0` for all `x`) — the verdict
+  `return 0` mutant is excluded ONLY under `requires x == 0` (which makes `0 == x`)
+  and STAYS counted under the looser `requires x <= 100` (AC-2), whereas the `x - 0`
+  flip is excluded under ANY `requires` (it equals `x + 0` for all `x`) — the verdict
   tracks provable equivalence per precondition, not the mutant's shape.
 
 - **AC-4 (determinism — R-CODE-5):** scoring the SAME forced-output fixture twice
@@ -396,7 +396,7 @@ obligation.
 
 - **AC-5 (the `0/0` backstop survives exclusion):** a forced-output fn ALL of
   whose mutants are proved equivalent and none killed (the degenerate `refuse(x)
-  req x == 0 ens result == 0 { x }`, whose sole early-`return 0` mutant is its only
+  requires x == 0 ensures result == 0 { x }`, whose sole early-`return 0` mutant is its only
   scored mutant and is proved equivalent) reduces to `0/0` → the #48 backstop
   STILL gates it (`kill_ratio == 0.0` < floor) — exclusion never opens a vacuous
   `1.0` pass for a fn the battery could not exercise.
@@ -421,10 +421,10 @@ obligation.
 
 - **AC-8 (#269 — the WEAK-callee conservatism fixture, REQ-8):** the new fixture
   `wcaller` — `#[boundary("ext::ext_weak")] fn ext_weak(x: u32) -> u32 req
-  x < 100 ens result <= 100 fx pure ; fn wcaller(x: u32) -> u32 req x < 100 ens
-  result <= 100 fx pure { ext_weak(x) }` — has an identity survivor `return x`
+  x < 100 ensures result <= 100 ! pure ; fn wcaller(x: u32) -> u32 requires x < 100 ens
+  result <= 100 ! pure { ext_weak(x) }` — has an identity survivor `return x`
   (it proves: `x < 100 ⟹ x <= 100`). Its harness's `eq` is UNPROVABLE
-  (`ext_weak`'s `ens result <= 100` does not pin `real == x`) → NOT excluded →
+  (`ext_weak`'s `ensures result <= 100` does not pin `real == x`) → NOT excluded →
   the survivor STAYS counted and is reported → `wcaller` gates `WeakContract`
   (the contract genuinely fails to pin the behavior through the callee's weak
   contract). Never a false exclusion.
@@ -441,16 +441,16 @@ The equivalence check is a new seam in `forge/src/mutation.rs` (the equivalence-
 obligation formulation) consumed by `check::mutation_score` in `check.rs` (it
 weaves the obligation as a per-item sub-program, lowers via the EXISTING
 `thermite_lower::lower`, content-addresses through `cache.rs`, and runs the
-EXISTING `run_verus`). It depends on `thermite_syntax` (the `FnItem` whose `req`
+EXISTING `run_verus`). It depends on `thermite_syntax` (the `FnItem` whose `requires`
 + params + return type frame the obligation, the real `body`, and the survivor's
 `body`), `thermite_lower::lower` (reused), the `check.rs` Verus driver (reused),
 and `cache.rs` (the `CHECK_SCHEMA_VERSION` bump + per-query content addressing).
 
 ### The equivalence obligation (the formulation)
 
-Given the function `f` (its `req`, params, return type), its real body `B_real`,
+Given the function `f` (its `requires`, params, return type), its real body `B_real`,
 and a survivor mutant's body `B_mut`, the equivalence obligation asks Verus to
-prove that, under `req`, `B_mut`'s observable result equals `B_real`'s for all
+prove that, under `requires`, `B_mut`'s observable result equals `B_real`'s for all
 inputs. **Call-free bodies (SHIPPED, #101):** hand-derived to spec form (the
 GROUNDED query below): two `spec fn`s — one per body — over the same parameters,
 with a `proof fn` that `requires <req>` and `ensures B_mut(params..) ==
@@ -482,7 +482,7 @@ mutation_score, per mutant Verus-classified SURVIVED:
 ### Why this cannot launder a weak contract (the soundness line)
 
 A `WeakContract` verdict means a mutant survived that the contract should have
-killed — i.e. a body DIFFERENT from the real body that the `ens` nonetheless
+killed — i.e. a body DIFFERENT from the real body that the `ensures` nonetheless
 admits. That mutant DIFFERS from the real body, so its equivalence query has a
 distinguishing input and FAILS to prove (REQ-3, GROUNDED below: the `x + 1`
 off-by-one and the `loose` early-`return 0` both fail equivalence). The exclusion
@@ -540,7 +540,7 @@ real `verus` binary. (Scratch fixtures were under `/tmp`; removed.)
 
 ### 1. The bug — a forced-output fn is falsely `WeakContract` (BEFORE)
 
-`refuse(x: u64) -> u64  req x == 0  ens result == 0  { x }` — `forge check`:
+`refuse(x: u64) -> u64  requires x == 0  ensures result == 0  { x }` — `forge check`:
 
 ```text
 item: refuse
@@ -549,7 +549,7 @@ reject: WeakContract — §7 step 4 ... mutation kill ratio 0/1 is below the flo
         mutant `insert early `return 0` at body head` survived ...
 ```
 
-`clamp_zero(x: u64) -> u64  req x == 0  ens result == 0  { let y: u64 = x + 0; y }`:
+`clamp_zero(x: u64) -> u64  requires x == 0  ensures result == 0  { let y: u64 = x + 0; y }`:
 
 ```text
 item: clamp_zero
@@ -558,12 +558,12 @@ reject: WeakContract — ... mutation kill ratio 1/3 is below the floor;
         mutant `insert early `return 0` at body head` survived ...
 ```
 
-Both honest (the `ens` pins `result == 0`, which the real body provably satisfies
-under `req x == 0`), both falsely gated.
+Both honest (the `ensures` pins `result == 0`, which the real body provably satisfies
+under `requires x == 0`), both falsely gated.
 
 ### 2. The equivalence proof — the survivors ARE equivalent (Verus VERIFIED)
 
-`clamp_zero`'s three mutants under `req x == 0`: `x + 1` (off-by-one) is KILLED;
+`clamp_zero`'s three mutants under `requires x == 0`: `x + 1` (off-by-one) is KILLED;
 the early-`return 0` and the `x - 0` (binop flip) SURVIVE. Both survivors' bodies
 are observably equal to the real body `x + 0` under `x == 0`:
 
@@ -611,8 +611,8 @@ proof fn equiv_offbyone(x: u64) requires x == 0, ensures mut_offbyone(x) == real
 verification results:: 0 verified, 1 errors        (postcondition not satisfied)
 ```
 
-A genuinely-WEAK contract stays `WeakContract`. `loose(x: u64) -> u64  req x <= 100
-ens result <= 1000  { let y: u64 = x + 0; y }` — `forge check`:
+A genuinely-WEAK contract stays `WeakContract`. `loose(x: u64) -> u64  requires x <= 100
+ensures result <= 1000  { let y: u64 = x + 0; y }` — `forge check`:
 
 ```text
 item: loose
@@ -622,7 +622,7 @@ reject: WeakContract — ... mutation kill ratio 0/2 is below the floor;
         (the `x - 0` flip was proved-equivalent and excluded, 3 → 2)
 ```
 
-Its early-`return 0` survivor's equivalence query FAILS under the looser `req`
+Its early-`return 0` survivor's equivalence query FAILS under the looser `requires`
 (the SAME mutant that was excludable under `x == 0` is NOT excludable under
 `x <= 100`, AC-3 — the decision is the Verus verdict, not a syntactic match):
 
@@ -649,7 +649,7 @@ indistinguishable mutants (REQ-3, R-DEFER-9).
   value (`==` over the lowered wrapper); the formulation generalizes (the spec-fn
   pair returns the wrapper type and `ensures` its `==`), but only scalar returns
   are GROUNDED here. **(Least confident — see report.)**
-- **OQ-2 (effectful bodies):** v0.1 mutation scores `fx pure` exec bodies; an
+- **OQ-2 (effectful bodies):** v0.1 mutation scores `! pure` exec bodies; an
   effectful body's "observable result" would also include its effect trace, not
   just the return value. The corpus forced-output fns are `pure`, so value
   equality is the full observable. A non-pure forced-output fn is out of v0.1
@@ -669,11 +669,11 @@ indistinguishable mutants (REQ-3, R-DEFER-9).
   ingredients: spec-fn deps, ADT decls, generated defs). DECISION DEFERRED: v1
   returns structured `Unsupported` for those shapes (REQ-9 — counted survivor,
   recorded reason); the composition fixtures need none of them.
-- **OQ-5 (#269 — mutant-side calls whose `req` fails under the harness):** a
+- **OQ-5 (#269 — mutant-side calls whose `requires` fails under the harness):** a
   mutated call argument (`ext_id(x + 1)`-class, families 2–4) may fail the
   callee's `requires` inside the harness even when the mutant SURVIVED its own
   contract check (the mutant's L3 run had the same call — if it survived, the
-  req discharged; but the harness's `req` is `f`'s, identical, so this should be
+  requires discharged; but the harness's `requires` is `f`'s, identical, so this should be
   unreachable). If verus nonetheless reports a precondition failure inside the
   harness, the polarity is already safe (non-Proved → counted); whether to
   classify it as `Unsupported`-with-reason instead is a builder call under
@@ -690,5 +690,5 @@ indistinguishable mutants (REQ-3, R-DEFER-9).
 | REQ-5 (`CHECK_SCHEMA_VERSION` bump) | SHIPPED | `cache::CHECK_SCHEMA_VERSION` bumped `4 → 5` (`cache.rs`, with the schema-history note): the verdict-changing exclusion invalidates stale forced-output verdicts so a `WeakContract` cached under schema 4 is re-scored under the new logic. *(REQ-7's landing bumps again per the same rule — the verdict changes for call-bearing fns.)* |
 | REQ-6 (determinism + bounded per-survivor cost) | SHIPPED | `equivalence_proves_equal` content-addresses the obligation through the SAME `cache::cache_key`/`load`/`store` (#8) and runs the deterministic pinned-seed/rlimit `run_verus`; ONE extra run PER SURVIVOR (a killed mutant is never queried — `mutation_score` `continue`s before the query). Verified: `forge/tests/equivalent_mutants_conformance.rs::req6_exclusion_is_deterministic` (byte-identical reduced `mutants_killed` across runs). |
 | REQ-7 (call-bearing obligation — equivalence modulo callee contracts, the exec harness) | SHIPPED | `thermite_lower::lower_equivalence_obligation(f, mutant_body, callee_deps)` (`thermite-lower/src/lower.rs`) routes a NON-EMPTY `callee_deps` (a call-bearing body) to `lower_call_bearing_equivalence_obligation`, which emits the EXEC-position harness `fn equiv_check_<n>(<params>) -> (eq: bool) requires <req>, ensures eq { let real_v: <ret> = { <real> }; let mutant_v: <ret> = { <mutant> }; real_v == mutant_v }` with the callee closure woven via the EXISTING `lower` dispatch (a boundary/slag dep → `lower_external_body_fn`'s `#[verifier::external_body]` signature, a regular dep → its full `lower_fn` def — the SAME weave `item_subprogram` drives, modulo callee contracts §9). Each compared body renders as an exec block VALUE via `render_body_as_exec_value` (leading early-return → its returned expr, bare tail, or immutable let-chain-plus-tail; a call is LEGAL — the closure declares every callee). Binders are `real_v`/`mutant_v` (NOT `real`, a vstd-imported type name). Consumer: `check::equivalence_proves_equal` threads the SAME `fn_deps` closure `mutation_score` weaves into each mutant's `item_subprogram`. Verified: `thermite-lower/tests/equivalence_obligation.rs::{call_bearing_obligation_emits_the_woven_exec_harness, call_bearing_identity_through_strong_contract_verifies}` (real verus — the woven ext_id external_body + the identity harness VERIFIES) + `forge/tests/composition_conformance.rs::{direct_boundary_caller_verifies_through_the_contract, transitive_boundary_caller_weaves_real_and_external_body_deps}` (AC-6/AC-7 GREEN — `caller`'s `return x` excluded → L3). |
-| REQ-8 (conservatism — weak callee ⟹ NOT equivalent; never a false exclusion) | SHIPPED | The harness `ensures eq` is provable ONLY when a callee contract pins `real == mutant`. `check::equivalence_proves_equal` excludes on `EquivOutcome::Proved` ALONE (a verus PROOF of the harness); a weak callee (`ens result <= 100`) leaves `eq` unprovable → `EquivOutcome::NotProved` → the survivor STAYS counted, the item gates. Verified: `thermite-lower/tests/equivalence_obligation.rs::call_bearing_identity_through_weak_contract_fails` (the `ext_weak` harness FAILS verus) + `forge/tests/composition_conformance.rs::weak_callee_identity_survivor_stays_counted_and_gates` (`wcaller` gates `WeakContract 0/2` — BOTH the identity and zero-return survivors counted, never falsely excluded). |
+| REQ-8 (conservatism — weak callee ⟹ NOT equivalent; never a false exclusion) | SHIPPED | The harness `ensures eq` is provable ONLY when a callee contract pins `real == mutant`. `check::equivalence_proves_equal` excludes on `EquivOutcome::Proved` ALONE (a verus PROOF of the harness); a weak callee (`ensures result <= 100`) leaves `eq` unprovable → `EquivOutcome::NotProved` → the survivor STAYS counted, the item gates. Verified: `thermite-lower/tests/equivalence_obligation.rs::call_bearing_identity_through_weak_contract_fails` (the `ext_weak` harness FAILS verus) + `forge/tests/composition_conformance.rs::weak_callee_identity_survivor_stays_counted_and_gates` (`wcaller` gates `WeakContract 0/2` — BOTH the identity and zero-return survivors counted, never falsely excluded). |
 | REQ-9 (structured `Unsupported` / probe-failure transparency — R-HONEST-3) | SHIPPED | The consumer no longer collapses every render error to bare `Ok(false)`: `check::equivalence_proves_equal` returns `EquivOutcome::{Proved, NotProved, Unsupported(String)}`, and `mutation_score` carries an `Unsupported` reason to the survivor transparency surface (`survivor = "<desc> (equivalence probe Unsupported — survivor COUNTED, not excluded: <reason>)"`) so an operator distinguishes "proved distinguishing" from "the probe could not ask". EXCLUSION fires on `Proved` ALONE; an out-of-scope shape (`LowerError::Unsupported` from `lower_equivalence_obligation`) keeps the survivor COUNTED with the reason recorded. Verified: `thermite-lower/tests/equivalence_obligation.rs::non_scalar_return_is_unsupported` (the seam returns structured `Unsupported`, no panic) + the `EquivOutcome::Unsupported` arm in `check.rs`. |

@@ -73,7 +73,7 @@ fn divergence_tree_fold_does_not_lower_and_verify() {
     // (`.design/basis/01-adts.md` REQ-10 + the recorded structural-recursion
     // finding — "a `tree_sum` fold was also confirmed to verify".)
     let src = "enum Tree {\n  Leaf(u64),\n  Node(Box<Tree>, Box<Tree>),\n}\n\n\
-               spec fn tree_sum(t: Tree) -> u64\n  dec t\n{\n  match t {\n    \
+               spec fn tree_sum(t: Tree) -> u64\n  measures t\n{\n  match t {\n    \
                Leaf(v)    => v as u64,\n    Node(l, r) => tree_sum(*l) + tree_sum(*r),\n  }\n}\n";
 
     let parsed = thermite_syntax::parse(src);

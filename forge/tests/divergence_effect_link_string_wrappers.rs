@@ -66,16 +66,18 @@ fn cleanup(artifact: &std::path::Path) {
 /// Stage-7 `String` arg (`08-runnable-effect-link.md` REQ-1 / the wrapper-set
 /// table). Hand-derived from the doc, not copied from toolchain output (R-CHAR-3).
 const PRINT_DEMO: &str = "#[boundary(\"os::print\")] fn print(s: String) -> u64\n  \
-                          req true\n  ens result <= 1\n  fx  write(output)\n  ;\n\n\
-                          fn greet() -> u64\n  req true\n  ens result <= 1\n  \
-                          fx  write(output)\n{\n  print(String::new())\n}\n";
+                          ! write(output)
+  requires true\n  ensures result <= 1\n  ;\n\n\
+                          fn greet() -> u64\n  ! write(output)
+  requires true\n  ensures result <= 1\n{\n  print(String::new())\n}\n";
 
 /// The design's read_line wrapper: a `#[boundary("os::read_line")]` primitive
 /// returning a Stage-7 `String` (`08-runnable-effect-link.md` REQ-1).
 const READ_LINE_DEMO: &str = "#[boundary(\"os::read_line\")] fn read_line() -> String\n  \
-                              req true\n  ens true\n  fx  read(input)\n  ;\n\n\
-                              fn getit() -> String\n  req true\n  ens true\n  \
-                              fx  read(input)\n{\n  read_line()\n}\n";
+                              ! read(input)
+  requires true\n  ensures true\n  ;\n\n\
+                              fn getit() -> String\n  ! read(input)
+  requires true\n  ensures true\n{\n  read_line()\n}\n";
 
 fn write_fixture(name: &str, src: &str) -> PathBuf {
     let p = std::env::temp_dir().join(format!(

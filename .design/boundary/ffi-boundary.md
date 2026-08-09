@@ -16,7 +16,7 @@ thesis-refs:
 ## Summary
 
 A `crates.io` dependency is imported through a **boundary module**: each foreign
-function gets a Thermite signature (`req`/`ens`/`fx`) but **no Thermite body** — the
+function gets a Thermite signature (`!`/`requires`/`ensures`) but **no Thermite body** — the
 body is the foreign crate's. Because a foreign body cannot be proved, the contract
 is **enforced at L1** (runtime checks on every crossing; `thermite-design.md` §9),
 and the function certifies at `Level::L1` with a `boundary` flag plus the foreign
@@ -53,9 +53,9 @@ foreign. The chosen form is the **skill-budget-minimal (a) variant**: a bodyless
 ```thermite
 #[boundary("regex::Regex::is_match")]
 fn re_is_match(re: &Regex, hay: &[u32]) -> bool
-  req true
-  ens true
-  fx  pure
+  requires true
+  ensures true
+  !  pure
 ;
 ```
 
@@ -82,8 +82,8 @@ the target is one positional string, as `#[slag]` uses `key = "value"` fields �
 minimal form is a single positional string literal, distinct from slag's named
 fields, because a boundary has exactly one datum.)
 
-A boundary fn `req`/`ens`/`fx` remain **mandatory** (the §4.1 rule is unchanged):
-the parser's existing `parse_contract` already rejects a missing `req`/`ens`/`fx`,
+A boundary fn `!`/`requires`/`ensures` remain **mandatory** (the §4.1 rule is unchanged):
+the parser's existing `parse_contract` already rejects a missing `!`/`requires`/`ensures`,
 so a bodyless fn with no contract is a parse error for free.
 
 ### Exact `ast.rs` / `parser.rs` additions (greenfield — verified absent)
@@ -91,7 +91,7 @@ so a bodyless fn with no contract is a parse error for free.
 Empirically confirmed against the current crate (a probe of
 `thermite_syntax::parse`):
 
-- A bodyless `fn foo(x: u32) -> u32 req true ens result == x fx pure ;` → parse
+- A bodyless `fn foo(x: u32) -> u32 requires true ensures result == x ! pure ;` → parse
   error `Unexpected { expected: "`{`", found: "`;`" }` — `parse_fn` calls
   `parse_block` in `parser.rs`, which `consume`s a `{`.
 - `#[boundary("…")] fn …` → parse error `Unexpected { expected: "`slag`", found:
@@ -141,7 +141,7 @@ wrapper reuses `l1.rs`'s existing executable machinery exactly:
 
 1. Emit the `fn <name>(<params>) -> <ret>` head (`emit_params`, `lower_type` —
    existing).
-2. Check `req` on entry via the always-active `thermite_check!` macro
+2. Check `requires` on entry via the always-active `thermite_check!` macro
    (`emit_check`, `lower_expr_exec` — existing; the same `if !(cond) {
    thermite_contract_violation(…) }` the proved-body L1 path uses).
 3. **Call the foreign function** named by `BoundaryAttr.target`, binding its return
@@ -149,13 +149,13 @@ wrapper reuses `l1.rs`'s existing executable machinery exactly:
    L1 fn: `let result = <target>(<args>);`. The foreign body is **NOT** lowered,
    NOT verified, NOT proved — it is the unproven crossing (§9), exactly as a
    `#[slag]` body's *body* is exempt from proving.
-4. Check each `ens` on exit against the bound `result` (`emit_check` over
+4. Check each `ensures` on exit against the bound `result` (`emit_check` over
    `f.contract.ens` — existing).
-5. `fx` emits no runtime sandbox in v0.1 (deferred to #21, R-SPEC-5), identical to
+5. `!` emits no runtime sandbox in v0.1 (deferred to #21, R-SPEC-5), identical to
    the proved-body L1 path.
 
-The wrapper IS "the runtime checks on every crossing": `req` before the foreign
-call, `ens` after. The new `thermite-lower` code is a `lower_boundary_fn_l1` arm in
+The wrapper IS "the runtime checks on every crossing": `requires` before the foreign
+call, `ensures` after. The new `thermite-lower` code is a `lower_boundary_fn_l1` arm in
 `lower_l1`/`lower_fn_l1` that, when `f.boundary.is_some()` (equivalently `f.body ==
 None`), emits steps 1–2-4-5 with step 3 in place of the body lowering. (OQ-3: a
 boundary fn is NOT lowered to Verus by `lower.rs` at all — there is no body to
@@ -216,8 +216,8 @@ target — NOT L3 (the foreign body is unproven), precisely mirroring the existi
   recovery is preserved. Derived from §9 + pillar §2.5 (locality / per-item
   recovery).
 - **REQ-4 (L1 wrapper lowering)**: a boundary fn lowers to an L1 wrapper —
-  `thermite_check!` on `req` → call the foreign target binding `result` →
-  `thermite_check!` on each `ens`; the foreign body is NOT lowered or verified.
+  `thermite_check!` on `requires` → call the foreign target binding `result` →
+  `thermite_check!` on each `ensures`; the foreign body is NOT lowered or verified.
   Derived from §9 ("L1, runtime checks on every crossing") + §6 (L1 = always-active
   runtime checks).
 - **REQ-5 (forge cert — L1 + boundary flag + target)**: a boundary fn certifies at
@@ -243,15 +243,15 @@ entry). The exact example program:
 ```thermite
 #[boundary("ext::foreign_id")]
 fn foreign_id(x: u32) -> u32
-  req x <= 1000
-  ens result == x
-  fx  pure
+  requires x <= 1000
+  ensures result == x
+  !  pure
 ;
 
 fn caller(x: u32) -> u32
-  req x <= 1000
-  ens result == x
-  fx  pure
+  requires x <= 1000
+  ensures result == x
+  !  pure
 {
   foreign_id(x)
 }
@@ -271,7 +271,7 @@ parser extension lands this PARSES; it does NOT parse today — verified above.)
   `boundary_target == "ext::foreign_id"`, `slag == false`, and an oracle subset
   matching `conformance/boundary/boundary.cert.json`. The cert is NOT `L3` (no
   verus run on a foreign body). (Oracle: the golden boundary cert.)
-- **AC-3 (L1 wrapper checks req/ens on the crossing)**: `thermite_lower::lower_l1`
+- **AC-3 (L1 wrapper checks req/ensures on the crossing)**: `thermite_lower::lower_l1`
   of `boundary.th` emits, for `foreign_id`, a `thermite_check!("req", …, x <= 1000)`
   before a call to `ext::foreign_id(x)`, then `thermite_check!("ens", …, result ==
   x)` against the bound `result`; the foreign body is absent from the output.
@@ -303,8 +303,8 @@ The component threads three crates in dependency order (`goal.md` R-DEFER-7):
 - **L1 wrapper (`thermite-lower`).** `lower_l1` routes a `f.boundary.is_some()`
   `FnItem` to a `lower_boundary_fn_l1` arm reusing `emit_check`, `lower_expr_exec`,
   `emit_params`, `lower_type`, and the `thermite_check!` macro from
-  `emit_check_macro` — the wrapper is `req`-check → `let result = <target>(args);`
-  → `ens`-checks. `lower.rs` (the L3 Verus path) skips a boundary fn (no body to
+  `emit_check_macro` — the wrapper is `requires`-check → `let result = <target>(args);`
+  → `ensures`-checks. `lower.rs` (the L3 Verus path) skips a boundary fn (no body to
   prove), mirroring `check.rs`'s slag skip.
 
 - **Cert (`forge`).** `manifest.rs` adds the additive `boundary: bool` +
@@ -355,10 +355,10 @@ The component threads three crates in dependency order (`goal.md` R-DEFER-7):
   boundary fn (no body), and `check.rs` does NOT run verus on it, mirroring the
   `#[slag]` skip. The builder should assert no Verus invocation occurs for a
   boundary fn (parallel to the slag no-verus assertion).
-- **OQ-4 (effect-row crossing):** does a boundary fn's `fx` row constrain the
-  foreign call (e.g. a `fx pure` boundary fn calling a foreign fn that allocates)?
-  In v0.1 `fx` is compile-time-subsumption-only (no runtime sandbox, #21,
-  R-SPEC-5), so the `fx` row is checked at the Thermite call site exactly as for a
+- **OQ-4 (effect-row crossing):** does a boundary fn's `!` row constrain the
+  foreign call (e.g. a `! pure` boundary fn calling a foreign fn that allocates)?
+  In v0.1 `!` is compile-time-subsumption-only (no runtime sandbox, #21,
+  R-SPEC-5), so the `!` row is checked at the Thermite call site exactly as for a
   proved fn; the foreign body's actual effects are trusted-by-fiat (the §9/§8
   honesty: the row is *stated*, the body is trusted). No new mechanism in #16.
 
@@ -369,7 +369,7 @@ The component threads three crates in dependency order (`goal.md` R-DEFER-7):
 | REQ-1 (surface form) | SHIPPED | `#[boundary("crate::path")] fn NAME(..) -> ret req .. ens .. fx .. ;` parses via `parse_attribute` + the `Semi`-body path in `parse_fn` (`thermite-syntax/src/parser.rs`); verified by `boundary_fn_parses_with_target_and_no_body` in `thermite-syntax/tests/boundary_parse.rs`. |
 | REQ-2 (AST shape) | SHIPPED | `struct BoundaryAttr { target, span }` + `FnItem.boundary: Option<BoundaryAttr>` + `FnItem.body: Option<Block>` in `thermite-syntax/src/ast.rs` (exported from `lib.rs`); a boundary fn is `boundary: Some`, `body: None` — asserted by `boundary_fn_parses_with_target_and_no_body`. |
 | REQ-3 (parser extension) | SHIPPED | `parse_attribute` dispatches on the `#[` name (`slag`→`SlagAttr`, `boundary`→`BoundaryAttr`); `parse_fn`'s `Semi`-body path is GATED on `boundary.is_some()` (OQ-2: a bodyless non-`#[boundary]` fn is a `SyntaxError`, a `#[boundary]` fn with `{ }` is a `SyntaxError`, `#[boundary]` on a `spec fn` is a `SyntaxError`). Verified by `bodyless_fn_without_boundary_is_a_parse_error`, `boundary_fn_with_brace_body_is_a_parse_error`, `boundary_on_spec_fn_is_a_parse_error`. |
-| REQ-4 (L1 wrapper lowering) | SHIPPED | `lower_boundary_fn_l1` in `thermite-lower/src/l1.rs` emits `req`-check → `let result = <target>(args);` (the foreign call; body NOT lowered) → `ens`-checks; routed by the `f.boundary.is_some()` guard in `lower_l1`. Consumer: `forge`'s `ladder_for_timeout`/the L1 recording path + the boundary cert. |
+| REQ-4 (L1 wrapper lowering) | SHIPPED | `lower_boundary_fn_l1` in `thermite-lower/src/l1.rs` emits `requires`-check → `let result = <target>(args);` (the foreign call; body NOT lowered) → `ensures`-checks; routed by the `f.boundary.is_some()` guard in `lower_l1`. Consumer: `forge`'s `ladder_for_timeout`/the L1 recording path + the boundary cert. |
 | REQ-5 (forge cert L1 + boundary flag) | SHIPPED | `Certificate.boundary: bool` + `boundary_target: Option<String>` + `Certificate::boundary_l1` (`Level::L1`, `boundary: true`, target, no verus, `graduate_triage_clean`) in `forge/src/manifest.rs`; `oracle_subset` is now `(item, level, effects, slag, boundary)`. `check::gate_fn` detects `f.boundary.is_some()` FIRST, validates a non-empty target, runs (a)/(b)/(c) triage, then `boundary_l1`. Verified by `foreign_id_certifies_l1_boundary_not_l3` + `boundary_vacuous_contract_is_rejected` in `forge/tests/boundary_conformance.rs`. |
 | REQ-6 (#15 TCB hook) | SHIPPED | the per-cert `boundary: bool` + `boundary_target` is the enumerable hook (joins `slag` in `oracle_subset`, rendered by `cli::render_human`); a boundary fn's cert carries `boundary: true` + the foreign target for #15's `slag ∪ boundary ∪ toolchain` audit. |
 | REQ-7 (composition independence) | SHIPPED | a boundary fn is gated to the L1 path in `check::gate_fn` BEFORE any L3/L2/mutation/strengthen stage, so a caller `g` lowers/certifies through `f`'s contract alone (its foreign body never enters `g`'s sub-program); the `caller`-through-`foreign_id` example certifies independent of the foreign target. |

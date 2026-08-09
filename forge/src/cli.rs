@@ -1523,7 +1523,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             })?;
             let addr = addr.ok_or_else(|| {
                 ForgeError::Usage(
-                    "`forge edit` requires a semantic <addr> (e.g. `binary_search.loop#1.inv#2`)"
+                    "`forge edit` requires a semantic <addr> (e.g. `binary_search.loop#1.keeps#2`)"
                         .to_string(),
                 )
             })?;
@@ -3149,7 +3149,7 @@ fn render_review(artifact: &ReviewArtifact) -> String {
         }
         out.push_str(&format!("  fx  [{}]\n", r.spec_layer.fx.join(", ")));
         for decl in &r.spec_layer.referenced_spec_fns {
-            out.push_str(&format!("  {} dec {}\n", decl.signature, decl.dec));
+            out.push_str(&format!("  {} dec {}\n", decl.signature, decl.measures));
         }
         out.push_str(&format!("  prompt: {}\n", r.prompt));
     }
@@ -3385,9 +3385,9 @@ fn render_audit(manifest: &AuditManifest) -> String {
                 "  boundary: {} -> {} (req={:?} ens=[{}] fx=[{}])\n",
                 c.name,
                 c.target,
-                c.req.as_deref().unwrap_or("(unresolved)"),
-                c.ens.join("; "),
-                c.fx.join(", ")
+                c.requires.as_deref().unwrap_or("(unresolved)"),
+                c.ensures.join("; "),
+                c.effects.join(", ")
             ));
         }
     }

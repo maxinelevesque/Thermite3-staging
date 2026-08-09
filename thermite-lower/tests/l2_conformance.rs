@@ -212,7 +212,8 @@ fn under_bound_is_reported_failure_not_false_pass() {
 fn bound_is_type_derived_not_name_derived() {
     // A synthetic `fn f(xs: &[u32], k: u32)`: the same slice scaffolding the
     // corpus uses + an unbounded `kani::any()` for the scalar `k`; no name check.
-    let src = "fn f(xs: &[u32], k: u32) -> u64\n  req k < 10\n  ens result == k as u64\n  fx pure\n{\n  k as u64\n}\n";
+    let src = "fn f(xs: &[u32], k: u32) -> u64\n  ! pure
+  requires k < 10\n  ensures result == k as u64\n{\n  k as u64\n}\n";
     let parsed = thermite_syntax::parse(src);
     assert!(
         parsed.errors.is_empty(),
@@ -234,7 +235,8 @@ fn bound_is_type_derived_not_name_derived() {
 #[test]
 fn unlowerable_is_err_not_panic() {
     // `&u32` (reference-to-scalar) has no L2 symbolic-input inference → Unsupported.
-    let src = "fn f(p: &u32) -> u32\n  req true\n  ens result == 0\n  fx pure\n{\n  0\n}\n";
+    let src = "fn f(p: &u32) -> u32\n  ! pure
+  requires true\n  ensures result == 0\n{\n  0\n}\n";
     let parsed = thermite_syntax::parse(src);
     assert!(parsed.errors.is_empty());
     let r = thermite_lower::lower_l2(&parsed.program);

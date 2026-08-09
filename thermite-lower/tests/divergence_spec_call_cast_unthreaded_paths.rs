@@ -43,7 +43,7 @@ fn lower(src: &str) -> String {
 /// with an arithmetic argument (`s_dec(i + 0)`) — the `lower_loop` inv path.
 const LOOP_INV_PROGRAM: &str = "\
 spec fn s_dec(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -53,15 +53,15 @@ spec fn s_dec(n: u32) -> u32
 }
 
 fn count_up(n: u32) -> u32
-  req true
-  ens result == s_dec(n)
-  fx  pure
+  ! pure
+  requires true
+  ensures result == s_dec(n)
 {
   let mut i: u32 = 0;
   while i < n
-    inv i <= n
-    inv s_dec(i + 0) == 0
-    dec n - i
+    keeps i <= n
+    keeps s_dec(i + 0) == 0
+    measures n - i
   {
     i = i + 1;
   }
@@ -91,7 +91,7 @@ fn loop_invariant_spec_call_arith_arg_casts_to_declared_param_type() {
 /// spec fn with an arithmetic argument — the `spec_dec` path.
 const SPEC_DEC_PROGRAM: &str = "\
 spec fn s_dec(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -101,7 +101,7 @@ spec fn s_dec(n: u32) -> u32
 }
 
 spec fn s_two(n: u32) -> u32
-  dec s_dec(n + 0)
+  measures s_dec(n + 0)
 {
   0
 }

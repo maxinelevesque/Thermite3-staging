@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 292396538e65cde488319c3b3b296463a84ec6b3bda4f3386db3380675001f05 (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: c5ad43230ea492bb869efdac76935eac697a3a6c4c3d7d5ca411d6958f060e46, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 46ee0151535566ef908765f13a921ed530117ff5535a70ec5fa4934c5baa4073))
+audited-content-sha256: 370e1f3c7b38984ed7fe7d5f74e2a6820c97b5d8488f3ac3c04a71435a1d5d32 (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: 292396538e65cde488319c3b3b296463a84ec6b3bda4f3386db3380675001f05, previously (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: c5ad43230ea492bb869efdac76935eac697a3a6c4c3d7d5ca411d6958f060e46, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 46ee0151535566ef908765f13a921ed530117ff5535a70ec5fa4934c5baa4073)))
 decision: Option A — compile the canonical Verus executable body that was verified
 issue: github:dollspace-gay/Thermite#101, github:dollspace-gay/Thermite#103, github:dollspace-gay/Thermite#104, github:dollspace-gay/Thermite#108, github:dollspace-gay/Thermite#111
 governs:
@@ -273,7 +273,7 @@ no skipped-success state.
 | Closure | complete and end-to-end | unresolved/cross-file calls, indirect-call uncertainty |
 | Source completeness | complete | body/proof holes, missing generated definitions |
 | Escape-hatch scan | none reachable | `#[slag]`, `#[boundary]`, `external_body`, `assume`, `admit`, axiom injection |
-| Termination | verified form | `fx diverge`, `decreases *`, no-decreases exemptions |
+| Termination | verified form | `! diverge`, `decreases *`, no-decreases exemptions |
 | Function certificates | L3 or stronger, not degraded | L0/L1/L2, timeout degradation, reject/counterexample |
 | Contract TV | faithful for every reachable clause | divergent, unsupported, skipped, unverifiable |
 | Exec-expression TV | faithful for every reachable expression class | divergent, unsupported, skipped, unverifiable |

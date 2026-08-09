@@ -206,13 +206,13 @@ fn vec_demo_matches_cert_oracle() {
         if let Item::Fn(f) = item {
             match f.name.as_str() {
                 "checked_get" => assert!(
-                    matches!(f.contract.fx, EffectRow::Pure),
+                    matches!(f.contract.effects, EffectRow::Pure),
                     "checked_get must be fx pure (oracle)"
                 ),
                 "push_one" => assert!(
-                    matches!(&f.contract.fx, EffectRow::Set(es) if es == &vec![Effect::Alloc]),
+                    matches!(&f.contract.effects, EffectRow::Set(es) if es == &vec![Effect::Alloc]),
                     "push_one must be fx alloc (oracle); got {:?}",
-                    f.contract.fx
+                    f.contract.effects
                 ),
                 other => panic!("unexpected fn {other} in vec_demo"),
             }
@@ -238,7 +238,7 @@ fn vec_demo_matches_cert_oracle() {
 fn oob_get_without_req_fails_verus_l0() {
     // The oracle's reject program verbatim (cases.json `oob_get_no_req.program`).
     let src =
-        "fn bad(v: Vec<u64>, i: usize) -> u64 req true ens result == v.get(i) fx pure { v.get(i) }";
+        "fn bad(v: Vec<u64>, i: usize) -> u64 ! pure requires true ensures result == v.get(i) { v.get(i) }";
     let program = parse_src(src, "oob_get_no_req");
     let emitted = lower_l3(&program);
     // It still lowers (a well-formed program); the failure is at verus (L0), not a

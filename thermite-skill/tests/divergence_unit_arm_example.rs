@@ -76,7 +76,7 @@ fn rendered_fn_examples_parse_clean() {
 
     // The corrected `Type::Unit` arm example must be present (so this test still
     // tracks that arm specifically) and must be a complete item we then parse.
-    let unit_example = "fn log() -> () req true ens true fx pure { }";
+    let unit_example = "fn log() -> () ! pure requires true ensures true { }";
     assert!(
         skill.contains(unit_example),
         "the Type::Unit arm should render the corrected `{unit_example}` \

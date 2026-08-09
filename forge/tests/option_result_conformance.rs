@@ -169,7 +169,8 @@ fn ac1_option_construct_payload_in_contract_certifies_l3() {
     }
     let certs = check_program(
         "optconstruct",
-        "fn make() -> Option<u64>\n  req true\n  ens match result { Some(v) => v == 5, None => true }\n  fx pure\n{ Some(5) }\n",
+        "fn make() -> Option<u64>\n  ! pure
+  requires true\n  ensures match result { Some(v) => v == 5, None => true }\n{ Some(5) }\n",
     );
     let make = cert_for(&certs, "make");
     assert_eq!(
@@ -199,7 +200,8 @@ fn ac2_result_two_arg_type_construct_payload_certifies_l3() {
     let certs = check_program(
         "resconstruct",
         "enum ParseErr { NotDigit, Overflow, Empty }\n\
-         fn ok7() -> Result<u64, ParseErr>\n  req true\n  ens match result { Ok(v) => v == 7, Err(_) => true }\n  fx pure\n{ Ok(7) }\n",
+         fn ok7() -> Result<u64, ParseErr>\n  ! pure
+  requires true\n  ensures match result { Ok(v) => v == 7, Err(_) => true }\n{ Ok(7) }\n",
     );
     let ok7 = cert_for(&certs, "ok7");
     assert_eq!(
@@ -228,7 +230,8 @@ fn ac3_broken_some_under_payload_ens_is_rejected() {
     }
     let certs = check_program(
         "optbroken",
-        "fn bad() -> Option<u64>\n  req true\n  ens match result { Some(v) => v == 5, None => true }\n  fx pure\n{ Some(0) }\n",
+        "fn bad() -> Option<u64>\n  ! pure
+  requires true\n  ensures match result { Some(v) => v == 5, None => true }\n{ Some(0) }\n",
     );
     let bad = cert_for(&certs, "bad");
     assert_ne!(
@@ -264,7 +267,8 @@ fn ac4_parse_u64_lowering_verifies_under_real_verus() {
     // round-trip ens projects the Some payload via parse_be over the consumed bytes).
     let (ok, output) = verus_on_lowered(
         "parseu64",
-        "fn run(s: &String) -> Option<u64>\n  req s.len() <= 1000000\n  ens match result { Some(v) => parse_be(s) == v, None => true }\n  fx pure\n{ parse_u64(s) }\n",
+        "fn run(s: &String) -> Option<u64>\n  ! pure
+  requires s.len() <= 1000000\n  ensures match result { Some(v) => parse_be(s) == v, None => true }\n{ parse_u64(s) }\n",
     );
     assert!(
         ok && output.contains("0 errors"),

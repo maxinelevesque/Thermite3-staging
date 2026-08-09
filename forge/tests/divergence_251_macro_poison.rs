@@ -66,9 +66,9 @@ fn lake_present() -> bool {
 // `LeanEngine::replay_interactive` under `--engine lean`. Shape mirrors the shipped
 // fixture `engine::tests::recursive_registry_is_interactive_unknown` and the #249/#250
 // pin (`forge/tests/divergence_249_axiom_mask.rs`).
-const TH_SRC: &str = "spec fn r(x: int) -> int\n  dec x\n{\n  r(x)\n}\n\n\
-                      fn f(x: u32) -> u32\n  req true\n  ens result as int == r(x as int)\n  \
-                      fx pure\n{\n  x\n}\n";
+const TH_SRC: &str = "spec fn r(x: int) -> int\n  measures x\n{\n  r(x)\n}\n\n\
+                      fn f(x: u32) -> u32\n  ! pure
+  requires true\n  ensures result as int == r(x as int)\n{\n  x\n}\n";
 
 // Transform the emitted tier-(c) skeleton into the macro-poison proof file: preserve the
 // evidence-key header + imports + `def R_item` (the staleness gate reads the author

@@ -62,7 +62,7 @@ fn body_has_nonliteral_mul(body: &thermite_syntax::ast::Block) -> bool {
 /// and whose `requires` is the verbatim req conjunct `n <= 30` (#196, REQ-7).
 #[test]
 fn sq_emits_req_bounded_mul_aid_with_hand_derived_bound() {
-    let src = "fn sq(n: u64) -> u64 req n <= 30 ens result == n * n fx pure { n * n }";
+    let src = "fn sq(n: u64) -> u64 ! pure requires n <= 30 ensures result == n * n { n * n }";
     let parsed = thermite_syntax::parse(src);
     assert!(parsed.is_clean(), "fixture must parse clean: {parsed:?}");
     let Item::Fn(f) = &parsed.program.items[0] else {
@@ -101,7 +101,7 @@ fn sq_emits_req_bounded_mul_aid_with_hand_derived_bound() {
 #[test]
 fn three_var_product_chain_emits_one_aid_per_subproduct() {
     let src = "fn p3(a: u64, b: u64, c: u64) -> u64 \
-               req a <= 10 && b <= 10 && c <= 10 ens result == a * b * c fx pure { a * b * c }";
+               ! pure requires a <= 10 && b <= 10 && c <= 10 ensures result == a * b * c { a * b * c }";
     let l3 = lower(src);
     assert!(
         l3.contains("assert((a * b) <= 100) by(nonlinear_arith) requires a <= 10, b <= 10;"),
@@ -120,7 +120,8 @@ fn three_var_product_chain_emits_one_aid_per_subproduct() {
 /// obligation stands; no fabricated assert (#196, R-DEFER-9).
 #[test]
 fn unbounded_factor_emits_no_aid() {
-    let src = "fn nm(n: u64, m: u64) -> u64 req n <= 30 ens result == n * m fx pure { n * m }";
+    let src =
+        "fn nm(n: u64, m: u64) -> u64 ! pure requires n <= 30 ensures result == n * m { n * m }";
     let l3 = lower(src);
     assert!(
         !l3.contains("by(nonlinear_arith)"),
@@ -135,7 +136,7 @@ fn unbounded_factor_emits_no_aid() {
 #[test]
 fn non_mul_body_emits_no_aid_and_is_unchanged() {
     let src = "fn mid(lo: u64, hi: u64) -> u64 \
-               req lo <= hi && hi <= 100 ens result >= lo fx pure { lo + (hi - lo) / 2 }";
+               ! pure requires lo <= hi && hi <= 100 ensures result >= lo { lo + (hi - lo) / 2 }";
     let l3 = lower(src);
     assert!(
         !l3.contains("by(nonlinear_arith)") && !l3.contains("proof {"),
@@ -155,9 +156,9 @@ fn non_mul_body_emits_no_aid_and_is_unchanged() {
 /// stands; verus reports the real overflow).
 #[test]
 fn product_of_mutated_local_is_skipped() {
-    let src = "fn acc_mul(n: u64) -> u64 req n <= 10 ens result >= 0 fx pure \
+    let src = "fn acc_mul(n: u64) -> u64 ! pure requires n <= 10 ensures result >= 0 \
                { let mut acc: u64 = 1; let mut i: usize = 0; \
-                 while i < 3 inv i <= 3 dec 3 - i { acc = acc * n; i = i + 1; } acc }";
+                 while i < 3 keeps i <= 3 measures 3 - i { acc = acc * n; i = i + 1; } acc }";
     let l3 = lower(src);
     assert!(
         !l3.contains("acc * n) <=") && !l3.contains("assert((acc"),
@@ -172,9 +173,9 @@ fn product_of_mutated_local_is_skipped() {
 /// the aid is inside the loop braces, after the `decreases` line.
 #[test]
 fn product_in_loop_body_aid_is_placed_inside_the_loop() {
-    let src = "fn lm(n: u64) -> u64 req n <= 30 ens result >= 0 fx pure \
+    let src = "fn lm(n: u64) -> u64 ! pure requires n <= 30 ensures result >= 0 \
                { let mut s: u64 = 0; let mut i: usize = 0; \
-                 while i < 2 inv i <= 2 dec 2 - i { let p: u64 = n * n; i = i + 1; } 0 }";
+                 while i < 2 keeps i <= 2 measures 2 - i { let p: u64 = n * n; i = i + 1; } 0 }";
     let l3 = lower(src);
     assert!(
         l3.contains("assert((n * n) <= 900) by(nonlinear_arith) requires n <= 30;"),

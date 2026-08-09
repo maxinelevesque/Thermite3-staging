@@ -34,15 +34,15 @@ fn lower(src: &str) -> String {
 /// comparison (`Expr::Binary`) argument at the bool position.
 const BOOL_BINARY_PROGRAM: &str = "\
 spec fn s_b(n: u32, b: bool) -> bool
-  dec n
+  measures n
 {
   if n == 0 { b } else { s_b(n - 1, b) }
 }
 
 fn f(x: u32, y: u32) -> u32
-  req s_b(x, x < y)
-  ens result == 0
-  fx  pure
+  ! pure
+  requires s_b(x, x < y)
+  ensures result == 0
 {
   0
 }
@@ -64,15 +64,15 @@ fn spec_call_bool_binary_arg_takes_no_cast() {
 /// matches `Expr::Unary` and casts it.
 const BOOL_UNARY_PROGRAM: &str = "\
 spec fn s_b(n: u32, b: bool) -> bool
-  dec n
+  measures n
 {
   if n == 0 { b } else { s_b(n - 1, b) }
 }
 
 fn f(flag: bool) -> u32
-  req s_b(1, !flag)
-  ens result == 0
-  fx  pure
+  ! pure
+  requires s_b(1, !flag)
+  ensures result == 0
 {
   0
 }

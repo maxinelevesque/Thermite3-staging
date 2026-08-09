@@ -8,9 +8,9 @@ Recorded facts include:
 
 - whether the program parses and how many diagnostics it produces;
 - top-level item names, kinds, parameters, and return types;
-- `req`, `ens`, and `fx` clause counts for functions;
-- loop addresses, surface forms, invariant counts, and `dec` presence;
-- `dec` presence for specification functions.
+- `requires`, `ensures`, and `!` clause counts for functions;
+- loop addresses, surface forms, invariant counts, and `measures` presence;
+- `measures` presence for specification functions.
 
 `recover_per_item.th` checks parser recovery. Its first item is malformed, while
 the second is valid. The parser must report the first error and still recover

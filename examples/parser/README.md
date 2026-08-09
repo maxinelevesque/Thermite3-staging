@@ -7,15 +7,15 @@ operation, `Vec<String>`, and the `contains` predicate.
 
 ```thermite
 fn fields(s: String, sep: u64) -> Vec<String>
-  req true
-  ens result.len() == 1 + count_sep(s, sep)
-  fx  alloc
+  requires true
+  ensures result.len() == 1 + count_sep(s, sep)
+  !  alloc
 { s.split(sep) }
 
 fn has_sep(s: &String, sep: &String) -> bool
-  req true
-  ens result == contains_sub(s, sep)
-  fx  pure
+  requires true
+  ensures result == contains_sub(s, sep)
+  !  pure
 { s.contains(sep) }
 ```
 

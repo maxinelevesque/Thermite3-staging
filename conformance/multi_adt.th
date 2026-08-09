@@ -2,21 +2,21 @@ enum Role { Owner, Player }
 enum Action { Ban, Chat }
 
 spec fn may_ban(r: Role) -> bool
-  dec r
+  measures r
 {
   match r { Role::Owner => true, Role::Player => false }
 }
 
 spec fn is_ban(a: Action) -> bool
-  dec a
+  measures a
 {
   match a { Action::Ban => true, Action::Chat => false }
 }
 
 fn authorize(r: Role, a: Action) -> bool
-  req true
-  ens result == (may_ban(r) || !is_ban(a))
-  fx  pure
+  ! pure
+  requires true
+  ensures result == (may_ban(r) || !is_ban(a))
 {
   match r {
     Role::Owner => true,

@@ -52,8 +52,8 @@ Their stratified handling is a stage-2 quantified-equivalence concern.
 |---|---|---|---|---|
 | `00_sorted_binary_search_req.fixture` | `sorted` | `binary_search.req` | corpus | ✓ |
 | `01_forall_in_binary_search_ens_None.fixture` | `forall_in` | `binary_search.ens.None` | corpus | ✓ |
-| `02_forall_below_binary_search_loop_1_inv_2.fixture` | `forall_below` | `binary_search.loop#1.inv#2` | corpus | ✓ |
-| `03_forall_from_binary_search_loop_1_inv_3.fixture` | `forall_from` | `binary_search.loop#1.inv#3` | corpus | ✓ |
+| `02_forall_below_binary_search_loop_1_inv_2.fixture` | `forall_below` | `binary_search.loop#1.keeps#2` | corpus | ✓ |
+| `03_forall_from_binary_search_loop_1_inv_3.fixture` | `forall_from` | `binary_search.loop#1.keeps#3` | corpus | ✓ |
 | `04_sorted_gen_1_8_5.fixture` | `sorted` | `gen#1.8#5` | generated | ✓ |
 | `05_sorted_gen_2_5_24.fixture` | `sorted` | `gen#2.5#24` | generated | ✓ |
 | `06_sorted_gen_2_28_27.fixture` | `sorted` | `gen#2.28#27` | generated | ✓ |
@@ -92,7 +92,7 @@ Their stratified handling is a stage-2 quantified-equivalence concern.
 | `39_disjoint_gen_1_18_13.fixture` | `disjoint` | `gen#1.18#13` | generated | ✓ |
 
 Corpus sources use the `thermite-syntax` address scheme where it exists
-(`binary_search.loop#1.inv#2` = `forall_below`, `inv#3` = `forall_from`)
-and an informal designation for `req`/`ens` (which `address.rs` does not
+(`binary_search.loop#1.keeps#2` = `forall_below`, `keeps#3` = `forall_from`)
+and an informal designation for `requires`/`ensures` (which `address.rs` does not
 address): `binary_search.req`, `binary_search.ens.None`. Generated
 instances are tagged `gen#<seed>.<k>` (the `gen::generate_clauses` draw).

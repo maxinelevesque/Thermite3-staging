@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 720c33b61138d572065cbcf3f8c9f87c824a5eec2cf8793e00102029b6498d0b (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: 98bb2d305dc2ea9a8d09aeece1393cadeaf8d2905203c21778aa0855afce75d1 (re-pinned 2026-08-08 for RFC-17: the clause vocabulary moved into the AST and the token kinds - Contract/LemmaItem{req,ens,fx} and FnItem/SpecFnItem/PropFnItem/LoopNode.dec and StructItem.inv to the full words the surface already uses, plus TokKind::{Req,Ens,Fx,Inv,Dec}. Type-directed: cargo check --workspace --all-targets exiting 0 is the completeness proof. prior: 10deebcb863c69d1884d5149c56376cef9b4b9c49578259b48b9ca75be414a74, previously (re-pinned 2026-08-08 for RFC-17: the AST field names and TokKind variants moved to the full words the surface already uses - Contract{req,ens,fx} to {requires,ensures,effects}, TokKind::{Req,Ens,Fx,Inv,Dec} to {Requires,Ensures,Effects,Keeps,Measures}. A type-directed rename with no semantic content: cargo check --workspace --all-targets exiting 0 IS the completeness proof, since an unrenamed site does not compile. prior: 720c33b61138d572065cbcf3f8c9f87c824a5eec2cf8793e00102029b6498d0b, previously (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)))
 governs: thermite-tv/src/exec_stmt_encode.rs, thermite-tv/src/obligation.rs, thermite-lower/src/lower.rs, forge/src/body_tv.rs, forge/src/tv_signal.rs
 thesis-refs:
   - thermite-design.md §1 (trust relocated: code → spec → spec-intent)
@@ -94,8 +94,8 @@ exec language v1.
 | block tail value | `Block.tail: Option<Box<Expr>>` | trailing expr = the block's value (`lower_block_inner`) | the body's RESULT (final-state projection) |
 | expression statement | `Stmt::Expr(e)` | `<e>;` | a side-effecting exec expr (a non-tail call) |
 | `return` | `Stmt::Return(Option<Expr>)` | `return [<e>];` | early exit with a value (straight-line: TAIL position only — see OUT) |
-| `while` with `inv`/`dec` | `Stmt::Loop(LoopNode { kind: While(..), invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed, not in 2.2.1 |
-| `loop` with `inv`/`dec` | `Stmt::Loop(LoopNode { kind: Loop, invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed |
+| `while` with `keeps`/`measures` | `Stmt::Loop(LoopNode { kind: While(..), invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed, not in 2.2.1 |
+| `loop` with `keeps`/`measures` | `Stmt::Loop(LoopNode { kind: Loop, invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed |
 | `break` | `Stmt::Break` | `break;` (`lower_stmt`) | **step 2.2.2** — loop-control only |
 | `continue` | `Stmt::Continue` | `continue;` (`lower_stmt`) | **step 2.2.2** — loop-control only |
 
@@ -240,7 +240,7 @@ is an EXEC `fn` (not `proof`/`spec`), so the always-active runtime overflow chec
 ## Acceptance criteria
 
 - **AC-1 (faithful straight-line body → verified)** — the body obligation for `{ let a = x + 1; let b
-  = a * 2; b }` (`x: u64`, `req x <= 1000`, reference `body_ref(x) = ((x as nat) + 1) * 2`, production
+  = a * 2; b }` (`x: u64`, `requires x <= 1000`, reference `body_ref(x) = ((x as nat) + 1) * 2`, production
   the faithful `let a = x + 1; let b = a * 2; b`) discharges as `success: true, verified: 1, errors:
   0`. GROUNDED below.
 - **AC-2 (dropped-statement infidelity → counterexample)** — the SAME obligation with production
@@ -406,7 +406,7 @@ as the kernel target.
 Three post-pin commits hardened the REQ-5 phase WITHOUT changing the four-way
 contract:
 
-- **#189** — `body_tv` gates the spec-fn-helper `req` and NEVER maps a verus
+- **#189** — `body_tv` gates the spec-fn-helper `requires` and NEVER maps a verus
   frame/compile abort of the obligation SCAFFOLD to `Divergent`: a discharge
   failure is `Unverifiable`; `Divergent` is reserved for a real counterexample /
   a non-compiling PRODUCTION body (R-HONEST-3).

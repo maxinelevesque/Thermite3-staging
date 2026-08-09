@@ -35,7 +35,7 @@ fn lower(src: &str) -> String {
 /// still `int`-typed as a whole in Verus spec position).
 const DEDUPE_REQ_PROGRAM: &str = "\
 spec fn s_dec(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -45,9 +45,9 @@ spec fn s_dec(n: u32) -> u32
 }
 
 fn f(k: u32, j: u32) -> u32
-  req s_dec(k + j as u32) == 0
-  ens result == 0
-  fx  pure
+  ! pure
+  requires s_dec(k + j as u32) == 0
+  ensures result == 0
 {
   0
 }
@@ -70,7 +70,7 @@ fn spec_call_arith_arg_ending_in_cast_text_still_narrows_to_declared_param_type(
 /// `Expr::Call` arm.
 const DEDUPE_INV_PROGRAM: &str = "\
 spec fn s_a(n: u32) -> u32
-  dec n
+  measures n
 {
   if n == 0 {
     0
@@ -82,7 +82,7 @@ spec fn s_a(n: u32) -> u32
 struct Nest {
   x: u32,
   y: u32,
-} inv s_a(x + y as u32) == 0
+} keeps s_a(x + y as u32) == 0
 ";
 
 #[test]

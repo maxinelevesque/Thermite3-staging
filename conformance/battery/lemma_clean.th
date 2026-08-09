@@ -1,1 +1,1 @@
-lemma add_id(a: u64) req true ens a == a proof { omega }
+lemma add_id(a: u64) requires true ensures a == a proof { omega }

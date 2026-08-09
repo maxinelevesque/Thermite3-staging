@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 80074948185b77b95006d034e461a338b1ce6b37 (re-pinned 2026-06-16: forge quality status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (re-pinned: the #269/#270 coordinated arc — the touched-file changes are exactly this doc's designed REQs / reviewed as claim-neutral)  (re-audited 2026-06-12: amended — shipped-status Summary; #48/#74/#80 early-return synthesis + 0/0 backstop, the #101 equivalence-excluded denominator, golden-anchored ratios, and the #247 Lean-battery consumer, #262. Amended 2026-06-12 (#269): the TWO MISSING early-return families F-IDENT (identity return) + F-STRUCT-ZERO (named-struct field-zeros) are specced REQ-9..REQ-13, NOT-STARTED — the outside review's item 5, the `move_up` weak-contract escape.))
-audited-content-sha256: 51cbcfdb38d810cbb0d568dc0c11227793a1ac938e3d1d8e8457611065ccd0ea
+audited-content-sha256: 22ba21d5e3bfa1cda7416ce1c39466283e141f65f8e4cf798c99153b4d0ae693 (re-pinned 2026-08-08 for rustfmt only: migrating `req`/`ens`/`fx` to `requires`/`ensures`/`!` lengthened call sites past the width, so rustfmt re-wrapped them and added trailing commas. No governed file changed meaning; the wrapped lines are `parse_program(...)`-style test fixtures. prior: b7c9b8a99370898ddd8842d9d61aa2019e32cc80ff10f91012485a99ca4d6e7e, previously (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: 51cbcfdb38d810cbb0d568dc0c11227793a1ac938e3d1d8e8457611065ccd0ea))
 governs: forge/src/mutation.rs
 thesis-refs:
   - thermite-design.md §7
@@ -48,7 +48,7 @@ SHIPPED (#269/#270 coordinated arc): the battery gained the TWO early-return
 families — **F-IDENT** (return a same-typed parameter verbatim) and
 **F-STRUCT-ZERO** (a named-struct return's field-zero literal). The motivating
 finding (the outside review's item 5): `examples/editor/editor.th::move_up(b:
-Buffer) -> Buffer` carried `ens result.text.len() == b.text.len() &&
+Buffer) -> Buffer` carried `ensures result.text.len() == b.text.len() &&
 result.cursor <= b.cursor` — a literal `return b` SATISFIED the whole contract
 and was L3-provable, yet the pre-#269 battery COULD NOT generate that mutant
 (`zero_value_for` had no struct arm, and no identity-return family existed). The
@@ -81,7 +81,7 @@ behavior-bearing arcs, verified against the current tree:
   stale gate verdict is served on an unchanged lowered-source key.
 - **#101 (`cb1462d5`) — equivalent-mutant exclusion (governing doc:
   `.design/forge/equivalent-mutants.md`).** A survivor Verus PROVES observably
-  equivalent to the real body under `req` (`check::equivalence_proves_equal`)
+  equivalent to the real body under `requires` (`check::equivalence_proves_equal`)
   drops from the kill-ratio DENOMINATOR: `MutationScore` gained
   `pub equivalent: usize` (a transparency count; `scored` is already net of
   the excluded mutants), and `survivor` NEVER records a proved-equivalent
@@ -112,7 +112,7 @@ behavior-bearing arcs, verified against the current tree:
 - **IN:** exactly §7 step 4 — generate the frozen mutant set of a `fn`'s body,
   re-verify each against the same contract, score the kill ratio, gate on the
   floor, and report survivors. Nothing more.
-- **OUT — strengthening probes** (§7 step 5: auto-PROPOSE a stronger `ens` that
+- **OUT — strengthening probes** (§7 step 5: auto-PROPOSE a stronger `ensures` that
   proves with no body change) are issue **#14**; this component only REPORTS
   which mutants survived (the "precise prompt for strengthening", §7 line 224),
   it never synthesizes a tightened contract.
@@ -121,12 +121,12 @@ behavior-bearing arcs, verified against the current tree:
   scoring runs strictly AFTER those gates pass and AFTER the real L3 proof
   succeeds.
 - **OUT — mutating the CONTRACT.** Mutators target the `FnItem.body` only. The
-  `req`/`ens`/`fx` and the loop `inv`/`dec` are the FIXED reference the mutants
+  `!`/`requires`/`ensures` and the loop `keeps`/`measures` are the FIXED reference the mutants
   are scored against (you measure whether the contract constrains the body, so
   the contract must not move).
 - **OUT (#269/#270 split) — tightening the editor's contracts.** This component
   GENERATES the mutants that expose `move_up`-class weakness; the contract fix
-  itself (`examples/editor/editor.th` `ens` tightening) is issue **#270**, a
+  itself (`examples/editor/editor.th` `ensures` tightening) is issue **#270**, a
   coordinated Tier-1 landing, never a forge change.
 
 ## The #269 gap, grounded (why the battery cannot expose `move_up`)
@@ -324,7 +324,7 @@ Two further grounded facts shape the spec:
   families 2–4, so the `MUTANT_CAP` order-prefix never crowds out the
   discriminator mutants (the shipped "listed first so the cap never crowds it
   out" rationale). KILL SEMANTICS: a STRONG contract refutes the identity
-  (killed — `to_1based`'s `ens result == x + 1` rejects `return x`; `min2`'s
+  (killed — `to_1based`'s `ensures result == x + 1` rejects `return x`; `min2`'s
   `result <= a && result <= b` rejects both `return a` and `return b` via the
   cross counterexamples); a WEAK contract proves it (survivor → the §7 floor
   gates / the `survivor` prompt names it). This is the mutant that exposes
@@ -353,16 +353,16 @@ Two further grounded facts shape the spec:
   `Type::Tuple` rule verbatim ("Returns `None` if ANY element lacks a scalar
   zero … dropped from the denominator, OQ-5 — never an over-gate"). An
   ENUM-named return gets no F-STRUCT-ZERO mutant (no canonical variant to
-  choose — OQ-5 drop). TYPE-INVARIANT interaction: a struct `inv` is CONTRACT —
-  if the field-zero literal violates it (e.g. a hypothetical `inv balance >=
+  choose — OQ-5 drop). TYPE-INVARIANT interaction: a struct `keeps` is CONTRACT —
+  if the field-zero literal violates it (e.g. a hypothetical `keeps balance >=
   10`), Verus fails the construction obligation and the mutant is KILLED (the
   honest polarity: the type invariant caught the wrong body); for the corpus
-  structs the zeros satisfy the `inv` (`Account { balance: 0 }`: `0 <=
+  structs the zeros satisfy the `keeps` (`Account { balance: 0 }`: `0 <=
   1_000_000`; `Buffer { text: <empty>, cursor: 0 }`: `0 <= 0 && 0 <=
-  1_000_000`) so the mutant is scored against the `ens`. Grounded kills:
-  `deposit`'s `ens result.balance == a.balance + amount` rejects
+  1_000_000`) so the mutant is scored against the `ensures`. Grounded kills:
+  `deposit`'s `ensures result.balance == a.balance + amount` rejects
   `Account { balance: 0 }` (counterexample `a.balance + amount >= 1`);
-  `move_up`'s length-identity `ens` rejects the empty-`Buffer` zero for any
+  `move_up`'s length-identity `ensures` rejects the empty-`Buffer` zero for any
   non-empty text — F-STRUCT-ZERO alone does NOT expose `move_up` (that is
   F-IDENT's job, REQ-9); it closes the "struct-returning fn has NO early-return
   mutant at all" hole. Source: `thermite-design.md` §7 line 224; the
@@ -402,11 +402,11 @@ Two further grounded facts shape the spec:
 
 - **REQ-13 (equivalence-exclusion interaction — the #101 rule applies
   unchanged):** an F-IDENT mutant of a `fn` whose body IS already
-  `return <param>`-equivalent under `req` (the equivalent-mutants fixtures
-  `refuse(x) { x }` and `clamp_zero(x) req x == 0 { let y = x + 0; y }`) will
+  `return <param>`-equivalent under `requires` (the equivalent-mutants fixtures
+  `refuse(x) { x }` and `clamp_zero(x) requires x == 0 { let y = x + 0; y }`) will
   SURVIVE and then be handled by the SHIPPED exclusion: `check::mutation_score`
   routes every survivor through `check::equivalence_proves_equal`
-  (`thermite_lower::lower_equivalence_obligation` — "under `req`, mutant_body ==
+  (`thermite_lower::lower_equivalence_obligation` — "under `requires`, mutant_body ==
   real_body" for all inputs); a verus-PROVED obligation excludes the mutant from
   BOTH the numerator and the denominator (`equivalent += 1; continue;` — never
   recorded as `survivor`), and the #48 `0/0` backstop still gates the
@@ -435,7 +435,7 @@ are GROUNDED (the real verus outputs are pasted in *Ground the mutants*).
   (`binary_search`) score `kill_ratio >= 0.60` and certify L3 with
   `contract_quality.mutants_killed = "<K>/<N>"` for `K/N >= 0.60`. GROUNDED for
   `sum`: the three hand-applied body mutants (`+`→`-`, `i=i+1`→`i=i+2`, early
-  `return 0`) are ALL killed by `sum`'s real `ens result == spec_sum(xs)` (verus
+  `return 0`) are ALL killed by `sum`'s real `ensures result == spec_sum(xs)` (verus
   `success: false` on each — see *Ground the mutants*), i.e. a 3/3 sample. The
   oracle asserts `mutants_killed` is `>= floor` (a ratio threshold, NOT a frozen
   exact string — REQ-8/OQ-1), so it is robust to the exact denominator the frozen
@@ -446,16 +446,16 @@ are GROUNDED (the real verus outputs are pasted in *Ground the mutants*).
   `conformance/mutation/weak_sum.th` (PARSE-VERIFIED, the exact program below):
   ```thermite
   fn sum(xs: &[u32]) -> u64
-    req xs.len() <= 1_000_000
-    ens result <= 1_000_000 * u32::MAX as u64
-    fx  pure
+    requires xs.len() <= 1_000_000
+    ensures result <= 1_000_000 * u32::MAX as u64
+    !  pure
   {
     let mut acc: u64 = 0;
     let mut i: usize = 0;
     while i < xs.len()
-      inv i <= xs.len()
-      inv acc <= i as u64 * u32::MAX as u64
-      dec xs.len() - i
+      keeps i <= xs.len()
+      keeps acc <= i as u64 * u32::MAX as u64
+      measures xs.len() - i
     {
       acc = acc + xs[i] as u64;
       i = i + 1;
@@ -463,17 +463,17 @@ are GROUNDED (the real verus outputs are pasted in *Ground the mutants*).
     acc
   }
   ```
-  This contract PASSES #6 (the `ens` mentions `result`, is not literal-`true`,
-  not an identity, not a `req` conjunct) and PASSES #13 (the `ens` does NOT hold
+  This contract PASSES #6 (the `ensures` mentions `result`, is not literal-`true`,
+  not an identity, not a `requires` conjunct) and PASSES #13 (the `ensures` does NOT hold
   for an arbitrary `result: u64` — `0 <= 1_000_000 * u32::MAX` holds but
   `u64::MAX <= 1_000_000 * u32::MAX` does NOT, so it is not a semantic tautology;
-  the `req` is satisfiable). It also VERIFIES L3 (the real body proves it — see
+  the `requires` is satisfiable). It also VERIFIES L3 (the real body proves it — see
   *Ground the mutants*). Yet it UNDER-CONSTRAINS the result: the **early
   `return 0`** mutant SURVIVES (verus PROVES it — `0 <= 1_000_000 * u32::MAX`),
   so the kill ratio drops below `0.60` on the mutant set and the item is GATED
   (does NOT certify), `RejectReason { cause: "WeakContract" }`, with `survivor`
   naming the early-return mutant ("the contract does not constrain the computed
-  sum; mutant `insert return 0 at body head` survives `ens`"). This is the §7
+  sum; mutant `insert return 0 at body head` survives `ensures`"). This is the §7
   value-add and the discriminator from AC-1's strong contract (where the SAME
   early-return mutant is killed).
 
@@ -512,13 +512,13 @@ are GROUNDED (the real verus outputs are pasted in *Ground the mutants*).
 - **AC-7 (the motivating editor case — F-IDENT exposes `move_up`):** under the
   new battery, `examples/editor/editor.th::move_up` gains the mutant
   ``insert early `return b` at body head (identity of param `b`)``.
-  PRE-TIGHTENING (the current contract `ens result.text.len() == b.text.len()
+  PRE-TIGHTENING (the current contract `ensures result.text.len() == b.text.len()
   && result.cursor <= b.cursor`) the mutant SURVIVES — hand-derivation: for
   `result = b`, `b.text.len() == b.text.len()` is reflexive and `b.cursor <=
   b.cursor` is reflexive, both provable for ALL inputs, and the equivalence
   probe cannot exclude it (`Buffer` is non-scalar → `Unsupported` → counted
   survivor; it is also genuinely distinguishing — the real body moves the
-  cursor). POST-TIGHTENING (#270 — an `ens` pinning the computed up-cursor) the
+  cursor). POST-TIGHTENING (#270 — an `ensures` pinning the computed up-cursor) the
   SAME mutant is KILLED. The oracle asserts the qualitative pair
   ("pre-tightening: a surviving identity mutant is reported / the item gates;
   post-tightening: the identity mutant is killed and the item certifies L3"),
@@ -527,20 +527,20 @@ are GROUNDED (the real verus outputs are pasted in *Ground the mutants*).
 - **AC-8 (struct-zero + identity against a STRONG struct contract — no
   over-gating):** `conformance/bank_account.th::deposit(a: Account, amount:
   u64) -> Account` gains BOTH new mutants and KILLS both — `return a` fails
-  `ens result.balance == a.balance + amount` (counterexample any admitted
+  `ensures result.balance == a.balance + amount` (counterexample any admitted
   `amount >= 1`) and `return Account { balance: 0 }` fails it (counterexample
-  `a.balance + amount >= 1`; the `inv balance <= 1_000_000` construction
-  obligation is satisfied by the zero, so the kill is the `ens`, not a lowering
+  `a.balance + amount >= 1`; the `keeps balance <= 1_000_000` construction
+  obligation is satisfied by the zero, so the kill is the `ensures`, not a lowering
   drop). `deposit` STILL certifies L3 with a raised ratio — the families enable
   scoring, they do not auto-gate strong contracts.
 
 - **AC-9 (equivalence interplay — the #101 fixtures stay stable):** the
   equivalent-mutants fixtures gain identity mutants that are PROVED EQUIVALENT
-  and excluded: `refuse(x) req x == 0 ens result == 0 { x }`'s `return x` IS the
+  and excluded: `refuse(x) requires x == 0 ensures result == 0 { x }`'s `return x` IS the
   body — excluded, `refuse` still reduces to `0/0` and stays GATED (the #48
   backstop, equivalent-mutants.md AC-5 preserved); `clamp_zero`'s `return x` ≡
-  `{ let y = x + 0; y }` under `req x == 0` — excluded from numerator AND
-  denominator, never `survivor`. The `add(a,b) ens result == a + b` fixture's
+  `{ let y = x + 0; y }` under `requires x == 0` — excluded from numerator AND
+  denominator, never `survivor`. The `add(a,b) ensures result == a + b` fixture's
   two identity mutants are KILLED (cross counterexamples).
 
 - **AC-10 (unsynthesizable struct → OQ-5 drop, never an error):** a struct
@@ -635,12 +635,12 @@ authors its own oracle):
   pre-tightening.** `editor_logic_certifies_l3_boundary_and_run_l1` pins EVERY
   editor logic item at L3. Hand-derivation of the new mutants: `move_up` and
   `move_down` each gain a BY-CONSTRUCTION-surviving identity mutant
-  (`return b` proves the length-identity + cursor-bound `ens`, AC-7);
+  (`return b` proves the length-identity + cursor-bound `ensures`, AC-7);
   `line_end(text, i, n) -> u64` gains TWO surviving identities (`return i` and
-  `return n` both prove the bounds-only `ens result >= i && result <= n`);
+  `return n` both prove the bounds-only `ensures result >= i && result <= n`);
   `min2`/`to_1based`/`decode`/`count_nl`/`line_start`/`insert_str`/`backspace`/
   `move_left`/`move_right` gain identity and/or `Buffer`-zero mutants that are
-  KILLED by their pinning `ens`. Whether each weak item's ratio crosses the
+  KILLED by their pinning `ensures`. Whether each weak item's ratio crosses the
   `0.60` floor (gate → the L3 assertion fails) or merely records a survivor is
   tool-computed (OQ-10) — the landing PLANS for the gate (the dispatching
   review and #269 expect `WeakContract` on the weak items). The exact-pin
@@ -652,7 +652,7 @@ authors its own oracle):
   gains two KILLED identities. The relational asserts are expected to hold;
   the orchestrator re-derives any exact-count expectation by hand (AC-9).
 - **`conformance/mutation/cases.json`** — `weak_loose_bound` (`f(a: u32, b:
-  u32) -> u32 ens result <= 1_000_000`) gains two SURVIVING identity mutants
+  u32) -> u32 ensures result <= 1_000_000`) gains two SURVIVING identity mutants
   (`a <= 10 ⟹ a <= 1_000_000`), pushing it further below the floor; the
   qualitative below-floor oracle holds unchanged.
 - **`forge/tests/divergence_mutation.rs`** — the `pick(xs: &[u32]) -> &[u32]`
@@ -667,7 +667,7 @@ authors its own oracle):
 **Landing order (MANDATORY — never a red-main window):** the families land in
 ONE coordinated Tier-1 arc — (1) the #269 battery widening (REQ-9..REQ-13,
 schema bump, re-derived unit oracles), (2) the #270 editor contract tightening
-(`move_up`/`move_down`/`line_end` `ens` pinned so the identity mutants are
+(`move_up`/`move_down`/`line_end` `ensures` pinned so the identity mutants are
 killed — the `cursor_col`/#126 tight-contract precedent), and (3) the
 orchestrator's hand-re-certified oracle expectations (R-CHAR-3 ceremony) —
 merged TOGETHER, so there is no window where `main` carries the new battery
@@ -723,7 +723,7 @@ These are the MANDATORY grounding runs: `sum`'s body was lowered via the real
 invariants left intact), and re-run through the real `verus` binary. They confirm
 the KILLED / SURVIVED polarity and the strong-vs-weak value-add.
 
-### Baseline: the real `sum` (strong `ens result == spec_sum(xs)`) verifies
+### Baseline: the real `sum` (strong `ensures result == spec_sum(xs)`) verifies
 
 ```text
 verification-results: {success: True, verified: 5, errors: 0}
@@ -733,7 +733,7 @@ verification-results: {success: True, verified: 5, errors: 0}
 
 ### Strong contract → all three mutants KILLED (3/3)
 
-Mutating `sum`'s lowered body against its REAL `ens result == spec_sum(xs)`:
+Mutating `sum`'s lowered body against its REAL `ensures result == spec_sum(xs)`:
 
 ```text
 MUTANT acc = acc + xs[i] → acc = acc - xs[i]   (operator flip Add→Sub)
@@ -754,7 +754,7 @@ A 3/3 sample → kill ratio above the 60% floor → `sum` certifies (AC-1).
 
 ### Weak contract → the early-return mutant SURVIVES (the value-add)
 
-The PARSE-VERIFIED weak fixture (`ens result <= 1_000_000 * u32::MAX as u64`,
+The PARSE-VERIFIED weak fixture (`ensures result <= 1_000_000 * u32::MAX as u64`,
 AC-2) lowers and VERIFIES L3 on the real body, AND passes #6 + #13. Its body
 mutants:
 
@@ -763,15 +763,15 @@ WEAK BASELINE (real body)
   verification-results: {success: True, verified: 3, errors: 0}     (verifies L3)
 
 WEAK MUTANT  acc + → acc -            : {success: False, errors: 1}  → KILLED (loop inv `acc <= i*MAX` + underflow)
-WEAK MUTANT  i = i + 1 → i = i + 2    : {success: False, errors: 1}  → KILLED (loop inv broken)
+WEAK MUTANT  i = i + 1 → i = i + 2    : {success: False, errors: 1}  → KILLED (loop keeps broken)
 WEAK MUTANT  insert `return 0;`       : {success: True,  errors: 0}  → SURVIVED  ★
 ```
 
 The early-return-`0` mutant SURVIVES the weak contract — verus PROVES it, because
-`0 <= 1_000_000 * u32::MAX` holds, so the weak `ens` cannot tell `return 0` from
+`0 <= 1_000_000 * u32::MAX` holds, so the weak `ensures` cannot tell `return 0` from
 the real sum. The SAME mutant against the strong contract is KILLED (above). The
 surviving mutant IS the strengthening prompt §7 describes ("which behavior the
-contract fails to constrain"): the weak `ens` does not pin `result` to the
+contract fails to constrain"): the weak `ensures` does not pin `result` to the
 computed sum. This single mutant drops the kill ratio below the floor → the weak
 contract is GATED (REQ-5) with `survivor` naming the early-return mutant — the
 precise value-add the floor catches.
@@ -781,7 +781,7 @@ precise value-add the floor catches.
 The F-IDENT family does not exist, so this grounding is the BY-HAND semantic
 derivation the families' kill semantics rest on (the builder re-grounds with
 real verus at landing): for `move_up(b: Buffer) -> Buffer` with
-`ens result.text.len() == b.text.len()` and `ens result.cursor <= b.cursor`,
+`ensures result.text.len() == b.text.len()` and `ensures result.cursor <= b.cursor`,
 the mutant body `{ return b; … }` yields `result = b`, so both clauses reduce
 to reflexivity (`b.text.len() == b.text.len()`, `b.cursor <= b.cursor`) — a
 Verus `Proved` for all inputs (the same trivial-discharge class as the GROUNDED
@@ -790,7 +790,7 @@ Verus `Proved` for all inputs (the same trivial-discharge class as the GROUNDED
 NOT observably equivalent (any two-line buffer with the cursor on line 2 is a
 counterexample) — and the equivalence probe could not exclude it anyway (a
 `Buffer` result is non-scalar → `lower_equivalence_obligation` `Unsupported` →
-counted survivor, REQ-13). Conversely `to_1based`'s `ens result == x + 1`
+counted survivor, REQ-13). Conversely `to_1based`'s `ensures result == x + 1`
 REFUTES `return x` (`x != x + 1`, the same counterexample class as the grounded
 strong-`sum` kills) — the families do not over-gate strong contracts.
 
@@ -826,7 +826,7 @@ strong-`sum` kills) — the families do not over-gate strong contracts.
   from the denominator (not scored), never an `Err` that fails the gate — the
   frozen set is still applied uniformly; only the realizable mutants are scored.
 - **OQ-6 (combinator-bearing bodies):** the corpus bodies are exec code (no
-  combinators in the BODY — combinators live in `req`/`ens`/`inv`, which the
+  combinators in the BODY — combinators live in `requires`/`ensures`/`keeps`, which the
   mutator never touches). So body mutation is well-defined for the corpus.
   Whether a body that itself calls a `spec fn`/combinator (not in v0.1's corpus)
   yields meaningful mutants is open; for v0.3 the mutator set targets the
@@ -842,7 +842,7 @@ strong-`sum` kills) — the families do not over-gate strong contracts.
   `cursor_row`/`cursor_col(b: &Buffer) -> u64` gain no identity mutant in v1.
 - **OQ-8 (#269 — multi-param dedup):** two params of the same matching type
   yield TWO identity mutants (`min2` → `return a` AND `return b`) — no dedup,
-  even when the params could be provably equal under `req` (the #101 exclusion
+  even when the params could be provably equal under `requires` (the #101 exclusion
   handles a genuinely-equivalent survivor; pre-deduping in the generator would
   be a semantic judgment the frozen syntactic table must not make). Cap
   interaction: a many-param fn spends cap budget on its identities; family-1
@@ -862,7 +862,7 @@ strong-`sum` kills) — the families do not over-gate strong contracts.
   survivors on `move_up`/`move_down`/`line_end` are hand-derived CERTAIN
   (AC-7); whether each item's full ratio lands below `0.60` (gate
   `WeakContract`) or above (certify-with-survivor) depends on the kill verdicts
-  of the items' other ~10–20 mutants against their weak `ens` — tool-computed,
+  of the items' other ~10–20 mutants against their weak `ensures` — tool-computed,
   not hand-derivable to the digit. The landing arc treats EITHER outcome as a
   red-risk to `editor_runs.rs`'s L3 pins and ships #269+#270 together
   (*Cert/oracle impact + landing order*); #270's tightening makes the question
@@ -879,9 +879,9 @@ strong-`sum` kills) — the families do not over-gate strong contracts.
 | REQ-5 (kill ratio + 60% floor gate) | SHIPPED | `mutation::MutationScore::{kill_ratio,meets_floor,mutants_killed_string}` + `pub const MUTATION_FLOOR = 0.60`; the gate in `check::check_file_with_options` certifies `>= floor` and produces `Certificate::rejected_weak_contract` (`RejectReason { cause: "WeakContract" }`) below it. `scored == 0` ⇒ `kill_ratio = 0.0` (the #48 backstop, below any positive floor); `meets_floor` is verus-anchored to `thermite_verified::meets_floor_60` (#60). The `cli` `--mutation-floor <FLOAT>` lever threads a non-default floor. Verified by `mutation_conformance.rs` (AC-2/AC-3: the `reject_below_floor` oracle entry `weak_loose_bound` is gated `WeakContract`; the oracle asserts the threshold relation, not a frozen count). |
 | REQ-6 (graduate `mutants_killed`/`survivor`) | SHIPPED | `Certificate::with_mutation_score` (certified path) + `Certificate::rejected_weak_contract` (reject path) set the two EXISTING Appendix A fields; no schema change (R-SPEC-2). Verified by `manifest::tests::with_mutation_score_graduates_fields_and_stays_oracle_excluded` + `rejected_weak_contract_carries_cause_ratio_and_survivor`. |
 | REQ-7 (gate AFTER L3, reuse proof cache) | SHIPPED | `check::mutation_score` runs only when `cert.level == L3 && reject.is_none()` (a proved real body); each mutant content-addresses via `cache::cache_key`/`load`/`store` (a non-default rlimit/floor bypasses the cache). Consumer: `check::check_file_with_options`'s post-L3 stage. |
-| REQ-8 (deterministic kill ratio, oracle stance) | SHIPPED | `generate` is a pure function of the AST + frozen table; the kill ratio is deterministic (verified by `mutation_conformance.rs::kill_ratio_is_deterministic_across_two_runs`, run==run). `mutants_killed`/`survivor` stay oracle-EXCLUDED in `Certificate::oracle_subset` (OQ-1, verus-version-sensitive). GROUNDED at the current tree: the frozen golden `conformance/sum.cert.json` pins `mutants_killed: "17/18"` with `survivor` "mutant#11: `i = i + 1` → `i = i + 2` survives ens but killed by inv#2" (the pin-era 7/7 sample predates the #92-operator mutant-set growth); the conformance oracle asserts threshold relations (`>= floor` / `< floor`), never frozen exact counts. |
-| REQ-9 (F-IDENT identity-return family) | SHIPPED | `mutation::generate(f, _seed, adt_deps)` (`forge/src/mutation.rs`) emits, in family 1 immediately AFTER the zero-value early-return and BEFORE families 2–4, ONE identity mutant per param whose `p.ty == f.ret` (AST `Type` derived `PartialEq`, by-value exact-type match — OQ-7), each `Stmt::Return(Some(Expr::Path(vec![p.name])))` labeled ``insert early `return <p>` at body head (identity of param `<p>`)`` (OQ-8 multi-param distinct). This is the mutant that exposes `move_up`: `return b` proves the length-identity + cursor-bound `ens`. Consumers: `check::mutation_score` + `check::lean_mutation_score`. Verified: `forge/tests/editor_runs.rs::editor_logic_certifies_l3_boundary_and_run_l1` (the tightened editor certifies L3 — the identity mutants KILLED post-#270) + `mutation::tests` (the re-derived frozen-order oracle). |
-| REQ-10 (F-STRUCT-ZERO named-struct field-zero family) | SHIPPED | `struct_zero_value(name, adt_deps)` + `zero_value_with_defs(ty, adt_deps)` + `find_struct` (`forge/src/mutation.rs`): a `Type::Named(name)` return resolving to an `Item::Struct` synthesizes `Expr::StructLit { path: vec![name], fields: <per-field zeros> }`, each field's zero from the SAME ladder (scalar `zero_value_for`, the #74/#80 empty-wrapper literals, the tuple recursion, and recursively a nested struct's own zeros). ANY field without a synthesizable zero ⇒ NO mutant (the OQ-5 drop, mirroring `Type::Tuple`); an enum-named return ⇒ no mutant (no canonical variant). Verified: `forge/tests/editor_runs.rs` (`Buffer`-zero mutants KILLED by the pinning `ens`) + `mutation::tests`. |
+| REQ-8 (deterministic kill ratio, oracle stance) | SHIPPED | `generate` is a pure function of the AST + frozen table; the kill ratio is deterministic (verified by `mutation_conformance.rs::kill_ratio_is_deterministic_across_two_runs`, run==run). `mutants_killed`/`survivor` stay oracle-EXCLUDED in `Certificate::oracle_subset` (OQ-1, verus-version-sensitive). GROUNDED at the current tree: the frozen golden `conformance/sum.cert.json` pins `mutants_killed: "17/18"` with `survivor` "mutant#11: `i = i + 1` → `i = i + 2` survives ensures but killed by keeps#2" (the pin-era 7/7 sample predates the #92-operator mutant-set growth); the conformance oracle asserts threshold relations (`>= floor` / `< floor`), never frozen exact counts. |
+| REQ-9 (F-IDENT identity-return family) | SHIPPED | `mutation::generate(f, _seed, adt_deps)` (`forge/src/mutation.rs`) emits, in family 1 immediately AFTER the zero-value early-return and BEFORE families 2–4, ONE identity mutant per param whose `p.ty == f.ret` (AST `Type` derived `PartialEq`, by-value exact-type match — OQ-7), each `Stmt::Return(Some(Expr::Path(vec![p.name])))` labeled ``insert early `return <p>` at body head (identity of param `<p>`)`` (OQ-8 multi-param distinct). This is the mutant that exposes `move_up`: `return b` proves the length-identity + cursor-bound `ensures`. Consumers: `check::mutation_score` + `check::lean_mutation_score`. Verified: `forge/tests/editor_runs.rs::editor_logic_certifies_l3_boundary_and_run_l1` (the tightened editor certifies L3 — the identity mutants KILLED post-#270) + `mutation::tests` (the re-derived frozen-order oracle). |
+| REQ-10 (F-STRUCT-ZERO named-struct field-zero family) | SHIPPED | `struct_zero_value(name, adt_deps)` + `zero_value_with_defs(ty, adt_deps)` + `find_struct` (`forge/src/mutation.rs`): a `Type::Named(name)` return resolving to an `Item::Struct` synthesizes `Expr::StructLit { path: vec![name], fields: <per-field zeros> }`, each field's zero from the SAME ladder (scalar `zero_value_for`, the #74/#80 empty-wrapper literals, the tuple recursion, and recursively a nested struct's own zeros). ANY field without a synthesizable zero ⇒ NO mutant (the OQ-5 drop, mirroring `Type::Tuple`); an enum-named return ⇒ no mutant (no canonical variant). Verified: `forge/tests/editor_runs.rs` (`Buffer`-zero mutants KILLED by the pinning `ensures`) + `mutation::tests`. |
 | REQ-11 (struct-defs seam into `generate`) | SHIPPED | `pub fn generate(f: &FnItem, _seed: u64, adt_deps: &[Item])` gained the third ADT-items parameter; the three production callers thread it — `check::mutation_score(.., adt_deps, ..)` and `check::strengthen_certificate(.., adt_deps, ..)` (the SAME `adt_deps` they weave into `item_subprogram`) and `check::lean_mutation_score` via `lean_program(lean)`. `early_return_value(f, adt_deps)` / `zero_value_with_defs(ty, adt_deps)` are the defs-threaded forms; `zero_value_for` stays the def-free leaf (no behavior change for the shipped arms). The nested-struct recursion terminates via the `Box`-has-no-zero OQ-5 drop. |
 | REQ-12 (cache schema bump + re-derived frozen-order oracle) | SHIPPED | `cache.rs`'s `const CHECK_SCHEMA_VERSION` bumped to `7` (the families bumped `5 → 6`; the #269 call-bearing equivalence arm — `.design/forge/equivalent-mutants.md` REQ-7 — bumped `6 → 7`, the schema-history note records both): both are VERDICT-CHANGING widenings, so no stale gate verdict is served on an unchanged lowered-source key (the #48/#74/#80/#49 discipline). The `mutation::tests` frozen-set/order oracle is re-derived by hand from REQ-1/REQ-9/REQ-10 (R-CHAR-3); determinism (REQ-2/REQ-8) is preserved (the new mutants are a pure function of the AST + the threaded struct defs). |
 | REQ-13 (equivalence-exclusion + Lean-path interaction) | SHIPPED | An F-IDENT survivor routes through the SHIPPED exclusion: `check::mutation_score` calls `check::equivalence_proves_equal` on every survivor; a verus-PROVED obligation excludes it (`equivalent += 1; continue;`, never `survivor`). For a CALL-FREE identity (`refuse(x) { x }`, `clamp_zero`) the scalar spec-fn obligation proves equivalence → excluded; the #48 `0/0` backstop still gates `refuse`. For a CALL-BEARING identity (the §9 composition `caller(x) { ext_id(x) }`) the #269 REQ-7 exec harness proves equivalence MODULO ext_id's contract → excluded → `caller` certifies L3 (AC-6). The HONEST LIMIT narrowed (no longer "non-scalar always counted"): a non-scalar/out-of-scope identity still stays a COUNTED survivor, now with the structured `Unsupported` reason carried (equivalent-mutants.md REQ-9). On the Lean path the new families flow through the SAME `mutation::generate` with #247 engine-generic semantics (non-admitted ⇒ "untested against lean", never killed; raw survivor set, no equivalence probe — OQ-9). Verified: `forge/tests/equivalent_mutants_conformance.rs` (5/5, the #101 fixtures stay stable) + `forge/tests/composition_conformance.rs` (AC-6/AC-8). |

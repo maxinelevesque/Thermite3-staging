@@ -292,8 +292,8 @@ pub fn build_tower(program: &Program, src: &str, f: &FnItem) -> DefinitionTower 
     // The roots: the spec fns the contract (`req ∪ ens`) directly references — the
     // meaning surface. (The body's own calls are implementation, not the claim.)
     let mut roots: BTreeSet<String> = BTreeSet::new();
-    crate::check::collect_expr_spec_fn_calls(&f.contract.req.expr, &spec_decls, &mut roots);
-    for ens in &f.contract.ens {
+    crate::check::collect_expr_spec_fn_calls(&f.contract.requires.expr, &spec_decls, &mut roots);
+    for ens in &f.contract.ensures {
         crate::check::collect_expr_spec_fn_calls(&ens.expr, &spec_decls, &mut roots);
     }
 
@@ -372,7 +372,7 @@ fn spec_fn_edges(spec_decls: &BTreeMap<&str, &SpecFnItem>) -> BTreeMap<String, B
         .map(|(name, decl)| {
             let mut callees: BTreeSet<String> = BTreeSet::new();
             crate::check::collect_block_spec_fn_calls(&decl.body, spec_decls, &mut callees);
-            crate::check::collect_expr_spec_fn_calls(&decl.dec.expr, spec_decls, &mut callees);
+            crate::check::collect_expr_spec_fn_calls(&decl.measures.expr, spec_decls, &mut callees);
             ((*name).to_string(), callees)
         })
         .collect()
@@ -519,16 +519,16 @@ mod tests {
             params: Vec::new(),
             ret: thermite_syntax::Type::Unit,
             contract: thermite_syntax::Contract {
-                req: thermite_syntax::Clause {
+                requires: thermite_syntax::Clause {
                     expr: thermite_syntax::Expr::BoolLit(true),
                     text: String::new(),
                     span: thermite_syntax::Span::new(0, 0),
                     bv: None,
                 },
-                ens: Vec::new(),
-                fx: thermite_syntax::EffectRow::Pure,
+                ensures: Vec::new(),
+                effects: thermite_syntax::EffectRow::Pure,
             },
-            dec: None,
+            measures: None,
             body: Some(thermite_syntax::Block {
                 stmts: Vec::new(),
                 tail: None,
@@ -544,7 +544,7 @@ mod tests {
     #[test]
     fn scalar_contract_has_empty_tower() {
         let (f, program, src) = fixture(
-            "fn inc(x: u32) -> u32 req x < 100 ens result == x + 1 fx pure { x + 1 }",
+            "fn inc(x: u32) -> u32 ! pure requires x < 100 ensures result == x + 1 { x + 1 }",
             "inc",
         );
         let tower = build_tower(&program, &src, &f);
@@ -558,10 +558,10 @@ mod tests {
     #[test]
     fn tower_follows_the_spec_fn_chain() {
         let src = "\
-spec fn a(x: u32) -> bool dec x { b(x) }
-spec fn b(x: u32) -> bool dec x { c(x) }
-spec fn c(x: u32) -> bool dec x { x > 0 }
-fn f(x: u32) -> u32 req true ens a(x) fx pure { x }";
+spec fn a(x: u32) -> bool measures x { b(x) }
+spec fn b(x: u32) -> bool measures x { c(x) }
+spec fn c(x: u32) -> bool measures x { x > 0 }
+fn f(x: u32) -> u32 ! pure requires true ensures a(x) { x }";
         let (f, program, src) = fixture(src, "f");
         let tower = build_tower(&program, &src, &f);
         // The contract references `a`, which references `b`, which references `c`:
@@ -586,9 +586,9 @@ fn f(x: u32) -> u32 req true ens a(x) fx pure { x }";
     #[test]
     fn body_only_spec_fn_is_not_in_the_tower() {
         let src = "\
-spec fn contract_dep(x: u32) -> bool dec x { x > 0 }
-spec fn body_dep(x: u32) -> bool dec x { x < 100 }
-fn f(x: u32) -> bool req true ens contract_dep(x) fx pure { body_dep(x) }";
+spec fn contract_dep(x: u32) -> bool measures x { x > 0 }
+spec fn body_dep(x: u32) -> bool measures x { x < 100 }
+fn f(x: u32) -> bool ! pure requires true ensures contract_dep(x) { body_dep(x) }";
         let (f, program, src) = fixture(src, "f");
         let tower = build_tower(&program, &src, &f);
         let names: Vec<&str> = tower.defs.iter().map(|d| d.name.as_str()).collect();
@@ -606,8 +606,8 @@ fn f(x: u32) -> bool req true ens contract_dep(x) fx pure { body_dep(x) }";
     #[test]
     fn recursive_spec_fn_does_not_loop_or_inflate_depth() {
         let src = "\
-spec fn count_down(n: u32) -> u32 dec n { if n == 0 { 0 } else { count_down(n - 1) } }
-fn f(n: u32) -> u32 req true ens result == count_down(n) fx pure { n }";
+spec fn count_down(n: u32) -> u32 measures n { if n == 0 { 0 } else { count_down(n - 1) } }
+fn f(n: u32) -> u32 ! pure requires true ensures result == count_down(n) { n }";
         let (f, program, src) = fixture(src, "f");
         let tower = build_tower(&program, &src, &f);
         assert_eq!(tower.definition_count(), 1);
@@ -622,12 +622,12 @@ fn f(n: u32) -> u32 req true ens result == count_down(n) fx pure { n }";
     fn over_depth_tower_is_refused() {
         // A chain d1 → d2 → d3 → d4 → d5 (5 distinct defs) → depth 5 > budget 4.
         let src = "\
-spec fn d1(x: u32) -> bool dec x { d2(x) }
-spec fn d2(x: u32) -> bool dec x { d3(x) }
-spec fn d3(x: u32) -> bool dec x { d4(x) }
-spec fn d4(x: u32) -> bool dec x { d5(x) }
-spec fn d5(x: u32) -> bool dec x { x > 0 }
-fn f(x: u32) -> u32 req true ens d1(x) fx pure { x }";
+spec fn d1(x: u32) -> bool measures x { d2(x) }
+spec fn d2(x: u32) -> bool measures x { d3(x) }
+spec fn d3(x: u32) -> bool measures x { d4(x) }
+spec fn d4(x: u32) -> bool measures x { d5(x) }
+spec fn d5(x: u32) -> bool measures x { x > 0 }
+fn f(x: u32) -> u32 ! pure requires true ensures d1(x) { x }";
         let (f, program, src) = fixture(src, "f");
         let tower = build_tower(&program, &src, &f);
         assert_eq!(tower.depth, 5);
@@ -650,8 +650,8 @@ fn f(x: u32) -> u32 req true ens d1(x) fx pure { x }";
     #[test]
     fn within_budget_tower_pins_a_stable_hash() {
         let src_a = "\
-spec fn p(x: u32) -> bool dec x { x > 0 }
-fn f(x: u32) -> u32 req true ens p(result) fx pure { x }";
+spec fn p(x: u32) -> bool measures x { x > 0 }
+fn f(x: u32) -> u32 ! pure requires true ensures p(result) { x }";
         let (f, program, src) = fixture(src_a, "f");
         let tower = build_tower(&program, &src, &f);
         assert!(tower.within_budget());
@@ -665,8 +665,8 @@ fn f(x: u32) -> u32 req true ens p(result) fx pure { x }";
 
         // A changed definition body changes the hash (the meaning moved).
         let src_b = "\
-spec fn p(x: u32) -> bool dec x { x > 1 }
-fn f(x: u32) -> u32 req true ens p(result) fx pure { x }";
+spec fn p(x: u32) -> bool measures x { x > 1 }
+fn f(x: u32) -> u32 ! pure requires true ensures p(result) { x }";
         let (f2, program2, src2) = fixture(src_b, "f");
         let tower_b = build_tower(&program2, &src2, &f2);
         assert_ne!(
@@ -681,8 +681,8 @@ fn f(x: u32) -> u32 req true ens p(result) fx pure { x }";
     #[test]
     fn render_shows_tower_and_hash() {
         let src = "\
-spec fn q(x: u32) -> bool dec x { x > 0 }
-fn f(x: u32) -> u32 req true ens q(result) fx pure { x }";
+spec fn q(x: u32) -> bool measures x { x > 0 }
+fn f(x: u32) -> u32 ! pure requires true ensures q(result) { x }";
         let (f, program, src) = fixture(src, "f");
         let tower = build_tower(&program, &src, &f);
         let rendered = tower.render();

@@ -4,14 +4,14 @@
   "addresses": [
     { "addr": "binary_search", "kind": "fn" },
     { "addr": "binary_search.loop#1", "kind": "loop" },
-    { "addr": "binary_search.loop#1.inv#1", "kind": "inv", "text": "lo <= hi && hi <= haystack.len()" },
-    { "addr": "binary_search.loop#1.inv#2", "kind": "inv", "text": "forall_below(haystack, lo, |x| x < needle)" },
-    { "addr": "binary_search.loop#1.inv#3", "kind": "inv", "text": "forall_from(haystack, hi, |x| x > needle)" },
-    { "addr": "binary_search.loop#1.dec", "kind": "dec", "text": "hi - lo" }
+    { "addr": "binary_search.loop#1.keeps#1", "kind": "keeps", "text": "lo <= hi && hi <= haystack.len()" },
+    { "addr": "binary_search.loop#1.keeps#2", "kind": "keeps", "text": "forall_below(haystack, lo, |x| x < needle)" },
+    { "addr": "binary_search.loop#1.keeps#3", "kind": "keeps", "text": "forall_from(haystack, hi, |x| x > needle)" },
+    { "addr": "binary_search.loop#1.measures", "kind": "measures", "text": "hi - lo" }
   ],
   "must_error": [
     "binary_search.loop#9",
-    "binary_search.loop#1.inv#7",
+    "binary_search.loop#1.keeps#7",
     "no_such_fn"
   ]
 }

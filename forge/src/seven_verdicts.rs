@@ -51,7 +51,8 @@ fn verdict_proved() {
         return;
     }
     let (program, f) = parse_fn(
-        "fn p(lo: u64, hi: u64) -> u64\n  req lo <= hi\n  ens lo + 1 <= hi + 1\n  fx pure\n{ lo }\n",
+        "fn p(lo: u64, hi: u64) -> u64\n  ! pure
+  requires lo <= hi\n  ensures lo + 1 <= hi + 1\n{ lo }\n",
         "p",
     );
     let outcome = NlsatEngine::new(program).discharge_relax(&f);
@@ -73,7 +74,8 @@ fn verdict_counterexample() {
     // `∀ n, n + 1 <= n` is false at every integer — the nlsat route finds an integer
     // counterexample (not a real-only witness).
     let (program, f) = parse_fn(
-        "fn c(n: u64) -> u64\n  req true\n  ens n + 1 <= n\n  fx pure\n{ n }\n",
+        "fn c(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n + 1 <= n\n{ n }\n",
         "c",
     );
     let outcome = NlsatEngine::new(program).discharge_relax(&f);
@@ -96,7 +98,8 @@ fn verdict_real_witness() {
         return;
     }
     let (program, f) = parse_fn(
-        "fn w(n: u64) -> u64\n  req true\n  ens n * n != 2\n  fx pure\n{ n }\n",
+        "fn w(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
         "w",
     );
     let outcome = NlsatEngine::new(program).discharge_relax(&f);
@@ -119,8 +122,8 @@ fn verdict_covenant_refuted() {
     use crate::covenant_engine::{analyze_covenant, covenant_gate, witness_bindings, CovenantGate};
     // `bad` claims `result >= x && result >= y` but returns the SMALLER — refuted.
     let (program, f) = parse_fn(
-        "fn bad(x: u64, y: u64) -> u64\n  req true\n  ens result >= x && result >= y\n  fx pure\n\
-         { if x > y { y } else { x } }\n\nwitness { inhabit (5, 5); inhabit (9, 2); falsify 2000; }\n",
+        "fn bad(x: u64, y: u64) -> u64\n  ! pure
+  requires true\n  ensures result >= x && result >= y\n{ if x > y { y } else { x } }\n\nwitness { inhabit (5, 5); inhabit (9, 2); falsify 2000; }\n",
         "bad",
     );
     let witness = witness_bindings(&program)

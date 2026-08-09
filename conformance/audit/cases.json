@@ -6,7 +6,7 @@
       "expect_tcb_slag": [], "expect_tcb_boundary": [],
       "why": "sum/spec_sum are pure-Thermite, L3, end-to-end -> project L3 end-to-end; the TCB has NO slag and NO boundary (only the toolchain identity). The fiat-trusted base of a pure project is exactly the toolchain." },
     { "name": "slag_boundary_tcb",
-      "program": "#[slag(reason = \"hand-tuned\", owner = \"agent:x\", review = \"required\")] fn vendored(x: u32) -> u32 req x < 100 ens result == x fx pure { x } #[boundary(\"ext::ext_f\")] fn ext_f(x: u32) -> u32 req x < 100 ens result == x fx pure ;",
+      "program": "#[slag(reason = \"hand-tuned\", owner = \"agent:x\", review = \"required\")] fn vendored(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x } #[boundary(\"ext::ext_f\")] fn ext_f(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
       "expect_tcb_slag": ["vendored"], "expect_tcb_boundary": ["ext_f"],
       "expect_boundary_target": "ext::ext_f",
       "why": "TCB enumeration: the slag block `vendored` (with reason/owner/review) AND the boundary contract `ext_f` (target ext::ext_f) BOTH appear in the audit manifest's TCB (§8 grep-slag inventory + §9 boundary contracts). Nothing fiat-trusted omitted (R-DEFER-9)." },
@@ -25,14 +25,14 @@
       "why": "AC-7: one lean_fragment row per functions row (spec_sum, sum), source order. sum's contract obligation refuses OutOfFragment (the recursive-registry contract over a while body — the §4 interactive residual, hand-traced); spec_sum refuses OutOfFragment (slice-pattern match body, OUT of S_C). class pinned + reason pinned verbatim from the shipped ExportRefusal Display (R-CHAR-3)." },
 
     { "name": "lean_fragment_tier_auto",
-      "program": "fn count(n: u32) -> u32 req n < 100 ens result == n fx pure { n }",
+      "program": "fn count(n: u32) -> u32 ! pure requires n < 100 ensures result == n { n }",
       "expect_rows": [
         { "name": "count", "exportable": true, "tier": "auto", "tier_tag": "fuel-free-auto" }
       ],
       "why": "AC-7: a pure-int-tail body whose req/ens/body are all specCall-free is exportable tier (a) FuelFreeAuto — `--engine lean` would export AND lake-invoke the auto battery. tier=auto, tier_tag=fuel-free-auto (ExportTier::is_auto + tag)." },
 
     { "name": "lean_fragment_tier_interactive",
-      "program": "spec fn r(x: int) -> int\n  dec x\n{\n  r(x)\n}\n\nfn f(x: u32) -> u32\n  req true\n  ens result as int == r(x as int)\n  fx pure\n{\n  x\n}\n",
+      "program": "spec fn r(x: int) -> int\n  measures x\n{\n  r(x)\n}\n\nfn f(x: u32) -> u32\n  ! pure\n  requires true\n  ensures result as int == r(x as int)\n{\n  x\n}\n",
       "expect_rows": [
         { "name": "r", "exportable": true, "tier": "interactive", "tier_tag": "recursive-interactive" },
         { "name": "f", "exportable": true, "tier": "interactive", "tier_tag": "recursive-interactive" }
@@ -40,7 +40,7 @@
       "why": "AC-7: a recursive spec fn `r` (registry recursive) called in `f`'s ens => tier (c) RecursiveInteractive — `--engine lean` exports but does NOT invoke lake (returns Unknown). Both rows exportable, tier=interactive, tier_tag=recursive-interactive (the shipped tier-(c) fixture, mirrors divergence_249_axiom_mask.rs's TH_SRC)." },
 
     { "name": "lean_fragment_refusal_optres",
-      "program": "fn opt(n: u32) -> Option<u32> req true ens true fx pure { Some(n) }",
+      "program": "fn opt(n: u32) -> Option<u32> ! pure requires true ensures true { Some(n) }",
       "expect_rows": [
         { "name": "opt", "exportable": false, "tier": "none",
           "refusal_class": "OptResResult",
@@ -49,7 +49,7 @@
       "why": "AC-8: an Option-typed straight-line-body result refuses OptResResult (ExecVal has no optres variant; #254). class + verbatim reason from the shipped ExportRefusal::OptResResult Display (R-CHAR-3)." },
 
     { "name": "lean_fragment_refusal_loop",
-      "program": "fn lp(n: u32) -> u32 req n < 10 ens result == n fx pure { let mut i: u32 = 0; loop inv i <= n dec n - i { if i == n { break; } i = i + 1; } i }",
+      "program": "fn lp(n: u32) -> u32 ! pure requires n < 10 ensures result == n { let mut i: u32 = 0; loop keeps i <= n measures n - i { if i == n { break; } i = i + 1; } i }",
       "expect_rows": [
         { "name": "lp", "exportable": false, "tier": "none",
           "refusal_class": "LoopBody",
@@ -58,7 +58,7 @@
       "why": "AC-8: a `loop`-kind loop body refuses LoopBody (S_B mechanizes no loop form; the v1 subset is single-`while` only). class + verbatim reason from the shipped ExportRefusal::LoopBody Display (R-CHAR-3)." },
 
     { "name": "lean_fragment_refusal_boundary",
-      "program": "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 req x < 100 ens result == x fx pure ;",
+      "program": "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
       "expect_rows": [
         { "name": "bnd", "exportable": false, "tier": "none",
           "refusal_class": "NotPureContract",

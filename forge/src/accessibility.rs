@@ -35,9 +35,9 @@ use crate::cache::{self, AccessibilityProof};
 #[must_use]
 pub fn dec_wf_relation_and_carrier(item: &Item) -> Option<(String, String)> {
     let (dec, params): (&Clause, &[Param]) = match item {
-        Item::Fn(f) => (f.dec.as_ref()?, &f.params),
-        Item::SpecFn(s) => (&s.dec, &s.params),
-        Item::Forge(ForgeItem::PropFn(p)) => (p.dec.as_ref()?, &p.params),
+        Item::Fn(f) => (f.measures.as_ref()?, &f.params),
+        Item::SpecFn(s) => (&s.measures, &s.params),
+        Item::Forge(ForgeItem::PropFn(p)) => (p.measures.as_ref()?, &p.params),
         _ => return None,
     };
     let relation = wf_relation(dec)?;
@@ -147,8 +147,8 @@ mod tests {
     #[test]
     fn extracts_dec_wf_relation_and_carrier() {
         let prog = parse_ok(
-            "spec fn rank(n: u32) -> u32 dec wf lt_rel { n }\n\
-             fn plain(n: u32) -> u32 req true ens result == n fx pure { n }",
+            "spec fn rank(n: u32) -> u32 measures wf lt_rel { n }\n\
+             fn plain(n: u32) -> u32 ! pure requires true ensures result == n { n }",
         );
         let rank = &prog.items[0];
         assert_eq!(
@@ -164,7 +164,7 @@ mod tests {
     // A `dec lex(...)` / plain `dec <expr>` measure is not a `dec wf` — no accessibility key.
     #[test]
     fn non_wf_measures_are_not_accessibility_keyed() {
-        let prog = parse_ok("spec fn rank(n: u32) -> u32 dec n { n }");
+        let prog = parse_ok("spec fn rank(n: u32) -> u32 measures n { n }");
         assert_eq!(dec_wf_relation_and_carrier(&prog.items[0]), None);
     }
 
@@ -205,8 +205,8 @@ mod tests {
         let dir = unique_dir("pass");
         let _ = std::fs::remove_dir_all(&dir);
         let prog = parse_ok(
-            "spec fn rank(n: u32) -> u32 dec wf lt_rel { n }\n\
-             fn plain(n: u32) -> u32 req true ens result == n fx pure { n }",
+            "spec fn rank(n: u32) -> u32 measures wf lt_rel { n }\n\
+             fn plain(n: u32) -> u32 ! pure requires true ensures result == n { n }",
         );
         cache_dec_wf_accessibility(&dir, &prog.items, |_name| true);
         // The `dec wf` item is cached; a re-check hits.

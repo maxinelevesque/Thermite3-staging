@@ -406,11 +406,11 @@ fn calculator_arithmetic_core_builds_and_runs() {
     // The arithmetic core in isolation (Option + `+`, no parse_u64) — the half of
     // the calculator with an L1 runnable form. 2+3 → Some(5), 100+200 → Some(300).
     let core = "fn add_vals(x: u64, y: u64) -> Option<u64>\n  \
-                req x <= 9223372036854775807 && y <= 9223372036854775807\n  \
-                ens match result { Some(v) => v == x + y, None => false }\n  \
-                fx  pure\n{ Some(x + y) }\n\
-                fn add_2_3() -> Option<u64> req true ens match result { Some(v) => v == 5, None => false } fx pure { add_vals(2, 3) }\n\
-                fn add_100_200() -> Option<u64> req true ens match result { Some(v) => v == 300, None => false } fx pure { add_vals(100, 200) }\n";
+                ! pure
+  requires x <= 9223372036854775807 && y <= 9223372036854775807\n  \
+                ensures match result { Some(v) => v == x + y, None => false }\n{ Some(x + y) }\n\
+                fn add_2_3() -> Option<u64> ! pure requires true ensures match result { Some(v) => v == 5, None => false } { add_vals(2, 3) }\n\
+                fn add_100_200() -> Option<u64> ! pure requires true ensures match result { Some(v) => v == 300, None => false } { add_vals(100, 200) }\n";
     let out = build_run_fixture("calc_core_23", core, "add_2_3");
     assert!(
         out.contains("Some(5)"),
@@ -520,8 +520,9 @@ fn parser_split_count_bound_verifies_under_real_verus() {
     // The `fields` contract from `parse_lines.th`, lowered + run under verus.
     let (ok, output) = verus_on_lowered(
         "fields",
-        "fn fields(s: String, sep: u64) -> Vec<String>\n  req true\n  \
-         ens result.len() == 1 + count_sep(s, sep)\n  fx alloc\n{ s.split(sep) }\n",
+        "fn fields(s: String, sep: u64) -> Vec<String>\n  ! alloc
+  requires true\n  \
+         ensures result.len() == 1 + count_sep(s, sep)\n{ s.split(sep) }\n",
     );
     assert!(
         ok && output.contains("0 errors"),
@@ -541,8 +542,8 @@ fn parser_split_core_builds_and_runs_three_pieces() {
     if !linux_build_run_supported("parser_split_core_builds_and_runs_three_pieces") {
         return;
     }
-    let split_only = "fn split_abc() -> Vec<String>\n  req true\n  ens result.len() >= 1\n  \
-                      fx alloc\n{ let s: String = \"a,b,c\"; s.split(44) }\n";
+    let split_only = "fn split_abc() -> Vec<String>\n  ! alloc
+  requires true\n  ensures result.len() >= 1\n{ let s: String = \"a,b,c\"; s.split(44) }\n";
     let out = build_run_fixture("split_abc", split_only, "split_abc");
     // 3 pieces: "a"=[97], "b"=[98], "c"=[99]. The Vec<String> Debug renders each
     // TString's bytes; all three piece-bytes are present (3 pieces from 2 commas).

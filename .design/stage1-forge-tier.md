@@ -78,10 +78,10 @@ Q-register defaults (Q1–Q4, Q6–Q8) adopted inline. Umbrella:
   not a one-time read.
 - REQ-3 (**surface syntax**, plan item 3): `thermite-syntax` parses
   `prop fn`, `lemma name(args) req … ens … proof { … }`,
-  `proof for f { ens#k by { … } }`, `?pN` proof holes,
+  `proof for f { ensures#k by { … } }`, `?pN` proof holes,
   `witness { inhabit (…); falsify N; }`, refinement-type sugar
   (`x: T{P}` desugaring to req/ens + call-site obligations), and
-  `dec lex(…)` / `dec wf ⟨rel⟩`. Slotting: new item kinds beside `fn` in
+  `measures lex(…)` / `measures wf ⟨rel⟩`. Slotting: new item kinds beside `fn` in
   the item parser; clause-level additions through `parse_contract`'s
   ordered-clause dispatch; `?pN` mirrors the existing `?N` hole machinery
   (`TokKind::Hole`, `FnItem.holes`, `HoleOutsideFnBody`) with proof-block
@@ -91,13 +91,13 @@ Q-register defaults (Q1–Q4, Q6–Q8) adopted inline. Umbrella:
   `forge fill` can target `?pN`. Syntax is always-on (no feature flag);
   gating is forge-side via holes and routing. **Grounding decisions**
   (Q-DECWF): the lexer is ASCII-only (`lex_punct` handles no multibyte
-  operators), so `dec wf` ships with an **ASCII relation spelling**
-  (`dec wf <rel>`), not the Unicode `⟨⟩` form, to avoid adding UTF-8
+  operators), so `measures wf` ships with an **ASCII relation spelling**
+  (`measures wf <rel>`), not the Unicode `⟨⟩` form, to avoid adding UTF-8
   operator lexing; and the refinement-type sugar desugars in a **new
   post-parse pass** (none exists in `thermite-syntax` today) so downstream
   stages see only the v1 clause shapes plus the new item kinds.
 - REQ-4 (**covenant engine**, plan item 4): `inhabit` witnesses are
-  type-checked and *executed* against `req`; `falsify` rides the
+  type-checked and *executed* against `requires`; `falsify` rides the
   SplitMix64 generator (`thermite-tv/src/gen.rs`) aimed at the executable
   semantics; a hit is the hard-fail verdict `CovenantRefuted` with the
   counterexample attached (same never-degrades treatment as
@@ -126,7 +126,7 @@ Q-register defaults (Q1–Q4, Q6–Q8) adopted inline. Umbrella:
   heuristic from RFC-1 §8's transcript).
 - REQ-6 (**anti-Goodhart at L3**, plan item 6): three defenses.
   (a) Arbitrary-result re-elaboration for tautology: substitute an opaque
-  result into the proof term; if it still elaborates, the `ens` said
+  result into the proof term; if it still elaborates, the `ensures` said
   nothing → reject (the L3 counterpart of
   `forge/src/vacuity_solver.rs`'s `build_tautology_harness`).
   (b) Re-elaboration mutation: reuse the frozen mutation operator
@@ -168,11 +168,11 @@ Q-register defaults (Q1–Q4, Q6–Q8) adopted inline. Umbrella:
 - REQ-9 (**lemma library mechanics**, plan item 9): per-project lemma
   namespace (Q1); citations resolve against certified lemmas only
   (`simp [melems_cons]` fails if `melems_cons` lacks a certificate);
-  dedup-on-burn by statement hash with citation rewrite (Q1); `dec wf`
+  dedup-on-burn by statement hash with citation rewrite (Q1); `measures wf`
   accessibility proofs cached by (relation, carrier) hash, invalidated
   like other certificates (Q7); burned lemmas surface in `forge review`
   like any certified item. Proof sharing per Q6: one `proof for f` block
-  may discharge several `ens#k` with shared `let`-style local lemmas; no
+  may discharge several `ensures#k` with shared `let`-style local lemmas; no
   cross-function sharing except via `lemma`. This item trails usage —
   last in dependency order.
 - REQ-10 (**gate G1**): stage 1 is done when an end-to-end L3 certificate
@@ -229,7 +229,7 @@ Q-register defaults (Q1–Q4, Q6–Q8) adopted inline. Umbrella:
   a `Stuck` verdict on the RFC's merge example carries the residual
   goal and a missing-bridge hint. (REQ-5)
 - [ ] AC-10: The arbitrary-result re-elaboration check rejects a
-  body-ignoring `ens` (test fixture); re-elaboration mutation reuses
+  body-ignoring `ensures` (test fixture); re-elaboration mutation reuses
   `mutation::generate` (asserted by a test that the operator catalogue
   is shared, not forked) and reports killed/scored in the certificate;
   a tower deeper than the budget fails `forge audit --meaning` and the
@@ -247,7 +247,7 @@ Q-register defaults (Q1–Q4, Q6–Q8) adopted inline. Umbrella:
 - [ ] AC-13: Citing an uncertified lemma fails with the lemma named;
   burning a statement-hash duplicate rewrites the citation instead of
   storing a copy (test with two identical lemmas under different
-  names); a `dec wf` re-check hits the accessibility cache (observable
+  names); a `measures wf` re-check hits the accessibility cache (observable
   via the cache layer, `forge/src/cache.rs` conventions). (REQ-9)
 - [ ] AC-14: G1 checklist green in one run: the merge-class example
   certifies L3 (clauses L4, L4, L3) with all four evidence blocks
@@ -286,10 +286,10 @@ without disturbing `oracle_subset()`'s 6-tuple for v1 items.
 `parse_contract` enforces clause order and `parse_fn` records `?N` holes
 with depth tracking. New items (`prop fn`, `lemma`, `proof for`,
 `witness`) are item-level productions beside `fn`; refinement sugar
-desugars in a post-parse pass to req/ens so downstream stages
+desugars in a post-parse pass to req/ensures so downstream stages
 (`thermite-spec` validation, lowering) see only the v1 clause shapes
 plus the new item kinds. `thermite-syntax/src/address.rs` gains proof
-addresses (`f.proof.ens#k`, `?pN`) so `goal_repl.rs`'s `edit_file`/
+addresses (`f.proof.ensures#k`, `?pN`) so `goal_repl.rs`'s `edit_file`/
 `fill_hole` machinery transfers unchanged.
 
 **Covenant.** Executes through the same executable-semantics surface the
@@ -368,10 +368,10 @@ forge-side elaboration wall-clock/timeout wrapper at the Q4 budget (30s/clause),
 not output-text matching. Either way `KernelBudget` is produced upstream as a
 cert-level verdict, never derived from the 3-arm `engine::Verdict`.
 
-### Q-DECWF: `dec wf` relation spelling — ASCII or Unicode? (resolved)
+### Q-DECWF: `measures wf` relation spelling — ASCII or Unicode? (resolved)
 
 **Decision:** ASCII. The lexer (`thermite-syntax`'s `lex_punct`) is ASCII-only
-and handles no multibyte operators, so `dec wf` ships as `dec wf <rel>`, not the
+and handles no multibyte operators, so `measures wf` ships as `measures wf <rel>`, not the
 Unicode `⟨⟩` form, avoiding a UTF-8 operator-lexing subtask. Relatedly, the
 refinement-type sugar (`x: T{P}`) desugars in a new post-parse pass — none exists
 in `thermite-syntax` today — so downstream stages see only v1 clause shapes.
@@ -418,6 +418,6 @@ with the shipped "audit gates nothing" invariant (#274 — gating at certify tim
 `forge audit --meaning` read-only); clarified REQ-1/AC-1/AC-2 (separate cert-level
 verdict enum; four verdicts produced upstream, not mapped from the 3-arm
 `engine::Verdict`); recorded covenant as a foundation `Engine`-signature change
-(REQ-4); resolved Q-DECWF (ASCII `dec wf`), Q-NLSAT (new `EngineName::Nlsat`,
+(REQ-4); resolved Q-DECWF (ASCII `measures wf`), Q-NLSAT (new `EngineName::Nlsat`,
 direct Z3 nlsat tactic), and opened Q-KBSIGNAL (kernel-budget signal probe +
 timeout-wrapper fallback). REQ/AC IDs and structure unchanged.*

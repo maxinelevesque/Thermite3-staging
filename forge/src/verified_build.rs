@@ -1197,7 +1197,7 @@ fn strict_source_checks(
                         f.name
                     ));
                 }
-                let effects: &[Effect] = match &f.contract.fx {
+                let effects: &[Effect] = match &f.contract.effects {
                     EffectRow::Pure => &[],
                     EffectRow::Set(effects) => effects,
                 };
@@ -1326,8 +1326,8 @@ fn plan_exports(
                 "export `{name}` has a type outside the v1 verified public ABI (primitive scalars and unit only)"
             ));
         }
-        let wrapped = !matches!(function.contract.req.expr, Expr::BoolLit(true));
-        if wrapped && !executable_precondition(&function.contract.req.expr) {
+        let wrapped = !matches!(function.contract.requires.expr, Expr::BoolLit(true));
+        if wrapped && !executable_precondition(&function.contract.requires.expr) {
             return Err(format!(
                 "export `{name}` has a non-executable precondition and cannot receive a total wrapper"
             ));
@@ -1362,10 +1362,10 @@ fn plan_exports(
             .collect::<Vec<_>>();
         let postcondition_ids = function
             .contract
-            .ens
+            .ensures
             .iter()
             .enumerate()
-            .map(|(index, _)| format!("{}.ens#{}", function.name, index + 1))
+            .map(|(index, _)| format!("{}.ensures#{}", function.name, index + 1))
             .collect::<Vec<_>>();
         let abi_preimage = format!(
             "thermite-rust-abi-v1\0crate={crate_name}\0profile={}\0triple={target_triple}\0pointer_width={target_pointer_width}\0endian={target_endian}\0ownership={}\0{signature}",
@@ -1597,15 +1597,17 @@ fn planned_node_parts(item: &Item) -> PlannedNodeParts {
                 .as_ref()
                 .map(|body| sha256(format!("{body:#?}").as_bytes())),
             contract_sha256: Some(sha256(
-                format!("{:#?}:{:#?}", function.contract, function.dec).as_bytes(),
+                format!("{:#?}:{:#?}", function.contract, function.measures).as_bytes(),
             )),
-            effects_sha256: Some(sha256(format!("{:#?}", function.contract.fx).as_bytes())),
+            effects_sha256: Some(sha256(
+                format!("{:#?}", function.contract.effects).as_bytes(),
+            )),
         },
         Item::SpecFn(function) => PlannedNodeParts {
             source_start: Some(function.span.start as u64),
             source_end: Some(function.span.end() as u64),
             body_sha256: Some(sha256(format!("{:#?}", function.body).as_bytes())),
-            contract_sha256: Some(sha256(format!("{:#?}", function.dec).as_bytes())),
+            contract_sha256: Some(sha256(format!("{:#?}", function.measures).as_bytes())),
             effects_sha256: Some(sha256(b"spec-pure")),
         },
         Item::Struct(item) => PlannedNodeParts {
@@ -1613,7 +1615,7 @@ fn planned_node_parts(item: &Item) -> PlannedNodeParts {
             source_end: Some(item.span.end() as u64),
             body_sha256: None,
             contract_sha256: item
-                .inv
+                .keeps
                 .as_ref()
                 .map(|inv| sha256(format!("{inv:#?}").as_bytes())),
             effects_sha256: None,
@@ -2017,12 +2019,16 @@ fn expected_tv_inventory(
         if !closure.functions.contains(&function.name) {
             continue;
         }
-        expect_tv(&mut expected, "contract", format!("{}.req", function.name));
-        for index in 0..function.contract.ens.len() {
+        expect_tv(
+            &mut expected,
+            "contract",
+            format!("{}.requires", function.name),
+        );
+        for index in 0..function.contract.ensures.len() {
             expect_tv(
                 &mut expected,
                 "contract",
-                format!("{}.ens#{}", function.name, index + 1),
+                format!("{}.ensures#{}", function.name, index + 1),
             );
         }
         if let Some(body) = &function.body {
@@ -2111,13 +2117,13 @@ fn expected_contract_loops(
                     expect_tv(
                         expected,
                         "contract",
-                        format!("{function}.loop#{current}.inv#{}", index + 1),
+                        format!("{function}.loop#{current}.keeps#{}", index + 1),
                     );
                 }
                 expect_tv(
                     expected,
                     "contract",
-                    format!("{function}.loop#{current}.dec"),
+                    format!("{function}.loop#{current}.measures"),
                 );
                 expected_contract_loops(expected, function, &node.body, loop_index);
             }
@@ -4268,9 +4274,9 @@ mod tests {
     #[test]
     fn export_plan_is_explicit_private_by_default_and_wraps_nontrivial_req() {
         let program = parse(
-            "fn direct(x: u64) -> u64 req true ens result == x fx pure { x } \
-             fn guarded(x: u64) -> u64 req x < 100 ens result == x fx pure { x } \
-             fn hidden(x: u64) -> u64 req true ens result == x fx pure { x }",
+            "fn direct(x: u64) -> u64 ! pure requires true ensures result == x { x } \
+             fn guarded(x: u64) -> u64 ! pure requires x < 100 ensures result == x { x } \
+             fn hidden(x: u64) -> u64 ! pure requires true ensures result == x { x }",
         );
         let exports = plan_exports(
             &program,
@@ -4301,11 +4307,13 @@ mod tests {
 
     #[test]
     fn normalized_program_digest_ignores_only_source_presentation() {
-        let compact = parse("fn id(x: u64) -> u64 req x < 10 ens result == 10 fx pure { 1_0 }");
+        let compact =
+            parse("fn id(x: u64) -> u64 ! pure requires x < 10 ensures result == 10 { 1_0 }");
         let presented_differently = parse(
-            "\nfn id ( x : u64 ) -> u64\n  req x < 10\n  ens result == 10\n  fx pure\n{ 10 }\n",
+            "\nfn id ( x : u64 ) -> u64\n  ! pure\n  requires x < 10\n  ensures result == 10\n{ 10 }\n",
         );
-        let changed = parse("fn id(x: u64) -> u64 req x < 10 ens result == 11 fx pure { 10 }");
+        let changed =
+            parse("fn id(x: u64) -> u64 ! pure requires x < 10 ensures result == 11 { 10 }");
         assert_eq!(
             normalized_program_sha256(&compact),
             normalized_program_sha256(&presented_differently)

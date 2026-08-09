@@ -470,7 +470,7 @@ element. The `wrong_combinator_breaks_soundness` (forallIn↔existsIn) and the `
 | per-arg encoding | `encode_call_arg`: `Closure => encode_pred_arg; other => encode_slice_arg` | `refIntValArgs \| a::rest => refIntVal fuel a env :: refIntValArgs fuel rest env` | each arg re-encoded (slice `@`-view / closure form) | `refIntValArgs_eq` |
 
 The fuel index is the Lean modelling of Verus's well-founded `spec fn` unfolding (every Thermite
-spec fn carries a mandatory `dec` measure, §4.2). The Rust encoder does NOT inline (it emits a call),
+spec fn carries a mandatory `measures` measure, §4.2). The Rust encoder does NOT inline (it emits a call),
 so there is no recursion to bound on the Rust side; the fuel models the *meaning* of the resulting
 recursive spec-fn definition. See Bridge Assumption A2.
 
@@ -645,7 +645,7 @@ datum) and the "Verus-meaning" column is replaced by the targeted spine arm.
 | specCall | `Expr::Call(spec_fn, args)` (a NON-combinator/NON-`old` callee) | `Expr.specCall {name} [args]` (tier (c)); STATICALLY UNFOLDED to its body for tier (b) | `Expr.specCall`+the fuel-indexed `Registry` (Table 1G, #181); `R_item` populated by the closure | direct + the static-unfolding sub-inspection (the unfolded `Expr` MUST equal the spec-fn's real body substituted — §6.1(b)) |
 | `old(x)` | `Expr::Call(old, [Path x])` | `Expr.var "old(x)"` | `Expr.var` (a free pre-state name, the `old(_)` arm of Table 1G) | direct |
 | **R_item** (registry) | the `req ∪ ens ∪ body ∪ dec` closure (`Obligation.env.spec_defs`) | `def R_item : Registry := fun name => match name with \| "f" => some ⟨[params], body⟩ \| … \| _ => none` + per-name `example : R_item "f" ≠ none := by decide` | `abbrev Registry := String → Option SpecFn`; `Env.specs` | direct + the HARD GATE (refuse-to-emit when `calledSpecFns ⊄ dom(R_item)` AND a re-check that every spec-call in the exprs is covered) + the per-name `decide` lemma (§4 mechanisms 1+2) + EXP body-faithfulness (each entry binds the REAL `Denote`-encoded body) |
-| **the theorem** | the per-item CONTRACT obligation | tier (a)/(b): `denote 0 req env → denote 0 ens (env.bindInt "result" (intVal 0 body env))`; tier (c): `∀ r, stabilizes body env r → stabilizesProp req env → stabilizesProp ens (env.bindInt "result" r)` | `denote`/`intVal`/`stabilizes`/`stabilizesProp` + `stabilizes_iff_intVal_zero` / `stabilizesProp_iff_denote_zero` (tier a/b) / `stabilization_exists` (tier c) — `Stabilize.lean` | the §4/§6.1 form: tier (a)/(b) fuel-free (sound by fuel-irrelevance / static unfolding), tier (c) the `∃N∀fuel` stabilized form (INTERACTIVE) |
+| **the theorem** | the per-item CONTRACT obligation | tier (a)/(b): `denote 0 requires env → denote 0 ensures (env.bindInt "result" (intVal 0 body env))`; tier (c): `∀ r, stabilizes body env r → stabilizesProp requires env → stabilizesProp ensures (env.bindInt "result" r)` | `denote`/`intVal`/`stabilizes`/`stabilizesProp` + `stabilizes_iff_intVal_zero` / `stabilizesProp_iff_denote_zero` (tier a/b) / `stabilization_exists` (tier c) — `Stabilize.lean` | the §4/§6.1 form: tier (a)/(b) fuel-free (sound by fuel-irrelevance / static unfolding), tier (c) the `∃N∀fuel` stabilized form (INTERACTIVE) |
 
 ### Table 4B — the EXEC-BODY bridge arms (`export_straight_line_body`, §4.1 / REQ-10, increment (iv-b))
 
@@ -668,7 +668,7 @@ DIRECT inspection row.
 | Stmt.ifElse | `Stmt::If { cond, then, else_ }` | `Exec.Stmt.ifElse {cond} {then} {else}` (a missing else → `Block.mk [] none`) | `Stmt.ifElse`+`State.restoreScope` (branch-local `let` discarded) | direct |
 | Block | `Block { stmts, tail }` | `Exec.Block.mk [stmts] (some tail)` | `Block.mk (stmts : List Stmt) (tail : Option ExecExpr)`; `bodyDenote` | direct (a tail-less block → the encoder's `none`) |
 | **stateOf** | the item's params | `def stateOf (v : Env) : Exec.State := { env := { vars := …, slices := … }, scope := fun _ => false }` (int → `.int ⟨uW, v.ints x⟩`; bool → `.bool (v.bools p)`; slice → `(v.seqs xs).map (⟨uW,·⟩)`) | `Exec.State`/`ExecEnv`; the `inputState` exemplar (`scope := fun _ => false`) | direct + the per-param correspondence `rfl`-lemma (`asInt … = some ⟨uW, v.ints x⟩` / `asBool …` / `slices.map BVal.value = v.seqs xs`, the §4.1.4 compile-time tripwire) + EXP `scope := false` faithfulness (VERIFIED against `body_ref_state`'s EMPTY initial env — params are free inputs, a param `assign` is `none`/`Err` both sides) |
-| **the body theorems** | the per-item CONTRACT + OVERFLOW obligations | the HYPOTHESIZE `bodyConverges body_block (stateOf v) r → denote 0 req … → denote 0 ens (bindResult … r)` AND the conjoined `(bodyDenote body_block (stateOf v)).isSome` under `req` (one file) | `bodyConverges`/`bodyDenote`/`bindResult` (`Exec/Stmt.lean`) + `denote`/`intVal` + `Env.bindInt`/`bindBool` | the §4.1.5 form: the result bound THROUGH `bodyConverges` (uniqueness FREE — `bodyDenote` a function); the OVERFLOW conjunct the conjunction-rule soundness condition (PinExecOverflowVacuity) |
+| **the body theorems** | the per-item CONTRACT + OVERFLOW obligations | the HYPOTHESIZE `bodyConverges body_block (stateOf v) r → denote 0 req … → denote 0 ensures (bindResult … r)` AND the conjoined `(bodyDenote body_block (stateOf v)).isSome` under `requires` (one file) | `bodyConverges`/`bodyDenote`/`bindResult` (`Exec/Stmt.lean`) + `denote`/`intVal` + `Env.bindInt`/`bindBool` | the §4.1.5 form: the result bound THROUGH `bodyConverges` (uniqueness FREE — `bodyDenote` a function); the OVERFLOW conjunct the conjunction-rule soundness condition (PinExecOverflowVacuity) |
 
 **Re-pin coverage note (Amendment 2026-06-11, #255).** The `1438dc5f` spine additions that touch
 the CONTRACT family — `Expr.boolVar` (`Ast.lean`), `Env.bools`/`Env.bindBool` (`Denote.lean`), and
@@ -731,7 +731,7 @@ on any tier that targets Verus text).
   `thermite-semantics.md` reduced-trusted-base table item #1, the target semantics).
 - **A2 (fuel ↔ Verus well-founded unfolding).** The Lean fuel index on `refDenote`/`refIntVal`
   /`denote` models Verus's well-founded `spec fn` unfolding (every Thermite spec fn carries a
-  mandatory `dec` measure, §4.2 ⟹ termination ⟹ a well-founded fixpoint). The Rust `encode_call`
+  mandatory `measures` measure, §4.2 ⟹ termination ⟹ a well-founded fixpoint). The Rust `encode_call`
   case (3) does not inline (it emits a call), so the fuel models the MEANING of the recursive spec-fn
   definition, not a Rust recursion bound. The soundness is proved for ALL fuel and both sides share
   the fuel + registry, so it is fuel-uniform (the `Denote.lean`/`RefEncode.lean` headers state this;
@@ -776,7 +776,7 @@ on any tier that targets Verus text).
 - **Struct-field / tuple-projection access in contract position.** The `ref_encode.rs::encode`
   `Expr::Field` arm (`result.x` → `{r}.{name}`) and `Expr::TupleProj` arm (`result.0` → `{r}.{index}`)
   are live in the Rust encoder but have NO Lean `Expr` constructor — the Lean `S_C` fragment does not
-  model member access. Reachable in a struct-field / tuple-projection `ens`; inspection-only (no T1
+  model member access. Reachable in a struct-field / tuple-projection `ensures`; inspection-only (no T1
   theorem) — see Discrepancy D6.
 - **The extraction-bridge tier (REQ-2, the named stronger closure).** A Lean→Rust extraction (or a
   Rust-side proof) would make the Rust encoder equal the Lean model BY CONSTRUCTION, discharging A2/A3
@@ -847,8 +847,8 @@ sides are not arm-for-arm identical.
   ```
 
   They emit the Verus member-access token `<receiver>.<name>` / `<receiver>.<index>` (the receiver
-  recursively re-encoded). They are reachable in the frozen contract subset for a struct-field `ens`
-  (`result.x == 0`) and a tuple-projection `ens` (`result.0 == a`) — the multi-cell/struct CONTRACT
+  recursively re-encoded). They are reachable in the frozen contract subset for a struct-field `ensures`
+  (`result.x == 0`) and a tuple-projection `ensures` (`result.0 == a`) — the multi-cell/struct CONTRACT
   surface. (This is DISTINCT from D5: D5 covers the EXEC-BODY tuple obligation SHAPE built by
   `body_ref_state_ensures`, i.e. the `result.{i} == {cell}` conjunction the body-refinement emits;
   D6 covers these `ref_encode.rs::encode` CONTRACT-position projection arms.) The Lean `Expr`

@@ -148,7 +148,8 @@ fn error_path_leaves_no_scratch_orphan() {
     let fixture = std::env::temp_dir().join(format!("th53_broken_{}.th", std::process::id()));
     std::fs::write(
         &fixture,
-        "fn add_one(x: u64) -> u64\n  req x < 1000\n  ens result == x + 2\n  fx  pure\n{\n  x + 1\n}\n",
+        "fn add_one(x: u64) -> u64\n  ! pure
+  requires x < 1000\n  ensures result == x + 2\n{\n  x + 1\n}\n",
     )
     .expect("write broken fixture");
 
@@ -189,7 +190,8 @@ fn vacuity_harness_success_leaves_no_scratch_orphan() {
     let fixture = std::env::temp_dir().join(format!("th53_taut_{}.th", std::process::id()));
     std::fs::write(
         &fixture,
-        "fn f(x: u32) -> u32\n  req x > 0\n  ens result >= 0\n  fx  pure\n{\n  x\n}\n",
+        "fn f(x: u32) -> u32\n  ! pure
+  requires x > 0\n  ensures result >= 0\n{\n  x\n}\n",
     )
     .expect("write tautology fixture");
 
