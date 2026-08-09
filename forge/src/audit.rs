@@ -437,11 +437,14 @@ pub struct BoundaryContract {
     pub target: String,
     /// The enforced precondition text (`req`), when resolvable from the program.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "req")]
     pub requires: Option<String>,
     /// The enforced postcondition clauses (`ens`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "ens")]
     pub ensures: Vec<String>,
     /// The declared effect row (`fx`) as tokens (e.g. `["pure"]`).
+    #[serde(rename = "fx")]
     pub effects: Vec<String>,
 }
 

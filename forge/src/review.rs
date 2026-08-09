@@ -104,6 +104,7 @@ pub struct SpecFnDecl {
     pub signature: String,
     /// The `dec` decreases-measure clause text (verbatim `Clause.text`), e.g.
     /// `xs.len()`. The well-formedness measure, read from the declaration.
+    #[serde(rename = "dec")]
     pub measures: String,
 }
 

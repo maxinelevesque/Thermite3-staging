@@ -63,6 +63,7 @@ pub struct BoundBoundary {
 pub struct KernelCertificateBinding {
     pub item: String,
     pub level: String,
+    #[serde(rename = "fx")]
     pub effects: Vec<String>,
     pub boundary: bool,
     pub boundary_target: Option<String>,
