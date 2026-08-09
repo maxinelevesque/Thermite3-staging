@@ -3241,7 +3241,7 @@ fn render_review(artifact: &ReviewArtifact) -> String {
         }
         out.push_str(&format!("  fx  [{}]\n", r.spec_layer.fx.join(", ")));
         for decl in &r.spec_layer.referenced_spec_fns {
-            out.push_str(&format!("  {} dec {}\n", decl.signature, decl.dec));
+            out.push_str(&format!("  {} dec {}\n", decl.signature, decl.measures));
         }
         out.push_str(&format!("  prompt: {}\n", r.prompt));
     }

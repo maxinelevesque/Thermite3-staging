@@ -35,9 +35,9 @@ use crate::cache::{self, AccessibilityProof};
 #[must_use]
 pub fn dec_wf_relation_and_carrier(item: &Item) -> Option<(String, String)> {
     let (dec, params): (&Clause, &[Param]) = match item {
-        Item::Fn(f) => (f.dec.as_ref()?, &f.params),
-        Item::SpecFn(s) => (&s.dec, &s.params),
-        Item::Forge(ForgeItem::PropFn(p)) => (p.dec.as_ref()?, &p.params),
+        Item::Fn(f) => (f.measures.as_ref()?, &f.params),
+        Item::SpecFn(s) => (&s.measures, &s.params),
+        Item::Forge(ForgeItem::PropFn(p)) => (p.measures.as_ref()?, &p.params),
         _ => return None,
     };
     let relation = wf_relation(dec)?;

@@ -149,7 +149,7 @@ pub struct Program {
 /// `match`es over `Item` downstream (thermite-spec/thermite-lower/forge) gain
 /// the validate/lower arms in basis stages 1b/1c.
 #[derive(Debug, Clone, PartialEq, Eq)]
-// C9-A (#108): adding `FnItem.dec: Option<Clause>` (the recursive-fn termination
+// C9-A (#108): adding `FnItem.measures: Option<Clause>` (the recursive-fn termination
 // measure) grew `Item::Fn` past clippy's `large_enum_variant` threshold (Fn ~560
 // bytes vs SpecFn ~256). Boxing `Item::Fn(Box<FnItem>)` would ripple a `Box` deref
 // to every exhaustive `match Item` across thermite-spec/thermite-lower/forge
@@ -246,7 +246,7 @@ pub struct PropFnItem {
     pub name: Ident,
     pub params: Vec<Param>,
     pub ret: Type,
-    pub dec: Option<Clause>,
+    pub measures: Option<Clause>,
     pub body: Block,
     pub span: Span,
 }
@@ -370,7 +370,7 @@ pub struct Falsify {
 pub struct StructItem {
     pub name: Ident,
     pub fields: Vec<FieldDef>,
-    pub inv: Option<Clause>,
+    pub keeps: Option<Clause>,
     pub sealed: bool,
     pub span: Span,
 }
@@ -439,7 +439,7 @@ pub struct FnItem {
     /// is a validator error (REQ-2). The clause parses after `fx` (REQ-1, OQ-4,
     /// keeping the `req`/`ens`/`fx` parse byte-stable), mirroring the loop order
     /// where `dec` follows the `inv`s.
-    pub dec: Option<Clause>,
+    pub measures: Option<Clause>,
     /// The Thermite body — `Some(Block)` for an in-language fn, `None` for a
     /// boundary fn (the body is foreign; ffi REQ-2).
     pub body: Option<Block>,
@@ -544,7 +544,7 @@ pub struct SpecFnItem {
     pub name: Ident,
     pub params: Vec<Param>,
     pub ret: Type,
-    pub dec: Clause,
+    pub measures: Clause,
     pub body: Block,
     pub span: Span,
 }
@@ -803,7 +803,7 @@ pub enum Stmt {
 pub struct LoopNode {
     pub kind: LoopKind,
     pub invs: Vec<Clause>,
-    pub dec: Clause,
+    pub measures: Clause,
     pub body: Block,
     pub span: Span,
 }

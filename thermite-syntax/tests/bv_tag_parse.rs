@@ -173,7 +173,7 @@ mod plumbing_present {
         );
         match result.program.items.into_iter().next().unwrap() {
             Item::Struct(s) => {
-                let inv = s.inv.expect("the struct has an inv clause");
+                let inv = s.keeps.expect("the struct has an inv clause");
                 assert_eq!(inv.bv.expect("the inv is tagged").width, BvWidth::W32);
                 assert_eq!(inv.text, "x == x");
             }

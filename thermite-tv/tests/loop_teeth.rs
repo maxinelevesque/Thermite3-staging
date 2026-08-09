@@ -245,7 +245,7 @@ fn l1_block() -> Block {
     let loop_node = LoopNode {
         kind: LoopKind::While(Box::new(bin(BinOp::Lt, path("lo"), path("n")))),
         invs: vec![clause(bin(BinOp::Le, path("lo"), path("n")))],
-        dec: clause(bin(BinOp::Sub, path("n"), path("lo"))),
+        measures: clause(bin(BinOp::Sub, path("n"), path("lo"))),
         body: Block {
             stmts: vec![assign("lo", bin(BinOp::Add, path("lo"), int(1)))],
             tail: None,
@@ -278,7 +278,7 @@ fn l0_loop_ref_obligations_match_hand_derived() {
     assert_eq!(obs.cells, vec!["lo".to_string()]);
     assert_eq!(obs.entry_pred, "(0 <= n)");
     assert_eq!(obs.cond, "(lo < n)");
-    assert_eq!(obs.inv, "(lo <= n)");
+    assert_eq!(obs.keeps, "(lo <= n)");
     assert_eq!(obs.step_cells, vec!["(lo + 1)".to_string()]);
     assert_eq!(obs.inv_at_step, "((lo + 1) <= n)");
 }
@@ -377,7 +377,7 @@ fn l4_loop_kind_is_skipped() {
     let loop_node = LoopNode {
         kind: LoopKind::Loop,
         invs: vec![clause(bin(BinOp::Le, path("lo"), path("hi")))],
-        dec: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
+        measures: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
         body: Block {
             stmts: vec![assign("lo", bin(BinOp::Add, path("lo"), int(1)))],
             tail: None,
@@ -406,7 +406,7 @@ fn l4_break_body_is_skipped() {
     let loop_node = LoopNode {
         kind: LoopKind::While(Box::new(bin(BinOp::Lt, path("lo"), path("hi")))),
         invs: vec![clause(bin(BinOp::Le, path("lo"), path("hi")))],
-        dec: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
+        measures: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
         body: Block {
             stmts: vec![
                 assign("lo", bin(BinOp::Add, path("lo"), int(1))),
@@ -429,7 +429,7 @@ fn l4_mid_body_return_is_skipped() {
     let loop_node = LoopNode {
         kind: LoopKind::While(Box::new(bin(BinOp::Lt, path("lo"), path("hi")))),
         invs: vec![clause(bin(BinOp::Le, path("lo"), path("hi")))],
-        dec: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
+        measures: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
         body: Block {
             stmts: vec![
                 Stmt::Return(Some(path("lo"))),
@@ -453,7 +453,7 @@ fn l4_trivially_weak_inv_is_skipped() {
     let loop_node = LoopNode {
         kind: LoopKind::While(Box::new(bin(BinOp::Lt, path("lo"), path("hi")))),
         invs: vec![clause(Expr::BoolLit(true))],
-        dec: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
+        measures: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
         body: Block {
             stmts: vec![assign("lo", bin(BinOp::Add, path("lo"), int(1)))],
             tail: None,
@@ -473,7 +473,7 @@ fn l4_nested_loop_is_skipped() {
     let inner = LoopNode {
         kind: LoopKind::While(Box::new(bin(BinOp::Lt, path("lo"), path("hi")))),
         invs: vec![clause(bin(BinOp::Le, path("lo"), path("hi")))],
-        dec: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
+        measures: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
         body: Block {
             stmts: vec![assign("lo", bin(BinOp::Add, path("lo"), int(1)))],
             tail: None,
@@ -483,7 +483,7 @@ fn l4_nested_loop_is_skipped() {
     let outer = LoopNode {
         kind: LoopKind::While(Box::new(bin(BinOp::Lt, path("lo"), path("hi")))),
         invs: vec![clause(bin(BinOp::Le, path("lo"), path("hi")))],
-        dec: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
+        measures: clause(bin(BinOp::Sub, path("hi"), path("lo"))),
         body: Block {
             stmts: vec![Stmt::Loop(inner)],
             tail: None,

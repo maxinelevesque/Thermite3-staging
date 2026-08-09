@@ -270,7 +270,7 @@ fn validate_never_panics_on_deep_nesting() {
                 ensures: vec![clause(Expr::BoolLit(true))],
                 effects: EffectRow::Pure,
             },
-            dec: None,
+            measures: None,
             body: Some(Block {
                 stmts: vec![],
                 tail: Some(Box::new(Expr::IntLit {

@@ -57,7 +57,7 @@ fn fn_calling(name: &str, effects: EffectRow, calls: &[&str]) -> Item {
             ensures: vec![true_clause()],
             effects,
         },
-        dec: None,
+        measures: None,
         body: Some(Block { stmts, tail: None }),
         holes: Vec::new(),
         refinements: Vec::new(),
@@ -267,7 +267,7 @@ fn crafted_accepts() {
         name: "spec_helper".to_string(),
         params: vec![],
         ret: Type::Prim(PrimType::Bool),
-        dec: true_clause(),
+        measures: true_clause(),
         body: Block {
             stmts: vec![],
             tail: Some(Box::new(Expr::BoolLit(true))),
@@ -458,7 +458,7 @@ fn deeply_nested_body_returns_result_not_panic() {
             ensures: vec![true_clause()],
             effects: pure(),
         },
-        dec: None,
+        measures: None,
         body: Some(Block {
             stmts: vec![],
             tail: Some(Box::new(expr)),

@@ -18,7 +18,7 @@ fn spec_fn_dec(src: &str) -> thermite_syntax::Clause {
         result.errors
     );
     match result.program.items.into_iter().next().unwrap() {
-        Item::SpecFn(s) => s.dec,
+        Item::SpecFn(s) => s.measures,
         other => panic!("expected a spec fn, got {other:?}"),
     }
 }
@@ -81,6 +81,6 @@ fn dec_wf_in_fn_position_parses() {
     let Item::Fn(f) = &result.program.items[0] else {
         panic!("expected a fn");
     };
-    let dec = f.dec.as_ref().expect("fn should carry a dec");
+    let dec = f.measures.as_ref().expect("fn should carry a dec");
     assert_eq!(call_shape(&dec.expr), ("wf".to_string(), 1));
 }

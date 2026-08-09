@@ -1009,7 +1009,7 @@ fn loop_after_loop_claim(block: &Block, frame: &LoopObligationFrame) -> Result<S
     let obs = loop_ref_obligations(block, &ctx).map_err(|e| {
         format!("the loop is OUTSIDE the v1 frozen subset (after-loop claim refused): {e}")
     })?;
-    Ok(obs.inv)
+    Ok(obs.keeps)
 }
 
 /// The discharge outcome of one obligation program (the four verus signals the

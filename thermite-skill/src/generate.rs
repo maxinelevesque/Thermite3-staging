@@ -964,7 +964,7 @@ fn item_inventory() -> Vec<Item> {
             // C9-A (`.design/basis/10-recursion-tuples.md` REQ-1): the optional
             // `measures` termination clause of a recursive exec `fn`. `None` for this
             // representative non-recursive item (the additive-field ripple).
-            dec: None,
+            measures: None,
             body: Some(empty_block()),
             // #193 (`.design/forge/goal-repl.md` REQ-4): the open body holes. empty
             // for this representative complete skill-inventory item (the additive
@@ -977,14 +977,14 @@ fn item_inventory() -> Vec<Item> {
             name: String::new(),
             params: Vec::new(),
             ret: Type::Unit,
-            dec: clause(),
+            measures: clause(),
             body: empty_block(),
             span,
         }),
         Item::Struct(StructItem {
             name: String::new(),
             fields: Vec::new(),
-            inv: None,
+            keeps: None,
             sealed: false,
             span,
         }),

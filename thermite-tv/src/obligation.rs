@@ -791,7 +791,7 @@ pub fn loop_preservation_obligation(
     // enclosing fn `requires` — Verus havocs the cells and assumes the invariant, so
     // the body proof is over a single arbitrary iteration).
     out.push_str("\n    requires ");
-    out.push_str(&obs.inv);
+    out.push_str(&obs.keeps);
     out.push_str(" && ");
     out.push_str(&obs.cond);
     out.push(',');
@@ -868,7 +868,7 @@ pub fn loop_exit_obligation(
     // The after-loop facts Verus assumes for the continuation: `inv ∧ ¬cond` over the
     // opaque (havocked) cells — the analogue of how Verus models a loop's after-state.
     out.push_str("\n    requires ");
-    out.push_str(&obs.inv);
+    out.push_str(&obs.keeps);
     out.push_str(" && ");
     out.push_str(&negate_condition(&obs.cond));
     out.push(',');

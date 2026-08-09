@@ -786,7 +786,7 @@ fn span_of_address(program: &Program, addr: &str) -> Option<Span> {
             let lp = nth_loop(body, loop_index)?;
             match segs.next() {
                 None => Some(lp.span),
-                Some("measures") => Some(lp.dec.span),
+                Some("measures") => Some(lp.measures.span),
                 Some(clause_seg) => {
                     let m: usize = clause_seg.strip_prefix("keeps#")?.parse().ok()?;
                     lp.invs.get(m.checked_sub(1)?).map(|c| c.span)
