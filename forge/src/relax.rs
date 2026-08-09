@@ -103,12 +103,12 @@ pub fn classify_fn(f: &FnItem) -> RelaxVerdict {
                 .to_string(),
         );
     }
-    if let Err(reason) = classify_prop(&f.contract.req.expr) {
+    if let Err(reason) = classify_prop(&f.contract.requires.expr) {
         return RelaxVerdict::NotRelaxable(format!(
             "the `req` clause is out of fragment: {reason}"
         ));
     }
-    for (k, ens) in f.contract.ens.iter().enumerate() {
+    for (k, ens) in f.contract.ensures.iter().enumerate() {
         if let Err(reason) = classify_prop(&ens.expr) {
             return RelaxVerdict::NotRelaxable(format!("`ens#{k}` is out of fragment: {reason}"));
         }
@@ -370,11 +370,11 @@ pub fn negated_contract_query(f: &FnItem) -> Option<String> {
         s.push_str(&format!("(assert (>= {v} 0.0))\n"));
     }
     // The precondition (the hypothesis of the universally-quantified implication).
-    let req = render_prop_smt(&f.contract.req.expr)?;
+    let req = render_prop_smt(&f.contract.requires.expr)?;
     s.push_str(&format!("(assert {req})\n"));
     // The negation of the conjoined conclusion: ¬(⋀ ens) = (or ¬ens0 ¬ens1 …).
-    let mut neg_ens = Vec::with_capacity(f.contract.ens.len());
-    for ens in &f.contract.ens {
+    let mut neg_ens = Vec::with_capacity(f.contract.ensures.len());
+    for ens in &f.contract.ensures {
         neg_ens.push(format!("(not {})", render_prop_smt(&ens.expr)?));
     }
     let neg_conj = if neg_ens.len() == 1 {
@@ -467,11 +467,11 @@ pub fn eval_contract_negation_over_ints(
     assign: &BTreeMap<String, i128>,
 ) -> Option<bool> {
     // req ∧ ¬(⋀ ens) = req ∧ (∃k. ¬ens_k).
-    if !eval_prop_int(&f.contract.req.expr, assign)? {
+    if !eval_prop_int(&f.contract.requires.expr, assign)? {
         return Some(false);
     }
     let mut any_ens_violated = false;
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         if !eval_prop_int(&ens.expr, assign)? {
             any_ens_violated = true;
         }
@@ -518,7 +518,7 @@ mod tests {
             "the isqrt postconditions are relaxable (polynomial, integer-scalar)"
         );
         // Each individual ens clause is relaxable too.
-        for ens in &f.contract.ens {
+        for ens in &f.contract.ensures {
             assert!(classify_clause(ens).is_relaxable());
         }
     }

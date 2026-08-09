@@ -74,14 +74,14 @@ pub fn statement_hash(l: &LemmaItem) -> String {
         field(&mut hasher, b"param", render_param(p).as_bytes());
     }
     // `req` — the single hypothesis clause's verbatim text.
-    field(&mut hasher, b"req", l.req.text.as_bytes());
+    field(&mut hasher, b"req", l.requires.text.as_bytes());
     // `ens` — every conclusion clause's verbatim text, in order.
     field(
         &mut hasher,
         b"ens-count",
-        &(l.ens.len() as u64).to_le_bytes(),
+        &(l.ensures.len() as u64).to_le_bytes(),
     );
-    for e in &l.ens {
+    for e in &l.ensures {
         field(&mut hasher, b"ens", e.text.as_bytes());
     }
     hex_lower(&hasher.finalize())

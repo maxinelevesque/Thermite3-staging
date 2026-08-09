@@ -287,7 +287,7 @@ fn emit_harness(f: &FnItem) -> Result<String, LowerError> {
     }
 
     // (2) assume the `req` (omit a literal-`true` empty contract).
-    let req = lower_expr_exec(&f.contract.req.expr, 0, f.span, NO_VARIANTS)?;
+    let req = lower_expr_exec(&f.contract.requires.expr, 0, f.span, NO_VARIANTS)?;
     if req != "true" {
         writeln!(out, "    kani::assume({req});").ok();
     }
@@ -303,7 +303,7 @@ fn emit_harness(f: &FnItem) -> Result<String, LowerError> {
 
     // (4) assert each `ens` against `result`, in source order (REQ-1, no
     // weakening, R-DEFER-9).
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let cond = lower_expr_exec(&ens.expr, 0, f.span, NO_VARIANTS)?;
         writeln!(out, "    assert!({cond});").ok();
     }

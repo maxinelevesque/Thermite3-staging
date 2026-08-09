@@ -64,11 +64,11 @@ fn bank_account_parses_struct_with_inv_and_struct_lit() {
     assert_eq!(f.params.len(), 2, "params a, amount");
     assert_eq!(f.params[0].name, "a");
     assert_eq!(f.params[1].name, "amount");
-    assert_eq!(f.contract.ens.len(), 1, "ens_count 1");
-    assert_eq!(f.contract.fx, EffectRow::Pure, "fx pure");
+    assert_eq!(f.contract.ensures.len(), 1, "ens_count 1");
+    assert_eq!(f.contract.effects, EffectRow::Pure, "fx pure");
     // `req` is a single non-empty clause (req_count 1 in the facts).
     assert_eq!(
-        f.contract.req.text, "a.balance + amount <= 1_000_000",
+        f.contract.requires.text, "a.balance + amount <= 1_000_000",
         "the single req clause"
     );
 
@@ -148,11 +148,12 @@ fn shape_parses_enum_is_expr_and_match_arms() {
         other => panic!("item[1] must be Item::Fn, got {other:?}"),
     };
     assert_eq!(f.name, "is_circle");
-    assert_eq!(f.contract.ens.len(), 1, "ens_count 1");
+    assert_eq!(f.contract.ensures.len(), 1, "ens_count 1");
 
     // The ens `result == (s is Circle)` contains an Expr::Is { scrutinee: s,
     // variant: Circle }.
-    let is = find_is(&f.contract.ens[0].expr).expect("ens contains an Expr::Is (REQ-6 surface)");
+    let is =
+        find_is(&f.contract.ensures[0].expr).expect("ens contains an Expr::Is (REQ-6 surface)");
     match is {
         Expr::Is { scrutinee, variant } => {
             assert_eq!(

@@ -41,7 +41,7 @@ fn parse_clean(src: &str) -> thermite_syntax::Program {
 // that the cage rejects as an unknown combinator.
 //
 // Root cause / design contradiction: REQ-3 enumerates the contract positions as
-// `Contract.req`/`ens`, `LoopNode.invs`/`dec`, and `SpecFnItem.body` — a `fn`
+// `Contract.requires`/`ens`, `LoopNode.invs`/`dec`, and `SpecFnItem.body` — a `fn`
 // body is not a contract position (only the loops *within* it are, for their
 // inv/dec). The validator's own `walk_block` doc-comment states "a `fn` body is
 // not itself a contract position — we only descend to surface nested loop

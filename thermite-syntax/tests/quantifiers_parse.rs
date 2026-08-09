@@ -40,7 +40,7 @@ fn fn_req(src: &str) -> (Expr, String) {
         result.errors
     );
     match result.program.items.into_iter().next().unwrap() {
-        Item::Fn(f) => (f.contract.req.expr, f.contract.req.text),
+        Item::Fn(f) => (f.contract.requires.expr, f.contract.requires.text),
         other => panic!("expected a fn, got {other:?}"),
     }
 }

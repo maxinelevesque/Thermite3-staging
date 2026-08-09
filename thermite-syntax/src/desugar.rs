@@ -48,11 +48,11 @@ pub fn desugar_refinements(program: &mut Program) {
             match target {
                 // A parameter refinement strengthens the precondition: `req && P`.
                 RefinementTarget::Param(_) => {
-                    f.contract.req = conjoin(f.contract.req.clone(), pred);
+                    f.contract.requires = conjoin(f.contract.requires.clone(), pred);
                 }
                 // A return refinement is a new postcondition clause.
                 RefinementTarget::Result => {
-                    f.contract.ens.push(pred);
+                    f.contract.ensures.push(pred);
                 }
             }
         }

@@ -72,7 +72,7 @@ pub struct SemanticForks {
 /// One module's bv-shadow density (REQ-6 / AC-7) — a contract-bearing item (`fn` /
 /// `lemma`) and how much of its `ens` postcondition surface is a machine-semantics fork.
 /// Denominated by the `ens` clauses because the `@bv` tag attaches only to `ens` (and a
-/// lemma's `ens`) — the taggable surface (`check::fn_has_bv_tag` keys on `contract.ens`).
+/// lemma's `ens`) — the taggable surface (`check::fn_has_bv_tag` keys on `contract.ensures`).
 /// A pure parse-level fact (which clauses carry the `@bv` tag); never recomputed from a
 /// verdict (R-CODE-5).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -232,8 +232,8 @@ fn module_densities(program: &Program) -> Vec<ModuleDensity> {
         .items
         .iter()
         .filter_map(|item| match item {
-            Item::Fn(f) => density_row(&f.name, &f.contract.ens),
-            Item::Forge(thermite_syntax::ForgeItem::Lemma(l)) => density_row(&l.name, &l.ens),
+            Item::Fn(f) => density_row(&f.name, &f.contract.ensures),
+            Item::Forge(thermite_syntax::ForgeItem::Lemma(l)) => density_row(&l.name, &l.ensures),
             _ => None,
         })
         .collect()
@@ -275,9 +275,9 @@ fn burned_lemma_towers(certs: &[Certificate], program: &Program) -> Vec<LemmaTow
         }
         // The tower roots: the lemma's `req ∪ ens` (the meaning surface), as
         // `meaning::build_tower` roots a `fn`'s tower.
-        let mut roots: Vec<&Expr> = Vec::with_capacity(1 + lemma.ens.len());
-        roots.push(&lemma.req.expr);
-        roots.extend(lemma.ens.iter().map(|c| &c.expr));
+        let mut roots: Vec<&Expr> = Vec::with_capacity(1 + lemma.ensures.len());
+        roots.push(&lemma.requires.expr);
+        roots.extend(lemma.ensures.iter().map(|c| &c.expr));
         let (depth, definitions) = crate::meaning::tower_metrics(program, &roots);
         rows.push(LemmaTower {
             lemma: cert.item.clone(),

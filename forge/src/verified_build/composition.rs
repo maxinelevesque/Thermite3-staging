@@ -277,7 +277,7 @@ fn complete_rich_composition_tv(
                     verdict: "faithful".to_string(),
                     detail: detail.clone(),
                 });
-                for index in 0..function.contract.ens.len() {
+                for index in 0..function.contract.ensures.len() {
                     completed.push(TvEvidenceRow {
                         phase: "contract".to_string(),
                         label: format!("{}.ensures#{}", function.name, index + 1),

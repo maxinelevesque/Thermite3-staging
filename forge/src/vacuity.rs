@@ -119,21 +119,21 @@ pub fn triage(item: &FnItem) -> VacuityVerdict {
     let contract = &item.contract;
 
     // (a) ens is syntactically `true`.
-    if let Some(clause) = ens_is_trivially_true(&contract.ens) {
+    if let Some(clause) = ens_is_trivially_true(&contract.ensures) {
         return VacuityVerdict::Rejected {
             cause: VacuityCause::EnsIsTrivial { clause },
         };
     }
 
     // (b) non-unit return, ens omits `result` (§4.1).
-    if ens_omits_result(&item.ret, &contract.ens) {
+    if ens_omits_result(&item.ret, &contract.ensures) {
         return VacuityVerdict::Rejected {
             cause: VacuityCause::EnsOmitsResult,
         };
     }
 
     // (c) ens syntactically implied by req.
-    if let Some(clause) = ens_implied_by_req(&contract.req.expr, &contract.ens) {
+    if let Some(clause) = ens_implied_by_req(&contract.requires.expr, &contract.ensures) {
         return VacuityVerdict::Rejected {
             cause: VacuityCause::EnsImpliedByReq { clause },
         };
@@ -145,7 +145,11 @@ pub fn triage(item: &FnItem) -> VacuityVerdict {
     // (OQ-4), so a `#[boundary]` attribute justifies a maximal row just as
     // `#[slag]` does. (a)/(b)/(c) still run for a boundary fn (it exempts proving
     // / the body's effects, not stating a non-vacuous contract).
-    if fx_maximal_without_slag(&contract.fx, item.slag.as_ref(), item.boundary.as_ref()) {
+    if fx_maximal_without_slag(
+        &contract.effects,
+        item.slag.as_ref(),
+        item.boundary.as_ref(),
+    ) {
         return VacuityVerdict::Rejected {
             cause: VacuityCause::MaximalFxWithoutSlag,
         };
@@ -168,7 +172,7 @@ fn ens_is_trivially_true(ens: &[thermite_syntax::Clause]) -> Option<usize> {
         }
     }
     // (i) every clause is the literal `true` → the conjunction is trivially true.
-    // (`ens` is a non-empty Vec — ast.rs Contract.ens — so `all` over empty is
+    // (`ens` is a non-empty Vec — ast.rs Contract.ensures — so `all` over empty is
     // not a concern, but the explicit non-empty guard documents the intent.)
     if !ens.is_empty() && ens.iter().all(|c| matches!(c.expr, Expr::BoolLit(true))) {
         return Some(0);
@@ -477,9 +481,9 @@ mod tests {
                     params: Vec::new(),
                     ret: Type::Unit,
                     contract: thermite_syntax::Contract {
-                        req: dummy_clause(),
-                        ens: vec![dummy_clause()],
-                        fx: EffectRow::Pure,
+                        requires: dummy_clause(),
+                        ensures: vec![dummy_clause()],
+                        effects: EffectRow::Pure,
                     },
                     dec: None,
                     body: Some(thermite_syntax::Block {

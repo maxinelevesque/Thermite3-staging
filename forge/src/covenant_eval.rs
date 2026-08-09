@@ -538,7 +538,7 @@ mod tests {
         let f = parse_fn(&format!(
             "fn probe(x: u64, y: u64) -> u64 ! pure requires true ensures {expr_src} {{ x }}"
         ));
-        eval_expr(&f.contract.ens[0].expr, e)
+        eval_expr(&f.contract.ensures[0].expr, e)
     }
 
     #[test]
@@ -702,7 +702,7 @@ mod tests {
         let mut ens_env = e.clone();
         ens_env.insert("result".to_string(), result);
         assert_eq!(
-            eval_expr(&f.contract.ens[0].expr, &ens_env),
+            eval_expr(&f.contract.ensures[0].expr, &ens_env),
             Ok(Value::Bool(true)),
             "body `!x` agrees with `ens result == !x`"
         );
@@ -711,7 +711,7 @@ mod tests {
             eval_expr(
                 &parse_fn("fn p(b: bool) -> bool ! pure requires true ensures result == !b { b }")
                     .contract
-                    .ens[0]
+                    .ensures[0]
                     .expr,
                 &env(&[("b", Value::Bool(true)), ("result", Value::Bool(false))]),
             ),

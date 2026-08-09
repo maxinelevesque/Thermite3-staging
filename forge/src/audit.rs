@@ -391,14 +391,14 @@ impl Tcb {
                 boundary_contracts.push(BoundaryContract {
                     name: cert.item.clone(),
                     target,
-                    req: contract.as_ref().map(|c| c.req.text.clone()),
-                    ens: contract
+                    requires: contract.as_ref().map(|c| c.requires.text.clone()),
+                    ensures: contract
                         .as_ref()
-                        .map(|c| c.ens.iter().map(|cl| cl.text.clone()).collect())
+                        .map(|c| c.ensures.iter().map(|cl| cl.text.clone()).collect())
                         .unwrap_or_default(),
-                    fx: contract
+                    effects: contract
                         .as_ref()
-                        .map(|c| effects_of(&c.fx))
+                        .map(|c| effects_of(&c.effects))
                         .unwrap_or_else(|| effects_of(&EffectRow::Pure)),
                 });
             }
@@ -437,12 +437,12 @@ pub struct BoundaryContract {
     pub target: String,
     /// The enforced precondition text (`req`), when resolvable from the program.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub req: Option<String>,
+    pub requires: Option<String>,
     /// The enforced postcondition clauses (`ens`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub ens: Vec<String>,
+    pub ensures: Vec<String>,
     /// The declared effect row (`fx`) as tokens (e.g. `["pure"]`).
-    pub fx: Vec<String>,
+    pub effects: Vec<String>,
 }
 
 /// The toolchain identity — the irreducible §9 TCB residue (REQ-3). Every

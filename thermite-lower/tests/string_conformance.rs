@@ -222,15 +222,15 @@ fn string_demo_matches_cert_oracle() {
         if let Item::Fn(f) = item {
             match f.name.as_str() {
                 "greeting_len" | "first_byte" => assert!(
-                    matches!(f.contract.fx, EffectRow::Pure),
+                    matches!(f.contract.effects, EffectRow::Pure),
                     "{} must be fx pure (oracle)",
                     f.name
                 ),
                 "join" | "literal_len" => assert!(
-                    matches!(&f.contract.fx, EffectRow::Set(es) if es == &vec![Effect::Alloc]),
+                    matches!(&f.contract.effects, EffectRow::Set(es) if es == &vec![Effect::Alloc]),
                     "{} must be fx alloc (oracle); got {:?}",
                     f.name,
-                    f.contract.fx
+                    f.contract.effects
                 ),
                 other => panic!("unexpected fn {other} in string_demo"),
             }

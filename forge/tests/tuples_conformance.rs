@@ -198,7 +198,7 @@ fn tuple_expr_and_projection_nodes() {
     }
 
     // The `ens` `result.0 == b` — its lhs is `Expr::TupleProj { index: 0 }`.
-    let ens0 = &f.contract.ens[0].expr;
+    let ens0 = &f.contract.ensures[0].expr;
     let lhs = match ens0 {
         Expr::Binary { lhs, .. } => lhs.as_ref(),
         other => panic!("ens is `result.0 == b` (a Binary), got {other:?}"),

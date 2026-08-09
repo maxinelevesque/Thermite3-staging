@@ -403,7 +403,7 @@ fn eval_inhabit(
 /// holds, `Ok(false)` iff it does not, or a [`CovenantEvalError`] on an out-of-fragment
 /// construct / trap.
 fn eval_req(f: &FnItem, env: &Env) -> Result<bool, CovenantEvalError> {
-    eval_expr(&f.contract.req.expr, env)?.as_bool()
+    eval_expr(&f.contract.requires.expr, env)?.as_bool()
 }
 
 /// Evaluate the body and check every `ens` clause under a parameter binding (REQ-4).
@@ -417,7 +417,7 @@ fn body_satisfies_ens(f: &FnItem, env: &Env) -> Result<bool, CovenantEvalError> 
     let result = eval_block(body, env)?;
     let mut ens_env = env.clone();
     ens_env.insert("result".to_string(), result);
-    for clause in &f.contract.ens {
+    for clause in &f.contract.ensures {
         if !eval_expr(&clause.expr, &ens_env)?.as_bool()? {
             return Ok(false);
         }

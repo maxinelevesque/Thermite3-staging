@@ -642,7 +642,7 @@ fn validate_boundaries(
             });
         }
         let expected = operation.domain;
-        let domain_matches = match &function.contract.fx {
+        let domain_matches = match &function.contract.effects {
             thermite_syntax::EffectRow::Set(effects) => {
                 effects.len() == 1
                     && matches!(

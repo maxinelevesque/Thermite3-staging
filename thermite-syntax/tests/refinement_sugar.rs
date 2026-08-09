@@ -35,13 +35,13 @@ fn param_refinement_folds_into_req_and_clears_the_transient_store() {
         f.refinements
     );
     // `req` is now `(true) && (x > 0)` — the refinement is a precondition conjunct.
-    assert_eq!(f.contract.req.text, "(true) && (x > 0)");
-    match &f.contract.req.expr {
+    assert_eq!(f.contract.requires.text, "(true) && (x > 0)");
+    match &f.contract.requires.expr {
         Expr::Binary { op: BinOp::And, .. } => {}
         other => panic!("expected req to be an `&&` conjunction, got {other:?}"),
     }
     // `ens` is unchanged (no return refinement here).
-    assert_eq!(f.contract.ens.len(), 1);
+    assert_eq!(f.contract.ensures.len(), 1);
 }
 
 #[test]
@@ -50,14 +50,14 @@ fn return_refinement_folds_into_ens() {
     let f = single_fn(src);
     assert!(f.refinements.is_empty());
     // The return refinement is appended as a new `ens` clause.
-    assert_eq!(f.contract.ens.len(), 2, "ens: {:?}", f.contract.ens);
+    assert_eq!(f.contract.ensures.len(), 2, "ens: {:?}", f.contract.ensures);
     assert!(
-        f.contract.ens.iter().any(|c| c.text == "result > 0"),
+        f.contract.ensures.iter().any(|c| c.text == "result > 0"),
         "expected the return refinement among ens clauses: {:?}",
-        f.contract.ens
+        f.contract.ensures
     );
     // `req` is untouched (no parameter refinement).
-    assert_eq!(f.contract.req.text, "true");
+    assert_eq!(f.contract.requires.text, "true");
 }
 
 #[test]
@@ -66,7 +66,7 @@ fn multiple_param_refinements_chain_into_req() {
     let f = single_fn(src);
     assert!(f.refinements.is_empty());
     // Both refinements fold in, in source order: ((true) && (x > 0)) && (y < 100).
-    assert_eq!(f.contract.req.text, "((true) && (x > 0)) && (y < 100)");
+    assert_eq!(f.contract.requires.text, "((true) && (x > 0)) && (y < 100)");
 }
 
 #[test]
@@ -75,9 +75,9 @@ fn both_param_and_return_refinements_desugar() {
         "fn f(x: u64{x > 0}) -> u64{result >= x} ! pure requires true ensures result == x { x }";
     let f = single_fn(src);
     assert!(f.refinements.is_empty());
-    assert_eq!(f.contract.req.text, "(true) && (x > 0)");
-    assert_eq!(f.contract.ens.len(), 2);
-    assert!(f.contract.ens.iter().any(|c| c.text == "result >= x"));
+    assert_eq!(f.contract.requires.text, "(true) && (x > 0)");
+    assert_eq!(f.contract.ensures.len(), 2);
+    assert!(f.contract.ensures.iter().any(|c| c.text == "result >= x"));
 }
 
 #[test]
@@ -86,8 +86,8 @@ fn an_unrefined_fn_is_byte_stable() {
     let src = "fn f(x: u64) -> u64 ! pure requires x > 0 ensures result == x { x }";
     let f = single_fn(src);
     assert!(f.refinements.is_empty());
-    assert_eq!(f.contract.req.text, "x > 0");
-    assert_eq!(f.contract.ens.len(), 1);
+    assert_eq!(f.contract.requires.text, "x > 0");
+    assert_eq!(f.contract.ensures.len(), 1);
 }
 
 #[test]
@@ -96,7 +96,7 @@ fn refinement_predicate_is_a_parsed_expression() {
     let src = "fn f(x: u64{x > 0 && x < 10}) -> u64 ! pure requires true ensures result == x { x }";
     let f = single_fn(src);
     // The folded req's rhs conjunct is the (parsed) predicate `x > 0 && x < 10`.
-    match &f.contract.req.expr {
+    match &f.contract.requires.expr {
         Expr::Binary {
             op: BinOp::And,
             rhs,

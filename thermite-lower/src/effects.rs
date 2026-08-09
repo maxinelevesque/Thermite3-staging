@@ -227,7 +227,7 @@ enum Callee<'a> {
     Unresolved,
 }
 
-/// The compile-time effect-subsumption check (REQ-3). Builds a name→`Contract.fx`
+/// The compile-time effect-subsumption check (REQ-3). Builds a name→`Contract.effects`
 /// map over the program's `FnItem`s (noting `SpecFnItem` names and registry
 /// combinators as pure), then walks every `FnItem` body's `Expr` tree. For each
 /// `Call`/`MethodCall` whose callee resolves to a declared `FnItem`, it asserts
@@ -245,7 +245,9 @@ pub fn check_effects(program: &Program) -> Result<(), Vec<LowerError>> {
     for item in &program.items {
         match item {
             Item::Fn(f) => {
-                fn_rows.entry(f.name.as_str()).or_insert(&f.contract.fx);
+                fn_rows
+                    .entry(f.name.as_str())
+                    .or_insert(&f.contract.effects);
             }
             Item::SpecFn(s) => {
                 spec_names.entry(s.name.as_str()).or_insert(());
@@ -285,7 +287,7 @@ pub fn check_effects(program: &Program) -> Result<(), Vec<LowerError>> {
             if let Some(body) = &f.body {
                 check_block(
                     body,
-                    &f.contract.fx,
+                    &f.contract.effects,
                     &f.name,
                     f.span,
                     &resolve,

@@ -556,7 +556,7 @@ fn build_functions(program: &Program) -> Vec<BuildFunction> {
         .filter_map(|item| match item {
             Item::Fn(f) => Some(BuildFunction {
                 name: f.name.clone(),
-                fx: effects_of(&f.contract.fx),
+                fx: effects_of(&f.contract.effects),
             }),
             Item::SpecFn(_) => None,
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 manifest consumer

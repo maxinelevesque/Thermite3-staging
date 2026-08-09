@@ -273,7 +273,7 @@ impl Obligation {
             ast_slice,
             env: ObligationEnv {
                 params,
-                req: Some(Box::new(f.contract.req.expr.clone())),
+                req: Some(Box::new(f.contract.requires.expr.clone())),
                 spec_defs: called_spec_fns,
                 ..ObligationEnv::default()
             },

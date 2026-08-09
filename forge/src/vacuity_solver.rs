@@ -472,7 +472,7 @@ fn parse_lowered_fn(lowered: &str, name: &str) -> Result<LoweredFn, ForgeError> 
         ));
     }
     if ensures_lines.is_empty() {
-        // Every `fn` has ≥1 `ens` clause (ast.rs `Contract.ens` is non-empty), so
+        // Every `fn` has ≥1 `ens` clause (ast.rs `Contract.ensures` is non-empty), so
         // the lowerer always emits an `ensures` keyword line — an empty capture
         // means the frame shape changed; surface it rather than emit a harness with
         // no `ensures` (which would prove vacuously and spuriously detect).
@@ -768,14 +768,14 @@ mod tests {
             params: Vec::new(),
             ret: thermite_syntax::Type::Unit,
             contract: thermite_syntax::Contract {
-                req: thermite_syntax::Clause {
+                requires: thermite_syntax::Clause {
                     expr: thermite_syntax::Expr::BoolLit(true),
                     text: String::new(),
                     span: thermite_syntax::Span::new(0, 0),
                     bv: None,
                 },
-                ens: Vec::new(),
-                fx: thermite_syntax::EffectRow::Pure,
+                ensures: Vec::new(),
+                effects: thermite_syntax::EffectRow::Pure,
             },
             dec: None,
             body: Some(thermite_syntax::Block {

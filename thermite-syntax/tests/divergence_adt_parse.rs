@@ -66,7 +66,7 @@ fn f(e: E) -> bool
         Item::Fn(f) => f,
         other => panic!("item[2] must be the `fn f`, got {other:?}"),
     };
-    let ens = &f.contract.ens[0].expr;
+    let ens = &f.contract.ensures[0].expr;
     let scrutinee = match ens {
         Expr::Is { scrutinee, .. } => scrutinee.as_ref(),
         other => panic!("ens must be an `Expr::Is`, got {other:?}"),

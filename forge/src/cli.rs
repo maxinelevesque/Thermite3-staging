@@ -3477,9 +3477,9 @@ fn render_audit(manifest: &AuditManifest) -> String {
                 "  boundary: {} -> {} (req={:?} ens=[{}] fx=[{}])\n",
                 c.name,
                 c.target,
-                c.req.as_deref().unwrap_or("(unresolved)"),
-                c.ens.join("; "),
-                c.fx.join(", ")
+                c.requires.as_deref().unwrap_or("(unresolved)"),
+                c.ensures.join("; "),
+                c.effects.join(", ")
             ));
         }
     }

@@ -219,12 +219,12 @@ fn check_parse_facts(facts_file: &str) {
                 // Mandatory-clause counts (ast.md REQ-2): req is always exactly 1.
                 assert_eq!(Some(1), fact.req_count, "{} req_count", fact.name);
                 assert_eq!(
-                    Some(f.contract.ens.len()),
+                    Some(f.contract.ensures.len()),
                     fact.ens_count,
                     "{} ens_count",
                     fact.name
                 );
-                let fx_str = match f.contract.fx {
+                let fx_str = match f.contract.effects {
                     EffectRow::Pure => "pure".to_string(),
                     EffectRow::Set(_) => "set".to_string(),
                 };
@@ -362,7 +362,7 @@ fn recover_per_item() {
             Item::Fn(f) => {
                 check_params(&f.params, &fact.params);
                 assert_eq!(render_type(&f.ret), fact.ret);
-                assert_eq!(Some(f.contract.ens.len()), fact.ens_count);
+                assert_eq!(Some(f.contract.ensures.len()), fact.ens_count);
             }
             Item::SpecFn(_) => panic!("`ok` should be a fn"),
             // The recovery fixture's recovered item is a `fn`; ADT item kinds
@@ -570,9 +570,12 @@ fn int_literal_preserves_value_and_raw() {
     // req is `xs.len() <= 1_000_000`: a Binary whose rhs is the IntLit.
     let Expr::Binary {
         rhs, op: BinOp::Le, ..
-    } = &f.contract.req.expr
+    } = &f.contract.requires.expr
     else {
-        panic!("expected a `<=` Binary req, got {:?}", f.contract.req.expr);
+        panic!(
+            "expected a `<=` Binary req, got {:?}",
+            f.contract.requires.expr
+        );
     };
     match rhs.as_ref() {
         Expr::IntLit { value, raw } => {
@@ -589,7 +592,7 @@ fn int_literal_preserves_value_and_raw() {
     let Item::Fn(g) = &result2.program.items[0] else {
         panic!("expected a fn item");
     };
-    let Expr::Binary { rhs, .. } = &g.contract.ens[0].expr else {
+    let Expr::Binary { rhs, .. } = &g.contract.ensures[0].expr else {
         panic!("expected a Binary ens");
     };
     match rhs.as_ref() {

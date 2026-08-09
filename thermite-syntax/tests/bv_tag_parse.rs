@@ -106,7 +106,7 @@ mod plumbing_present {
             result.errors
         );
         match result.program.items.into_iter().next().unwrap() {
-            Item::Fn(f) => f.contract.ens,
+            Item::Fn(f) => f.contract.ensures,
             other => panic!("expected a fn, got {other:?}"),
         }
     }
@@ -194,7 +194,7 @@ mod plumbing_present {
         match result.program.items.into_iter().next().unwrap() {
             Item::Forge(ForgeItem::Lemma(l)) => {
                 assert_eq!(
-                    l.ens[0].bv.expect("the lemma ens is tagged").width,
+                    l.ensures[0].bv.expect("the lemma ens is tagged").width,
                     BvWidth::W64
                 );
             }

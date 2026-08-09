@@ -37,9 +37,9 @@ fn divergence_lowering_emits_value_not_raw() {
     };
     let Expr::Binary {
         rhs, op: BinOp::Le, ..
-    } = &f.contract.req.expr
+    } = &f.contract.requires.expr
     else {
-        panic!("expected a `<=` req, got {:?}", f.contract.req.expr);
+        panic!("expected a `<=` req, got {:?}", f.contract.requires.expr);
     };
     match rhs.as_ref() {
         Expr::IntLit { value, raw } => {

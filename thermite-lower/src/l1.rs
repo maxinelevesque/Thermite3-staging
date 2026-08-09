@@ -452,8 +452,8 @@ pub(crate) fn emit_combinator_l1_defs(program: &Program) -> Result<String, Lower
     for item in &program.items {
         match item {
             Item::Fn(f) => {
-                collect_combinators_in_expr(&f.contract.req.expr, f.span, &mut names);
-                for ens in &f.contract.ens {
+                collect_combinators_in_expr(&f.contract.requires.expr, f.span, &mut names);
+                for ens in &f.contract.ensures {
                     collect_combinators_in_expr(&ens.expr, f.span, &mut names);
                 }
                 // A boundary fn (ffi-boundary.md REQ-2) has `body: None` — its
@@ -767,9 +767,9 @@ fn lower_fn_l1(
     writeln!(out, ") -> {ret} {{").ok();
 
     // req on entry (REQ-1/REQ-2). Omit a literal-`true` req (the empty contract).
-    let req_cond = lower_expr_exec(&f.contract.req.expr, 0, f.span, variants)?;
+    let req_cond = lower_expr_exec(&f.contract.requires.expr, 0, f.span, variants)?;
     if req_cond != "true" {
-        out.push_str(&emit_check("req", &f.contract.req.text, &req_cond, 1));
+        out.push_str(&emit_check("req", &f.contract.requires.text, &req_cond, 1));
     }
     // REQ-8 (handled-or-loud): a parameter whose type is an
     // invariant-bearing `struct` gets its `well_formed()` check woven as an
@@ -805,7 +805,7 @@ fn lower_fn_l1(
         .filter(|p| {
             type_is_non_copy_l1(&p.ty)
                 && f.contract
-                    .ens
+                    .ensures
                     .iter()
                     .any(|ens| expr_references_ident(&ens.expr, &p.name))
         })
@@ -844,7 +844,7 @@ fn lower_fn_l1(
     // ens on exit, in source order, against the bound `result` (REQ-1/REQ-2). A
     // reference to a snapshot non-Copy param is rewritten to its `<p>__pre` clone
     // (#88 blocker 2) so the check does not borrow a value the body moved.
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let expr = rename_params_in_expr(&ens.expr, &rename);
         let cond = lower_expr_exec(&expr, 0, f.span, variants)?;
         out.push_str(&emit_check("ens", &ens.text, &cond, 1));
@@ -1175,9 +1175,9 @@ fn lower_boundary_fn_l1(f: &FnItem, variants: &[(&str, &str)]) -> Result<String,
     writeln!(out, ") -> {ret} {{").ok();
 
     // (2) req-check on entry (REQ-4). Omit a literal-`true` req (empty contract).
-    let req_cond = lower_expr_exec(&f.contract.req.expr, 0, f.span, variants)?;
+    let req_cond = lower_expr_exec(&f.contract.requires.expr, 0, f.span, variants)?;
     if req_cond != "true" {
-        out.push_str(&emit_check("req", &f.contract.req.text, &req_cond, 1));
+        out.push_str(&emit_check("req", &f.contract.requires.text, &req_cond, 1));
     }
 
     // (3) the foreign call binding `result`, the unproven crossing (§9). The
@@ -1193,7 +1193,7 @@ fn lower_boundary_fn_l1(f: &FnItem, variants: &[(&str, &str)]) -> Result<String,
     writeln!(out, "    let result = {}({args});", boundary.target).ok();
 
     // (4) ens-check on exit against the bound `result` (REQ-4), in source order.
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let cond = lower_expr_exec(&ens.expr, 0, f.span, variants)?;
         out.push_str(&emit_check("ens", &ens.text, &cond, 1));
     }

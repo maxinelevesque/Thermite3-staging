@@ -266,9 +266,9 @@ fn validate_never_panics_on_deep_nesting() {
             params: vec![],
             ret: Type::Prim(PrimType::U32),
             contract: Contract {
-                req: clause(expr),
-                ens: vec![clause(Expr::BoolLit(true))],
-                fx: EffectRow::Pure,
+                requires: clause(expr),
+                ensures: vec![clause(Expr::BoolLit(true))],
+                effects: EffectRow::Pure,
             },
             dec: None,
             body: Some(Block {

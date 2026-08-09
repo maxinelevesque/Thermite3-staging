@@ -327,15 +327,15 @@ pub fn exec_tv_export_guard(f: &FnItem, seed: u64, rlimit: f64) -> ExecResult {
         env.bind(&param.name, ty, slice);
     }
     let mut frame_fn = f.clone();
-    frame_fn.contract.req = Clause {
+    frame_fn.contract.requires = Clause {
         expr: Expr::BoolLit(true),
         text: "true".to_string(),
-        span: f.contract.req.span,
+        span: f.contract.requires.span,
         bv: None,
     };
     let mut report = ExecTvReport::default();
     check_corpus_expr(
-        &f.contract.req.expr,
+        &f.contract.requires.expr,
         &label,
         "bool",
         &env,
@@ -763,7 +763,7 @@ fn collect_text_idents(text: &str) -> Vec<String> {
 /// (the source bound for `acc + xs[i]` lives in a loop `inv`, not the `req`); such an
 /// expr then discharges Unverifiable, not Faithful.
 fn corpus_req(f: &FnItem) -> Option<String> {
-    let text = f.contract.req.text.trim();
+    let text = f.contract.requires.text.trim();
     if text.is_empty() || text == "true" {
         None
     } else {

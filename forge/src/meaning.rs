@@ -292,8 +292,8 @@ pub fn build_tower(program: &Program, src: &str, f: &FnItem) -> DefinitionTower 
     // The roots: the spec fns the contract (`req ∪ ens`) directly references — the
     // meaning surface. (The body's own calls are implementation, not the claim.)
     let mut roots: BTreeSet<String> = BTreeSet::new();
-    crate::check::collect_expr_spec_fn_calls(&f.contract.req.expr, &spec_decls, &mut roots);
-    for ens in &f.contract.ens {
+    crate::check::collect_expr_spec_fn_calls(&f.contract.requires.expr, &spec_decls, &mut roots);
+    for ens in &f.contract.ensures {
         crate::check::collect_expr_spec_fn_calls(&ens.expr, &spec_decls, &mut roots);
     }
 
@@ -519,14 +519,14 @@ mod tests {
             params: Vec::new(),
             ret: thermite_syntax::Type::Unit,
             contract: thermite_syntax::Contract {
-                req: thermite_syntax::Clause {
+                requires: thermite_syntax::Clause {
                     expr: thermite_syntax::Expr::BoolLit(true),
                     text: String::new(),
                     span: thermite_syntax::Span::new(0, 0),
                     bv: None,
                 },
-                ens: Vec::new(),
-                fx: thermite_syntax::EffectRow::Pure,
+                ensures: Vec::new(),
+                effects: thermite_syntax::EffectRow::Pure,
             },
             dec: None,
             body: Some(thermite_syntax::Block {

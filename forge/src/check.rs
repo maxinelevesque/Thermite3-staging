@@ -419,7 +419,7 @@ pub fn check_file_with_options(
             if mutual_missing_dec_fns.contains(&f.name) {
                 certs.push(Certificate::rejected(
                     f.name.clone(),
-                    effects_of(&f.contract.fx),
+                    effects_of(&f.contract.effects),
                     false,
                     RejectReason {
                         cause: "MutualRecursionMissingDecreases".to_string(),
@@ -451,7 +451,7 @@ pub fn check_file_with_options(
             if let Some(detail) = crate::goal_repl::open_hole_reason(f) {
                 certs.push(Certificate::rejected(
                     f.name.clone(),
-                    effects_of(&f.contract.fx),
+                    effects_of(&f.contract.effects),
                     f.slag.is_some(),
                     RejectReason {
                         cause: "OpenHole".to_string(),
@@ -582,7 +582,7 @@ pub fn check_file_with_options(
         if let Item::Fn(f) = item {
             if let Some(witness) = covenant_bindings.get(&f.name) {
                 use crate::covenant_engine::{analyze_covenant, covenant_gate, CovenantGate};
-                let effects = effects_of(&f.contract.fx);
+                let effects = effects_of(&f.contract.effects);
                 let gate = covenant_gate(analyze_covenant(f, witness), |record| {
                     debug_assert!(
                         record.declared,
@@ -765,7 +765,7 @@ pub fn check_file_with_options(
                 };
                 let cert = Certificate::rejected_vacuity(
                     f.name.clone(),
-                    effects_of(&f.contract.fx),
+                    effects_of(&f.contract.effects),
                     RejectReason {
                         cause: cause.tag().to_string(),
                         detail: cause.detail(),
@@ -879,7 +879,7 @@ pub fn check_file_with_options(
                     &cache_dir,
                     use_cache,
                 )?;
-                let effects = effects_of(&f.contract.fx);
+                let effects = effects_of(&f.contract.effects);
                 if score.meets_floor(options.mutation_floor) {
                     // #14 §7 step 5 — strengthening probe
                     // (`.design/forge/strengthening-probes.md` REQ-5). The item is a
@@ -1486,7 +1486,7 @@ fn nlsat_l4_cert(
     let solver_input = crate::relax::nlsat_solver_input(f);
     let obligations = f
         .contract
-        .ens
+        .ensures
         .iter()
         .enumerate()
         .map(|(index, clause)| {
@@ -1707,7 +1707,7 @@ fn bv_attribution() -> crate::engine::EngineAttribution {
 /// REQ-2 / AC-2)? The bit-vector route discharges such a lemma directly, with no author
 /// proof block.
 fn lemma_has_bv_tag(l: &thermite_syntax::LemmaItem) -> bool {
-    l.ens.iter().any(|c| c.bv.is_some())
+    l.ensures.iter().any(|c| c.bv.is_some())
 }
 
 /// Whether the program has a tagged postcondition, lemma conclusion, or invariant.
@@ -1747,7 +1747,7 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
 
         let mut reconstructed = Vec::new();
         let mut terminal = None;
-        for (index, clause) in function.contract.ens.iter().enumerate() {
+        for (index, clause) in function.contract.ensures.iter().enumerate() {
             let Some(outcome) = epr_clause_outcome(program, function, index, clause) else {
                 continue;
             };
@@ -1804,7 +1804,7 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
             continue;
         }
 
-        let every_clause_reconstructed = reconstructed.len() == function.contract.ens.len();
+        let every_clause_reconstructed = reconstructed.len() == function.contract.ensures.len();
         if every_clause_reconstructed {
             // A base-engine counterexample contradicting a kernel-checked EPR proof
             // is a soundness alarm, not permission to silently replace either
@@ -1848,7 +1848,7 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
 fn fn_has_epr_clause(program: &Program, function: &thermite_syntax::FnItem) -> bool {
     function
         .contract
-        .ens
+        .ensures
         .iter()
         .enumerate()
         .any(|(index, clause)| {
@@ -1882,7 +1882,7 @@ fn epr_candidate(
             let raw = thermite_spec::s2_recon_from_obligation(
                 program,
                 function,
-                &function.contract.req,
+                &function.contract.requires,
                 clause,
                 address,
             )
@@ -1898,7 +1898,7 @@ fn epr_candidate(
     let recon = match thermite_spec::s2_recon_from_obligation(
         program,
         function,
-        &function.contract.req,
+        &function.contract.requires,
         &grounded_clause,
         address,
     ) {
@@ -1928,7 +1928,7 @@ fn epr_clause_outcome(
         Ok(Some(recon)) => Some(crate::epr_reconstruct::reconstruct(
             &recon,
             function,
-            &function.contract.req,
+            &function.contract.requires,
             clause,
         )),
         Ok(None) => None,
@@ -2100,7 +2100,7 @@ fn fn_has_bv_tag(f: &thermite_syntax::FnItem) -> bool {
 }
 
 fn fn_has_bv_ens_tag(f: &thermite_syntax::FnItem) -> bool {
-    f.contract.ens.iter().any(|c| c.bv.is_some())
+    f.contract.ensures.iter().any(|c| c.bv.is_some())
 }
 
 /// Tagged loop invariants in address order.
@@ -2299,13 +2299,13 @@ fn bv_fn_cert(
     let effects = base.effects.clone();
     let slag = f.slag.is_some();
     let vars: Vec<String> = f.params.iter().map(|p| p.name.clone()).collect();
-    let req = &f.contract.req.expr;
+    let req = &f.contract.requires.expr;
     let bv_attr = bv_attribution();
-    let mut obligations = Vec::with_capacity(f.contract.ens.len());
+    let mut obligations = Vec::with_capacity(f.contract.ensures.len());
     let mut item_level = Level::L4;
     let mut item_attr: Option<crate::engine::EngineAttribution> = None;
 
-    for (k, ens) in f.contract.ens.iter().enumerate() {
+    for (k, ens) in f.contract.ensures.iter().enumerate() {
         if let Some(tag) = &ens.bv {
             let clause_expr = match ground_result_in_clause(f, &ens.expr) {
                 Ok(e) => e,
@@ -2552,7 +2552,7 @@ fn bv_mutation_score(
     // `(tag, clause expr)` pair in the filter so the discharge needs no re-unwrap.
     let result_clauses: Vec<(&thermite_syntax::BvTag, &thermite_syntax::Expr)> = f
         .contract
-        .ens
+        .ensures
         .iter()
         .filter_map(|c| match &c.bv {
             Some(tag) if expr_mentions_result(&c.expr) => Some((tag, &c.expr)),
@@ -2564,7 +2564,7 @@ fn bv_mutation_score(
     }
 
     let vars: Vec<String> = f.params.iter().map(|p| p.name.clone()).collect();
-    let req = &f.contract.req.expr;
+    let req = &f.contract.requires.expr;
     let mutants = crate::mutation::generate(f, 0, adt_deps);
     // The original body's effective result — the reference for the observable-equivalence
     // exclusion below (#101, at width).
@@ -2669,11 +2669,11 @@ fn bv_lemma_cert(
     use crate::bitvector::BvOutcome;
     let effects = vec!["pure".to_string()];
     let vars: Vec<String> = l.params.iter().map(|p| p.name.clone()).collect();
-    let req = &l.req.expr;
+    let req = &l.requires.expr;
     let bv_attr = bv_attribution();
-    let mut obligations = Vec::with_capacity(l.ens.len());
+    let mut obligations = Vec::with_capacity(l.ensures.len());
 
-    for (k, ens) in l.ens.iter().enumerate() {
+    for (k, ens) in l.ensures.iter().enumerate() {
         let Some(tag) = &ens.bv else {
             return Certificate::rejected(
                 l.name.clone(),
@@ -3007,7 +3007,7 @@ fn lia_replay_req(f: &thermite_syntax::FnItem) -> thermite_syntax::Expr {
     use thermite_syntax::{BinOp, Expr};
 
     crate::relax::integer_vars(f).into_iter().rev().fold(
-        f.contract.req.expr.clone(),
+        f.contract.requires.expr.clone(),
         |req, variable| {
             let nonnegative = Expr::Binary {
                 op: BinOp::Ge,
@@ -3309,7 +3309,7 @@ fn forge_gate_item_cert(
     _base: Certificate,
 ) -> Certificate {
     use crate::engine::Verdict;
-    let effects = effects_of(&f.contract.fx);
+    let effects = effects_of(&f.contract.effects);
 
     // (1) Covenant gate (covenant-before-burn, R-COV-1). A forge gate item carries a
     // `witness` block: its author `inhabit` witnesses are executed against `req` and the
@@ -3370,11 +3370,11 @@ fn forge_gate_item_cert(
     // (over a synthetic single-clause `fn`): a relaxable clause routes to nlsat (L4), a
     // non-relaxable clause to the author-proof Lean discharge (L3 + burn). The item level
     // is the min over the clauses.
-    let mut obligations = Vec::with_capacity(f.contract.ens.len());
+    let mut obligations = Vec::with_capacity(f.contract.ensures.len());
     let mut item_level = Level::L4;
     let mut burn: Option<crate::burn::BurnReceipt> = None;
     let mut l3_clause: Option<(usize, &thermite_syntax::Clause, String)> = None;
-    for (k, ens) in f.contract.ens.iter().enumerate() {
+    for (k, ens) in f.contract.ensures.iter().enumerate() {
         let synth = single_ens_fn(f, ens);
         if crate::relax::classify_fn(&synth).is_relaxable() {
             // Relaxable polynomial side-condition → nlsat real relaxation → L4.
@@ -3558,7 +3558,7 @@ fn single_ens_fn(
     ens: &thermite_syntax::Clause,
 ) -> thermite_syntax::FnItem {
     let mut synth = f.clone();
-    synth.contract.ens = vec![ens.clone()];
+    synth.contract.ensures = vec![ens.clone()];
     synth
 }
 
@@ -3729,8 +3729,8 @@ fn synth_l3_lemma(
     thermite_syntax::LemmaItem {
         name: format!("{}__gate_ens{k}", f.name),
         params: f.params.clone(),
-        req: f.contract.req.clone(),
-        ens: vec![Clause {
+        requires: f.contract.requires.clone(),
+        ensures: vec![Clause {
             expr: subst_ens,
             text: format!("{}::ens#{k} (result := body)", f.name),
             span,
@@ -4397,7 +4397,7 @@ pub fn check_l2_file(path: impl AsRef<Path>) -> Result<Vec<Certificate>, ForgeEr
         let harness = thermite_lower::lower_l2(&sub).map_err(ForgeError::Lower)?;
         let bound = thermite_lower::bound_string(&sub);
         let l2 = crate::kani::run_kani(&harness, &f.name, &bound)?;
-        let effects = effects_of(&f.contract.fx);
+        let effects = effects_of(&f.contract.effects);
         certs.push(crate::kani::assemble_l2_certificate(&f.name, effects, &l2));
     }
     Ok(certs)
@@ -4445,7 +4445,7 @@ enum GateOutcome {
 /// SlagL1 (level L1, slag:true, slag_meta)
 /// ```
 fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
-    let effects = effects_of(&f.contract.fx);
+    let effects = effects_of(&f.contract.effects);
 
     // #16 boundary (FFI) path, detected first (`.design/boundary/ffi-boundary.md`
     // REQ-5, §9): a `#[boundary("crate::path")]` fn's foreign body is unproven, so
@@ -4596,7 +4596,7 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
 /// that declares `fx diverge`, never to a normal fn (R-DEFER-9).
 fn fn_is_diverge(f: &thermite_syntax::FnItem) -> bool {
     use thermite_syntax::ast::{Effect, EffectRow};
-    matches!(&f.contract.fx, EffectRow::Set(es) if es.contains(&Effect::Diverge))
+    matches!(&f.contract.effects, EffectRow::Set(es) if es.contains(&Effect::Diverge))
 }
 
 /// Build a `fx diverge` partial-correctness L1 certificate (`.design/forge/check.md`
@@ -5079,8 +5079,8 @@ fn reachable_spec_fn_names_full(program: &Program, f: &thermite_syntax::FnItem) 
     // Seed: the spec-fn calls in `req ∪ ens ∪ body ∪ dec(item)` (the full
     // expression-position seed, #226).
     let mut seed: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    collect_expr_spec_fn_calls(&f.contract.req.expr, &spec_decls, &mut seed);
-    for ens in &f.contract.ens {
+    collect_expr_spec_fn_calls(&f.contract.requires.expr, &spec_decls, &mut seed);
+    for ens in &f.contract.ensures {
         collect_expr_spec_fn_calls(&ens.expr, &spec_decls, &mut seed);
     }
     if let Some(body) = &f.body {
@@ -5112,8 +5112,8 @@ fn reachable_spec_fn_names_full_lemma(
         })
         .collect();
     let mut seed: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    collect_expr_spec_fn_calls(&l.req.expr, &spec_decls, &mut seed);
-    for ens in &l.ens {
+    collect_expr_spec_fn_calls(&l.requires.expr, &spec_decls, &mut seed);
+    for ens in &l.ensures {
         collect_expr_spec_fn_calls(&ens.expr, &spec_decls, &mut seed);
     }
     reachable_spec_fn_names_from_seed(&spec_decls, seed, program)
@@ -5430,8 +5430,8 @@ fn collect_item_adt_refs(
                 collect_type_adt_refs(&p.ty, adt_decls, out);
             }
             collect_type_adt_refs(&f.ret, adt_decls, out);
-            collect_expr_adt_refs(&f.contract.req.expr, adt_decls, out);
-            for ens in &f.contract.ens {
+            collect_expr_adt_refs(&f.contract.requires.expr, adt_decls, out);
+            for ens in &f.contract.ensures {
                 collect_expr_adt_refs(&ens.expr, adt_decls, out);
             }
             if let Some(body) = &f.body {
@@ -6278,7 +6278,7 @@ fn parse_span(line: &str) -> Option<String> {
 ///   witnesses (the existing #5 path), no profile.
 fn assemble_certificate(item: &Item, verus: &VerusResult) -> Certificate {
     let effects = match item {
-        Item::Fn(f) => effects_of(&f.contract.fx),
+        Item::Fn(f) => effects_of(&f.contract.effects),
         // `spec fn`s have no `fx` row (§4.2) — they are pure by construction.
         Item::SpecFn(_) => vec!["pure".to_string()],
         // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum` type
@@ -6432,7 +6432,7 @@ fn ladder_for_timeout(
         (other, _) => other,
     };
 
-    let effects = effects_of(&f.contract.fx);
+    let effects = effects_of(&f.contract.effects);
     let l1_effects = effects.clone();
     let fname = f.name.clone();
 
@@ -7656,7 +7656,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
             .expect("the mutant body has an effective result");
 
         // The tagged clause `result >= x` grounded by the mutant body → `x + 1 >= x`.
-        let ens = &f.contract.ens[0];
+        let ens = &f.contract.ensures[0];
         assert!(ens.bv.is_some(), "the fixture clause is @bv-tagged");
         let grounded = substitute_result_with_body(&ens.expr, &result_expr);
 
@@ -7681,7 +7681,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
         // unbounded path) proves it → the mutant survives the unbounded check.
         let synth = thermite_syntax::FnItem {
             contract: thermite_syntax::Contract {
-                ens: vec![thermite_syntax::Clause {
+                ensures: vec![thermite_syntax::Clause {
                     expr: grounded.clone(),
                     text: "result >= x [result := x + 1]".to_string(),
                     span: thermite_syntax::Span::new(0, 0),
@@ -8029,7 +8029,7 @@ requires true\n\
         let Item::Fn(function) = &parsed.program.items[0] else {
             panic!("fixture must contain a function");
         };
-        let clause = &function.contract.ens[0];
+        let clause = &function.contract.ensures[0];
         let grounded =
             ground_result_in_clause(function, &clause.expr).expect("result has a source body");
         assert!(

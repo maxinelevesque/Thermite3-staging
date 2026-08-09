@@ -79,7 +79,7 @@ fn lemma_parses_with_req_ens_and_proof_block() {
     };
     assert_eq!(l.name, "add_id");
     assert_eq!(l.params.len(), 1);
-    assert_eq!(l.ens.len(), 1);
+    assert_eq!(l.ensures.len(), 1);
     // The proof block captures verbatim tactic text (not structurally parsed) and
     // has no open holes here.
     assert_eq!(l.proof.text, "omega");

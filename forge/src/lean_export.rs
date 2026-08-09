@@ -2200,9 +2200,9 @@ pub fn export_lemma(
 
     // Encode req + each ens via the same machinery the fn-contract path uses. An
     // out-of-fragment construct refuses here (before emitting), a skip.
-    let req_term = encode_expr(&l.req.expr, &ctx)?;
+    let req_term = encode_expr(&l.requires.expr, &ctx)?;
     let ens_terms = l
-        .ens
+        .ensures
         .iter()
         .map(|e| encode_expr(&e.expr, &ctx))
         .collect::<Result<Vec<_>, _>>()?;
@@ -2338,8 +2338,8 @@ fn export_item_with_mode(
                 )));
             }
             (
-                Some(f.contract.req.expr.clone()),
-                f.contract.ens.iter().map(|c| c.expr.clone()).collect(),
+                Some(f.contract.requires.expr.clone()),
+                f.contract.ensures.iter().map(|c| c.expr.clone()).collect(),
                 body,
                 f.dec.as_ref().map(|c| c.expr.clone()),
                 f.params.clone(),
@@ -2581,8 +2581,8 @@ fn export_straight_line_body(
 
     // The contract clauses (the §4 form). `result` reads as `Expr.var "result"` (int)
     // or `Expr.boolVar "result"` (bool) — the spine's bool-result read.
-    let req = f.contract.req.expr.clone();
-    let ens: Vec<Expr> = f.contract.ens.iter().map(|c| c.expr.clone()).collect();
+    let req = f.contract.requires.expr.clone();
+    let ens: Vec<Expr> = f.contract.ensures.iter().map(|c| c.expr.clone()).collect();
     let dec = f.dec.as_ref().map(|c| c.expr.clone());
     let params = f.params.clone();
 
@@ -3117,8 +3117,8 @@ fn export_while_body(
     let exec_ctx = exec_ctx_for_params(&params);
 
     // The contract clauses (the §4 form). A bool result reads `result` via `boolVar`.
-    let req = f.contract.req.expr.clone();
-    let ens: Vec<Expr> = f.contract.ens.iter().map(|c| c.expr.clone()).collect();
+    let req = f.contract.requires.expr.clone();
+    let ens: Vec<Expr> = f.contract.ensures.iter().map(|c| c.expr.clone()).collect();
 
     // The hard gate (§4 mechanism 1) over req/ens (the loop contributes ∅ new spec-calls
     // per §4.2.1, so the seed is the contract closure — the #226 closure is untouched).
@@ -4222,7 +4222,7 @@ mod tests {
             _ => unreachable!(),
         };
         let ctx = ctx_for_params(&f.params);
-        let ens = &f.contract.ens[0].expr;
+        let ens = &f.contract.ensures[0].expr;
         let encoded = encode_expr(ens, &ctx).expect("scalar comparison encodes");
         assert!(
             encoded.contains("Thermite.Expr.cmp Thermite.CmpOp.ge"),
@@ -4270,8 +4270,8 @@ mod tests {
         };
         let decls = spec_decls(&p);
         let tier = tier_of(
-            Some(&f.contract.req.expr),
-            &[f.contract.ens[0].expr.clone()],
+            Some(&f.contract.requires.expr),
+            &[f.contract.ensures[0].expr.clone()],
             f.body.as_ref().unwrap().tail.as_deref().unwrap(),
             None,
             &[],
