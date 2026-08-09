@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 9479f91e0c7f70981aceb3a7ab6a17f55851d057094254a658faafe35e7e8634
+audited-content-sha256: 86dee11d345631a0ea5f85eed47ff821d56dd82d786aba7a40dcb2202d9b7b08 (re-pinned 2026-08-08 for RFC-17: the AST field names and TokKind variants moved to the full words the surface already uses - Contract{req,ens,fx} to {requires,ensures,effects}, TokKind::{Req,Ens,Fx,Inv,Dec} to {Requires,Ensures,Effects,Keeps,Measures}. A type-directed rename with no semantic content: cargo check --workspace --all-targets exiting 0 IS the completeness proof, since an unrenamed site does not compile. prior: 9479f91e0c7f70981aceb3a7ab6a17f55851d057094254a658faafe35e7e8634)
 governs: thermite-spec/src/combinators.rs, thermite-spec/src/validator.rs
 thesis-refs:
   - thermite-design.md §4.1

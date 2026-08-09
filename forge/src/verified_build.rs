@@ -1197,7 +1197,7 @@ fn strict_source_checks(
                         f.name
                     ));
                 }
-                let effects: &[Effect] = match &f.contract.fx {
+                let effects: &[Effect] = match &f.contract.effects {
                     EffectRow::Pure => &[],
                     EffectRow::Set(effects) => effects,
                 };
@@ -1326,8 +1326,8 @@ fn plan_exports(
                 "export `{name}` has a type outside the v1 verified public ABI (primitive scalars and unit only)"
             ));
         }
-        let wrapped = !matches!(function.contract.req.expr, Expr::BoolLit(true));
-        if wrapped && !executable_precondition(&function.contract.req.expr) {
+        let wrapped = !matches!(function.contract.requires.expr, Expr::BoolLit(true));
+        if wrapped && !executable_precondition(&function.contract.requires.expr) {
             return Err(format!(
                 "export `{name}` has a non-executable precondition and cannot receive a total wrapper"
             ));
@@ -1362,7 +1362,7 @@ fn plan_exports(
             .collect::<Vec<_>>();
         let postcondition_ids = function
             .contract
-            .ens
+            .ensures
             .iter()
             .enumerate()
             .map(|(index, _)| format!("{}.ensures#{}", function.name, index + 1))
@@ -1599,7 +1599,9 @@ fn planned_node_parts(item: &Item) -> PlannedNodeParts {
             contract_sha256: Some(sha256(
                 format!("{:#?}:{:#?}", function.contract, function.dec).as_bytes(),
             )),
-            effects_sha256: Some(sha256(format!("{:#?}", function.contract.fx).as_bytes())),
+            effects_sha256: Some(sha256(
+                format!("{:#?}", function.contract.effects).as_bytes(),
+            )),
         },
         Item::SpecFn(function) => PlannedNodeParts {
             source_start: Some(function.span.start as u64),
@@ -2022,7 +2024,7 @@ fn expected_tv_inventory(
             "contract",
             format!("{}.requires", function.name),
         );
-        for index in 0..function.contract.ens.len() {
+        for index in 0..function.contract.ensures.len() {
             expect_tv(
                 &mut expected,
                 "contract",

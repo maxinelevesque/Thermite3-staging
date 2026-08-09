@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 6b86f74476122cfddbdcf168d37a3561d2598054 (re-pinned 2026-06-16 for PR #46 after merging main: lower_l1's TString runtime gate now treats String-typed ADT declarations as TString users so ADT fields cannot name an unemitted runtime; main's inert Item::Forge skip is preserved; core req/ens/keeps check emission is unchanged.)
-audited-content-sha256: 45ef0652ace83125b3bc5a129e4d71dc6d277d933a6bd6df50c656984f3ef52b
+audited-content-sha256: 4206f6e94a8bea3316e5eea866f66d37473b37fb12a32a9105bc9a1a7f7ce9ef (re-pinned 2026-08-08 for RFC-17: the AST field names and TokKind variants moved to the full words the surface already uses - Contract{req,ens,fx} to {requires,ensures,effects}, TokKind::{Req,Ens,Fx,Inv,Dec} to {Requires,Ensures,Effects,Keeps,Measures}. A type-directed rename with no semantic content: cargo check --workspace --all-targets exiting 0 IS the completeness proof, since an unrenamed site does not compile. prior: 45ef0652ace83125b3bc5a129e4d71dc6d277d933a6bd6df50c656984f3ef52b)
 governs: thermite-lower/src/l1.rs
 thesis-refs:
   - thermite-design.md §4.2

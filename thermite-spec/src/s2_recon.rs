@@ -1694,7 +1694,7 @@ mod tests {
         from_clause(
             &parsed.program,
             function,
-            &function.contract.req,
+            &function.contract.requires,
             SourceAddress {
                 item: function.name.clone(),
                 clause: clause.to_string(),
@@ -1743,8 +1743,8 @@ requires x > 0\n\
         let recon = from_obligation(
             &parsed.program,
             function,
-            &function.contract.req,
-            &function.contract.ens[0],
+            &function.contract.requires,
+            &function.contract.ensures[0],
             SourceAddress {
                 item: "f".to_string(),
                 clause: "ens#0".to_string(),
@@ -1813,8 +1813,8 @@ requires x + x == 6\n\
         let recon = from_obligation(
             &parsed.program,
             function,
-            &function.contract.req,
-            &function.contract.ens[0],
+            &function.contract.requires,
+            &function.contract.ensures[0],
             SourceAddress {
                 item: "f".to_string(),
                 clause: "ens#0".to_string(),
@@ -1842,7 +1842,7 @@ requires x + x == 6\n\
             panic!("expected function");
         };
         let mut function = parsed_function.clone();
-        function.contract.ens[0].bv = Some(BvTag {
+        function.contract.ensures[0].bv = Some(BvTag {
             width: BvWidth::W64,
             nowrap: false,
             span: Span::new(0, 0),
@@ -1850,8 +1850,8 @@ requires x + x == 6\n\
         let recon = from_obligation(
             &parsed.program,
             &function,
-            &function.contract.req,
-            &function.contract.ens[0],
+            &function.contract.requires,
+            &function.contract.ensures[0],
             SourceAddress {
                 item: "f".to_string(),
                 clause: "ens#0".to_string(),
@@ -1887,7 +1887,7 @@ requires x / 2 == 3\n\
         let untagged = from_clause(
             &parsed.program,
             parsed_function,
-            &parsed_function.contract.req,
+            &parsed_function.contract.requires,
             SourceAddress {
                 item: "f".to_string(),
                 clause: "req".to_string(),
@@ -1901,7 +1901,7 @@ requires x / 2 == 3\n\
         ));
 
         let mut function = parsed_function.clone();
-        function.contract.req.bv = Some(BvTag {
+        function.contract.requires.bv = Some(BvTag {
             width: BvWidth::W32,
             nowrap: false,
             span: Span::new(0, 0),
@@ -1909,7 +1909,7 @@ requires x / 2 == 3\n\
         let tagged = from_clause(
             &parsed.program,
             &function,
-            &function.contract.req,
+            &function.contract.requires,
             SourceAddress {
                 item: "f".to_string(),
                 clause: "req".to_string(),

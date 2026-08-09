@@ -889,8 +889,8 @@ impl Validator {
             }
             match item {
                 Item::Fn(f) => {
-                    self.walk_clause(&f.contract.req);
-                    for clause in &f.contract.ens {
+                    self.walk_clause(&f.contract.requires);
+                    for clause in &f.contract.ensures {
                         self.walk_clause(clause);
                     }
                     // REQ-3: a `fn` body is executable surface code, not a
@@ -1902,7 +1902,7 @@ fn collect_covered_variants<'p>(pattern: &'p Pattern, out: &mut Vec<&'p str>) {
 /// of truth for the §4.1 termination exemption).
 fn fn_is_diverge(f: &thermite_syntax::ast::FnItem) -> bool {
     use thermite_syntax::ast::{Effect, EffectRow};
-    matches!(&f.contract.fx, EffectRow::Set(es) if es.contains(&Effect::Diverge))
+    matches!(&f.contract.effects, EffectRow::Set(es) if es.contains(&Effect::Diverge))
 }
 
 /// True iff `block` contains a direct call to `name` — the self-reference test

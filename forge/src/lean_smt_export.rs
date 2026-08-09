@@ -986,7 +986,7 @@ pub fn obligations_for_program(program: &Program) -> (Vec<SmtEquivObligation>, V
     let mut skipped = Vec::new();
     for item in &program.items {
         let Item::Fn(f) = item else { continue };
-        for (idx, clause) in f.contract.ens.iter().enumerate() {
+        for (idx, clause) in f.contract.ensures.iter().enumerate() {
             let fragment = bv_fragment(clause).unwrap_or(SmtFragment::Lia);
             let name = format!("{}_ens{idx}", f.name);
             let obligation = obligation_for_predicate(&name, &clause.expr, fragment);
@@ -1036,7 +1036,7 @@ mod tests {
         p.items
             .iter()
             .find_map(|i| match i {
-                Item::Fn(f) if f.name == name => Some(f.contract.ens[0].expr.clone()),
+                Item::Fn(f) if f.name == name => Some(f.contract.ensures[0].expr.clone()),
                 _ => None,
             })
             .expect("fn with an ens clause present")

@@ -2356,8 +2356,8 @@ requires true\n\
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2365,7 +2365,12 @@ requires true\n\
         )
         .expect("canonical S₂.0 bridge");
         assert!(needs_reconstruction(&recon.formula));
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Proved(evidence) => {
                 assert_eq!(evidence.fragment, EPR_FRAGMENT);
                 assert_eq!(evidence.budget_outcome.as_deref(), Some("within-budget"));
@@ -2391,8 +2396,8 @@ requires xs.len() == ys.len() && \
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2400,7 +2405,12 @@ requires xs.len() == ys.len() && \
         )
         .expect("canonical S₂.0 bridge");
         assert!(needs_reconstruction(&recon.formula));
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Proved(evidence) => {
                 assert_eq!(evidence.fragment, EPR_FRAGMENT);
                 assert!(
@@ -2429,8 +2439,8 @@ requires x + x == 2\n\
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2438,7 +2448,12 @@ requires x + x == 2\n\
         )
         .expect("canonical S₂.0 bridge");
         assert_eq!(recon.qfree_atoms.len(), 2);
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Counterexample(model) => {
                 assert!(
                     model
@@ -2474,8 +2489,8 @@ requires x + x == 2\n\
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2490,7 +2505,12 @@ requires x + x == 2\n\
                 .collect::<Vec<_>>(),
             vec![QFreeFragment::Lia, QFreeFragment::Bv(BvWidth::W8)]
         );
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Counterexample(model) => {
                 assert!(model
                     .qfree_checks
@@ -2521,8 +2541,8 @@ requires x + x == x + x || xs.len() == xs.len()\n\
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2530,7 +2550,12 @@ requires x + x == x + x || xs.len() == xs.len()\n\
         )
         .expect("canonical S₂.0 bridge");
         assert_eq!(recon.qfree_atoms.len(), 1);
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Counterexample(model) => {
                 assert!(
                     model
@@ -2564,17 +2589,20 @@ requires true\n\
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
             },
         )
         .expect("canonical S₂.0 bridge");
-        let EprOutcome::Proved(_) =
-            reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0])
-        else {
+        let EprOutcome::Proved(_) = reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) else {
             panic!("fixture must first produce a checked proof");
         };
 
@@ -2585,8 +2613,8 @@ requires true\n\
         let canonical = recon.canonical_wire();
         let source_clause = format!(
             "{}\n{}",
-            thermite_spec::canonical_source_expr(&item.contract.req.expr),
-            thermite_spec::canonical_source_expr(&item.contract.ens[0].expr)
+            thermite_spec::canonical_source_expr(&item.contract.requires.expr),
+            thermite_spec::canonical_source_expr(&item.contract.ensures[0].expr)
         );
         let theorem = "thermite_epr_epr_cache_ens_0";
         let input_key = cache_input_key(&canonical, &source_clause, &premise, &conclusion)

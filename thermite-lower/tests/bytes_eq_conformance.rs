@@ -240,9 +240,9 @@ fn bytes_eq_demo_matches_cert_oracle() {
             if f.name == "slice_id" {
                 saw_slice_id = true;
                 assert!(
-                    matches!(&f.contract.fx, EffectRow::Set(es) if es == &vec![Effect::Alloc]),
+                    matches!(&f.contract.effects, EffectRow::Set(es) if es == &vec![Effect::Alloc]),
                     "slice_id must be fx alloc (oracle); got {:?}",
-                    f.contract.fx
+                    f.contract.effects
                 );
             }
         }

@@ -257,7 +257,7 @@ pub enum SandboxMode {
 }
 
 /// The transitive `fx` token set for `entry` in `program` (REQ-2): the union of
-/// `effects_of(&f.contract.fx)` over `{entry} ∪
+/// `effects_of(&f.contract.effects)` over `{entry} ∪
 /// closure::reachable_in_file_fns(program, entry)`. Reuses the same #17 cycle-safe,
 /// source-order reachability walker `check::item_subprogram` consumes, rather than
 /// a duplicate. A `#[boundary]`/`#[slag]` fn reached in the closure contributes its
@@ -274,7 +274,7 @@ pub fn transitive_fx(program: &Program, entry: &str) -> BTreeSet<String> {
     for item in &program.items {
         if let thermite_syntax::Item::Fn(f) = item {
             if names.contains(&f.name) {
-                for tok in effects_of(&f.contract.fx) {
+                for tok in effects_of(&f.contract.effects) {
                     tokens.insert(tok);
                 }
             }

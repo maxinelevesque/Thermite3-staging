@@ -485,8 +485,8 @@ fn collect_verified_calls(item: &Item) -> Vec<VerifiedCall> {
     let mut calls = Vec::new();
     match item {
         Item::Fn(f) => {
-            collect_verified_expr_calls(&f.contract.req.expr, &mut calls);
-            for ens in &f.contract.ens {
+            collect_verified_expr_calls(&f.contract.requires.expr, &mut calls);
+            for ens in &f.contract.ensures {
                 collect_verified_expr_calls(&ens.expr, &mut calls);
             }
             if let Some(dec) = &f.dec {

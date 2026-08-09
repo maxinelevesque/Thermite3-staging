@@ -72,7 +72,7 @@ pub const CANDIDATE_CAP: usize = 16;
 #[derive(Debug, Clone)]
 pub struct CandidateClause {
     /// The candidate `ens` clause (a real adoptable SpecTherm postcondition).
-    pub ens: Clause,
+    pub ensures: Clause,
     /// The rendered surface form of the clause (`result == a + b`), the
     /// `Suggestion.clause` payload.
     pub rendered: String,
@@ -245,7 +245,7 @@ pub fn generate_candidates(
                 let clause = result_equals(call);
                 let rendered = clause.text.clone();
                 candidates.push(CandidateClause {
-                    ens: clause,
+                    ensures: clause,
                     rendered,
                     kills_survivor: None,
                 });
@@ -270,7 +270,7 @@ pub fn generate_candidates(
             let clause = result_equals(Expr::Path(vec![name.to_string()]));
             let rendered = clause.text.clone();
             candidates.push(CandidateClause {
-                ens: clause,
+                ensures: clause,
                 rendered,
                 kills_survivor: None,
             });
@@ -292,7 +292,7 @@ pub fn generate_candidates(
                     let clause = result_equals(bin);
                     let rendered = clause.text.clone();
                     candidates.push(CandidateClause {
-                        ens: clause,
+                        ensures: clause,
                         rendered,
                         // Family 3: a binary equality on `result` rejects the
                         // early-return-0 body (the §7 survivor-kill witness).
@@ -322,7 +322,7 @@ pub fn generate_candidates(
                 let clause = result_equals(len_call);
                 let rendered = clause.text.clone();
                 candidates.push(CandidateClause {
-                    ens: clause,
+                    ensures: clause,
                     rendered,
                     kills_survivor: None,
                 });
@@ -344,7 +344,7 @@ pub fn generate_candidates(
 /// candidate as the sole `ens`).
 pub fn candidate_fn(f: &FnItem, candidate: &CandidateClause) -> FnItem {
     let mut copy = f.clone();
-    copy.contract.ens = vec![candidate.ens.clone()];
+    copy.contract.ensures = vec![candidate.ensures.clone()];
     copy
 }
 
@@ -478,7 +478,7 @@ pub fn probe(
     mut verify_survivor: impl FnMut(&CandidateClause) -> Result<bool, ForgeError>,
 ) -> Result<Vec<Suggestion>, ForgeError> {
     let candidates = generate_candidates(f, spec_items, score);
-    let current_pins_result = current_ens_pins_result(&f.contract.ens);
+    let current_pins_result = current_ens_pins_result(&f.contract.ensures);
     let mut suggestions = Vec::new();
 
     for candidate in &candidates {
@@ -644,7 +644,7 @@ mod tests {
         let f = weak_fixture();
         let c = &generate_candidates(&f, &[], &early_zero_survivor())[0];
         // The weak fixture's `ens result <= 1000000` does not pin result.
-        assert!(!current_ens_pins_result(&f.contract.ens));
+        assert!(!current_ens_pins_result(&f.contract.ensures));
         assert!(
             is_strictly_stronger(c, false, false),
             "an equality candidate strengthens a non-pinning inequality ens"
@@ -659,7 +659,7 @@ mod tests {
         let pinning = parse_fn(
             "fn g(a: u32, b: u32) -> u32 ! pure requires a <= 10 && b <= 10 ensures result == a + b { a + b }",
         );
-        assert!(current_ens_pins_result(&pinning.contract.ens));
+        assert!(current_ens_pins_result(&pinning.contract.ensures));
         // A family-2 equality candidate over this fn carries no kill link (the
         // survivor is killed by the existing exact ens, so no survivor remains).
         let no_survivor = MutationScore {
@@ -691,7 +691,7 @@ mod tests {
         // Body verify: prove only the exact `result == a + b`; reject everything
         // else (the over-strong / wrong candidates do not hold for `{ a + b }`).
         let verify_body = |fk: &FnItem| -> Result<bool, ForgeError> {
-            let ens = &fk.contract.ens[0].text;
+            let ens = &fk.contract.ensures[0].text;
             Ok(ens == "result == a + b")
         };
         // Survivor verify: the early-return-0 body does not prove `result == a + b`

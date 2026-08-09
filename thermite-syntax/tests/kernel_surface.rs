@@ -29,7 +29,7 @@ fn platform_probe(byte: u8, word: u16) -> u16
     assert_eq!(function.params[1].ty, Type::Prim(PrimType::U16));
     assert_eq!(function.ret, Type::Prim(PrimType::U16));
 
-    let thermite_syntax::EffectRow::Set(effects) = &function.contract.fx else {
+    let thermite_syntax::EffectRow::Set(effects) = &function.contract.effects else {
         panic!("expected the explicit platform effect row");
     };
     assert_eq!(
@@ -96,5 +96,5 @@ requires at < data.len()\n\
             inner: Box::new(Type::Slice(Box::new(Type::Prim(PrimType::U8)))),
         }
     );
-    assert_eq!(function.contract.ens.len(), 2);
+    assert_eq!(function.contract.ensures.len(), 2);
 }

@@ -43,7 +43,7 @@ fn call(callee: &str) -> Expr {
 }
 
 /// A `fn` with the given effect row and an explicit body block.
-fn fn_with_body(name: &str, fx: EffectRow, body: Block) -> Item {
+fn fn_with_body(name: &str, effects: EffectRow, body: Block) -> Item {
     Item::Fn(FnItem {
         slag: None,
         boundary: None,
@@ -51,9 +51,9 @@ fn fn_with_body(name: &str, fx: EffectRow, body: Block) -> Item {
         params: vec![],
         ret: Type::Unit,
         contract: Contract {
-            req: true_clause(),
-            ens: vec![true_clause()],
-            fx,
+            requires: true_clause(),
+            ensures: vec![true_clause()],
+            effects,
         },
         dec: None,
         body: Some(body),

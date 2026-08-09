@@ -957,9 +957,9 @@ fn item_inventory() -> Vec<Item> {
             params: Vec::new(),
             ret: Type::Unit,
             contract: Contract {
-                req: clause(),
-                ens: vec![clause()],
-                fx: EffectRow::Pure,
+                requires: clause(),
+                ensures: vec![clause()],
+                effects: EffectRow::Pure,
             },
             // C9-A (`.design/basis/10-recursion-tuples.md` REQ-1): the optional
             // `measures` termination clause of a recursive exec `fn`. `None` for this

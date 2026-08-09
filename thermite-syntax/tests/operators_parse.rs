@@ -108,7 +108,7 @@ fn ens_rhs(expr_src: &str) -> Expr {
     let Item::Fn(f) = &r.program.items[0] else {
         panic!("expected a fn item");
     };
-    let ens = &f.contract.ens[0].expr;
+    let ens = &f.contract.ensures[0].expr;
     match ens {
         Expr::Binary {
             op: BinOp::Eq, rhs, ..

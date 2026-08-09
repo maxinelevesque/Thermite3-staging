@@ -327,7 +327,7 @@ fn validate_segments(addr: &str) -> Result<(), AddressError> {
     }
     for seg in segs {
         // Bare keyword segments: the loop `dec`, the proof-block `proof`, and an
-        // unindexed clause family (`f.proof.req`).
+        // unindexed clause family (`f.proof.requires`).
         if matches!(seg, "measures" | "proof" | "ensures" | "requires" | "keeps") {
             continue;
         }

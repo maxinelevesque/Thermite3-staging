@@ -47,7 +47,7 @@ fn boundary_fn_parses_with_target_and_no_body() {
         f.body
     );
     // The contract is still mandatory and parsed.
-    assert_eq!(f.contract.ens.len(), 1, "the `ens` clause is parsed");
+    assert_eq!(f.contract.ensures.len(), 1, "the `ens` clause is parsed");
 }
 
 // OQ-2 (the recovery interaction): a bodyless fn without `#[boundary]`

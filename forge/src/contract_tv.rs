@@ -73,7 +73,7 @@ pub enum ClauseVerdict {
 /// verdict (REQ-5).
 #[derive(Debug, Clone)]
 pub struct ClauseResult {
-    /// A human label for the clause (`sum.req`, `sum.ens#1`, `sum.loop#1.keeps#2`, …).
+    /// A human label for the clause (`sum.requires`, `sum.ensures#1`, `sum.loop#1.keeps#2`, …).
     pub label: String,
     /// The verdict.
     pub verdict: ClauseVerdict,
@@ -223,7 +223,7 @@ fn tv_fn(
 
     // req
     tv_clause(
-        &f.contract.req,
+        &f.contract.requires,
         &format!("{}.requires", f.name),
         f,
         &nat_fns,
@@ -234,7 +234,7 @@ fn tv_fn(
         report,
     );
     // ens (in source order)
-    for (i, ens) in f.contract.ens.iter().enumerate() {
+    for (i, ens) in f.contract.ensures.iter().enumerate() {
         tv_clause(
             ens,
             &format!("{}.ensures#{}", f.name, i + 1),

@@ -9,7 +9,7 @@
 //! use vstd::prelude::*;
 //! verus! {
 //!     <frame.spec_defs — the in-scope spec fn / combinator verus_l3 defs>
-//!     proof fn tv_check(<frame.params>) requires <frame.req> {
+//!     proof fn tv_check(<frame.params>) requires <frame.requires> {
 //!         assert((<p_production>) <==> (<ref_contract_pred(source)>));
 //!     }
 //! }
@@ -334,7 +334,7 @@ impl ExecObligationFrame {
 /// verus! {
 ///     <frame.spec_defs>
 ///     fn tv_exec_wrap(<frame.params>) -> (result: <frame.ret_type>)
-///         requires <frame.req>,
+///         requires <frame.requires>,
 ///         ensures result == <exec_ref_value(source)>,
 ///     {
 ///         <p_production>
@@ -495,7 +495,7 @@ impl BodyObligationFrame {
 /// verus! {
 ///     <frame.spec_defs>
 ///     fn tv_body_wrap(<frame.params>) -> (result: <frame.ret_type>)
-///         requires <frame.req>,
+///         requires <frame.requires>,
 ///         ensures result == <body_ref_state(body)>,
 ///     {
 ///         <p_production>
@@ -691,7 +691,7 @@ impl LoopObligationFrame {
 /// verus! {
 ///     <frame.spec_defs>
 ///     proof fn tv_loop_entry(<frame.inputs>)
-///         requires <frame.req>,
+///         requires <frame.requires>,
 ///     {
 ///         assert(<inv[cells := entry-state]>);
 ///     }

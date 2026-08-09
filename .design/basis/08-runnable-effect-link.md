@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: aa34d55382bc5a8823cae5c1c4f5ea4bc7737dc7d030d4e3e28eff30c2fed61b
+audited-content-sha256: 660244c124bc58a9b6331f605028115efdadf92033721c16b2e0abfa26492b21 (re-pinned 2026-08-08 for RFC-17: the AST field names and TokKind variants moved to the full words the surface already uses - Contract{req,ens,fx} to {requires,ensures,effects}, TokKind::{Req,Ens,Fx,Inv,Dec} to {Requires,Ensures,Effects,Keeps,Measures}. A type-directed rename with no semantic content: cargo check --workspace --all-targets exiting 0 IS the completeness proof, since an unrenamed site does not compile. prior: aa34d55382bc5a8823cae5c1c4f5ea4bc7737dc7d030d4e3e28eff30c2fed61b)
 governs: forge/src/build.rs
 governs: forge/src/effect_wrappers.rs
 (the thermite-stdlib/src/effect/* paths this doc originally listed were never

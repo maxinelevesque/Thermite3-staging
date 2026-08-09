@@ -152,11 +152,11 @@ fn render_lemma_proof(l: &LemmaItem) -> String {
         "PROOF VIEW — {} (lemma, forge-routed \u{2192} L3)\n",
         l.name
     ));
-    out.push_str(&render_hypotheses(&l.params, &l.req));
+    out.push_str(&render_hypotheses(&l.params, &l.requires));
 
     // Each `ens` clause is a goal the proof must discharge.
-    for (i, ens) in l.ens.iter().enumerate() {
-        let tag = if l.ens.len() > 1 {
+    for (i, ens) in l.ensures.iter().enumerate() {
+        let tag = if l.ensures.len() > 1 {
             format!(" #{}", i + 1)
         } else {
             String::new()
@@ -191,7 +191,7 @@ fn render_proof_for(p: &ProofItem, program: &Program) -> String {
 
         match target_fn {
             Some(f) => {
-                out.push_str(&render_hypotheses(&f.params, &f.contract.req));
+                out.push_str(&render_hypotheses(&f.params, &f.contract.requires));
                 match resolve_clause(&f.contract, &ob.clause) {
                     Some(goal) => {
                         out.push_str(&format!("  \u{22a2} goal: {}\n", goal.text));
@@ -282,8 +282,8 @@ fn clause_label(sel: &ClauseSelector) -> String {
 fn resolve_clause<'c>(contract: &'c Contract, sel: &ClauseSelector) -> Option<&'c Clause> {
     // The selector carries the SURFACE spelling, which is now the full word.
     match sel.keyword.as_str() {
-        "requires" => Some(&contract.req),
-        "ensures" => contract.ens.get(sel.index? as usize),
+        "requires" => Some(&contract.requires),
+        "ensures" => contract.ensures.get(sel.index? as usize),
         _ => None,
     }
 }
@@ -491,8 +491,8 @@ fn render_goal_item(cert: &Certificate, program: &Program) -> String {
     // source text; the AST does — semantic-addressing.md AC-1 keeps verbatim
     // `text` on every clause).
     if let Some(contract) = contract_of(program, &cert.item) {
-        out.push_str(&format!("  given: {}\n", contract.req.text));
-        for (i, ens) in contract.ens.iter().enumerate() {
+        out.push_str(&format!("  given: {}\n", contract.requires.text));
+        for (i, ens) in contract.ensures.iter().enumerate() {
             let label = if i == 0 { "want " } else { "     " };
             out.push_str(&format!("  {label}: {}\n", ens.text));
         }

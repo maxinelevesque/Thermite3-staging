@@ -153,9 +153,9 @@ impl SpecLayer {
     /// `SpecFnItem.body`.
     fn extract(contract: &Contract, spec_fns: &[&thermite_syntax::SpecFnItem]) -> Self {
         SpecLayer {
-            req: contract.req.text.clone(),
-            ens: contract.ens.iter().map(|c| c.text.clone()).collect(),
-            fx: effects_of(&contract.fx),
+            req: contract.requires.text.clone(),
+            ens: contract.ensures.iter().map(|c| c.text.clone()).collect(),
+            fx: effects_of(&contract.effects),
             referenced_spec_fns: referenced_spec_fns(contract, spec_fns),
         }
     }
@@ -532,8 +532,8 @@ fn referenced_spec_fns(
     // BTreeSet → sorted + deduplicated (deterministic), and only names that resolve
     // to a top-level spec fn are kept (OQ-3 direct-only — no transitive closure).
     let mut names: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    collect_callee_names(&contract.req.expr, &mut names);
-    for clause in &contract.ens {
+    collect_callee_names(&contract.requires.expr, &mut names);
+    for clause in &contract.ensures {
         collect_callee_names(&clause.expr, &mut names);
     }
     names

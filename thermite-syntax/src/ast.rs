@@ -3,8 +3,8 @@
 //!
 //! Governing design: `.design/syntax/ast.md`. The node set mirrors
 //! `.design/syntax/surface-grammar.md` one-for-one. The mandatory-contract
-//! rule (§4.1) is encoded in the types: `Contract.req`/`Contract.fx` are
-//! non-`Option`, `Contract.ens` is a non-empty `Vec`, and `LoopNode` carries a
+//! rule (§4.1) is encoded in the types: `Contract.requires`/`Contract.effects` are
+//! non-`Option`, `Contract.ensures` is a non-empty `Vec`, and `LoopNode` carries a
 //! non-empty `invs` plus a single `dec`, so an ill-formed contract is
 //! unrepresentable (ast.md REQ-2/REQ-5). The frontend is registry-free:
 //! combinator calls (`forall_in`, `sorted`) are ordinary `Expr::Call` nodes.
@@ -262,8 +262,8 @@ pub struct PropFnItem {
 pub struct LemmaItem {
     pub name: Ident,
     pub params: Vec<Param>,
-    pub req: Clause,
-    pub ens: Vec<Clause>,
+    pub requires: Clause,
+    pub ensures: Vec<Clause>,
     pub proof: ProofBlock,
     pub span: Span,
 }
@@ -584,9 +584,9 @@ pub struct Param {
 /// non-optional: `ens` is a `Vec` the parser only ever fills with ≥1 element.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Contract {
-    pub req: Clause,
-    pub ens: Vec<Clause>,
-    pub fx: EffectRow,
+    pub requires: Clause,
+    pub ensures: Vec<Clause>,
+    pub effects: EffectRow,
 }
 
 /// The fixed bit-width of a `@bv` machine-semantics clause tag
