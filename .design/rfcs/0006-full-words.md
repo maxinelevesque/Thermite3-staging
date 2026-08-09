@@ -309,6 +309,64 @@ an `ens true` that §7.1(a) rejects as `EnsIsTrivial`, before the rename and aft
 it. The rename preserves meaning to the prover rather than only information in
 the text.
 
+## Residual trust
+
+What is still taken on faith after this ships. The evidence above is real; this
+section is what it does *not* reach, so the assurance claim shrinks visibly
+rather than being implied.
+
+**The tooling that measured the scope was wrong four times.** The published
+figures of 547 + 1,527 came from a scanner with four silent gaps, each of which
+made a population invisible rather than miscounted — neither migrated nor
+declined, with no counter moving. They are fixed and the corrected total is
+2,910, but the correction was produced by the same *class* of instrument. What
+actually backs the migration is the AST comparison, not the counters; a fifth
+gap of the same shape would be equally silent.
+
+**The AST comparison establishes shape, not agreement on all inputs.** One
+fingerprint program is compiled against both front ends and `Contract` is shown
+to have the same shape either side of the rename. That is much stronger than the
+round-trip it replaced, and it is not a proof that the two front ends agree on
+every program — only on the corpus and literal populations actually run.
+
+**The test comparison is by failing-test NAME, and 48 tests fail on both
+sides.** The set difference being empty is the right control, and it means those
+48 are not evidence for anything. They fail from an unresolvable
+`lean/.lake` mathlib checkout and an absent CaDiCaL, and that attribution is
+believed rather than demonstrated — a genuine regression hiding behind an
+environmental failure would be invisible to this comparison.
+
+**Untouched goldens show lowering did not change, not that it is correct.**
+`tests/golden/` needing no regeneration is exactly what "lowering becomes
+identity" predicts, because Verus already spells `requires`/`ensures`. It
+inherits whatever was true of lowering before.
+
+**Forty-three declined clause-bearing literals rest on human review.** They are
+`format!` templates, assertion prose, and fixtures invalid on purpose. The
+guarantee that declining each was right is that a person read the list.
+
+**Thirty v2 comment lines survive inside migrated corpus files.** The rewriter
+edits clause-token spans and preserves comments by design, so comments referring
+to `inv#3` or `fx alloc` sit inside programs that no longer contain either.
+These were cleaned; nothing prevents recurrence, because no gate reads comment
+text.
+
+**Five document populations keep the old spelling on purpose** — the RFCs,
+`docs/v2/`, `CHANGELOG.md`, the other-language rule files, and the harness agent
+definitions. A reader who does not know that will read them as stale.
+
+**The AST still speaks the old vocabulary.** `Contract { req, ens, fx }` and the
+`TokKind` variants are unchanged, so `keyword_kind` maps `"keeps"` to
+`TokKind::Inv`. The surface no longer needs a mapping; the toolchain does.
+
+**Seventy-four design-doc pins were moved and none of the documents was
+re-read.** Migrating the surface, reformatting, and regenerating the registry
+drifted design docs in four waves. Each re-pin carries a note recording what
+moved it, and in every case the reasoning was from the diff — "comments and line
+breaks only", "path strings only" — rather than from re-auditing the document
+against its governed code. That is the largest unaudited surface this change
+ships, and it is a property of how content pins are used, not of this migration.
+
 ## What is not in this proposal
 
 Everything that would add capability, listed so that this one can be short:
