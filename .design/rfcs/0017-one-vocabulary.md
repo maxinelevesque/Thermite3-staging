@@ -131,9 +131,19 @@ that digest — `3f525f14` to `756cd389` — with no clause, span or effect chan
 The compiler cannot see it; a CI job caught it. Re-pinned with the cause
 recorded, as RFC-6 did for the same digest when clause SPANS moved it.
 
+**A serialized form is the same failure, and it happened too.** `forge audit
+--json` keys its boundary rows from `BoundaryContract`'s field names via serde,
+so the rename re-keyed a manifest carrying `manifest_version: v1` — an external
+contract. Two further structs were affected, `KernelCertificateBinding.fx` and
+`SpecFnDecl.dec`. The fix keeps both properties rather than trading them: the
+Rust fields carry the full word, and `#[serde(rename = "req")]` holds the wire
+spelling. Reverting the fields would have reintroduced the split.
+
 The lesson generalizes past this RFC: "the compiler enumerates every site" holds
 only where the compiler is what reads the name. A digest over a rendering, a
-serialized form, or a diagnostic string reads it too, and none of those type-check.
+serialized form, or a diagnostic string reads it too, and none of those
+type-check. Both cases here were caught by CI rather than by `cargo check`, and
+both were invisible to the local test run.
 
 **One further population needs care and is not type-directed.** RFC-6 already
 found it:
@@ -154,6 +164,10 @@ listed here so a reviewer knows they were considered and excluded, not missed.
   the migration rewrites clause-token spans and preserves comments by design.
   RFC-6's implementation cleaned these; nothing prevents them recurring, and no
   gate looks at comment text.
+* **Three wire formats are held at v1 by attribute rather than by type.**
+  `#[serde(rename)]` keeps the manifest keys stable, and nothing prevents a
+  future field being added without one. The schema is not versioned against the
+  struct; the attribute is the only thing holding them together.
 * **One frozen digest moved and was re-pinned rather than derived.** The
   kernel boundary digest is `sha256` over a `Debug` rendering, so it encodes
   field names. Accepting the new value rests on the same argument RFC-6 used:
