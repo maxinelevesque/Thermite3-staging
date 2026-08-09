@@ -36,6 +36,15 @@ Rename five token kinds and three AST fields, and nothing else.
 | `Contract.req` | `Contract.requires` |
 | `Contract.ens` | `Contract.ensures` |
 | `Contract.fx` | `Contract.effects` |
+| `LemmaItem.req` | `LemmaItem.requires` |
+| `LemmaItem.ens` | `LemmaItem.ensures` |
+
+`LemmaItem` was not in this table when the RFC was written; the implementation
+found it. It carries the same two clause fields for the same reason, and leaving
+it behind would have reinstated the split this proposal exists to close — a
+`Contract` spelling `requires` beside a `LemmaItem` spelling `req`. Named here
+rather than absorbed silently, because a rename that grows during implementation
+is exactly the kind of scope change a reviewer should be told about.
 
 ## 1. The lexer table is the argument
 
