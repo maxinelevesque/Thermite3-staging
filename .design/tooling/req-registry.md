@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: f09f8ca376257cc1e2543b8ebc9fb771bffd04df (content-sha256 re-pinned 2026-07-29 for stage-3 REQ-1..REQ-9 / gate G3 (#80, crosslink #351): the registry and generated status view carry the fixed-width reconstruction requirements and verified evidence; req-registry.py --check is clean (462 requirements, 119 views). The legacy commit pin remains the f09f8ca3 stable-main ancestor; the active content digest tracks the governed files. prior: 2026-06-21 stage-2 REQ-10 / AC-10 (#332), the pin battery and final gate G2 increment)
-audited-content-sha256: e52da53e0e0c36e557fcecc462762a056dda2d941519bf30c265fcdc43b35cdd (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: 78d81ff79fb9d39e01e295262dc2fba370f06b13c285893806506546b4b2faf9, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 1106ab1e5817d4cbb5928f93b40fce3d262c9482e62e5c7ef86434ef2dc673c2))
+audited-content-sha256: 1177a67eb1265004a4b289a545958acdf042a11b042f2c79d332050a5fd7820a (re-pinned 2026-08-09 for the trunk consolidation: rfcs/thermite-3-set merged into staging, bringing all 17 RFCs and 36 capability requirements onto the trunk. The registry gained those requirements and lost the 8 owned by .design/build/bootable-multicore-kernel.md, which the kernel removal deleted; status.md was regenerated from it. prior: e52da53e0e0c36e557fcecc462762a056dda2d941519bf30c265fcdc43b35cdd, previously (re-pinned 2026-08-08 for the v2 document relocation: thermite2-semantics.md, .design/thermite2-program.md and its pipeline JSON moved to docs/v2/, and every inbound reference was rewritten - including the ones in source comments, which is why this doc's governed files moved. Path strings only; no code, no behaviour, and no requirement changed. prior: 78d81ff79fb9d39e01e295262dc2fba370f06b13c285893806506546b4b2faf9, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 1106ab1e5817d4cbb5928f93b40fce3d262c9482e62e5c7ef86434ef2dc673c2)))
 governs:
   - .design/reqs/registry.toml
   - .design/reqs/status.md
@@ -244,6 +244,26 @@ scripts that have not switched to the facade.
 6. Keep the bridge tight: `req-status.py` should stay green and any reintroduced
    hand-maintained source status row should be treated as a regression to map or
    remove.
+
+## Interpreter floor
+
+`req-registry.py` parses the registry with `tomllib`, which is standard library
+from Python 3.11. On an older interpreter it reports
+
+```
+REQ registry inconclusive: tomllib is unavailable (Python < 3.11)
+```
+
+and exits **3**. That is correct behaviour — it fails rather than passing — but
+the environment error stands in front of the verdict, so a real finding waits
+behind it. In #127 the finding was requirements added to the registry without
+regenerating the status view they appear in, and it surfaced only once the gate
+ran on an interpreter that could parse the file.
+
+`req-registry.py` and `reqs` therefore carry a PEP 723 header declaring the
+floor, so `uv run tooling/reqs check` fetches a matching interpreter rather than
+inheriting whichever `python3` is on PATH, and returns a verdict instead of an
+excuse.
 
 ## Known Limits
 
