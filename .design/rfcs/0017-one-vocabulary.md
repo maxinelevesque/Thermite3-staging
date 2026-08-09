@@ -38,9 +38,14 @@ Rename five token kinds and three AST fields, and nothing else.
 | `Contract.fx` | `Contract.effects` |
 | `LemmaItem.req` | `LemmaItem.requires` |
 | `LemmaItem.ens` | `LemmaItem.ensures` |
+| `FnItem.dec` | `FnItem.measures` |
+| `SpecFnItem.dec` | `SpecFnItem.measures` |
+| `PropFnItem.dec` | `PropFnItem.measures` |
+| `LoopNode.dec` | `LoopNode.measures` |
+| `StructItem.inv` | `StructItem.keeps` |
 
-`LemmaItem` was not in this table when the RFC was written; the implementation
-found it. It carries the same two clause fields for the same reason, and leaving
+The table originally held eight rows. The implementation found seven more, each
+as a compile error rather than a reading, and `LemmaItem` is the clearest case. It carries the same two clause fields for the same reason, and leaving
 it behind would have reinstated the split this proposal exists to close — a
 `Contract` spelling `requires` beside a `LemmaItem` spelling `req`. Named here
 rather than absorbed silently, because a rename that grows during implementation
@@ -118,7 +123,20 @@ The evidence a reviewer should ask for is therefore narrow:
   name;
 * the conformance corpus is untouched, since no `.th` file changes.
 
-**One population needs care and is not type-directed.** RFC-6 already found it:
+**A digest over a `Debug` rendering is NOT type-directed, and this RFC first
+claimed no such case existed.** `forge/src/kernel_image.rs` computes a frozen
+boundary digest as `sha256(format!("{:#?}", function.contract))`, and Rust's
+derived `Debug` renders FIELD NAMES. Renaming `Contract`'s fields therefore moves
+that digest — `3f525f14` to `756cd389` — with no clause, span or effect changed.
+The compiler cannot see it; a CI job caught it. Re-pinned with the cause
+recorded, as RFC-6 did for the same digest when clause SPANS moved it.
+
+The lesson generalizes past this RFC: "the compiler enumerates every site" holds
+only where the compiler is what reads the name. A digest over a rendering, a
+serialized form, or a diagnostic string reads it too, and none of those type-check.
+
+**One further population needs care and is not type-directed.** RFC-6 already
+found it:
 clause names built as data — `format!("{loop_addr}.measures")`, the
 `ClauseSelector` family strings, and their diagnostics. Those are strings that
 must agree with `validate_segments`, and the compiler cannot see them. They were
@@ -136,6 +154,11 @@ listed here so a reviewer knows they were considered and excluded, not missed.
   the migration rewrites clause-token spans and preserves comments by design.
   RFC-6's implementation cleaned these; nothing prevents them recurring, and no
   gate looks at comment text.
+* **One frozen digest moved and was re-pinned rather than derived.** The
+  kernel boundary digest is `sha256` over a `Debug` rendering, so it encodes
+  field names. Accepting the new value rests on the same argument RFC-6 used:
+  the structural fingerprint over item names, clause text and the effect row is
+  identical either side.
 * **This RFC does not make the vocabulary enforceable.** After it, nothing stops
   a future field from being named `fx` again. A lint could, and this does not
   propose one.
