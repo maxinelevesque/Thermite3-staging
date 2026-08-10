@@ -27,20 +27,20 @@ fi
 export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-1}"
 
 # The SAT solver and LRAT converter are built from the exact revisions in
-# scripts/g4-toolchain.env. The gate never falls back to a system package.
-# shellcheck source=scripts/g4-toolchain.env
-source "$ROOT/scripts/g4-toolchain.env"
+# dev/g4-toolchain.env. The gate never falls back to a system package.
+# shellcheck source=dev/g4-toolchain.env
+source "$ROOT/dev/g4-toolchain.env"
 export THERMITE_EPR_CADICAL="$ROOT/target/g4-tools/bin/cadical"
 export THERMITE_EPR_DRAT_TRIM="$ROOT/target/g4-tools/bin/drat-trim"
 THERMITE_EPR_Z3="$(command -v z3)"
 export THERMITE_EPR_Z3
 
 [[ -x "$THERMITE_EPR_CADICAL" ]] || {
-  echo "g4-gate: pinned CaDiCaL is missing; run scripts/install-g4-tools.sh" >&2
+  echo "g4-gate: pinned CaDiCaL is missing; run dev/install-g4-tools.sh" >&2
   exit 2
 }
 [[ -x "$THERMITE_EPR_DRAT_TRIM" ]] || {
-  echo "g4-gate: pinned drat-trim is missing; run scripts/install-g4-tools.sh" >&2
+  echo "g4-gate: pinned drat-trim is missing; run dev/install-g4-tools.sh" >&2
   exit 2
 }
 [[ "$("$THERMITE_EPR_CADICAL" --version)" == "$CADICAL_VERSION" ]] || {

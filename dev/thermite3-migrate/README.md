@@ -15,8 +15,8 @@ So: build here, run against a worktree of the work branch.
 
 ```
 git worktree add ../t3-work anchor/implementation
-cargo build --release --manifest-path tooling/thermite3-migrate/Cargo.toml
-uv run --python 3.11 tooling/thermite3-migrate/coverage.py ../t3-work
+cargo build --release --manifest-path dev/thermite3-migrate/Cargo.toml
+uv run --python 3.11 dev/thermite3-migrate/coverage.py ../t3-work
 ```
 
 ## Why it is not a regex

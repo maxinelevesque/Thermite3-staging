@@ -5,7 +5,7 @@
 # ///
 """Run the front-end-driven rewriter over a tree and report what it reaches.
 
-    uv run --python 3.11 tooling/migrate/coverage.py <tree>
+    uv run --python 3.11 dev/thermite3-migrate/coverage.py <tree>
 
 Measure a pinned upstream on a `git archive` export of the pin, never on
 `.build/thermite`: counting through a clone this repository writes into is what
