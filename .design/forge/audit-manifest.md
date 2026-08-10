@@ -546,11 +546,11 @@ identity and the cache provenance agree.
 ## Verification
 
 - **Route to add (orchestrator, not this doc):** add a `[[route]]` to
-  `tooling/spec-routes.toml` mapping `forge/src/audit.rs` → this doc, with
+  `gates/routes.toml` mapping `forge/src/audit.rs` → this doc, with
   `reference = ["conformance/audit"]` and `conformance_ops = ["sum",
   "binary_search", "slag_boundary", "to_boundary_project"]`. The spec-discipline
   hook (R-XLATE-2/R-XLATE-3) blocks the builder's edit until both the route and
-  this doc exist. *(Status: the route exists at `tooling/spec-routes.toml`
+  this doc exist. *(Status: the route exists at `gates/routes.toml`
   `crate_pattern = "forge/src/audit.rs"` → this doc — no #274 route change
   needed; the amendment edits files already routed here.)*
 - **Oracle (orchestrator-authored):** a `conformance/audit/cases.json`

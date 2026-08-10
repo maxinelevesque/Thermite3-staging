@@ -596,7 +596,7 @@ lands the verified-validator theorem in a small, independently-auditable TCB.
 
 A NEW top-level directory **`lean/`** holds the Lean 4 development. (Chosen over
 `thermite-semantics/` to avoid colliding with the crate-naming convention and to read as "the Lean
-side of the toolchain".) It is NOT a Cargo crate and is NOT routed in `tooling/spec-routes.toml`
+side of the toolchain".) It is NOT a Cargo crate and is NOT routed in `gates/routes.toml`
 (which routes `thermite-*/src/**/*.rs` + `forge/src/**/*.rs`); it is governed by THIS doc directly.
 
 **Build files (the builder writes these — this doc does not):**

@@ -302,7 +302,7 @@ AC-2).
 
 ## Route to add (orchestrator, NOT this component)
 
-`tooling/spec-routes.toml` gains, under the `forge` block:
+`gates/routes.toml` gains, under the `forge` block:
 
 ```toml
 [[route]]

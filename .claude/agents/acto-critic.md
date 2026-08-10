@@ -41,7 +41,7 @@ This is intentional. `Edit` is for modifying production code. Your job is to pro
 ### Step 1 — Read the iter's deliverable
 - The commit message (`git show <SHA>`)
 - Every toolchain file the commit touches
-- The route table entry for each touched file (`tooling/spec-routes.toml`)
+- The route table entry for each touched file (`gates/routes.toml`)
 
 ### Step 2 — Read the contract sources
 For each touched file, `Read`: the governing `.design/<area>/<doc>.md`, the relevant `thermite-design.md` section(s), the route's `reference` (conformance corpus entry / golden file), and `goal.md`.

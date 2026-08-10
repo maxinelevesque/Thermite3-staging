@@ -405,7 +405,7 @@ assumed contract composes like any other, and the discharge is local + sound.
 
 - **Routes to add (orchestrator, not this doc):** the composition machinery lives
   in files that already carry governing routes; add `[[route]]` entries to
-  `tooling/spec-routes.toml` pointing the composition/aggregation files at THIS
+  `gates/routes.toml` pointing the composition/aggregation files at THIS
   doc (a file may carry multiple governing docs — the #52 `lower.rs` precedent):
 
   ```

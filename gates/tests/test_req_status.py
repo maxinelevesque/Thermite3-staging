@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Oracle tests for tooling/req-status.py."""
+"""Oracle tests for gates/req-status.py."""
 
 import json
 import subprocess

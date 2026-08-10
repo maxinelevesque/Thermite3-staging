@@ -260,7 +260,7 @@ this doc; R-CHAR-3, expected values hand-derived, never copied from forge output
 ## Verification
 
 - **Route to add (orchestrator, not this doc):** add a `[[route]]` to
-  `tooling/spec-routes.toml` mapping `forge/src/closure.rs` → this doc, with
+  `gates/routes.toml` mapping `forge/src/closure.rs` → this doc, with
   `reference = ["conformance/e2e"]` and `conformance_ops = ["sum", "binary_search",
   "foreign_id", "transitive_chain", "slag_in_closure"]`. The spec-discipline hook
   (R-XLATE-2/R-XLATE-3) blocks the builder's edit until both the route and this

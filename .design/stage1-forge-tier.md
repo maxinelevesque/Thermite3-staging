@@ -72,7 +72,7 @@ Q-register defaults (Q1–Q4, Q6–Q8) adopted inline. Umbrella:
   (extending the Table-4 drift-tripwire discipline) and repoint the
   *existing* doc-drift route at it — the doc-drift gate is built and
   already routes `forge/src/lean_export.rs` (#258,
-  `tooling/spec-routes.toml`), so AC-6 is authoring a table + pinning its
+  `gates/routes.toml`), so AC-6 is authoring a table + pinning its
   `audited-sha`, not building the gate — the durable form of F10's
   "re-inspect the freshest code": a standing drift-tripwired contract,
   not a one-time read.

@@ -211,7 +211,7 @@ v0.1 corpus has no effectful program.
 ## Verification
 
 `cargo test -p thermite-lower` (this route has no golden `reference` in
-`tooling/spec-routes.toml` — the checks are unit-level over crafted rows):
+`gates/routes.toml` — the checks are unit-level over crafted rows):
 
 - **AC-1:** table-driven `subsumes` law test (reflexive; `Pure` subsumes only
   `Pure`; top subsumes all) with hand-derived expected bools (R-CHAR-3).

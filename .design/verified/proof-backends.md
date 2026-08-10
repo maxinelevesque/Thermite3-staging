@@ -1144,7 +1144,7 @@ EXISTING spine encodings — the `Expr`/`Block` inductives + `denote`/`bodyDenot
 exporter does NOT define a new semantics — it targets the already-kernel-proven `S`, so its
 faithfulness is the SAME correspondence class as the Rust↔Lean encoder correspondence: **arm-by-arm
 inspection** (each Thermite AST construct ↦ its `Expr` constructor, quoting both sides) **+ the
-deep-audit drift tripwire** (`scripts/audit.sh` check [4], the SHA-pinning discipline
+deep-audit drift tripwire** (`gates/audit.sh` check [4], the SHA-pinning discipline
 `rust-lean-correspondence.md` uses — any change to the exporter or the targeted spine arms
 invalidates the audit row and forces re-inspection). This is named here as a NEW trust item of that
 exact discipline: **(EXP) — the exporter emits Lean source that, arm-by-arm, instantiates the

@@ -1,6 +1,6 @@
 # Stage 3: fixed-width clauses and checked reconstruction
 
-Status: Gate G3 implemented. The gate command is `bash scripts/g3-gate.sh`.
+Status: Gate G3 implemented. The gate command is `bash gates/g3.sh`.
 
 Stage 3 adds an explicit machine-arithmetic mode and reduces solver trust for
 the fragments Lean can check. The two changes meet on QF_BV:
@@ -136,7 +136,7 @@ relation/array fragment; see `stage4-epr-reconstruction.md`.
 - [x] **AC-9:** certificates contain checked evidence for the actual validity
   theorem; failed, unavailable, unsafe, and unsupported replays do not migrate
   trust. The audit names the residual solver trust.
-- [x] **AC-10:** `scripts/g3-gate.sh` runs all G3 checks in one CI job.
+- [x] **AC-10:** `gates/g3.sh` runs all G3 checks in one CI job.
 
 ## Evidence map
 
@@ -148,8 +148,8 @@ relation/array fragment; see `stage4-epr-reconstruction.md`.
 | mutation and nowrap | `forge/src/check.rs`, `forge/tests/bv_lowering.rs` |
 | invariant semantics | `thermite-lower/src/lower.rs`, `forge/tests/bv_invariants.rs` |
 | validity export and replay | `forge/src/lean_smt_export.rs`, `lean/Thermite/Reconstruct.lean` |
-| permanent axiom probe | `lean/Thermite/PinReconstruction.lean`, `scripts/lean-axiom-probe.sh` |
-| combined gate | `scripts/g3-gate.sh`, `.github/workflows/ci.yml` |
+| permanent axiom probe | `lean/Thermite/PinReconstruction.lean`, `gates/lean-axiom-probe.sh` |
+| combined gate | `gates/g3.sh`, `.github/workflows/ci.yml` |
 
 ## Residual trust and limits
 

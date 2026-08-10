@@ -100,7 +100,7 @@ the REQ status table. Blocker #26 (OQ-1) is RESOLVED on the scheme reading:
   - `binary_search.loop#1.dec` → `hi - lo`
 
   **NOTE on the corpus oracle string `binary_search.loop#1.keeps#2` (blocker #26):**
-  the task brief and `tooling/spec-routes.toml`
+  the task brief and `gates/routes.toml`
   (`conformance_ops = ["binary_search.loop#1.keeps#2"]`) cite `keeps#2` resolving to
   `forall_from(haystack, hi, |x| x > needle)`. In the verbatim corpus source the
   SECOND `keeps` is `forall_below(...)` and the THIRD is `forall_from(...)`. This
@@ -179,7 +179,7 @@ In `sum` the `while` is therefore `sum.loop#1`.
 
 Expected address lists are hand-derived from §4.3's scheme + the verbatim corpus,
 NEVER copied from `address.rs`'s output (R-CHAR-3). The corpus string
-`binary_search.loop#1.keeps#2` (in `tooling/spec-routes.toml conformance_ops`) is
+`binary_search.loop#1.keeps#2` (in `gates/routes.toml conformance_ops`) is
 the external oracle for the scheme; its exact resolution is pinned by blocker #26.
 
 ## REQ status

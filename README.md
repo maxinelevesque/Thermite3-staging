@@ -166,7 +166,7 @@ automatically when run from this checkout. The G4 gate also exports explicit
 paths before it runs:
 
 ```sh
-bash scripts/g4-gate.sh
+bash gates/g4.sh
 ```
 
 The gate applies a 6 GiB address-space ceiling and serializes the expensive
@@ -284,8 +284,8 @@ cargo test -p thermite-skill
 cargo test -p forge
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all --check
-python3 tooling/doc-drift.py
-tooling/reqs check
+python3 gates/doc-drift.py
+gates/reqs check
 ```
 
 Run the Rust/control-plane gauntlet with:
@@ -297,8 +297,8 @@ make gauntlet
 Proof-bearing gates:
 
 ```sh
-bash scripts/g3-gate.sh
-bash scripts/g4-gate.sh
+bash gates/g3.sh
+bash gates/g4.sh
 make audit-fast
 make audit
 ```

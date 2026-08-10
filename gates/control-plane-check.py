@@ -11,7 +11,7 @@ Exit codes:
 * 1: missing wiring, a missing script, or invalid settings
 * 3: the repository could not be inspected
 
-Usage: ``python3 tooling/control-plane-check.py [--root <repo-toplevel>]``
+Usage: ``python3 gates/control-plane-check.py [--root <repo-toplevel>]``
 
 See ``.design/tooling/control-plane.md`` for the requirements. The check runs in
 CI and through ``make control-plane``; it is not itself a hook or part of
@@ -40,20 +40,20 @@ REQUIRED_HOOKS = (
     {
         "event": "PostToolUse",
         "tools": ("Read",),
-        "script": "tooling/spec-discipline.py",
+        "script": "gates/spec-discipline.py",
         "claim": "spec-discipline.py:16 'PostToolUse on Read -> records the Read'",
     },
     {
         "event": "PreToolUse",
         "tools": ("Write", "Edit"),
-        "script": "tooling/spec-discipline.py",
-        "claim": "goal.md R-XLATE-1/2/3 'enforced by tooling/spec-discipline.py'",
+        "script": "gates/spec-discipline.py",
+        "claim": "goal.md R-XLATE-1/2/3 'enforced by gates/spec-discipline.py'",
     },
     {
         "event": "PreToolUse",
         "tools": ("Write", "Edit"),
-        "script": "tooling/anti-pattern-gate.py",
-        "claim": "goal.md R-APG 'enforced by tooling/anti-pattern-gate.py'",
+        "script": "gates/anti-pattern-gate.py",
+        "claim": "goal.md R-APG 'enforced by gates/anti-pattern-gate.py'",
     },
 )
 
@@ -66,7 +66,7 @@ MISSING_SCRIPT = "MISSING-SCRIPT"
 UNPARSEABLE = "UNPARSEABLE"
 WIRED = "WIRED"
 
-# Exit codes (REQ-5), matching tooling/doc-drift.py.
+# Exit codes (REQ-5), matching gates/doc-drift.py.
 EXIT_OK = 0
 EXIT_FAIL = 1
 EXIT_INCONCLUSIVE = 3

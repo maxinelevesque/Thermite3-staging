@@ -11,7 +11,7 @@ discussion: https://github.com/dollspace-gay/Thermite/issues/17
 
 The current doc-drift gate catches routed design documents that are stale relative to audited file SHA pins. That is useful, but it does not catch semantic drift inside long source comments. The recent `REQ-5 (forge plug-in point)` mismatch is the concrete example: one module documented the forge TV plug-in point as `NOT-STARTED` while the forge side documented and implemented it as `SHIPPED`.
 
-The new `tooling/req-status.py` lint is a pragmatic tripwire for this class of mistake. It scans `//! | REQ ... | SHIPPED/NOT-STARTED | ... |` source-comment rows and fails when exact labels disagree, `NOT-STARTED` rows do not cite future/deferred scope, or `SHIPPED` rows lack at least one resolving backtick file/symbol citation.
+The new `gates/req-status.py` lint is a pragmatic tripwire for this class of mistake. It scans `//! | REQ ... | SHIPPED/NOT-STARTED | ... |` source-comment rows and fails when exact labels disagree, `NOT-STARTED` rows do not cite future/deferred scope, or `SHIPPED` rows lack at least one resolving backtick file/symbol citation.
 
 That guard is intentionally mechanical. It reduces obvious contradictions, but it should not become the long-term source of truth.
 
@@ -64,8 +64,8 @@ Possible generated views:
 
 ## Enforcement Plan
 
-1. Keep `tooling/req-status.py` as the short-term contradiction lint.
-2. Add a registry file, likely under `.design/reqs/` or `tooling/reqs/`.
+1. Keep `gates/req-status.py` as the short-term contradiction lint.
+2. Add a registry file, likely under `.design/reqs/` or `gates/reqs/`.
 3. Add a generator that renders tables from the registry.
 4. Add a check that generated tables are up to date.
 5. Replace hand-written source-comment status rows with generated rows or links to generated status docs.

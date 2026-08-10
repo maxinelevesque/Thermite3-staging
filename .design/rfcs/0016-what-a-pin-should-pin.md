@@ -13,7 +13,7 @@ introduces: []
 | **Status** | Draft, unfiled |
 | **Supersedes** | — |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
-| **Scope** | `tooling/doc-drift.py` and the route table, not the language |
+| **Scope** | `gates/doc-drift.py` and the route table, not the language |
 | **Relation** | Generalizes RFC-15 §3.3, which narrows one route as a special case |
 
 `doc-drift` asks a good question — *might this document now be false?* — and

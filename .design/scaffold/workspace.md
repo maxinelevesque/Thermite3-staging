@@ -22,7 +22,7 @@ thesis-refs:
 
 The scaffold is the empty-but-buildable Cargo workspace that every other v0.1
 kernel unit lands inside. It fixes the crate topology (the five member crates
-of `tooling/spec-routes.toml`), the internal dependency DAG (leaf-first per
+of `gates/routes.toml`), the internal dependency DAG (leaf-first per
 R-DEFER-7), the shared error / `Result` discipline (R-CODE-2), the pinned Rust
 edition + MSRV for determinism (R-CODE-5), and the CI gauntlet that is the
 acceptance gate. Nothing in this scaffold contains language logic — it is the
@@ -44,14 +44,14 @@ five-crate REQ texts below are the SCAFFOLD-TIME contract; the growth is
 recorded here and in the evidence rows.
 
 Gate G4 adds a dedicated CI job that installs the pinned SAT/LRAT tools and Z3,
-then runs `scripts/g4-gate.sh` under its 6 GiB process limit. This is additive:
+then runs `gates/g4.sh` under its 6 GiB process limit. This is additive:
 the workspace members and dependency graph are unchanged.
 
 ## Requirements
 
 - **REQ-1 (workspace topology):** A virtual Cargo workspace (root `Cargo.toml`
   with `[workspace]`, no root `[package]`) whose members are exactly the five
-  crates implied by `tooling/spec-routes.toml`: `thermite-syntax`,
+  crates implied by `gates/routes.toml`: `thermite-syntax`,
   `thermite-spec`, `thermite-lower`, `forge`, `thermite-skill`. `forge` is the
   sole binary crate (the CLI); the other four are libraries. No crate is
   invented that the routes / `goal.md` do not imply. Derived from
@@ -196,7 +196,7 @@ not itself a publishable crate. This is the conventional layout for a
 multi-crate toolchain and keeps each component independently testable
 (`cargo test -p <crate>`), which the per-crate gauntlet in `goal.md` requires.
 
-The crate set and file layout are fixed by `tooling/spec-routes.toml` — the
+The crate set and file layout are fixed by `gates/routes.toml` — the
 authoritative module map (`goal.md` "Scope": *"the route table is the
 authoritative module map"*). The scaffold materializes the five crates it
 names:
@@ -215,7 +215,7 @@ thermite-skill/    (lib)   dep: thermite-spec, thermite-syntax; route: generate.
 (Current-tree growth, #262 re-audit: `thermite-verified` (leaf, #60) and
 `thermite-tv` (deps syntax+spec, #144) are members six and seven;
 `thermite-skill` also ships a `src/main.rs` bin (#7); `forge/src/main.rs` now
-registers ~27 modules — `tooling/spec-routes.toml` remains the authoritative
+registers ~27 modules — `gates/routes.toml` remains the authoritative
 module map.)
 
 The dependency DAG (REQ-2) reflects the data flow of the toolchain in
@@ -296,7 +296,7 @@ scaffold contains no language behavior. The corpus (`conformance/sum.th`,
 ## Open questions (for the orchestrator before the builder runs)
 
 - **OQ-1 (thermite-spec membership vs issue #1 comment):** The `goal.md` Scope
-  and `tooling/spec-routes.toml` both list `thermite-spec` as a distinct crate
+  and `gates/routes.toml` both list `thermite-spec` as a distinct crate
   (`thermite-spec/src/{combinators,grammar}.rs`), but the issue #1 `[decision]`
   comment enumerates only `thermite-syntax`, `thermite-lower`, `forge`,
   `thermite-skill` (it omits `thermite-spec`). This doc follows the route table

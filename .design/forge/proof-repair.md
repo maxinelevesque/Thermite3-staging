@@ -50,7 +50,7 @@ REPORTS (never upgrades) counterexamples and rejects.
 
 It is GREENFIELD: `forge/src/repair.rs` does not exist, there is no `Command::Repair`
 in `cli.rs` (`parse_args` matches only `new` / `check` / `audit`), and no route for
-it in `tooling/spec-routes.toml`. The pieces repair COMPOSES all ship — the #10
+it in `gates/routes.toml`. The pieces repair COMPOSES all ship — the #10
 ladder + degrade (`degrade.rs`), the #11 solver profile = the repair prompt
 (`profile.rs`), the #8 proof cache (`cache.rs`), the `--rlimit` budget seam
 (`check::check_file_with_rlimit`), and the lower.rs shape-keyed proof-aid templates
@@ -496,7 +496,7 @@ COMPOSES all ship and are reused: the #10 ladder's `VerusTimeout` degrade reason
   `forge repair`. To ratify in #18.
 
 - **OQ-5 (route registration).** `forge/src/repair.rs` is not in
-  `tooling/spec-routes.toml`. The orchestrator must add a route
+  `gates/routes.toml`. The orchestrator must add a route
   `crate_pattern = "forge/src/repair.rs"` → `design = ".design/forge/proof-repair.md"`
   before the #18 builder can edit it (R-XLATE-2/3), and the `Command::Repair`
   dispatch lands in `forge/src/cli.rs` (already routed to `.design/forge/cli.md`; the

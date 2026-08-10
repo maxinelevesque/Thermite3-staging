@@ -805,7 +805,7 @@ dedicated relational fixture would only duplicate `binary_search`.)
 
 ## Route to add (orchestrator, NOT this component)
 
-`tooling/spec-routes.toml`:
+`gates/routes.toml`:
 ```toml
 [[route]]
 crate_pattern = "forge/src/vacuity_solver.rs"

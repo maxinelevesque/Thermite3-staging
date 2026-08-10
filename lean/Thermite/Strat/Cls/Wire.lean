@@ -16,7 +16,7 @@
   This is a TOOL module (an `IO` driver), not part of the proof spine: it carries no
   theorems and the parser is `partial` (its termination is not needed — a malformed line
   is reported as `parse-error`, never trusted). It is added to the Lean CI build target
-  set (`scripts/lean-axiom-probe.sh`) only so a compile break is caught, not because it
+  set (`gates/lean-axiom-probe.sh`) only so a compile break is caught, not because it
   contributes an axiom-gated theorem.
 
   THE WIRE GRAMMAR (tokens are `(`, `)`, and maximal non-paren non-space runs; mirrors

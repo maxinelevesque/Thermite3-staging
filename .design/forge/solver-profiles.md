@@ -381,7 +381,7 @@ timing-fragile, documented below).
   timeout signal fires) should be preferred; to be settled with OQ-1.
 
 - **OQ-4 (route registration).** `forge/src/profile.rs` is not yet in
-  `tooling/spec-routes.toml`. The orchestrator must add a route
+  `gates/routes.toml`. The orchestrator must add a route
   `crate_pattern = "forge/src/profile.rs"` → `design = ".design/forge/solver-profiles.md"`
   before the #11 builder can edit it (R-XLATE-2/3). This doc-author does not edit
   the route table.

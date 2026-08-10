@@ -36,7 +36,7 @@
 # `make audit`       runs the deep audit (SLOW — minutes: Lean build + corpus TV + teeth).
 # `make audit-fast`  runs the legacy A/B/D existence demo (the old shape) on one program.
 #
-# Usage:  bash scripts/audit.sh [--fast] [PROGRAM.th] [EMITTED_PROOF.verus.rs]
+# Usage:  bash gates/audit.sh [--fast] [PROGRAM.th] [EMITTED_PROOF.verus.rs]
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -183,7 +183,7 @@ note "Re-builds the Lean proof spine from source, then \`#print axioms\` all twe
 note "gated theorems: the v1 and loop spine, relax route, Stage 2 spine, and the"
 note "Stage 3 reconstruction probe. PASS iff every axiom list is a subset of"
 note "{propext, Classical.choice, Quot.sound} — no sorryAx, no custom axiom."
-note "The build + parse is the SHARED scripts/lean-axiom-probe.sh — the same probe the"
+note "The build + parse is the SHARED gates/lean-axiom-probe.sh — the same probe the"
 note "Lean CI job runs (trust-audit F4), so local and CI cannot drift in what they check."
 
 # detect elan/lake
@@ -202,7 +202,7 @@ else
   echo "      lake : $LAKE   (building lean/ from source — this is the slow part)"
   # Delegate the build + #print-axioms parse to the shared probe (single source of truth
   # with the Lean CI job). It prints PASS/FAIL per theorem; map its exit into RC.
-  if bash "$ROOT/scripts/lean-axiom-probe.sh"; then
+  if bash "$ROOT/gates/lean-axiom-probe.sh"; then
     note "MEANING: the ∀-programs faithfulness theorem (lowering_faithful), its three"
     note "T1 soundness pillars (ref_sound / exec_ref_sound / body_ref_sound), the loop"
     note "WHILE-RULE (while_rule), and the two relax-route spine lemmas (r_relax_sound /"
@@ -492,7 +492,7 @@ note "     strat_two_phase) are content-pinned + current under the stratified co
 if ! command -v python3 >/dev/null 2>&1; then
   skip "[4′] python3 not found — the doc-drift tripwire was not run."
   S2_DRIFT=skip
-elif python3 "$ROOT/tooling/doc-drift.py" >"$TMP/docdrift.out" 2>&1 \
+elif python3 "$ROOT/gates/doc-drift.py" >"$TMP/docdrift.out" 2>&1 \
      && grep -q "CURRENT  .design/verified/strat-rust-lean-correspondence.md" "$TMP/docdrift.out"; then
   pass "[4′] doc-drift GREEN — the stratified correspondence doc is current (no mirror drift)"
   S2_DRIFT=green

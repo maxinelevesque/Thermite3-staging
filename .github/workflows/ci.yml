@@ -61,21 +61,21 @@ jobs:
       - name: cargo fmt
         run: cargo fmt --all --check
 
-      - name: tooling gate tests (tooling/tests)
-        run: uv run python -m unittest discover -s tooling/tests
+      - name: tooling gate tests (gates/tests)
+        run: uv run python -m unittest discover -s gates/tests
       - name: doc-drift tripwire (design-doc freshness)
-        run: uv run python tooling/doc-drift.py
+        run: uv run python gates/doc-drift.py
       # The gate that guards the gates (crosslink #93): asserts the two
       # agent-facing hooks are still WIRED in the tracked settings.json, which
       # `crosslink init` regenerates and 5581b65f silently clobbered.
       - name: control-plane gate (hook wiring)
-        run: uv run python tooling/control-plane-check.py
+        run: uv run python gates/control-plane-check.py
       - name: req-status lint (source-comment status consistency)
-        run: uv run python tooling/req-status.py
+        run: uv run python gates/req-status.py
       - name: req-registry gate (canonical status inventory)
-        run: uv run tooling/reqs check
+        run: uv run gates/reqs check
       - name: rfc gate (front matter, numbering, registry link)
-        run: uv run python tooling/rfc-check.py
+        run: uv run python gates/rfc-check.py
 
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
@@ -240,7 +240,7 @@ jobs:
   # build or a relax-spine lemma acquiring a disallowed axiom would go unseen in CI).
   # SPLIT into two parallel jobs (#340, CI speedup options 2+3 — zero coverage loss):
   #   lean-probe       — `lake build` the spine subset + the `#print axioms` gate
-  #                      (scripts/lean-axiom-probe.sh, the same check [1] `make audit`
+  #                      (gates/lean-axiom-probe.sh, the same check [1] `make audit`
   #                      runs, so local and CI cannot drift).
   #   lean-spine-forge — an independent run of the spine-gated forge tests.
   #                      The ordinary test matrix also provisions Lean so a missing
@@ -295,7 +295,7 @@ jobs:
         run: lake exe cache get
 
       - name: Lean spine build + axiom probe (lake build + #print axioms gate)
-        run: bash scripts/lean-axiom-probe.sh
+        run: bash gates/lean-axiom-probe.sh
 
   # The independent spine-GATED forge tests (Audit F4 / #309). Lean + Verus are
   # mandatory here and in the ordinary test matrix; missing dependencies fail rather
@@ -498,7 +498,7 @@ jobs:
           key: g3
 
       - name: Gate G3
-        run: bash scripts/g3-gate.sh
+        run: bash gates/g3.sh
 
   # Stage 4 closes the admitted S₂.0 relation/array residual. Keep its pinned
   # SAT/LRAT tools and complete replay matrix visible as one fail-fast check.
@@ -559,5 +559,5 @@ jobs:
         run: bash scripts/install-g4-tools.sh
 
       - name: Gate G4
-        run: bash scripts/g4-gate.sh
+        run: bash gates/g4.sh
 

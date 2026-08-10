@@ -3,12 +3,12 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: cd8ddad18a7bd790eb874a477d9030e9b7060b03645005887a90f6de1741f2b1 (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: a2006a732dff1a7a13f11568a5adbdd291a6f66736ea6af05fdd8bb3ac287e9c, previously (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: adba1a733f08c9644914fad439fcaf367e972adeebc3039b37fd9dea8c8c233f))
+audited-content-sha256: 236b890dd162d58aceacfbf8e51a3c2d3b26567fcbfac5f7f5d6a5fee3d2ad46 (re-pinned 2026-08-09, RFC-18 step 1 completion. A tree-wide sweep found 37 live references to the step-1 paths that the first sweep missed, because that sweep was piped through head -25 and the output was dominated by .design/ hits - a truncated list read as a complete one. The misses included forge/tests/divergence_audit_check2_exit_swallow.rs, which READS the audit script by path and failed CI with 'read scripts/audit.sh: NotFound'. Governed source changed only where it named a moved path; no behaviour changed. Historical records were excluded from the sweep: .claims/, CHANGELOG.md, the frozen docs/v2/ set, and every audited-content-sha256 note line. prior: b0c34ae6ec93f5a9880df8c9c72770208acbd8a125d4382eced9bc84099e84ba.)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
-         audit boundary, proof tooling, and Gate G4 (see tooling/spec-routes.toml)
+         audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->
 
-Status: shipped. Gate G4 is `bash scripts/g4-gate.sh`.
+Status: shipped. Gate G4 is `bash gates/g4.sh`.
 
 Stage 2 proved the shape of the stratified encoder, but left relation and
 array-property atoms interpreted by the solver. Stage 3 added checked replay for
@@ -177,7 +177,7 @@ not race to compile the shared Lean artifacts.
   clause routing without an engine flag.
 - [x] Restratified formulas and their side obligations have positive and
   fail-closed tests.
-- [x] `bash scripts/g4-gate.sh`, the workspace tests, Lean build and axiom probe,
+- [x] `bash gates/g4.sh`, the workspace tests, Lean build and axiom probe,
   audit, drift checks, and requirement-registry checks all pass with no skipped
   dependency.
 
@@ -192,7 +192,7 @@ not race to compile the shared Lean artifacts.
   models, replays proofs, records evidence, and maintains the checked cache.
 - `forge/src/check.rs` applies the route automatically and changes trust only
   after checked replay.
-- `scripts/g4-gate.sh` is the memory-bounded completion gate.
+- `gates/g4.sh` is the memory-bounded completion gate.
 
 ## Residual trust after G4
 

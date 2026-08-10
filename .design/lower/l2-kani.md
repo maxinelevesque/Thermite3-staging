@@ -459,7 +459,7 @@ kani spawn (R-CHAR-3: the expected strings are Kani's real format).
 real `cargo kani 0.67.0` runs and remain the external truth the tests anchor
 to.
 
-### Routes (added at #9; verified present in `tooling/spec-routes.toml` at the #262 re-audit)
+### Routes (added at #9; verified present in `gates/routes.toml` at the #262 re-audit)
 
 ```toml
 [[route]]

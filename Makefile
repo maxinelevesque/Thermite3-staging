@@ -1,6 +1,6 @@
 # Thermite — convenience targets. The build/test system is Cargo; these are
 # thin entry points. `make audit` is the headline: a FULL TRUST-CHAIN
-# re-derivation a skeptic runs on their own machine (see scripts/audit.sh).
+# re-derivation a skeptic runs on their own machine (see gates/audit.sh).
 .PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test
 
 DOC_DRIFT_CI_BASE ?= origin/main
@@ -19,13 +19,13 @@ DOC_DRIFT_CI_HEAD ?= HEAD
 # is absent, and a SKIP degrades the verdict. Requires elan/lake (check 1) and the
 # Verus/Z3 prover (checks 2/3/5: set VERUS_BIN, put `verus` on PATH, or ~/.local/bin/verus).
 audit:
-	@bash scripts/audit.sh
+	@bash gates/audit.sh
 
 # The fast existence demo (the legacy A/B/D shape on one program): faithful program
 # certifies L3, the SAME program with an injected bug is REFUSED, and the emitted
 # proof re-verifies under third-party Verus with forge excluded. Requires Verus/Z3.
 audit-fast:
-	@bash scripts/audit.sh --fast
+	@bash gates/audit.sh --fast
 
 # The full local gauntlet (mirrors CI).
 gauntlet:
@@ -33,8 +33,8 @@ gauntlet:
 	cargo test --workspace
 	cargo clippy --workspace --all-targets -- -D warnings
 	cargo fmt --all --check
-	uv run python tooling/req-status.py
-	uv run tooling/reqs check
+	uv run python gates/req-status.py
+	uv run gates/reqs check
 
 check:
 	cargo build --workspace
@@ -59,7 +59,7 @@ clippy:
 # commit (`DOC_DRIFT_CI_BASE`, default origin/main, merged with
 # `DOC_DRIFT_CI_HEAD`, default HEAD) in a temporary worktree. Deliberately NOT
 # part of `make audit` — doc freshness is a development-discipline invariant,
-# not a link in the proof-trust chain (decision 5); scripts/audit.sh stays
+# not a link in the proof-trust chain (decision 5); gates/audit.sh stays
 # byte-identical.
 doc-drift: doc-drift-ci
 
@@ -83,31 +83,31 @@ doc-drift-ci:
 	cleanup() { git worktree remove -f "$$tmp_dir" >/dev/null 2>&1 || rm -rf "$$tmp_dir"; }; \
 	trap cleanup EXIT HUP INT TERM; \
 	git worktree add --detach --quiet "$$tmp_dir" "$$merge_sha"; \
-	uv run python "$$tmp_dir/tooling/doc-drift.py" --root "$$tmp_dir"
+	uv run python "$$tmp_dir/gates/doc-drift.py" --root "$$tmp_dir"
 
 doc-drift-worktree:
-	@uv run python tooling/doc-drift.py
+	@uv run python gates/doc-drift.py
 
 # The gate's own oracle fixture suite (hand-authored expected values, R-CHAR-3).
 doc-drift-test:
-	@uv run python -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s gates/tests -v
 
 # Source-comment REQ-status inventory/contradiction lint. Complements
 # doc-drift's audited-sha freshness check by catching semantic contradictions in
 # `//! | REQ | SHIPPED/NOT-STARTED | evidence |` rows.
 req-status:
-	@uv run python tooling/req-status.py
+	@uv run python gates/req-status.py
 
 req-status-test:
-	@uv run python -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s gates/tests -v
 
 # Canonical REQ registry + generated status views. `--check` validates the
 # machine-readable registry and fails if checked-in generated views are stale.
 req-registry:
-	@uv run tooling/reqs check
+	@uv run gates/reqs check
 
 req-registry-test:
-	@uv run python -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s gates/tests -v
 
 # The gate that guards the gates (crosslink #93). doc-drift pins the CONTENT of
 # what the routes govern; this asserts the two agent-facing hooks are actually
@@ -116,7 +116,7 @@ req-registry-test:
 # Not part of `make audit`: hook wiring is a development-discipline invariant,
 # not a link in the proof-trust chain (the doc-drift decision-5 precedent).
 control-plane:
-	@uv run python tooling/control-plane-check.py
+	@uv run python gates/control-plane-check.py
 
 control-plane-test:
-	@uv run python -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s gates/tests -v

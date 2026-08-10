@@ -189,7 +189,7 @@ mid-argument.
 
 ## The gate
 
-`tooling/rfc-check.py`, in the style of the existing gates: stdlib only, exit
+`gates/rfc-check.py`, in the style of the existing gates: stdlib only, exit
 non-zero with a specific message.
 
 - every file in `.design/rfcs/` has valid front matter with the required fields
@@ -203,7 +203,7 @@ write its own enforcement is one that does not land.
 
 ### The gate declares its interpreter
 
-`rfc-check.py` carries a PEP 723 header, so `uv run tooling/rfc-check.py` fetches
+`rfc-check.py` carries a PEP 723 header, so `uv run gates/rfc-check.py` fetches
 a matching interpreter rather than inheriting whichever `python3` is on PATH.
 `req-registry.py` and `reqs` get the same header, for a reason this PR ran into.
 
@@ -222,7 +222,7 @@ status view they appear in. It was invisible until the gate ran on an
 interpreter that could parse the file.
 
 An inconclusive gate is not a lie, but it is a result nobody can act on. The
-header makes `uv run tooling/reqs check` produce the actual verdict.
+header makes `uv run gates/reqs check` produce the actual verdict.
 
 ## What this does not change
 

@@ -485,7 +485,7 @@ Gauntlet (R-DEFER-6, per crate): `cargo test -p <crate>`, `cargo clippy -p <crat
 ## Routes to add (orchestrator)
 
 C7 adds NEW concerns to files that already carry routes; add these routes to
-`tooling/spec-routes.toml` pointing at THIS doc (a file may carry multiple
+`gates/routes.toml` pointing at THIS doc (a file may carry multiple
 governing docs — the `lower.rs` precedent):
 
 ```

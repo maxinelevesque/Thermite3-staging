@@ -1,4 +1,4 @@
-# spec-routes.toml — the Thermite route table (single source of truth).
+# routes.toml — the Thermite route table (single source of truth).
 #
 # Each route maps a toolchain source file to the design doc that governs it
 # and, where one exists, the golden/conformance reference that is the
@@ -1040,7 +1040,7 @@ conformance_ops = ["binary_search"]
 # itself (which IS enforced via `make doc-drift`): editing the gate without
 # bumping the doc's audited-sha fires the tripwire on this route (the dogfood).
 [[route]]
-crate_pattern = "tooling/doc-drift.py"
+crate_pattern = "gates/doc-drift.py"
 design = ".design/tooling/doc-drift-tripwire.md"
 reference = []
 conformance_ops = []
@@ -1049,23 +1049,23 @@ conformance_ops = []
 # tooling — canonical REQ registry and generated status views (GitHub #17)
 # ---------------------------------------------------------------------
 # DECLARATIVE like the doc-drift route above: the edit hook does not gate
-# tooling/.design data paths, but doc-drift can still enforce that the governing
+# gates/.design data paths, but doc-drift can still enforce that the governing
 # design doc is re-pinned when the registry, generator, generated view, or legacy
 # bridge changes.
 [[route]]
-crate_pattern = "tooling/req-registry.py"
+crate_pattern = "gates/req-registry.py"
 design = ".design/tooling/req-registry.md"
 reference = []
 conformance_ops = []
 
 [[route]]
-crate_pattern = "tooling/reqs"
+crate_pattern = "gates/reqs"
 design = ".design/tooling/req-registry.md"
 reference = []
 conformance_ops = []
 
 [[route]]
-crate_pattern = "tooling/tests/test_req_registry.py"
+crate_pattern = "gates/tests/test_req_registry.py"
 design = ".design/tooling/req-registry.md"
 reference = []
 conformance_ops = []
@@ -1083,7 +1083,7 @@ reference = []
 conformance_ops = []
 
 [[route]]
-crate_pattern = "tooling/req-status.py"
+crate_pattern = "gates/req-status.py"
 design = ".design/tooling/req-registry.md"
 reference = []
 conformance_ops = []
@@ -1092,7 +1092,7 @@ conformance_ops = []
 # Stage-2 stratified cage — the three Rust mirrors of the kernel-proven
 # Lean Strat models (crosslink #331, REQ-9 [4′]). Governed by the
 # stratified Rust↔Lean correspondence doc, content-pinned and drift-gated
-# (tooling/doc-drift.py) as one of the four make-audit checks that gate the
+# (gates/doc-drift.py) as one of the four make-audit checks that gate the
 # G2 trust flip (.design/stage2-stratified-cage.md REQ-9 / AC-9). These
 # routes make the doc-drift tripwire COVER the three mirrors; before #331
 # the strat files were unrouted (no freshness gate).
@@ -1183,6 +1183,15 @@ reference = []
 conformance_ops = []
 
 [[route]]
+# gates/g4.sh was gates/g4.sh and was covered by the scripts/g4-* glob
+# above until RFC-18 step 1 moved it. Named explicitly so the move does not
+# silently drop its route (R-XLATE-2 would otherwise block the next edit).
+crate_pattern = "gates/g4.sh"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
 crate_pattern = "scripts/install-g4-tools.sh"
 design = ".design/stage4-epr-reconstruction.md"
 reference = []
@@ -1205,7 +1214,7 @@ conformance_ops = []
 # `make doc-drift` + CI): editing the hook wiring or an agent def without
 # bumping .design/tooling/control-plane.md's audited-content-sha256 fires the
 # tripwire. The wiring itself is separately asserted by
-# tooling/control-plane-check.py (`make control-plane`).
+# gates/control-plane-check.py (`make control-plane`).
 
 [[route]]
 crate_pattern = ".claude/settings.json"
@@ -1220,7 +1229,7 @@ reference = []
 conformance_ops = []
 
 [[route]]
-crate_pattern = "tooling/control-plane-check.py"
+crate_pattern = "gates/control-plane-check.py"
 design = ".design/tooling/control-plane.md"
 reference = []
 conformance_ops = []

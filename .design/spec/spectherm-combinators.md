@@ -385,7 +385,7 @@ later consumer.
 ## Verification
 
 `cargo test -p thermite-spec` over the oracle at `tests/golden/combinators/`
-(declared as this route's `reference` in `tooling/spec-routes.toml`):
+(declared as this route's `reference` in `gates/routes.toml`):
 
 - **AC-1:** assert the registry table equals the hand-authored
   `tests/golden/combinators/registry.{json,txt}` (every name/arity/arg-kinds/

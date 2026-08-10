@@ -1,6 +1,6 @@
 /-
   Permanent probe for proof-producing BitVec reconstruction.
-  Its axiom report is checked by scripts/lean-axiom-probe.sh.
+  Its axiom report is checked by gates/lean-axiom-probe.sh.
 -/
 import Thermite.Reconstruct
 

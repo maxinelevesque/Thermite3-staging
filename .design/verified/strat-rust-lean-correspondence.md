@@ -1,7 +1,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: a7a96c79c077a9695bbaf6e1087030ab48bc9d7d669fd5179589465bbf4bc897
+audited-content-sha256: fb912de6d0a4ffaf109229d5ae627acf4ce60b0597ca55b34496ffe9db0454d5 (re-pinned 2026-08-09, RFC-18 step 1 completion. A tree-wide sweep found 37 live references to the step-1 paths that the first sweep missed, because that sweep was piped through head -25 and the output was dominated by .design/ hits - a truncated list read as a complete one. The misses included forge/tests/divergence_audit_check2_exit_swallow.rs, which READS the audit script by path and failed CI with 'read scripts/audit.sh: NotFound'. Governed source changed only where it named a moved path; no behaviour changed. Historical records were excluded from the sweep: .claims/, CHANGELOG.md, the frozen docs/v2/ set, and every audited-content-sha256 note line. prior: a7a96c79c077a9695bbaf6e1087030ab48bc9d7d669fd5179589465bbf4bc897.)
 governs: thermite-spec/src/classifier.rs (the Rust admission classifier) ↔
          lean/Thermite/Strat/{Nnf,Graph,Fragment}.lean (Thermite.Strat.Cls.admitted,
          T3-C classifier_correct);
@@ -31,7 +31,7 @@ Stage 2 ships THREE new Rust files that MIRROR kernel-proven Lean models over th
 minimal semantic spine `Frm`). As with the v1 encoders
 (`.design/verified/rust-lean-correspondence.md`), Lean proves the **Lean** definitions sound;
 that the **Rust** mirrors implement the *same* algorithm is a separate claim, discharged here
-by inspection and held current by the doc-drift tripwire (`tooling/doc-drift.py`, check [4′]).
+by inspection and held current by the doc-drift tripwire (`gates/doc-drift.py`, check [4′]).
 This doc is one of the four `make audit` checks that gate the G2 certificate trust flip
 (REQ-9 / AC-9): a content drift in any governed file flips this row red, which mechanically
 withholds the flip (`forge g2-gate`).
@@ -64,7 +64,7 @@ attesting that the Stage 2 Rust mirrors match their Lean definitions.
 ## Audited files (content-pinned — re-pin on any change)
 
 The pin is the `audited-content-sha256:` digest in this doc's header — a deterministic
-aggregate SHA-256 over the three governed files' content (`tooling/doc-drift.py`
+aggregate SHA-256 over the three governed files' content (`gates/doc-drift.py`
 `_content_digest`). Any edit to a governed file changes the digest and FAILS the doc-drift
 tripwire until this doc is re-audited and re-pinned (`make doc-drift`). The content pin is
 chosen over a commit pin so a squash merge cannot leave an INVALID-PIN (the lower.rs lesson).
@@ -137,7 +137,7 @@ is the adversarial complement: for every load-bearing theorem, an in-tree
 mis-implementation — and `decide`-checks (or, for the relax island, kernel-proves) that it
 DIVERGES from the proven definition on a concrete witness. A pin is the executable
 statement of *why the theorem's hypotheses are necessary*: drop the discipline the theorem
-names and this witness flips. All eight are BUILD targets in `scripts/lean-axiom-probe.sh`,
+names and this witness flips. All eight are BUILD targets in `gates/lean-axiom-probe.sh`,
 so a `sorry` or a broken `decide` in any of them fails the Lean CI job; each is axiom-clean
 (⊆ {propext, Classical.choice, Quot.sound}; no `native_decide`).
 

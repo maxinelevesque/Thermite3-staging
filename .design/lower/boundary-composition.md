@@ -120,7 +120,7 @@ a foreign function — not a proof cheat — because:
    `to_boundary` (#17): "verified, GIVEN `f` honors its contract."
 
 **emitted-verus vs our-Rust-src distinction (load-bearing).** The anti-pattern
-gate (`tooling/anti-pattern-gate.py`, R-DEFER-9) forbids `#[verifier::external]`
+gate (`gates/anti-pattern-gate.py`, R-DEFER-9) forbids `#[verifier::external]`
 (note: `external`, not `external_body`) appearing in OUR toolchain's `.rs`
 production source — that would dodge a proof of code we wrote. #52 emits
 `#[verifier::external_body]` (a different attribute) INTO the lowered verus
@@ -158,7 +158,7 @@ the two files #52 touched:
   in place of a real body. The `requires`/`ensures` lowering is UNCHANGED (same
   spec-context machinery, REQ-5 of verus-lowering.md); only the attribute + the
   body-suppression is new. This is the SECONDARY change site (the emission shape
-  is the lowerer's job). (Route shape RESOLVED at #52: `tooling/spec-routes.toml` carries
+  is the lowerer's job). (Route shape RESOLVED at #52: `gates/routes.toml` carries
   boundary-composition.md routes for BOTH `lower.rs` and `check.rs`, alongside
   their other governing docs — see OQ-3.)
 
@@ -294,7 +294,7 @@ forge check <file>
 ## Verification
 
 - **Route (orchestrator, not this doc):** add/extend `[[route]]` entries in
-  `tooling/spec-routes.toml` so `forge/src/check.rs` and `thermite-lower/src/lower.rs`
+  `gates/routes.toml` so `forge/src/check.rs` and `thermite-lower/src/lower.rs`
   map to this doc (in ADDITION to their existing `check.md` / `verus-lowering.md`
   routes — a file may carry multiple governing docs), with `reference =
   ["conformance/composition"]`. The spec-discipline hook (R-XLATE-2/R-XLATE-3)

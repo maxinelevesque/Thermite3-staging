@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check whether routed design documents are current with their source files.
 
-Routes come from ``tooling/spec-routes.toml``. Each routed document must contain
+Routes come from ``gates/routes.toml``. Each routed document must contain
 either an ``audited-content-sha256`` pin or a legacy ``audited-sha`` commit pin.
 Content pins are compared with a digest of the governed files. Legacy pins are
 checked against commits that touched those files after the pinned commit.
@@ -12,7 +12,7 @@ Results are sorted by document and file:
 * 1: drift, a missing pin, or an invalid pin was found
 * 3: the check could not run reliably
 
-Usage: ``python3 tooling/doc-drift.py [--root <repo-toplevel>]``
+Usage: ``python3 gates/doc-drift.py [--root <repo-toplevel>]``
 
 The detailed rules are in ``.design/tooling/doc-drift-tripwire.md``.
 This is a standalone/CI check, not a Claude Code hook or part of ``make audit``.
@@ -35,7 +35,7 @@ except ImportError:  # pragma: no cover - exercised via the env-failure path
 # Project settings
 
 # Repo-relative path to the route table (the enumeration source, REQ-1).
-ROUTES_RELPATH = "tooling/spec-routes.toml"
+ROUTES_RELPATH = "gates/routes.toml"
 
 # Preferred content pin: a deterministic aggregate SHA-256 over the doc's
 # governed file set. This makes drift a data-consistency check, independent of
@@ -200,7 +200,7 @@ def load_doc_files(root):
             )
         design = route.get("design")
         pattern = route.get("crate_pattern")
-        # Both fields are required by the spec-routes.toml schema. Reject absent,
+        # Both fields are required by the routes.toml schema. Reject absent,
         # empty, or non-string values so a malformed route cannot reduce coverage
         # while the check still succeeds (#261).
         for field, value in (("design", design), ("crate_pattern", pattern)):
@@ -303,7 +303,7 @@ def _extract_claude_hooks(data, relpath):
     additive lines wiring a second agent harness moved this doc's pin while
     `control-plane-check.py` exited 0 on both sides.
 
-    Ownership is decided by the command referencing a path under `tooling/`,
+    Ownership is decided by the command referencing a path under `gates/`,
     which is exactly the set `control-plane-check.py` verifies.
     """
     try:
@@ -322,7 +322,7 @@ def _extract_claude_hooks(data, relpath):
                     continue
                 for hook in entry.get("hooks", []) or []:
                     command = (hook or {}).get("command", "")
-                    if isinstance(command, str) and "tooling/" in command:
+                    if isinstance(command, str) and "gates/" in command:
                         owned.append(
                             {"event": event, "matcher": entry.get("matcher"), "command": command}
                         )

@@ -43,7 +43,7 @@ projected.
 
 ### 1.1 CI hard-requires the control plane
 
-`.github/workflows/ci.yml`'s `checks` job runs `tooling/control-plane-check.py`,
+`.github/workflows/ci.yml`'s `checks` job runs `gates/control-plane-check.py`,
 which reads `.claude/settings.json` and asserts three wirings are present:
 `PostToolUse` on `Read` → `spec-discipline.py`, and `PreToolUse` on
 `Write`/`Edit` → `spec-discipline.py` and `anti-pattern-gate.py`.
