@@ -182,6 +182,28 @@ Per `telos/residual-trust-is-named`, what this does **not** discharge:
   direction: here the *governed file is unchanged* and only its path moved, yet
   a digest still shifts, because the pinned region was defined by a path
   substring rather than by structure.
+* **A glob's membership is part of the digest, so a move drifts documents that
+  govern globs the moved file happened to match.** `_content_digest` digests,
+  per pattern, the *set* of files the pattern matches. `scripts/g4-*` governs
+  `.design/stage4-epr-reconstruction.md`, and moving `g4-gate.sh` out of
+  `scripts/` removed a member — so that document drifted with no file's content
+  changed and no pattern string changed. Worse, the moved file **silently lost
+  its route**: the glob no longer reaches it, and nothing scans for unrouted
+  files, so the loss surfaces only when someone tries to edit it and R-XLATE-2
+  blocks them. This RFC adds no check for either. *(Both observed rather than
+  predicted — §4 as first written claimed only one document would drift.)*
+
+* **A green local gate suite is not evidence about the shell gates.** The suite
+  runs the seven Python gates and their 67 unit tests. It never *executes*
+  `g3.sh` or `g4.sh`, which need Lean, Verus and the pinned CaDiCaL/drat-trim
+  pair — so it is structurally incapable of catching a bad path inside them.
+  Measured: step 1 shipped with `gates/g3.sh` still invoking
+  `scripts/lean-axiom-probe.sh`, a file step 1 had itself moved, and CI failed
+  the `g3` job with exit 127 after the local suite had reported green. The
+  cheap check that does catch it — assert every repo-relative path referenced
+  by the shell gates, the `Makefile` and `ci.yml` exists — is not wired into
+  any gate by this RFC.
+
 * **`ci.yml` and the `Makefile` are rewritten by hand.** Nothing pins that they
   agree with the new layout beyond CI going green, and a step that is silently
   skipped rather than failed would not be caught.
