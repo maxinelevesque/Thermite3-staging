@@ -2,12 +2,13 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
 
 # Cancel a PR's superseded in-flight run when a new commit is pushed (the
-# kickoff-agent loop waits on this CI, so stale runs are pure latency). Main
-# pushes are NOT cancelled: those runs are the verification record of record.
+# kickoff-agent loop waits on this CI, so stale runs are pure latency). Pushes to
+# main and staging are NOT cancelled: those runs are the verification record of
+# record.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
