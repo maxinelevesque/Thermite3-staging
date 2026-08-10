@@ -701,7 +701,7 @@ battery must ship as one arc.
 
 ## Route to add (orchestrator, NOT this component)
 
-`tooling/spec-routes.toml` gains a route for the greenfield file (this doc does
+`gates/routes.toml` gains a route for the greenfield file (this doc does
 NOT edit the route table — `goal.md` R-XLATE-2 is the orchestrator's job; the
 spec-discipline hook blocks the builder's first edit until the route exists):
 
@@ -712,7 +712,7 @@ design = ".design/forge/mutation-scoring.md"
 reference = ["conformance/mutation"]
 ```
 
-*(Shipped — the route exists at `tooling/spec-routes.toml` ("v0.3 — mutation
+*(Shipped — the route exists at `gates/routes.toml` ("v0.3 — mutation
 scoring (issue #12)") with `conformance_ops = ["weak_contract", "sum"]`; no
 route change is needed for the #269 amendment — it governs the same file.)*
 

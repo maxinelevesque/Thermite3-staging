@@ -542,7 +542,7 @@ skeptic's machine).
 **The enumerated trust base (the residuals, stated rather than hidden).** Following
 CompCert's reduced-trusted-base framing (SOTA finding #3, Leroy's "verification
 never eliminates the trusted base, it reduces it to an enumerable set"), an L3
-certificate currently trusts the following (this is `scripts/audit.sh` check [6]'s
+certificate currently trusts the following (this is `gates/audit.sh` check [6]'s
 five-item residual-trust block; the checker the spine itself leans on is item 1):
 
 1. **The Lean kernel + its three standard axioms**, `{propext,

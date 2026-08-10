@@ -36,7 +36,7 @@
   and already enters the build graph through `Thermite.SmtDemo`, so this island reuses the
   existing toolchain — no new dependency, no Mathlib on the core denotation path
   (`Ast`/`Denote`/`RefEncode`/`Soundness`/`Exec`), which stays Mathlib-free. The audit
-  axiom probe (`scripts/audit.sh` check [1], the §12 [1′] pattern) is extended to both
+  axiom probe (`gates/audit.sh` check [1], the §12 [1′] pattern) is extended to both
   lemmas; their footprint must stay ⊆ {propext, Classical.choice, Quot.sound}.
 -/
 import Mathlib.Data.Real.Basic
@@ -90,7 +90,7 @@ theorem r_relax_sound {ν : Type u} (e : PExpr ν)
 
 /-! ## Trust accounting — `#print axioms` on the relax spine lemmas.
 
-  The canonical gate is `scripts/audit.sh` check [1] (and the Lean CI job), which parses
+  The canonical gate is `gates/audit.sh` check [1] (and the Lean CI job), which parses
   these axiom lists and PASSES iff each ⊆ {propext, Classical.choice, Quot.sound}. These
   in-module `#print axioms` mirror that for developer visibility (the `SmtDemo` pattern). -/
 #print axioms rencode_sound

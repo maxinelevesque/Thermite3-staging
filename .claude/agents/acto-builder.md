@@ -24,7 +24,7 @@ The orchestrator dispatches you with an explicit file manifest (≤~10 files). Y
 ## Procedure
 
 ### Step 1 — Read the contract
-Read `goal.md`, the governing `.design/<area>/<doc>.md`, the relevant `thermite-design.md` sections, the route entries (`tooling/spec-routes.toml`) for every manifest file, and any route `reference` (conformance corpus / golden file). The spec-discipline hook enforces these reads before it lets you edit.
+Read `goal.md`, the governing `.design/<area>/<doc>.md`, the relevant `thermite-design.md` sections, the route entries (`gates/routes.toml`) for every manifest file, and any route `reference` (conformance corpus / golden file). The spec-discipline hook enforces these reads before it lets you edit.
 
 ### Step 2 — Plan
 Map each design REQ to the impl + consumer + test you will write. Identify the conformance corpus entries / golden files your component must satisfy.

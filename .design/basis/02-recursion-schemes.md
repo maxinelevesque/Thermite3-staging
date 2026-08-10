@@ -678,7 +678,7 @@ Gauntlet (R-DEFER-6, per crate): `cargo test -p <crate>`, `cargo clippy -p <crat
 
 This stage adds NEW concerns to files that already carry routes, plus one new file
 (`thermite-spec/src/schemes.rs`). The orchestrator adds these routes to
-`tooling/spec-routes.toml` pointing at THIS doc (a file may carry multiple
+`gates/routes.toml` pointing at THIS doc (a file may carry multiple
 governing docs — the `lower.rs` precedent):
 
 ```

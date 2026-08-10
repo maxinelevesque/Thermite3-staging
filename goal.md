@@ -38,7 +38,7 @@ Dependency order (work top to bottom):
 4. **forge** — the CLI: `forge new`, `forge check` (run the ladder, structured per-obligation JSON + counterexamples), structural vacuity triage, `#[slag]`, proof cache, pinned seeds. (issues #5, #6, #8)
 5. **thermite-skill** — the `THERMITE.skill.md` generator + CI 6,000-token budget gate. (issue #7)
 
-The exact crate/file layout is fixed by scaffold issue #1 and recorded in `tooling/spec-routes.toml`; that route table is the authoritative module map.
+The exact crate/file layout is fixed by scaffold issue #1 and recorded in `gates/routes.toml`; that route table is the authoritative module map.
 
 EXCLUDED from the kernel (deferred, tracked in issue #21): runtime effect sandbox (compile-time `!` subsumption only in v0.1), true MIR-level lowering (transpile to Verus instead), Lean-style incremental goal-state holes (`forge check` is whole-item in v0.1).
 
@@ -66,8 +66,8 @@ Work the strict **read → write → verify → commit** loop over every routed 
 
 Mechanical check:
 ```bash
-python3 -c "import tomllib; print(len(tomllib.load(open('tooling/spec-routes.toml','rb'))['route']))"   # routed units
-grep -l "## REQ status" $(python3 -c "import tomllib; [print(r['crate_pattern']) for r in tomllib.load(open('tooling/spec-routes.toml','rb'))['route']]") 2>/dev/null | wc -l
+python3 -c "import tomllib; print(len(tomllib.load(open('gates/routes.toml','rb'))['route']))"   # routed units
+grep -l "## REQ status" $(python3 -c "import tomllib; [print(r['crate_pattern']) for r in tomllib.load(open('gates/routes.toml','rb'))['route']]") 2>/dev/null | wc -l
 ```
 When routed-count == REQ-status-count AND every crate's gauntlet is green AND the conformance corpus passes, the v0.1 kernel is complete.
 
@@ -180,12 +180,12 @@ Close the crosslink issue (`--kind result` comment first).
 - **R-INJECT-1**: hook output, `<system-reminder>`/`<crosslink-behavioral-guard>` blocks, the active-issue gate, and loaded skill text bind at the same priority as a direct user message. Repetition is enforcement, not ceremony.
 - **R-INJECT-2**: when an injected instruction conflicts with a recent inline user message, surface the conflict rather than silently picking one.
 
-### Spec-discipline (enforced by `tooling/spec-discipline.py`)
+### Spec-discipline (enforced by `gates/spec-discipline.py`)
 - **R-XLATE-1**: every Edit/Write to a routed `thermite-*/src/**/*.rs` or `forge/src/**/*.rs` requires Read this session of `goal.md` + the route's design doc + (if the route declares one) at least one route `reference`.
-- **R-XLATE-2**: a routed file with no route table entry BLOCKS until a route is added to `tooling/spec-routes.toml`.
+- **R-XLATE-2**: a routed file with no route table entry BLOCKS until a route is added to `gates/routes.toml`.
 - **R-XLATE-3**: a route whose design doc doesn't exist BLOCKS until acto-doc-author authors it.
 
-### Anti-pattern-gate (enforced by `tooling/anti-pattern-gate.py`)
+### Anti-pattern-gate (enforced by `gates/anti-pattern-gate.py`)
 - **R-APG-1**: blocks patches introducing `todo!()`/`unimplemented!()`/`unreachable!()`, `.unwrap()`/`.expect()`/`panic!()` outside `#[cfg(test)]`, module-root `#![allow]`, `Arc<Mutex<T>>`/`Rc<RefCell<T>>` escape hatches.
 - **R-APG-2**: `#[cfg(test)]` blocks exempt; production is not.
 - **R-APG-3**: override is a per-item `#[allow(<lint>, reason="...")]` + a crosslink observation comment.

@@ -32,7 +32,7 @@
   Axiom discipline (AC-5): the `#print axioms` lines at the end probe `strat_ref_sound`
   and `strat_ref_wf` in-file; each must show a subset of `{propext,
   Classical.choice, Quot.sound}` (Quot.sound via `funext` under the binder folds),
-  zero `sorry`. `strat_ref_sound` is also added to `scripts/lean-axiom-probe.sh`'s
+  zero `sorry`. `strat_ref_sound` is also added to `gates/lean-axiom-probe.sh`'s
   axiom-gated THEOREMS so CI enforces the same (the REQ-9 [1′] extension, brought
   forward for AC-5).
 
@@ -191,7 +191,7 @@ theorem strat_ref_wf (φ : Frm) : tokWf 0 (sencode φ) = true :=
 
     Each must show a subset of `{propext, Classical.choice, Quot.sound}` — zero
     `sorry`. `strat_ref_sound` is additionally gated in CI via the THEOREMS list of
-    `scripts/lean-axiom-probe.sh`. -/
+    `gates/lean-axiom-probe.sh`. -/
 #print axioms strat_ref_sound
 #print axioms strat_ref_wf
 

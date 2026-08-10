@@ -592,7 +592,7 @@ input (R-CODE-5, §5.3).
 ## Verification
 
 `cargo test -p thermite-lower` over `tests/golden/lower/` (this route's
-`reference` in `tooling/spec-routes.toml`):
+`reference` in `gates/routes.toml`):
 
 - **AC-1/AC-2:** lower the parsed corpus programs and `assert_eq!` the emitted
   `String` against the golden files (R-CHAR-3 — golden hand-authored from this

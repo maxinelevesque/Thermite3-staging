@@ -361,12 +361,12 @@ pub fn strat_trust_profile_current() -> Vec<String> {
 /// ([1′][4′][8][9], `.design/stage2-stratified-cage.md` REQ-9).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct G2Checks {
-    /// `[1′]` — the Lean axiom probe (`scripts/lean-axiom-probe.sh`): the four stratified
+    /// `[1′]` — the Lean axiom probe (`gates/lean-axiom-probe.sh`): the four stratified
     /// soundness theorems (`strat_ref_sound`, `strat_lowering_faithful`,
     /// `classifier_correct`, `restrat_conservative`) elaborate with axioms ⊆ {propext,
     /// Classical.choice, Quot.sound}.
     pub axiom_probe: bool,
-    /// `[4′]` — the doc-drift tripwire (`tooling/doc-drift.py`): the three new mirrored Rust
+    /// `[4′]` — the doc-drift tripwire (`gates/doc-drift.py`): the three new mirrored Rust
     /// files (`classifier.rs` / `strat_ref_encode.rs` / `strat_two_phase.rs`) are
     /// content-pinned and current under `.design/verified/strat-rust-lean-correspondence.md`.
     pub doc_drift: bool,

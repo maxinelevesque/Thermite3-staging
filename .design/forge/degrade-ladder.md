@@ -502,7 +502,7 @@ forced-degrade conformance test is best-effort skip-loud — exactly the pattern
 ## REQ status
 
 All REQs are NOT-STARTED. `forge/src/degrade.rs` does not exist; there is no route
-for it in `tooling/spec-routes.toml`; the default `forge check` path emits a
+for it in `gates/routes.toml`; the default `forge check` path emits a
 `VerusTimeout` L0 cert and STOPS instead of laddering. The pieces this component
 COMPOSES (#11 classification, #9 L2, L1) all ship, but the auto-degrade
 composition and the min-over-functions aggregate do not. Open prereq blocker:
@@ -580,7 +580,7 @@ composition and the min-over-functions aggregate do not. Open prereq blocker:
   surface. To ratify in #10.
 
 - **OQ-5 (route registration).** `forge/src/degrade.rs` (and any assurance-manifest
-  module) is not in `tooling/spec-routes.toml`. The orchestrator must add a route
+  module) is not in `gates/routes.toml`. The orchestrator must add a route
   `crate_pattern = "forge/src/degrade.rs"` → `design = ".design/forge/degrade-ladder.md"`
   (and, if the aggregate lands in a separate module, a route for it) before the #10
   builder can edit it (R-XLATE-2/3). This doc-author does not edit the route table.

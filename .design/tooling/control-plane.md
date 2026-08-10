@@ -3,13 +3,13 @@
 <!--
 tier: 3-component
 status: draft
-governs: tooling/control-plane-check.py + the control-plane files it and
+governs: gates/control-plane-check.py + the control-plane files it and
          doc-drift.py now pin (.claude/settings.json, .claude/agents/*.md) +
          the `make control-plane` Makefile target and its CI step. Explicitly
-         NOT `scripts/audit.sh`, which this component leaves byte-identical
+         NOT `gates/audit.sh`, which this component leaves byte-identical
          (the doc-drift decision-5 precedent).
 pin-extract: .claude/settings.json=claude-hooks
-audited-content-sha256: 6658afd9c0161d2cf9e2c524f362bc409a634009f4eabb94df6ee55dec811306 (re-pinned 2026-08-09 for RFC-18 step 1. This is the drift RFC-18 section 4 predicted: the doc opts into pin-extract .claude/settings.json=claude-hooks, and doc-drift.py decides ownership by testing whether a hook command contains a path under the gates directory. The three owned hooks now invoke gates/spec-discipline.py and gates/anti-pattern-gate.py, so the extracted region's bytes moved while the audited control plane did not - control-plane-check.py exits 0 either side. prior: 2505e4bb72334b0f037e8da049ac4b46eda24c3eb3a7d81f5fc43d746b40edf8.)
+audited-content-sha256: 1fa8537d54b48e951e61ab62a2cfd252873552fbe666bca1327544f1f2c79f3c (re-pinned 2026-08-09, RFC-18 step 1 completion. A tree-wide sweep found 37 live references to the step-1 paths that the first sweep missed, because that sweep was piped through head -25 and the output was dominated by .design/ hits - a truncated list read as a complete one. The misses included forge/tests/divergence_audit_check2_exit_swallow.rs, which READS the audit script by path and failed CI with 'read scripts/audit.sh: NotFound'. Governed source changed only where it named a moved path; no behaviour changed. Historical records were excluded from the sweep: .claims/, CHANGELOG.md, the frozen docs/v2/ set, and every audited-content-sha256 note line. prior: 6658afd9c0161d2cf9e2c524f362bc409a634009f4eabb94df6ee55dec811306.)
 re-pinned: 2026-08-07, from cdce9510c89d0bd00fb08a9a441e07a8299ad4eb71e43e20d4c29e928797b59e.
   The content pin digests the WHOLE of .claude/settings.json, so it moves on any
   addition to the file, not only on a change to the three wirings this document
@@ -33,7 +33,7 @@ prior-arc:
 
 ## Summary
 
-`tooling/spec-discipline.py` and `tooling/anti-pattern-gate.py` are the two
+`gates/spec-discipline.py` and `gates/anti-pattern-gate.py` are the two
 agent-facing enforcement gates. They are real, tested, and tracked — and they
 only ever fire because `.claude/settings.json` wires them into Claude Code's
 `PreToolUse`/`PostToolUse` events. That wiring is the entire control plane, and
@@ -53,7 +53,7 @@ Both gates were therefore **dormant for the entire Stage-3 arc**, while:
 - `README.md:172` — "`.claude/settings.json` (also tracked) wires these into
   Claude Code's `PreToolUse`/`PostToolUse` events, so they enforce automatically
   — no setup."
-- `goal.md:183` — "### Spec-discipline (enforced by `tooling/spec-discipline.py`)"
+- `goal.md:183` — "### Spec-discipline (enforced by `gates/spec-discipline.py`)"
 - all four `.claude/agents/acto-*.md` — "The spec-discipline hook enforces these
   reads before it lets you edit."
 
@@ -63,13 +63,13 @@ nothing in the repo could see it.
 
 ## The blind spot this closes
 
-`tooling/doc-drift.py` pins design↔source freshness for every file reachable
-from `tooling/spec-routes.toml`. It is thorough, CI-enforced, and it even routes
-its own gate (`tooling/doc-drift.py` → `.design/tooling/doc-drift-tripwire.md`,
+`gates/doc-drift.py` pins design↔source freshness for every file reachable
+from `gates/routes.toml`. It is thorough, CI-enforced, and it even routes
+its own gate (`gates/doc-drift.py` → `.design/tooling/doc-drift-tripwire.md`,
 REQ-11's dogfood). But:
 
 ```
-$ grep -nE "\.claude|settings\.json|agents/" tooling/spec-routes.toml
+$ grep -nE "\.claude|settings\.json|agents/" gates/routes.toml
 (no output)
 ```
 
@@ -106,7 +106,7 @@ the anti-pattern gate being dead was not compensated elsewhere (OQ-2).
    Claude Code loads no hooks at all from a settings file it cannot parse, so
    unparseable is maximally gate-dead. Exit 3 is reserved for failures of the
    gate's own environment (git absent / not a repo) — the `doc-drift.py` REQ-9
-   and `scripts/audit.sh` precedent: a gate that fails open is a silent pass
+   and `gates/audit.sh` precedent: a gate that fails open is a silent pass
    (R-HONEST-3).
 
 4. **Wired-but-absent is its own defect class.** Every hook command is
@@ -118,10 +118,10 @@ the anti-pattern gate being dead was not compensated elsewhere (OQ-2).
 
 5. **Not part of `make audit`.** Hook wiring is a development-discipline
    invariant, not a link in the proof-trust chain. This mirrors doc-drift's
-   decision 5 exactly, and `scripts/audit.sh` is left byte-identical.
+   decision 5 exactly, and `gates/audit.sh` is left byte-identical.
 
 6. **The control-plane routes are DECLARATIVE for spec-discipline, ENFORCED for
-   doc-drift.** `is_gated_path` in `tooling/spec-discipline.py` requires a
+   doc-drift.** `is_gated_path` in `gates/spec-discipline.py` requires a
    `.rs` extension, a `thermite-`/`forge` crate dir, and a `src/` component, so
    it structurally cannot gate `.claude/settings.json` or a `.md` agent def —
    the same honest limitation `doc-drift-tripwire.md` REQ-11 records for
@@ -160,9 +160,9 @@ the anti-pattern gate being dead was not compensated elsewhere (OQ-2).
   `1` = at least one finding; `3` = the gate could not determine the answer
   (git absent / not a repo). Mirrors `doc-drift.py` REQ-9.
 
-- **REQ-6 (control plane routed).** `tooling/spec-routes.toml` carries routes
+- **REQ-6 (control plane routed).** `gates/routes.toml` carries routes
   for `.claude/settings.json`, `.claude/agents/*.md`, and
-  `tooling/control-plane-check.py`, all governed by this doc, so `doc-drift.py`
+  `gates/control-plane-check.py`, all governed by this doc, so `doc-drift.py`
   content-pins them (decision 6).
 
 - **REQ-7 (CI enforcement).** The gate runs in the `checks` job of
@@ -172,7 +172,7 @@ the anti-pattern gate being dead was not compensated elsewhere (OQ-2).
 ## Acceptance criteria
 
 - **AC-1**: with the three entries removed from `.claude/settings.json` (the
-  verbatim post-`5581b65f` file), `python3 tooling/control-plane-check.py`
+  verbatim post-`5581b65f` file), `python3 gates/control-plane-check.py`
   exits 1 and names all three missing wirings and both script paths.
 - **AC-2**: with the entries restored, the gate exits 0 and prints one `WIRED`
   line per requirement.
@@ -184,11 +184,11 @@ the anti-pattern gate being dead was not compensated elsewhere (OQ-2).
   and never 0.
 - **AC-6**: a matcher of `Write|Edit|Bash` satisfies a `Write|Edit`
   requirement; a matcher of `Write` alone does not.
-- **AC-7**: `scripts/audit.sh` is byte-identical to its pre-component state.
+- **AC-7**: `gates/audit.sh` is byte-identical to its pre-component state.
 
 ## Verification
 
-`tooling/tests/test_control_plane.py` — nine hand-authored oracle fixtures
+`gates/tests/test_control_plane.py` — nine hand-authored oracle fixtures
 (O-1..O-9), the same convention as `test_doc_drift.py`: build a throwaway
 control plane in a tmpdir, run the gate by subprocess with `--root`, assert
 against expected values the spec fixes, never against the tool's own output
@@ -198,19 +198,19 @@ O-2 is load-bearing: its fixture is the **verbatim** de-wired `settings.json`
 that `5581b65f` left on `main`, so if the gate ever stops catching the exact
 regression it was built for, the suite goes red.
 
-Run: `make control-plane-test`, or `python3 -m unittest discover -s tooling/tests`.
+Run: `make control-plane-test`, or `python3 -m unittest discover -s gates/tests`.
 
 ## REQ status
 
 | REQ | Status | Evidence |
 | --- | --- | --- |
-| REQ-1 (settings.json is the subject) | SHIPPED | `SETTINGS_RELPATH = ".claude/settings.json"` + `def evaluate` in `tooling/control-plane-check.py`; the absent/unparseable branches return `(EXIT_FAIL, [UNPARSEABLE …])`. Non-test consumer: the `control-plane gate (hook wiring)` step in `.github/workflows/ci.yml` and `make control-plane`. Verification: O-4/O-5 in `tooling/tests/test_control_plane.py`. |
-| REQ-2 (required-wiring predicate) | SHIPPED | `REQUIRED_HOOKS` + `def _matcher_covers` + `def _entry_commands` + `def _restore_snippet` in `tooling/control-plane-check.py`. Non-test consumer: as REQ-1. Verification: O-1 (all wired → exit 0), O-2 (the verbatim `5581b65f` fixture → exit 1, three findings), O-6/O-7 (matcher coverage) in `tooling/tests/test_control_plane.py`. |
+| REQ-1 (settings.json is the subject) | SHIPPED | `SETTINGS_RELPATH = ".claude/settings.json"` + `def evaluate` in `gates/control-plane-check.py`; the absent/unparseable branches return `(EXIT_FAIL, [UNPARSEABLE …])`. Non-test consumer: the `control-plane gate (hook wiring)` step in `.github/workflows/ci.yml` and `make control-plane`. Verification: O-4/O-5 in `gates/tests/test_control_plane.py`. |
+| REQ-2 (required-wiring predicate) | SHIPPED | `REQUIRED_HOOKS` + `def _matcher_covers` + `def _entry_commands` + `def _restore_snippet` in `gates/control-plane-check.py`. Non-test consumer: as REQ-1. Verification: O-1 (all wired → exit 0), O-2 (the verbatim `5581b65f` fixture → exit 1, three findings), O-6/O-7 (matcher coverage) in `gates/tests/test_control_plane.py`. |
 | REQ-3 (wired implies present) | SHIPPED | the `if not (root / script).is_file():` branch emitting `MISSING_SCRIPT` in `def evaluate`. Non-test consumer: as REQ-1. Verification: O-3. |
 | REQ-4 (deterministic report) | SHIPPED | `def evaluate` iterates `REQUIRED_HOOKS` in declaration order; no set/dict iteration reaches the output. Non-test consumer: as REQ-1. Verification: O-8 (two runs byte-identical). |
 | REQ-5 (exit contract) | SHIPPED | `EXIT_OK`/`EXIT_FAIL`/`EXIT_INCONCLUSIVE` + `class EnvironmentError3` + the `except EnvironmentError3` arm in `def main`. Non-test consumer: CI reads the exit status. Verification: O-9 (non-git cwd → exit 3, never 0). |
-| REQ-6 (control plane routed) | SHIPPED | the `# tooling — the control plane gating itself` block in `tooling/spec-routes.toml`: three `[[route]]` entries (`.claude/settings.json`, `.claude/agents/*.md`, `tooling/control-plane-check.py`) all `design = ".design/tooling/control-plane.md"`. Non-test consumer: `def load_doc_files in tooling/doc-drift.py` inverts the table and content-pins this doc's governed set. Verification: `python3 tooling/doc-drift.py` reports this doc CURRENT at the pinned aggregate. |
-| REQ-7 (CI enforcement) | SHIPPED | `.github/workflows/ci.yml` `checks` job step `control-plane gate (hook wiring)` → `python3 tooling/control-plane-check.py`; `Makefile` targets `control-plane` / `control-plane-test`. Verification: the step is sequenced with the sibling `doc-drift tripwire` step in the same job. |
+| REQ-6 (control plane routed) | SHIPPED | the `# tooling — the control plane gating itself` block in `gates/routes.toml`: three `[[route]]` entries (`.claude/settings.json`, `.claude/agents/*.md`, `gates/control-plane-check.py`) all `design = ".design/tooling/control-plane.md"`. Non-test consumer: `def load_doc_files in gates/doc-drift.py` inverts the table and content-pins this doc's governed set. Verification: `python3 gates/doc-drift.py` reports this doc CURRENT at the pinned aggregate. |
+| REQ-7 (CI enforcement) | SHIPPED | `.github/workflows/ci.yml` `checks` job step `control-plane gate (hook wiring)` → `python3 gates/control-plane-check.py`; `Makefile` targets `control-plane` / `control-plane-test`. Verification: the step is sequenced with the sibling `doc-drift tripwire` step in the same job. |
 
 ## Open questions
 

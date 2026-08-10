@@ -80,7 +80,7 @@ messages and the `Faithfulness.lean` header). **Any edit to a pinned encoder fil
 corresponding table section and requires re-audit (see "Drift" below).**
 
 > **Amendment 2026-06-10 (re-pin, crosslink #200) — VERIFIED additive-only, NO re-audit of the arm
-> tables needed.** The deep-audit drift tripwire (`scripts/audit.sh` check [4], commit `a0d8ea64`)
+> tables needed.** The deep-audit drift tripwire (`gates/audit.sh` check [4], commit `a0d8ea64`)
 > correctly fired: two pinned SHAs were stale because the loop-TV work (#163) landed AFTER the
 > arm-by-arm audit. The drift was VERIFIED additive-only against the actual diffs before re-pinning,
 > NOT rubber-stamped:
@@ -142,7 +142,7 @@ corresponding table section and requires re-audit (see "Drift" below).**
 > new-constructor arms only; zero deletions against the pin. Re-pinned `65504c18` → `1438dc5f`.**
 
 > **Amendment 2026-06-18 (re-pin, crosslink #283) — VERIFIED comment-only + additive-only, NO re-audit
-> of the arm tables needed.** The deep-audit drift tripwire (`scripts/audit.sh` check [4]) fired on
+> of the arm tables needed.** The deep-audit drift tripwire (`gates/audit.sh` check [4]) fired on
 > the post-#53-merge tip (HEAD `49ca894e`): all six pinned SHAs were stale after the #240–#264
 > stage-1-forge-tier arc and the tree-wide `543b506e` "source status turnover" (the REQ-status comment
 > migration to the `<!-- generated:reqs -->` block). The drift was VERIFIED by a comment-stripped
@@ -192,7 +192,7 @@ corresponding table section and requires re-audit (see "Drift" below).**
 > `1438dc5f → b6038651`. The full deep audit (`make audit`) re-runs green after the re-pin.**
 
 > **Amendment 2026-06-21 (re-pin, crosslink #331 — stage-2 REQ-9) — VERIFIED additive-only, NO re-audit
-> of the arm tables needed.** The deep-audit drift tripwire (`scripts/audit.sh` check [4]) fired on the
+> of the arm tables needed.** The deep-audit drift tripwire (`gates/audit.sh` check [4]) fired on the
 > branch tip (HEAD `48817df5`): four pinned SHAs were stale after the stage-2 REQ-0..REQ-8 merge arc
 > (#322–#330). The drift was VERIFIED additive-only by a comment-stripped code-level diff before
 > re-pinning, NOT rubber-stamped:
@@ -271,7 +271,7 @@ corresponding table section and requires re-audit (see "Drift" below).**
 > Stage 4 proof boundary. The audit inspected the exporter at `06e14a2e` and the Lean spine
 > at `ba960a9a`; PR #98 squashed both into `10365b60` with the exporter blob and complete
 > `lean/Thermite` tree byte-identical to those audited branch revisions. The drift pins now
-> name that content-identical commit on `main`; `make audit` and `scripts/g4-gate.sh` must
+> name that content-identical commit on `main`; `make audit` and `gates/g4.sh` must
 > both be green before this amendment is accepted.
 
 
@@ -625,7 +625,7 @@ datum) and the "Verus-meaning" column is replaced by the targeted spine arm.
 > **PIN: this table is current as of `forge/src/lean_export.rs` @ the #240 closing commit (see the
 > Audited-commits table) + the `lean/Thermite/**` spine SHA pinned there.** A change to either the
 > exporter arms below OR the targeted spine constructors INVALIDATES this table and forces re-audit
-> (the `scripts/audit.sh` check [4] drift tripwire already covers the `lean/Thermite/**` spine SHA;
+> (the `gates/audit.sh` check [4] drift tripwire already covers the `lean/Thermite/**` spine SHA;
 > the exporter file's SHA is added to the Audited-commits table below).
 
 | # | Thermite `Expr` (`thermite-syntax`) | `lean_export.rs` arm (`encode_expr`/helper) | Targeted spine constructor (`Ast.lean`/`Denote.lean`) | Inspection tier |

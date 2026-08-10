@@ -94,7 +94,7 @@ the path that succeeded; a failed LRAT attempt is never labeled as LRAT
 evidence.
 
 `lean/Thermite/PinReconstruction.lean` keeps a permanent 64-bit theorem on the
-LRAT path. `scripts/lean-axiom-probe.sh` builds it and checks its axiom report.
+LRAT path. `gates/lean-axiom-probe.sh` builds it and checks its axiom report.
 
 ## History
 
@@ -133,6 +133,6 @@ translation-validation theorem, or quantified formula has been reconstructed.
 cargo test -p forge --features bv --bin forge lean_smt_export::tests -- --nocapture
 cargo test -p forge --features bv --test bv_lowering -- --nocapture
 cd lean && lake build Thermite.PinReconstruction
-bash scripts/lean-axiom-probe.sh
-bash scripts/g3-gate.sh
+bash gates/lean-axiom-probe.sh
+bash gates/g3.sh
 ```

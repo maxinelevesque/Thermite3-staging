@@ -8,10 +8,10 @@ audited-content-sha256: 6310a560e8e7f9f884c3d3fe3e0e2e7f47cfd5286f7b8be31d0a5a5b
 governs:
   - .design/reqs/registry.toml
   - .design/reqs/status.md
-  - tooling/req-registry.py
-  - tooling/reqs
-  - tooling/req-status.py (legacy bridge only)
-  - tooling/spec-routes.toml entries for this registry
+  - gates/req-registry.py
+  - gates/reqs
+  - gates/req-status.py (legacy bridge only)
+  - gates/routes.toml entries for this registry
   - Makefile req-registry targets
   - .github/workflows/ci.yml req-registry step
   - generated regions declared by `.design/reqs/registry.toml`
@@ -51,7 +51,7 @@ issue: GitHub #17
 
 ## Summary
 
-The comment-level `tooling/req-status.py` gate is a useful tripwire: it catches
+The comment-level `gates/req-status.py` gate is a useful tripwire: it catches
 obvious contradictions in repeated `//! | REQ | SHIPPED/NOT-STARTED | evidence |`
 rows. It is not a source of truth. Exact-label matching can miss renamed
 requirements, symbol existence does not prove semantic coverage, and future-scope
@@ -59,7 +59,7 @@ keywords do not prove that a blocker exists or owns the work.
 
 This component introduces the next layer: a canonical machine-readable registry
 under `.design/reqs/registry.toml`, a validator/generator at
-`tooling/req-registry.py`, and generated status views such as
+`gates/req-registry.py`, and generated status views such as
 `.design/reqs/status.md`. The registry is deliberately harness-neutral: git plus
 a TOML parser is enough to read and check the offline contract, and live tracker
 or CI integrations can be thin adapters over the same file. Source comments
@@ -68,7 +68,7 @@ evidence, blockers, and migration state belong in registry data and generated
 views.
 The source-comment turnover is complete for the hand-maintained REQ status rows:
 source files now carry generated regions or links back to canonical owner rows,
-and `tooling/req-status.py` remains only as a compatibility tripwire that should
+and `gates/req-status.py` remains only as a compatibility tripwire that should
 stay quiet when no legacy rows are reintroduced.
 
 ## Design Decisions
@@ -174,18 +174,18 @@ Evidence fields:
 Tracker references are structurally checked offline. A live adapter may later
 resolve open/closed state for a specific tracker, but no tracker credentials are
 required for the default gate to pass. The first live adapter is optional:
-`tooling/reqs check --live-issues` asks `gh` to resolve GitHub issue references
+`gates/reqs check --live-issues` asks `gh` to resolve GitHub issue references
 and fails if any blocker resolves closed.
 
 ## CLI
 
-- `tooling/reqs check`: validate the registry and fail if generated regions are
+- `gates/reqs check`: validate the registry and fail if generated regions are
   stale.
-- `tooling/reqs render`: rewrite generated views and regions from the registry.
-- `tooling/reqs query`: print the normalized registry inventory; add `--json`
+- `gates/reqs render`: rewrite generated views and regions from the registry.
+- `gates/reqs query`: print the normalized registry inventory; add `--json`
   for machine-readable output.
 
-The historical flags remain valid through `python3 tooling/req-registry.py` for
+The historical flags remain valid through `python3 gates/req-registry.py` for
 scripts that have not switched to the facade.
 
 ## Requirements
@@ -203,7 +203,7 @@ scripts that have not switched to the facade.
 - **REQ-REG-4 (generated status regions):** generated markdown views are rendered
   deterministically from the registry into marked regions, and CI fails when
   checked-in output is stale.
-- **REQ-REG-5 (legacy source-comment bridge):** `tooling/req-status.py` remains
+- **REQ-REG-5 (legacy source-comment bridge):** `gates/req-status.py` remains
   active as a compatibility tripwire after the repeated source-comment status
   rows have been mapped to stable IDs.
 - **REQ-REG-6 (generated-region migration):** hand-maintained source status
@@ -221,7 +221,7 @@ scripts that have not switched to the facade.
   blocker; `req:REQ-ID` blockers must resolve to a known registry ID.
 - AC-6: `--check` fails when a generated region differs from renderer output.
 - AC-7: `--write` rewrites the generated view deterministically.
-- AC-8: `tooling/reqs check` is wired into Makefile and CI.
+- AC-8: `gates/reqs check` is wired into Makefile and CI.
 - AC-9: `reference_list` views can render into Rust doc-comment regions with a
   declared `comment_prefix`.
 - AC-10: a legacy mapping fails if its canonical ID or replacement view does not
@@ -229,7 +229,7 @@ scripts that have not switched to the facade.
   be present in the same file.
 - AC-11: command evidence fails if its shell syntax, executable, or repo-path
   arguments do not resolve.
-- AC-12: `tooling/reqs check --live-issues` fails when a GitHub blocker resolves
+- AC-12: `gates/reqs check --live-issues` fails when a GitHub blocker resolves
   closed through the optional `gh` adapter.
 
 ## Migration Plan
@@ -261,7 +261,7 @@ regenerating the status view they appear in, and it surfaced only once the gate
 ran on an interpreter that could parse the file.
 
 `req-registry.py` and `reqs` therefore carry a PEP 723 header declaring the
-floor, so `uv run tooling/reqs check` fetches a matching interpreter rather than
+floor, so `uv run gates/reqs check` fetches a matching interpreter rather than
 inheriting whichever `python3` is on PATH, and returns a verdict instead of an
 excuse.
 

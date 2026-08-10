@@ -341,7 +341,7 @@ theorem comb_deriv_permutation_of (a b : List Tm) :
     Each `comb_deriv_*` must show a subset of `{propext, Classical.choice,
     Quot.sound}` (Quot.sound via `funext` under the binder folds / `List` recursors),
     zero `sorry` — axiom-clean, core-Lean-only. These modules are also added to
-    `scripts/lean-axiom-probe.sh`'s build targets (REQ-9 [1′] surface) so a `sorry`
+    `gates/lean-axiom-probe.sh`'s build targets (REQ-9 [1′] surface) so a `sorry`
     or broken proof fails the CI Lean job. -/
 #print axioms comb_deriv_forall_in
 #print axioms comb_deriv_exists_in

@@ -538,7 +538,7 @@ Gauntlet (R-DEFER-6, per crate): `cargo test -p <crate>`, `cargo clippy -p
 ## Routes to add (orchestrator)
 
 This stage adds NEW concerns to files that already have routes; the orchestrator
-adds these routes to `tooling/spec-routes.toml` pointing at THIS doc (a file may
+adds these routes to `gates/routes.toml` pointing at THIS doc (a file may
 carry multiple governing docs — the §52 `lower.rs` precedent):
 
 ```

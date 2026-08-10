@@ -1183,7 +1183,7 @@ reference = []
 conformance_ops = []
 
 [[route]]
-# gates/g4.sh was scripts/g4-gate.sh and was covered by the scripts/g4-* glob
+# gates/g4.sh was gates/g4.sh and was covered by the scripts/g4-* glob
 # above until RFC-18 step 1 moved it. Named explicitly so the move does not
 # silently drop its route (R-XLATE-2 would otherwise block the next edit).
 crate_pattern = "gates/g4.sh"

@@ -319,7 +319,7 @@ repo tree (the #53 lesson — compiled artifacts are large).
 The doc-author does not author production code, routes, or the oracle. The orchestrator
 must:
 
-- Add the route to `tooling/spec-routes.toml`:
+- Add the route to `gates/routes.toml`:
   `crate_pattern = "forge/src/build.rs"`, `design = ".design/forge/build.md"`,
   `reference = ["conformance/build"]`, `conformance_ops = ["sum"]`.
 - Author the `conformance/build/` oracle the ACs reference — at minimum the EXACT

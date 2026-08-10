@@ -1,4 +1,4 @@
-//! Divergence pin (#201, audits #200 / commit a0d8ea64): `scripts/audit.sh`
+//! Divergence pin (#201, audits #200 / commit a0d8ea64): `gates/audit.sh`
 //! check [2] (full-corpus translation-validation) swallows a Divergent finding.
 //!
 //! The divergence (false assurance in the audit script, the worst-case
@@ -10,7 +10,7 @@
 //!     "Any DIVERGENT clause (corpus OR generated) is a lowering-fidelity
 //!      finding → verification-failure exit" → `ExitCode::from(EXIT_VERIFICATION_FAILURE)`.
 //!
-//!   But `scripts/audit.sh` check [2]'s per-subcommand loop does:
+//!   But `gates/audit.sh` check [2]'s per-subcommand loop does:
 //!     out="$("$FORGE" "$sub" "$f" 2>&1)"; src=$?
 //!     if [ "$src" -ne 0 ]; then prog_admit=0; continue; fi
 //!   i.e. it treats every nonzero exit as "forge refused to admit" and skips
@@ -21,7 +21,7 @@
 //!   catch one condition cannot fire on that condition.
 //!
 //! Authority (R-CHAR-3 — the expected value is not taken from the script):
-//!   - `scripts/audit.sh` own stated contract (header + check [2] note):
+//!   - `gates/audit.sh` own stated contract (header + check [2] note):
 //!     "PASS iff zero Divergent across the corpus" — so one Divergent ⇒ fail ⇒ RC=1.
 //!   - `forge/src/cli.rs::run_tv` — the Divergent ⇒ nonzero-exit convention the
 //!     script consumes (the fake forge below reproduces it, including
@@ -29,7 +29,7 @@
 //!   - goal.md R-HONEST-3 (no silent masking of an infidelity); thermite-design.md
 //!     §1 (trust relocation: the audit is what the skeptic relies on).
 //!
-//! Method: extract check [2] verbatim from the live `scripts/audit.sh` (between
+//! Method: extract check [2] verbatim from the live `gates/audit.sh` (between
 //! its `# check 2` / `# check 3` banners), run it against a fake `forge` that
 //! reports one corpus program as `1 DIVERGENT` with the real exit convention
 //! (exit 1), and assert the authority's expectation: the check fails (RC=1)
@@ -68,14 +68,14 @@ exit 0
 #[test]
 fn divergence_audit_check2_swallows_divergent_exit() {
     let root = repo_root();
-    let script = fs::read_to_string(root.join("scripts/audit.sh")).expect("read scripts/audit.sh");
+    let script = fs::read_to_string(root.join("gates/audit.sh")).expect("read gates/audit.sh");
 
     // Extract check [2] verbatim between its section banners.
     let start = script.find("# CHECK 2 ").expect(
-        "scripts/audit.sh: '# CHECK 2' banner not found (script restructured? re-anchor this pin)",
+        "gates/audit.sh: '# CHECK 2' banner not found (script restructured? re-anchor this pin)",
     );
     let end = script.find("# CHECK 3 ").expect(
-        "scripts/audit.sh: '# CHECK 3' banner not found (script restructured? re-anchor this pin)",
+        "gates/audit.sh: '# CHECK 3' banner not found (script restructured? re-anchor this pin)",
     );
     assert!(start < end, "CHECK 2 banner must precede CHECK 3");
     let check2 = &script[start..end];
@@ -131,7 +131,7 @@ fn divergence_audit_check2_swallows_divergent_exit() {
     // (delivered with forge's real verification-failure exit) trips the gate.
     assert!(
         stdout.contains("FINAL_RC=1"),
-        "scripts/audit.sh check [2] swallowed a DIVERGENT finding: forge tv reported \
+        "gates/audit.sh check [2] swallowed a DIVERGENT finding: forge tv reported \
          '1 DIVERGENT' and exited with EXIT_VERIFICATION_FAILURE (the cli.rs::run_tv \
          convention), but the corpus gate did not fail (RC stayed 0 — the nonzero \
          exit was treated as 'not admitted' and the report was never parsed).\n\
@@ -142,7 +142,7 @@ fn divergence_audit_check2_swallows_divergent_exit() {
     // corpus containing a Divergent program (R-HONEST-3: do not mask an infidelity).
     assert!(
         !stdout.contains("ZERO divergent across the whole corpus"),
-        "scripts/audit.sh check [2] printed the green zero-divergent PASS over a \
+        "gates/audit.sh check [2] printed the green zero-divergent PASS over a \
          corpus containing a DIVERGENT program (false assurance).\n\
          --- harness output ---\n{stdout}"
     );
