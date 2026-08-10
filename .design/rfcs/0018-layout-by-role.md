@@ -133,21 +133,55 @@ the rest.
 
 ### 3.3 What follows the move
 
-`ci.yml` (12 invocation sites), `Makefile` (14), the 154 `crate_pattern`
-entries whose `design` fields are unaffected but whose paths are not, and the
-pins in `.design/tooling/*.md`.
+`ci.yml` (12 invocation sites), `Makefile` (14), and the route table's own
+entries — three `crate_pattern`s point at `tooling/doc-drift.py`,
+`tooling/req-registry.py` and `tooling/reqs`, while their `design` fields are
+unaffected.
+
+Three couplings are not mechanical and are named here so they are not
+discovered late:
+
+* `doc-drift.py` hardcodes `ROUTES_RELPATH = "tooling/spec-routes.toml"`, which
+  becomes `gates/routes.toml`.
+* `doc-drift.py` decides pin-extract ownership with `"tooling/" in command`
+  (§4). That test becomes `"gates/"`.
+* `.claude/settings.json` wires three hooks by path into `tooling/`, and
+  `control-plane-check.py` asserts exactly those three. Both move together, and
+  `.design/tooling/control-plane.md` is re-pinned once as a consequence.
+
+A separate question this raises and does not answer: `.design/tooling/` would
+then hold the design docs governing `gates/`. Renaming it is 73-pin territory
+and is deliberately out of scope here.
 
 ## 4. Residual trust
 
 Per `telos/residual-trust-is-named`, what this does **not** discharge:
 
-* **`doc-drift` cannot see this change.** Its pins are `content-sha256` over
-  file *contents*, and a move leaves contents byte-identical. The gate stays
-  green through a re-layout that invalidates every path around it. This is the
-  same shape as the recorded finding that a round-trip proves information
-  preservation and is silent about coverage. `spec-discipline` does fail loudly
-  — an unrouted file blocks under R-XLATE-2 — so the hole is narrow, but it is
-  real and this RFC does not add a check that a route's target exists.
+* **`doc-drift` is blind to this change everywhere but one document.** Its pins
+  are `content-sha256` over file *contents*, and a move leaves contents
+  byte-identical, so the gate stays green through a re-layout that invalidates
+  every path around it — the same shape as the recorded finding that a
+  round-trip proves information preservation and is silent about coverage.
+  `spec-discipline` does fail loudly, since an unrouted file blocks under
+  R-XLATE-2, so the hole is narrow. But this RFC does not add a check that a
+  route's target exists, and it should not be read as claiming the move is
+  digest-neutral.
+
+  The exception is `.design/tooling/control-plane.md`, and it is instructive.
+  That document opts into `pin-extract: .claude/settings.json=claude-hooks`
+  (RFC-16 layer 1), and `doc-drift.py` decides which hooks the repository *owns*
+  by testing `"tooling/" in command`. The three owned hooks invoke
+  `tooling/spec-discipline.py` and `tooling/anti-pattern-gate.py`, so renaming
+  the directory changes the extracted region's bytes and moves the digest. The
+  move therefore requires a deliberate re-pin of exactly one document, plus a
+  one-word change to the ownership test inside `doc-drift.py` itself — a gate
+  that must be edited to keep recognising the gates.
+
+  This is a second instance of the recorded rule that editing a governed source
+  file drifts every document whose route digests it, arriving from an unusual
+  direction: here the *governed file is unchanged* and only its path moved, yet
+  a digest still shifts, because the pinned region was defined by a path
+  substring rather than by structure.
 * **`ci.yml` and the `Makefile` are rewritten by hand.** Nothing pins that they
   agree with the new layout beyond CI going green, and a step that is silently
   skipped rather than failed would not be caught.
