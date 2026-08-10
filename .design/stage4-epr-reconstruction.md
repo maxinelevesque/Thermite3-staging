@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: b16f160b3275d45c788819ec6845c255828e0d1c86c81c92e1976eed6e2de330 (re-pinned 2026-08-09 for RFC-18 step 1, and this one was NOT predicted. No file this document governs changed content. The route crate_pattern = scripts/g4-* is a GLOB, and moving scripts/g4-gate.sh to gates/g4.sh removed a file from its membership; _content_digest digests the matched file SET per pattern, so the digest moves on membership alone. A move can therefore drift a document that governs a glob the moved file happened to match, with no content change anywhere. Coverage was restored rather than lost: an explicit gates/g4.sh route was added, since the glob no longer reaches it and R-XLATE-2 would have blocked the next edit. prior: cd8ddad18a7bd790eb874a477d9030e9b7060b03645005887a90f6de1741f2b1.)
+audited-content-sha256: b0c34ae6ec93f5a9880df8c9c72770208acbd8a125d4382eced9bc84099e84ba (re-pinned 2026-08-09, correcting RFC-18 step 1. The first step-1 pin was taken while gates/g4.sh still invoked scripts/lean-axiom-probe.sh and scripts/g4-gate.sh, paths step 1 had itself moved - CI proved it with 'bash: scripts/lean-axiom-probe.sh: No such file or directory', exit 127 in the g3 job. The local gate suite could not have caught this: it runs the Python gates and never executes g3.sh or g4.sh. The shell gates now reference gates/ for everything step 1 moved, and keep scripts/ for the g4 provisioning, which does not move until step 2. G4 itself is unchanged. prior: b16f160b3275d45c788819ec6845c255828e0d1c86c81c92e1976eed6e2de330.)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see tooling/spec-routes.toml)
 -->

@@ -19,7 +19,7 @@ done
 if [[ "${THERMITE_G4_MEMORY_LIMITED:-0}" != "1" ]]; then
   export THERMITE_G4_MEMORY_LIMITED=1
   exec prlimit --as="${THERMITE_G4_ADDRESS_SPACE_BYTES:-6442450944}" -- \
-    bash "$ROOT/scripts/g4-gate.sh" "$@"
+    bash "$ROOT/gates/g4.sh" "$@"
 fi
 
 # Rust builds are the only broadly parallel part of the gate. One build job and
@@ -73,7 +73,7 @@ cargo test -p forge --bin forge epr_reconstruct::tests:: -- \
   --nocapture --test-threads=1
 
 echo "[G4 4/6] axiom footprint"
-bash scripts/lean-axiom-probe.sh
+bash gates/lean-axiom-probe.sh
 
 echo "[G4 5/6] release defaults and automatic BV routing"
 cargo build -p forge --release

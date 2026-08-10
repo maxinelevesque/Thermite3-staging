@@ -24,7 +24,7 @@ cargo test -p thermite-lower tagged_ -- --nocapture
 cargo test -p forge --features bv --test bv_invariants -- --nocapture
 
 echo "[G3 4/5] Lean spine and reconstruction axiom probe"
-bash scripts/lean-axiom-probe.sh
+bash gates/lean-axiom-probe.sh
 
 echo "[G3 5/5] checked validity replay and the live BV route"
 cargo test -p forge --features bv --bin forge lean_smt_export::tests -- --nocapture
