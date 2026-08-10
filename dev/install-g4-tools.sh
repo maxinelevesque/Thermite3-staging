@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=g4-toolchain.env
-source "$ROOT/scripts/g4-toolchain.env"
+source "$ROOT/dev/g4-toolchain.env"
 
 for tool in git make cc c++; do
   command -v "$tool" >/dev/null 2>&1 || {
@@ -44,7 +44,7 @@ cc -D_GNU_SOURCE -std=c99 -O2 \
 mkdir -p "$DEST/bin" "$DEST/libexec"
 install -m 0755 "$WORK/cadical/build/cadical" "$DEST/bin/cadical"
 install -m 0755 "$WORK/drat-trim/drat-trim" "$DEST/libexec/drat-trim.real"
-install -m 0755 "$ROOT/scripts/g4-tools/drat-trim" "$DEST/bin/drat-trim"
+install -m 0755 "$ROOT/dev/g4-tools/drat-trim" "$DEST/bin/drat-trim"
 
 test "$("$DEST/bin/cadical" --version)" = "$CADICAL_VERSION"
 test "$("$DEST/bin/drat-trim" --thermite-version)" = "drat-trim $DRAT_TRIM_REV"

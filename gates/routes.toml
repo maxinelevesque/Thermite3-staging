@@ -1049,7 +1049,7 @@ conformance_ops = []
 # tooling — canonical REQ registry and generated status views (GitHub #17)
 # ---------------------------------------------------------------------
 # DECLARATIVE like the doc-drift route above: the edit hook does not gate
-# gates/.design data paths, but doc-drift can still enforce that the governing
+# gates/ and .design/ data paths, but doc-drift can still enforce that the governing
 # design doc is re-pinned when the registry, generator, generated view, or legacy
 # bridge changes.
 [[route]]
@@ -1177,13 +1177,13 @@ reference = []
 conformance_ops = []
 
 [[route]]
-crate_pattern = "scripts/g4-*"
+crate_pattern = "dev/g4-*"
 design = ".design/stage4-epr-reconstruction.md"
 reference = []
 conformance_ops = []
 
 [[route]]
-# gates/g4.sh was gates/g4.sh and was covered by the scripts/g4-* glob
+# gates/g4.sh was gates/g4.sh and was covered by the dev/g4-* glob
 # above until RFC-18 step 1 moved it. Named explicitly so the move does not
 # silently drop its route (R-XLATE-2 would otherwise block the next edit).
 crate_pattern = "gates/g4.sh"
@@ -1192,7 +1192,7 @@ reference = []
 conformance_ops = []
 
 [[route]]
-crate_pattern = "scripts/install-g4-tools.sh"
+crate_pattern = "dev/install-g4-tools.sh"
 design = ".design/stage4-epr-reconstruction.md"
 reference = []
 conformance_ops = []

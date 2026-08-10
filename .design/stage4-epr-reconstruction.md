@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 236b890dd162d58aceacfbf8e51a3c2d3b26567fcbfac5f7f5d6a5fee3d2ad46 (re-pinned 2026-08-09, RFC-18 step 1 completion. A tree-wide sweep found 37 live references to the step-1 paths that the first sweep missed, because that sweep was piped through head -25 and the output was dominated by .design/ hits - a truncated list read as a complete one. The misses included forge/tests/divergence_audit_check2_exit_swallow.rs, which READS the audit script by path and failed CI with 'read scripts/audit.sh: NotFound'. Governed source changed only where it named a moved path; no behaviour changed. Historical records were excluded from the sweep: .claims/, CHANGELOG.md, the frozen docs/v2/ set, and every audited-content-sha256 note line. prior: b0c34ae6ec93f5a9880df8c9c72770208acbd8a125d4382eced9bc84099e84ba.)
+audited-content-sha256: bb844015e03f93c9300948641a5029fec701ecd6d09920d65651d0b8bbe04cb8 (re-pinned 2026-08-09 for RFC-18 step 2: the g4 provisioning moved scripts/ -> dev/ (install-g4-tools.sh, g4-toolchain.env, g4-tools/drat-trim) and thermite3-migrate moved tooling/ -> dev/. The route pattern scripts/g4-* became dev/g4-*, and gates/g4.sh's text changed where it names the provisioning. G4 itself is unchanged: same CaDiCaL 2.1.3 and drat-trim identities, same memory-bounded gate. prior: 236b890dd162d58aceacfbf8e51a3c2d3b26567fcbfac5f7f5d6a5fee3d2ad46.)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->
@@ -18,7 +18,7 @@ countermodel or a kernel-checked proof of its actual `req → clause` theorem.
 
 The external solver may search for a proof, but it is not trusted. Lean rebuilds
 the finite grounding and CNF, checks an LRAT certificate, and derives the clause
-theorem. `scripts/install-g4-tools.sh` builds CaDiCaL 2.1.3 at
+theorem. `dev/install-g4-tools.sh` builds CaDiCaL 2.1.3 at
 `f13d74439a5b5c963ac5b02d05ce93a8098018b8` and drat-trim at
 `effa1dcce85c878236f8313133dff1a2b766cd7c`; the gate accepts only those
 identities.

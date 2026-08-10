@@ -17287,7 +17287,7 @@ note = "Binds grounding, theory clauses, CNF, LRAT, and the source implication t
 
 [[requirement.evidence]]
 kind = "file"
-target = "scripts/g4-toolchain.env"
+target = "dev/g4-toolchain.env"
 note = "Exact CaDiCaL and drat-trim source identities."
 
 [[requirement]]

@@ -2215,7 +2215,7 @@ mod tests {
 
     #[test]
     fn source_toolchain_pins_match_the_runtime_checks() {
-        let pins = include_str!("../../scripts/g4-toolchain.env");
+        let pins = include_str!("../../dev/g4-toolchain.env");
         assert!(pins.contains(&format!("CADICAL_VERSION={CADICAL_VERSION}\n")));
         assert!(pins.contains(&format!("CADICAL_REV={CADICAL_REVISION}\n")));
         assert!(pins.contains(&format!("DRAT_TRIM_REV={DRAT_TRIM_REVISION}\n")));

@@ -155,10 +155,10 @@ build can spend hours rebuilding dependencies.
 Normal release builds include fixed-width `@bvN` syntax and automatic routing.
 The finite relation/array reconstruction path additionally needs the exact
 CaDiCaL and `drat-trim` revisions pinned in
-[`scripts/g4-toolchain.env`](scripts/g4-toolchain.env):
+[`dev/g4-toolchain.env`](dev/g4-toolchain.env):
 
 ```sh
-bash scripts/install-g4-tools.sh
+bash dev/install-g4-tools.sh
 ```
 
 They are installed under `target/g4-tools`. Forge finds that directory

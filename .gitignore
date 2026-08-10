@@ -36,7 +36,7 @@
 
 # ACToR harness read-state (per-worktree)
 .crosslink/.spec-reads.json
-tooling/__pycache__/
+gates/__pycache__/
 __pycache__/
 
 # Rust build artifacts
@@ -70,5 +70,5 @@ binary_search_golden
 # day disposable render cache (display only).
 .day/
 
-# built by tooling/thermite3-migrate
-tooling/thermite3-migrate/target/
+# built by dev/thermite3-migrate
+dev/thermite3-migrate/target/
