@@ -72,3 +72,15 @@ binary_search_golden
 
 # built by dev/thermite3-migrate
 dev/thermite3-migrate/target/
+
+# === RFC-15: materialized opt-in stacks ===
+# `just use <stack>` copies these from opt-in/ into the working tree. They are
+# listed here so they stop being tracked at RFC-15 step 3; until then the tracked
+# copies at the root still exist and git ignores nothing already tracked, so
+# these lines are inert. Adding them at step 1 means step 3 is a `git rm` with no
+# further ignore work, and it documents which paths are generated.
+/.mcp.json
+/.claude/settings.json
+/.claude/agents/
+/.crosslink/hook-config.json
+/.crosslink/rules/
