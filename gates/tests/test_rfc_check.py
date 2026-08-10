@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Oracle tests for tooling/rfc-check.py.
+"""Oracle tests for gates/rfc-check.py.
 
 Each test asserts on the reported message rather than only the exit code. A gate
 that fails for the wrong reason is a gate that sends the next reader to the wrong

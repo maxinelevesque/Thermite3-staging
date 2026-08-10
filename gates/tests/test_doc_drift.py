@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Oracle fixture tests for tooling/doc-drift.py.
+Oracle fixture tests for gates/doc-drift.py.
 
-tooling/ had NO test convention before this gate (its two shipped hooks are
+gates/ had NO test convention before this gate (its two shipped hooks are
 untested); this introduces the first one, per
 .design/tooling/doc-drift-tripwire.md "Verification". Each test builds a
 throwaway git repo in a tmpdir (git init + a hermetic user.name/email + a mini
-spec-routes.toml + docs + governed files), then runs the gate via subprocess
+routes.toml + docs + governed files), then runs the gate via subprocess
 with `--root <fixture>` and asserts against HAND-AUTHORED oracle facts — never
 the tool's own output (R-CHAR-3).
 
-Runnable as:  python3 -m unittest discover -s tooling/tests
+Runnable as:  python3 -m unittest discover -s gates/tests
 
 The oracle (the spec's expected values, not the tool's):
 
@@ -52,7 +52,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-# The gate under test: tooling/doc-drift.py, two levels up from this file.
+# The gate under test: gates/doc-drift.py, two levels up from this file.
 GATE = Path(__file__).resolve().parents[1] / "doc-drift.py"
 
 
@@ -109,7 +109,7 @@ class Fixture:
         _git(self.path, "checkout", "-q", "-b", "main", env=env)
         _git(self.path, "config", "user.name", "Fixture", env=env)
         _git(self.path, "config", "user.email", "fixture@example.com", env=env)
-        (self.path / "tooling").mkdir(parents=True, exist_ok=True)
+        (self.path / "gates").mkdir(parents=True, exist_ok=True)
 
     def write(self, relpath, content):
         p = self.path / relpath
@@ -128,7 +128,7 @@ class Fixture:
                 "reference = []\n"
                 "conformance_ops = []\n"
             )
-        self.write("tooling/spec-routes.toml", "\n".join(blocks))
+        self.write("gates/routes.toml", "\n".join(blocks))
 
     def write_doc(self, relpath, pin, content_pin=None):
         """Write a routed doc with an HTML-comment header. pin=None -> no pin."""

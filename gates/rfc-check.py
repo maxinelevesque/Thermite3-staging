@@ -21,8 +21,8 @@ from the documents:
 
 Usage:
 
-    python3 tooling/rfc-check.py [--root <repo>] [--json] [--index]
-    uv run  tooling/rfc-check.py [--root <repo>] [--json] [--index]
+    python3 gates/rfc-check.py [--root <repo>] [--json] [--index]
+    uv run  gates/rfc-check.py [--root <repo>] [--json] [--index]
 
 The PEP 723 header above pins the interpreter this needs, so `uv run` fetches a
 matching one rather than inheriting whatever `python3` happens to be. This gate

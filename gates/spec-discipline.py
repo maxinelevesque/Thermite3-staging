@@ -2,7 +2,7 @@
 """Require the relevant design material to be read before source edits.
 
 The PostToolUse hook records reads in ``.crosslink/.spec-reads.json``. The
-PreToolUse hook checks Write and Edit requests against ``spec-routes.toml``.
+PreToolUse hook checks Write and Edit requests against ``routes.toml``.
 Each routed edit requires ``goal.md``, its design document, and at least one
 declared conformance or golden reference when the route specifies references.
 
@@ -66,7 +66,7 @@ def state_path(repo_root):
 
 
 def routes_path(repo_root):
-    return repo_root / "tooling" / "spec-routes.toml"
+    return repo_root / "gates" / "routes.toml"
 
 
 def read_state(repo_root):
@@ -94,7 +94,7 @@ def require_toml_reader():
 
     Without `tomllib` the route table loads EMPTY, and an empty table makes
     every gated file look unrouted — so the hook blocks with "no route table
-    entry matches", which sends the reader to `spec-routes.toml` to add a route
+    entry matches", which sends the reader to `routes.toml` to add a route
     that is already there. Fail closed, but say why. `tomllib` is 3.11+; the
     repo pins its interpreter in `.python-version` and CI and `make` reach it
     through `uv run`.
@@ -109,7 +109,7 @@ def require_toml_reader():
             "\n"
             "Run the hook under the pinned interpreter:\n"
             "\n"
-            "  uv run python tooling/spec-discipline.py\n"
+            "  uv run python gates/spec-discipline.py\n"
         )
         sys.exit(2)
 
@@ -285,7 +285,7 @@ def main():
             f"/conformance reference). Without a route, the file has no\n"
             f"contract and cannot be edited.\n"
             f"\n"
-            f"Add a route to tooling/spec-routes.toml:\n"
+            f"Add a route to gates/routes.toml:\n"
             f"\n"
             f"  [[route]]\n"
             f"  crate_pattern = \"{rel}\"\n"
@@ -380,14 +380,14 @@ def main():
                 f"\n"
                 f"Run the Read tool on each missing path, THEN retry the edit.\n"
                 f"\n"
-                f"Route entry for this file (from spec-routes.toml):\n"
+                f"Route entry for this file (from routes.toml):\n"
                 f"  crate_pattern = \"{route.get('crate_pattern')}\"\n"
                 f"  design        = \"{route.get('design')}\"\n"
                 f"  reference     = {route.get('reference', [])}\n"
                 f"  conformance_ops = {route.get('conformance_ops', [])}\n"
                 f"\n"
                 f"If you believe the route is wrong, edit\n"
-                f"  tooling/spec-routes.toml\n"
+                f"  gates/routes.toml\n"
                 f"and adjust this route entry before retrying.\n"
                 f"{PRIORITY_FOOTER}"
             )

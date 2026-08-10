@@ -20,7 +20,7 @@ and applies three checks:
 
 Usage:
 
-    python3 tooling/req-status.py [--root <repo>] [--inventory] [--json]
+    python3 gates/req-status.py [--root <repo>] [--inventory] [--json]
 """
 
 from __future__ import annotations

@@ -9,7 +9,7 @@ governs: tooling/doc-drift.py + the `audited-content-sha256:` / `audited-sha:`
          REQ-10). Explicitly NOT `scripts/audit.sh`, which this component
          leaves byte-identical (decision 5).
 audited-sha: 1523b7edd09d5fe614f2950b5d9ba16ef5639f14 (re-pinned at the #258 gauntlet HEAD; governed file last touched 1523b7ed)
-audited-content-sha256: b27747ecb71426569d7add4e9c60619d809866f0d110751f31e18483c31b9c9d (re-pinned 2026-08-08 for RFC-16 layer 1: doc-drift.py gains anchors (doc:begin/doc:end) and pin-extract, both opt-in. Proved before re-pinning that the digest is unchanged for every doc that does not opt in: 59 docs compared old algorithm against new on one identical tree, 0 differences. prior: 7b5d98596a791fe3ab1e6fb08886d647ca19740da2623ce858debcc3492ec9e6)
+audited-content-sha256: 96da3811ab63a96761f075e958a9e247f622bd99a80f35eb8474cb9f185afdc8 (re-pinned 2026-08-09 for RFC-18 step 1: doc-drift.py moved tooling/ -> gates/ and its route pattern moved with it. Two causes, both intended - the pattern string is part of the digest (_content_digest line 415), and the file's own text changed where it names ROUTES_RELPATH and the pin-extract ownership test. No rule changed. prior: b27747ecb71426569d7add4e9c60619d809866f0d110751f31e18483c31b9c9d.)
 thesis-refs:
   - thermite-design.md §1 (trust relocated: "a skeptical third party can audit in minutes")
   - thermite-design.md §8 (#[slag]: the unverified residue is LOUD, never silent)

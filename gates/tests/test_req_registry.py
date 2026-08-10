@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Oracle tests for tooling/req-registry.py."""
+"""Oracle tests for gates/req-registry.py."""
 
 import os
 import subprocess

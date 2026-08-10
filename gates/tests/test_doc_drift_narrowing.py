@@ -65,7 +65,7 @@ SETTINGS_ONE_HOOK = """{
   "hooks": {
     "PreToolUse": [
       {"matcher": "Write|Edit",
-       "hooks": [{"type": "command", "command": "python3 tooling/gate.py"}]}
+       "hooks": [{"type": "command", "command": "python3 gates/gate.py"}]}
     ]
   }
 }
@@ -75,7 +75,7 @@ SETTINGS_PLUS_THIRD_PARTY = """{
   "hooks": {
     "PreToolUse": [
       {"matcher": "Write|Edit",
-       "hooks": [{"type": "command", "command": "python3 tooling/gate.py"}]}
+       "hooks": [{"type": "command", "command": "python3 gates/gate.py"}]}
     ],
     "SessionStart": [
       {"hooks": [{"type": "command", "command": "day hook session-start"}]}
@@ -88,7 +88,7 @@ SETTINGS_CHANGED_OWN_HOOK = """{
   "hooks": {
     "PreToolUse": [
       {"matcher": "Write|Edit",
-       "hooks": [{"type": "command", "command": "python3 tooling/other.py"}]}
+       "hooks": [{"type": "command", "command": "python3 gates/other.py"}]}
     ]
   }
 }

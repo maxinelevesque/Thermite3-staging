@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Oracle fixture tests for tooling/control-plane-check.py.
+Oracle fixture tests for gates/control-plane-check.py.
 
 Same convention as test_doc_drift.py: each test builds a throwaway control plane
-in a tmpdir (a .claude/settings.json + the tooling/ scripts it names), runs the
+in a tmpdir (a .claude/settings.json + the gates/ scripts it names), runs the
 gate via subprocess with `--root <fixture>`, and asserts against HAND-AUTHORED
 oracle facts — never the tool's own output (R-CHAR-3).
 
@@ -11,7 +11,7 @@ O-2 is the load-bearing one: its fixture is the VERBATIM de-wired settings.json
 that commit 5581b65f left on main, so the suite fails if the gate ever stops
 catching the exact regression it was built for (crosslink #93).
 
-Runnable as:  python3 -m unittest discover -s tooling/tests
+Runnable as:  python3 -m unittest discover -s gates/tests
 
 The oracle (the spec's expected values, not the tool's):
 
@@ -45,12 +45,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-# The gate under test: tooling/control-plane-check.py, two levels up.
+# The gate under test: gates/control-plane-check.py, two levels up.
 GATE = Path(__file__).resolve().parents[1] / "control-plane-check.py"
 
 # The two hook scripts the required wirings name.
-SPEC_DISCIPLINE = "tooling/spec-discipline.py"
-ANTI_PATTERN = "tooling/anti-pattern-gate.py"
+SPEC_DISCIPLINE = "gates/spec-discipline.py"
+ANTI_PATTERN = "gates/anti-pattern-gate.py"
 
 
 def _guard(script):
@@ -100,7 +100,7 @@ def _make_fixture(tmp, hooks, *, scripts_present=True, raw_settings=None,
     """Build a control-plane fixture rooted at `tmp`; return that root."""
     root = Path(tmp)
     (root / ".claude").mkdir(parents=True, exist_ok=True)
-    (root / "tooling").mkdir(parents=True, exist_ok=True)
+    (root / "gates").mkdir(parents=True, exist_ok=True)
 
     if scripts_present:
         for script in (SPEC_DISCIPLINE, ANTI_PATTERN):

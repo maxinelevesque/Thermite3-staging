@@ -5310,7 +5310,7 @@ note = "governing design contract"
 [[requirement]]
 id = "REQ-REG-2"
 title = "Registry-declared status policy"
-owner = "tooling/req-registry.py"
+owner = "gates/req-registry.py"
 status = "shipped"
 scope = "tooling"
 summary = "Registry statuses are declared by the registry, not hard-coded by the checker."
@@ -5323,13 +5323,13 @@ note = "status policy model"
 
 [[requirement.evidence]]
 kind = "test"
-target = "tooling/tests/test_req_registry.py::ReqRegistryOracleTest.test_rejects_unknown_status"
+target = "gates/tests/test_req_registry.py::ReqRegistryOracleTest.test_rejects_unknown_status"
 note = "requirements may only use declared statuses"
 
 [[requirement]]
 id = "REQ-REG-3"
 title = "Typed evidence validation"
-owner = "tooling/req-registry.py"
+owner = "gates/req-registry.py"
 status = "shipped"
 scope = "tooling"
 summary = "Evidence entries carry an explicit kind and target; path, symbol, command, issue, and blocker references are validated mechanically."
@@ -5342,28 +5342,28 @@ note = "accepted evidence kind set"
 
 [[requirement.evidence]]
 kind = "test"
-target = "tooling/tests/test_req_registry.py::ReqRegistryOracleTest.test_rejects_unresolved_file_evidence"
+target = "gates/tests/test_req_registry.py::ReqRegistryOracleTest.test_rejects_unresolved_file_evidence"
 note = "path evidence must resolve"
 
 [[requirement.evidence]]
 kind = "test"
-target = "tooling/tests/test_req_registry.py::ReqRegistryOracleTest.test_blocked_requires_issue_blocker"
+target = "gates/tests/test_req_registry.py::ReqRegistryOracleTest.test_blocked_requires_issue_blocker"
 note = "future status blockers are typed"
 
 [[requirement.evidence]]
 kind = "test"
-target = "tooling/tests/test_req_registry.py::ReqRegistryOracleTest.test_command_evidence_rejects_unresolved_executable"
+target = "gates/tests/test_req_registry.py::ReqRegistryOracleTest.test_command_evidence_rejects_unresolved_executable"
 note = "command evidence must parse and resolve its executable"
 
 [[requirement.evidence]]
 kind = "test"
-target = "tooling/tests/test_req_registry.py::ReqRegistryOracleTest.test_live_issue_adapter_rejects_closed_github_blocker"
+target = "gates/tests/test_req_registry.py::ReqRegistryOracleTest.test_live_issue_adapter_rejects_closed_github_blocker"
 note = "optional live issue adapter catches closed blockers"
 
 [[requirement]]
 id = "REQ-REG-4"
 title = "Generated status views"
-owner = "tooling/req-registry.py"
+owner = "gates/req-registry.py"
 status = "shipped"
 scope = "tooling"
 summary = "Generated markdown views are rendered deterministically from the registry and checked in CI for staleness."
@@ -5376,38 +5376,38 @@ note = "status view renderer"
 
 [[requirement.evidence]]
 kind = "test"
-target = "tooling/tests/test_req_registry.py::ReqRegistryOracleTest.test_check_detects_stale_generated_view"
+target = "gates/tests/test_req_registry.py::ReqRegistryOracleTest.test_check_detects_stale_generated_view"
 note = "stale generated output is a failing condition"
 
 [[requirement.evidence]]
 kind = "command"
-target = "tooling/reqs check"
+target = "gates/reqs check"
 note = "CI-facing generated-view check"
 
 [[requirement]]
 id = "REQ-REG-5"
 title = "Legacy source-comment bridge"
-owner = "tooling/req-status.py"
+owner = "gates/req-status.py"
 status = "shipped"
 scope = "tooling"
 summary = "The existing source-comment lint remains as a compatibility bridge and now verifies that no hand-maintained legacy source REQ status rows remain."
-contributors = ["tooling/req-registry.py"]
+contributors = ["gates/req-registry.py"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "file"
-target = "tooling/req-status.py"
+target = "gates/req-status.py"
 note = "short-term contradiction tripwire"
 
 [[requirement.evidence]]
 kind = "command"
-target = "python3 tooling/req-status.py"
+target = "python3 gates/req-status.py"
 note = "legacy row lint stays green during migration"
 
 [[requirement]]
 id = "REQ-REG-6"
 title = "Generated-region migration"
-owner = "tooling/req-registry.py"
+owner = "gates/req-registry.py"
 status = "shipped"
 scope = "tooling"
 summary = "Hand-maintained source-comment status tables have been replaced by generated regions or links declared from the canonical registry."
@@ -5644,7 +5644,7 @@ status = "shipped"
 scope = "lower"
 summary = "The L3 lowerer reports unsupported or invalid lowering shapes through `LowerError` instead of panicking."
 aliases = ["thermite-lower/src/lower.rs REQ-9 (`LowerError`, no panics)"]
-contributors = [".design/lower/verus-lowering.md", "tooling/anti-pattern-gate.py"]
+contributors = [".design/lower/verus-lowering.md", "gates/anti-pattern-gate.py"]
 generated_to = ["status", "thermite-lower-verus-lowering-status"]
 
 [[requirement.evidence]]
@@ -5659,7 +5659,7 @@ note = "structured unsupported-construct variant"
 
 [[requirement.evidence]]
 kind = "file"
-target = "tooling/anti-pattern-gate.py"
+target = "gates/anti-pattern-gate.py"
 note = "workspace anti-pattern/no-panic gate"
 
 [[requirement]]
@@ -5863,7 +5863,7 @@ status = "shipped"
 scope = "lower"
 summary = "ADT lowering reuses structured `LowerError` handling and does not introduce panics for unsupported ADT shapes."
 aliases = ["thermite-lower/src/lower.rs REQ-11 (`LowerError`/no panics)"]
-contributors = [".design/basis/01-adts.md", "tooling/anti-pattern-gate.py"]
+contributors = [".design/basis/01-adts.md", "gates/anti-pattern-gate.py"]
 generated_to = ["status", "thermite-lower-adt-status"]
 
 [[requirement.evidence]]
@@ -5873,7 +5873,7 @@ note = "shared lowerer error type"
 
 [[requirement.evidence]]
 kind = "file"
-target = "tooling/anti-pattern-gate.py"
+target = "gates/anti-pattern-gate.py"
 note = "workspace anti-pattern/no-panic gate"
 
 [[requirement]]
@@ -5957,7 +5957,7 @@ status = "shipped"
 scope = "lower"
 summary = "Scheme lowering reports unresolved or unsupported scheme shapes through structured `LowerError` paths."
 aliases = ["thermite-lower/src/lower.rs REQ-9 (`LowerError` extension, no panics)"]
-contributors = [".design/basis/02-recursion-schemes.md", "tooling/anti-pattern-gate.py"]
+contributors = [".design/basis/02-recursion-schemes.md", "gates/anti-pattern-gate.py"]
 generated_to = ["status", "thermite-lower-recursion-schemes-status"]
 
 [[requirement.evidence]]
@@ -5972,7 +5972,7 @@ note = "shared lowerer error type"
 
 [[requirement.evidence]]
 kind = "file"
-target = "tooling/anti-pattern-gate.py"
+target = "gates/anti-pattern-gate.py"
 note = "workspace anti-pattern/no-panic gate"
 
 [[requirement]]
@@ -6045,7 +6045,7 @@ status = "shipped"
 scope = "lower"
 summary = "Collection lowering reuses structured `LowerError` handling for unsupported element or collection shapes."
 aliases = ["thermite-lower/src/lower.rs REQ-7 (`LowerError` extension, no panics)"]
-contributors = [".design/basis/04-collections.md", "tooling/anti-pattern-gate.py"]
+contributors = [".design/basis/04-collections.md", "gates/anti-pattern-gate.py"]
 generated_to = ["status", "thermite-lower-collections-status"]
 
 [[requirement.evidence]]
@@ -6060,7 +6060,7 @@ note = "unsupported Vec element types report structured errors"
 
 [[requirement.evidence]]
 kind = "file"
-target = "tooling/anti-pattern-gate.py"
+target = "gates/anti-pattern-gate.py"
 note = "workspace anti-pattern/no-panic gate"
 
 [[requirement]]
@@ -6248,7 +6248,7 @@ status = "shipped"
 scope = "lower"
 summary = "Unsupported Map key/value shapes report structured `LowerError` results instead of panics."
 aliases = ["thermite-lower/src/lower.rs REQ-6 (`LowerError` extension, no panics)"]
-contributors = [".design/basis/13-map.md", "tooling/anti-pattern-gate.py"]
+contributors = [".design/basis/13-map.md", "gates/anti-pattern-gate.py"]
 generated_to = ["status", "thermite-lower-map-status"]
 
 [[requirement.evidence]]
@@ -6263,7 +6263,7 @@ note = "shared lowerer error type"
 
 [[requirement.evidence]]
 kind = "file"
-target = "tooling/anti-pattern-gate.py"
+target = "gates/anti-pattern-gate.py"
 note = "workspace anti-pattern/no-panic gate"
 
 [[requirement]]
@@ -6820,7 +6820,7 @@ note = "real-encoding ring-hom lemma"
 
 [[requirement.evidence]]
 kind = "file"
-target = "scripts/lean-axiom-probe.sh"
+target = "gates/lean-axiom-probe.sh"
 note = "the shared lake-build + #print-axioms gate, run by the Lean CI job and make audit check [1]"
 
 [[requirement]]
@@ -6980,7 +6980,7 @@ title = "Stage-2 Strat spine foundation — Strat/{Syntax,Carrier,Denote}.lean +
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "The stratified-FOL spine foundation (stage2-stratified-cage.md REQ-1 / AC-1; child of docs/v2/program.md REQ-10; gate G2), built against the REQ-0 surface quantifiers (Expr::Quantifier, #322) and inheriting the SPIKE-1 de Bruijn conventions VERBATIM from the surviving note .design/strat/substkit-conventions.md (the retired Spike/{SubstKit,PinBrokenLift}.lean are deleted in this same change). (1) Strat/Syntax.lean: the de Bruijn term / atom / formula language. Tm (var); Atom (eq of two carrier-sort terms | qf embedding a v1 quantifier-free Thermite.Expr); Frm (atom/neg/conj/disj/all/ex). lift/subst with the SPIKE-1 §1/§3 leaf rules verbatim — bumpIdx, liftTm, substTm, and the cutoff bumping c->c+1 under all/ex (the off-by-one the SubstKit micro-pin REQ-2 refutes). The STRATIFICATION: carrier-sort variables live ONLY in the eq atoms (de Bruijn Tm); qf atoms are closed w.r.t. the binders, so lift/subst pass them through unchanged. (2) Strat/Carrier.lean: CarrierAssign bundles one opaque sort C with a HAND-ROLLED finiteness witness — deq (DecidableEq carried as DATA, SPIKE-1 §6 carry-as-data), enum (List C), complete (forall x, x in enum) — NO Mathlib Fintype; plus the de Bruijn environment algebra Env/cons/insert. complete is the (R1) load-bearing datum. (3) Strat/Denote.lean: sdenote is Bool-valued via List.all (all) / List.any (ex) folds over the enumeration, parametric in a QFree oracle so it stays computable; sdenote_all_iff / sdenote_ex_iff upgrade the folds to genuine forall/exists by CONSUMING complete; the v1 deferral is concrete — canonicalQOracle reads the embedded Expr's truth straight off the v1 Thermite.denote (consumed, not re-proven), with canonicalQOracle_iff / sdenote_qf_canonical the bridges. No Mathlib on the denote path (imports only Strat.Syntax/Carrier + the Mathlib-free Thermite.Denote). (4) PinFiniteEscape: the (R1) pin — an INCOMPLETE enumeration fold reports true while the genuine forall is false (finiteEscape_pinned / incompleteEnum_escapes), exhibiting the soundness escape that dropping complete would permit, then tied back to sdenote on the genuine carrier via sdenote_all_iff_instance. AC-1 met: lake build green with Strat/{Syntax,Carrier,Denote} + PinFiniteEscape (wired into scripts/lean-axiom-probe.sh as CI build targets); zero sorry under lean/Thermite/Strat/; no Mathlib import on the Denote path; the load-bearing lemmas are axiom-clean (subset of propext/Classical.choice/Quot.sound). The SubstKit ~25-lemma binder kit (REQ-2), the NNF/graph/fragment classifier (REQ-3+), the encoder + T1-S (REQ-5), and the rest of the stage-2 tree are SEPARATE downstream requirements, not remaining scope of this foundation."
+summary = "The stratified-FOL spine foundation (stage2-stratified-cage.md REQ-1 / AC-1; child of docs/v2/program.md REQ-10; gate G2), built against the REQ-0 surface quantifiers (Expr::Quantifier, #322) and inheriting the SPIKE-1 de Bruijn conventions VERBATIM from the surviving note .design/strat/substkit-conventions.md (the retired Spike/{SubstKit,PinBrokenLift}.lean are deleted in this same change). (1) Strat/Syntax.lean: the de Bruijn term / atom / formula language. Tm (var); Atom (eq of two carrier-sort terms | qf embedding a v1 quantifier-free Thermite.Expr); Frm (atom/neg/conj/disj/all/ex). lift/subst with the SPIKE-1 §1/§3 leaf rules verbatim — bumpIdx, liftTm, substTm, and the cutoff bumping c->c+1 under all/ex (the off-by-one the SubstKit micro-pin REQ-2 refutes). The STRATIFICATION: carrier-sort variables live ONLY in the eq atoms (de Bruijn Tm); qf atoms are closed w.r.t. the binders, so lift/subst pass them through unchanged. (2) Strat/Carrier.lean: CarrierAssign bundles one opaque sort C with a HAND-ROLLED finiteness witness — deq (DecidableEq carried as DATA, SPIKE-1 §6 carry-as-data), enum (List C), complete (forall x, x in enum) — NO Mathlib Fintype; plus the de Bruijn environment algebra Env/cons/insert. complete is the (R1) load-bearing datum. (3) Strat/Denote.lean: sdenote is Bool-valued via List.all (all) / List.any (ex) folds over the enumeration, parametric in a QFree oracle so it stays computable; sdenote_all_iff / sdenote_ex_iff upgrade the folds to genuine forall/exists by CONSUMING complete; the v1 deferral is concrete — canonicalQOracle reads the embedded Expr's truth straight off the v1 Thermite.denote (consumed, not re-proven), with canonicalQOracle_iff / sdenote_qf_canonical the bridges. No Mathlib on the denote path (imports only Strat.Syntax/Carrier + the Mathlib-free Thermite.Denote). (4) PinFiniteEscape: the (R1) pin — an INCOMPLETE enumeration fold reports true while the genuine forall is false (finiteEscape_pinned / incompleteEnum_escapes), exhibiting the soundness escape that dropping complete would permit, then tied back to sdenote on the genuine carrier via sdenote_all_iff_instance. AC-1 met: lake build green with Strat/{Syntax,Carrier,Denote} + PinFiniteEscape (wired into gates/lean-axiom-probe.sh as CI build targets); zero sorry under lean/Thermite/Strat/; no Mathlib import on the Denote path; the load-bearing lemmas are axiom-clean (subset of propext/Classical.choice/Quot.sound). The SubstKit ~25-lemma binder kit (REQ-2), the NNF/graph/fragment classifier (REQ-3+), the encoder + T1-S (REQ-5), and the rest of the stage-2 tree are SEPARATE downstream requirements, not remaining scope of this foundation."
 aliases = ["Stage-2 REQ-1", "REQ-1 Strat spine foundation", "Strat spine foundation", "Strat/Syntax.lean", "Strat/Carrier.lean", "Strat/Denote.lean", "CarrierAssign", "sdenote", "sdenote_all_iff", "PinFiniteEscape", "AC-1", "github:dollspace-gay/Thermite#323"]
 generated_to = ["status"]
 
@@ -7021,7 +7021,7 @@ note = "(4) the (R1) pin battery: finiteEscape_pinned / incompleteEnum_escapes (
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "AC-1 (ci): the CI Lean job builds Thermite.Strat.Denote + Thermite.PinFiniteEscape (added as build targets), so a sorry or broken proof under Strat/ fails the gate; the probe also confirms the spine theorems stay axiom-clean"
 
 [[requirement]]
@@ -7030,7 +7030,7 @@ title = "Stage-2 SubstKit binder kit — Strat/SubstKit.lean + PinBrokenLift"
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "The de Bruijn binder kit (stage2-stratified-cage.md REQ-2 / AC-2; child of docs/v2/program.md REQ-10; gate G2), built on REQ-1's Strat/{Syntax,Carrier,Denote}.lean (#323, merged @ 35d5a9f2). The lemma list is FIXED from the SPIKE-1 conventions note .design/strat/substkit-conventions.md (sha256 9acf36855e824ddeb022ad61cc601a4dbb6f217b47a99894bf8027f64bd35ba5, cited in the file header): the two load-bearing lemmas and their term companions inherit the note's §4 statement shapes VERBATIM — formula as the induction target, cutoff/index/value/env quantified AFTER it, with the QFree oracle q threaded as fixed context before the formula. (1) Strat/SubstKit.lean carries the binder lemmas the toy proved (REQ-1 pre-shipped four of the note's 11 pieces — CarrierAssign.beq_self/beq_eq_true in Carrier.lean, sdenote_all_iff/sdenote_ex_iff in Denote.lean): env-algebra (all_congr, any_congr, insert_apply, insert_bumpIdx, cons_insert — the note §2/§3 cons/insert commutation inherited); term level (tdenote_liftTm, tdenote_substTm — note §4 verbatim; substTm_liftTm the syntactic inverse); atom level (adenote_liftAtom, adenote_substAtom, substAtom_liftAtom — factoring the eq/qf stratification split the richer spine adds over the toy); the two LOAD-BEARING lemmas sdenote_push_lift (weakening is denotation-invariant) and sdenote_subst (the substitution lemma); the syntactic formula inverse substFrm_liftFrm; and the binder-introduction corollaries sdenote_lift0 (c=0 weakening) / sdenote_subst0 (j=0 instantiation/β) / sdenote_substFrm_liftFrm (semantic freshness, the substance of REQ-5's fresh-name discipline). Decidability on the bundled carrier sort is routed as DATA via CarrierAssign.beq (note §6 carry-as-data), NOT a [DecidableEq] instance. (2) PinBrokenLift (the flat Pin*.lean placement REQ-1 used for PinFiniteEscape): liftBadFrm leaves the cutoff UNCHANGED under all/ex (the off-by-one neighbour); brokenLift_breaks_push_lift refutes sdenote_push_lift for it via decide on a concrete 2-element carrier, with correctLift_satisfies_push_lift confirming the divergence is solely the off-by-one. AC-2 met: lake build green; the two load-bearing lemmas are axiom-clean (in-file #print axioms = [propext, Quot.sound], the note §4 measurement reproduced — NOT added to the fixed make-audit THEOREM list); zero sorry under lean/Thermite/Strat/; no Mathlib import on the path (SubstKit imports only Strat.Denote). Also fixed the stale Syntax.lean:13 comment referencing the deleted Spike/SubstKit.lean, and wired Thermite.Strat.SubstKit + Thermite.PinBrokenLift into scripts/lean-axiom-probe.sh as CI build targets. The NNF/graph/fragment classifier (REQ-3+), the encoder + T1-S (REQ-5), and the rest of the stage-2 tree are SEPARATE downstream requirements, not remaining scope of this kit."
+summary = "The de Bruijn binder kit (stage2-stratified-cage.md REQ-2 / AC-2; child of docs/v2/program.md REQ-10; gate G2), built on REQ-1's Strat/{Syntax,Carrier,Denote}.lean (#323, merged @ 35d5a9f2). The lemma list is FIXED from the SPIKE-1 conventions note .design/strat/substkit-conventions.md (sha256 9acf36855e824ddeb022ad61cc601a4dbb6f217b47a99894bf8027f64bd35ba5, cited in the file header): the two load-bearing lemmas and their term companions inherit the note's §4 statement shapes VERBATIM — formula as the induction target, cutoff/index/value/env quantified AFTER it, with the QFree oracle q threaded as fixed context before the formula. (1) Strat/SubstKit.lean carries the binder lemmas the toy proved (REQ-1 pre-shipped four of the note's 11 pieces — CarrierAssign.beq_self/beq_eq_true in Carrier.lean, sdenote_all_iff/sdenote_ex_iff in Denote.lean): env-algebra (all_congr, any_congr, insert_apply, insert_bumpIdx, cons_insert — the note §2/§3 cons/insert commutation inherited); term level (tdenote_liftTm, tdenote_substTm — note §4 verbatim; substTm_liftTm the syntactic inverse); atom level (adenote_liftAtom, adenote_substAtom, substAtom_liftAtom — factoring the eq/qf stratification split the richer spine adds over the toy); the two LOAD-BEARING lemmas sdenote_push_lift (weakening is denotation-invariant) and sdenote_subst (the substitution lemma); the syntactic formula inverse substFrm_liftFrm; and the binder-introduction corollaries sdenote_lift0 (c=0 weakening) / sdenote_subst0 (j=0 instantiation/β) / sdenote_substFrm_liftFrm (semantic freshness, the substance of REQ-5's fresh-name discipline). Decidability on the bundled carrier sort is routed as DATA via CarrierAssign.beq (note §6 carry-as-data), NOT a [DecidableEq] instance. (2) PinBrokenLift (the flat Pin*.lean placement REQ-1 used for PinFiniteEscape): liftBadFrm leaves the cutoff UNCHANGED under all/ex (the off-by-one neighbour); brokenLift_breaks_push_lift refutes sdenote_push_lift for it via decide on a concrete 2-element carrier, with correctLift_satisfies_push_lift confirming the divergence is solely the off-by-one. AC-2 met: lake build green; the two load-bearing lemmas are axiom-clean (in-file #print axioms = [propext, Quot.sound], the note §4 measurement reproduced — NOT added to the fixed make-audit THEOREM list); zero sorry under lean/Thermite/Strat/; no Mathlib import on the path (SubstKit imports only Strat.Denote). Also fixed the stale Syntax.lean:13 comment referencing the deleted Spike/SubstKit.lean, and wired Thermite.Strat.SubstKit + Thermite.PinBrokenLift into gates/lean-axiom-probe.sh as CI build targets. The NNF/graph/fragment classifier (REQ-3+), the encoder + T1-S (REQ-5), and the rest of the stage-2 tree are SEPARATE downstream requirements, not remaining scope of this kit."
 aliases = ["Stage-2 REQ-2", "REQ-2 SubstKit", "SubstKit", "the SubstKit binder kit", "Strat/SubstKit.lean", "sdenote_push_lift", "sdenote_subst", "substFrm_liftFrm", "PinBrokenLift", "liftBadFrm", "AC-2", "github:dollspace-gay/Thermite#324"]
 generated_to = ["status"]
 
@@ -7061,7 +7061,7 @@ note = "the broken-lift micro-pin: liftBadFrm omits the cutoff bump under all/ex
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "AC-2 (ci): Thermite.Strat.SubstKit + Thermite.PinBrokenLift added as CI build targets, so a sorry or broken proof in the kit (or the pin) fails the Lean gate; lake build green, the spine theorems stay axiom-clean"
 
 [[requirement]]
@@ -7070,7 +7070,7 @@ title = "Stage-2 classifier kernel half — Strat/{Nnf,Graph,Fragment}.lean + T3
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "The admission-classifier KERNEL half (stage2-stratified-cage.md REQ-3 / AC-3; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §1-§3,§5). Builds on the REQ-1 Strat spine (#323, merged 35d5a9f2). KEY MODELING DECISION: the metatheory §1.2 Frm (SORTED binders + the array-property term vocabulary Read/Len/Cast/IdxOp/spec-fns) is RICHER than REQ-1's minimal SEMANTIC spine (single carrier, unsorted all/ex, Tm.var only, qf opaque) — the admission traps a[a[i]]/cast-cycle are properties of that sort/term structure REQ-1's Frm cannot express. So the classifier operates on its OWN sorted surface syntax (faithful to §1.2), defined in Strat/Nnf.lean; REQ-1's minimal Frm stays the semantic/encoder spine and the encoder (REQ-5) bridges them. (1) Strat/Nnf.lean: Sort2 (mach/seq/opaque) + rich Tm/Atom/Frm with sorted binders; a STRUCTURAL denotation fdenote (sorts erased: a finite List of closed terms as the value domain, a closing substitution Nat->Tm, atoms read by an oracle Atom->Bool — stronger than a single fixed model and reusing REQ-1's cons) + the de Bruijn lift/closing-subst cancellation; nnf/nnfNeg (NNF, eliminating imp, pushing neg to atoms so every binder's polarity is syntactic) with nnf_sound (UNCONDITIONAL denotation-preservation); prenex/mergeConj/mergeDisj (quantifier pull, fsize-terminating) with prenex_sound (the standard non-empty-carrier side condition dom != []). (2) Strat/Graph.lean: sortGraph (E1 alternation: edge S->T for an ex-T binder under a forall-S; E2 function-flow: edge S->T for a function occurrence whose S-position arg has a universally bound var — Read usize->elem, Cast from->to, Len SeqS->usize inert, app1 arg->res), computed on NNF; acyclic via the Roy-Warshall transitive-closure recursion reach (allowed=nodes), the declarative cycle TC/Chain, and the soundness theorem acyclic_iff_no_cycle (a clean STRUCTURAL Warshall vertex-peel induction — NO pigeonhole/Nodup, which keeps it Mathlib-free), plus sortGraph_complete (the node set is closed for the edges = Wf, the property acyclic consumes; the Skolemisation-closure the sketch describes IS the E2 edges, computed directly). (3) Strat/Fragment.lean: finCarrier (R1, no seq binder), idxGrammar (R2 BMS index grammar: no bound index var under mul or a width-changing cast — the deliberate cast redundancy with the graph), admitted = finCarrier && idxGrammar && acyclic(sortGraph(nnf)), the declarative Frag (R1/R2 syntactic + R3 stated declaratively as not HasCycle), and T3-C classifier_correct : forall phi, admitted phi = true <-> Frag phi (substance = acyclic_iff_no_cycle). Fragment versioned S2.0 (the narrow R2; every widening is new grammar+pins, never silent). AC-3 met: classifier_correct axiom-clean (#print axioms = {propext, Quot.sound} subset of allowed); the four §3.2 worked micro-examples are decide-checked (NOT native_decide, which would inject Lean.ofReduceBool) test theorems with expected outcomes — ex_selfLoop_rejected (a[a[i]] E2 self-loop), ex_castCycle_rejected (E2 usize->u64->usize, + ex_castCycle_idxGrammar_ok showing R2 alone passes so the graph is the sole rejector), ex_kvCycle_rejected (E1 Key<->Value), ex_sortedness_admitted (E2 usize->u32 only); zero sorry under lean/Thermite/Strat/; core-Lean-only (no Mathlib import on the classifier path). Strat.Fragment + classifier_correct wired into scripts/lean-axiom-probe.sh (build target + axiom gate). The Rust ops-half classifier + differential battery (REQ-4), encoder/T1-S (REQ-5), and the rest of the stage-2 tree are SEPARATE downstream requirements."
+summary = "The admission-classifier KERNEL half (stage2-stratified-cage.md REQ-3 / AC-3; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §1-§3,§5). Builds on the REQ-1 Strat spine (#323, merged 35d5a9f2). KEY MODELING DECISION: the metatheory §1.2 Frm (SORTED binders + the array-property term vocabulary Read/Len/Cast/IdxOp/spec-fns) is RICHER than REQ-1's minimal SEMANTIC spine (single carrier, unsorted all/ex, Tm.var only, qf opaque) — the admission traps a[a[i]]/cast-cycle are properties of that sort/term structure REQ-1's Frm cannot express. So the classifier operates on its OWN sorted surface syntax (faithful to §1.2), defined in Strat/Nnf.lean; REQ-1's minimal Frm stays the semantic/encoder spine and the encoder (REQ-5) bridges them. (1) Strat/Nnf.lean: Sort2 (mach/seq/opaque) + rich Tm/Atom/Frm with sorted binders; a STRUCTURAL denotation fdenote (sorts erased: a finite List of closed terms as the value domain, a closing substitution Nat->Tm, atoms read by an oracle Atom->Bool — stronger than a single fixed model and reusing REQ-1's cons) + the de Bruijn lift/closing-subst cancellation; nnf/nnfNeg (NNF, eliminating imp, pushing neg to atoms so every binder's polarity is syntactic) with nnf_sound (UNCONDITIONAL denotation-preservation); prenex/mergeConj/mergeDisj (quantifier pull, fsize-terminating) with prenex_sound (the standard non-empty-carrier side condition dom != []). (2) Strat/Graph.lean: sortGraph (E1 alternation: edge S->T for an ex-T binder under a forall-S; E2 function-flow: edge S->T for a function occurrence whose S-position arg has a universally bound var — Read usize->elem, Cast from->to, Len SeqS->usize inert, app1 arg->res), computed on NNF; acyclic via the Roy-Warshall transitive-closure recursion reach (allowed=nodes), the declarative cycle TC/Chain, and the soundness theorem acyclic_iff_no_cycle (a clean STRUCTURAL Warshall vertex-peel induction — NO pigeonhole/Nodup, which keeps it Mathlib-free), plus sortGraph_complete (the node set is closed for the edges = Wf, the property acyclic consumes; the Skolemisation-closure the sketch describes IS the E2 edges, computed directly). (3) Strat/Fragment.lean: finCarrier (R1, no seq binder), idxGrammar (R2 BMS index grammar: no bound index var under mul or a width-changing cast — the deliberate cast redundancy with the graph), admitted = finCarrier && idxGrammar && acyclic(sortGraph(nnf)), the declarative Frag (R1/R2 syntactic + R3 stated declaratively as not HasCycle), and T3-C classifier_correct : forall phi, admitted phi = true <-> Frag phi (substance = acyclic_iff_no_cycle). Fragment versioned S2.0 (the narrow R2; every widening is new grammar+pins, never silent). AC-3 met: classifier_correct axiom-clean (#print axioms = {propext, Quot.sound} subset of allowed); the four §3.2 worked micro-examples are decide-checked (NOT native_decide, which would inject Lean.ofReduceBool) test theorems with expected outcomes — ex_selfLoop_rejected (a[a[i]] E2 self-loop), ex_castCycle_rejected (E2 usize->u64->usize, + ex_castCycle_idxGrammar_ok showing R2 alone passes so the graph is the sole rejector), ex_kvCycle_rejected (E1 Key<->Value), ex_sortedness_admitted (E2 usize->u32 only); zero sorry under lean/Thermite/Strat/; core-Lean-only (no Mathlib import on the classifier path). Strat.Fragment + classifier_correct wired into gates/lean-axiom-probe.sh (build target + axiom gate). The Rust ops-half classifier + differential battery (REQ-4), encoder/T1-S (REQ-5), and the rest of the stage-2 tree are SEPARATE downstream requirements."
 remaining_scope = "Kernel (Lean) half ONLY. The Rust classifier mirroring admitted in thermite-spec + the SplitMix64 differential battery (REQ-4 / AC-4, #326), and the [1'] axiom-probe extension to the OTHER stratified soundness theorems (strat_ref_sound/strat_lowering_faithful/restrat_conservative; REQ-9 / #331), are separate requirements."
 aliases = ["Stage-2 REQ-3", "REQ-3 classifier kernel", "classifier kernel half", "Strat/Nnf.lean", "Strat/Graph.lean", "Strat/Fragment.lean", "nnf_sound", "prenex_sound", "sortGraph", "acyclic_iff_no_cycle", "sortGraph_complete", "admitted", "Frag", "classifier_correct", "T3-C", "AC-3", "github:dollspace-gay/Thermite#325"]
 generated_to = ["status"]
@@ -7112,7 +7112,7 @@ note = "AC-3 examples: ex_selfLoop_rejected / ex_castCycle_rejected (+ ex_castCy
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "AC-3 (ci): Thermite.Strat.Fragment added as a build target (transitively pulls Nnf/Graph) so a sorry/broken proof under Strat/ fails the gate; Thermite.Strat.Cls.classifier_correct added to the axiom-gated THEOREMS list so its axioms must stay subset of {propext, Classical.choice, Quot.sound}"
 
 [[requirement]]
@@ -7121,8 +7121,8 @@ title = "Stage-2 classifier ops half (Rust) + the differential battery — therm
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "The admission-classifier OPS half + the M2b differential battery (stage2-stratified-cage.md REQ-4 / AC-4; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §1-§3,§5). Mirrors the REQ-3 Lean KERNEL classifier (#325, merged 80e59203) in Rust, beside thermite-spec's existing validator, over the SORT-TYPED Thermite.Strat.Cls surface (Sort2 mach/seq/opaque + the Read/Len/Cast/IdxOp/Mul/spec-fn term vocabulary + sorted binders) — NOT REQ-1's minimal semantic-spine Frm. (1) thermite-spec/src/classifier.rs: a line-for-line transliteration of the Lean defs — Sort2/Mach/Tm/Rel/Atom/Frm, fin_sort/fin_carrier (R1), same_width/has_bound_var/idx_ok_tm/idx_grammar_at (R2 BMS index grammar), nnf/nnf_neg, edges_tm/edges_atom/edges_frm + sort_graph (E1 alternation ∪ E2 function-flow, on NNF), and admitted = fin_carrier && idx_grammar && acyclic(sort_graph(nnf)). The ONE intentional divergence: acyclic is a polynomial transitive-closure (Graph::acyclic) computing the SAME boolean as the Lean exponential Roy-Warshall reach (they agree by acyclic_iff_no_cycle), so the differential is fast. classify returns Verdict {Admitted | Rejected(RejectReason) | Unknown}; the FROZEN rejection vocabulary RejectReason = SeqQuantifier (R1, the only non-finite Sort2) | IndexGrammar (R2) | SortGraphCycle{cycle} (R3, the named cycle). The four §3.2 micro-examples (a[a[i]] self-loop, the width-preserving cast cycle, the kv alternation cycle, sortedness) are unit-tested to the SAME admit/reject outcomes the Lean Fragment.lean decide-checks. A shared compact S-expression WIRE format (to_wire/parse_frm) round-trips every Frm. (2) thermite-tv/src/gen.rs: gen_strat_formulas(seed,n) extends the SplitMix64 generator with well-sorted binder productions — the Q5 default two arms (a corpus-mimicking arm spanning every admit/reject class + a uniform-random bounded recursive-descent arm), every var an in-scope de Bruijn index carrying its binder sort; deterministic (same seed -> same stream), covering every verdict class. (3) lean/Thermite/Strat/Cls/Wire.lean: the Lean half — a partial recursive-descent parser from the wire format back to the kernel Cls.Frm + a root main that runs the KERNEL Cls.admitted (the exact REQ-3 admitted, not a re-impl) on each stdin line, printing one verdict line; an IO tool (no theorem), wired into scripts/lean-axiom-probe.sh as a build target (so a compile break fails the Lean CI job and its dep Strat.Fragment is built). (4) forge/src/strat_tv.rs + the forge strat-tv subcommand: the differential harness — generate N formulas, classify each with BOTH the Rust classifier AND lake env lean --run on the Lean admitted (wire on stdin), compare verdict-for-verdict. A DISAGREEMENT (Rust admit != Lean admit, both definite) is a verification-failure exit (the hard CI failure audit check [8] raises, NOT a ForgeError). The unknown-on-admitted TRIPWIRE (a formula the Rust classifier could not vouch for — Verdict::Unknown, or a Lean parse-error — while the kernel admitted it) is the classifier-suspect signal: counted, logged, escalated (also fails the gate), never silently retried; structurally 0 since classify is total. lake-absent is an honest Skipped (exit 0, never a false pass). AC-4 met: forge/tests/strat_differential.rs (lake-gated, runs live in the lean CI job via cargo nextest run -p forge) asserts the Rust verdict == Lean admitted on N=200 generated formulas with ZERO disagreements + ZERO tripwire, at the pinned seed and a rotated seed; locally verified across 5 seeds (600 formulas) with zero disagreements and a ~50/50 admit/reject balance. cargo test/clippy -D warnings/fmt clean; lake build green."
-remaining_scope = "The Rust ops-half classifier + the differential battery ONLY. The encoder + T1-S (REQ-5 / #327, the bridge between the Cls classifier surface and the REQ-1 semantic spine), the audit-script [8]/[1'] integration (REQ-9 / #331 — this increment ships the runnable battery + the lake-gated forge test that runs in the lean CI job, NOT the scripts/audit.sh check-[8] wiring), and the rest of the stage-2 tree are SEPARATE downstream requirements."
+summary = "The admission-classifier OPS half + the M2b differential battery (stage2-stratified-cage.md REQ-4 / AC-4; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §1-§3,§5). Mirrors the REQ-3 Lean KERNEL classifier (#325, merged 80e59203) in Rust, beside thermite-spec's existing validator, over the SORT-TYPED Thermite.Strat.Cls surface (Sort2 mach/seq/opaque + the Read/Len/Cast/IdxOp/Mul/spec-fn term vocabulary + sorted binders) — NOT REQ-1's minimal semantic-spine Frm. (1) thermite-spec/src/classifier.rs: a line-for-line transliteration of the Lean defs — Sort2/Mach/Tm/Rel/Atom/Frm, fin_sort/fin_carrier (R1), same_width/has_bound_var/idx_ok_tm/idx_grammar_at (R2 BMS index grammar), nnf/nnf_neg, edges_tm/edges_atom/edges_frm + sort_graph (E1 alternation ∪ E2 function-flow, on NNF), and admitted = fin_carrier && idx_grammar && acyclic(sort_graph(nnf)). The ONE intentional divergence: acyclic is a polynomial transitive-closure (Graph::acyclic) computing the SAME boolean as the Lean exponential Roy-Warshall reach (they agree by acyclic_iff_no_cycle), so the differential is fast. classify returns Verdict {Admitted | Rejected(RejectReason) | Unknown}; the FROZEN rejection vocabulary RejectReason = SeqQuantifier (R1, the only non-finite Sort2) | IndexGrammar (R2) | SortGraphCycle{cycle} (R3, the named cycle). The four §3.2 micro-examples (a[a[i]] self-loop, the width-preserving cast cycle, the kv alternation cycle, sortedness) are unit-tested to the SAME admit/reject outcomes the Lean Fragment.lean decide-checks. A shared compact S-expression WIRE format (to_wire/parse_frm) round-trips every Frm. (2) thermite-tv/src/gen.rs: gen_strat_formulas(seed,n) extends the SplitMix64 generator with well-sorted binder productions — the Q5 default two arms (a corpus-mimicking arm spanning every admit/reject class + a uniform-random bounded recursive-descent arm), every var an in-scope de Bruijn index carrying its binder sort; deterministic (same seed -> same stream), covering every verdict class. (3) lean/Thermite/Strat/Cls/Wire.lean: the Lean half — a partial recursive-descent parser from the wire format back to the kernel Cls.Frm + a root main that runs the KERNEL Cls.admitted (the exact REQ-3 admitted, not a re-impl) on each stdin line, printing one verdict line; an IO tool (no theorem), wired into gates/lean-axiom-probe.sh as a build target (so a compile break fails the Lean CI job and its dep Strat.Fragment is built). (4) forge/src/strat_tv.rs + the forge strat-tv subcommand: the differential harness — generate N formulas, classify each with BOTH the Rust classifier AND lake env lean --run on the Lean admitted (wire on stdin), compare verdict-for-verdict. A DISAGREEMENT (Rust admit != Lean admit, both definite) is a verification-failure exit (the hard CI failure audit check [8] raises, NOT a ForgeError). The unknown-on-admitted TRIPWIRE (a formula the Rust classifier could not vouch for — Verdict::Unknown, or a Lean parse-error — while the kernel admitted it) is the classifier-suspect signal: counted, logged, escalated (also fails the gate), never silently retried; structurally 0 since classify is total. lake-absent is an honest Skipped (exit 0, never a false pass). AC-4 met: forge/tests/strat_differential.rs (lake-gated, runs live in the lean CI job via cargo nextest run -p forge) asserts the Rust verdict == Lean admitted on N=200 generated formulas with ZERO disagreements + ZERO tripwire, at the pinned seed and a rotated seed; locally verified across 5 seeds (600 formulas) with zero disagreements and a ~50/50 admit/reject balance. cargo test/clippy -D warnings/fmt clean; lake build green."
+remaining_scope = "The Rust ops-half classifier + the differential battery ONLY. The encoder + T1-S (REQ-5 / #327, the bridge between the Cls classifier surface and the REQ-1 semantic spine), the audit-script [8]/[1'] integration (REQ-9 / #331 — this increment ships the runnable battery + the lake-gated forge test that runs in the lean CI job, NOT the gates/audit.sh check-[8] wiring), and the rest of the stage-2 tree are SEPARATE downstream requirements."
 aliases = ["Stage-2 REQ-4", "REQ-4 classifier ops half", "classifier ops half", "the Rust classifier", "thermite-spec/src/classifier.rs", "forge/src/strat_tv.rs", "lean/Thermite/Strat/Cls/Wire.lean", "gen_strat_formulas", "forge strat-tv", "the differential battery", "M2b", "AC-4", "github:dollspace-gay/Thermite#326"]
 generated_to = ["status"]
 
@@ -7144,7 +7144,7 @@ note = "(2) gen_strat_formulas — the SplitMix64 generator extended with well-s
 [[requirement.evidence]]
 kind = "file"
 target = "lean/Thermite/Strat/Cls/Wire.lean"
-note = "(3) the Lean half: a wire-format recursive-descent parser to the kernel Cls.Frm + a root main running the kernel Cls.admitted per stdin line; an IO tool, a scripts/lean-axiom-probe.sh build target"
+note = "(3) the Lean half: a wire-format recursive-descent parser to the kernel Cls.Frm + a root main running the kernel Cls.admitted per stdin line; an IO tool, a gates/lean-axiom-probe.sh build target"
 
 [[requirement.evidence]]
 kind = "file"
@@ -7167,7 +7167,7 @@ title = "Stage-2 encoder + T1-S — Strat/{RefEncode,TokDenote,Soundness}.lean +
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "The stratified reference encoder + T1-S soundness (stage2-stratified-cage.md REQ-5 / AC-5; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2). Builds on REQ-1..REQ-4 (#323/#324/#325/#326, merged @ 94c2683c). REQ-5 IS THE BRIDGE: the two-syntax split (REQ-3) leaves the classifier surface Cls.Frm and the semantic spine Strat.Frm un-reconciled; this increment connects an admitted Cls.Frm to a sound denotation. BRIDGE DECISION (documented in Strat/TokDenote.lean header + surfaced on #327): option A (a translation Cls.Frm -> spine Strat.Frm + correspondence) is ILL-DEFINED — the minimal spine Tm is var-only (it cannot hold the Read/Len/Cast/IdxOp array-property vocabulary) and Atom.eq equates only vars while Atom.qf is carrier-closed, so an admitted formula like forall i. a[i] <= a[j] has NO image in the spine; there is no total meaning-preserving translation. So the encoder takes option B: encode Cls.Frm DIRECTLY against REQ-3's STRUCTURAL denotation fdenote (binders over a finite List Tm domain, atoms via an oracle q : Atom -> Bool), which the design records is STRONGER than any single per-sort model (it holds for every (q, dom)), so encoder soundness against fdenote subsumes soundness under any concrete per-sort sdenote. No forked syntax (reuses Cls.Frm/Cls.Tm/Cls.substAtom), no sorry. (1) Strat/TokDenote.lean: the trigger-free MBQI token surface Tok — the SMT image of an admitted Cls.Frm with NAMED binders (a Nat name + a triggerFree flag per quantifier) in place of de Bruijn indices; upd (the named-environment update); tokDenote (Bool-valued, computable; binders fold dom re-binding the binder NAME, atoms read by the SAME oracle q as fdenote). (2) Strat/RefEncode.lean: encName (the de Bruijn LEVEL d-1-i a body index denotes at depth d — the fresh-name discipline), encTm/encAtom (relabel variable references index->level), sencodeAt/sencode (name each binder by its level, flag triggerFree=true), wfTm/wfAtom/wfFrm (the de Bruijn well-scopedness the bridge relies on — a top-level admitted clause is a wfFrm 0 sentence), tokWf (the encoder-output discipline: binder names strictly increase down each path -> pairwise distinct -> no capture, AND every quantifier trigger-free). (3) Strat/Soundness.lean: Agree (the named<->de Bruijn agreement invariant sigma (encName d i) = rho i for i<d), Agree_upd (maintained across a binder: cons lines up with upd at the fresh name d), encTm_subst/encAtom_subst (a relabelled term/atom read under sigma equals the original read under rho), T1-S strat_ref_sound (tokDenote q dom (sencodeAt d phi) sigma = fdenote q dom phi rho for every (q,dom) given Agree d + wfFrm d) + strat_ref_sound_sentence (the usable closed-sentence corollary at d=0, Agree 0 vacuous), strat_ref_wf (tokWf 0 (sencode phi) — the fresh-name + MBQI discipline). (4) PinStratFlip + PinStratCapture (flat lean/Thermite/Pin*.lean placement, as REQ-1/2): sencodeFlipAt swaps all<->ex and flip_breaks_soundness refutes it (witness exists x. x=c0 true, flipped to forall x. x=c0 false) via decide on a 2-element domain; sencodeCap reuses name 0 for every binder and capture_breaks_soundness refutes it (witness forall x. exists y. x=c0 — the outer x is captured by the inner binder, collapsing to forall x. exists y. y=c0) via decide; each pin also exhibits correct_sound_on_phi* showing the REAL sencode agrees on the same witness via the proven strat_ref_sound (the divergence is solely the broken step). AC-5 met: strat_ref_sound (T1-S) and strat_ref_wf proven, axiom-clean (in-file #print axioms = [propext, Quot.sound] subset of allowed; Quot.sound via funext under the binder folds), zero sorry under lean/Thermite/Strat/, core-Lean-only (no Mathlib on the path); PinStratCapture + PinStratFlip refute the broken-encoder neighbours at small carriers (decide, never native_decide). Thermite.Strat.Soundness + the two pins wired into scripts/lean-axiom-probe.sh as CI build targets, and Thermite.Strat.strat_ref_sound added to the axiom-gated THEOREMS list (the REQ-9 [1'] extension brought forward for AC-5); the probe stays green. The combinator demotion (REQ-6 / #328), restratify (REQ-7 / #329), faithfulness + two-phase TV + the trust flip (REQ-8 / #330), and the audit/[1'][4'][8][9] G2 gate (REQ-9 / #331) are SEPARATE downstream requirements."
+summary = "The stratified reference encoder + T1-S soundness (stage2-stratified-cage.md REQ-5 / AC-5; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2). Builds on REQ-1..REQ-4 (#323/#324/#325/#326, merged @ 94c2683c). REQ-5 IS THE BRIDGE: the two-syntax split (REQ-3) leaves the classifier surface Cls.Frm and the semantic spine Strat.Frm un-reconciled; this increment connects an admitted Cls.Frm to a sound denotation. BRIDGE DECISION (documented in Strat/TokDenote.lean header + surfaced on #327): option A (a translation Cls.Frm -> spine Strat.Frm + correspondence) is ILL-DEFINED — the minimal spine Tm is var-only (it cannot hold the Read/Len/Cast/IdxOp array-property vocabulary) and Atom.eq equates only vars while Atom.qf is carrier-closed, so an admitted formula like forall i. a[i] <= a[j] has NO image in the spine; there is no total meaning-preserving translation. So the encoder takes option B: encode Cls.Frm DIRECTLY against REQ-3's STRUCTURAL denotation fdenote (binders over a finite List Tm domain, atoms via an oracle q : Atom -> Bool), which the design records is STRONGER than any single per-sort model (it holds for every (q, dom)), so encoder soundness against fdenote subsumes soundness under any concrete per-sort sdenote. No forked syntax (reuses Cls.Frm/Cls.Tm/Cls.substAtom), no sorry. (1) Strat/TokDenote.lean: the trigger-free MBQI token surface Tok — the SMT image of an admitted Cls.Frm with NAMED binders (a Nat name + a triggerFree flag per quantifier) in place of de Bruijn indices; upd (the named-environment update); tokDenote (Bool-valued, computable; binders fold dom re-binding the binder NAME, atoms read by the SAME oracle q as fdenote). (2) Strat/RefEncode.lean: encName (the de Bruijn LEVEL d-1-i a body index denotes at depth d — the fresh-name discipline), encTm/encAtom (relabel variable references index->level), sencodeAt/sencode (name each binder by its level, flag triggerFree=true), wfTm/wfAtom/wfFrm (the de Bruijn well-scopedness the bridge relies on — a top-level admitted clause is a wfFrm 0 sentence), tokWf (the encoder-output discipline: binder names strictly increase down each path -> pairwise distinct -> no capture, AND every quantifier trigger-free). (3) Strat/Soundness.lean: Agree (the named<->de Bruijn agreement invariant sigma (encName d i) = rho i for i<d), Agree_upd (maintained across a binder: cons lines up with upd at the fresh name d), encTm_subst/encAtom_subst (a relabelled term/atom read under sigma equals the original read under rho), T1-S strat_ref_sound (tokDenote q dom (sencodeAt d phi) sigma = fdenote q dom phi rho for every (q,dom) given Agree d + wfFrm d) + strat_ref_sound_sentence (the usable closed-sentence corollary at d=0, Agree 0 vacuous), strat_ref_wf (tokWf 0 (sencode phi) — the fresh-name + MBQI discipline). (4) PinStratFlip + PinStratCapture (flat lean/Thermite/Pin*.lean placement, as REQ-1/2): sencodeFlipAt swaps all<->ex and flip_breaks_soundness refutes it (witness exists x. x=c0 true, flipped to forall x. x=c0 false) via decide on a 2-element domain; sencodeCap reuses name 0 for every binder and capture_breaks_soundness refutes it (witness forall x. exists y. x=c0 — the outer x is captured by the inner binder, collapsing to forall x. exists y. y=c0) via decide; each pin also exhibits correct_sound_on_phi* showing the REAL sencode agrees on the same witness via the proven strat_ref_sound (the divergence is solely the broken step). AC-5 met: strat_ref_sound (T1-S) and strat_ref_wf proven, axiom-clean (in-file #print axioms = [propext, Quot.sound] subset of allowed; Quot.sound via funext under the binder folds), zero sorry under lean/Thermite/Strat/, core-Lean-only (no Mathlib on the path); PinStratCapture + PinStratFlip refute the broken-encoder neighbours at small carriers (decide, never native_decide). Thermite.Strat.Soundness + the two pins wired into gates/lean-axiom-probe.sh as CI build targets, and Thermite.Strat.strat_ref_sound added to the axiom-gated THEOREMS list (the REQ-9 [1'] extension brought forward for AC-5); the probe stays green. The combinator demotion (REQ-6 / #328), restratify (REQ-7 / #329), faithfulness + two-phase TV + the trust flip (REQ-8 / #330), and the audit/[1'][4'][8][9] G2 gate (REQ-9 / #331) are SEPARATE downstream requirements."
 remaining_scope = "The encoder + T1-S soundness + the two broken-encoder pins ONLY. The combinator demotion (REQ-6 / #328), restratify (REQ-7 / #329), faithfulness + two-phase TV + the trust flip (REQ-8 / #330), and the audit-script G2 gate integration ([1'] extension of the OTHER stratified theorems strat_lowering_faithful/restrat_conservative + [4'][8][9]; REQ-9 / #331) are separate requirements."
 aliases = ["Stage-2 REQ-5", "REQ-5 encoder", "the encoder + T1-S", "REQ-5 IS THE BRIDGE", "Strat/RefEncode.lean", "Strat/TokDenote.lean", "Strat/Soundness.lean", "sencode", "tokDenote", "strat_ref_sound", "strat_ref_wf", "T1-S", "PinStratCapture", "PinStratFlip", "the trigger-free MBQI surface", "AC-5", "github:dollspace-gay/Thermite#327"]
 generated_to = ["status"]
@@ -7190,7 +7190,7 @@ note = "(3) Agree + Agree_upd + encTm_subst/encAtom_subst, T1-S strat_ref_sound 
 [[requirement.evidence]]
 kind = "symbol"
 target = "Thermite.Strat.strat_ref_sound"
-note = "T1-S: tokDenote q dom (sencodeAt d phi) sigma = fdenote q dom phi rho for every model (q,dom) under Agree d + wfFrm d — the encoder preserves the structural denotation (axiom-gated in scripts/lean-axiom-probe.sh)"
+note = "T1-S: tokDenote q dom (sencodeAt d phi) sigma = fdenote q dom phi rho for every model (q,dom) under Agree d + wfFrm d — the encoder preserves the structural denotation (axiom-gated in gates/lean-axiom-probe.sh)"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -7209,7 +7209,7 @@ note = "the variable-capture pin: sencodeCap reuses name 0 for every binder; cap
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "AC-5 (ci): builds Thermite.Strat.Soundness + the two pins and axiom-gates Thermite.Strat.strat_ref_sound (subset of {propext, Classical.choice, Quot.sound}); green — a sorry or disallowed axiom under the encoder/soundness path fails the Lean CI job"
 
 [[requirement]]
@@ -7218,7 +7218,7 @@ title = "Stage-2 combinator demotion — Strat/CombDeriv.lean (eight comb_deriv_
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "The combinator demotion (stage2-stratified-cage.md REQ-6 / AC-6; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §4). Builds on REQ-1..REQ-5 (#323/#324/#325/#326/#327, merged @ 52ace098). Closes the v1 SpecTherm combinator set into the stratified fragment: each of the eight frozen registry combinators (thermite-spec/src/combinators.rs, UNTOUCHED as surface syntax) gets a comb_deriv_* lemma proving its denotation EQUALS its raw-quantifier expansion (the six bounded ones) or its definitional aggregate form (the two SPIKE-2 census combinators). THE TWO-SYNTAX TARGET (binding, per REQ-3/4/5): the raw-quantifier target is the CLASSIFIER surface Thermite.Strat.Cls.Frm (sort-typed Sort2 + Read/Len/Cast/IdxOp/app1 + sorted binders), NOT REQ-1's minimal spine Frm; each expansion is denoted by REQ-3's STRUCTURAL fdenote (q : Atom -> Bool over a finite dom : List Tm), so the demotion is proven at the structural layer, parametric in the atom oracle q. THE REQ-8 BOUNDARY (REQ-5 option B, #327): q stays ABSTRACT — grounding q to the real v1 atom semantics (Read/Len/Cast/rel -> Thermite.denote) is REQ-8's INHERITED OBLIGATION; REQ-6 proves the SKELETON correspondence (each combinator HAS the claimed raw-quantifier spelling in the classifier surface and its fdenote IS exactly the intended bounded quantifier — mirroring Thermite/Denote.lean's bounded-quantifier denote, which mirrors the frozen verus_l3), the spine sdenote being the eventual concrete q instance the for-all-q result specializes to. (1) Strat/CombDeriv.lean: the shared Cls vocabulary of an expansion (boolS, seqA/seqB closed slice literals, idx0/idx1 de Bruijn index binders, nLit, boundLo/boundHi index bounds, predApp the declared unary spec-fn predicate application, readA/readB element reads); the six raw-quantifier Cls.Frm expansions forallInExp/existsInExp/sortedExp/forallBelowExp/forallFromExp/disjointExp (bound shapes mirroring the frozen verus_l3 EXACTLY, incl. the strict upper bound i < s.len()); the six demotion lemmas comb_deriv_forall_in/exists_in/sorted/forall_below/forall_from/disjoint, each fdenote q dom (expand) rho = true <-> the bounded forall/exists characterization over dom (proven via List.all_eq_true/List.any_eq_true + the imp/conj Bool unfolding + the closing-substitution computation). The two SPIKE-2 census combinators (count_where, permutation_of — NO layer-1 raw-quantifier spelling) demote to DEFINITIONAL aggregate forms over the carrier multiset: countWhereCls (the recursive count, mirroring Denote.lean's countWhereVal/countWhereVal_cons) with comb_deriv_count_where = the filter-length closed form (+ countWhereCls_cons the verus_l3 head-tail step), and permEqCls (the decidable per-element count check, core List.count not Mathlib Multiset) with comb_deriv_permutation_of <-> the multiset-equality characterization forall x, a.count x = b.count x (the [1,1,2]/[1,2,2] multiset-vs-set teeth); their stratified TV routes through the REQ-8 semantic phase, not the syntactic normalizer. (2) PinCombDeriv (flat lean/Thermite/Pin*.lean placement, as REQ-1/2/5): forallInExpWrong uses the OFF-BY-ONE upper bound i <= s.len() (.rel .le where .rel .lt is meant); offbyone_breaks_demotion refutes it via decide on a 2-element domain (the boundary index c1 = len, predicate-false, counts as in-bounds under <= -> the wrong expansion is false where the faithful one is vacuously true), with faithful_matches_bounded_forall (via comb_deriv_forall_in) confirming the divergence is solely the off-by-one. AC-6 met: all eight comb_deriv_* lemmas proven, axiom-clean (in-file #print axioms = subset of {propext, Classical.choice, Quot.sound}; Quot.sound via funext under the binder folds / List recursors), zero sorry under lean/Thermite/Strat/, core-Lean-only (CombDeriv imports only Strat.Nnf; no Mathlib); PinCombDeriv refutes the off-by-one neighbour (decide, never native_decide); the v1 conformance corpus certifies UNCHANGED (byte-identical goldens — the registry surface + lowering are untouched, the demotion is mechanized in Lean). Thermite.Strat.CombDeriv + Thermite.PinCombDeriv wired into scripts/lean-axiom-probe.sh as CI build targets (the eight lemmas axiom-probed IN-FILE, the REQ-2 SubstKit convention, NOT added to the fixed universal-pillar THEOREMS list). The restratify (REQ-7 / #329), faithfulness + two-phase TV + the trust flip (REQ-8 / #330), and the audit/[1'][4'][8][9] G2 gate (REQ-9 / #331) are SEPARATE downstream requirements."
+summary = "The combinator demotion (stage2-stratified-cage.md REQ-6 / AC-6; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §4). Builds on REQ-1..REQ-5 (#323/#324/#325/#326/#327, merged @ 52ace098). Closes the v1 SpecTherm combinator set into the stratified fragment: each of the eight frozen registry combinators (thermite-spec/src/combinators.rs, UNTOUCHED as surface syntax) gets a comb_deriv_* lemma proving its denotation EQUALS its raw-quantifier expansion (the six bounded ones) or its definitional aggregate form (the two SPIKE-2 census combinators). THE TWO-SYNTAX TARGET (binding, per REQ-3/4/5): the raw-quantifier target is the CLASSIFIER surface Thermite.Strat.Cls.Frm (sort-typed Sort2 + Read/Len/Cast/IdxOp/app1 + sorted binders), NOT REQ-1's minimal spine Frm; each expansion is denoted by REQ-3's STRUCTURAL fdenote (q : Atom -> Bool over a finite dom : List Tm), so the demotion is proven at the structural layer, parametric in the atom oracle q. THE REQ-8 BOUNDARY (REQ-5 option B, #327): q stays ABSTRACT — grounding q to the real v1 atom semantics (Read/Len/Cast/rel -> Thermite.denote) is REQ-8's INHERITED OBLIGATION; REQ-6 proves the SKELETON correspondence (each combinator HAS the claimed raw-quantifier spelling in the classifier surface and its fdenote IS exactly the intended bounded quantifier — mirroring Thermite/Denote.lean's bounded-quantifier denote, which mirrors the frozen verus_l3), the spine sdenote being the eventual concrete q instance the for-all-q result specializes to. (1) Strat/CombDeriv.lean: the shared Cls vocabulary of an expansion (boolS, seqA/seqB closed slice literals, idx0/idx1 de Bruijn index binders, nLit, boundLo/boundHi index bounds, predApp the declared unary spec-fn predicate application, readA/readB element reads); the six raw-quantifier Cls.Frm expansions forallInExp/existsInExp/sortedExp/forallBelowExp/forallFromExp/disjointExp (bound shapes mirroring the frozen verus_l3 EXACTLY, incl. the strict upper bound i < s.len()); the six demotion lemmas comb_deriv_forall_in/exists_in/sorted/forall_below/forall_from/disjoint, each fdenote q dom (expand) rho = true <-> the bounded forall/exists characterization over dom (proven via List.all_eq_true/List.any_eq_true + the imp/conj Bool unfolding + the closing-substitution computation). The two SPIKE-2 census combinators (count_where, permutation_of — NO layer-1 raw-quantifier spelling) demote to DEFINITIONAL aggregate forms over the carrier multiset: countWhereCls (the recursive count, mirroring Denote.lean's countWhereVal/countWhereVal_cons) with comb_deriv_count_where = the filter-length closed form (+ countWhereCls_cons the verus_l3 head-tail step), and permEqCls (the decidable per-element count check, core List.count not Mathlib Multiset) with comb_deriv_permutation_of <-> the multiset-equality characterization forall x, a.count x = b.count x (the [1,1,2]/[1,2,2] multiset-vs-set teeth); their stratified TV routes through the REQ-8 semantic phase, not the syntactic normalizer. (2) PinCombDeriv (flat lean/Thermite/Pin*.lean placement, as REQ-1/2/5): forallInExpWrong uses the OFF-BY-ONE upper bound i <= s.len() (.rel .le where .rel .lt is meant); offbyone_breaks_demotion refutes it via decide on a 2-element domain (the boundary index c1 = len, predicate-false, counts as in-bounds under <= -> the wrong expansion is false where the faithful one is vacuously true), with faithful_matches_bounded_forall (via comb_deriv_forall_in) confirming the divergence is solely the off-by-one. AC-6 met: all eight comb_deriv_* lemmas proven, axiom-clean (in-file #print axioms = subset of {propext, Classical.choice, Quot.sound}; Quot.sound via funext under the binder folds / List recursors), zero sorry under lean/Thermite/Strat/, core-Lean-only (CombDeriv imports only Strat.Nnf; no Mathlib); PinCombDeriv refutes the off-by-one neighbour (decide, never native_decide); the v1 conformance corpus certifies UNCHANGED (byte-identical goldens — the registry surface + lowering are untouched, the demotion is mechanized in Lean). Thermite.Strat.CombDeriv + Thermite.PinCombDeriv wired into gates/lean-axiom-probe.sh as CI build targets (the eight lemmas axiom-probed IN-FILE, the REQ-2 SubstKit convention, NOT added to the fixed universal-pillar THEOREMS list). The restratify (REQ-7 / #329), faithfulness + two-phase TV + the trust flip (REQ-8 / #330), and the audit/[1'][4'][8][9] G2 gate (REQ-9 / #331) are SEPARATE downstream requirements."
 remaining_scope = "The eight comb_deriv_* demotion lemmas + the off-by-one pin ONLY. The atom-grounding of the oracle q to the real v1 semantics (the structural-vs-grounded boundary inherited from REQ-5 option B), the two-phase stratified TV that routes count_where/permutation_of through the semantic phase (REQ-8 / #330), restratify (REQ-7 / #329), and the audit-script G2 gate ([1'][4'][8][9]; REQ-9 / #331) are separate requirements."
 aliases = ["Stage-2 REQ-6", "REQ-6 combinator demotion", "combinator demotion", "comb_deriv", "comb_deriv_*", "Strat/CombDeriv.lean", "CombDeriv", "PinCombDeriv", "the eight comb_deriv lemmas", "countWhereCls", "permEqCls", "raw-quantifier expansion", "AC-6", "github:dollspace-gay/Thermite#328"]
 generated_to = ["status"]
@@ -7245,7 +7245,7 @@ note = "the off-by-one pin: forallInExpWrong uses i <= s.len() where i < s.len()
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "AC-6 (ci): builds Thermite.Strat.CombDeriv + Thermite.PinCombDeriv (the eight comb_deriv_* lemmas axiom-probed in-file, subset of {propext, Classical.choice, Quot.sound}); green — a sorry or disallowed axiom under the demotion path fails the Lean CI job"
 
 [[requirement]]
@@ -7948,12 +7948,12 @@ status = "shipped"
 scope = "scaffold"
 summary = "The forge crate root has no dangling modules or placeholder scaffolding and participates in the workspace build."
 aliases = ["forge/src/main.rs REQ-6 (clean compile)"]
-contributors = ["Makefile", "tooling/anti-pattern-gate.py", ".design/scaffold/workspace.md"]
+contributors = ["Makefile", "gates/anti-pattern-gate.py", ".design/scaffold/workspace.md"]
 generated_to = ["status", "forge-main-scaffold-status"]
 
 [[requirement.evidence]]
 kind = "file"
-target = "tooling/anti-pattern-gate.py"
+target = "gates/anti-pattern-gate.py"
 note = "placeholder/anti-pattern gate"
 
 [[requirement.evidence]]
@@ -16732,7 +16732,7 @@ title = "Stage-2 restratify — Strat/Restratify.lean (T4-R) + forge edit --rest
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "The restratification rewrite + its T4-R metatheory + the forge wiring (stage2-stratified-cage.md REQ-7 / AC-7; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §6). Builds on REQ-1..REQ-6 (#323/#324/#325/#326/#327/#328, all merged @ b61d12e7); unblocks REQ-8 (#330). Operates on REQ-3's CLASSIFIER surface Thermite.Strat.Cls.Frm + its STRUCTURAL fdenote (q : Atom -> Bool over a finite dom : List Tm), NOT REQ-1's minimal spine Frm. THE REWRITE (the §6 kv-alternation repair): the motivating inadmissible formula is the kv cycle ex_kvCycle = (forall k:Key. exists v:Value. v=k) AND (forall v:Value. exists k:Key. k=v), whose sort graph has BOTH E1 edges Key->Value (from A) and Value->Key (from B) = a cycle, so admitted phi = false. restrat breaks it by EXCISING the cycle-closing conjunct B and replacing it with a fresh OPAQUE abstraction p (a qfree leaf — opaque to the classifier, contributing NO sorts and NO graph edges, the §1.2 QFree leaf): phi' = restrat phi = A AND p (only the Key->Value edge -> acyclic -> ADMITTED), and emits the IMPLICATION side obligation Side(phi',phi) = p => B (only the Value->Key edge -> acyclic -> ADMITTED). Neither phi' nor Side carries BOTH edges, so each is admissible alone, yet together they re-establish phi (modus ponens on p). R-SIDE-1 (the load-bearing discipline): a certificate of phi' ALONE never counts for phi — p is a fresh, UNCONSTRAINED abstraction, so A AND p is satisfied trivially by p:=true WITHOUT B holding; only a SEPARATELY DISCHARGED Side (p=>B, itself in-cage) licenses the inference to phi. (1) lean/Thermite/Strat/Restratify.lean: absLeaf/restrat/Side (the rewrite + the obligation) and the FOUR T4-R theorems — restrat_conservative (for ALL (q,dom,rho): fdenote phi' AND fdenote Side => fdenote phi, the R-SIDE-1 certificate bridge, a Boolean tautology = modus ponens on the abstraction's denotation; consumes BOTH hypotheses), restrat_admits (admitted (restrat kvAbs ex_kvCycle) = true, decide) + restrat_moves_into_cage (the original ex_kvCycle is rejected, decide), side_admitted (admitted (Side kvAbs ex_kvCycle) = true, decide — so Side is dischargeable IN-CAGE), and restrat_complete (under the WITNESS oracle q(p)=fdenote B, a model of phi is a model of both phi' and Side — no validity lost). (2) lean/Thermite/PinRestratDropSide.lean (flat Pin*.lean placement, as REQ-1/2/5/6): a boolean-literal oracle qBool with a TRUE A leaf and a FALSE B leaf; dropSide_counterexample shows phi' = A AND p is true (p:=true) while phi = A AND B is false; dropSide_breaks_certification refutes 'phi' certified => phi certified' WITH SIDE DROPPED via decide; side_is_false_here / conservative_withholds_without_side show that under the SAME model the real Side (p=>B) is FALSE so restrat_conservative's Side hypothesis is UNMET (the discipline correctly withholds) — the gap is solely the dropped obligation. (3) thermite-spec/src/restratify.rs (Rust ops-half, mirroring the Lean rewrite over classifier::Frm): abs_leaf/restratify (-> RestratResult{original,rewritten,side}) + certify(phi, side_discharged) -> Certification{Certified|Withheld(WithheldReason)} honouring R-SIDE-1 (WITHHELDs with SideUndischarged when phi' admitted + Side in-cage but Side not discharged) + kv_example; unit-tested kv rejected / phi'+Side both admitted / certified-when-discharged / WITHHELD-when-undischarged / non-conjunction-not-restratifiable. (4) forge edit --restratify [--json] (forge/src/cli.rs run_restratify): runs the kv example end to end — original REJECTED (the opaque0-cycle), phi' ADMITTED, Side ADMITTED, Side DISCHARGED in-cage, phi CERTIFIED — and the report attests R-SIDE-1 (withheld_when_side_undischarged). AC-7 met: forge edit --restratify performs the kv rewrite end to end, emits AND discharges Side in-cage, and a test (forge/tests/restratify.rs certification_withheld_when_side_undischarged + the thermite-spec unit test) proves certification is WITHHELD when Side is undischarged; PinRestratDropSide exists; restrat_conservative/admits/complete + side_admitted proven axiom-clean (in-file + lean-axiom-probe: subset of {propext, Classical.choice, Quot.sound}), zero sorry under lean/Thermite/Strat/, core-Lean-only (Restratify imports only Strat.Fragment; no Mathlib). Thermite.Strat.Restratify + Thermite.PinRestratDropSide wired into scripts/lean-axiom-probe.sh as CI build targets, and Thermite.Strat.Cls.restrat_conservative added to the axiom-gated THEOREMS list (the REQ-9 [1'] extension brought forward for AC-7, as REQ-5 did for strat_ref_sound); the probe stays green. The faithfulness + two-phase TV + the trust flip (REQ-8 / #330) and the audit/[1'][4'][8][9] G2 gate (REQ-9 / #331) are SEPARATE downstream requirements."
+summary = "The restratification rewrite + its T4-R metatheory + the forge wiring (stage2-stratified-cage.md REQ-7 / AC-7; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §6). Builds on REQ-1..REQ-6 (#323/#324/#325/#326/#327/#328, all merged @ b61d12e7); unblocks REQ-8 (#330). Operates on REQ-3's CLASSIFIER surface Thermite.Strat.Cls.Frm + its STRUCTURAL fdenote (q : Atom -> Bool over a finite dom : List Tm), NOT REQ-1's minimal spine Frm. THE REWRITE (the §6 kv-alternation repair): the motivating inadmissible formula is the kv cycle ex_kvCycle = (forall k:Key. exists v:Value. v=k) AND (forall v:Value. exists k:Key. k=v), whose sort graph has BOTH E1 edges Key->Value (from A) and Value->Key (from B) = a cycle, so admitted phi = false. restrat breaks it by EXCISING the cycle-closing conjunct B and replacing it with a fresh OPAQUE abstraction p (a qfree leaf — opaque to the classifier, contributing NO sorts and NO graph edges, the §1.2 QFree leaf): phi' = restrat phi = A AND p (only the Key->Value edge -> acyclic -> ADMITTED), and emits the IMPLICATION side obligation Side(phi',phi) = p => B (only the Value->Key edge -> acyclic -> ADMITTED). Neither phi' nor Side carries BOTH edges, so each is admissible alone, yet together they re-establish phi (modus ponens on p). R-SIDE-1 (the load-bearing discipline): a certificate of phi' ALONE never counts for phi — p is a fresh, UNCONSTRAINED abstraction, so A AND p is satisfied trivially by p:=true WITHOUT B holding; only a SEPARATELY DISCHARGED Side (p=>B, itself in-cage) licenses the inference to phi. (1) lean/Thermite/Strat/Restratify.lean: absLeaf/restrat/Side (the rewrite + the obligation) and the FOUR T4-R theorems — restrat_conservative (for ALL (q,dom,rho): fdenote phi' AND fdenote Side => fdenote phi, the R-SIDE-1 certificate bridge, a Boolean tautology = modus ponens on the abstraction's denotation; consumes BOTH hypotheses), restrat_admits (admitted (restrat kvAbs ex_kvCycle) = true, decide) + restrat_moves_into_cage (the original ex_kvCycle is rejected, decide), side_admitted (admitted (Side kvAbs ex_kvCycle) = true, decide — so Side is dischargeable IN-CAGE), and restrat_complete (under the WITNESS oracle q(p)=fdenote B, a model of phi is a model of both phi' and Side — no validity lost). (2) lean/Thermite/PinRestratDropSide.lean (flat Pin*.lean placement, as REQ-1/2/5/6): a boolean-literal oracle qBool with a TRUE A leaf and a FALSE B leaf; dropSide_counterexample shows phi' = A AND p is true (p:=true) while phi = A AND B is false; dropSide_breaks_certification refutes 'phi' certified => phi certified' WITH SIDE DROPPED via decide; side_is_false_here / conservative_withholds_without_side show that under the SAME model the real Side (p=>B) is FALSE so restrat_conservative's Side hypothesis is UNMET (the discipline correctly withholds) — the gap is solely the dropped obligation. (3) thermite-spec/src/restratify.rs (Rust ops-half, mirroring the Lean rewrite over classifier::Frm): abs_leaf/restratify (-> RestratResult{original,rewritten,side}) + certify(phi, side_discharged) -> Certification{Certified|Withheld(WithheldReason)} honouring R-SIDE-1 (WITHHELDs with SideUndischarged when phi' admitted + Side in-cage but Side not discharged) + kv_example; unit-tested kv rejected / phi'+Side both admitted / certified-when-discharged / WITHHELD-when-undischarged / non-conjunction-not-restratifiable. (4) forge edit --restratify [--json] (forge/src/cli.rs run_restratify): runs the kv example end to end — original REJECTED (the opaque0-cycle), phi' ADMITTED, Side ADMITTED, Side DISCHARGED in-cage, phi CERTIFIED — and the report attests R-SIDE-1 (withheld_when_side_undischarged). AC-7 met: forge edit --restratify performs the kv rewrite end to end, emits AND discharges Side in-cage, and a test (forge/tests/restratify.rs certification_withheld_when_side_undischarged + the thermite-spec unit test) proves certification is WITHHELD when Side is undischarged; PinRestratDropSide exists; restrat_conservative/admits/complete + side_admitted proven axiom-clean (in-file + lean-axiom-probe: subset of {propext, Classical.choice, Quot.sound}), zero sorry under lean/Thermite/Strat/, core-Lean-only (Restratify imports only Strat.Fragment; no Mathlib). Thermite.Strat.Restratify + Thermite.PinRestratDropSide wired into gates/lean-axiom-probe.sh as CI build targets, and Thermite.Strat.Cls.restrat_conservative added to the axiom-gated THEOREMS list (the REQ-9 [1'] extension brought forward for AC-7, as REQ-5 did for strat_ref_sound); the probe stays green. The faithfulness + two-phase TV + the trust flip (REQ-8 / #330) and the audit/[1'][4'][8][9] G2 gate (REQ-9 / #331) are SEPARATE downstream requirements."
 remaining_scope = "The restratify rewrite + the four T4-R theorems + the drop-Side pin + the forge edit --restratify wiring ONLY. The atom-grounding of the oracle q to the real v1 semantics (inherited from REQ-5 option B), the faithfulness + two-phase stratified TV + the trust flip (REQ-8 / #330), and the audit-script G2 gate ([1'][4'][8][9]; REQ-9 / #331) are separate requirements."
 aliases = ["Stage-2 REQ-7", "REQ-7 restratify", "restratify", "restrat", "T4-R", "Strat/Restratify.lean", "Restratify", "restrat_conservative", "restrat_admits", "restrat_complete", "side_admitted", "Side", "R-SIDE-1", "PinRestratDropSide", "forge edit --restratify", "AC-7", "github:dollspace-gay/Thermite#329"]
 generated_to = ["status"]
@@ -16745,7 +16745,7 @@ note = "T4-R: absLeaf/restrat/Side + restrat_conservative (for all (q,dom,rho): 
 [[requirement.evidence]]
 kind = "symbol"
 target = "Thermite.Strat.Cls.restrat_conservative"
-note = "T4-R conservativity / R-SIDE-1: a phi'-certificate counts for phi ONLY together with a discharged Side (p=>B) — fdenote phi' AND fdenote Side => fdenote phi, axiom-gated in scripts/lean-axiom-probe.sh (subset of {propext, Classical.choice, Quot.sound})"
+note = "T4-R conservativity / R-SIDE-1: a phi'-certificate counts for phi ONLY together with a discharged Side (p=>B) — fdenote phi' AND fdenote Side => fdenote phi, axiom-gated in gates/lean-axiom-probe.sh (subset of {propext, Classical.choice, Quot.sound})"
 
 [[requirement.evidence]]
 kind = "symbol"
@@ -16769,7 +16769,7 @@ note = "AC-7: forge edit --restratify performs the kv rewrite end to end (origin
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "AC-7 (ci): builds Thermite.Strat.Restratify + Thermite.PinRestratDropSide and axiom-gates Thermite.Strat.Cls.restrat_conservative (subset of {propext, Classical.choice, Quot.sound}); green — a sorry or disallowed axiom under the restratify path fails the Lean CI job"
 
 [[requirement]]
@@ -16778,7 +16778,7 @@ title = "Stage-2 faithfulness + two-phase TV + the trust flip — Strat/Faithful
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "The SOUNDNESS-CRUX increment: faithfulness + the atom-grounding + the two-phase stratified TV + the certificate trust flip (stage2-stratified-cage.md REQ-8 / AC-8; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §8.2). Builds on REQ-1..REQ-7 (#323/#324/#325/#326/#327/#328/#329, all merged @ 2917535b); unblocks REQ-9 (#331). CLOSES the atom-grounding obligation REQ-5 option B (#327) deferred here. (1) lean/Thermite/Strat/Faithfulness.lean: T2-S strat_lowering_faithful + the SFnTvWitness with explicit req-frame conditioning. REQ-5's T1-S proved only the STRUCTURAL skeleton parametric in an uninterpreted atom oracle q : Atom -> Bool; REQ-8 GROUNDS it. groundQ venv relModel : Cls.Atom -> Bool mirrors the spine adenote/canonicalQOracle seam (the v1 deferral REQ-1 proved sound, sdenote_qf_canonical): a qfree e atom defers to decide (Thermite.denote 0 e venv) — the REAL v1 source meaning — while a rel atom defers to the solver's relModel (the SMT array/integer theory). THE HONEST BOUNDARY (surfaced as a decision on #330, NOT papered over): rel atoms stay MODEL-RELATIVE because a closed Cls.rel term cannot be evaluated to a v1 value — Cls.Tm.lit carries NO value (Nnf.lean 'value irrelevant here') and the structural dom : List Tm is sort-erased; the array theory is the solver's, exactly an SMT translation-validation posture, exactly the parametricity T1-S already certifies. So T2-S = T1-S specialized to ANY oracle that grounds qfree to v1 (strat_ref_sound_sentence, free), PLUS the qfree-reflects-v1 conjunct (the new content: the encoded SMT surface of a qfree atom denotes EXACTLY the v1 Thermite.denote truth in the req-frame). SFnTvWitness bundles the req-frame (venv) + the oracle q + the non-empty carrier dom + the grounding hypothesis (grounds : forall e, q (qfree e) = decide (denote 0 e venv)); SFnTvWitness.canonical (built by groundQ_qfree's rfl) proves the theorem INHABITED (not vacuous). strat_lowering_faithful_qfree_iff is the <-> corollary, the Cls analogue of sdenote_qf_canonical. Imports Strat.Soundness + the v1 Thermite.Denote — deliberately NOT the spine Strat.Denote, which would re-introduce the #68 two-syntax probe collision the .Cls split fixed; the v1 deferral seam is reproduced on the Cls atom set directly. (2) thermite-lower production quantifier emission (lower.rs Expr::Quantifier): the pre-REQ-8 honest refusal (LowerError::Unsupported) is replaced by the real (R2) index-grammar emission — forall|x: int| 0 <= x < <dom>.len() ==> (<body>) / exists|x: int| ... && (...), TRIGGER-FREE (the MBQI surface T1-S strat_ref_wf certifies, matching sencode's triggerFree:=true). (3) thermite-tv/src/strat_ref_encode.rs: the INDEPENDENT stratified reference encoder (classifier::Frm -> normalize::Formula), the Rust analogue of RefEncode.lean sencode (de Bruijn LEVEL naming encName d i = d-1-i, no capture); depends on thermite-spec only (never thermite-lower — the TV honesty boundary). (4) thermite-tv/src/strat_two_phase.rs: the two-phase TV per §8.2 — phase 1 SYNTACTIC (the SPIKE-2 normalizer carrying nnf_sound/prenex_sound, the dominant path: SPIKE-2 measured 40/40=100% syntactic) -> phase 2 SEMANTIC (the negation-unfriendly quantified-equivalence Z3 query with finite-bound assertions, the thin rarely-hit fallback); count_where/permutation_of (no raw-quantifier spelling, REQ-6) route ClauseRoute::DirectSemantic; an honest Timeout WITHHOLDS the certificate (TvVerdict::Withheld, never a false pass); run_two_phase reports the syntactic/semantic/timeout/divergent PhaseSplit. (5) THE TRUST FLIP: G2_FLIPPED (the one-line gate, false during rollout) + strat_trust_profile(g2_proven) — pre-G2 a certified stratified clause reads trust: solver(z3) + ref_encode(strat, UNPROVEN — stage 2 in progress); the proven form ref_encode(strat) is the single-line G2_FLIPPED edit, gated on REQ-9's [1'][4'][8][9] audit (the flip must NOT trigger on REQ-5 structural soundness alone — it attests 'proven over source meaning', REQ-8's atom-grounding). (6) forge/src/strat_faithful.rs + forge strat-faithful-tv: the forge orchestrator — run the two-phase TV over generated clauses, report the phase split + the per-clause trust profile under the gate; a divergence or withhold is a verification-failure exit. AC-8 met: thermite-tv/tests/strat_two_phase_corpus.rs runs the two-phase TV over the stratified corpus (40 SPIKE-2 fixtures, all syntactic) + generated clauses reporting the phase split; the trust string reads the UNPROVEN form before G2 and the proven form after, exercised by the gate-toggle tests (trust_profile_reads_unproven_before_g2_and_proven_after, the_flip_is_a_tested_code_path); thermite-lower/tests/strat_quantifier_lower.rs pins the production emission. strat_lowering_faithful proven axiom-clean (in-file + lean-axiom-probe THEOREMS: [propext, Classical.choice, Quot.sound]; Classical via the decide over the Prop-valued v1 denote), zero sorry under lean/Thermite/Strat/, core-Lean path (no Mathlib). Thermite.Strat.Faithfulness wired into scripts/lean-axiom-probe.sh as a CI build target + Thermite.Strat.strat_lowering_faithful added to the axiom-gated THEOREMS (the REQ-9 [1'] extension brought forward for AC-8, as REQ-5/REQ-7 did). cargo test/clippy -D warnings/fmt clean. The audit/[1'][4'][8][9] G2 gate + the real Z3 discharge of the semantic phase (REQ-9 / #331) is the SEPARATE downstream requirement."
+summary = "The SOUNDNESS-CRUX increment: faithfulness + the atom-grounding + the two-phase stratified TV + the certificate trust flip (stage2-stratified-cage.md REQ-8 / AC-8; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2 §8.2). Builds on REQ-1..REQ-7 (#323/#324/#325/#326/#327/#328/#329, all merged @ 2917535b); unblocks REQ-9 (#331). CLOSES the atom-grounding obligation REQ-5 option B (#327) deferred here. (1) lean/Thermite/Strat/Faithfulness.lean: T2-S strat_lowering_faithful + the SFnTvWitness with explicit req-frame conditioning. REQ-5's T1-S proved only the STRUCTURAL skeleton parametric in an uninterpreted atom oracle q : Atom -> Bool; REQ-8 GROUNDS it. groundQ venv relModel : Cls.Atom -> Bool mirrors the spine adenote/canonicalQOracle seam (the v1 deferral REQ-1 proved sound, sdenote_qf_canonical): a qfree e atom defers to decide (Thermite.denote 0 e venv) — the REAL v1 source meaning — while a rel atom defers to the solver's relModel (the SMT array/integer theory). THE HONEST BOUNDARY (surfaced as a decision on #330, NOT papered over): rel atoms stay MODEL-RELATIVE because a closed Cls.rel term cannot be evaluated to a v1 value — Cls.Tm.lit carries NO value (Nnf.lean 'value irrelevant here') and the structural dom : List Tm is sort-erased; the array theory is the solver's, exactly an SMT translation-validation posture, exactly the parametricity T1-S already certifies. So T2-S = T1-S specialized to ANY oracle that grounds qfree to v1 (strat_ref_sound_sentence, free), PLUS the qfree-reflects-v1 conjunct (the new content: the encoded SMT surface of a qfree atom denotes EXACTLY the v1 Thermite.denote truth in the req-frame). SFnTvWitness bundles the req-frame (venv) + the oracle q + the non-empty carrier dom + the grounding hypothesis (grounds : forall e, q (qfree e) = decide (denote 0 e venv)); SFnTvWitness.canonical (built by groundQ_qfree's rfl) proves the theorem INHABITED (not vacuous). strat_lowering_faithful_qfree_iff is the <-> corollary, the Cls analogue of sdenote_qf_canonical. Imports Strat.Soundness + the v1 Thermite.Denote — deliberately NOT the spine Strat.Denote, which would re-introduce the #68 two-syntax probe collision the .Cls split fixed; the v1 deferral seam is reproduced on the Cls atom set directly. (2) thermite-lower production quantifier emission (lower.rs Expr::Quantifier): the pre-REQ-8 honest refusal (LowerError::Unsupported) is replaced by the real (R2) index-grammar emission — forall|x: int| 0 <= x < <dom>.len() ==> (<body>) / exists|x: int| ... && (...), TRIGGER-FREE (the MBQI surface T1-S strat_ref_wf certifies, matching sencode's triggerFree:=true). (3) thermite-tv/src/strat_ref_encode.rs: the INDEPENDENT stratified reference encoder (classifier::Frm -> normalize::Formula), the Rust analogue of RefEncode.lean sencode (de Bruijn LEVEL naming encName d i = d-1-i, no capture); depends on thermite-spec only (never thermite-lower — the TV honesty boundary). (4) thermite-tv/src/strat_two_phase.rs: the two-phase TV per §8.2 — phase 1 SYNTACTIC (the SPIKE-2 normalizer carrying nnf_sound/prenex_sound, the dominant path: SPIKE-2 measured 40/40=100% syntactic) -> phase 2 SEMANTIC (the negation-unfriendly quantified-equivalence Z3 query with finite-bound assertions, the thin rarely-hit fallback); count_where/permutation_of (no raw-quantifier spelling, REQ-6) route ClauseRoute::DirectSemantic; an honest Timeout WITHHOLDS the certificate (TvVerdict::Withheld, never a false pass); run_two_phase reports the syntactic/semantic/timeout/divergent PhaseSplit. (5) THE TRUST FLIP: G2_FLIPPED (the one-line gate, false during rollout) + strat_trust_profile(g2_proven) — pre-G2 a certified stratified clause reads trust: solver(z3) + ref_encode(strat, UNPROVEN — stage 2 in progress); the proven form ref_encode(strat) is the single-line G2_FLIPPED edit, gated on REQ-9's [1'][4'][8][9] audit (the flip must NOT trigger on REQ-5 structural soundness alone — it attests 'proven over source meaning', REQ-8's atom-grounding). (6) forge/src/strat_faithful.rs + forge strat-faithful-tv: the forge orchestrator — run the two-phase TV over generated clauses, report the phase split + the per-clause trust profile under the gate; a divergence or withhold is a verification-failure exit. AC-8 met: thermite-tv/tests/strat_two_phase_corpus.rs runs the two-phase TV over the stratified corpus (40 SPIKE-2 fixtures, all syntactic) + generated clauses reporting the phase split; the trust string reads the UNPROVEN form before G2 and the proven form after, exercised by the gate-toggle tests (trust_profile_reads_unproven_before_g2_and_proven_after, the_flip_is_a_tested_code_path); thermite-lower/tests/strat_quantifier_lower.rs pins the production emission. strat_lowering_faithful proven axiom-clean (in-file + lean-axiom-probe THEOREMS: [propext, Classical.choice, Quot.sound]; Classical via the decide over the Prop-valued v1 denote), zero sorry under lean/Thermite/Strat/, core-Lean path (no Mathlib). Thermite.Strat.Faithfulness wired into gates/lean-axiom-probe.sh as a CI build target + Thermite.Strat.strat_lowering_faithful added to the axiom-gated THEOREMS (the REQ-9 [1'] extension brought forward for AC-8, as REQ-5/REQ-7 did). cargo test/clippy -D warnings/fmt clean. The audit/[1'][4'][8][9] G2 gate + the real Z3 discharge of the semantic phase (REQ-9 / #331) is the SEPARATE downstream requirement."
 remaining_scope = "The faithfulness/atom-grounding (T2-S), the production quantifier emission, the stratified reference encoder, the two-phase TV (syntactic + semantic + timeout-withhold), and the gated trust flip (one-line G2_FLIPPED + the toggle test) ONLY. The make-audit G2 gate ([1'][4'][8][9] green blocking the flip), the real Z3 discharge of the rarely-hit semantic phase, and the scheduled rotating-seed job (REQ-9 / #331) are a separate requirement. The rel-atom semantics stays model-relative by design (the SMT array theory is the solver's; closing it in Lean is out of scope and would be a fabricated correspondence)."
 aliases = ["Stage-2 REQ-8", "REQ-8 faithfulness", "faithfulness", "two-phase TV", "trust flip", "atom-grounding", "T2-S", "Strat/Faithfulness.lean", "Faithfulness", "strat_lowering_faithful", "SFnTvWitness", "groundQ", "strat_ref_encode", "strat_two_phase", "ClauseRoute", "PhaseSplit", "G2_FLIPPED", "ref_encode(strat)", "forge strat-faithful-tv", "AC-8", "github:dollspace-gay/Thermite#330"]
 generated_to = ["status"]
@@ -16791,7 +16791,7 @@ note = "T2-S strat_lowering_faithful + SFnTvWitness (req-frame conditioning): gr
 [[requirement.evidence]]
 kind = "symbol"
 target = "Thermite.Strat.strat_lowering_faithful"
-note = "T2-S faithfulness / atom-grounding: the encoded SMT surface denotes the source skeleton with qfree atoms grounded to real v1 truth in the req-frame (lifting cage L4 above structural-only); axiom-gated in scripts/lean-axiom-probe.sh (subset of {propext, Classical.choice, Quot.sound})"
+note = "T2-S faithfulness / atom-grounding: the encoded SMT surface denotes the source skeleton with qfree atoms grounded to real v1 truth in the req-frame (lifting cage L4 above structural-only); axiom-gated in gates/lean-axiom-probe.sh (subset of {propext, Classical.choice, Quot.sound})"
 
 [[requirement.evidence]]
 kind = "file"
@@ -16825,7 +16825,7 @@ note = "pins the production quantifier emission: forall/exists lower to the boun
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "AC-8 (ci): builds Thermite.Strat.Faithfulness and axiom-gates Thermite.Strat.strat_lowering_faithful (subset of {propext, Classical.choice, Quot.sound}); green — a sorry or disallowed axiom under the faithfulness path fails the Lean CI job"
 
 [[requirement]]
@@ -16834,7 +16834,7 @@ title = "Stage-2 audit integration — the G2 gate: make audit grows [1'][4'][8]
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "THE G2 GATE increment (stage2-stratified-cage.md REQ-9 / AC-9; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2). Builds on REQ-1..REQ-8 (#323/#324/#325/#326/#327/#328/#329/#330, all merged @ 80c88ea1); unblocks REQ-10 (#332). make audit grows four stage-2 checks that must ALL be green in ONE run, gating REQ-8's certificate trust flip (G2_FLIPPED). (1) [1'] the axiom probe (scripts/lean-axiom-probe.sh) gates the FOUR stratified soundness theorems strat_ref_sound (T1-S) / strat_lowering_faithful (T2-S) / classifier_correct (T3-C) / restrat_conservative (T4-R) — already in THEOREMS by REQ-5/8/3/7 (allowed axioms unchanged {propext, Classical.choice, Quot.sound}); scripts/audit.sh check [1] surfaces the stratified pillars + sets the [G2] sub-verdict S2_AXIOM. (2) [4'] doc-drift over the THREE new mirrored Rust files: .design/verified/strat-rust-lean-correspondence.md (the stratified arm-by-arm correspondence, content-sha256 pinned) governs thermite-spec/src/classifier.rs + thermite-tv/src/strat_ref_encode.rs + thermite-tv/src/strat_two_phase.rs via three new tooling/spec-routes.toml routes, so tooling/doc-drift.py (the shipped tripwire) now covers the mirrors (before #331 they were unrouted — no freshness gate). (3) [8] the classifier differential battery (forge strat-tv, fixed seed) wired into scripts/audit.sh + the rotating-seed scheduled job (.github/workflows/generated-tv.yml gains elan + mathlib cache + the Wire build + a rotating-seed forge strat-tv/strat-faithful-tv step). (4) [9] the stratified two-phase TV sweep (forge strat-faithful-tv) wired into scripts/audit.sh reporting the syntactic/semantic/timeout phase split. THE GATE AS A TESTED CODE PATH (the AC-9 crux): thermite-tv/src/strat_two_phase.rs gains G2Checks{axiom_probe,doc_drift,differential,two_phase_tv} + g2_flip_permitted(declared,&checks)=declared && all_green + strat_trust_profile_gated — the proven (HONESTLY SCOPED) flip is permitted iff G2 is declared AND every gating check is green; ANY red check downgrades the label back to the conservative UNPROVEN form (a flipped certificate can never out-run the audit that justifies it). The toggle tests drive each of the four red in turn and assert the flip is withheld (gate_blocks_the_flip_when_any_one_check_is_red). forge g2-gate is the make-audit enforcer: it combines the four verdicts through g2_flip_permitted, prints the effective trust, and EXITS NONZERO when G2 is declared while any check is red (the live mechanical block). G2 is REACHED: G2_FLIPPED flipped false->true (REQ-8's one-line change, now enabled), and REF_ENCODE_PROVEN is HONESTLY SCOPED per REQ-5 option B / #330-#331: structure proven (T1-S) + qfree atoms grounded to v1 Thermite.denote (T2-S) + rel/array discharged by Z3's theory (solver base) — kernel-grounding rel was downstream work later completed by Gate G4; the label does NOT over-claim. scripts/audit.sh grows the [G2] section (the four sub-checks + the forge g2-gate enforcer; tool-absent SKIP is INCONCLUSIVE not green, R-HONEST-3) and the .github/workflows/ci.yml lean job runs the fixed-seed strat-tv/strat-faithful-tv where lake exists. cargo test (gate toggle + flip-block tests) / clippy -D warnings / fmt / doc-drift (re-pinned) / tooling/reqs check all clean. No stubs/sorries."
+summary = "THE G2 GATE increment (stage2-stratified-cage.md REQ-9 / AC-9; child of docs/v2/program.md REQ-10; gate G2; spec of record the stage-2 metatheory sketch GH#2). Builds on REQ-1..REQ-8 (#323/#324/#325/#326/#327/#328/#329/#330, all merged @ 80c88ea1); unblocks REQ-10 (#332). make audit grows four stage-2 checks that must ALL be green in ONE run, gating REQ-8's certificate trust flip (G2_FLIPPED). (1) [1'] the axiom probe (gates/lean-axiom-probe.sh) gates the FOUR stratified soundness theorems strat_ref_sound (T1-S) / strat_lowering_faithful (T2-S) / classifier_correct (T3-C) / restrat_conservative (T4-R) — already in THEOREMS by REQ-5/8/3/7 (allowed axioms unchanged {propext, Classical.choice, Quot.sound}); gates/audit.sh check [1] surfaces the stratified pillars + sets the [G2] sub-verdict S2_AXIOM. (2) [4'] doc-drift over the THREE new mirrored Rust files: .design/verified/strat-rust-lean-correspondence.md (the stratified arm-by-arm correspondence, content-sha256 pinned) governs thermite-spec/src/classifier.rs + thermite-tv/src/strat_ref_encode.rs + thermite-tv/src/strat_two_phase.rs via three new gates/routes.toml routes, so gates/doc-drift.py (the shipped tripwire) now covers the mirrors (before #331 they were unrouted — no freshness gate). (3) [8] the classifier differential battery (forge strat-tv, fixed seed) wired into gates/audit.sh + the rotating-seed scheduled job (.github/workflows/generated-tv.yml gains elan + mathlib cache + the Wire build + a rotating-seed forge strat-tv/strat-faithful-tv step). (4) [9] the stratified two-phase TV sweep (forge strat-faithful-tv) wired into gates/audit.sh reporting the syntactic/semantic/timeout phase split. THE GATE AS A TESTED CODE PATH (the AC-9 crux): thermite-tv/src/strat_two_phase.rs gains G2Checks{axiom_probe,doc_drift,differential,two_phase_tv} + g2_flip_permitted(declared,&checks)=declared && all_green + strat_trust_profile_gated — the proven (HONESTLY SCOPED) flip is permitted iff G2 is declared AND every gating check is green; ANY red check downgrades the label back to the conservative UNPROVEN form (a flipped certificate can never out-run the audit that justifies it). The toggle tests drive each of the four red in turn and assert the flip is withheld (gate_blocks_the_flip_when_any_one_check_is_red). forge g2-gate is the make-audit enforcer: it combines the four verdicts through g2_flip_permitted, prints the effective trust, and EXITS NONZERO when G2 is declared while any check is red (the live mechanical block). G2 is REACHED: G2_FLIPPED flipped false->true (REQ-8's one-line change, now enabled), and REF_ENCODE_PROVEN is HONESTLY SCOPED per REQ-5 option B / #330-#331: structure proven (T1-S) + qfree atoms grounded to v1 Thermite.denote (T2-S) + rel/array discharged by Z3's theory (solver base) — kernel-grounding rel was downstream work later completed by Gate G4; the label does NOT over-claim. gates/audit.sh grows the [G2] section (the four sub-checks + the forge g2-gate enforcer; tool-absent SKIP is INCONCLUSIVE not green, R-HONEST-3) and the .github/workflows/ci.yml lean job runs the fixed-seed strat-tv/strat-faithful-tv where lake exists. cargo test (gate toggle + flip-block tests) / clippy -D warnings / fmt / doc-drift (re-pinned) / gates/reqs check all clean. No stubs/sorries."
 remaining_scope = "Closed: the make-audit G2 gate, the mirror drift route, the rotating-seed differential, and the honestly scoped trust flip. At G2 the rel/array semantics was deliberately model-relative; Gate G4 now closes that downstream residual for admitted S₂.0 clauses. REQ-10 is the separate Stage-2 pin battery."
 aliases = ["Stage-2 REQ-9", "REQ-9 audit integration", "G2 gate", "the G2 gate", "make audit", "g2-gate", "forge g2-gate", "G2Checks", "g2_flip_permitted", "strat_trust_profile_gated", "[1']", "[4']", "[8]", "[9]", "strat-rust-lean-correspondence", "doc-drift route", "rotating-seed", "AC-9", "github:dollspace-gay/Thermite#331"]
 generated_to = ["status"]
@@ -16861,12 +16861,12 @@ note = "[4'] the stratified arm-by-arm Rust<->Lean correspondence doc (content-s
 
 [[requirement.evidence]]
 kind = "file"
-target = "tooling/spec-routes.toml"
-note = "[4'] three new routes mapping the mirrored Rust files to the stratified correspondence doc, so tooling/doc-drift.py (the shipped tripwire) covers them (before #331 the strat files were unrouted — no freshness gate)"
+target = "gates/routes.toml"
+note = "[4'] three new routes mapping the mirrored Rust files to the stratified correspondence doc, so gates/doc-drift.py (the shipped tripwire) covers them (before #331 the strat files were unrouted — no freshness gate)"
 
 [[requirement.evidence]]
 kind = "file"
-target = "scripts/audit.sh"
+target = "gates/audit.sh"
 note = "the [G2] section: runs [1'] (axiom probe, shared with check [1]) / [4'] (doc-drift over the strat correspondence doc) / [8] (forge strat-tv) / [9] (forge strat-faithful-tv) and the forge g2-gate enforcer; all four green in one run flips, any red blocks, a tool-absent SKIP is INCONCLUSIVE (R-HONEST-3)"
 
 [[requirement.evidence]]
@@ -16876,7 +16876,7 @@ note = "[8] the rotating-seed scheduled differential: elan + mathlib cache + The
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "[1'] the axiom probe gates the four stratified soundness theorems strat_ref_sound/strat_lowering_faithful/classifier_correct/restrat_conservative (allowed axioms unchanged {propext, Classical.choice, Quot.sound}); rc=0"
 
 [[requirement.evidence]]
@@ -16890,7 +16890,7 @@ title = "Stage-2 pin battery, complete (AC-10, gate G2): all eight metatheory §
 owner = ".design/stage2-stratified-cage.md"
 status = "shipped"
 scope = "verified"
-summary = "THE LAST STAGE-2 INCREMENT (stage2-stratified-cage.md REQ-10 / AC-10; child of docs/v2/program.md REQ-10; gate G2 — this completes Stage 2). Builds on REQ-1..REQ-9 (#323..#331, all merged @ 88d37f41). AUDIT + COMPLETE the eight-pin metatheory §9 battery in the established lean/Thermite/Pin*.lean style (small concrete carrier + decide-checked / kernel-proven theorems; decide, never native_decide; core-Lean-only except the relax island). FIVE pins already landed in prior increments and were AUDITED present/green/cited: PinFiniteEscape (REQ-1, guards Strat/Denote.lean sdenote_all_iff — the (R1) completeness datum), PinStratCapture + PinStratFlip (REQ-5, guard Thermite.Strat.strat_ref_sound T1-S — fresh-name discipline + quantifier-kind fidelity), PinCombDeriv (REQ-6, guards the eight Strat/CombDeriv.lean comb_deriv_* demotion lemmas — the off-by-one i<=len vs i<len), PinRestratDropSide (REQ-7, guards Thermite.Strat.Cls.restrat_conservative T4-R — the dropped Side obligation, R-SIDE-1). THREE pins were MISSING and added here: (1) PinStratSelfLoop (lean/Thermite/PinStratSelfLoop.lean) — guards Thermite.Strat.Cls.classifier_correct (T3-C) acyclicity arm; broken neighbour stripSelf removes reflexive edges before acyclic, so it ADMITS the a[a[i]] self-loop (Strat/Fragment.lean ex_selfLoop, usize->usize self-edge) the real admitted rejects; decide-checked. (2) PinNNFPolarity (lean/Thermite/PinNNFPolarity.lean) — guards classifier_correct (T3-C) on nnf (Nnf.lean nnf_sound); broken neighbour builds the sort graph PRE-NNF, so (NOT EX k.ALL v.phi1) AND (NOT EX v.ALL k.phi2) — whose NNF flips both blocks into a Key<->Value E1 alternation cycle — is wrongly admitted (raw graph empty -> acyclic); decide-checked. (3) PinRelaxRefute (lean/Thermite/PinRelaxRefute.lean) — guards Thermite.Relax.r_relax_sound (T5-X, stage-1); refutes the ILLEGITIMATE CONVERSE: e(x)=x*x+(-1)*x = x(x-1) is >=0 for every integer (consecutive-integer product) but <0 at x=1/2 over R, so a failed real relaxation does NOT imply an integer counterexample — exactly the RealWitness escalation r_relax_sound's one-wayness mandates (don't emit a Counterexample). Mathlib-importing island like Relax.lean (imports Mathlib.Tactic.Ring + NormNum); kernel-proven, no native_decide. WIRING: all three new pins added as BUILD targets in scripts/lean-axiom-probe.sh IMPORTS (a sorry/broken decide fails the Lean CI job); each pin theorem axiom-clean (PinStratSelfLoop/PinNNFPolarity = {propext}; PinRelaxRefute subset of {propext, Classical.choice, Quot.sound}). CITATION: .design/verified/strat-rust-lean-correspondence.md gains the 'The stage-2 pin battery (AC-10)' section — an eight-row table citing each pin FROM the theorem it guards (the proven anchor) + the broken neighbour it refutes; the five soundness anchors are the same theorems the axiom probe [1'] gates, so the battery is their negative-space witness set. SELF-VERIFY all green: cd lean && lake build (zero sorry under lean/Thermite/); bash scripts/lean-axiom-probe.sh rc=0; cargo test; clippy -D; fmt; python3 tooling/doc-drift.py + make doc-drift rc=0 (the correspondence doc's content-sha256 pin is over the governed Rust files, unaffected by the prose edit — no re-pin needed); tooling/reqs check clean. No stubs/sorries."
+summary = "THE LAST STAGE-2 INCREMENT (stage2-stratified-cage.md REQ-10 / AC-10; child of docs/v2/program.md REQ-10; gate G2 — this completes Stage 2). Builds on REQ-1..REQ-9 (#323..#331, all merged @ 88d37f41). AUDIT + COMPLETE the eight-pin metatheory §9 battery in the established lean/Thermite/Pin*.lean style (small concrete carrier + decide-checked / kernel-proven theorems; decide, never native_decide; core-Lean-only except the relax island). FIVE pins already landed in prior increments and were AUDITED present/green/cited: PinFiniteEscape (REQ-1, guards Strat/Denote.lean sdenote_all_iff — the (R1) completeness datum), PinStratCapture + PinStratFlip (REQ-5, guard Thermite.Strat.strat_ref_sound T1-S — fresh-name discipline + quantifier-kind fidelity), PinCombDeriv (REQ-6, guards the eight Strat/CombDeriv.lean comb_deriv_* demotion lemmas — the off-by-one i<=len vs i<len), PinRestratDropSide (REQ-7, guards Thermite.Strat.Cls.restrat_conservative T4-R — the dropped Side obligation, R-SIDE-1). THREE pins were MISSING and added here: (1) PinStratSelfLoop (lean/Thermite/PinStratSelfLoop.lean) — guards Thermite.Strat.Cls.classifier_correct (T3-C) acyclicity arm; broken neighbour stripSelf removes reflexive edges before acyclic, so it ADMITS the a[a[i]] self-loop (Strat/Fragment.lean ex_selfLoop, usize->usize self-edge) the real admitted rejects; decide-checked. (2) PinNNFPolarity (lean/Thermite/PinNNFPolarity.lean) — guards classifier_correct (T3-C) on nnf (Nnf.lean nnf_sound); broken neighbour builds the sort graph PRE-NNF, so (NOT EX k.ALL v.phi1) AND (NOT EX v.ALL k.phi2) — whose NNF flips both blocks into a Key<->Value E1 alternation cycle — is wrongly admitted (raw graph empty -> acyclic); decide-checked. (3) PinRelaxRefute (lean/Thermite/PinRelaxRefute.lean) — guards Thermite.Relax.r_relax_sound (T5-X, stage-1); refutes the ILLEGITIMATE CONVERSE: e(x)=x*x+(-1)*x = x(x-1) is >=0 for every integer (consecutive-integer product) but <0 at x=1/2 over R, so a failed real relaxation does NOT imply an integer counterexample — exactly the RealWitness escalation r_relax_sound's one-wayness mandates (don't emit a Counterexample). Mathlib-importing island like Relax.lean (imports Mathlib.Tactic.Ring + NormNum); kernel-proven, no native_decide. WIRING: all three new pins added as BUILD targets in gates/lean-axiom-probe.sh IMPORTS (a sorry/broken decide fails the Lean CI job); each pin theorem axiom-clean (PinStratSelfLoop/PinNNFPolarity = {propext}; PinRelaxRefute subset of {propext, Classical.choice, Quot.sound}). CITATION: .design/verified/strat-rust-lean-correspondence.md gains the 'The stage-2 pin battery (AC-10)' section — an eight-row table citing each pin FROM the theorem it guards (the proven anchor) + the broken neighbour it refutes; the five soundness anchors are the same theorems the axiom probe [1'] gates, so the battery is their negative-space witness set. SELF-VERIFY all green: cd lean && lake build (zero sorry under lean/Thermite/); bash gates/lean-axiom-probe.sh rc=0; cargo test; clippy -D; fmt; python3 gates/doc-drift.py + make doc-drift rc=0 (the correspondence doc's content-sha256 pin is over the governed Rust files, unaffected by the prose edit — no re-pin needed); gates/reqs check clean. No stubs/sorries."
 remaining_scope = "Closed: the complete eight-pin battery is wired into Lean CI and cited from the theorem each pin guards. Gate G2 / Stage 2 is complete. A ninth admission trap remains a new pin and battery row, never a silent widening. Gate G4 later closes the admitted S₂.0 relation/array reconstruction residual."
 aliases = ["Stage-2 REQ-10", "REQ-10 pin battery", "the pin battery", "pin battery", "PinStratSelfLoop", "PinNNFPolarity", "PinRelaxRefute", "AC-10", "metatheory §9 pins", "the eight-pin battery", "github:dollspace-gay/Thermite#332"]
 generated_to = ["status"]
@@ -16917,12 +16917,12 @@ note = "AC-10 citation: the 'The stage-2 pin battery (AC-10)' section — an eig
 
 [[requirement.evidence]]
 kind = "file"
-target = "scripts/lean-axiom-probe.sh"
+target = "gates/lean-axiom-probe.sh"
 note = "the three new pins (PinStratSelfLoop/PinNNFPolarity/PinRelaxRefute) added as BUILD targets in IMPORTS (alongside the five already present), so a sorry or broken decide in any of the eight battery pins fails the Lean CI job"
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "AC-10 (ci): builds all eight battery pins (zero sorry under lean/Thermite/) and the spine; rc=0 — a sorry/disallowed axiom in any pin or gated theorem fails the Lean CI job"
 
 [[requirement]]
@@ -17092,7 +17092,7 @@ note = "Checks actual QF_BV and QF_LIA certificate migration and successful-chec
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/lean-axiom-probe.sh"
+target = "bash gates/lean-axiom-probe.sh"
 note = "Builds and axiom-checks the permanent 64-bit LRAT theorem."
 
 [[requirement]]
@@ -17107,17 +17107,17 @@ generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "file"
-target = "scripts/g3-gate.sh"
+target = "gates/g3.sh"
 note = "Single fail-fast command for all G3 checks."
 
 [[requirement.evidence]]
 kind = "file"
 target = ".github/workflows/ci.yml"
-note = "The g3 job installs the pinned dependencies and runs scripts/g3-gate.sh."
+note = "The g3 job installs the pinned dependencies and runs gates/g3.sh."
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/g3-gate.sh"
+target = "bash gates/g3.sh"
 note = "Gate G3; exits nonzero on any failed check or missing dependency."
 
 [[requirement]]
@@ -17347,7 +17347,7 @@ generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "file"
-target = "scripts/g4-gate.sh"
+target = "gates/g4.sh"
 note = "Single fail-fast, 6 GiB-capped, serialized completion gate."
 
 [[requirement.evidence]]
@@ -17357,7 +17357,7 @@ note = "The g4 job installs Lean, Z3, pinned CaDiCaL/drat-trim, then runs the ga
 
 [[requirement.evidence]]
 kind = "command"
-target = "bash scripts/g4-gate.sh"
+target = "bash gates/g4.sh"
 note = "Gate G4; exits nonzero on any failed check or missing dependency."
 [[requirement]]
 id = "REQ-RFC-FRONTMATTER"
@@ -17366,7 +17366,7 @@ owner = ".design/rfcs"
 status = "shipped"
 scope = "docs"
 summary = "Every RFC is a file under .design/rfcs/ carrying rfc/title/status front matter, with optional supersedes, introduces and discussion fields."
-contributors = [".design/rfcs/0005-rfc-process.md", "tooling/rfc-check.py"]
+contributors = [".design/rfcs/0005-rfc-process.md", "gates/rfc-check.py"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
@@ -17382,7 +17382,7 @@ note = "front-matter reader"
 [[requirement]]
 id = "REQ-RFC-GATE"
 title = "RFC front-matter gate"
-owner = "tooling/rfc-check.py"
+owner = "gates/rfc-check.py"
 status = "shipped"
 scope = "docs"
 summary = "CI rejects an RFC with missing or malformed front matter, a status outside the enum, a number disagreeing with its filename, or a number colliding with a non-draft RFC."
@@ -17396,18 +17396,18 @@ note = "the gate"
 
 [[requirement.evidence]]
 kind = "command"
-target = "python3 tooling/rfc-check.py"
+target = "python3 gates/rfc-check.py"
 note = "CI step"
 
 [[requirement.evidence]]
 kind = "test"
-target = "tooling/tests/test_rfc_check.py"
+target = "gates/tests/test_rfc_check.py"
 note = "15 oracle tests, asserting on the reported message rather than the exit code"
 
 [[requirement]]
 id = "REQ-RFC-REGISTRY-LINK"
 title = "RFC to REQ registry link"
-owner = "tooling/rfc-check.py"
+owner = "gates/rfc-check.py"
 status = "shipped"
 scope = "docs"
 summary = "An RFC declares the requirements it introduces, and the gate rejects a name absent from the registry, so implementation status is derived from the registry rather than declared in the RFC."
