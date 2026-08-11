@@ -35,6 +35,65 @@ concurrency:
 # The skill-budget gate fails CI if the generated THERMITE.skill.md exceeds its
 # 6,000-token budget (design §2.2 / §10).
 jobs:
+  # Which jobs need to run for this change.
+  #
+  # A documentation-only pull request does not need the Verus, Lean or SAT
+  # gates: doc-drift pins digest governed SOURCE, and no source moves when a
+  # design document changes. The `checks` job is NEVER filtered — it carries
+  # doc-drift, rfc-check, req-status, reqs and control-plane-check, which are
+  # exactly the gates a documentation change can trip.
+  #
+  # Two rules keep this from becoming a gate that fails open:
+  #
+  #   1. A PUSH to main or staging always runs everything. Those runs are the
+  #      verification record of record for the trunk (see `concurrency` above),
+  #      and a trunk whose last full verification predates its tip is not
+  #      verified. Only pull_request is filtered.
+  #   2. The decision and its reason are PRINTED. A skipped job reports
+  #      "skipped" rather than "success", but a summary that says 12/12 does not
+  #      distinguish them, so the reason is in the log rather than inferred.
+  #
+  # Anything not matching the docs allowlist counts as code, so the default on
+  # an unrecognised path is to run everything.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.decide.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Decide whether code-dependent jobs must run
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "event=$EVENT — a trunk push always runs the full gauntlet."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "Changed files:"
+          echo "$changed" | sed 's/^/  /'
+          # Docs allowlist. Everything else is code.
+          noncode='^(\.design/|docs/|\.claims/|[^/]*\.md$)'
+          if code_files="$(echo "$changed" | grep -Ev "$noncode")" && [ -n "$code_files" ]; then
+            echo "Code-dependent files changed:"
+            echo "$code_files" | sed 's/^/  /'
+            echo "-> running the full gauntlet."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "-> documentation only. The Verus, Lean and SAT jobs are SKIPPED,"
+            echo '   not passed. The checks job still runs and carries every gate a'
+            echo '   documentation change can trip.'
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   checks:
     runs-on: ubuntu-latest
     steps:
@@ -132,6 +191,8 @@ jobs:
         run: cargo run -p thermite-skill -- --check-budget
 
   test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       # Surface every shard's failures, not just the first.
@@ -260,6 +321,8 @@ jobs:
   # test-group (a test-code change) so the selector can't drift. Until then we run the
   # full `-p forge` (sharded) — redundant on non-spine tests, but provably complete.
   lean-probe:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -303,6 +366,8 @@ jobs:
   # parallel; the union is the whole `-p forge` suite. Restores the same `.lake` cache
   # as lean-probe; no `needs:` so it runs concurrently.
   lean-spine-forge:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       # Surface every shard's failures, not just the first.
@@ -438,6 +503,8 @@ jobs:
 
   # Keep the parser lock, fixed-width checks, and Lean replay in one gate.
   g3:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -503,6 +570,8 @@ jobs:
   # Stage 4 closes the admitted S₂.0 relation/array residual. Keep its pinned
   # SAT/LRAT tools and complete replay matrix visible as one fail-fast check.
   g4:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
