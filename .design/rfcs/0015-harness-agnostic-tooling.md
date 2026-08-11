@@ -67,7 +67,7 @@ generated `THERMITE.skill.md`.
 
 ### 1.2 Adding a second harness drifts an upstream design doc
 
-`.design/tooling/control-plane.md` pins a content digest over its governed
+`.design/gates/control-plane.md` pins a content digest over its governed
 files, and that set includes the whole of `.claude/settings.json`. So *any*
 addition to the file moves the hash, not only a change to the three wirings the
 document audits.

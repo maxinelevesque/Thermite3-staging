@@ -85,8 +85,9 @@ propose it. Measured, on `staging @ 43fabc09`:
 | `thermite-syntax` → `crates/` | 115 | 1,211 |
 | `forge` → `crates/` | 225 | 3,767 |
 
-Plus **154 `crate_pattern` entries** in the route table and **73 design
-documents carrying pins**.
+Plus **154 `crate_pattern` entries** in the route table and **60 design
+documents carrying pins** (59 with `audited-content-sha256`, 46 with a legacy
+`audited-sha`, 60 distinct).
 
 The two moves this RFC proposes are ~512 references. The crate move alone is
 roughly ten times that, and it buys one line of root tidiness. That is the diff
@@ -147,11 +148,17 @@ discovered late:
   (§4). That test becomes `"gates/"`.
 * `.claude/settings.json` wires three hooks by path into `tooling/`, and
   `control-plane-check.py` asserts exactly those three. Both move together, and
-  `.design/tooling/control-plane.md` is re-pinned once as a consequence.
+  `.design/gates/control-plane.md` is re-pinned once as a consequence.
 
-A separate question this raises and does not answer: `.design/tooling/` would
-then hold the design docs governing `gates/`. Renaming it is 73-pin territory
-and is deliberately out of scope here.
+A separate question this raises and does not answer: `.design/gates/` would
+then hold the design docs governing `gates/`. Renaming it costs 3 documents, 10
+`design =` fields, 16 referencing files — and **3 re-pins**, which is worth
+recording because the obvious prediction is zero. A pin digests the governed
+*source*, and the source does not move; but the governed Python sources cite
+their own design doc in their module docstrings, so rewriting the reference
+changes the source and moves the digest. Same family as the glob-membership
+case in §4: what moved was not the governed file but something the governed
+file mentions. Out of scope *here* only to keep this RFC to one argument.
 
 ## 4. Residual trust
 
@@ -167,7 +174,7 @@ Per `telos/residual-trust-is-named`, what this does **not** discharge:
   route's target exists, and it should not be read as claiming the move is
   digest-neutral.
 
-  The exception is `.design/tooling/control-plane.md`, and it is instructive.
+  The exception is `.design/gates/control-plane.md`, and it is instructive.
   That document opts into `pin-extract: .claude/settings.json=claude-hooks`
   (RFC-16 layer 1), and `doc-drift.py` decides which hooks the repository *owns*
   by testing `"tooling/" in command`. The three owned hooks invoke

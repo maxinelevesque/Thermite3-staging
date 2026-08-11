@@ -14,7 +14,7 @@ Results are sorted by document and file:
 
 Usage: ``python3 gates/doc-drift.py [--root <repo-toplevel>]``
 
-The detailed rules are in ``.design/tooling/doc-drift-tripwire.md``.
+The detailed rules are in ``.design/gates/doc-drift-tripwire.md``.
 This is a standalone/CI check, not a Claude Code hook or part of ``make audit``.
 Customize ``ROUTES_RELPATH`` and the pin expressions below when adapting it.
 """

@@ -9,7 +9,7 @@ governs: gates/doc-drift.py + the `audited-content-sha256:` / `audited-sha:`
          REQ-10). Explicitly NOT `gates/audit.sh`, which this component
          leaves byte-identical (decision 5).
 audited-sha: 1523b7edd09d5fe614f2950b5d9ba16ef5639f14 (re-pinned at the #258 gauntlet HEAD; governed file last touched 1523b7ed)
-audited-content-sha256: 96da3811ab63a96761f075e958a9e247f622bd99a80f35eb8474cb9f185afdc8 (re-pinned 2026-08-09 for RFC-18 step 1: doc-drift.py moved tooling/ -> gates/ and its route pattern moved with it. Two causes, both intended - the pattern string is part of the digest (_content_digest line 415), and the file's own text changed where it names ROUTES_RELPATH and the pin-extract ownership test. No rule changed. prior: b27747ecb71426569d7add4e9c60619d809866f0d110751f31e18483c31b9c9d.)
+audited-content-sha256: 7d39fe2b32b725bace3654f9e7129fadc67cc2ff409d2ceb78c79302a8735beb (re-pinned 2026-08-10 for the .design/tooling -> .design/gates move. I predicted this would need NO re-pins, on the correct premise that a pin digests the GOVERNED SOURCE and the source does not move. The premise held; the prediction did not, because the governed Python sources cite their own design doc path in their module docstrings - doc-drift.py says 'the detailed rules are in .design/gates/...' - so rewriting the reference changed the source and moved the digest. Second-order, same family as the glob-membership case recorded on stage4: the thing that moved was not the governed file, but something the governed file mentions. No rule and no behaviour changed; reqs check reports 536 requirements and 124 views, unchanged. Note also that req-registry's governed set includes registry.toml, whose 6 REQ-REG entries moved scope 'tooling' -> 'registry' in the same commit. prior: 96da3811ab63a96761f075e958a9e247f622bd99a80f35eb8474cb9f185afdc8.)
 thesis-refs:
   - thermite-design.md §1 (trust relocated: "a skeptical third party can audit in minutes")
   - thermite-design.md §8 (#[slag]: the unverified residue is LOUD, never silent)
@@ -233,7 +233,7 @@ New work:
   ```toml
   [[route]]
   crate_pattern = "gates/doc-drift.py"
-  design = ".design/tooling/doc-drift-tripwire.md"
+  design = ".design/gates/doc-drift-tripwire.md"
   reference = []
   conformance_ops = []
   ```
@@ -380,7 +380,7 @@ doc-drift.py itself until OQ-5 is resolved.
 (Separately: `.design/00-index.md` nominally indexes the docs, but it has not been
 updated since commit `1e008994` — it still lists every doc as "planned" and knows
 nothing of `.design/basis/`, `.design/verified/`, `.design/build/`, or this
-`.design/tooling/` area. Index maintenance is NOT a live convention; this doc adds
+`.design/gates/` area. Index maintenance is NOT a live convention; this doc adds
 no index entry and flags the index itself as a doc-drift instance the route table
 cannot catch, since the index is unrouted. Named in OQ-7.)
 

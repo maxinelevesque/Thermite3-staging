@@ -137,7 +137,7 @@ A route may name what it depends on:
 ```toml
 [[route]]
 crate_pattern = ".claude/settings.json"
-design        = ".design/tooling/control-plane.md"
+design        = ".design/gates/control-plane.md"
 pin_extract   = "hooks"     # digest the extracted hook entries, not the file
 ```
 

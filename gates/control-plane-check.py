@@ -13,7 +13,7 @@ Exit codes:
 
 Usage: ``python3 gates/control-plane-check.py [--root <repo-toplevel>]``
 
-See ``.design/tooling/control-plane.md`` for the requirements. The check runs in
+See ``.design/gates/control-plane.md`` for the requirements. The check runs in
 CI and through ``make control-plane``; it is not itself a hook or part of
 ``make audit``. Customize ``SETTINGS_RELPATH`` and ``REQUIRED_HOOKS`` below.
 """

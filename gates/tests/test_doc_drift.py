@@ -4,7 +4,7 @@ Oracle fixture tests for gates/doc-drift.py.
 
 gates/ had NO test convention before this gate (its two shipped hooks are
 untested); this introduces the first one, per
-.design/tooling/doc-drift-tripwire.md "Verification". Each test builds a
+.design/gates/doc-drift-tripwire.md "Verification". Each test builds a
 throwaway git repo in a tmpdir (git init + a hermetic user.name/email + a mini
 routes.toml + docs + governed files), then runs the gate via subprocess
 with `--root <fixture>` and asserts against HAND-AUTHORED oracle facts — never

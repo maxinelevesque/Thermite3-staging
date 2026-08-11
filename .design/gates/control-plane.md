@@ -9,7 +9,7 @@ governs: gates/control-plane-check.py + the control-plane files it and
          NOT `gates/audit.sh`, which this component leaves byte-identical
          (the doc-drift decision-5 precedent).
 pin-extract: .claude/settings.json=claude-hooks
-audited-content-sha256: 1fa8537d54b48e951e61ab62a2cfd252873552fbe666bca1327544f1f2c79f3c (re-pinned 2026-08-09, RFC-18 step 1 completion. A tree-wide sweep found 37 live references to the step-1 paths that the first sweep missed, because that sweep was piped through head -25 and the output was dominated by .design/ hits - a truncated list read as a complete one. The misses included forge/tests/divergence_audit_check2_exit_swallow.rs, which READS the audit script by path and failed CI with 'read scripts/audit.sh: NotFound'. Governed source changed only where it named a moved path; no behaviour changed. Historical records were excluded from the sweep: .claims/, CHANGELOG.md, the frozen docs/v2/ set, and every audited-content-sha256 note line. prior: 6658afd9c0161d2cf9e2c524f362bc409a634009f4eabb94df6ee55dec811306.)
+audited-content-sha256: 8b99a357b614f7d20c5b653106d37cd9ed2758925b8ce80fd4a9db2137769ac8 (re-pinned 2026-08-10 for the .design/tooling -> .design/gates move. I predicted this would need NO re-pins, on the correct premise that a pin digests the GOVERNED SOURCE and the source does not move. The premise held; the prediction did not, because the governed Python sources cite their own design doc path in their module docstrings - doc-drift.py says 'the detailed rules are in .design/gates/...' - so rewriting the reference changed the source and moved the digest. Second-order, same family as the glob-membership case recorded on stage4: the thing that moved was not the governed file, but something the governed file mentions. No rule and no behaviour changed; reqs check reports 536 requirements and 124 views, unchanged. Note also that req-registry's governed set includes registry.toml, whose 6 REQ-REG entries moved scope 'tooling' -> 'registry' in the same commit. prior: 1fa8537d54b48e951e61ab62a2cfd252873552fbe666bca1327544f1f2c79f3c.)
 re-pinned: 2026-08-07, from cdce9510c89d0bd00fb08a9a441e07a8299ad4eb71e43e20d4c29e928797b59e.
   The content pin digests the WHOLE of .claude/settings.json, so it moves on any
   addition to the file, not only on a change to the three wirings this document
@@ -25,7 +25,7 @@ thesis-refs:
   - thermite-design.md §8 (#[slag]: the unverified residue is LOUD, never silent)
 issue: crosslink #93
 prior-arc:
-  - .design/tooling/doc-drift-tripwire.md (the sibling gate: pinned freshness for
+  - .design/gates/doc-drift-tripwire.md (the sibling gate: pinned freshness for
     routed design docs. This component is its missing complement — doc-drift pins
     the CONTENT of what the routes govern; nothing pinned whether the routes are
     WIRED. Same 0/1/3 exit contract, same fixture-oracle test convention.)
@@ -65,7 +65,7 @@ nothing in the repo could see it.
 
 `gates/doc-drift.py` pins design↔source freshness for every file reachable
 from `gates/routes.toml`. It is thorough, CI-enforced, and it even routes
-its own gate (`gates/doc-drift.py` → `.design/tooling/doc-drift-tripwire.md`,
+its own gate (`gates/doc-drift.py` → `.design/gates/doc-drift-tripwire.md`,
 REQ-11's dogfood). But:
 
 ```
@@ -209,7 +209,7 @@ Run: `make control-plane-test`, or `python3 -m unittest discover -s gates/tests`
 | REQ-3 (wired implies present) | SHIPPED | the `if not (root / script).is_file():` branch emitting `MISSING_SCRIPT` in `def evaluate`. Non-test consumer: as REQ-1. Verification: O-3. |
 | REQ-4 (deterministic report) | SHIPPED | `def evaluate` iterates `REQUIRED_HOOKS` in declaration order; no set/dict iteration reaches the output. Non-test consumer: as REQ-1. Verification: O-8 (two runs byte-identical). |
 | REQ-5 (exit contract) | SHIPPED | `EXIT_OK`/`EXIT_FAIL`/`EXIT_INCONCLUSIVE` + `class EnvironmentError3` + the `except EnvironmentError3` arm in `def main`. Non-test consumer: CI reads the exit status. Verification: O-9 (non-git cwd → exit 3, never 0). |
-| REQ-6 (control plane routed) | SHIPPED | the `# tooling — the control plane gating itself` block in `gates/routes.toml`: three `[[route]]` entries (`.claude/settings.json`, `.claude/agents/*.md`, `gates/control-plane-check.py`) all `design = ".design/tooling/control-plane.md"`. Non-test consumer: `def load_doc_files in gates/doc-drift.py` inverts the table and content-pins this doc's governed set. Verification: `python3 gates/doc-drift.py` reports this doc CURRENT at the pinned aggregate. |
+| REQ-6 (control plane routed) | SHIPPED | the `# tooling — the control plane gating itself` block in `gates/routes.toml`: three `[[route]]` entries (`.claude/settings.json`, `.claude/agents/*.md`, `gates/control-plane-check.py`) all `design = ".design/gates/control-plane.md"`. Non-test consumer: `def load_doc_files in gates/doc-drift.py` inverts the table and content-pins this doc's governed set. Verification: `python3 gates/doc-drift.py` reports this doc CURRENT at the pinned aggregate. |
 | REQ-7 (CI enforcement) | SHIPPED | `.github/workflows/ci.yml` `checks` job step `control-plane gate (hook wiring)` → `python3 gates/control-plane-check.py`; `Makefile` targets `control-plane` / `control-plane-test`. Verification: the step is sequenced with the sibling `doc-drift tripwire` step in the same job. |
 
 ## Open questions
