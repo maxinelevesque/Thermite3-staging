@@ -1035,13 +1035,13 @@ conformance_ops = ["binary_search"]
 # ---------------------------------------------------------------------
 # DECLARATIVE in v1: the spec-discipline hook structurally cannot gate a .py
 # file (is_gated_path requires TARGET_EXTENSION ".rs" + a thermite-/forge crate
-# dir + a src/ component — see .design/tooling/doc-drift-tripwire.md REQ-11).
+# dir + a src/ component — see .design/gates/doc-drift-tripwire.md REQ-11).
 # This route therefore makes the gate's OWN doc-drift checkable by doc-drift.py
 # itself (which IS enforced via `make doc-drift`): editing the gate without
 # bumping the doc's audited-sha fires the tripwire on this route (the dogfood).
 [[route]]
 crate_pattern = "gates/doc-drift.py"
-design = ".design/tooling/doc-drift-tripwire.md"
+design = ".design/gates/doc-drift-tripwire.md"
 reference = []
 conformance_ops = []
 
@@ -1054,37 +1054,37 @@ conformance_ops = []
 # bridge changes.
 [[route]]
 crate_pattern = "gates/req-registry.py"
-design = ".design/tooling/req-registry.md"
+design = ".design/gates/req-registry.md"
 reference = []
 conformance_ops = []
 
 [[route]]
 crate_pattern = "gates/reqs"
-design = ".design/tooling/req-registry.md"
+design = ".design/gates/req-registry.md"
 reference = []
 conformance_ops = []
 
 [[route]]
 crate_pattern = "gates/tests/test_req_registry.py"
-design = ".design/tooling/req-registry.md"
+design = ".design/gates/req-registry.md"
 reference = []
 conformance_ops = []
 
 [[route]]
 crate_pattern = ".design/reqs/registry.toml"
-design = ".design/tooling/req-registry.md"
+design = ".design/gates/req-registry.md"
 reference = []
 conformance_ops = []
 
 [[route]]
 crate_pattern = ".design/reqs/status.md"
-design = ".design/tooling/req-registry.md"
+design = ".design/gates/req-registry.md"
 reference = []
 conformance_ops = []
 
 [[route]]
 crate_pattern = "gates/req-status.py"
-design = ".design/tooling/req-registry.md"
+design = ".design/gates/req-registry.md"
 reference = []
 conformance_ops = []
 
@@ -1212,24 +1212,24 @@ conformance_ops = []
 # structurally cannot gate a .json or .md control-plane file. These routes make
 # the control plane CONTENT-PINNED under doc-drift.py (which IS enforced via
 # `make doc-drift` + CI): editing the hook wiring or an agent def without
-# bumping .design/tooling/control-plane.md's audited-content-sha256 fires the
+# bumping .design/gates/control-plane.md's audited-content-sha256 fires the
 # tripwire. The wiring itself is separately asserted by
 # gates/control-plane-check.py (`make control-plane`).
 
 [[route]]
 crate_pattern = ".claude/settings.json"
-design = ".design/tooling/control-plane.md"
+design = ".design/gates/control-plane.md"
 reference = []
 conformance_ops = []
 
 [[route]]
 crate_pattern = ".claude/agents/*.md"
-design = ".design/tooling/control-plane.md"
+design = ".design/gates/control-plane.md"
 reference = []
 conformance_ops = []
 
 [[route]]
 crate_pattern = "gates/control-plane-check.py"
-design = ".design/tooling/control-plane.md"
+design = ".design/gates/control-plane.md"
 reference = []
 conformance_ops = []

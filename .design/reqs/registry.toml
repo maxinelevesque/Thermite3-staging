@@ -5290,9 +5290,9 @@ note = "boundary parser conformance"
 [[requirement]]
 id = "REQ-REG-1"
 title = "Stable requirement identity and ownership"
-owner = ".design/tooling/req-registry.md"
+owner = ".design/gates/req-registry.md"
 status = "shipped"
-scope = "tooling"
+scope = "registry"
 summary = "Each canonical requirement has a stable ID, title, owner, status, scope, generated view membership, and typed evidence."
 aliases = ["registry identity", "REQ status registry identity"]
 generated_to = ["status"]
@@ -5304,7 +5304,7 @@ note = "schema v1 registry source"
 
 [[requirement.evidence]]
 kind = "doc"
-target = ".design/tooling/req-registry.md"
+target = ".design/gates/req-registry.md"
 note = "governing design contract"
 
 [[requirement]]
@@ -5312,7 +5312,7 @@ id = "REQ-REG-2"
 title = "Registry-declared status policy"
 owner = "gates/req-registry.py"
 status = "shipped"
-scope = "tooling"
+scope = "registry"
 summary = "Registry statuses are declared by the registry, not hard-coded by the checker."
 generated_to = ["status"]
 
@@ -5331,7 +5331,7 @@ id = "REQ-REG-3"
 title = "Typed evidence validation"
 owner = "gates/req-registry.py"
 status = "shipped"
-scope = "tooling"
+scope = "registry"
 summary = "Evidence entries carry an explicit kind and target; path, symbol, command, issue, and blocker references are validated mechanically."
 generated_to = ["status"]
 
@@ -5365,7 +5365,7 @@ id = "REQ-REG-4"
 title = "Generated status views"
 owner = "gates/req-registry.py"
 status = "shipped"
-scope = "tooling"
+scope = "registry"
 summary = "Generated markdown views are rendered deterministically from the registry and checked in CI for staleness."
 generated_to = ["status"]
 
@@ -5389,7 +5389,7 @@ id = "REQ-REG-5"
 title = "Legacy source-comment bridge"
 owner = "gates/req-status.py"
 status = "shipped"
-scope = "tooling"
+scope = "registry"
 summary = "The existing source-comment lint remains as a compatibility bridge and now verifies that no hand-maintained legacy source REQ status rows remain."
 contributors = ["gates/req-registry.py"]
 generated_to = ["status"]
@@ -5409,7 +5409,7 @@ id = "REQ-REG-6"
 title = "Generated-region migration"
 owner = "gates/req-registry.py"
 status = "shipped"
-scope = "tooling"
+scope = "registry"
 summary = "Hand-maintained source-comment status tables have been replaced by generated regions or links declared from the canonical registry."
 generated_to = ["status"]
 

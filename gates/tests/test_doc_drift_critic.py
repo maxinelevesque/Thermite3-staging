@@ -3,7 +3,7 @@
 Critic divergence tests for gates/doc-drift.py (acto-critic, crosslink #258).
 
 Each test pins a DIVERGENCE between the gate's behavior and its authority,
-.design/tooling/doc-drift-tripwire.md (REQ-9) + goal.md R-HONEST-3. Expected
+.design/gates/doc-drift-tripwire.md (REQ-9) + goal.md R-HONEST-3. Expected
 values are taken from the design doc's REQ-9 exit-code contract, never from
 the tool's own output (R-CHAR-3). These tests FAIL against the current
 implementation by construction; they are the audit artifact for the builder's
