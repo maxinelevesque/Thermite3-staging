@@ -251,3 +251,20 @@ context than an inline one.
 
 Steps 1 and 2 are independently useful and reversible. Step 3 is a long tail
 rather than a project. Step 4 is a proposal to argue about, not a plan.
+
+**Step 2, as shipped (2026-08-10), deviates from §5.1's sketch and the record
+should say so.** The four formatting-sensitive documents — `workspace.md`,
+`vacuity-triage.md`, `09-option-result.md`, `11-ergonomics.md` — were narrowed
+with a `code-normalized` *extractor* (comments dropped, whitespace collapsed
+outside string literals, trailing commas before closers dropped, string
+contents byte-for-byte), not with `doc:begin`/`doc:end` anchors. The reason is
+measured, not aesthetic: the governed lib roots are 26–82 lines of pure
+declarations, so any honest anchor encloses the whole file — and the 2026-08-07
+re-wrap happened *inside* the export list itself, where a region pin still
+fires. Shape (ii) is byte noise *within* the depended-on region, which is an
+extraction problem, not a region problem. Anchors remain shipped and unused;
+the first route whose depended-on region is a strict subset of a large file
+should still reach for them. New named blindness, accepted deliberately: a
+comment-only edit in a file pinned `code-normalized` no longer drifts its
+documents — `//!` REQ-status rows are separately linted by `req-status.py` —
+and `(x,)` → `(x)` normalizes equal.

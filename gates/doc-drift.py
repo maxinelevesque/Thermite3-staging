@@ -330,7 +330,123 @@ def _extract_claude_hooks(data, relpath):
     return json.dumps(owned, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-EXTRACTORS = {"claude-hooks": _extract_claude_hooks}
+def _extract_code_normalized(data, relpath):
+    """The file's code with comments dropped and formatting collapsed.
+
+    RFC-16 shape (ii): formatting and comments move bytes without moving
+    meaning. Measured, 2026-08-07: one commit deleted an orphaned comment and
+    let rustfmt re-wrap an export list, and four documents drifted with no
+    claim in any of them affected. This extractor digests what the compiler
+    sees instead of what the formatter wrote:
+
+    * ``//`` and nestable ``/* */`` comments are dropped;
+    * whitespace outside string literals collapses (kept as one space only
+      between two word characters, so ``pub use`` stays two tokens);
+    * a trailing comma before a closing bracket is dropped, because rustfmt
+      adds and removes those as it re-wraps lists;
+    * string literals (including raw strings) are preserved byte-for-byte —
+      a rename that passes through a format string is a semantic change and
+      must still fire.
+
+    Named blindness, accepted: a comment-only edit no longer drifts a doc
+    pinned this way (REQ-status rows in ``//!`` comments are separately
+    linted by req-status.py), and ``(x,)`` → ``(x)`` normalizes equal.
+    """
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise EnvironmentError3(
+            f"pin-extract code-normalized: {relpath} is not UTF-8: {exc}"
+        ) from exc
+
+    out = []
+    i, n = 0, len(text)
+    in_line = False
+    block_depth = 0
+    string_end = None  # the terminator of the current string literal
+    while i < n:
+        c = text[i]
+        nxt = text[i + 1] if i + 1 < n else ""
+        if in_line:
+            if c == "\n":
+                in_line = False
+            i += 1
+            continue
+        if block_depth:
+            if c == "/" and nxt == "*":
+                block_depth += 1
+                i += 2
+                continue
+            if c == "*" and nxt == "/":
+                block_depth -= 1
+                i += 2
+                continue
+            i += 1
+            continue
+        if string_end is not None:
+            out.append(c)
+            if c == "\\" and string_end == '"' and nxt:
+                out.append(nxt)
+                i += 2
+                continue
+            if text.startswith(string_end, i):
+                out.append(string_end[1:])
+                i += len(string_end)
+                string_end = None
+                continue
+            i += 1
+            continue
+        if c == "/" and nxt == "/":
+            in_line = True
+            i += 2
+            continue
+        if c == "/" and nxt == "*":
+            block_depth = 1
+            i += 2
+            continue
+        if c == "'":
+            # A char literal ('"', '\\', 'x') is copied verbatim so a quote
+            # inside it cannot open a phantom string; a lifetime ('a) has no
+            # closing quote and falls through as plain code.
+            m = re.match(r"'(\\.|[^'\\\n])'", text[i:])
+            if m:
+                out.append(m.group(0))
+                i += len(m.group(0))
+                continue
+        if c == '"':
+            out.append(c)
+            string_end = '"'
+            i += 1
+            continue
+        m = re.match(r'r(#*)"', text[i:])
+        if c == "r" and m:
+            out.append(m.group(0))
+            string_end = '"' + m.group(1)
+            i += len(m.group(0))
+            continue
+        if c.isspace():
+            j = i
+            while j < n and text[j].isspace():
+                j += 1
+            prev = out[-1] if out else ""
+            after = text[j] if j < n else ""
+            if re.match(r"\w", prev or " ") and re.match(r"\w", after or " "):
+                out.append(" ")
+            i = j
+            continue
+        out.append(c)
+        i += 1
+
+    normalized = "".join(out)
+    for closer in ("}", ")", "]"):
+        normalized = normalized.replace("," + closer, closer)
+    return normalized.encode("utf-8")
+
+
+EXTRACTORS = {
+    "claude-hooks": _extract_claude_hooks,
+    "code-normalized": _extract_code_normalized,
+}
 
 
 def extract_pin_config(root, doc_relpath):
