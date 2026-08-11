@@ -10,7 +10,7 @@ introduces: []
 
 | | |
 |---|---|
-| **Status** | Draft, unfiled. A design pass, not a proposal |
+| **Status** | Draft, unfiled. A design pass, not a proposal. §0's five questions were answered 2026-08-11; the answers are recorded in §0 and applied through the document |
 | **Supersedes** | — |
 | **Baseline** | `staging @ b79b4005`; surface at the [RFC-7](0007-thermite-3.md) endpoint |
 | **Position** | Cross-cutting. Assumes RFC-6; orthogonal to RFC-8..14 |
@@ -21,7 +21,7 @@ The verification surface at the RFC-7 endpoint is large enough that a single
 document asks where the seam between them falls, and finds that the answer is
 already implemented three times under three names.
 
-**Contents:** [§0 What this asks](#0-what-this-asks) ·
+**Contents:** [§0 What this asked, and what was answered](#0-what-this-asked-and-what-was-answered) ·
 [§1 The seam is already built](#1-the-seam-is-already-built) ·
 [§2 The rule](#2-the-rule) · [§3 What the rule decides](#3-what-the-rule-decides) ·
 [§4 Clause labels](#4-clause-labels) · [§5 The surface](#5-the-surface) ·
@@ -34,24 +34,80 @@ already implemented three times under three names.
 
 ---
 
-## 0. What this asks
+## 0. What this asked, and what was answered
 
-A direction check on one rule and its consequences. Nothing is filed and no
-requirement is introduced.
+A direction check on one rule and its consequences. It was answered on
+2026-08-11. Nothing is filed and no requirement is introduced — the answers set
+direction for a later proposal, and this document remains a design pass.
 
-1. **Is the rule right?** A construct belongs to the proof layer when nothing
-   outside the verifier depends on it. §2 states it and §3 applies it.
-2. **Is the promotion the right shape?** The forge tier already parses
-   `prop fn`, `lemma`, `proof for f` and `witness`. This asks whether that item
-   set is a forge-tier feature or the language's proof layer, gated by routing
-   rather than by grammar.
-3. **Are clause labels wanted?** §4. They replace the positional `ensures#k`
-   with a name, and they are what makes body-keyed proof material addressable.
-4. **Does the covenant belong in the source at all?** §6 finds one directive in
-   it that measures tool effort rather than stating a fact, and moves it out.
-5. **Which separation of specification from implementation is wanted?** §9 gives
-   three, and only one of them needs a module system. The first draft of this
-   document said all three did, which was wrong.
+**1. Is the rule right?** A construct belongs to the proof layer when nothing
+outside the verifier depends on it. §2 states it and §3 applies it.
+
+> **Yes, with the evidence claim narrowed.** The rule and both tests stand. What
+> is scoped back is §2's closing sentence, which offered the agreement between
+> the rule and `forge review`'s projection as evidence that the rule "is a
+> description rather than a preference". That agreement is real but holds over a
+> smaller domain than the sentence implied: `forge review` structurally never
+> reads a body, so every body-keyed construct — loop `keeps`, loop `measures` —
+> is a case where the two do not both apply, and §3.4 is precisely where the rule
+> is overridden on other grounds. §2 now says what the agreement covers.
+
+**2. Is the promotion the right shape?** The forge tier already parses
+`prop fn`, `lemma`, `proof for f` and `witness`. This asks whether that item
+set is a forge-tier feature or the language's proof layer, gated by routing
+rather than by grammar.
+
+> **It is recognition rather than migration.** The probe settles the question in
+> a way the framing did not anticipate: all four forms parse in an *ordinary*
+> file with no attribute and no feature flag, and emit addresses
+> (`sum.proof.ensures#1:Forge`, `witness#1:Forge`). There is no gate to move them
+> through. The forge-tier framing is already nominal, and the honest statement is
+> that the item set is the language's today and always has been — what is missing
+> is that nothing says so, and nothing checks the bindings (§7).
+
+**3. Are clause labels wanted?** §4. They replace the positional `ensures#k`
+with a name, and they are what makes body-keyed proof material addressable.
+
+> **Yes — optional, and required on any clause the proof layer references.** §4
+> as written. Optional rather than mandatory follows RFC-9's argument: a
+> mechanical pass over 547 sites would emit `ensures_1`, which is the ordinal
+> with extra steps. Required-where-referenced is what gives out-of-line material
+> something stable to bind to. This is where essentially all of the
+> implementation cost sits, and it is load-bearing for the rest: §3.2's argument
+> that a positional address cannot key committed proof material means the
+> out-of-line forms have nothing to bind to without it.
+
+**4. Does the covenant belong in the source at all?** §6 finds one directive in
+it that measures tool effort rather than stating a fact, and moves it out.
+
+> **The budget leaves the source**, as §6.3 works it: `admits` and `excludes`
+> stay as checked claims, the budget becomes `--falsify <N>` beside `--rlimit`,
+> and the counts and seed stay in the certificate as an oracle-excluded receipt
+> sibling to `burn`. The decisive evidence is mechanical rather than aesthetic:
+> keeping the budget in source is what forced `covenant_evidence` into
+> `oracle_subset`, so `conformance/covenant/max_correct.cert.json` now pins
+> `"falsify_generated": 2002` — a measured result frozen as though it were a
+> specification. §10 prices the resulting golden change; sequencing it is an
+> implementation question this document does not settle.
+
+**5. Which separation of specification from implementation is wanted?** §9 gives
+three, and only one of them needs a module system. The first draft of this
+document said all three did, which was wrong.
+
+> **(a) only — the body moves out.** §9's own argument decides it: (a) and (b)
+> give the same physical separation and the same authority boundary and differ
+> only in which artifact is primary, and for a language whose thesis makes
+> contracts the only artifact needing intent review, the contract is the one to
+> keep primary. (b) is retained in §9 as a considered alternative rather than a
+> proposal, because its cost is a retirement — `surface-grammar.md` REQ-2,
+> "absence of a required clause is a parse error", would have to go, which makes
+> `fn f(x: u32) -> u32 { x }` legal Thermite and turns THERMITE.skill.md §8's
+> verification-is-the-default polarity from a grammar property into a link-time
+> check. (c) stays blocked and stays analysis.
+>
+> §9(a)'s one open choice is settled with it: the declaration carries a marker
+> rather than the bodyless-`fn` gate relaxing, and the marker is the keyword
+> **`contract fn`**. See §9(a).
 
 ## 1. The seam is already built
 
@@ -174,8 +230,18 @@ Applied to the surface at the RFC-7 endpoint:
 | loop `keeps` / `measures` | yes | the verifier | **proof by the rule; see §3.2 and §4** |
 
 The rule and `forge review`'s projection give the same answer everywhere they
-both apply, which is the evidence that the rule is a description rather than a
-preference.
+both apply, which is evidence that the rule describes something the compiler
+already computes rather than stating a preference.
+
+The scope of that evidence is worth being exact about, because the sentence is
+easy to read as stronger than it is. `forge review` structurally never reads a
+body, so the domain where both apply is the contract and spec-declaration
+surface — the rows above `spec fn` body in the table. Every body-keyed construct
+is outside it: the projection has no opinion on loop `keeps` or loop `measures`,
+which is why the last row of the table defers to §3.2 and §4 rather than to the
+projection, and why §3.4 records the one case where the rule is overridden on
+address-stability grounds. Corroboration over the contract surface is what is
+claimed; corroboration everywhere is not.
 
 ## 3. What the rule decides
 
@@ -595,6 +661,18 @@ no_such_function { … }` parses clean and addresses cleanly, so the binding is
 checked in neither direction — the same shape as the unchecked effect row RFC-9
 was written against. Target resolution is the first thing this layering owes.
 
+**This one is a defect now, not an obligation of the layering, and it is filed
+separately.** An orphan `proof for` is wrong at the current baseline whether or
+not anything in this document is adopted: rename a function and the out-of-line
+proof committed against it silently detaches, with nothing reporting the break.
+It is tracked as its own issue with the reproducing probe attached, so that
+fixing it does not wait on a direction check. What that issue cannot yet say is
+how bad it is — the probes here reach the parse and address layers only, and no
+Verus or Lean run was made anywhere in this work, so whether a detached proof
+merely rots (its target then fails to certify, which is loud and safe) or is
+counted as discharging something (which would not be) is unestablished and needs
+a certification run to separate.
+
 **What a missing proof layer costs.** An item whose obligations do not discharge
 is L0 and is reported as such. The failure mode of a proof layer that is absent,
 stale or unwritten is that the program does not certify, never that it certifies
@@ -631,11 +709,15 @@ one. An earlier draft of this section gave only the third and said the whole
 question was blocked on a module system. That was wrong: two of the three need no
 module system at all, because they bind by name the way `proof for` does.
 
-| | binds by | obligation | needs a module system |
-|---|---|---|---|
-| **(a) the body moves out** | name — `body for f` | none new | no |
-| **(b) the contract moves out** | name — `contract for f` | none new | no |
-| **(c) the implementation refines a model** | a named abstract specification | refinement | yes |
+| | binds by | obligation | needs a module system | in scope |
+|---|---|---|---|---|
+| **(a) the body moves out** | name — `body for f` | none new | no | **yes** |
+| **(b) the contract moves out** | name — `contract for f` | none new | no | no — considered alternative |
+| **(c) the implementation refines a model** | a named abstract specification | refinement | yes | no — blocked |
+
+§0's answer to question 5 takes (a) only. (b) is kept below because the
+comparison is what justifies the choice, not because it is proposed; (c) stays
+analysis until there is a module system to write it against.
 
 ### (a) The body moves out
 
@@ -648,7 +730,7 @@ spec fn spec_sum(xs: &[u32]) -> u64
   measures xs.len()
 { match xs { [] => 0, [head, ..t] => head as u64 + spec_sum(t) } }
 
-fn sum(xs: &[u32]) -> u64
+contract fn sum(xs: &[u32]) -> u64
   ! pure
   requires bounded_input: xs.len() <= 1_000_000
   ensures  matches_model: result == spec_sum(xs)
@@ -691,7 +773,48 @@ elsewhere should certify normally. And the bodyless-`fn` parse gate is a real
 decision rather than wiring: today the `;` body is gated on `boundary.is_some()`,
 a per-item check, and a `body for` declaration cannot be validated at item-parse
 time. Relaxing the gate and enforcing at file level costs pillar 5's per-item
-independence; a marker on the declaration keeps it. That choice is open.
+independence; a marker on the declaration keeps it.
+
+**The marker is a keyword, and the keyword is `contract`.** The declaration reads
+`contract fn sum(..)`, and the gate stays per-item: a `contract fn` legally has
+no body, every other `fn` still requires one, and both facts are decidable at the
+item where they are written. Relaxing the gate was the alternative and was
+rejected on that ground — it makes a bodyless `fn` an error only once the whole
+compilation unit is known, which is the independence pillar 5 states.
+
+Three things recommend `contract` over the other candidates.
+
+*It completes a vocabulary that already exists.* The sidecar items are nouns
+naming what they carry — `body for f`, `proof for f`, `witness for f`, and §9(b)'s
+`contract for f`. Those four nouns are the four kinds of material this document
+opens by observing that one file carries. `contract fn` makes the primary item
+name its noun too, and the rule becomes uniform: **the noun says what this is;
+it is either welded to the signature or `for`-bound elsewhere.** The same noun in
+both positions is a feature — `contract fn f` is the contract welded on, and
+§9(b)'s `contract for f` is the same contract moved out.
+
+*It names the meaning rather than the file layout.* `separate`, `split` and
+`outlined` all describe where the bytes went, which is the mechanism and not the
+idea. What the declaration means is that this item's obligations are settled here
+and the work is performed elsewhere against them.
+
+*It stays clear of the contrast set.* The words with the strongest recognition
+are the dangerous ones, because they already mean *no implementation* or
+*unproven*, and both are taken here by constructs that mean something materially
+different. `abstract` says "has no implementation" in Java, Scala and C#, and
+collides with §9(c)'s abstract *model* in this same document. `partial` is a near
+mechanical match in C# — declaration and body in separate files, merged at
+compile time — but in a language with `measures` and totality checking, a
+*partial function* is one that may not terminate. `extern` and `deferred` read as
+foreign or not-yet-written. A `contract fn` is none of these: its body exists,
+it is Thermite, and it certifies normally.
+
+`contract` is not currently a reserved word — `keyword_kind` in
+`thermite-syntax/src/lexer.rs` does not list it — so this is an addition rather
+than a re-use. `opaque` is not reserved either, which is worth stating since §5
+and §1.1 write `opaque spec fn` throughout: that spelling is RFC-7 §6's proposed
+surface rather than shipped grammar, so `contract fn` would be the first
+item-leading modifier of its kind to land, not the second.
 
 ### (b) The contract moves out
 
@@ -780,7 +903,22 @@ applied to its own certificate break.
 **Two invariants are new checks.** The no-strengthening rule reads a proof item's
 obligations against its target's contract; the no-naming rule is a
 name-resolution restriction. Neither needs a solver, and target resolution (§7)
-does not exist today at all.
+does not exist today at all — and, per §7, is filed as a defect against the
+current baseline rather than costed here.
+
+**`contract fn` is one reserved word and one branch.** `contract` joins
+`keyword_kind`, and the `;`-body gate in the parser changes from
+`boundary.is_some()` to admitting the `contract` modifier as well, which keeps it
+a per-item check.
+
+Reserving the word is the only part with corpus reach, and the reach is measured
+rather than assumed: across the 65 `.th` files in `conformance/` and `examples/`,
+the bare token `contract` occurs 11 times in 9 files, and **every occurrence is
+inside a `//` comment** — prose describing a contract, never an identifier in
+code position. Identifiers that merely contain the substring, such as
+`bv_weak_contract`, lex as single identifiers and are unaffected. So the
+migration cost of reserving it is zero at this baseline, which is the one thing
+that would otherwise have to be weighed against `telos/the-corpus-still-certifies`.
 
 **Nothing about certification changes.** Levels, verdicts, the ladder and the
 oracle's verdict semantics are untouched. This document proposes where material
@@ -788,9 +926,16 @@ is written, not what is proved about it.
 
 ## 11. Open questions
 
+Four of the five below were answered on 2026-08-11 and are recorded with their
+answers. One remains open, and it acquired a live dependency while this document
+was being written.
+
 - **Does the bodyless-`fn` gate relax, or does the declaration carry a marker?**
   §9(a). The first costs per-item parse independence; the second adds a token.
-  No worked example decides it.
+
+  > **Resolved: the declaration carries a marker, and the marker is the keyword
+  > `contract`.** Per-item decidability is the deciding property, and §9(a)
+  > carries the full argument for the spelling.
 
 - **Does `opaque` become the default for `spec fn`?** §1.1 makes `opaque` the
   spec-world instance of the same separation. If the layering is adopted, whether
@@ -798,22 +943,52 @@ is written, not what is proved about it.
   document raises and does not answer. RFC-7's asymmetry argument — assuming an
   opaque predicate is free, establishing one costs an unfold — is the input.
 
+  > **Deferred, and a probe is owed before it is decided.** The asymmetry argues
+  > for opaque-by-default, but flipping the default silently invalidates any
+  > existing proof that relied on a transparent body, and under
+  > `telos/the-corpus-still-certifies` that is a claim requiring a certification
+  > run rather than an argument. No Verus run was made anywhere in this document.
+  > Measure the corpus impact first. Note this is not blocking: nothing else here
+  > depends on the answer, because `opaque` is written explicitly today either
+  > way — and, per §9(a), is not reserved grammar yet in any case.
+
 - **Does the no-strengthening rule need an escape?** A proof needing an auxiliary
   invariant the contract does not state has to put it somewhere. The answer is
   probably a `lemma`, which states its own `requires`/`ensures` and strengthens
   nothing. Whether that covers every case has no worked example here, because no
   verified subsystem in this corpus has yet needed one.
 
+  > **Resolved: no escape. `lemma` covers it.** A `lemma` states its own
+  > obligations and strengthens nothing, and no verified subsystem in this corpus
+  > has yet needed more. Adding a sanctioned escape to an invariant before a case
+  > demands it is how the invariant stops being checked, which is the failure
+  > `telos/a-clause-is-checked` names. When a real case forces one, that case is
+  > its justification and can be evaluated on its own terms.
+
 - **Should a missing `excludes` witness ever become a gate?** §6.2 makes it
   advisory, on the strengthening-probe precedent and because a gate would fail
-  the whole corpus. Whether a conjunct with no excluding tuple should eventually
-  block certification is a question for after the advisory has run on real code.
+  the whole corpus.
+
+  > **Resolved: advisory now, with the promotion condition written down rather
+  > than left open.** It becomes a gate when the advisory has run on real code
+  > and the corpus is clean under it — that is the condition, and meeting it is
+  > what re-opens the question. An advisory with no stated path to becoming a
+  > check tends to stay advisory permanently, which is the same failure the
+  > previous item guards against from the other side.
 
 - **Do proof-cache keys survive the split?** thermite-design.md §5.3 keys the
   per-item cache on an item's content. Once an item's contract, body and proof can
   sit in three files, the key has to compose from three places, and the layer
-  boundary is what should make that composition clean rather than fragile. Not
-  worked out here.
+  boundary is what should make that composition clean rather than fragile.
+
+  > **Still open — and it now has a live dependency.** The composition is not
+  > worked out here and this document does not attempt it. What is recorded is
+  > that the key is changing underneath the question: `fix/proof-cache-effect-row`
+  > adds the declared effect row to the proof-cache key (REQ-1e) at the same
+  > baseline this document measures. That change is independent and correct on its
+  > own terms, but it sets precedent for how the key composes, and §9(a) would
+  > later have the key drawing from two files rather than one. Whoever settles the
+  > composition should read that change first rather than discover it afterwards.
 
 ---
 
@@ -835,6 +1010,7 @@ rather than produced here.
 | `body for sum { … }` | parse error at item dispatch — the item form does not exist |
 | `by` in a clause position across `conformance/` and `examples/` | one occurrence, already the out-of-line form (`isqrt_class.th`); all others are prose in comments |
 | `inhabit` sites in the corpus | 10, across 4 `witness` blocks |
+| `contract` and `opaque` as reserved words | neither appears in `keyword_kind` (`thermite-syntax/src/lexer.rs`). `contract fn` (§9(a)) is an addition rather than a re-use, and `opaque spec fn` is RFC-7 §6's proposed surface rather than shipped grammar |
 
 Two of these decided sections rather than confirming them. The unresolved
 `proof for` target is why §7 names target resolution as the first thing owed; the
