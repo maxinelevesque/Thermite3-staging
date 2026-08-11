@@ -1,7 +1,7 @@
 # Thermite — convenience targets. The build/test system is Cargo; these are
 # thin entry points. `make audit` is the headline: a FULL TRUST-CHAIN
 # re-derivation a skeptic runs on their own machine (see gates/audit.sh).
-.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test
+.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test
 
 DOC_DRIFT_CI_BASE ?= origin/main
 DOC_DRIFT_CI_HEAD ?= HEAD
@@ -119,4 +119,23 @@ control-plane:
 	@uv run python gates/control-plane-check.py
 
 control-plane-test:
+	@uv run python -m unittest discover -s gates/tests
+
+# The two RFC-18 §4 coverage gates. route-coverage: every route in
+# gates/routes.toml resolves against the tracked tree (no dead routes, no
+# stale `unbuilt` flags) and every spec-discipline-gated file is routed —
+# the static sweep of the rule the edit hook enforces per-edit. paths-exist:
+# every repo-relative path referenced by CI, the Makefile, the justfile, the
+# shell gates, the Python gates and Rust source resolves; would have caught
+# all three CI breaks the layout move shipped through a green local suite.
+route-coverage:
+	@uv run python gates/route-coverage.py
+
+route-coverage-test:
+	@uv run python -m unittest discover -s gates/tests
+
+paths-exist:
+	@uv run python gates/paths-exist.py
+
+paths-exist-test:
 	@uv run python -m unittest discover -s gates/tests -v

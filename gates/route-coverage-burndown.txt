@@ -1,0 +1,30 @@
+# Gated source files that predate gates/route-coverage.py and carry no route.
+# Measured on staging @ 05059300, 2026-08-10, the day the gate was written.
+#
+# Each file below is gated by the spec-discipline hook (R-XLATE-2 blocks any
+# edit to it until a route exists) but matches no route in gates/routes.toml,
+# so the block surfaces only when someone tries to edit it — the same failure
+# shape as gates/g4.sh silently losing its route (RFC-18 §4).
+#
+# This list only shrinks. Route a file and remove its line; the gate flags a
+# line whose file became routed or left the tree. A NEW gated file gets a
+# route, never a line here.
+forge/src/accessibility.rs
+forge/src/battery.rs
+forge/src/bitvector.rs
+forge/src/burn.rs
+forge/src/covenant.rs
+forge/src/covenant_engine.rs
+forge/src/covenant_eval.rs
+forge/src/forks.rs
+forge/src/lemma_library.rs
+forge/src/meaning.rs
+forge/src/metrics.rs
+forge/src/relax.rs
+forge/src/seven_verdicts.rs
+forge/src/strat_faithful.rs
+forge/src/strat_tv.rs
+forge/src/verdict.rs
+thermite-spec/src/restratify.rs
+thermite-syntax/src/desugar.rs
+thermite-tv/src/normalize.rs
