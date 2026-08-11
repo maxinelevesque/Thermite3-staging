@@ -692,15 +692,16 @@ pub fn check_file_with_options(
 
         // #8 proof cache (`.design/forge/proof-cache.md` REQ-1/REQ-3): the lowered
         // source is the item's content-address — the bytes verus checks
-        // (§5.3 isolated sub-program). The key composes it with the four
-        // verdict-determining inputs. Consult the cache before spawning verus.
+        // (§5.3 isolated sub-program). The key composes it with the other
+        // oracle-field-determining inputs, including the declared effect row
+        // (REQ-1e). Consult the cache before spawning verus.
         //
         // #11: the cache is keyed at the canonical [`DEFAULT_RLIMIT`] budget only.
         // A non-default `--rlimit` (the timeout-forcing / exploratory lever) is a
         // budget-dependent verdict (a timeout at `--rlimit 1` is not the cached
         // `L3` proved at the generous default), so it bypasses the cache entirely
         // — neither served from nor written to it. This keeps the cache key
-        // (`cache::cache_key`, four inputs) unchanged while staying sound (a
+        // (`cache::cache_key`) unchanged while staying sound (a
         // timeout verdict is never cached as if proved).
         // #12: a non-default `--mutation-floor` (the AC-3 floor-flip lever) is also a
         // verdict-changing knob not in the cache key (the same lowered source can
@@ -708,10 +709,15 @@ pub fn check_file_with_options(
         // a non-default floor likewise bypasses the cache — neither served nor
         // written. The canonical-config run (default rlimit + default floor) is the
         // only one that populates / serves the shared `target/` cache, keeping the
-        // four-input `cache::cache_key` unchanged while staying sound.
+        // `cache::cache_key` composition unchanged while staying sound.
         let use_cache =
             rlimit == DEFAULT_RLIMIT && options.mutation_floor == crate::mutation::MUTATION_FLOOR;
-        let key = cache::cache_key(&lowered, seed, &verus_version, THERMITE_VERSION);
+        // REQ-1e: the declared effect row joins the key. It determines
+        // `Certificate::effects` (an `oracle_subset` field) and does not reach
+        // the lowered source, so without it two items differing only in their
+        // row share an address and the second is served the first's cert.
+        let item_row = item_effects(item);
+        let key = cache::cache_key(&lowered, seed, &verus_version, THERMITE_VERSION, &item_row);
         if use_cache {
             if let Some(stored) = cache::load(&cache_dir, &key) {
                 // Hit: skip verus entirely (REQ-3, AC-1 — the solver-skip). The
@@ -6262,11 +6268,32 @@ fn parse_span(line: &str) -> Option<String> {
     Some(format!("{base}:{loc}"))
 }
 
+/// The canonical effect-token vector for one item — the value that becomes
+/// `Certificate::effects` and, per `.design/forge/proof-cache.md` REQ-1e, the
+/// declared-row input to `cache::cache_key`. Both consumers read it here, so the
+/// cache key and the certificate agree about an item's row by construction.
+pub(crate) fn item_effects(item: &Item) -> Vec<String> {
+    match item {
+        Item::Fn(f) => effects_of(&f.contract.effects),
+        // `spec fn`s have no effect row (§4.2) — they are pure by construction.
+        Item::SpecFn(_) => vec!["pure".to_string()],
+        // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum` type
+        // declares no effect row — its neutral effect projection is `pure` (the
+        // same empty-effect value as a `spec fn`). Dead-in-1a: an ADT item dies
+        // at the validator before a certificate is ever assembled for it.
+        Item::Struct(_) | Item::Enum(_) => vec!["pure".to_string()],
+        // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 cert consumer yet
+        // (increments 2b-3); declares no effect row → the same neutral `pure`
+        // projection as a `spec fn`/ADT decl, mirroring the inert ADT-decl arm.
+        Item::Forge(_) => vec!["pure".to_string()],
+    }
+}
+
 /// Assemble one item's [`Certificate`] from that item's own verus result (REQ-1
 /// final stage; §5.3 per-item). `verus` is the result of verifying `item`'s
 /// isolated sub-program (`item_subprogram`), so its outcome reflects only this
-/// item — never a sibling's. `item` is the item name; `effects` is the item's
-/// `fx` row (`spec fn`s are pure — they carry no `fx`).
+/// item — never a sibling's. The certificate's effect row comes from
+/// [`item_effects`] (`spec fn`s are pure — they carry no row).
 ///
 /// #11 — the three-way outcome maps to three certificate shapes:
 /// - [`VerusOutcome::Proved`] → `Level::L3`, one discharged summary obligation,
@@ -6277,20 +6304,7 @@ fn parse_span(line: &str) -> Option<String> {
 /// - [`VerusOutcome::Counterexample`] → `Level::L0` with the per-obligation
 ///   witnesses (the existing #5 path), no profile.
 fn assemble_certificate(item: &Item, verus: &VerusResult) -> Certificate {
-    let effects = match item {
-        Item::Fn(f) => effects_of(&f.contract.effects),
-        // `spec fn`s have no `fx` row (§4.2) — they are pure by construction.
-        Item::SpecFn(_) => vec!["pure".to_string()],
-        // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum` type
-        // declares no `fx` row — its neutral effect projection is `pure` (the
-        // same empty-effect value as a `spec fn`). Dead-in-1a: an ADT item dies
-        // at the validator before a certificate is ever assembled for it.
-        Item::Struct(_) | Item::Enum(_) => vec!["pure".to_string()],
-        // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 cert consumer yet
-        // (increments 2b-3); declares no `fx` row → the same neutral `pure`
-        // projection as a `spec fn`/ADT decl, mirroring the inert ADT-decl arm.
-        Item::Forge(_) => vec!["pure".to_string()],
-    };
+    let effects = item_effects(item);
     match &verus.outcome {
         VerusOutcome::Proved { verified } => Certificate::new(
             item.name(),
@@ -6541,8 +6555,16 @@ fn mutation_score(
 
         // Content-address the mutant as the L3 path does (#8). A mutant's
         // verdict is a deterministic function of its lowered source + seed +
-        // versions, so it caches like any item.
-        let key = cache::cache_key(&lowered, seed, verus_version, THERMITE_VERSION);
+        // versions, so it caches like any item. The row is passed for the same
+        // item the mutant derives from (REQ-1e), keeping one keyspace rule
+        // across both consumers of this cache.
+        let key = cache::cache_key(
+            &lowered,
+            seed,
+            verus_version,
+            THERMITE_VERSION,
+            &item_effects(&item),
+        );
         let proved = if use_cache {
             if let Some(stored) = cache::load(cache_dir, &key) {
                 mutant_cert_is_survivor(&stored)
@@ -6691,7 +6713,14 @@ fn equivalence_proves_equal(
     // needs no woven sub-program. #92: it used to be wrapped in a single-item
     // `Program` purely to feed `run_verus`'s label machinery; `run_verus` now takes
     // the subject name directly, so the wrapper (and its `f.clone()`) is gone.
-    let key = cache::cache_key(&obligation, seed, verus_version, THERMITE_VERSION);
+    // REQ-1e: `f`'s declared row, for the same keyspace rule the L3 path uses.
+    let key = cache::cache_key(
+        &obligation,
+        seed,
+        verus_version,
+        THERMITE_VERSION,
+        &effects_of(&f.contract.effects),
+    );
     let proved = if use_cache {
         if let Some(stored) = cache::load(cache_dir, &key) {
             // A cached cert: the equivalence query proved iff the stored cert is
@@ -6814,7 +6843,13 @@ fn strengthen_certificate(
             Ok(s) => s,
             Err(_) => return Ok(false),
         };
-        let key = cache::cache_key(&lowered, seed, verus_version, THERMITE_VERSION);
+        let key = cache::cache_key(
+            &lowered,
+            seed,
+            verus_version,
+            THERMITE_VERSION,
+            &item_effects(&item),
+        );
         if use_cache {
             if let Some(stored) = cache::load(cache_dir, &key) {
                 return Ok(mutant_cert_is_survivor(&stored));
@@ -7203,7 +7238,13 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
             let adt_deps = reachable_adt_deps(&parsed.program, &referrers);
             let sub = item_subprogram(item, &spec_items, &fn_deps, &adt_deps);
             let lowered = thermite_lower::lower(&sub).ok()?;
-            Some(cache::cache_key(&lowered, 0, VERUS, THERMITE))
+            Some(cache::cache_key(
+                &lowered,
+                0,
+                VERUS,
+                THERMITE,
+                &item_effects(item),
+            ))
         };
 
         let g_v1 = key_of(src_v1, "g");

@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (cache.rs) is the additive REQ-9 measures wf accessibility-proof cache (AccessibilityProof + accessibility_cache_key + load/store, a separate wf- on-disk namespace, CHECK_SCHEMA_VERSION-invalidated like the per-item cache); the per-item proof cache is byte-identical (REQ-S1-9). prior: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab)
-audited-content-sha256: 927473d2e96688240e6ca8959906bf6fbaf6d3c5b1262b769aa2d003dcdafb0f
+audited-content-sha256: 04dc24667c8eb6b3d502a0857557e0714c64d6243281f833ec35f42be71355c9 (re-pinned 2026-08-11 for the proof-cache effect-row key input: `cache::cache_key` takes the item's declared effect row as a fifth caller-passed argument (REQ-1e), and `check.rs` gained `check::item_effects` as the single source for both that key input and `Certificate::effects`, so the four `cache_key` call sites moved with it. The row determines an oracle field without reaching the lowered source, so two items differing only in their row shared one cache address and the second was served the first's certificate. Pinned by forge/tests/divergence_cache_effect_row.rs. No governed behaviour outside the cache key changed. prior: 927473d2e96688240e6ca8959906bf6fbaf6d3c5b1262b769aa2d003dcdafb0f.)
 governs: forge/src/cache.rs
 thesis-refs:
   - thermite-design.md §5.3
@@ -21,8 +21,9 @@ home of the bit-reproducible-verification contract (`thermite-design.md` §5.3:
 "Proof results are content-addressed and cached per item"). For each `.th`
 item, `forge check` computes a STABLE cache key from everything that determines
 the verdict (the item's lowered Verus source + the pinned solver seed + the
-verus version + the thermite toolchain version + the module-internal
-check-logic schema version — REQ-1 as amended, #49), consults the cache BEFORE
+verus version + the thermite toolchain version + the item's declared effect
+row + the module-internal check-logic schema version — REQ-1 as amended by #49
+and by the effect-row input), consults the cache BEFORE
 spawning verus, returns the cached certificate on a HIT (skipping the solver),
 and stores the result on a MISS. The cache is a PERFORMANCE optimization that
 NEVER changes a verdict: a hit is indistinguishable from a fresh verify.
@@ -71,6 +72,23 @@ against the current tree:
   structural-triage rejects and slag/boundary L1 short-circuits are still
   never cached (they short-circuit in `gate_fn`, before the key is computed),
   but the #13 SOLVER-vacuity verdict, computed inside the MISS branch, is.
+- **The declared effect row is a SIXTH key input.** `cache_key` takes a fifth
+  caller-passed argument, `effect_row: &[String]` — the item's declared row as
+  the canonical token vector `check::item_effects` produces, which is the same
+  value that lands in `Certificate::effects`. The row determines that field, and
+  `effects` is the third element of `Certificate::oracle_subset`, so it is one of
+  the deterministic fields a hit must agree with a fresh verify on (REQ-2's own
+  carve-out names `cached` as the only non-oracle field). The row does not reach
+  the lowered source: the bookkeeping labels (`read`, `write`, `net`, `alloc`,
+  `time`, `rand`, `panic`, `term`) change no proof obligation and lowering erases
+  them, while `diverge` survives through the termination obligation. Two items
+  identical but for their row therefore shared a key, and the second was served
+  the first's certificate, reporting a row its source does not declare in either
+  direction. Measured at staging `b79b4005` and pinned by
+  `forge/tests/divergence_cache_effect_row.rs`. REQ-1's "EXACTLY the four inputs"
+  and REQ-2's enumeration argument are amended accordingly: five caller-passed
+  inputs + the check-logic version. Keying on the same vector the certificate
+  carries makes the two impossible to disagree.
 - **Engine-discriminated evidence keys (the proof-backends arc; `cache.rs`
   itself unchanged by it).** `engine::engine_cache_key(EngineName,
   content_address)` wraps this module's key into the
@@ -78,23 +96,29 @@ against the current tree:
   builds it with `EngineName::Verus`), and the Lean engine versions its own
   exporter via `engine::LEAN_SCHEMA_VERSION` — the analogue of
   `CHECK_SCHEMA_VERSION` for the Lean path. The on-disk
-  `target/thermite-proof-cache/` store and `cache_key`'s four-argument
-  signature are untouched by that arc.
+  `target/thermite-proof-cache/` store is untouched by that arc; `cache_key`'s
+  signature gained the effect-row argument separately.
 
 ## Requirements
 
-- REQ-1 (cache-key composition — the four verdict-determining inputs): the
-  cache key for one item is a STABLE sha256 hash over EXACTLY the four inputs
-  that determine that item's verdict: (a) the item's LOWERED Verus source — the
-  byte string `thermite_lower::lower(&sub)` produces for that item's isolated
-  sub-program (`check::item_subprogram`), which is what verus actually checks;
+- REQ-1 (cache-key composition — the five oracle-field-determining inputs): the
+  cache key for one item is a STABLE sha256 hash over EXACTLY the five inputs
+  that determine that item's verdict or one of its oracle fields: (a) the
+  item's LOWERED Verus source — the byte string `thermite_lower::lower(&sub)`
+  produces for that item's isolated sub-program (`check::item_subprogram`),
+  which is what verus actually checks;
   (b) the pinned solver seed (`check::resolve_seed` / `DEFAULT_SOLVER_SEED`,
-  §5.3); (c) the verus version; (d) the thermite toolchain version. The hash is
+  §5.3); (c) the verus version; (d) the thermite toolchain version; (e) the
+  item's declared effect row, as the canonical token vector that lands in
+  `Certificate::effects` (`check::item_effects`). The hash is
   domain-separated and length-prefixed per field so no two distinct input tuples
-  collide by concatenation ambiguity. The key is the cache's content address.
-  *(Amended #49: the hash carries a FIFTH, module-internal field —
+  collide by concatenation ambiguity; the row is fed as its length followed by
+  each token as its own length-prefixed field, so a sequence boundary is
+  unambiguous and a reordered row is a different key. The key is the cache's
+  content address.
+  *(Amended #49: the hash carries a module-internal field —
   `CHECK_SCHEMA_VERSION`, the verdict-affecting check-logic version; see
-  Post-pin amendments.)*
+  Post-pin amendments. Amended again for input (e), the declared effect row.)*
   Source: `thermite-design.md` §5.3 ("proof results are content-addressed and
   cached per item"); §12 ("certificates are per-item and content-addressed").
 - REQ-2 (the soundness-completeness invariant — a hit equals a fresh verify):
@@ -103,8 +127,15 @@ against the current tree:
   cache HIT therefore returns the SAME verdict a fresh verus run would, by
   construction. A stale-cache false-L3 (returning L3 when a fresh run would not)
   is a SOUNDNESS HOLE; the completeness of the four-input key (REQ-1) is the
-  argument that this cannot occur. *(Amended #49: the enumeration includes the
-  check-logic version — the gate SET is itself a verdict-determining input.)* The cache is never a way to fabricate a
+  argument that this cannot occur. The invariant ranges over the certificate's
+  oracle fields (`Certificate::oracle_subset`), not the solver outcome alone: a
+  hit that agrees on `level` while disagreeing on `effects` still breaks it,
+  since both are oracle fields and the certificate is the deliverable
+  (`goal.md` R-SPEC-2). An input that determines any oracle field is therefore a
+  key input. *(Amended #49: the enumeration includes the
+  check-logic version — the gate SET is itself a verdict-determining input.
+  Amended again for the declared effect row, which determines `effects` without
+  reaching the lowered source.)* The cache is never a way to fabricate a
   verdict (`goal.md` R-DEFER-9 — no proof cheats).
   Source: `thermite-design.md` §5.3 ("a proof that passed yesterday passes today
   unless something semantically relevant changed"); §11 ("never by weakening the
@@ -229,6 +260,8 @@ key = sha256( DOMAIN ||                        // "thermite.forge.proof-cache.v1
         len-prefix( seed_bytes )            ||   // pinned solver seed (REQ-1b, §5.3)
         len-prefix( verus_version )         ||   // REQ-1d / REQ-5
         len-prefix( thermite_version )      ||   // REQ-1c / REQ-5
+        len-prefix( effect_row.len() )      ||   // declared row, REQ-1e
+        concat( len-prefix( token ) for token in effect_row ) ||
         len-prefix( CHECK_SCHEMA_VERSION )       // check-logic version (#49 amendment)
       )
 ```
@@ -237,8 +270,8 @@ Each field is length-prefixed (and domain-tagged) before hashing so that, e.g.,
 two distinct (source, version) splits cannot produce the same byte stream — the
 hash is injective on the structured tuple, not merely on a flat concatenation.
 The key is rendered as lowercase hex for the on-disk filename. The function is a
-PURE function of the four inputs: no wall-clock, no environment beyond the
-explicitly-passed version strings (R-CODE-5).
+PURE function of its inputs: no wall-clock, no environment beyond the
+explicitly-passed version strings and row (R-CODE-5).
 
 **Why the key is COMPLETE — the soundness argument (REQ-2).** A cache hit must
 be indistinguishable from a fresh verus run. The verdict for an item is a
@@ -248,11 +281,17 @@ item's contract references), the seed the SMT solver is pinned to
 (`smt.random_seed`, §5.3), and the prover itself (the verus version, which fixes
 Z3/the encoding) plus the thermite lowering that produced the source (the
 thermite version). Nothing else influences the verdict: there is no wall-clock,
-no un-seeded randomness (`goal.md` R-CODE-5), no ambient state. Therefore if all
-four key inputs are equal, the verdict is equal, and the cached certificate is
-exactly what a fresh run would produce. Conversely, if ANY of them differs, the
-key differs and `forge` re-verifies. The argument's load-bearing claim is the
-ENUMERATION: these four are ALL the verdict-determining inputs. The lowered
+no un-seeded randomness (`goal.md` R-CODE-5), no ambient state.
+
+The stored artifact is a certificate, and one of its oracle fields is determined
+outside that set: `effects` comes from the item's declared row, which lowering
+erases for every label but `diverge`. Input (e) closes the gap by keying on the
+same token vector the certificate carries. Therefore if all key inputs are equal,
+both the solver outcome and the certificate's oracle fields are equal, and the
+cached certificate is what a fresh run would produce. Conversely, if ANY of them
+differs, the key differs and `forge` re-verifies. The argument's load-bearing
+claim is the ENUMERATION: these five plus the check-logic version are ALL the
+inputs determining an oracle field. The lowered
 source is the right content-address (not the surface AST) precisely because it
 is *what verus checks* — two surface programs that lower to the same Verus bytes
 have the same verdict, and a surface change that does not alter the lowered bytes
@@ -265,7 +304,8 @@ triage reject — those never reach verus, so there is nothing to cache):
 ```text
 sub      = item_subprogram(item, &spec_items)        // §5.3 isolated sub-program
 lowered  = thermite_lower::lower(&sub)
-key      = cache::key(&lowered, seed, &verus_version, &thermite_version)   // REQ-1
+row      = item_effects(item)                              // the declared row (REQ-1e)
+key      = cache::key(&lowered, seed, &verus_version, &thermite_version, &row)   // REQ-1
 match cache::load(&key) {
   Some(stored) => stored.with_cached(true),          // HIT: skip verus (REQ-3, AC-1)
   None => {
@@ -278,7 +318,7 @@ match cache::load(&key) {
 ```
 
 `cache.rs` exposes the boundary surface (as-built spellings):
-`pub fn cache_key(lowered_src, seed, verus_version, thermite_version) -> String`,
+`pub fn cache_key(lowered_src, seed, verus_version, thermite_version, effect_row) -> String`,
 `pub fn load(cache_dir, key) -> Option<Certificate>`,
 `pub fn store(cache_dir, key, cert) -> std::io::Result<()>`, and
 `pub fn default_cache_dir() -> PathBuf`; its sole
@@ -394,8 +434,8 @@ the dependency; the doc-author does not edit `Cargo.toml`.
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (cache-key composition) | SHIPPED | `cache::cache_key(lowered_src, seed, verus_version, thermite_version) -> String` (`cache.rs`) sha256-hashes the four args PLUS the module-internal `CHECK_SCHEMA_VERSION` check-logic version (= 7; the #49 amendment, bumped through `6 → 7` for the #269 arc), each DOMAIN-tagged + LENGTH-prefixed (`cache::field`); `sha2 = "0.10"` in `forge/Cargo.toml`. Consumer: `check::check_file` in `check.rs` (and, engine-wrapped, `engine::engine_cache_key`). |
-| REQ-2 (soundness-completeness invariant) | SHIPPED | the key captures the four verdict-determining inputs PLUS the #49 check-logic version (a gate-set change forces a universal MISS — schema bumps 2–7 recorded at the const); the two verdict-changing knobs NOT in the key (`rlimit`, `mutation_floor`) BYPASS the cache at non-default values (`check_file`'s `use_cache` guard — neither served nor written). `cache::store` persists the canonical `cached: false` and `cache::load` returns it unchanged, so `check::check_file`'s HIT (`Certificate::with_cached(true)`) is oracle-equal to the fresh verify. Verified by `cache::tests::key_changes_when_any_input_changes` + `cache_conformance::second_run_is_a_cache_hit_with_equal_deterministic_fields`. |
+| REQ-1 (cache-key composition) | SHIPPED | `cache::cache_key(lowered_src, seed, verus_version, thermite_version, effect_row) -> String` (`cache.rs`) sha256-hashes the five args PLUS the module-internal `CHECK_SCHEMA_VERSION` check-logic version (= 7; the #49 amendment, bumped through `6 → 7` for the #269 arc), each DOMAIN-tagged + LENGTH-prefixed (`cache::field`); the row is fed as `effect-row-len` then one `effect` field per token; `sha2 = "0.10"` in `forge/Cargo.toml`. Consumer: `check::check_file` in `check.rs`, passing `check::item_effects(item)` — the same vector `assemble_certificate` writes to `Certificate::effects` (and, engine-wrapped, `engine::engine_cache_key`). |
+| REQ-2 (soundness-completeness invariant) | SHIPPED | the key captures the five oracle-field-determining inputs (incl. the declared effect row, which determines `Certificate::effects` without reaching the lowered source; pinned by `divergence_cache_effect_row::cache_hit_effects_must_equal_a_fresh_verify` and `::editing_only_the_row_in_place_must_change_the_reported_effects`) PLUS the #49 check-logic version (a gate-set change forces a universal MISS — schema bumps 2–7 recorded at the const); the two verdict-changing knobs NOT in the key (`rlimit`, `mutation_floor`) BYPASS the cache at non-default values (`check_file`'s `use_cache` guard — neither served nor written). `cache::store` persists the canonical `cached: false` and `cache::load` returns it unchanged, so `check::check_file`'s HIT (`Certificate::with_cached(true)`) is oracle-equal to the fresh verify. Verified by `cache::tests::key_changes_when_any_input_changes` + `cache_conformance::second_run_is_a_cache_hit_with_equal_deterministic_fields`. |
 | REQ-3 (lookup-then-store flow, per item) | SHIPPED | `check::check_file`'s L3 path calls `cache::load` BEFORE `run_verus` (HIT → return + skip verus + `continue`); on a MISS it runs verus, assembles + graduates the cert, `cache::store`s it, and returns `with_cached(false)`. Post-pin: a #13 `Certificate::rejected_vacuity` (computed inside the MISS branch) is stored too — a settled deterministic verdict, so a later HIT is verus-free end-to-end. |
 | REQ-4 (locality — per-item) | SHIPPED | the key is over the item's OWN `item_subprogram` lowered source; `check::tests::cache_key_is_local_to_the_item` asserts `g`'s key is invariant under an `f`-only edit while `f`'s key changes. |
 | REQ-5 (version-keyed invalidation) | SHIPPED | `check::resolve_verus_version` captures the verus version once per run (the `VERUS_VERSION` pin, else `verus --version`; a missing version is `ForgeError::VerusAbsent`, never an empty-string key) and `check::THERMITE_VERSION = env!("CARGO_PKG_VERSION")` feed the key. Verified by `cache::tests::key_changes_when_any_input_changes`. |
