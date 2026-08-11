@@ -5401,7 +5401,7 @@ note = "short-term contradiction tripwire"
 
 [[requirement.evidence]]
 kind = "command"
-target = "python3 gates/req-status.py"
+target = "uv run python gates/req-status.py"
 note = "legacy row lint stays green during migration"
 
 [[requirement]]
@@ -17396,7 +17396,7 @@ note = "the gate"
 
 [[requirement.evidence]]
 kind = "command"
-target = "python3 gates/rfc-check.py"
+target = "uv run python gates/rfc-check.py"
 note = "CI step"
 
 [[requirement.evidence]]

@@ -1091,7 +1091,7 @@ def validate_generated(root: Path, rendered: list[RenderedView]) -> list[Issue]:
                     Issue(
                         "STALE-GENERATED",
                         view.path,
-                        "generated region differs; run `python3 gates/req-registry.py --write`",
+                        "generated region differs; run `uv run python gates/req-registry.py --write`",
                     )
                 )
             continue
@@ -1101,7 +1101,7 @@ def validate_generated(root: Path, rendered: list[RenderedView]) -> list[Issue]:
                 Issue(
                     "STALE-GENERATED",
                     view.path,
-                    "generated view differs; run `python3 gates/req-registry.py --write`",
+                    "generated view differs; run `uv run python gates/req-registry.py --write`",
                 )
             )
     return issues
