@@ -9,7 +9,7 @@
       {
         "hooks": [
           {
-            "command": "HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/.claude/hooks/post-edit-check.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$ROOT/.claude/hooks/post-edit-check.py\"; [ -f \"$HOOK\" ] || exit 0; cd \"$ROOT\" && uv run python \"$HOOK\"",
             "timeout": 5,
             "type": "command"
           }
@@ -19,7 +19,7 @@
       {
         "hooks": [
           {
-            "command": "HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/gates/spec-discipline.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$ROOT/gates/spec-discipline.py\"; [ -f \"$HOOK\" ] || exit 0; cd \"$ROOT\" && uv run python \"$HOOK\"",
             "timeout": 5,
             "type": "command"
           }
@@ -29,7 +29,7 @@
       {
         "hooks": [
           {
-            "command": "HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/.claude/hooks/heartbeat.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$ROOT/.claude/hooks/heartbeat.py\"; [ -f \"$HOOK\" ] || exit 0; cd \"$ROOT\" && uv run python \"$HOOK\"",
             "timeout": 3,
             "type": "command"
           }
@@ -40,7 +40,7 @@
       {
         "hooks": [
           {
-            "command": "HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/.claude/hooks/pre-web-check.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$ROOT/.claude/hooks/pre-web-check.py\"; [ -f \"$HOOK\" ] || exit 0; cd \"$ROOT\" && uv run python \"$HOOK\"",
             "timeout": 5,
             "type": "command"
           }
@@ -50,7 +50,7 @@
       {
         "hooks": [
           {
-            "command": "HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/.claude/hooks/work-check.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$ROOT/.claude/hooks/work-check.py\"; [ -f \"$HOOK\" ] || exit 0; cd \"$ROOT\" && uv run python \"$HOOK\"",
             "timeout": 3,
             "type": "command"
           }
@@ -60,12 +60,12 @@
       {
         "hooks": [
           {
-            "command": "HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/gates/spec-discipline.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$ROOT/gates/spec-discipline.py\"; [ -f \"$HOOK\" ] || exit 0; cd \"$ROOT\" && uv run python \"$HOOK\"",
             "timeout": 5,
             "type": "command"
           },
           {
-            "command": "HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/gates/anti-pattern-gate.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$ROOT/gates/anti-pattern-gate.py\"; [ -f \"$HOOK\" ] || exit 0; cd \"$ROOT\" && uv run python \"$HOOK\"",
             "timeout": 5,
             "type": "command"
           }
@@ -77,7 +77,7 @@
       {
         "hooks": [
           {
-            "command": "HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/.claude/hooks/session-start.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$ROOT/.claude/hooks/session-start.py\"; [ -f \"$HOOK\" ] || exit 0; cd \"$ROOT\" && uv run python \"$HOOK\"",
             "timeout": 10,
             "type": "command"
           }
@@ -89,7 +89,7 @@
       {
         "hooks": [
           {
-            "command": "HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/.claude/hooks/prompt-guard.py\"; if [ -f \"$HOOK\" ]; then python3 \"$HOOK\"; else exit 0; fi",
+            "command": "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; HOOK=\"$ROOT/.claude/hooks/prompt-guard.py\"; [ -f \"$HOOK\" ] || exit 0; cd \"$ROOT\" && uv run python \"$HOOK\"",
             "timeout": 5,
             "type": "command"
           }

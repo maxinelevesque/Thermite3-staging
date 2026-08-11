@@ -196,7 +196,7 @@ New work:
   check is NOT a pass"). The tool never exits 0 without having checked all 48 docs.
 - REQ-10 (Makefile + CI wiring, SEQUENCED — replaces the rejected audit.sh
   wiring): `Makefile` exposes two local entry points. `make doc-drift-worktree`
-  invokes `python3 gates/doc-drift.py` directly against the current worktree,
+  invokes `uv run python gates/doc-drift.py` directly against the current worktree,
   preserving the tool's precise 0/1/3 exit-code contract for scripts that need to
   branch on drift vs environment failure. `make doc-drift` mirrors pull-request
   CI: it synthesizes a base-first merge commit from `DOC_DRIFT_CI_BASE`
@@ -251,7 +251,7 @@ New work:
 
 ## Acceptance criteria
 
-- AC-1: with a routed file's content changed after its doc's content pin, `python3
+- AC-1: with a routed file's content changed after its doc's content pin, `uv run python
   gates/doc-drift.py` exits 1 and its output names the doc path, the pinned
   digest, the current digest, and the governed pattern. The legacy fallback also
   reports intervening commit SHAs with `--full-history`.
@@ -270,7 +270,7 @@ New work:
 - AC-7: `make doc-drift-worktree` exits 0 when the direct tool exits 0 and
   nonzero otherwise (GNU make collapses failing recipes to exit 2 — REQ-10
   caveat; the 0/1/3 contract is the DIRECT invocation
-  `python3 gates/doc-drift.py`) and prints the tool's report. `make doc-drift`
+  `uv run python gates/doc-drift.py`) and prints the tool's report. `make doc-drift`
   evaluates a CI-style base-first merge ref in a temporary worktree. In both
   cases `gates/audit.sh` is UNCHANGED by this component (byte-identical — the
   gate is outside the proof-trust chain, decision 5).
@@ -284,7 +284,7 @@ New work:
 PROJECT-CUSTOMIZATION constants block, top-of-file docstring stating the rule it
 enforces and citing this doc. Unlike the siblings it is NOT a Claude-Code hook in
 v1 (decision 5): it is invoked by CI, by `make doc-drift`'s temporary merge-ref
-worktree, or directly via `make doc-drift-worktree` / `python3
+worktree, or directly via `make doc-drift-worktree` / `uv run python
 gates/doc-drift.py`.
 
 Pipeline (one pass, no state file):
@@ -359,7 +359,7 @@ the code changing). Unification is OQ-1.
   path history hides a main-side edit but `--full-history` reports it for legacy
   commit pins. Expected values are hand-built fixture facts, never the tool's own
   output (R-CHAR-3).
-- **Live-tree smoke**: `python3 gates/doc-drift.py` on the real repo exits 0
+- **Live-tree smoke**: `uv run python gates/doc-drift.py` on the real repo exits 0
   when every routed doc's `audited-content-sha256:` matches its governed files.
 - **Makefile wiring**: `make doc-drift-worktree` is exit 0 iff the tool exits 0,
   and nonzero (make's collapsed 2) for both the 1- and 3-cases, with the class
@@ -388,8 +388,8 @@ cannot catch, since the index is unrouted. Named in OQ-7.)
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (route table as enumeration source) | SHIPPED | `gates/routes.toml` header: "spec-routes.toml — the Thermite route table (single source of truth)… Each route maps a toolchain source file to the design doc that governs it". Non-test consumer: `def load_routes in gates/spec-discipline.py` → `def find_routes`, wired as the PreToolUse/PostToolUse hook in `.claude/settings.json` (`python3 "$HOOK"` on `gates/spec-discipline.py`). Verification: `python3 -c "import tomllib; …"` → 107 routes, 48 distinct `design` docs, all 48 exist on disk, 0 glob patterns. |
-| REQ-2 (tomllib/glob parsing substrate) | SHIPPED | `try: import tomllib  # Python 3.11+` + `def load_routes` + `def glob_to_regex` + `def match_pattern in gates/spec-discipline.py`. Non-test consumer: the spec-discipline hook itself (`.claude/settings.json` PreToolUse on Write\|Edit). Verification: `python3 --version` → `Python 3.13.13` (tomllib available); the hook blocks routed edits live in this harness. |
+| REQ-1 (route table as enumeration source) | SHIPPED | `gates/routes.toml` header: "spec-routes.toml — the Thermite route table (single source of truth)… Each route maps a toolchain source file to the design doc that governs it". Non-test consumer: `def load_routes in gates/spec-discipline.py` → `def find_routes`, wired as the PreToolUse/PostToolUse hook in `.claude/settings.json` (`uv run python "$HOOK"` on `gates/spec-discipline.py`). Verification: `uv run python -c "import tomllib; …"` → 107 routes, 48 distinct `design` docs, all 48 exist on disk, 0 glob patterns. |
+| REQ-2 (tomllib/glob parsing substrate) | SHIPPED | `try: import tomllib  # Python 3.11+` + `def load_routes` + `def glob_to_regex` + `def match_pattern in gates/spec-discipline.py`. Non-test consumer: the spec-discipline hook itself (`.claude/settings.json` PreToolUse on Write\|Edit). Verification: `uv run python --version` → the `.python-version` interpreter (tomllib available); the hook blocks routed edits live in this harness. |
 | REQ-3 (exit-3 honest-inconclusive precedent) | SHIPPED | `gates/audit.sh`: `pass()`/`fail()`/`skip()` helpers; `SKIPPED_GUARANTEES=()`; verdict block "INCONCLUSIVE is NOT a pass… Exit NONZERO (3, distinct from FAILED's 1) so automation cannot read a skipped-guarantee run as green (R-HONEST-3)". Non-test consumer: `make audit` (`Makefile`: `audit: @bash gates/audit.sh`). Role here is PRECEDENT-ONLY: REQ-9 mirrors the 0/1/3 shape; nothing in this component calls into or out of `audit.sh` (decision 5). |
 | REQ-4 (check [4] precedent, stays bespoke AND stays in the audit) | SHIPPED | `gates/audit.sh` "[4/5] CORRESPONDENCE DRIFT TRIPWIRE": `pin_sha_for()` extracts backticked hex from `.design/verified/rust-lean-correspondence.md`'s "Audited commits (PINNED…)" table; compare `cur="$(git log -1 --format=%h -- "$pf")"`; on mismatch `fail "$pf — DRIFTED: pinned $pinned, current $cur"` + `RC=1`. Non-test consumer: `make audit`. Verification: the doc's two amendment blocks record the tripwire firing and being cleared by verified re-pins (#200, #255). Its subject is a check-[6] residual-trust item — the property this gate's subjects lack (decision 5). |
 | REQ-5 (`audited-content-sha256:` preferred pin + legacy `audited-sha:`) | SHIPPED | Routed docs carry content pins in their HTML-comment headers, with legacy `audited-sha:` retained for provenance / fallback. The tool prefers the content pin when present. |
@@ -397,7 +397,7 @@ cannot catch, since the index is unrouted. Named in OQ-7.)
 | REQ-7 (loud doc+file/pattern failure report) | SHIPPED | Content drift reports doc path, pinned digest, current digest, and governed patterns; legacy commit drift reports doc path, governed file, and intervening full-history commits. |
 | REQ-8 (missing/invalid pin = FAIL, no grandfathering) | SHIPPED | `MISSING-PIN` fires when neither content nor commit pin exists; `INVALID-PIN` fires for malformed content digests and invalid legacy commit pins. |
 | REQ-9 (exit-code contract 0/1/3) | SHIPPED | Direct tool exits 0 for current, 1 for DRIFT/MISSING-PIN/INVALID-PIN, and 3 for environment failures. |
-| REQ-10 (Makefile + CI wiring) | SHIPPED | `Makefile` has `doc-drift-worktree` for direct worktree checks and `doc-drift` for a CI-style base-first temporary merge worktree; `.github/workflows/ci.yml` runs `python3 gates/doc-drift.py` with full checkout history. |
+| REQ-10 (Makefile + CI wiring) | SHIPPED | `Makefile` has `doc-drift-worktree` for direct worktree checks and `doc-drift` for a CI-style base-first temporary merge worktree; `.github/workflows/ci.yml` runs `uv run python gates/doc-drift.py` with full checkout history. |
 | REQ-11 (self-governing route entry) | SHIPPED | `gates/routes.toml` routes `gates/doc-drift.py` to this doc, so the gate's own implementation is covered by the doc-drift check. The edit hook still does not gate `.py` files; that limitation remains outside this component. |
 
 ## Open questions

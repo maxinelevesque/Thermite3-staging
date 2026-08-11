@@ -489,10 +489,10 @@ bold "[G2] STAGE-2 STRATIFIED CAGE — the four-check G2 gate (REQ-9 / AC-9)"
 # [4′] doc-drift tripwire over the three mirrored Rust files.
 note "[4′] doc-drift: the three mirrored Rust files (classifier / strat_ref_encode /"
 note "     strat_two_phase) are content-pinned + current under the stratified correspondence doc."
-if ! command -v python3 >/dev/null 2>&1; then
-  skip "[4′] python3 not found — the doc-drift tripwire was not run."
+if ! command -v uv >/dev/null 2>&1; then
+  skip "[4′] uv not found — the doc-drift tripwire was not run."
   S2_DRIFT=skip
-elif python3 "$ROOT/gates/doc-drift.py" >"$TMP/docdrift.out" 2>&1 \
+elif (cd "$ROOT" && uv run python gates/doc-drift.py) >"$TMP/docdrift.out" 2>&1 \
      && grep -q "CURRENT  .design/verified/strat-rust-lean-correspondence.md" "$TMP/docdrift.out"; then
   pass "[4′] doc-drift GREEN — the stratified correspondence doc is current (no mirror drift)"
   S2_DRIFT=green

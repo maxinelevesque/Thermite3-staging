@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-for tool in cargo lake prlimit python3 z3; do
+for tool in cargo lake prlimit uv z3; do
   command -v "$tool" >/dev/null 2>&1 || {
     echo "g4-gate: required tool not found: $tool" >&2
     exit 2
@@ -81,7 +81,7 @@ cargo test -p forge --bin forge check::tests -- \
   --nocapture --test-threads=1
 
 echo "[G4 6/6] no proof placeholders or custom axioms"
-python3 - lean/Thermite <<'PY'
+uv run python - lean/Thermite <<'PY'
 from pathlib import Path
 import re
 import sys

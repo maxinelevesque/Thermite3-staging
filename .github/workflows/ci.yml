@@ -634,6 +634,13 @@ jobs:
       - name: Install pinned CaDiCaL and drat-trim
         run: bash dev/install-g4-tools.sh
 
+      # G4's [6/6] placeholder scan runs under the pinned interpreter, and the
+      # gate's required-tool list now names `uv` rather than a system python3.
+      - name: Install uv (pins the Python the gate runs under)
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version-file: .python-version
+
       - name: Gate G4
         run: bash gates/g4.sh
 

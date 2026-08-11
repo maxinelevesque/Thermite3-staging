@@ -48,7 +48,7 @@ which reads `.claude/settings.json` and asserts three wirings are present:
 `PostToolUse` on `Read` → `spec-discipline.py`, and `PreToolUse` on
 `Write`/`Edit` → `spec-discipline.py` and `anti-pattern-gate.py`.
 
-Run it against a tree that carries `tooling/` and no `.claude/`:
+Run it against a tree that carries `gates/` and no `.claude/`:
 
 ```
 UNPARSEABLE  .claude/settings.json  file not found — no hook is wired,
@@ -106,7 +106,7 @@ absent from a fresh checkout. Meanwhile:
 
 * tracked `.claude/settings.json` wires **nine hooks**, of which **six** invoke
   scripts under the absent `.claude/hooks/`. The three that resolve are exactly
-  the three pointing into `tooling/` — which are also exactly the three
+  the three pointing into `gates/` — which are also exactly the three
   `control-plane-check.py` audits, so the gate is green on a control plane that
   is two-thirds dangling;
 * tracked `.mcp.json` declares **three** servers, all named `crosslink-*`, all

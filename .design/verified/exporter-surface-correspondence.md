@@ -235,7 +235,7 @@ This doc is the inspection artifact; "verification" is the groundedness of every
 row quotes the actual Rust source symbol and the actual spine target, not a paraphrase) and
 the live regression oracle suite.
 
-**Drift tripwire.** `python3 gates/doc-drift.py` must exit 0 (CURRENT) on
+**Drift tripwire.** `uv run python gates/doc-drift.py` must exit 0 (CURRENT) on
 `forge/src/lean_export.rs` against the `b60b75a4` pin. If it exits 1, the pin is stale
 and this table requires re-audit before the edit can land.
 
@@ -272,4 +272,4 @@ gate the SPINE; the exporter's mirror is:
 | REQ | Status | Evidence |
 |---|---|---|
 | REQ-1 (the exporter surface correspondence) | SHIPPED | This doc IS the deliverable. Tables EXP-1 through EXP-6 enumerate every `encode_expr` arm (with explicit OUT-of-S_C residuals), every `ExportRefusal` variant, `build_registry`'s two-direction hard gate, the three `emit_theorem` tiers with their spine theorems, and `emit_state_of`'s three param-sort branches. Each row quotes the actual Rust source symbol (`pub fn encode_expr in lean_export.rs`, `fn build_registry in lean_export.rs`, `fn emit_theorem in lean_export.rs`, `fn emit_state_of in lean_export.rs`, `pub enum ExportRefusal in lean_export.rs`) beside the targeted spine constructor or theorem. Non-test consumer: `engine::LeanEngine::{fragment,discharge,admits_auto}` calls `export_item` (which calls all of the above) on the live discharge path. Inspection tier — see "Scope and limits." |
-| REQ-2 (drift-tripwire discipline) | SHIPPED | `audited-sha: b60b75a49a3d8de99a4b7ed98fe42124e1b808fb` in this doc's header; the `forge/src/lean_export.rs` route in `gates/routes.toml` points at this doc; `python3 gates/doc-drift.py` exits 0 (CURRENT). Any future edit to `lean_export.rs` fires the gate and demands re-audit. |
+| REQ-2 (drift-tripwire discipline) | SHIPPED | `audited-sha: b60b75a49a3d8de99a4b7ed98fe42124e1b808fb` in this doc's header; the `forge/src/lean_export.rs` route in `gates/routes.toml` points at this doc; `uv run python gates/doc-drift.py` exits 0 (CURRENT). Any future edit to `lean_export.rs` fires the gate and demands re-audit. |

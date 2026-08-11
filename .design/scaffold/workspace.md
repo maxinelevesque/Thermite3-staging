@@ -263,7 +263,7 @@ ships `thermite-skill` as an empty member only.
 Discharge is entirely mechanical and runs on the empty workspace once the
 builder lands it:
 
-- **AC-1/AC-2:** `cargo metadata --no-deps --format-version 1 | python3 -c "..."`
+- **AC-1/AC-2:** `cargo metadata --no-deps --format-version 1 | uv run python -c "..."`
   to assert the five member names, the single `bin` target, and per-crate
   path-dep sets; `cargo build --workspace` to confirm acyclicity.
 - **AC-3:** `cargo build --workspace` (re-exports resolve) +
