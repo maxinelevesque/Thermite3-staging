@@ -103,8 +103,31 @@ on**:
   builds, the CLI and closure analysis drifted without any of their claims
   moving, because the rename passed through files they govern.
 
-Both are properties of the *pin's shape*, not of the change that tripped it. And
-neither shape overlaps with the 28 true findings, which came from a semantic
+* **(iv) A pin over a *pattern*, where the pattern's membership changes.**
+  Added 2026-08-10 from the RFC-18 layout move, and distinct from (i)–(iii)
+  because in those, bytes moved somewhere. Here nothing moved but set
+  membership. `_content_digest` digests, per pattern, the *set* of files the
+  pattern matches, so a file entering or leaving a glob moves the digest with
+  **no file's content changed and no pattern string changed**. Measured:
+  `crate_pattern = "scripts/g4-*"` governs `stage4-epr-reconstruction.md`, and
+  moving `g4-gate.sh` out of `scripts/` drifted that document while every claim
+  in it remained exactly as true as before.
+
+  It has a second face, from the same move: a governed file that *cites its own
+  design document* in a docstring drifts that document when the document is
+  renamed. `gates/doc-drift.py` says "the detailed rules are in
+  `.design/gates/doc-drift-tripwire.md`", so renaming `.design/tooling/` to
+  `.design/gates/` changed the governed source and moved three digests — after a
+  prediction of zero, reasoned correctly from the premise that a pin digests the
+  source and the source does not move.
+
+  Both faces share a root the other shapes do not: **what changed was not the
+  governed file, but something the governed file mentions.** Neither is
+  addressable by narrowing to a region, because there is no region to narrow to
+  — which makes (iv) an argument for §5.2 rather than §5.1.
+
+All four are properties of the *pin's shape*, not of the change that tripped it.
+And no shape overlaps with the 28 true findings, which came from a semantic
 change — a rename that genuinely invalidated prose. **The false-positive sources
 can be removed without touching the path that produced every true finding.**
 That is the whole argument.
@@ -121,6 +144,24 @@ positives were cleared by re-pinning, and in none of them was the governed
 document re-read to confirm its claims still held. The reasoning was from the
 diff — "comments and line breaks only" — which is sound, and is also precisely
 the ritual.
+
+**Reproduced, independently, on a different change class.** The RFC-18 layout
+move on 2026-08-10 produced **13 re-pin operations across 5 distinct documents**
+— `stage4-epr-reconstruction`, `control-plane`, `doc-drift-tripwire`,
+`req-registry` and `strat-rust-lean-correspondence`. **None of the five was
+re-read.** Every clearance reasoned from the diff: "only the path moved", "only
+the docstring names a new directory", "the glob lost a member". Each of those is
+sound, and the pattern of thirteen consecutive sound-and-unaudited clearances is
+the ritual §4 predicts, arrived at by someone who had read §4 first and
+re-pinned anyway.
+
+That last detail is the finding. The original evidence could be read as a bad
+day; this is the same behaviour from an operator who knew the argument, on a
+change class the original 41 findings did not include. **Knowing that the
+response has become a ritual does not stop it being the rational response** —
+re-auditing five documents to clear a finding caused by a directory rename is
+still not a good use of anyone's attention. The design has to change, because
+the discipline demonstrably does not.
 
 This is the real cost. A pin-everything design maximizes *nominal* recall. Its
 *effective* recall is the fraction of re-pins where someone genuinely re-audits,
