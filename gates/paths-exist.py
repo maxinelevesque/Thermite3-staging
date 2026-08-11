@@ -17,16 +17,23 @@ repo-relative reference whose target had moved.
 What is checked, per file kind:
 
 * ``.github/workflows/*.yml``, ``Makefile``, ``justfile``, ``gates/`` and
-  ``dev/`` shell scripts, top-level ``gates/*.py``: any token starting with a
-  known tree prefix (``gates/``, ``dev/``, ``conformance/``, ...) after
-  comment stripping. ``scripts/`` and ``tooling/`` are deliberately in the
-  prefix list: they no longer exist, so a live reference to either is
-  exactly the stale-layout class this gate exists for.
+  ``dev/`` shell scripts: any token starting with a known tree prefix
+  (``gates/``, ``dev/``, ``conformance/``, ...) after comment stripping.
+  ``scripts/`` and ``tooling/`` are deliberately in the prefix list: they no
+  longer exist, so a live reference to either is exactly the stale-layout
+  class this gate exists for.
 * Rust source: ``include_str!``/``include_bytes!`` literals resolved against
   the containing file (the compile-time semantics), and any string literal
   that IS a tree path (starts with a known prefix, after ``./``/``../``
   stripping). Literals that merely mention a path inside prose are not
   checked — "install lean/elan" is a sentence, not a reference.
+* Top-level ``gates/*.py``: string literals under the same whole-literal
+  rule as Rust. A gate's docstring quotes historical paths as prose (this
+  file's own docstring does), so token-scanning Python flags the gates for
+  telling their own history; a literal that IS a path — doc-drift's
+  ``ROUTES_RELPATH = "gates/routes.toml"`` — is still checked. A literal
+  that is exactly a known prefix and nothing more is configuration (this
+  file's own prefix list), not a reference.
 
 A missing path that git ignores is skipped: a reference to a generated
 location (``lean/.lake/...``) is legitimate and its absence from a fresh
@@ -84,6 +91,9 @@ _PREFIX_ALT = "|".join(re.escape(p) for p in KNOWN_PREFIXES)
 TOKEN_RE = re.compile(r"(?:%s)[A-Za-z0-9._/\-*]*" % _PREFIX_ALT)
 INCLUDE_RE = re.compile(r'include_(?:str|bytes)!\s*\(\s*"([^"]+)"')
 STRING_RE = re.compile(r'"((?:[^"\\\n]|\\.)*)"')
+PY_STRING_RE = re.compile(
+    r'"((?:[^"\\\n]|\\.)*)"|\'((?:[^\'\\\n]|\\.)*)\''
+)
 
 
 class EnvironmentError3(Exception):
@@ -124,7 +134,7 @@ def _scan_set(tracked):
             and not f.startswith("gates/tests/")
             and f.endswith(".py")
         ):
-            out.append((f, "hash"))
+            out.append((f, "python"))
         elif f.endswith(".rs"):
             out.append((f, "rust"))
     return out
@@ -250,6 +260,43 @@ def _hash_file_refs(text):
     return refs
 
 
+def _literal_path(lit):
+    """The tree path a whole string literal names, or None for prose/config.
+
+    Leading ``./``/``../`` segments are stripped (all known prefixes are
+    root-level, so a manifest-relative join still resolves). A literal that
+    is exactly a known prefix is configuration, not a reference.
+    """
+    s = lit
+    while s.startswith("./"):
+        s = s[2:]
+    while s.startswith("../"):
+        s = s[3:]
+    if not s or not s.startswith(KNOWN_PREFIXES):
+        return None
+    if s in KNOWN_PREFIXES:
+        return None
+    cleaned = _clean_token(s)
+    if s not in (cleaned, cleaned + "/"):
+        s = cleaned
+    if not s or s in KNOWN_PREFIXES or (s + "/") in KNOWN_PREFIXES:
+        return None
+    if "$" in s or "{" in s or " " in s:
+        return None
+    return s
+
+
+def _python_file_refs(text):
+    """Whole-literal tree paths from a Python gate."""
+    refs = []
+    for m in PY_STRING_RE.finditer(text):
+        lit = m.group(1) if m.group(1) is not None else m.group(2)
+        tok = _literal_path(lit)
+        if tok:
+            refs.append(tok)
+    return refs
+
+
 def _rust_file_refs(relpath, text):
     """(token, base) refs from a Rust file.
 
@@ -271,18 +318,9 @@ def _rust_file_refs(relpath, text):
         lit = m.group(1)
         if lit in include_literals:
             continue
-        s = lit
-        while s.startswith("./"):
-            s = s[2:]
-        while s.startswith("../"):
-            s = s[3:]
-        if not s or not s.startswith(KNOWN_PREFIXES):
-            continue
-        if s != _clean_token(s) + "/" and s != _clean_token(s):
-            s = _clean_token(s)
-        if not s or "$" in s or "{" in s or " " in s:
-            continue
-        literals.append(s)
+        tok = _literal_path(lit)
+        if tok:
+            literals.append(tok)
     return includes, literals
 
 
@@ -331,6 +369,9 @@ def evaluate(root):
             raise EnvironmentError3(f"unreadable: {relpath}: {exc}")
         if kind == "hash":
             for tok in _hash_file_refs(text):
+                candidates.append((tok, relpath, None))
+        elif kind == "python":
+            for tok in _python_file_refs(text):
                 candidates.append((tok, relpath, None))
         else:
             includes, literals = _rust_file_refs(relpath, text)

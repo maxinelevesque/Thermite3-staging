@@ -200,6 +200,36 @@ class PathsExistTests(unittest.TestCase):
         )
         self.assertEqual(self.fx.run().returncode, 0)
 
+    def test_python_docstring_prose_is_not_a_reference(self):
+        """A gate's docstring quotes historical paths as prose; only a
+        literal that IS a path is checked. This is the self-scan case: the
+        two gates flagged their own docstrings the moment they were
+        tracked."""
+        self.fx.file(
+            "gates/history.py",
+            '"""Once upon a time scripts/audit.sh lived here."""\n'
+            "X = 1\n",
+        )
+        self.assertEqual(self.fx.run().returncode, 0)
+
+    def test_python_path_literal_is_checked(self):
+        """doc-drift's ROUTES_RELPATH shape: a config literal that IS a
+        path must resolve — it was one of RFC-18 §3.3's named couplings."""
+        self.fx.file(
+            "gates/reader.py",
+            'ROUTES_RELPATH = "gates/routes.toml"\n',
+        )
+        r = self.fx.run()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("MISSING-PATH gates/routes.toml", r.stdout)
+
+    def test_python_bare_prefix_literal_is_config(self):
+        self.fx.file(
+            "gates/config.py",
+            'PREFIXES = ("gates/", "scripts/", "tooling/")\n',
+        )
+        self.assertEqual(self.fx.run().returncode, 0)
+
     # --- environment ----------------------------------------------------
 
     def test_outside_a_repo_is_inconclusive(self):
