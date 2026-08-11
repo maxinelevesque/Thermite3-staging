@@ -1,0 +1,55 @@
+# The derived roadmap (issue #26): rendered from the tree on every push to
+# staging — the trunk event #22 created — and published to GitHub Pages, so it
+# is current by construction rather than by discipline.
+#
+# This fork's page only. The roadmap tracks THIS fork's path to Thermite 3;
+# the process layer never travels upstream (telos/the-clone-is-neutral,
+# branch discipline), so this workflow must never appear on an upstream-bound
+# branch.
+name: roadmap
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: roadmap-deploy
+  cancel-in-progress: false
+
+jobs:
+  render-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history: the renderer shells out to rfc-check --index (RFC
+          # revisions are commit counts) and doc-drift (pin validation reads
+          # ancestry); a shallow clone would mis-derive both.
+          fetch-depth: 0
+
+      - name: Install uv (pins the Python the renderer runs under)
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version-file: .python-version
+
+      - name: Render the roadmap from the tree
+        run: uv run python dev/render-roadmap.py --out _site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
