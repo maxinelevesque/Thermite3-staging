@@ -387,17 +387,22 @@ conformance_ops = ["weak_loose_bound", "sum"]
 # v0.4 — crates.io FFI boundary modules (issue #16)
 #   The boundary fn syntax also touches ast.rs/parser.rs (governed by their docs
 #   + ffi-boundary.md); the L1 wrapper may live in l1.rs or boundary.rs.
+#   Both files are ahead of the build (the manifest-time route convention);
+#   `unbuilt = true` tells gates/route-coverage.py the empty match is intended,
+#   and the gate flags the flag itself once the file lands.
 [[route]]
 crate_pattern = "thermite-lower/src/boundary.rs"
 design = ".design/boundary/ffi-boundary.md"
 reference = []
 conformance_ops = []
+unbuilt = true
 
 [[route]]
 crate_pattern = "forge/src/boundary.rs"
 design = ".design/boundary/ffi-boundary.md"
 reference = ["conformance/boundary"]
 conformance_ops = ["foreign_id"]
+unbuilt = true
 
 # v0.4 — end-to-end vs to-the-boundary certification (issue #17)
 [[route]]
@@ -429,12 +434,14 @@ conformance_ops = ["sum", "vacuous"]
 
 # v0.5 — multi-agent Forge sessions (issue #20)
 #   The concurrency-safety primitive (atomic cache) is emergent from #8; #20 is
-#   chiefly the guarantee + the concurrency test suite. session.rs is optional.
+#   chiefly the guarantee + the concurrency test suite. session.rs is optional
+#   and ahead of the build — see the boundary.rs `unbuilt` note above.
 [[route]]
 crate_pattern = "forge/src/session.rs"
 design = ".design/forge/multi-agent.md"
 reference = []
 conformance_ops = []
+unbuilt = true
 
 # Goal-state REPL — forge goal/fill/edit/battery (issue #21 item 3, #193).
 # The last unshipped thesis surface (design 5/5.1, Appendix B): views over the

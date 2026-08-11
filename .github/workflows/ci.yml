@@ -135,6 +135,13 @@ jobs:
         run: uv run gates/reqs check
       - name: rfc gate (front matter, numbering, registry link)
         run: uv run python gates/rfc-check.py
+      # The two RFC-18 §4 coverage gates: a route that resolves to nothing
+      # and a referenced path that no longer exists both shipped through a
+      # green local suite during the layout move.
+      - name: route-coverage gate (routes.toml <-> tracked tree)
+        run: uv run python gates/route-coverage.py
+      - name: paths-exist gate (referenced repo paths resolve)
+        run: uv run python gates/paths-exist.py
 
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
