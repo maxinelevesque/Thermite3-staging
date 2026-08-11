@@ -103,6 +103,13 @@ Five theories that generate a frame condition:
 | `partiality` | may not return at all | `diverge` |
 | `io(σ)` | a free signature, no equations | terminal *reads*, where the value does not exist until it does |
 
+The basis owes a home to every label the surface carries. `net(d)` and `term`
+have none in the table above, and the design is not complete until they do.
+`net(d)` is either `io(σ)` or a `state(d)` instance, depending on whether a
+reply is modelled as a read of the far end; `term` is the #106 terminal-control
+atom, whose frame condition is a hardware enable bit rather than a region. Both
+are placed before this RFC is filed.
+
 And two given atoms, which generate none:
 
 | atom | why it has none |
@@ -165,8 +172,9 @@ effect journal(d)  = state(d) + exception
 The prover only ever sees primitives it knows how to encode; users get to name
 and structure their own vocabulary; and the conflict rule, composition law and
 frame conditions are generated rather than hardcoded — including for effects the
-language never anticipated. Today `platform(memory)` gets no conflict checking at
-all, because nothing knows what it is.
+language never anticipated. The label set is fixed today, so an effect the
+language does not already name gets no conflict checking and cannot be given
+any without a change to the language itself. This lifts that ceiling.
 
 The discipline is the one already used a level down: you do not get to define
 type constructors with arbitrary kinding rules, you build from a fixed set.
