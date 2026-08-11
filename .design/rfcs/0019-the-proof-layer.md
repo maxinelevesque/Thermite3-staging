@@ -665,8 +665,9 @@ was written against. Target resolution is the first thing this layering owes.
 separately.** An orphan `proof for` is wrong at the current baseline whether or
 not anything in this document is adopted: rename a function and the out-of-line
 proof committed against it silently detaches, with nothing reporting the break.
-It is tracked as its own issue with the reproducing probe attached, so that
-fixing it does not wait on a direction check. What that issue cannot yet say is
+It is tracked as [issue #41](https://github.com/maxinelevesque/Thermite3-staging/issues/41)
+with the reproducing probe attached, so that fixing it does not wait on a
+direction check. What that issue cannot yet say is
 how bad it is — the probes here reach the parse and address layers only, and no
 Verus or Lean run was made anywhere in this work, so whether a detached proof
 merely rots (its target then fails to certify, which is loud and safe) or is
