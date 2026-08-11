@@ -62,7 +62,7 @@ On Ubuntu or Debian:
 sudo apt-get update
 sudo apt-get install --yes \
   build-essential ca-certificates clang curl git \
-  libc++-dev libc++abi-dev python3 unzip util-linux z3
+  libc++-dev libc++abi-dev unzip util-linux z3
 ```
 
 What these provide:
@@ -71,14 +71,28 @@ What these provide:
 |---|---|
 | `git`, `curl`, `ca-certificates`, `unzip` | Fetching pinned Rust, Lean, Verus, CVC5, and solver artifacts |
 | `build-essential`, `clang`, `libc++-dev`, `libc++abi-dev` | Building the Stage 4 SAT tools and Lean's CVC5 bridge |
-| `python3` | Repository gates and proof-artifact checks |
 | `util-linux` | `prlimit`, used by the memory-bounded G4 gate |
 | `z3` | Normal reconstruction and G4 checks; Verus also ships its matching private Z3 |
 
 You do not need a system CVC5 package. Lean's pinned dependency downloads the
 matching CVC5 distribution and builds its bridge.
 
-### 2. Rust
+### 2. uv (the pinned Python interpreter)
+
+Every repository gate runs under the interpreter `uv` resolves from
+[`.python-version`](.python-version), never a system Python. The gates read
+`gates/routes.toml` through `tomllib`, which is 3.11+, so a system Python 3.9
+makes them exit on their own environment check rather than on the thing they
+gate.
+
+```sh
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Gates are then invoked as `uv run python gates/<gate>.py`, which is also how
+`make` and CI reach them.
+
+### 3. Rust
 
 Install rustup if necessary:
 
@@ -109,7 +123,7 @@ export PATH="$HOME/.local/bin:$PATH"
 Add that `PATH` export to your shell profile if `~/.local/bin` is not already
 present.
 
-### 3. Verus
+### 4. Verus
 
 Thermite's L3 path invokes `verus` from `PATH`. Install the exact CI release:
 
@@ -130,7 +144,7 @@ verus --version
 Keep the Verus directory intact: its binary expects the bundled Rust toolchain
 and Z3 beside it.
 
-### 4. Lean and the proof spine
+### 5. Lean and the proof spine
 
 Install elan, then let the repository select Lean 4.29.0:
 
@@ -150,7 +164,7 @@ cd ..
 `lake exe cache get` is important: without the prebuilt Mathlib cache, a first
 build can spend hours rebuilding dependencies.
 
-### 5. Checked BV and EPR reconstruction
+### 6. Checked BV and EPR reconstruction
 
 Normal release builds include fixed-width `@bvN` syntax and automatic routing.
 The finite relation/array reconstruction path additionally needs the exact
@@ -172,7 +186,7 @@ bash gates/g4.sh
 The gate applies a 6 GiB address-space ceiling and serializes the expensive
 work, so it is suitable for smaller development machines.
 
-### 6. Optional: Kani for explicit L2 checks
+### 7. Optional: Kani for explicit L2 checks
 
 Kani is only needed for `forge check --level l2` and the live Kani tests:
 
@@ -194,7 +208,7 @@ cargo --version
 verus --version
 lake --version
 z3 --version
-python3 --version
+uv run python --version
 
 cargo build --release -p forge
 forge check conformance/sum.th
@@ -284,7 +298,7 @@ cargo test -p thermite-skill
 cargo test -p forge
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all --check
-python3 gates/doc-drift.py
+uv run python gates/doc-drift.py
 gates/reqs check
 ```
 

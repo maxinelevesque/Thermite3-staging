@@ -66,8 +66,8 @@ Work the strict **read → write → verify → commit** loop over every routed 
 
 Mechanical check:
 ```bash
-python3 -c "import tomllib; print(len(tomllib.load(open('gates/routes.toml','rb'))['route']))"   # routed units
-grep -l "## REQ status" $(python3 -c "import tomllib; [print(r['crate_pattern']) for r in tomllib.load(open('gates/routes.toml','rb'))['route']]") 2>/dev/null | wc -l
+uv run python -c "import tomllib; print(len(tomllib.load(open('gates/routes.toml','rb'))['route']))"   # routed units
+grep -l "## REQ status" $(uv run python -c "import tomllib; [print(r['crate_pattern']) for r in tomllib.load(open('gates/routes.toml','rb'))['route']]") 2>/dev/null | wc -l
 ```
 When routed-count == REQ-status-count AND every crate's gauntlet is green AND the conformance corpus passes, the v0.1 kernel is complete.
 
