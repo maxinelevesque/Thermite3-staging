@@ -28,6 +28,28 @@ introduces:
 underneath [verified effect rows](0009-verified-effect-rows.md): that document makes
 the row checkable, this one says what a row *is*.
 
+## Amendment: what the probe measured (staging `b79b4005`)
+
+This document was written before the language was probed for what it already
+does. A `language-probe` at `b79b4005` — three-line files and a `forge check`
+verdict, with `verus 0.2026.05.24.ecee80a` and a cold cache per case — measured
+five things this document had assumed. Two of them change what the document may
+claim, and both are corrected in place below.
+
+| measured | consequence here |
+|---|---|
+| A caller declaring `! pure` whose body calls a `! write(log)` boundary is **rejected**, exit 2 | The row constrains the body. The basis refines a live mechanism. |
+| A caller declaring `! write(db)` whose body calls a `! write(log)` boundary **certifies at L3** | Subsumption compares labels only. The region does not participate. §"A row entry" is corrected. |
+| A caller declaring `! read(log)` against a `! write(log)` callee is **rejected** | The `read`/`write` distinction exists at label granularity. |
+| `! frobnicate` is a **parse error**; the accepted set is `read`, `write`, `net`, `alloc`, `time`, `rand`, `panic`, `diverge`, `term` | The label set is closed, and it contains two labels this document does not account for. §"The basis" and §"User-declared effects" are corrected. |
+| `! pure` certifies L3 and `! diverge` certifies L1 on the same body and contract | The claim in §"Why there is a row at all" holds at this baseline. |
+
+`! write(nowhere)` on a body that touches nothing still certifies at L3, so
+over-declaration remains unchecked. Combined with the region result, a region
+name in a row is checked against nothing at all: not the body, not the callee,
+and not any declaration site, because the surface has no region declaration
+form.
+
 ## Why there is a row at all
 
 A return type and an effect row sit on different axes, and the difference is what
@@ -44,6 +66,16 @@ held before a call, a return type is silent about whether it still holds after.
 That is the frame rule, and framing is the single thing that makes modular
 verification scale. Without it every call invalidates everything known, and
 proofs stop composing.
+
+The probe could not measure this the way it measured the rest, and the reason is
+worth stating. The surface has no mutable state and no assignment: effects enter
+only through `#[boundary]` declarations and travel upward by subsumption. There
+is no `P(s)` for a caller to carry across a call and therefore no frame
+condition to emit, so "what the call leaves alone" is currently carried by the
+value language being pure rather than by the row. The frame rule above describes
+what the row is *for* once regions are distinguished, which makes it a statement
+about the same work §"A row entry" defers, not an account of what a row buys a
+caller today.
 
 There is a second difference, in *when* the obligation is discharged. A return
 type is discharged at the call site by construction — you get a `Result` and deal
@@ -103,6 +135,15 @@ Five theories that generate a frame condition:
 | `partiality` | may not return at all | `diverge` |
 | `io(σ)` | a free signature, no equations | terminal *reads*, where the value does not exist until it does |
 
+**Two shipped labels this table does not yet place.** The accepted set at
+`b79b4005` is `read`, `write`, `net`, `alloc`, `time`, `rand`, `panic`,
+`diverge`, `term`. `net(d)` and `term` appear in none of the rows above, and the
+covers column does not reach them. `net(d)` plausibly lands in `io(σ)` or as a
+`state(d)` instance depending on whether a reply is modelled as a read, and
+`term` is the #106 terminal-control atom whose frame condition is a hardware
+enable bit rather than a region. Placing both is work this document owes before
+the basis can claim to cover the surface it is proposed for.
+
 And two given atoms, which generate none:
 
 | atom | why it has none |
@@ -119,6 +160,16 @@ different theories under one word, adjacent in the same row.
 
 This is the structural bit that makes the conflict table fall out.
 
+> **Not a reading of current behaviour.** Everything in this section is proposed
+> construction. The probe measured that subsumption compares the label alone:
+> a caller declaring `! write(db)` whose body calls a `! write(log)` boundary
+> certifies at L3, reporting `effects: [write(db)]` for the caller and
+> `[write(log)]` for the callee, with no error. So `state(r)` instances are not
+> distinguished today, and the `get`/`put` split the table below is derived from
+> is part of the work this RFC proposes rather than a property the toolchain
+> has. The `read`/`write` distinction does exist, at label granularity: a caller
+> declaring `! read(log)` against a `! write(log)` callee is rejected.
+
 ```
 read(r)   =  state(r) / {get}
 write(r)  =  state(r) / {get, put}
@@ -132,6 +183,11 @@ Commutation is then computed per operation pair from the state equations:
 | `read(r)` ∥ `write(r)` | reject | `get` does not commute with `put` |
 | `write(r)` ∥ `write(r)` | reject | `put` does not commute with `put` |
 | `write(a)` ∥ `write(b)` | accept | independent instances are independent theories |
+
+The last row is the one with the most to build. It needs the checker to tell
+`write(a)` from `write(b)`, which the probe measured it cannot, so the payoff
+this section claims for the conflict table arrives with the region work rather
+than ahead of it.
 
 So the data-race-freedom rule is the commutation condition for the tensor of the
 region theories. The effect-rows document says "Metatheory: none new", which is
@@ -165,8 +221,13 @@ effect journal(d)  = state(d) + exception
 The prover only ever sees primitives it knows how to encode; users get to name
 and structure their own vocabulary; and the conflict rule, composition law and
 frame conditions are generated rather than hardcoded — including for effects the
-language never anticipated. Today `platform(memory)` gets no conflict checking at
-all, because nothing knows what it is.
+language never anticipated.
+
+The probe sharpens what this asks for. The label set is closed at
+`b79b4005`: an unrecognised label is a parse error naming the nine it accepts,
+so `effect journal(d) = state(d) + exception` is an extension that opens a
+closed set rather than a restriction of something permissive. That is the
+easier sell of the two readings, and it is the accurate one.
 
 The discipline is the one already used a level down: you do not get to define
 type constructors with arbitrary kinding rules, you build from a fixed set.
