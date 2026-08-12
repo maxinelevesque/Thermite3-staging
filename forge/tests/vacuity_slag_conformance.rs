@@ -140,17 +140,18 @@ fn run_check_json(file: &Path) -> (Option<i32>, Vec<Value>) {
     (out.status.code(), arr)
 }
 
-fn first_cert(certs: &[Value]) -> &Value {
-    certs
-        .first()
-        .unwrap_or_else(|| panic!("no certificate emitted"))
-}
-
 fn slag_cert(certs: &[Value]) -> &Value {
     certs
         .iter()
         .find(|cert| cert.get("slag").and_then(Value::as_bool) == Some(true))
         .unwrap_or_else(|| panic!("no slag certificate emitted: {certs:?}"))
+}
+
+fn rejected_cert(certs: &[Value]) -> &Value {
+    certs
+        .iter()
+        .find(|cert| cert.get("reject").is_some_and(|reject| !reject.is_null()))
+        .unwrap_or_else(|| panic!("no rejected certificate emitted: {certs:?}"))
 }
 
 // ---- triage rejects (no verus needed — short-circuit before the proof) -----
@@ -171,7 +172,7 @@ fn triage_rejects_match_oracle_cause() {
             "triage reject `{}` must exit with the verification-failure code",
             case.name
         );
-        let cert = first_cert(&certs);
+        let cert = rejected_cert(&certs);
         let got_cause = cert
             .get("reject")
             .and_then(|r| r.get("cause"))
@@ -318,7 +319,7 @@ fn slag_rejects_match_oracle_cause() {
             "slag reject `{}` must exit with the verification-failure code",
             case.name
         );
-        let cert = first_cert(&certs);
+        let cert = rejected_cert(&certs);
         let got_cause = cert
             .get("reject")
             .and_then(|r| r.get("cause"))
