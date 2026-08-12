@@ -103,19 +103,63 @@ Five theories that generate a frame condition:
 | `partiality` | may not return at all | `diverge` |
 | `io(σ)` | a free signature, no equations | terminal *reads*, where the value does not exist until it does |
 
-The basis owes a home to every label the surface carries. `net(d)` and `term`
-have none in the table above, and the design is not complete until they do.
-`net(d)` is either `io(σ)` or a `state(d)` instance, depending on whether a
-reply is modelled as a read of the far end; `term` is the #106 terminal-control
-atom, whose frame condition is a hardware enable bit rather than a region. Both
-are placed before this RFC is filed.
+The basis owes a home to every label the surface carries, and the two the table
+above leaves out are an instance and a combination rather than new primitives.
 
-And two given atoms, which generate none:
+`term` is `state(termios) / {get, put}`. The #106 terminal-control atom is the
+termios control register, read by `tcgetattr` and written by `tcsetattr`, which
+are the state theory's two operations over one region. Reading a keypress is a
+different label, `read(input)`.
 
-| atom | why it has none |
-|---|---|
-| `random` | no first-order denotation for a distribution — see below |
-| `blocks` | a liveness claim, and this project proves no liveness; recorded and unproved |
+`net(d)` is `state(d) + io(σ_d)`, a combination in the declaration form below.
+Its transfer splits along the theory boundary: `setsockopt` and `getsockopt` are
+`get` and `put` on socket state, `sendto` is a `put` toward the far end, and
+`recvfrom` yields a value that no region this program frames over determines.
+The sum is a conservative combination rather than a model of a socket. It
+asserts no equations between its summands, so it does not express that a
+`setsockopt` timeout changes what a later `recvfrom` does; tensor is ruled out
+for the same instance because that interaction exists, and the sum's silence
+licenses no commutation the interaction would refute. Expressing the
+interaction needs directed equations or a distributive law, which this document
+does not propose.
+Holding `net` out of the basis keeps the basis at five theories, which is the
+direction [the surface conventions](0007-thermite-3.md#5-the-effect-row) set when
+they made `alloc`, `time` and `rand` into declared state: the label set shrinks.
+The `io` summand is also what keeps the reproducibility reading below honest,
+since a row carrying one is not reproducible, which is the right answer for a
+receive.
+
+And two given atoms, which generate no frame condition. Generating no frame
+condition and carrying no equations are separate properties, and the two atoms
+differ on the second:
+
+| atom | frame condition | equations |
+|---|---|---|
+| `random` | none — no first-order denotation for a distribution, see below | undetermined |
+| `blocks` | none — a liveness claim, and this project proves no liveness | none stated |
+
+The frame-condition column is what separates `random` from `io(σ)`, and it is
+enough on its own: `io(σ)` generates one, and `random` generates none. So they
+are distinct rather than two spellings of one free signature.
+
+The equations column is open for `random`, and the commutation table below
+inherits its `random ∥ random` accept rather than computing it. Fubini is a
+theorem about product measures and needs a distribution, which the
+unparameterized atom does not carry, so attributing the row to Fubini claims
+more than the atom supplies. Read as nondeterministic choice the atom commutes,
+because the finite powerset monad is commutative; read as a free operation it
+does not commute; read as sampling it commutes by Fubini once a distribution
+exists. `random(D)` settles this by putting the distribution in the denotation,
+which is another reason the parameter position is reserved.
+
+`blocks` is recorded and unproved because its discharge route is unbuilt, rather
+than because progress cannot be stated. `diverge` shows the shape. Termination is
+a liveness property, and the language reaches it by reducing it to well-founded
+descent through `measures`, a finitary witness inside the function. Progress does
+not reduce that way, because the witness is a peer's behaviour. Binary session
+duality carries deadlock freedom
+([protocol types](0013-protocol-types.md)), so the route is settled in the
+literature and arrives with that document.
 
 `accrues` rather than `writer`: the category-theory name describes the mechanism,
 and what the primitive does is monotone accumulation, which is what "accrues"
@@ -167,7 +211,19 @@ combinations of the basis, with the language computing the rest:
 ```thermite
 effect platform(d) = state(d)
 effect journal(d)  = state(d) + exception
+effect net(d)      = state(d) + io(σ_d)
 ```
+
+`+` is the **sum** of theories in the Hyland–Plotkin–Power sense: a free
+combination, with no equations relating the summands, so nothing in one commutes
+with anything in the other. It is a different operation from the composition law
+each family carries in
+[the surface conventions](0007-thermite-3.md#5-the-effect-row) table, which says
+how a caller inherits a callee's effects. Distinct region instances combine by
+**tensor** instead — every operation of one commutes with every operation of the
+other — and that is the combination the conflict rule reads, which is why
+`write(a) ∥ write(b)` accepts. Naming the two is worth the sentence, because
+"sum" appears in both senses across these documents.
 
 The prover only ever sees primitives it knows how to encode; users get to name
 and structure their own vocabulary; and the conflict rule, composition law and
