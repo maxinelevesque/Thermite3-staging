@@ -335,6 +335,7 @@ pub fn build_file(
         // `?N` body-hole refusal — a holed proof must not ship a trust-stamped
         // artifact. Hole-free forge items contribute no reason (`None`).
         Item::Forge(forge) => crate::goal_repl::open_proof_hole_reason(forge),
+        Item::EffectDecl(_) => None,
     }) {
         return Err(ForgeError::Usage(format!(
             "`forge build` refuses a holed item: {detail} `forge build` lowers to a \
@@ -538,7 +539,7 @@ fn reachable_boundary_targets(program: &Program) -> BTreeSet<String> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 boundary-target
             // consumer yet (increments 2b-3); declares no boundary crossing (neutral
             // `None`), mirroring the inert ADT-decl arm.
-            Item::Forge(_) => None,
+            Item::Forge(_) | Item::EffectDecl(_) => None,
         })
         .collect()
 }
@@ -564,7 +565,7 @@ fn build_functions(program: &Program) -> Vec<BuildFunction> {
             // item carries no `fx` contract row → contributes no manifest
             // function (neutral value `None`). Dead-in-1a: an ADT program dies
             // at the validator before `forge build` projects its functions.
-            Item::Struct(_) | Item::Enum(_) => None,
+            Item::Struct(_) | Item::Enum(_) | Item::EffectDecl(_) => None,
         })
         .collect()
 }
@@ -597,6 +598,9 @@ fn find_entry_fn<'a>(program: &'a Program, name: &str) -> Result<&'a FnItem, For
         Some(Item::Forge(_)) => Err(ForgeError::Usage(format!(
             "`--entry {name}` names a forge-tier item (prop/lemma/proof/witness), not a \
              runnable `fn`; name a `fn`"
+        ))),
+        Some(Item::EffectDecl(_)) => Err(ForgeError::Usage(format!(
+            "`--entry {name}` names an effect declaration, not a runnable `fn`; name a `fn`"
         ))),
         None => Err(ForgeError::Usage(format!(
             "`--entry {name}` names no `fn` in the program"

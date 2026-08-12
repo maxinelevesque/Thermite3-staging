@@ -268,7 +268,7 @@ fn check_parse_facts(facts_file: &str) {
             // never appear here. Additive arm so this exhaustive `match` compiles;
             // ADT items are asserted by `tests/adt_parse.rs`, forge items by
             // `tests/forge_items.rs`.
-            Item::Struct(_) | Item::Enum(_) | Item::Forge(_) => {
+            Item::Struct(_) | Item::Enum(_) | Item::Forge(_) | Item::EffectDecl(_) => {
                 panic!(
                     "{}: unexpected non-(spec)fn item in the corpus fixture",
                     fact.name
@@ -369,7 +369,7 @@ fn recover_per_item() {
             // (`.design/basis/01-adts.md`) and forge-tier items
             // (`.design/stage1-forge-tier.md` REQ-3) do not appear. Additive arm so
             // this exhaustive `match` compiles.
-            Item::Struct(_) | Item::Enum(_) | Item::Forge(_) => {
+            Item::Struct(_) | Item::Enum(_) | Item::Forge(_) | Item::EffectDecl(_) => {
                 panic!("`ok` should be a fn, not an ADT/forge item")
             }
         }

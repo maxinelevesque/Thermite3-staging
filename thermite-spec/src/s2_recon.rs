@@ -925,7 +925,7 @@ impl OpaqueSorts {
                 Item::Enum(item) => {
                     names.insert(item.name.clone());
                 }
-                Item::Forge(_) => {}
+                Item::Forge(_) | Item::EffectDecl(_) => {}
             }
         }
         for clause in clauses {

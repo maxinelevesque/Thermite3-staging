@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 5e03364c86d7cbf259b8a4c8a3640c6cf1a6fc13ded0fd492c93fead590aa86a (re-pinned 2026-08-11 for RFC-8 step 3: the governed `thermite-spec/src/lib.rs` adds only the `effect_commutation` module declaration; Stage-4 reconstruction behavior is unchanged. prior: 30a26c7e45d1c8b687ea186f36d0a49f3ebec2e3b098a95f8702b181c9cf104c, the merged proof-cache and interpreter-pin digest.)
+audited-content-sha256: 9999634d69f46934aa7678f7bfcd1fb04960b914c56b66e9c691491d14fda2d2 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 5e03364c86d7cbf259b8a4c8a3640c6cf1a6fc13ded0fd492c93fead590aa86a.)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

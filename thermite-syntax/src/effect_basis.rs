@@ -15,9 +15,9 @@
 //! | REQ-4 | SHIPPED | [`Entry`] pairs a theory instance with its capability operations. |
 //! | REQ-5 | SHIPPED | [`entry_for_effect`] exhaustively maps all nine [`Effect`] variants. |
 //! | REQ-6 | SHIPPED | [`BasisEntry::Combination`] represents `net` as state plus free I/O. |
-//! | REQ-7 | NOT-STARTED | Deferred to the declaration-surface increment over `ast.rs` and `parser.rs`. |
+//! | REQ-7 | SHIPPED | `EffectDeclItem`, the parser, and [`resolve_declaration`] close declarations over the five primitives. |
 //! | REQ-8 | SHIPPED | `thermite_spec::effect_commutation` computes facts from these entries. |
-//! | REQ-9 | NOT-STARTED | Deferred to the lowerer diagnostic increment. |
+//! | REQ-9 | SHIPPED | `thermite_lower::LowerError::EffectNotSubsumed` reports [`entry_for_effect`] and its frame condition without changing the missing set. |
 //! | REQ-10 | NOT-STARTED | Future RFC-9 scope owns region-granular checking and conflict detection. |
 //! | REQ-11 | SHIPPED | This module does not alter `Effect`, lowering masks, or verified subsumption. |
 //! | REQ-12 | SHIPPED | [`BasisEntry::footprint`] projects region reads and writes. |
@@ -26,7 +26,7 @@
 
 use std::collections::BTreeSet;
 
-use crate::ast::Effect;
+use crate::ast::{Effect, EffectDeclItem, EffectPrimitive};
 
 /// A named instance parameter carried by a theory.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -222,6 +222,37 @@ pub fn entry_for_effect(effect: &Effect) -> BasisEntry {
         Effect::Panic => BasisEntry::Primitive(Entry::operationless(Theory::Exception)),
         Effect::Diverge => BasisEntry::Primitive(Entry::operationless(Theory::Partiality)),
         Effect::Term => BasisEntry::Primitive(state_write("termios")),
+    }
+}
+
+/// Resolve a parsed declaration to basis primitives before lowering (REQ-7).
+pub fn resolve_declaration(declaration: &EffectDeclItem) -> BasisEntry {
+    let entries = declaration
+        .combination
+        .iter()
+        .map(|primitive| match primitive {
+            EffectPrimitive::State(instance) => {
+                Entry::state(instance, [Operation::Get, Operation::Put])
+            }
+            EffectPrimitive::Accrues(monoid) => Entry {
+                theory: Theory::Accrues(monoid.clone()),
+                operations: [Operation::Accrue].into_iter().collect(),
+            },
+            EffectPrimitive::Exception => Entry {
+                theory: Theory::Exception,
+                operations: [Operation::Raise].into_iter().collect(),
+            },
+            EffectPrimitive::Partiality => Entry {
+                theory: Theory::Partiality,
+                operations: [Operation::FailToTerminate].into_iter().collect(),
+            },
+            EffectPrimitive::Io(signature) => Entry::io(signature),
+        })
+        .collect::<Vec<_>>();
+
+    match entries.as_slice() {
+        [entry] => BasisEntry::Primitive(entry.clone()),
+        _ => BasisEntry::Combination(entries),
     }
 }
 

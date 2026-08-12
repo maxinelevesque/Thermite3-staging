@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 (#349), the Rust→Lean obligation exporter: the change to this doc's governed lib roots is additive — `mod lean_smt_export;` in forge/src/main.rs (the SMT-tactic obligation exporter module); the workspace/crate structure is otherwise unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `pub mod classifier;` + `mod strat_tv;`; 2026-06-17 umbrella REQ-7 / AC-12 §6 metrics dashboard `mod metrics;`; stage-1 REQ-10/AC-14 G1 gate seven-verdict test module)
-audited-content-sha256: 67ba4bf7a77b87f58106e8f639e119d61f91966bb0fe618f3a17514bf31bc53c (re-pinned 2026-08-11 for RFC-8 step 3: thermite-spec's governed crate root adds the `effect_commutation` module. prior: 18b6f3fc0577100492e4a71323dd600d7989945a141c88e8c96e0d7f14f0197a, re-pinned for step 1's additive `effect_basis` module.)
+audited-content-sha256: 9366998c153983eb57f036803ed7d56c81a702e5059d0fac10da85d204c80db1 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 67ba4bf7a77b87f58106e8f639e119d61f91966bb0fe618f3a17514bf31bc53c.)
 pin-extract: thermite-syntax/src/lib.rs=code-normalized
 pin-extract: thermite-spec/src/lib.rs=code-normalized
 pin-extract: thermite-lower/src/lib.rs=code-normalized

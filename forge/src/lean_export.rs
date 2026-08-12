@@ -2394,6 +2394,11 @@ fn export_item_with_mode(
                     .to_string(),
             ))
         }
+        Item::EffectDecl(_) => {
+            return Err(ExportRefusal::OutOfFragment(
+                "effect declaration (algebra metadata, no certification obligation)".to_string(),
+            ))
+        }
     };
 
     // The env coercion frame (sorts free names).

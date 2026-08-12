@@ -176,6 +176,8 @@ pub enum SyntaxError {
     /// Only reachable in a `bv` build (else `BvTagWithoutShadowPlumbing`
     /// fires first).
     BvWidthInvalid { found: String, span: Span },
+    /// A declaration RHS named something outside RFC-8's closed basis.
+    UnknownEffectPrimitive { found: String, span: Span },
 }
 
 /// The maximum recursive-descent nesting depth the parser will follow before
@@ -231,7 +233,8 @@ impl SyntaxError {
             | SyntaxError::BodyHoleInProofBlock { span, .. }
             | SyntaxError::BvTagWithoutShadowPlumbing { span }
             | SyntaxError::BvTagOnPrecondition { span }
-            | SyntaxError::BvWidthInvalid { span, .. } => *span,
+            | SyntaxError::BvWidthInvalid { span, .. }
+            | SyntaxError::UnknownEffectPrimitive { span, .. } => *span,
         }
     }
 }
@@ -316,6 +319,11 @@ impl std::fmt::Display for SyntaxError {
                 f,
                 "`@{found}` at byte {} is not a valid `@bv` width (expected one of \
                  `bv8`/`bv16`/`bv32`/`bv64`)",
+                span.start
+            ),
+            SyntaxError::UnknownEffectPrimitive { found, span } => write!(
+                f,
+                "unknown effect primitive `{found}` at byte {}; expected one of state, accrues, exception, partiality, io",
                 span.start
             ),
         }
@@ -635,7 +643,8 @@ impl<'a> Parser<'a> {
                     | TokKind::HashBracket
                     | TokKind::Struct
                     | TokKind::Enum
-            ) {
+            ) || matches!(self.peek(), TokKind::Ident(word) if word == "effect")
+            {
                 break;
             }
             self.bump();
@@ -654,6 +663,13 @@ impl<'a> Parser<'a> {
         } else {
             None
         };
+
+        if matches!(self.peek(), TokKind::Ident(word) if word == "effect") {
+            if attr.is_some() {
+                return Err(self.unexpected("an effect declaration takes no attribute"));
+            }
+            return self.parse_effect_decl(start_span);
+        }
 
         // A `struct` item (`.design/basis/01-adts.md` REQ-1) accepts the
         // `#[sealed]` abstraction-barrier attribute (REQ-8) and no other; an
@@ -752,6 +768,47 @@ impl<'a> Parser<'a> {
             Err(self.unexpected(
                 "`fn`, `spec fn`, `#[slag(...)]`, `#[boundary(\"...\")]`, or `#[sealed] struct`",
             ))
+        }
+    }
+
+    fn parse_effect_decl(&mut self, start_span: Span) -> PResult<Item> {
+        self.expect_contextual("effect")?;
+        let name = self.take_ident("an effect name")?;
+        self.consume(&TokKind::LParen, "`(`")?;
+        let param = self.take_ident("an effect parameter")?;
+        self.consume(&TokKind::RParen, "`)`")?;
+        self.consume(&TokKind::Eq, "`=`")?;
+
+        let mut combination = vec![self.parse_effect_primitive()?];
+        while self.eat(&TokKind::Plus) {
+            combination.push(self.parse_effect_primitive()?);
+        }
+        let span = start_span.to(self.prev_span());
+        Ok(Item::EffectDecl(EffectDeclItem {
+            name,
+            param,
+            combination,
+            span,
+        }))
+    }
+
+    fn parse_effect_primitive(&mut self) -> PResult<EffectPrimitive> {
+        let span = self.peek_span();
+        let name = self.take_ident("an effect-basis primitive")?;
+        match name.as_str() {
+            "state" | "accrues" | "io" => {
+                self.consume(&TokKind::LParen, "`(`")?;
+                let argument = self.take_ident("a primitive argument")?;
+                self.consume(&TokKind::RParen, "`)`")?;
+                Ok(match name.as_str() {
+                    "state" => EffectPrimitive::State(argument),
+                    "accrues" => EffectPrimitive::Accrues(argument),
+                    _ => EffectPrimitive::Io(argument),
+                })
+            }
+            "exception" => Ok(EffectPrimitive::Exception),
+            "partiality" => Ok(EffectPrimitive::Partiality),
+            _ => Err(SyntaxError::UnknownEffectPrimitive { found: name, span }),
         }
     }
 

@@ -163,6 +163,7 @@ pub fn lower_l2(program: &Program) -> Result<String, LowerError> {
                     span,
                 });
             }
+            Item::EffectDecl(_) => {}
         }
     }
 
@@ -425,7 +426,7 @@ pub fn bound_string(program: &Program) -> String {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 L2 consumer yet
             // (increments 2b-3); no loop body to unwind-bound → contributes nothing
             // (neutral `None`), mirroring the inert ADT-decl arm.
-            Item::Forge(_) => None,
+            Item::Forge(_) | Item::EffectDecl(_) => None,
         })
         .max()
         .unwrap_or(SLICE_BOUND + 1);
