@@ -643,7 +643,7 @@ impl<'a> Parser<'a> {
                     | TokKind::HashBracket
                     | TokKind::Struct
                     | TokKind::Enum
-            ) || matches!(self.peek(), TokKind::Ident(word) if word == "effect")
+            ) || matches!(self.peek(), TokKind::Ident(word) if matches!(word.as_str(), "effect" | "shared" | "concurrent"))
             {
                 break;
             }
@@ -669,6 +669,18 @@ impl<'a> Parser<'a> {
                 return Err(self.unexpected("an effect declaration takes no attribute"));
             }
             return self.parse_effect_decl(start_span);
+        }
+        if matches!(self.peek(), TokKind::Ident(word) if word == "shared") {
+            if attr.is_some() {
+                return Err(self.unexpected("a shared declaration takes no attribute"));
+            }
+            return self.parse_shared_decl(start_span);
+        }
+        if matches!(self.peek(), TokKind::Ident(word) if word == "concurrent") {
+            if attr.is_some() {
+                return Err(self.unexpected("a concurrent declaration takes no attribute"));
+            }
+            return self.parse_concurrent(start_span);
         }
 
         // A `struct` item (`.design/basis/01-adts.md` REQ-1) accepts the
@@ -790,6 +802,36 @@ impl<'a> Parser<'a> {
             combination,
             span,
         }))
+    }
+
+    fn parse_shared_decl(&mut self, start_span: Span) -> PResult<Item> {
+        self.expect_contextual("shared")?;
+        let name = self.take_ident("a shared region name")?;
+        self.consume(&TokKind::Colon, "`:`")?;
+        let ty = self.parse_type()?;
+        let span = start_span.to(self.prev_span());
+        Ok(Item::SharedDecl(SharedDeclItem { name, ty, span }))
+    }
+
+    fn parse_concurrent(&mut self, start_span: Span) -> PResult<Item> {
+        self.expect_contextual("concurrent")?;
+        let name = self.take_ident("a concurrent composition name")?;
+        self.consume(&TokKind::LBrace, "`{`")?;
+        let mut roots = Vec::new();
+        if !self.check(&TokKind::RBrace) {
+            loop {
+                roots.push(self.take_ident("an executable root name")?);
+                if !self.eat(&TokKind::Comma) {
+                    break;
+                }
+                if self.check(&TokKind::RBrace) {
+                    break;
+                }
+            }
+        }
+        self.consume(&TokKind::RBrace, "`}`")?;
+        let span = start_span.to(self.prev_span());
+        Ok(Item::Concurrent(ConcurrentItem { name, roots, span }))
     }
 
     fn parse_effect_primitive(&mut self) -> PResult<EffectPrimitive> {
@@ -1748,7 +1790,7 @@ impl<'a> Parser<'a> {
         match name.as_str() {
             "read" | "write" | "net" => {
                 self.consume(&TokKind::LParen, "`(`")?;
-                let arg = self.take_ident("an effect path argument")?;
+                let arg = self.parse_region_path()?;
                 self.consume(&TokKind::RParen, "`)`")?;
                 Ok(match name.as_str() {
                     "read" => Effect::Read(arg),
@@ -1769,6 +1811,14 @@ impl<'a> Parser<'a> {
                 span: self.prev_span(),
             }),
         }
+    }
+
+    fn parse_region_path(&mut self) -> PResult<RegionPath> {
+        let mut segments = vec![self.take_ident("an effect path argument")?];
+        while self.eat(&TokKind::Dot) {
+            segments.push(self.take_ident("a region field name after `.`")?);
+        }
+        Ok(RegionPath { segments })
     }
 
     // ---- blocks + statements ----------------------------------------------

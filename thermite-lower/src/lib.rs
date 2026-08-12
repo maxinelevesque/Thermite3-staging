@@ -32,7 +32,7 @@ pub mod l1;
 pub mod l2;
 pub mod lower;
 
-pub use effects::{check_effects, subsumes};
+pub use effects::{analyze_effects, check_effects, subsumes, EffectAnalysis, EffectWarning};
 pub use l1::lower_l1;
 pub use l2::{bound_string, lower_l2};
 pub use lower::{

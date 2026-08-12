@@ -39,13 +39,13 @@ fn row_from_mask(mask: u16) -> EffectRow {
     }
     let mut effects = Vec::new();
     if mask & (1 << 0) != 0 {
-        effects.push(Effect::Read("p".to_string()));
+        effects.push(Effect::Read("p".to_string().into()));
     }
     if mask & (1 << 1) != 0 {
-        effects.push(Effect::Write("p".to_string()));
+        effects.push(Effect::Write("p".to_string().into()));
     }
     if mask & (1 << 2) != 0 {
-        effects.push(Effect::Net("d".to_string()));
+        effects.push(Effect::Net("d".to_string().into()));
     }
     if mask & (1 << 3) != 0 {
         effects.push(Effect::Alloc);

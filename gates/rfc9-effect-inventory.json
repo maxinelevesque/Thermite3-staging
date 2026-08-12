@@ -1,0 +1,314 @@
+{
+  "json_program_fields": [
+    {
+      "address": "$.reject[0].program",
+      "atoms": [
+        "read(stdin)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/effect-stdlib/cases.json"
+    },
+    {
+      "address": "$.reject[1].program",
+      "atoms": [
+        "read(stdin)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/effect-stdlib/cases.json"
+    },
+    {
+      "address": "$.probe_allowed_when_fx_widens[0].program",
+      "atoms": [
+        "read(src)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/sandbox/cases.json"
+    },
+    {
+      "address": "$.accept[1].program",
+      "atoms": [
+        "net(a)",
+        "read(a)",
+        "write(a)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/slag/slag.json"
+    },
+    {
+      "address": "$.reject[5].program",
+      "atoms": [
+        "net(a)",
+        "read(a)",
+        "write(a)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/vacuity/triage.json"
+    }
+  ],
+  "rust_mixed_sites": [
+    {
+      "atoms": [
+        "read(a)",
+        "write(b)",
+        "write(log)"
+      ],
+      "classification": "non-program cache-key token fixtures",
+      "path": "forge/src/cache.rs",
+      "sites": 5
+    },
+    {
+      "atoms": [
+        "write(db.child)"
+      ],
+      "classification": "structured diagnostic expected-output token",
+      "path": "forge/src/cli.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
+        "net(z)",
+        "read(x)",
+        "write(y)"
+      ],
+      "classification": "non-program manifest tokens and documentation",
+      "path": "forge/src/manifest.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "net(_)",
+        "net(s)",
+        "net(sock)",
+        "read(_)",
+        "read(a)",
+        "read(anything)",
+        "read(foo)",
+        "read(input)",
+        "read(s)",
+        "read(src)",
+        "read(x)",
+        "write(_)",
+        "write(b)",
+        "write(dst)",
+        "write(o)",
+        "write(output)"
+      ],
+      "classification": "migrated program fixtures plus sandbox token fixtures and documentation",
+      "path": "forge/src/sandbox.rs",
+      "sites": 40
+    },
+    {
+      "atoms": [
+        "net(a)",
+        "read(a)",
+        "write(a)"
+      ],
+      "classification": "migrated maximal-row program fixtures",
+      "path": "forge/src/vacuity.rs",
+      "sites": 6
+    },
+    {
+      "atoms": [
+        "read(path)",
+        "read(source_path)"
+      ],
+      "classification": "Rust filesystem API calls; not Thermite syntax",
+      "path": "forge/src/verified_build.rs",
+      "sites": 3
+    },
+    {
+      "atoms": [
+        "read(path)"
+      ],
+      "classification": "Rust filesystem API calls; not Thermite syntax",
+      "path": "forge/src/verified_build/composition.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
+        "write(log)"
+      ],
+      "classification": "migrated programs plus expected-output tokens",
+      "path": "forge/tests/divergence_cache_effect_row.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(input)",
+        "write(output)"
+      ],
+      "classification": "migrated program fixtures",
+      "path": "forge/tests/divergence_effect_link_string_wrappers.rs",
+      "sites": 5
+    },
+    {
+      "atoms": [
+        "net(db)",
+        "write(db)",
+        "write(log)"
+      ],
+      "classification": "migrated program fixtures",
+      "path": "forge/tests/divergence_provenance.rs",
+      "sites": 6
+    },
+    {
+      "atoms": [
+        "read(input)",
+        "write(output)"
+      ],
+      "classification": "expected-output tokens for migrated editor program",
+      "path": "forge/tests/editor_runs.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(input)"
+      ],
+      "classification": "expected-output tokens for migrated conformance program",
+      "path": "forge/tests/effect_link_conformance.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
+        "net(socket)",
+        "read(stdin)",
+        "write(heap)",
+        "write(stdout)"
+      ],
+      "classification": "migrated programs plus expected diagnostics",
+      "path": "forge/tests/freestanding_target.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(_)",
+        "read(src)",
+        "write(out)"
+      ],
+      "classification": "migrated programs plus expected-output tokens",
+      "path": "forge/tests/sandbox_conformance.rs",
+      "sites": 7
+    },
+    {
+      "atoms": [
+        "read(path)"
+      ],
+      "classification": "Rust filesystem API call; not Thermite syntax",
+      "path": "forge/tests/verified_build.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
+        "net(d)",
+        "read(missing)",
+        "read(state.child)",
+        "read(x)",
+        "write(state)",
+        "write(y)"
+      ],
+      "classification": "migrated programs plus intentional undeclared-root rejection fixture",
+      "path": "thermite-lower/tests/effects.rs",
+      "sites": 9
+    },
+    {
+      "atoms": [
+        "net(domain)",
+        "read(path)",
+        "write(path)"
+      ],
+      "classification": "generated language documentation tokens",
+      "path": "thermite-skill/src/generate.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "net(domain)",
+        "read(path)",
+        "write(path)"
+      ],
+      "classification": "generated language documentation expectations",
+      "path": "thermite-skill/tests/skill.rs",
+      "sites": 3
+    },
+    {
+      "atoms": [
+        "net(db)"
+      ],
+      "classification": "migrated program fixtures",
+      "path": "thermite-spec/tests/sealed_validate.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(missing.field)",
+        "read(scheduler.runqueue)",
+        "read(scheduler.runqueue.head)",
+        "write(scheduler)",
+        "write(scheduler.runqueue)",
+        "write(scheduler.timers)"
+      ],
+      "classification": "RFC-9 program fixtures and expected diagnostics",
+      "path": "thermite-spec/tests/verified_effect_rows.rs",
+      "sites": 7
+    },
+    {
+      "atoms": [
+        "read(rel)"
+      ],
+      "classification": "parser token fixtures; not complete programs",
+      "path": "thermite-syntax/tests/conformance.rs",
+      "sites": 3
+    },
+    {
+      "atoms": [
+        "read(scheduler.runqueue.head)"
+      ],
+      "classification": "RFC-9 parser program fixtures and expected syntax",
+      "path": "thermite-syntax/tests/verified_effect_rows.rs",
+      "sites": 1
+    }
+  ],
+  "schema": 2,
+  "summary": {
+    "json_missing_shared": 0,
+    "json_program_fields_with_state_effects": 5,
+    "rust_files_reviewed": 22,
+    "rust_reviewed_sites": 125,
+    "th_missing_shared": 0,
+    "th_programs_with_state_effects": 4,
+    "tracked_th_files": 65
+  },
+  "thermite_programs": [
+    {
+      "atoms": [
+        "read(stdin)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/compose_demo.th"
+    },
+    {
+      "atoms": [
+        "read(stdin)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/effect_demo.th"
+    },
+    {
+      "atoms": [
+        "net(db)",
+        "write(db)",
+        "write(log)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/provenance_demo.th"
+    },
+    {
+      "atoms": [
+        "read(input)",
+        "write(output)"
+      ],
+      "missing_shared": [],
+      "path": "examples/editor/editor.th"
+    }
+  ]
+}

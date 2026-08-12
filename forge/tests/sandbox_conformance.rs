@@ -263,7 +263,7 @@ fn probe_allowed_when_fx_widens() {
     // The oracle's `rf` fixture (declared inline per cases.json `program`).
     let fixture = write_fixture(
         "rf",
-        "fn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }\n",
+        "shared src: u8\nfn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }\n",
     );
     let (ok, stdout, stderr) = run_forge_build(&[
         fixture.to_str().unwrap(),

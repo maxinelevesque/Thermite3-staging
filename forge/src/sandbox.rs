@@ -663,8 +663,9 @@ mod tests {
     // widens. Anchored to the oracle's `rf` fixture shape.
     #[test]
     fn transitive_fx_carries_read() {
-        let prog =
-            parse("fn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }");
+        let prog = parse(
+            "shared src: u8\nfn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }",
+        );
         let fx = transitive_fx(&prog, "rf");
         assert!(fx.contains("read(src)"), "rf declares read(src): {fx:?}");
         assert!(syscall_allowlist(&fx).contains(&257), "→ openat widened");
@@ -675,7 +676,7 @@ mod tests {
     #[test]
     fn transitive_fx_unions_callee_row() {
         let prog = parse(
-            "fn helper(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }\n\
+            "shared src: u8\nfn helper(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }\n\
              fn caller(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { helper(x) }",
         );
         let fx = transitive_fx(&prog, "caller");

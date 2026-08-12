@@ -145,7 +145,7 @@ pub fn addresses_of(program: &Program) -> Vec<AddressEntry> {
             // This additive no-op arm keeps the same-crate exhaustive `match`
             // compiling; types gain no `forge edit` address.
             Item::Struct(_) | Item::Enum(_) => {}
-            Item::EffectDecl(_) => {}
+            Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
             // Stage-1 forge-tier items (`.design/stage1-forge-tier.md` REQ-3): the
             // prop/lemma/proof/witness addressing, including the proof-block
             // addresses (`f.proof.ensures#k`) and the `?pN` proof-hole form (AC-7).

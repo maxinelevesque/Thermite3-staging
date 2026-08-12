@@ -281,8 +281,8 @@ fn ambient_read_fx_fn_is_refused() {
          stdout:{stdout}\nstderr:{stderr}"
     );
     assert!(
-        stderr.contains("read"),
-        "the refusal must NAME the rejected `read` effect:\n{stderr}"
+        stderr.contains("cannot classify region") && stderr.contains("clock"),
+        "the refusal must name the first unresolved canonical region:\n{stderr}"
     );
     assert!(
         stderr.contains("kernel"),
@@ -295,7 +295,7 @@ fn ambient_write_net_term_fx_refuse_identically() {
     // A self-contained `fx write` boundary fn → refused.
     let write_th = write_fixture(
         "write_fx",
-        "#[boundary(\"os::write\")] fn put() -> bool\n  ! write(stdout)
+        "shared stdout: u8\n#[boundary(\"os::write\")] fn put() -> bool\n  ! write(stdout)
   requires true\n  ensures true\n  ;\n",
     );
     let (ok_w, _so, se_w) =
@@ -310,7 +310,7 @@ fn ambient_write_net_term_fx_refuse_identically() {
     // A self-contained `fx net` boundary fn → refused.
     let net_th = write_fixture(
         "net_fx",
-        "#[boundary(\"os::net\")] fn dial() -> bool\n  ! net(socket)
+        "shared socket: u8\n#[boundary(\"os::net\")] fn dial() -> bool\n  ! net(socket)
   requires true\n  ensures true\n  ;\n",
     );
     let (ok_n, _so2, se_n) =
@@ -336,25 +336,26 @@ fn ambient_write_net_term_fx_refuse_identically() {
 }
 
 #[test]
-fn pure_and_alloc_fx_fns_build_for_freestanding() {
-    // `sum` is `fx pure` → admitted (built above). `string_demo` carries `fx alloc`
-    // fns → admitted (alloc is on the kernel admit list, OQ-2) and the `use TString
-    // as String;` alias compiles under no_std (it does not collide with the prelude,
-    // which imports only `Vec`).
+fn alloc_fails_closed_without_bulla_heap_classification() {
+    // `sum` is `fx pure` and remains admitted (built above). `string_demo`
+    // carries `alloc`, whose canonical basis footprint is `write(heap)`; without
+    // a Bulla policy classifying heap as kernel-owned it must fail closed too.
     let string_demo = corpus_dir().join("string_demo.th");
-    let (ok, stdout, stderr) = run_forge_build(&[
-        string_demo.to_str().unwrap(),
-        "--target",
-        "freestanding",
-        "--json",
-    ]);
+    let (ok, stdout, stderr) =
+        run_forge_build(&[string_demo.to_str().unwrap(), "--target", "freestanding"]);
     assert!(
-        ok,
-        "a `fx pure`/`alloc` program must BUILD for the kernel target (alloc is \
-         admitted):\nstdout:{stdout}\nstderr:{stderr}"
+        !ok,
+        "an allocating program without a Bulla heap classification must fail:\n\
+         stdout:{stdout}\nstderr:{stderr}"
     );
-    let v: serde_json::Value = serde_json::from_str(&stdout).expect("manifest JSON");
-    assert_eq!(v["crate_type"], "rlib");
+    assert!(
+        stderr.contains("region `heap`"),
+        "the refusal names heap:\n{stderr}"
+    );
+    assert!(
+        stderr.contains("alloc"),
+        "the refusal names alloc:\n{stderr}"
+    );
 }
 
 // ---- AC-3: --target freestanding + --entry is a usage error ----------------------------

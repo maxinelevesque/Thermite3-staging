@@ -113,7 +113,7 @@ fn cert_for<'a>(certs: &'a [Value], item: &str) -> &'a Value {
 /// signature, contract and body — the row is the ONLY difference, which is what
 /// makes the pair collide.
 fn program_with_row(row: &str) -> String {
-    format!("fn row_item(x: u64) -> u64\n  ! {row}\n  requires x < 1000\n  ensures result == x\n{{\n  x\n}}\n")
+    format!("shared log: u8\nfn row_item(x: u64) -> u64\n  ! {row}\n  requires x < 1000\n  ensures result == x\n{{\n  x\n}}\n")
 }
 
 /// REQ-2, stated as a test: a HIT must equal a FRESH VERIFY on the oracle

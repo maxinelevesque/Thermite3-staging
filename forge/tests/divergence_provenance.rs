@@ -139,6 +139,7 @@ fn assert_sealed_launder_rejected(outcome: &CheckOutcome, item: &str, sealed_ty:
 /// Taint axis: `Sql { stmt: input.raw }` launders a `Tainted` into the SQL sink's
 /// clean type without `parameterize`. The SQLi-un-typeable centerpiece is hollow.
 const TAINT_BYPASS: &str = r#"
+shared db: u8
 struct Tainted { raw: u64 }
 #[sealed] struct Sql { stmt: u64 }
 
@@ -160,6 +161,7 @@ fn bypass_query(input: Tainted) -> u64
 /// Secret axis: `Public { val: s.val }` launders a `Secret` into the public sink's
 /// clean type without `declassify`. The secret reaches `emit` un-declassified.
 const SECRET_BYPASS: &str = r#"
+shared log: u8
 struct Secret { val: u64 }
 #[sealed] struct Public { val: u64 }
 
@@ -181,6 +183,7 @@ fn bypass_emit(s: Secret) -> u64
 /// Capability axis: `Authorized { id: u.id }` forges the capability token without
 /// `authorize`. The protected op `delete` runs on an unauthorized `User`.
 const CAP_BYPASS: &str = r#"
+shared db: u8
 struct User { id: u64 }
 #[sealed] struct Authorized { id: u64 }
 

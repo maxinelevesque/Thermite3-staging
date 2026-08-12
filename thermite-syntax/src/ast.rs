@@ -136,6 +136,45 @@ use crate::lexer::Span;
 /// An identifier (a single name segment).
 pub type Ident = String;
 
+/// A shared-state region path. The first segment names a [`SharedDeclItem`];
+/// later segments name fields reached through declared types.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct RegionPath {
+    pub segments: Vec<Ident>,
+}
+
+impl RegionPath {
+    pub fn root(name: Ident) -> Self {
+        Self {
+            segments: vec![name],
+        }
+    }
+
+    pub fn display(&self) -> String {
+        self.segments.join(".")
+    }
+}
+
+impl std::fmt::Display for RegionPath {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.display())
+    }
+}
+
+impl From<&str> for RegionPath {
+    fn from(value: &str) -> Self {
+        Self {
+            segments: value.split('.').map(str::to_string).collect(),
+        }
+    }
+}
+
+impl From<String> for RegionPath {
+    fn from(value: String) -> Self {
+        Self::from(value.as_str())
+    }
+}
+
 /// A whole parsed program: the recovered top-level items, in source order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Program {
@@ -184,6 +223,10 @@ pub enum Item {
     Forge(ForgeItem),
     /// An RFC-8 user-declared effect combination.
     EffectDecl(EffectDeclItem),
+    /// An RFC-9 declared shared-state root: `shared NAME: TYPE`.
+    SharedDecl(SharedDeclItem),
+    /// An RFC-9 named set of roots that may execute concurrently.
+    Concurrent(ConcurrentItem),
 }
 
 impl Item {
@@ -199,8 +242,26 @@ impl Item {
             Item::Enum(e) => &e.name,
             Item::Forge(forge) => forge.name(),
             Item::EffectDecl(effect) => &effect.name,
+            Item::SharedDecl(shared) => &shared.name,
+            Item::Concurrent(composition) => &composition.name,
         }
     }
+}
+
+/// `shared NAME: TYPE` — the root of a field-derived region tree.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SharedDeclItem {
+    pub name: Ident,
+    pub ty: Type,
+    pub span: Span,
+}
+
+/// `concurrent NAME { ROOT, ... }` — roots compared for effect commutation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConcurrentItem {
+    pub name: Ident,
+    pub roots: Vec<Ident>,
+    pub span: Span,
 }
 
 /// `effect name(param) = primitive + ...` (effect-algebra.md REQ-7).
@@ -679,11 +740,11 @@ pub enum EffectRow {
 }
 
 /// A single effect in a non-`pure` row.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Effect {
-    Read(Ident),
-    Write(Ident),
-    Net(Ident),
+    Read(RegionPath),
+    Write(RegionPath),
+    Net(RegionPath),
     Alloc,
     Time,
     Rand,

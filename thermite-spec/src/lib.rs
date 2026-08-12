@@ -57,6 +57,7 @@
 pub mod classifier;
 pub mod combinators;
 pub mod effect_commutation;
+pub mod regions;
 pub mod restratify;
 pub mod s2_recon;
 pub mod schemes;
@@ -64,6 +65,7 @@ pub mod validator;
 
 pub use classifier::{admitted, classify, parse_frm, to_wire, Frm, RejectReason, Sort2, Verdict};
 pub use combinators::{all, lookup, ArgKind, CombinatorSig, ResultKind};
+pub use regions::{effect_path, RegionError, RegionIndex};
 pub use restratify::{certify, restratify, Certification, RestratResult, WithheldReason};
 pub use s2_recon::{
     canonical_source_expr, from_clause as s2_recon_from_clause,

@@ -166,7 +166,10 @@ impl CallGraph {
                 // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 call-graph
                 // consumer yet (increments 2b-3); not a callable node — insert
                 // nothing, mirroring the inert ADT-decl arm.
-                Item::Forge(_) | Item::EffectDecl(_) => {}
+                Item::Forge(_)
+                | Item::EffectDecl(_)
+                | Item::SharedDecl(_)
+                | Item::Concurrent(_) => {}
             }
         }
         CallGraph { nodes }
@@ -367,7 +370,11 @@ pub fn verified_closure(
                     variants.insert(variant.name.clone());
                 }
             }
-            Item::Struct(_) | Item::Forge(_) | Item::EffectDecl(_) => {}
+            Item::Struct(_)
+            | Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_) => {}
         }
     }
 
@@ -505,7 +512,11 @@ fn collect_verified_calls(item: &Item) -> Vec<VerifiedCall> {
                 collect_verified_expr_calls(&inv.expr, &mut calls);
             }
         }
-        Item::Enum(_) | Item::Forge(_) | Item::EffectDecl(_) => {}
+        Item::Enum(_)
+        | Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_) => {}
     }
     calls
 }

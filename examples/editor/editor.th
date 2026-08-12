@@ -517,3 +517,5 @@ fn run() -> u64
   let restored: u64 = raw_mode_off();
   0
 }
+shared input: u8
+shared output: u8

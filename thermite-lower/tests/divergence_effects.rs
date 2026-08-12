@@ -99,7 +99,7 @@ fn divergence_while_condition_callee_is_checked() {
             tail: None,
         },
     );
-    let callee = fn_with_body(
+    let mut callee = fn_with_body(
         "effectful",
         EffectRow::Set(vec![Effect::Alloc]),
         Block {
@@ -107,6 +107,12 @@ fn divergence_while_condition_callee_is_checked() {
             tail: None,
         },
     );
+    let Item::Fn(callee_fn) = &mut callee else {
+        unreachable!()
+    };
+    // A boundary's declared row is its trusted direct footprint. An empty
+    // in-language body would correctly infer pure under RFC-9.
+    callee_fn.body = None;
     let prog = Program {
         items: vec![caller, callee],
     };
@@ -119,7 +125,8 @@ fn divergence_while_condition_callee_is_checked() {
                 errs.iter().any(|e| matches!(
                     e,
                     LowerError::EffectNotSubsumed { callee, missing, .. }
-                        if callee == "effectful" && *missing == vec![Effect::Alloc]
+                        if callee == "inferred transitive footprint"
+                            && *missing == vec![Effect::Alloc]
                 )),
                 "while-condition callee must be checked; expected EffectNotSubsumed \
                  {{callee: effectful, missing: [Alloc]}}, got {errs:?}"

@@ -11,6 +11,6 @@
     { "name": "ens_omits_result",   "cause": "EnsOmitsResult",      "program": "fn f(x: u32) -> u32 ! pure requires true ensures x > 0 { x }", "why": "(b) non-unit return but ens does not mention `result` (§4.1)." },
     { "name": "ens_eq_req",         "cause": "EnsImpliedByReq",     "program": "fn f(x: u32) -> () ! pure requires x > 0 ensures x > 0 { }", "why": "(c) ens is syntactically identical to req (unit -> (b) does not pre-empt)." },
     { "name": "ens_conjunct_req",   "cause": "EnsImpliedByReq",     "program": "fn f(x: u32) -> () ! pure requires x > 0 && x < 10 ensures x > 0 { }", "why": "(c) ens is a conjunct of req's && chain." },
-    { "name": "maximal_fx_no_slag", "cause": "MaximalFxWithoutSlag", "program": "fn f(x: u32) -> u32 ! read(a), write(a), net(a), alloc, time, rand, panic, diverge requires true ensures result == x { x }", "why": "(d) fx row covers all 8 effect kinds and there is no #[slag] justification." }
+    { "name": "maximal_fx_no_slag", "cause": "MaximalFxWithoutSlag", "program": "shared a: u8\nfn f(x: u32) -> u32 ! read(a), write(a), net(a), alloc, time, rand, panic, diverge requires true ensures result == x { x }", "why": "(d) fx row covers all 8 effect kinds and there is no #[slag] justification." }
   ]
 }

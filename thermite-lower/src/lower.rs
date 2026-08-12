@@ -234,6 +234,8 @@ pub enum LowerError {
         missing: Vec<thermite_syntax::ast::Effect>,
         span: Span,
     },
+    /// RFC-9 region metadata or concurrent-footprint rejection.
+    EffectAnalysis { detail: String, span: Span },
 }
 
 /// One explicit public function in an L3 verified library artifact
@@ -320,6 +322,12 @@ impl std::fmt::Display for LowerError {
                     atoms.join(", ")
                 )
             }
+            LowerError::EffectAnalysis { detail, span } => write!(
+                f,
+                "effect analysis failed at byte {}..{}: {detail}",
+                span.start,
+                span.end()
+            ),
         }
     }
 }
@@ -1105,7 +1113,9 @@ fn lower_with_profile(
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering/cert
             // consumer yet (increments 2b-3); emit nothing, mirroring the inert
             // ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) => continue,
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
+                continue
+            }
         };
         out.push('\n');
         out.push_str(&item_src);
@@ -1185,7 +1195,7 @@ fn program_needs_kernel_alloc(program: &Program) -> bool {
                 .iter()
                 .any(|field| type_needs_kernel_alloc(&field.ty)),
         }),
-        Item::Forge(_) | Item::EffectDecl(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
     })
 }
 
@@ -1812,7 +1822,7 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
             Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 combinator-collection
             // consumer yet (increments 2b-3); inert here, mirroring the ADT-decl arm.
-            Item::Forge(_) | Item::EffectDecl(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
         }
     }
 
@@ -4896,7 +4906,7 @@ pub(crate) fn collect_vec_elem_types(program: &Program) -> Vec<Type> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 type-reachability
             // consumer yet (increments 2b-3); contributes no Vec element types,
             // mirroring the inert ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
         }
     }
     // Cluster C5 (`.design/basis/07-strings.md` REQ-15, issue #102): the emitted
@@ -5292,7 +5302,7 @@ pub(crate) fn collect_map_kv_types(program: &Program) -> Vec<(Type, Type)> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 type-reachability
             // consumer yet (increments 2b-3); contributes no Map (K,V) pairs,
             // mirroring the inert ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
         }
     }
     pairs
@@ -5683,7 +5693,7 @@ fn program_uses_string(program: &Program) -> bool {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 String-reachability
             // consumer yet (increments 2b-3); reaches no String, so fall through
             // without returning, mirroring the inert ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
         }
     }
     false
@@ -6338,7 +6348,7 @@ pub(crate) fn program_uses_string_search(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
     })
 }
 
@@ -6526,7 +6536,7 @@ fn program_uses_numfmt(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
     })
 }
 
@@ -7099,7 +7109,7 @@ pub(crate) fn program_uses_parse(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
     })
 }
 
@@ -7361,7 +7371,7 @@ pub(crate) fn program_uses_bytes_eq(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
     })
 }
 

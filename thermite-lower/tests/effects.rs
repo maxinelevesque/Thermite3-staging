@@ -10,9 +10,10 @@
 //! checker operates on the AST regardless of how it was built, so the fixtures
 //! are authoritative.) `unwrap` is fine here — `tests/` is not gated.
 
-use thermite_lower::{check_effects, subsumes, LowerError};
+use thermite_lower::{analyze_effects, check_effects, subsumes, LowerError};
 use thermite_syntax::ast::{
-    Block, Clause, Contract, Effect, EffectRow, Expr, FnItem, Item, PrimType, Program, Type,
+    Block, Clause, Contract, Effect, EffectRow, Expr, FnItem, Item, PrimType, Program,
+    SharedDeclItem, Type,
 };
 use thermite_syntax::lexer::Span;
 
@@ -37,6 +38,7 @@ fn true_clause() -> Clause {
 /// one bare-expression `Call` per callee name in `calls`. This is the minimal
 /// caller→callee call-graph fixture the checker walks (REQ-3).
 fn fn_calling(name: &str, effects: EffectRow, calls: &[&str]) -> Item {
+    let is_effectful_leaf = calls.is_empty() && effects != EffectRow::Pure;
     let stmts = calls
         .iter()
         .map(|callee| {
@@ -58,9 +60,25 @@ fn fn_calling(name: &str, effects: EffectRow, calls: &[&str]) -> Item {
             effects,
         },
         measures: None,
-        body: Some(Block { stmts, tail: None }),
+        body: (!is_effectful_leaf).then_some(Block { stmts, tail: None }),
         holes: Vec::new(),
         refinements: Vec::new(),
+        span: span(),
+    })
+}
+
+fn boundary(name: &str, effects: EffectRow) -> Item {
+    let Item::Fn(mut function) = fn_calling(name, effects, &[]) else {
+        unreachable!()
+    };
+    function.body = None;
+    Item::Fn(function)
+}
+
+fn shared(name: &str) -> Item {
+    Item::SharedDecl(SharedDeclItem {
+        name: name.to_string(),
+        ty: Type::Prim(PrimType::U8),
         span: span(),
     })
 }
@@ -75,9 +93,9 @@ fn set(effects: Vec<Effect>) -> EffectRow {
 
 fn all_atoms() -> EffectRow {
     set(vec![
-        Effect::Read("x".to_string()),
-        Effect::Write("y".to_string()),
-        Effect::Net("d".to_string()),
+        Effect::Read("x".to_string().into()),
+        Effect::Write("y".to_string().into()),
+        Effect::Net("d".to_string().into()),
         Effect::Alloc,
         Effect::Time,
         Effect::Rand,
@@ -97,8 +115,8 @@ fn lattice_law_reflexive() {
         pure(),
         set(vec![Effect::Alloc]),
         set(vec![
-            Effect::Read("x".to_string()),
-            Effect::Write("y".to_string()),
+            Effect::Read("x".to_string().into()),
+            Effect::Write("y".to_string().into()),
         ]),
         all_atoms(),
     ];
@@ -137,7 +155,7 @@ fn lattice_law_top_subsumes_everything() {
     let rows = vec![
         pure(),
         set(vec![Effect::Alloc]),
-        set(vec![Effect::Read("x".to_string())]),
+        set(vec![Effect::Read("x".to_string().into())]),
         set(vec![Effect::Panic, Effect::Diverge]),
         all_atoms(),
     ];
@@ -154,25 +172,25 @@ fn lattice_law_table() {
         // superset subsumes subset
         (
             set(vec![
-                Effect::Read("x".to_string()),
-                Effect::Write("y".to_string()),
+                Effect::Read("x".to_string().into()),
+                Effect::Write("y".to_string().into()),
             ]),
-            set(vec![Effect::Read("x".to_string())]),
+            set(vec![Effect::Read("x".to_string().into())]),
             true,
         ),
         // subset does not subsume superset
         (
-            set(vec![Effect::Read("x".to_string())]),
+            set(vec![Effect::Read("x".to_string().into())]),
             set(vec![
-                Effect::Read("x".to_string()),
-                Effect::Net("d".to_string()),
+                Effect::Read("x".to_string().into()),
+                Effect::Net("d".to_string().into()),
             ]),
             false,
         ),
         // atom-kind level: Write("a") caller subsumes Write("b") callee (OQ-1)
         (
-            set(vec![Effect::Write("a".to_string())]),
-            set(vec![Effect::Write("b".to_string())]),
+            set(vec![Effect::Write("a".to_string().into())]),
+            set(vec![Effect::Write("b".to_string().into())]),
             true,
         ),
         // disjoint single atoms
@@ -245,15 +263,21 @@ fn crafted_accepts() {
     // {read(x), write(y)} caller calling {read(x)} callee — Ok (superset).
     let prog = Program {
         items: vec![
+            shared("x"),
+            shared("y"),
             fn_calling(
                 "caller",
                 set(vec![
-                    Effect::Read("x".to_string()),
-                    Effect::Write("y".to_string()),
+                    Effect::Read("x".to_string().into()),
+                    Effect::Write("y".to_string().into()),
                 ]),
                 &["callee"],
             ),
-            fn_calling("callee", set(vec![Effect::Read("x".to_string())]), &[]),
+            fn_calling(
+                "callee",
+                set(vec![Effect::Read("x".to_string().into())]),
+                &[],
+            ),
         ],
     };
     assert_eq!(
@@ -329,7 +353,7 @@ fn reject_pure_calling_alloc() {
             ..
         } => {
             assert_eq!(caller, "caller");
-            assert_eq!(callee, "callee");
+            assert_eq!(callee, "inferred transitive footprint");
             assert_eq!(
                 missing,
                 vec![Effect::Alloc],
@@ -347,14 +371,14 @@ fn reject_read_calling_read_net() {
         items: vec![
             fn_calling(
                 "caller",
-                set(vec![Effect::Read("x".to_string())]),
+                set(vec![Effect::Read("x".to_string().into())]),
                 &["callee"],
             ),
             fn_calling(
                 "callee",
                 set(vec![
-                    Effect::Read("x".to_string()),
-                    Effect::Net("d".to_string()),
+                    Effect::Read("x".to_string().into()),
+                    Effect::Net("d".to_string().into()),
                 ]),
                 &[],
             ),
@@ -362,11 +386,9 @@ fn reject_read_calling_read_net() {
     };
     match single_error(&prog) {
         LowerError::EffectNotSubsumed { missing, .. } => {
-            // Path-insensitive (OQ-1): missing is the Net kind, reported with an
-            // empty path representative.
             assert_eq!(
                 missing,
-                vec![Effect::Net(String::new())],
+                vec![Effect::Net("d".into())],
                 "missing must be exactly [Net]"
             );
         }
@@ -379,13 +401,17 @@ fn missing_net_diagnostic_names_basis_entry_and_frame() {
     let prog = Program {
         items: vec![
             fn_calling("caller", pure(), &["callee"]),
-            fn_calling("callee", set(vec![Effect::Net("d".to_string())]), &[]),
+            fn_calling(
+                "callee",
+                set(vec![Effect::Net("d".to_string().into())]),
+                &[],
+            ),
         ],
     };
     let error = single_error(&prog);
     match &error {
         LowerError::EffectNotSubsumed { missing, .. } => {
-            assert_eq!(missing, &vec![Effect::Net(String::new())]);
+            assert_eq!(missing, &vec![Effect::Net("d".into())]);
         }
         other => panic!("expected EffectNotSubsumed, got {other:?}"),
     }
@@ -422,8 +448,8 @@ fn reject_pure_calling_panic() {
 
 #[test]
 fn reject_accumulates_all_violations() {
-    // §2.4: accumulate one error per violation rather than fail on the first. A
-    // pure caller calling two distinct effectful callees yields two errors.
+    // RFC-9 reports one normalized missing footprint per caller after
+    // propagation, rather than duplicating errors at individual call sites.
     let prog = Program {
         items: vec![
             fn_calling("caller", pure(), &["a", "b"]),
@@ -432,7 +458,14 @@ fn reject_accumulates_all_violations() {
         ],
     };
     match check_effects(&prog) {
-        Err(errs) => assert_eq!(errs.len(), 2, "both violations must accumulate"),
+        Err(errs) => match &errs[..] {
+            [LowerError::EffectNotSubsumed { missing, .. }] => assert_eq!(
+                missing,
+                &vec![Effect::Alloc, Effect::Panic],
+                "both transitive operations must be reported"
+            ),
+            other => panic!("expected one normalized footprint error, got {other:?}"),
+        },
         Ok(()) => panic!("expected two violations"),
     }
 }
@@ -458,6 +491,169 @@ fn unresolved_callee_is_noop() {
 #[test]
 fn empty_program_is_ok() {
     assert_eq!(check_effects(&Program { items: vec![] }), Ok(()));
+}
+
+#[test]
+fn call_propagation_preserves_region_identity() {
+    let program = Program {
+        items: vec![
+            fn_calling("caller", set(vec![Effect::Write("db".into())]), &["callee"]),
+            fn_calling("callee", set(vec![Effect::Write("log".into())]), &[]),
+        ],
+    };
+
+    match single_error(&program) {
+        LowerError::EffectNotSubsumed { missing, .. } => {
+            assert_eq!(missing, vec![Effect::Write("log".into())]);
+        }
+        other => panic!("expected region-sensitive rejection, got {other:?}"),
+    }
+}
+
+#[test]
+fn analysis_reaches_a_fixed_point_through_recursive_calls() {
+    let program = Program {
+        items: vec![
+            fn_calling("a", set(vec![Effect::Alloc]), &["b"]),
+            fn_calling("b", set(vec![Effect::Alloc]), &["a", "heap_boundary"]),
+            boundary("heap_boundary", set(vec![Effect::Alloc])),
+        ],
+    };
+
+    let analysis = analyze_effects(&program).expect("declared rows cover the fixed point");
+    assert_eq!(
+        analysis.footprints["a"],
+        std::collections::BTreeSet::from([Effect::Alloc])
+    );
+    assert_eq!(analysis.footprints["b"], analysis.footprints["a"]);
+    assert!(analysis.warnings.is_empty());
+}
+
+#[test]
+fn analysis_returns_deterministic_excess_warnings() {
+    let program = Program {
+        items: vec![
+            shared("db"),
+            fn_calling(
+                "overdeclared",
+                set(vec![Effect::Write("db".into()), Effect::Alloc]),
+                &["heap_boundary"],
+            ),
+            boundary("heap_boundary", set(vec![Effect::Alloc])),
+        ],
+    };
+
+    let analysis = analyze_effects(&program).expect("over-conservative rows warn");
+    assert_eq!(analysis.warnings.len(), 1);
+    assert_eq!(analysis.warnings[0].function, "overdeclared");
+    assert_eq!(
+        analysis.warnings[0].excess,
+        vec![Effect::Write("db".into())]
+    );
+}
+
+#[test]
+fn production_analysis_rejects_concurrent_ancestry_conflict() {
+    let parsed = thermite_syntax::parse(
+        "struct State { child: u64 }\n\
+         shared state: State\n\
+         #[boundary(\"ext::left\")] fn left() -> u64 ! write(state) requires nothing ensures result == 0;\n\
+         #[boundary(\"ext::right\")] fn right() -> u64 ! read(state.child) requires nothing ensures result == 0;\n\
+         concurrent pair { left, right }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+
+    let errors = analyze_effects(&parsed.program).expect_err("overlapping write/read must reject");
+    assert!(errors.iter().any(|error| matches!(
+        error,
+        LowerError::EffectAnalysis { detail, .. }
+            if detail.contains("concurrent `pair`")
+                && detail.contains("`left`")
+                && detail.contains("`right`")
+                && detail.contains("state")
+    )));
+}
+
+#[test]
+fn shared_metadata_enables_global_region_resolution_without_concurrency() {
+    let parsed = thermite_syntax::parse(
+        "shared known: u8\n\
+         #[boundary(\"ext::bad\")] fn bad() -> u64 ! read(missing) requires nothing ensures result == 0;",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    let errors = analyze_effects(&parsed.program).expect_err("unknown root must reject");
+    assert!(errors.iter().any(|error| matches!(
+        error,
+        LowerError::EffectAnalysis { detail, .. }
+            if detail.contains("UnknownRegionRoot") && detail.contains("missing")
+    )));
+}
+
+#[test]
+fn direct_effectful_intrinsic_requires_its_canonical_effect() {
+    let mut item = fn_calling("grow", pure(), &[]);
+    let Item::Fn(function) = &mut item else {
+        unreachable!()
+    };
+    function.body = Some(Block {
+        stmts: vec![thermite_syntax::Stmt::Expr(Expr::MethodCall {
+            receiver: Box::new(Expr::Path(vec!["values".into()])),
+            name: "push".into(),
+            args: vec![Expr::IntLit {
+                value: 1,
+                raw: "1".into(),
+            }],
+        })],
+        tail: None,
+    });
+
+    let errors = analyze_effects(&Program { items: vec![item] })
+        .expect_err("push has the canonical allocation footprint");
+    assert!(errors.iter().any(|error| matches!(
+        error,
+        LowerError::EffectNotSubsumed { missing, .. } if missing == &vec![Effect::Alloc]
+    )));
+}
+
+#[test]
+fn owned_literal_and_collection_constructor_infer_allocation() {
+    for expression in [
+        Expr::StrLit("owned".into()),
+        Expr::Call {
+            callee: Box::new(Expr::Path(vec!["Vec".into(), "new".into()])),
+            args: vec![],
+        },
+        Expr::Call {
+            callee: Box::new(Expr::Path(vec!["String".into(), "from_byte".into()])),
+            args: vec![Expr::IntLit {
+                value: 65,
+                raw: "65".into(),
+            }],
+        },
+        Expr::Call {
+            callee: Box::new(Expr::Path(vec!["Box".into(), "new".into()])),
+            args: vec![Expr::IntLit {
+                value: 1,
+                raw: "1".into(),
+            }],
+        },
+    ] {
+        let mut item = fn_calling("construct", pure(), &[]);
+        let Item::Fn(function) = &mut item else {
+            unreachable!()
+        };
+        function.body = Some(Block {
+            stmts: vec![thermite_syntax::Stmt::Expr(expression)],
+            tail: None,
+        });
+        let errors = analyze_effects(&Program { items: vec![item] })
+            .expect_err("owned construction requires alloc");
+        assert!(matches!(
+            &errors[..],
+            [LowerError::EffectNotSubsumed { missing, .. }]
+                if missing == &vec![Effect::Alloc]
+        ));
+    }
 }
 
 #[test]

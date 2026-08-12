@@ -5,7 +5,7 @@
       "program": "#[slag(reason = \"vendored SIMD intrinsics\", owner = \"agent:forge-7\", review = \"required\")] fn simd_sum(xs: &[u32]) -> u64 ! pure requires xs.len() <= 1000000 ensures result == 0 { 0 }",
       "why": "valid slag (all 3 fields non-empty), non-vacuous contract -> L1 + slag:true (L3-exempt, L1-enforced)." },
     { "name": "slag_justifies_maximal_fx", "expect_level": "L1", "expect_slag": true,
-      "program": "#[slag(reason = \"raw FFI\", owner = \"agent:forge-7\", review = \"required\")] fn g(x: u32) -> u32 ! read(a), write(a), net(a), alloc, time, rand, panic, diverge requires true ensures result == x { x }",
+      "program": "shared a: u8\n#[slag(reason = \"raw FFI\", owner = \"agent:forge-7\", review = \"required\")] fn g(x: u32) -> u32 ! read(a), write(a), net(a), alloc, time, rand, panic, diverge requires true ensures result == x { x }",
       "why": "maximal fx WITH slag -> the (d) triage check does not fire; certifies L1 + slag:true." }
   ],
   "reject": [

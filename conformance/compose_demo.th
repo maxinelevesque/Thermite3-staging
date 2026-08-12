@@ -1,3 +1,5 @@
+shared stdin: u8
+
 fn step_inc(x: u32) -> u32
   ! pure
   requires x < 99

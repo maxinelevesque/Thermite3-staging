@@ -1265,3 +1265,72 @@ crate_pattern = "thermite-spec/src/effect_commutation.rs"
 design = ".design/syntax/effect-algebra.md"
 reference = []
 conformance_ops = []
+
+# ---------------------------------------------------------------------
+# Verified effect rows (RFC-9)
+# ---------------------------------------------------------------------
+[[route]]
+crate_pattern = "thermite-syntax/src/ast.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/parser.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/tests/verified_effect_rows.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/effect_commutation.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/regions.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/tests/verified_effect_rows.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/effects.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/build.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = ["conformance/verified-build"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/rfc9-effect-inventory.py"
+design = ".design/syntax/verified-effect-rows.md"
+reference = ["gates/rfc9-effect-inventory.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/rfc9-effect-inventory.json"
+design = ".design/syntax/verified-effect-rows.md"
+reference = ["gates/rfc9-effect-inventory.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/EffectRows.lean"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/research/relational-contracts.md"]
+conformance_ops = ["gates/lean-axiom-probe.sh"]
