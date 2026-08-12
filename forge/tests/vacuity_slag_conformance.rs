@@ -146,6 +146,13 @@ fn first_cert(certs: &[Value]) -> &Value {
         .unwrap_or_else(|| panic!("no certificate emitted"))
 }
 
+fn slag_cert(certs: &[Value]) -> &Value {
+    certs
+        .iter()
+        .find(|cert| cert.get("slag").and_then(Value::as_bool) == Some(true))
+        .unwrap_or_else(|| panic!("no slag certificate emitted: {certs:?}"))
+}
+
 // ---- triage rejects (no verus needed — short-circuit before the proof) -----
 
 #[test]
@@ -271,7 +278,7 @@ fn slag_accepts_certify_l1_slag_true() {
             "valid slag `{}` certifies (exit 0): {certs:?}",
             case.name
         );
-        let cert = first_cert(&certs);
+        let cert = slag_cert(&certs);
         assert_eq!(
             cert.get("level").and_then(|l| l.as_str()),
             Some(case.expect_level.as_str()),
