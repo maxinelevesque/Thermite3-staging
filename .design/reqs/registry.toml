@@ -17524,10 +17524,9 @@ note = "the allowlist lines, and the address-segment constraint that ruled out `
 id = "REQ-SYNTAX-EFFECT-BASIS"
 title = "The effect basis: five primitive theories"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "syntax"
 summary = "state(r), accrues(M), exception, partiality and io(s) generate the frame conditions every other label is built from; random and blocks are given atoms that generate none."
-remaining_scope = "Introduce the basis in the surface and route existing atoms through it: read/write/owns/forgets become state(r), cost(E) becomes accrues over a monoid, panic becomes exception, diverge becomes partiality. The two labels RFC-8 left unplaced are placed by the design doc: term is state(termios)/{get,put} and net(d) is the combination state(d) + io(s_d), so the label map is total over the nine ast::Effect variants. Proposed by RFC-8; staged and not filed."
 contributors = [".design/rfcs/0008-effect-algebra.md", ".design/syntax/effect-algebra.md"]
 generated_to = ["status"]
 
@@ -17541,14 +17540,18 @@ kind = "doc"
 target = ".design/syntax/effect-algebra.md"
 note = "the component contract: REQ-1 the admissibility criterion, REQ-2 the five theories, REQ-3 the two given atoms, REQ-4 an entry is a theory instance plus its operations, REQ-5 the total label map, REQ-6 combination with net as the worked example; AC-1 through AC-3 assert them against thermite-syntax/src/effect_basis.rs"
 
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-syntax/src/effect_basis.rs"
+note = "Closed basis, total nine-label denotation, generated frame conditions, footprints and discharge routes."
+
 [[requirement]]
 id = "REQ-SYNTAX-EFFECT-DECLARED"
 title = "User-declared effects as basis combinations"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "syntax"
 summary = "`effect platform(d) = state(d)` declares a label as a combination of the fixed basis, so the prover only ever sees primitives it can encode."
-remaining_scope = "Parse the declaration form and expand it to the basis before lowering. Today platform(memory) gets no conflict checking at all, because nothing knows what it is. Proposed by RFC-8; staged and not filed."
 contributors = [".design/rfcs/0008-effect-algebra.md", ".design/syntax/effect-algebra.md"]
 generated_to = ["status"]
 
@@ -17562,14 +17565,23 @@ kind = "doc"
 target = ".design/syntax/effect-algebra.md"
 note = "the component contract: REQ-7 the `effect name(param) = combination` declaration item, its parse and its resolution to basis primitives, with AC-4 asserting that a non-basis right-hand side returns a structured error listing the basis"
 
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-syntax/tests/effect_declarations.rs"
+note = "Declaration parsing, closed-basis resolution, item boundary and structured unknown-primitive diagnostics."
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/effect_declarations.rs"
+note = "Declaration resolution is accepted before lowering and emits no new verified-core construct."
+
 [[requirement]]
 id = "REQ-SPEC-EFFECT-COMMUTATION"
 title = "Commutation facts derive the conflict table"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "spec"
 summary = "Each label owes a theory, a composition law and a commutation fact, which makes the data-race-freedom table a theorem rather than an axiom."
-remaining_scope = "Compute commutation per operation pair from the state equations, so read/read accepts, read/write rejects, and write(a)/write(b) accepts on independent instances. Proposed by RFC-8; staged and not filed."
 contributors = [".design/rfcs/0008-effect-algebra.md", ".design/syntax/effect-algebra.md"]
 generated_to = ["status"]
 
@@ -17583,14 +17595,18 @@ kind = "doc"
 target = ".design/syntax/effect-algebra.md"
 note = "the component contract: REQ-8 commutation computed per operation pair, over thermite-spec/src/effect_commutation.rs, with AC-5 asserting the four state rows and the two io rows against hand-derived values; RFC-9's conflict rule is the consumer, so this lands computable and unused"
 
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-spec/src/effect_commutation.rs"
+note = "State and free-I/O commutation derived per operation pair, with conservative combination meet."
+
 [[requirement]]
 id = "REQ-SYNTAX-EFFECT-FOOTPRINT"
 title = "A row projects to a read and write footprint"
 owner = ".design/syntax"
-status = "not_started"
+status = "shipped"
 scope = "syntax"
 summary = "footprint(row) gives the region instances a row may read and those it may write, computed from each entry's operation set: get contributes to reads, put to writes."
-remaining_scope = "Compute the projection from the basis map, so read(r) gives ({r}, {}) and write(r) gives ({r}, {r}) because a writer may read what it writes. The 9-atom mask cannot express this - EffectKind::of drops the region argument - and the mask is a projection of the row's LABELS while the footprint is a projection of its REGIONS AND OPERATIONS, so neither coarsens the other. Required by the relational frame lemma, which quantifies over two runs agreeing on a row's footprint and reaching states agreeing outside its write-footprint. Introduced by the component contract rather than by RFC-8, which does not name the projection."
 contributors = [".design/syntax/effect-algebra.md", ".design/research/relational-contracts.md"]
 generated_to = ["status"]
 
@@ -17604,14 +17620,18 @@ kind = "doc"
 target = ".design/research/relational-contracts.md"
 note = "the consumer: §5.1 states the relational frame lemma over a row's footprint and write-footprint, §5.2 generates coupling invariants from the same frames, and §10 sequences the lemma second, ahead of every clause that instantiates it"
 
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-syntax/src/effect_basis.rs"
+note = "BasisEntry::footprint plus its hand-derived table for all nine surface labels."
+
 [[requirement]]
 id = "REQ-SYNTAX-EFFECT-ROUTE"
 title = "Each atom carries the route that discharges it"
 owner = ".design/syntax"
-status = "not_started"
+status = "shipped"
 scope = "syntax"
 summary = "route(atom) is NoObligation, Implemented(form), Deferred(form) or Open(question), so an atom whose obligation has no built discharge is named as residual trust rather than passing silently."
-remaining_scope = "Classify each atom by what discharges its characteristic obligation GIVEN AN HONEST ROW - row honesty is REQ-SPEC-EFFECT-ROW-CHECKED's global obligation, not a per-atom one, and reading this REQ as covering it would mark every effectful function in the tree. diverge is Implemented(measures), which reaches termination by reducing a liveness property to well-founded descent, a finitary witness inside the function. blocks is Deferred(session_duality): its obligation is progress, whose witness is a peer's behaviour, so the reduction does not transfer; binary session duality carries deadlock freedom and is unbuilt here. Deferred and Open are separated by whether a sound route is KNOWN, and one construct may sit on both sides - progress is Deferred for two parties and Open(multiparty_duality) beyond. The classification makes the #[future(..)] / #[research(..)] obligation derived rather than written, and the route name is the retirement query when a route lands. The attribute surface is a change to the item grammar and belongs with the RFC that adds it; note that parse_attribute accepts at most one attribute per item and attribute names carry no :: path."
 contributors = [".design/syntax/effect-algebra.md", ".design/rfcs/0013-protocol-types.md"]
 generated_to = ["status"]
 
@@ -17619,6 +17639,11 @@ generated_to = ["status"]
 kind = "doc"
 target = ".design/syntax/effect-algebra.md"
 note = "the component contract: REQ-13 the four-way route classification with the boundary that keeps it off row honesty, and AC-10 asserting the table over the nine labels plus the tenth-variant guard"
+
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-syntax/src/effect_basis.rs"
+note = "route_for_effect/route_for_given plus tests pin NoObligation, Implemented, Deferred and Open."
 
 [[requirement.evidence]]
 kind = "doc"

@@ -515,6 +515,11 @@ fn render_item_arm(item: &Item) -> SkillFragment {
             description: "a forge-tier surface item (prop fn / lemma / proof for / witness)",
             example: "prop fn nonneg(x: i64) -> bool { x >= 0 }",
         },
+        Item::EffectDecl(_) => SkillFragment {
+            fragment: "effect NAME(param) = primitive + ..",
+            description: "an effect label declared as a combination of algebraic-basis primitives",
+            example: "effect platform(d) = state(d) + io(d)",
+        },
     }
 }
 

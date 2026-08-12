@@ -56,6 +56,7 @@
 
 pub mod classifier;
 pub mod combinators;
+pub mod effect_commutation;
 pub mod restratify;
 pub mod s2_recon;
 pub mod schemes;

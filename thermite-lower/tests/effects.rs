@@ -375,6 +375,31 @@ fn reject_read_calling_read_net() {
 }
 
 #[test]
+fn missing_net_diagnostic_names_basis_entry_and_frame() {
+    let prog = Program {
+        items: vec![
+            fn_calling("caller", pure(), &["callee"]),
+            fn_calling("callee", set(vec![Effect::Net("d".to_string())]), &[]),
+        ],
+    };
+    let error = single_error(&prog);
+    match &error {
+        LowerError::EffectNotSubsumed { missing, .. } => {
+            assert_eq!(missing, &vec![Effect::Net(String::new())]);
+        }
+        other => panic!("expected EffectNotSubsumed, got {other:?}"),
+    }
+
+    let diagnostic = error.to_string();
+    assert!(diagnostic.contains("net (basis: Combination"));
+    assert!(diagnostic.contains("State"));
+    assert!(diagnostic.contains("Io"));
+    assert!(diagnostic.contains("frame: Conjunction"));
+    assert!(diagnostic.contains("MayModifyOnly"));
+    assert!(diagnostic.contains("UnconstrainedValueNoRegion"));
+}
+
+#[test]
 fn reject_pure_calling_panic() {
     // pure caller calling {panic} callee → missing: [Panic].
     let prog = Program {

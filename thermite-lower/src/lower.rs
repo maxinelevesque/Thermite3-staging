@@ -310,7 +310,7 @@ impl std::fmt::Display for LowerError {
                 missing,
                 span,
             } => {
-                let atoms: Vec<String> = missing.iter().map(effect_atom_name).collect();
+                let atoms: Vec<String> = missing.iter().map(effect_atom_diagnostic).collect();
                 write!(
                     f,
                     "effect row of `{caller}` does not subsume callee `{callee}` at byte {}..{}: \
@@ -329,19 +329,31 @@ impl std::fmt::Display for LowerError {
 /// OQ-1), so the carrier atoms (`read`/`write`/`net`) are reported by kind
 /// without their (empty) path argument — the agent's fix is to add the effect
 /// kind to the caller's row.
-fn effect_atom_name(effect: &thermite_syntax::ast::Effect) -> String {
+fn effect_atom_name(effect: &thermite_syntax::ast::Effect) -> &'static str {
     use thermite_syntax::ast::Effect;
     match effect {
-        Effect::Read(_) => "read".to_string(),
-        Effect::Write(_) => "write".to_string(),
-        Effect::Net(_) => "net".to_string(),
-        Effect::Alloc => "alloc".to_string(),
-        Effect::Time => "time".to_string(),
-        Effect::Rand => "rand".to_string(),
-        Effect::Panic => "panic".to_string(),
-        Effect::Diverge => "diverge".to_string(),
-        Effect::Term => "term".to_string(),
+        Effect::Read(_) => "read",
+        Effect::Write(_) => "write",
+        Effect::Net(_) => "net",
+        Effect::Alloc => "alloc",
+        Effect::Time => "time",
+        Effect::Rand => "rand",
+        Effect::Panic => "panic",
+        Effect::Diverge => "diverge",
+        Effect::Term => "term",
     }
+}
+
+/// Enrich the existing missing-atom diagnostic with the algebraic basis entry
+/// and generated frame condition (effect-algebra.md REQ-9). This is reporting
+/// only: the exact `missing` carrier stored in the error remains unchanged.
+fn effect_atom_diagnostic(effect: &thermite_syntax::ast::Effect) -> String {
+    let entry = thermite_syntax::effect_basis::entry_for_effect(effect);
+    let frame = entry.frame_condition();
+    format!(
+        "{} (basis: {entry:?}; frame: {frame:?})",
+        effect_atom_name(effect)
+    )
 }
 
 impl std::error::Error for LowerError {}
@@ -1093,7 +1105,7 @@ fn lower_with_profile(
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering/cert
             // consumer yet (increments 2b-3); emit nothing, mirroring the inert
             // ADT-decl arms.
-            Item::Forge(_) => continue,
+            Item::Forge(_) | Item::EffectDecl(_) => continue,
         };
         out.push('\n');
         out.push_str(&item_src);
@@ -1173,7 +1185,7 @@ fn program_needs_kernel_alloc(program: &Program) -> bool {
                 .iter()
                 .any(|field| type_needs_kernel_alloc(&field.ty)),
         }),
-        Item::Forge(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) => false,
     })
 }
 
@@ -1800,7 +1812,7 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
             Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 combinator-collection
             // consumer yet (increments 2b-3); inert here, mirroring the ADT-decl arm.
-            Item::Forge(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) => {}
         }
     }
 
@@ -4884,7 +4896,7 @@ pub(crate) fn collect_vec_elem_types(program: &Program) -> Vec<Type> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 type-reachability
             // consumer yet (increments 2b-3); contributes no Vec element types,
             // mirroring the inert ADT-decl arms.
-            Item::Forge(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) => {}
         }
     }
     // Cluster C5 (`.design/basis/07-strings.md` REQ-15, issue #102): the emitted
@@ -5280,7 +5292,7 @@ pub(crate) fn collect_map_kv_types(program: &Program) -> Vec<(Type, Type)> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 type-reachability
             // consumer yet (increments 2b-3); contributes no Map (K,V) pairs,
             // mirroring the inert ADT-decl arms.
-            Item::Forge(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) => {}
         }
     }
     pairs
@@ -5671,7 +5683,7 @@ fn program_uses_string(program: &Program) -> bool {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 String-reachability
             // consumer yet (increments 2b-3); reaches no String, so fall through
             // without returning, mirroring the inert ADT-decl arms.
-            Item::Forge(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) => {}
         }
     }
     false
@@ -6326,7 +6338,7 @@ pub(crate) fn program_uses_string_search(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) => false,
     })
 }
 
@@ -6514,7 +6526,7 @@ fn program_uses_numfmt(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) => false,
     })
 }
 
@@ -7087,7 +7099,7 @@ pub(crate) fn program_uses_parse(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) => false,
     })
 }
 
@@ -7349,7 +7361,7 @@ pub(crate) fn program_uses_bytes_eq(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) => false,
     })
 }
 

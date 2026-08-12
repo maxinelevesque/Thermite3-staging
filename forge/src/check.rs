@@ -4735,6 +4735,9 @@ fn item_subprogram(
             items.push(item.clone());
             Program { items }
         }
+        Item::EffectDecl(_) => Program {
+            items: vec![item.clone()],
+        },
     }
 }
 
@@ -4989,7 +4992,7 @@ fn mint_item_obligations(program: &Program, item: &Item) -> ItemObligations {
         // certification obligation in v1 (no v1 consumer until increments 2b-3); mint
         // the same empty contract obligation as the ADT-decl arm so the function stays
         // total without a panic (R-APG-1) — it is never discharged.
-        Item::Struct(_) | Item::Enum(_) | Item::Forge(_) => (
+        Item::Struct(_) | Item::Enum(_) | Item::Forge(_) | Item::EffectDecl(_) => (
             Obligation {
                 item: item.name().to_string(),
                 class: crate::obligation::ObligationClass::Contract,
@@ -5456,7 +5459,7 @@ fn collect_item_adt_refs(
         // fixed point (`collect_decl_field_adt_refs`), not here.
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 ADT-ref consumer yet
         // (increments 2b-3); references no in-file ADT here, mirroring the ADT-decl arm.
-        Item::Struct(_) | Item::Enum(_) | Item::Forge(_) => {}
+        Item::Struct(_) | Item::Enum(_) | Item::Forge(_) | Item::EffectDecl(_) => {}
     }
 }
 
@@ -5494,7 +5497,7 @@ fn collect_decl_field_adt_refs(
         }
         // Forge-tier item (stage1-forge-tier.md REQ-3): not an ADT decl → no field
         // type graph to follow (increments 2b-3); inert, mirroring the non-decl arm.
-        Item::Fn(_) | Item::SpecFn(_) | Item::Forge(_) => {}
+        Item::Fn(_) | Item::SpecFn(_) | Item::Forge(_) | Item::EffectDecl(_) => {}
     }
 }
 
@@ -6285,7 +6288,7 @@ pub(crate) fn item_effects(item: &Item) -> Vec<String> {
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 cert consumer yet
         // (increments 2b-3); declares no effect row → the same neutral `pure`
         // projection as a `spec fn`/ADT decl, mirroring the inert ADT-decl arm.
-        Item::Forge(_) => vec!["pure".to_string()],
+        Item::Forge(_) | Item::EffectDecl(_) => vec!["pure".to_string()],
     }
 }
 

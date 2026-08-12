@@ -403,7 +403,7 @@ fn project_artifact(
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 review/projection
             // consumer yet (increments 2b-3); not a `spec fn` → contributes nothing
             // (neutral `None`), mirroring the inert ADT-decl arm.
-            Item::Forge(_) => None,
+            Item::Forge(_) | Item::EffectDecl(_) => None,
         })
         .collect();
 

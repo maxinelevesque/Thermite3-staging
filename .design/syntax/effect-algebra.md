@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 263663e1584a4f2b5e2089107b636a25a2335a35bc8d201dcf57dc7c2ac8b3d1 (initial pin, 2026-08-11: both governed files are unbuilt, so the digest covers an empty governed set. The routes carry `unbuilt = true` and the pin is re-derived when `effect_basis.rs` lands.)
+audited-content-sha256: ae92a39cd653dd150d799d9abd82c2c0347cf00846db1310dbd929282a93e2da (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: d733b59acf94bb59f7fb0317cb14a7e147b8eaa721fd8c06b39d2aef96d768eb.)
 governs: thermite-syntax/src/effect_basis.rs
 governs: thermite-spec/src/effect_commutation.rs
 thesis-refs:
@@ -595,19 +595,19 @@ sites are the only `net` uses in the tree and which AC-7 holds unchanged.
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (admissibility criterion) | NOT-STARTED | open prerequisite: `thermite-syntax/src/effect_basis.rs` is unbuilt (route carries `unbuilt = true`). |
-| REQ-2 (the basis: five theories) | NOT-STARTED | open prerequisite: as REQ-1. |
-| REQ-3 (two given atoms) | NOT-STARTED | open prerequisite: as REQ-1. |
-| REQ-4 (entry = instance + operations) | NOT-STARTED | open prerequisite: as REQ-1. |
-| REQ-5 (label map is total) | NOT-STARTED | open prerequisite: as REQ-1. |
-| REQ-6 (combination; `net`) | NOT-STARTED | open prerequisite: as REQ-1. |
-| REQ-7 (declaration surface) | NOT-STARTED | open prerequisite: REQ-5's map, and the `ast.rs`/`parser.rs` item this adds. |
-| REQ-8 (commutation computed) | NOT-STARTED | open prerequisite: `thermite-spec/src/effect_commutation.rs` is unbuilt; depends on REQ-4's operation sets. |
-| REQ-9 (diagnostic names the theory) | NOT-STARTED | open prerequisite: REQ-5's map; amends `.design/lower/effect-subsumption.md` REQ-4. |
+| REQ-1 (admissibility criterion) | SHIPPED | `Theory::frame_condition` generates the admissibility witness. |
+| REQ-2 (the basis: five theories) | SHIPPED | `effect_basis::Theory` is the closed five-theory basis. |
+| REQ-3 (two given atoms) | SHIPPED | `GivenAtom` records `random` and `blocks` outside the basis. |
+| REQ-4 (entry = instance + operations) | SHIPPED | `Entry` pairs each theory instance with its permitted operations. |
+| REQ-5 (label map is total) | SHIPPED | `entry_for_effect` exhaustively maps all nine `Effect` variants. |
+| REQ-6 (combination; `net`) | SHIPPED | `BasisEntry::Combination` maps `net` to state plus free I/O. |
+| REQ-7 (declaration surface) | SHIPPED | `EffectDeclItem` parses and `resolve_declaration` expands only the closed basis; parser tests pin the structured unknown-primitive error. |
+| REQ-8 (commutation computed) | SHIPPED | `thermite-spec/src/effect_commutation.rs` computes state/free-I/O facts and the conservative combination meet. |
+| REQ-9 (diagnostic names the theory) | SHIPPED | `EffectNotSubsumed` displays each missing atom's basis entry and frame condition while retaining its exact `missing` set. |
 | REQ-10 (RFC-9 owns checking) | NOT-STARTED | boundary recorded; discharged when the three RFC-9 REQs are owned elsewhere. |
-| REQ-11 (verified core does not move) | NOT-STARTED | boundary recorded; asserted by AC-7 once the basis lands. |
-| REQ-12 (the footprint projection) | NOT-STARTED | open prerequisite: as REQ-1; depends on REQ-4's operation sets and REQ-5's map. The projection the relational frame lemma reads; asserted by AC-8 and AC-9. |
-| REQ-13 (the discharge route) | NOT-STARTED | open prerequisite: as REQ-1. Supplies the classification that makes the `#[future(..)]` / `#[research(..)]` obligation derived; the attribute surface belongs to the RFC that adds it. Asserted by AC-10. |
+| REQ-11 (verified core does not move) | SHIPPED | declarations are resolved metadata and lowering emits no new verified constructor; the existing exhaustive effect test remains unchanged. |
+| REQ-12 (the footprint projection) | SHIPPED | `BasisEntry::footprint` derives region reads/writes and I/O carriage from operations. |
+| REQ-13 (the discharge route) | SHIPPED | `route_for_effect` and `route_for_given` provide the four-way discharge classification. |
 | REQ-14 (R-DEFER-1 boundary) | NOT-STARTED | override recorded with its grounds and its retirement condition; discharged when RFC-9's `REQ-SPEC-EFFECT-CONFLICT` consumes REQ-8's commutation facts. |
 
 ## Open questions (for the orchestrator before the builder runs)

@@ -182,6 +182,8 @@ pub enum Item {
     /// (REQ-9). Increment 2a ships the PARSE + AST + ADDRESS + hole-gating surface
     /// (each kind has parse/address/round-trip tests); the consumers arrive next.
     Forge(ForgeItem),
+    /// An RFC-8 user-declared effect combination.
+    EffectDecl(EffectDeclItem),
 }
 
 impl Item {
@@ -196,8 +198,28 @@ impl Item {
             Item::Struct(s) => &s.name,
             Item::Enum(e) => &e.name,
             Item::Forge(forge) => forge.name(),
+            Item::EffectDecl(effect) => &effect.name,
         }
     }
+}
+
+/// `effect name(param) = primitive + ...` (effect-algebra.md REQ-7).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EffectDeclItem {
+    pub name: Ident,
+    pub param: Ident,
+    pub combination: Vec<EffectPrimitive>,
+    pub span: Span,
+}
+
+/// A primitive admitted on an effect declaration's right-hand side.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EffectPrimitive {
+    State(Ident),
+    Accrues(Ident),
+    Exception,
+    Partiality,
+    Io(Ident),
 }
 
 /// A Stage-1 forge-tier item (`.design/stage1-forge-tier.md` REQ-3, increment 2a).
