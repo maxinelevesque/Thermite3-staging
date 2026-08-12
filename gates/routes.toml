@@ -1259,7 +1259,6 @@ crate_pattern = "thermite-syntax/src/effect_basis.rs"
 design = ".design/syntax/effect-algebra.md"
 reference = []
 conformance_ops = []
-unbuilt = true
 
 [[route]]
 crate_pattern = "thermite-spec/src/effect_commutation.rs"

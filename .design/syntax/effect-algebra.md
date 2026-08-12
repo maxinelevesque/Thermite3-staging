@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 263663e1584a4f2b5e2089107b636a25a2335a35bc8d201dcf57dc7c2ac8b3d1 (initial pin, 2026-08-11: both governed files are unbuilt, so the digest covers an empty governed set. The routes carry `unbuilt = true` and the pin is re-derived when `effect_basis.rs` lands.)
+audited-content-sha256: 81362e9830a73273c09c6d6841f5b5c5417e96b78799ef2b10e48be616493d57 (re-pinned 2026-08-11 for RFC-8 step 1: `thermite-syntax/src/effect_basis.rs` now implements the additive basis, total label map, frame conditions, footprint projection, and discharge routes; `thermite-spec/src/effect_commutation.rs` remains unbuilt. prior: 263663e1584a4f2b5e2089107b636a25a2335a35bc8d201dcf57dc7c2ac8b3d1, the empty governed set.)
 governs: thermite-syntax/src/effect_basis.rs
 governs: thermite-spec/src/effect_commutation.rs
 thesis-refs:

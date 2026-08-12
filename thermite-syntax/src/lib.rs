@@ -41,6 +41,7 @@
 pub mod address;
 pub mod ast;
 pub mod desugar;
+pub mod effect_basis;
 pub mod lexer;
 pub mod parser;
 
