@@ -1,0 +1,91 @@
+{
+  "series": "Thermite 3",
+  "first_rfc": 7,
+  "last_rfc": 13,
+  "guides": [
+    {
+      "rfc": 7,
+      "summary": "Defines the agent-readable Thermite 3 surface and the dependency sequence for the capabilities that follow.",
+      "features": [
+        "Full-word behavioural clauses: requires, ensures, keeps, and measures",
+        "Effect rows remain part of function types and precede behavioural clauses",
+        "Shared state, resources, interference, and protocols receive distinct surface roles",
+        "A staged dependency tree from syntax through protocol-checked concurrency"
+      ],
+      "example_label": "A Thermite 3 function contract",
+      "example": "fn allocate(pages: u64) -> Result<Grant, u64>\n  ! write(heap), cost(12 * pages + 40)\n  requires pages > 0\n  ensures result.is_ok()"
+    },
+    {
+      "rfc": 8,
+      "summary": "Gives effect rows an algebraic meaning so frame conditions and commutation facts are computed rather than maintained as an ad-hoc table.",
+      "features": [
+        "Five basis theories: state, accrues, exception, partiality, and free I/O",
+        "Effect entries pair a theory instance with the operations actually used",
+        "Computed read/read, read/write, and write/write commutation",
+        "User-declared effects compose known theories while retaining named residual trust"
+      ],
+      "example_label": "Effects assembled from the basis",
+      "example": "effect platform(d) = state(d)\neffect journal(d)  = state(d) + exception\neffect net(d)      = state(d) + io(sigma_d)"
+    },
+    {
+      "rfc": 9,
+      "summary": "Turns effect rows into checked, region-sensitive upper bounds and rejects unsafe concurrent compositions.",
+      "features": [
+        "Declared shared regions with field-derived containment",
+        "Exact body, intrinsic-operation, and transitive callee footprints",
+        "Errors for missing effects and loud structured warnings for excess effects",
+        "Named concurrent compositions checked with RFC-8 commutation facts"
+      ],
+      "example_label": "A checked shared-region footprint",
+      "example": "shared scheduler: SchedState\nshared clock: TimeState\n\nfn advance() -> u64\n  ! write(scheduler), read(clock)\n  requires nothing\n  ensures result < MAX_SLOTS"
+    },
+    {
+      "rfc": 10,
+      "summary": "Adds lexical lock ownership, protected invariants, ordering, and interrupt masking to shared-state reasoning.",
+      "features": [
+        "Lock declarations connect a lock name to the type whose invariant it guards",
+        "owns(lock) exposes acquisition to callers while holding blocks locate it in the body",
+        "Rows and lexical holding blocks must agree in both directions",
+        "One-lock-by-default ordering and masking rules for handler-visible locks"
+      ],
+      "example_label": "A lock-scoped invariant update",
+      "example": "lock counters guards Counter;\n\nfn bump(c: &mut Counter) -> ()\n  ! owns(counters)\n{\n  holding counters { c.n = c.n + 1; }\n}"
+    },
+    {
+      "rfc": 11,
+      "summary": "Introduces resource kinds whose values must be consumed exactly once on every returning path.",
+      "features": [
+        "resource marks non-copyable, non-droppable structs and enums",
+        "Resource obligations propagate through fields, variants, and generic containers",
+        "Destructuring consumes the container and transfers obligations to its parts",
+        "Explicit forget operations make intentional abandonment visible in the effect row"
+      ],
+      "example_label": "A grant that must be returned",
+      "example": "resource struct Grant { frame: u64, generation: u64 }\n\nfn release(a: Allocator, g: Grant) -> Allocator\n  ! pure\n  ensures result.free_count == a.free_count + 1"
+    },
+    {
+      "rfc": 12,
+      "summary": "Adds rely-guarantee clauses for concurrent code whose environment may evolve while the function runs.",
+      "features": [
+        "interleaves scopes relational asks and promises clauses",
+        "Peer promises must imply the other participant's assumptions",
+        "Environment relations must be reflexive and transitive",
+        "Postconditions must remain stable under permitted interference"
+      ],
+      "example_label": "A relational interference contract",
+      "example": "fn ack(s: &mut Shoot, cpu: u64) -> ()\n  ! write(shootdown)\n  interleaves {\n    asks final(s).epoch == s.epoch\n    promises final(s).acked == s.acked | (1 << cpu)\n  }"
+    },
+    {
+      "rfc": 13,
+      "summary": "Makes communication protocols resource-typed so endpoint use, branching, and completion are statically disciplined.",
+      "features": [
+        "Protocols describe role-labelled turns ending in end",
+        "Endpoint types are named by protocol and role",
+        "Branch choices are explicit messages with a named chooser",
+        "Resource consumption ties endpoint release to protocol completion"
+      ],
+      "example_label": "A two-role request protocol",
+      "example": "protocol PageRequest {\n  User     { op: u32, count: u64 },\n  Provider { status: u32, base: u64 },\n  end\n}"
+    }
+  ]
+}
