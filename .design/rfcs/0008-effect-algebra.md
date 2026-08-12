@@ -115,6 +115,13 @@ different label, `read(input)`.
 Its transfer splits along the theory boundary: `setsockopt` and `getsockopt` are
 `get` and `put` on socket state, `sendto` is a `put` toward the far end, and
 `recvfrom` yields a value that no region this program frames over determines.
+The sum is a conservative combination rather than a model of a socket. It
+asserts no equations between its summands, so it does not express that a
+`setsockopt` timeout changes what a later `recvfrom` does; tensor is ruled out
+for the same instance because that interaction exists, and the sum's silence
+licenses no commutation the interaction would refute. Expressing the
+interaction needs directed equations or a distributive law, which this document
+does not propose.
 Holding `net` out of the basis keeps the basis at five theories, which is the
 direction [the surface conventions](0007-thermite-3.md#5-the-effect-row) set when
 they made `alloc`, `time` and `rand` into declared state: the label set shrinks.
@@ -128,14 +135,22 @@ differ on the second:
 
 | atom | frame condition | equations |
 |---|---|---|
-| `random` | none — no first-order denotation for a distribution, see below | commutativity |
+| `random` | none — no first-order denotation for a distribution, see below | undetermined |
 | `blocks` | none — a liveness claim, and this project proves no liveness | none stated |
 
-`random`'s equation is what the commutation table below reads off as
-`random ∥ random` accept. Independent samples commute, which is Fubini, which is
-the commutativity of the distribution monad. So `random` and `io(σ)` are
-distinct theories rather than two spellings of one free signature: `io(σ)` has no
-equations and therefore does not commute with itself.
+The frame-condition column is what separates `random` from `io(σ)`, and it is
+enough on its own: `io(σ)` generates one, and `random` generates none. So they
+are distinct rather than two spellings of one free signature.
+
+The equations column is open for `random`, and the commutation table below
+inherits its `random ∥ random` accept rather than computing it. Fubini is a
+theorem about product measures and needs a distribution, which the
+unparameterized atom does not carry, so attributing the row to Fubini claims
+more than the atom supplies. Read as nondeterministic choice the atom commutes,
+because the finite powerset monad is commutative; read as a free operation it
+does not commute; read as sampling it commutes by Fubini once a distribution
+exists. `random(D)` settles this by putting the distribution in the denotation,
+which is another reason the parameter position is reserved.
 
 `blocks` is recorded and unproved because its discharge route is unbuilt, rather
 than because progress cannot be stated. `diverge` shows the shape. Termination is

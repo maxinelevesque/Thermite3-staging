@@ -76,17 +76,28 @@ expect them.
   |---|---|---|
   | `state(r)` | yes | get-put, put-get, put-put |
   | `io(σ)` | yes — nothing changes, and the value is unconstrained | none (free) |
-  | `random` | no | commutativity |
+  | `random` | no | undetermined — OQ-6 |
   | `blocks` | no | none stated |
 
   `random` and `blocks` generate no frame condition, so REQ-1's criterion places
-  them outside the basis as given atoms. `random` still carries an equation.
-  Independent samples commute, which RFC-8 and RFC-7 both record as
-  `random ∥ random accept`, and that fact is the commutativity equation rather
-  than a stipulation: a commutative theory is the standard algebraic reading of
-  probability. So `random` and `io(σ)` are distinct theories, and the property
-  that separates them is checkable — `random` commutes with itself and `io(σ)`,
-  having no equations, does not.
+  them outside the basis as given atoms. **That criterion is also what separates
+  `random` from `io(σ)`**, and it is sufficient on its own: `io(σ)` generates a
+  frame condition (nothing changes, and the value is unconstrained) and `random`
+  generates none.
+
+  The commutation fact is a different matter and is **not derived here**. RFC-7
+  §5, RFC-8 and RFC-9 all record `random ∥ random` accept and attribute it to
+  Fubini. Fubini is a theorem about product measures and needs a distribution,
+  which the unparameterized atom does not carry, so naming it as the
+  justification claims more than the atom supplies. Two readings of the bare
+  atom reach the accept by different routes and a third does not reach it at
+  all: read as nondeterministic choice it commutes, because the finite powerset
+  monad is commutative; read as a free operation with no equations it does not
+  commute; read as sampling it commutes by Fubini once a distribution exists.
+  Which reading the atom takes is OQ-6, and `random(D)` settles it by putting
+  the distribution in the denotation. Until then the accept row is inherited
+  from the surface conventions rather than computed, and REQ-8 must not report
+  it as derived.
 
   `random` reads as "I claim nothing about this value": the prover treats the
   result as unconstrained, which supports "this holds for every value it could
@@ -138,7 +149,16 @@ expect them.
 
 - **REQ-4 (a row entry is a theory instance plus its operations):** A row entry
   names a theory instance and the subset of that theory's operations the entry
-  uses. For the state theory with operations `{get, put}`:
+  **may perform**. The reading is a capability upper bound rather than a record
+  of what a body does, which matters for `write(r)` below: `get` and `put` are
+  distinct operations in the state theory and performing an update does not
+  invoke a lookup, so `{get, put}` is a stipulation about what the label
+  permits, not a theorem of the state equations. RFC-8 makes that stipulation
+  and this document keeps it, on the ground that the conservative reading is the
+  one that keeps REQ-12's footprint sound: if `write(r)` permits reading `r` and
+  `r` is absent from the read-footprint, two runs disagreeing on `r` could
+  produce different results and the relational frame lemma would not hold. For
+  the state theory with operations `{get, put}`:
 
   ```
   read(r)   =  state(r) / {get}
@@ -183,7 +203,18 @@ expect them.
   effect net(d) = state(d) + io(σ_d)
   ```
 
-  The decomposition is read off the label's existing surface. Its syscall grant
+  **The sum is a conservative combination rather than a model of a socket.** A
+  sum asserts no equations relating its summands, so it says nothing about the
+  causal interaction between socket state and transfer — that a `setsockopt`
+  timeout changes what a later `recvfrom` does is a fact the sum does not
+  express. Tensor is ruled out for the same instance precisely because that
+  interaction exists, and the sum's silence is sound in the direction that
+  matters here, since it licenses no commutation the interaction would refute.
+  Representing the interaction rather than over-approximating it needs directed
+  interaction equations or a distributive law, which is out of scope for this
+  document and recorded as OQ-7.
+
+  The decomposition follows the label's existing surface. Its syscall grant
   in [`.design/forge/runtime-sandbox.md`](../forge/runtime-sandbox.md) splits
   along the theory boundary: `setsockopt`/`getsockopt` are `get`/`put` on socket
   state, `sendto` is a `put` toward the far end, and `recvfrom` yields a value
@@ -287,8 +318,17 @@ expect them.
   carries a **route**: what discharges its characteristic obligation.
 
   ```
-  route(atom) -> NoObligation | Implemented(form) | Deferred(form) | Open(question)
+  route(atom) -> NoObligation(premise) | Implemented(form) | Deferred(form) | Open(question)
   ```
+
+  `NoObligation` carries its premise in the value rather than in this document's
+  prose, so a consumer cannot read it as unconditional. A state effect is
+  `NoObligation(RowChecked)`: nothing further is owed once the row is honest, and
+  row honesty is `REQ-SPEC-EFFECT-ROW-CHECKED`, which is not built. A consumer
+  that treats the premise as discharged would certify a frame condition in a
+  compiler where a body can still touch undeclared state. `panic` is
+  `NoObligation(None)`, since abort is described by its propagation and depends
+  on no premise.
 
   **The boundary this classification respects.** A route says what is left to
   prove *given an honest row*. Whether a body respects its row is a separate and
@@ -300,8 +340,8 @@ expect them.
 
   | atom | route |
   |---|---|
-  | `read(r)`, `write(r)`, `net(d)`, `alloc`, `time`, `rand`, `term` | `NoObligation` |
-  | `panic` | `NoObligation` — abort is described by its propagation |
+  | `read(r)`, `write(r)`, `net(d)`, `alloc`, `time`, `rand`, `term` | `NoObligation(RowChecked)` |
+  | `panic` | `NoObligation(None)` — abort is described by its propagation |
   | `diverge` | `Implemented(measures)` — a well-founded ordering |
   | `blocks` | `Deferred(session_duality)` |
 
@@ -343,7 +383,23 @@ expect them.
   RFC-8's step 4 hands checking to RFC-9. A step whose output the next step
   consumes has no in-scope consumer by construction.
 
-  **The candidates, and what each fails.** The diagnostic in
+  **One candidate is not a message, and it is not dismissed.** The shipped
+  runtime sandbox derives enforced syscall grants from effect atoms through
+  `thermite_verified::widen` and `io_allow`, with
+  `forge::sandbox::syscall_allowlist` anchored to the proved bitset over all 512
+  masks. That is behavioural rather than diagnostic: a wrong mapping changes what
+  a program is permitted to execute. Having the basis drive or cross-check it
+  would exercise semantic distinctions. Two things keep it out of this step
+  rather than out of the design. The grant is a platform fact and not an
+  algebraic one — nothing in `state(d) + io(σ_d)` determines `socket|connect` —
+  so the basis can cross-check the table but cannot derive it, and the shape of
+  a sound cross-check is unsettled, since `alloc` puts to `heap` while widening
+  none of the five sensitive syscalls. And `forge` is downstream of
+  `thermite-lower` in `goal.md` R-DEFER-7's order, so consuming it from `forge`
+  before the lower tier exists inverts the sequence. Recorded as OQ-8, and it is
+  the first candidate to revisit if this override is reopened.
+
+  **The candidates that are messages, and what each fails.** The diagnostic in
   `thermite-lower/src/lower.rs` is a message: a `Display` implementation that
   prints a lookup does not exercise the lookup, so an incorrect entry in REQ-5's
   map would produce an incorrect message and no failure. It also costs 7,506
@@ -362,6 +418,13 @@ expect them.
   exercised and validated. AC-9 does that: it derives the footprint and the mask
   by separate routes from REQ-5's map and asserts they agree, so a wrong entry
   fails a test rather than printing a wrong message. The mask side is anchored to
+  **This argument rests on ACs that have never run**, since nothing is built, and
+  an adversarial review of this document found AC-9 stating the law with `Net`
+  missing from both mask sets, which would have failed on the single-atom row
+  `! net(d)`. The AC is corrected; the episode is recorded because it bounds what
+  this paragraph claims. AC-9 validates the map once it runs, and until then it
+  is an unexecuted intention like any other part of a contract authored ahead of
+  its code. The mask side is anchored to
   the Verus-proved `thermite_verified::subsumes_masks`, so the comparison is
   against established code rather than against this component's own output
   (R-CHAR-3). AC-10 does the same for the route table. Both fail without any
@@ -415,9 +478,16 @@ expect them.
   built from the nine labels, the footprint and the existing mask satisfy:
 
   ```
-  footprint(row).writes ≠ ∅  ⟺  mask(row) ∩ {Write, Alloc, Rand, Term} ≠ ∅
-  footprint(row).reads  ≠ ∅  ⟺  mask(row) ∩ {Read, Write, Alloc, Time, Rand, Term} ≠ ∅
+  footprint(row).writes ≠ ∅  ⟺  mask(row) ∩ {Write, Net, Alloc, Rand, Term} ≠ ∅
+  footprint(row).reads  ≠ ∅  ⟺  mask(row) ∩ {Read, Write, Net, Alloc, Time, Rand, Term} ≠ ∅
   ```
+
+  `Net` is on both sides because REQ-5 sends `net(d)` to a combination whose
+  state summand is instanced at `d`, so AC-8 gives it the footprint `({d}, {d})`.
+  An earlier draft of this AC omitted `Net` from both sets, which made the law
+  fail on the single-atom row `! net(d)`: both footprint sides non-empty, both
+  mask sides empty. The omission is the defect this AC is built to catch, found
+  in the AC rather than in the map.
 
   Both sides are derived from REQ-5's map — the left by which entries carry `get`
   or `put`, the right by which labels the map sends to a state instance — so a
@@ -566,6 +636,37 @@ sites are the only `net` uses in the tree and which AC-7 holds unchanged.
   input. `owns` has no surface label today and arrives with
   [RFC-10](../rfcs/0010-shared-state-invariants.md). Not a blocker for the three
   REQs here.
+
+- **OQ-6 (which theory the bare `random` atom is):** REQ-3 records that the
+  commutation fact `random ∥ random` accept is inherited from RFC-7 §5 rather
+  than derived, because Fubini needs a distribution the unparameterized atom
+  does not carry. Three readings are open: nondeterministic choice, which
+  commutes because the finite powerset monad is commutative; a free operation
+  with no equations, which does not commute; and sampling, which commutes by
+  Fubini once a distribution exists. `random(D)` settles it by putting the
+  distribution in the denotation. REQ-1's frame-condition criterion separates
+  `random` from `io(σ)` without this being settled, so the basis is unaffected.
+  A blocker for REQ-8 reporting the `random` row as computed, and for nothing
+  else.
+
+- **OQ-7 (the socket interaction the sum does not express):** REQ-6 combines
+  `state(d)` and `io(σ_d)` by sum, which asserts no equations between them. The
+  real interaction is directed — a `setsockopt` timeout changes what a later
+  `recvfrom` does — and a sum is silent about it. The silence is sound in the
+  direction this document needs, since it licenses no commutation the
+  interaction would refute, and it is an over-approximation rather than a model.
+  Expressing the interaction needs directed equations or a distributive law.
+  Not a blocker for the three RFC-8 requirements.
+
+- **OQ-8 (the sandbox as a behavioural consumer):** REQ-14 records the runtime
+  sandbox as the one production consumer that is not a message, since
+  `widen`/`io_allow` derive enforced syscall grants from effect atoms. Two things
+  are unsettled: the grant is a platform fact that no basis entry determines, so
+  the relation can only be a cross-check, and the shape of a sound cross-check is
+  unclear because `alloc` puts to `heap` while widening none of the five
+  sensitive syscalls. `forge` is also downstream of `thermite-lower` in
+  R-DEFER-7's order. The first candidate to revisit if REQ-14's override is
+  reopened.
 
 - **OQ-4 (combination's commutation meet):** REQ-6 defines a combination's
   commutation fact as the conservative meet of its summands', so `net(d)` rejects
