@@ -1240,3 +1240,30 @@ crate_pattern = "gates/control-plane-check.py"
 design = ".design/gates/control-plane.md"
 reference = []
 conformance_ops = []
+
+# ---------------------------------------------------------------------
+# The effect algebra — what a row denotes (RFC-8)
+# ---------------------------------------------------------------------
+#   .design/syntax/effect-algebra.md contracts the three REQs RFC-8
+#   introduces: REQ-SYNTAX-EFFECT-BASIS and REQ-SYNTAX-EFFECT-DECLARED in
+#   thermite-syntax, REQ-SPEC-EFFECT-COMMUTATION in thermite-spec (the
+#   R-DEFER-7 order, and the scopes .design/reqs/registry.toml records).
+#   Both files are ahead of the build, so they take the manifest-time
+#   `unbuilt = true` convention documented at the boundary.rs routes above.
+#
+#   The declaration surface (REQ-7) also touches ast.rs and parser.rs, which
+#   are already routed to their own docs; that step re-pins the eight docs
+#   governing those two files and adds no route here.
+[[route]]
+crate_pattern = "thermite-syntax/src/effect_basis.rs"
+design = ".design/syntax/effect-algebra.md"
+reference = []
+conformance_ops = []
+unbuilt = true
+
+[[route]]
+crate_pattern = "thermite-spec/src/effect_commutation.rs"
+design = ".design/syntax/effect-algebra.md"
+reference = []
+conformance_ops = []
+unbuilt = true
