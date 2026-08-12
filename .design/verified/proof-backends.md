@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: 0cff30526c2960f3ecec40d29a8609de031d3231cbfee795a5333e7d0a66ba67 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 1663c632bad8d679ef17c12995673519f7db1d0da75e71b106c2b5f95c78fae3.)
+audited-content-sha256: 426a494732bca8d961a719a28d5753a73f89a090f7c459c3af7eb323f3207a90 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 1663c632bad8d679ef17c12995673519f7db1d0da75e71b106c2b5f95c78fae3.)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and

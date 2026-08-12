@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 84d436cfbcf8ffadf465dd26d95e6de0226232aa3fd19450c4d6b867214b0635 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 72edf80a374ac90d33af19ddf4b351f126cdf50245f3f56da84beaabe54ec609.)
+audited-content-sha256: 3dec968aaeb6f8f8908fefebd9be034bd5b23b8e6c167aeb81f0407894154577 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 72edf80a374ac90d33af19ddf4b351f126cdf50245f3f56da84beaabe54ec609.)
 decision: qualify invariant field paths in the canonical invariant lowerer
 issue: github:dollspace-gay/Thermite#110
 governs:

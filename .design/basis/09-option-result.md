@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 04385916b00070c1dbc94090c803e61e57bf6d9ed2d9dcf70e7a158c5ed67137 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 4a33996659471a3323be5ce0182845f6704de1f288f2e451be8274f5987b6da0.)
+audited-content-sha256: f5ae14fae6972570d7327ad650eec32112665b94b76ae37277b1be1e473655a1 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 4a33996659471a3323be5ce0182845f6704de1f288f2e451be8274f5987b6da0.)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized
