@@ -192,7 +192,9 @@ pub fn lower_l1(program: &Program) -> Result<String, LowerError> {
             Item::Enum(e) => lower_enum_l1(e)?,
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer
             // yet (increments 2b-3); emit nothing, mirroring the inert ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) => continue,
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
+                continue
+            }
         };
         out.push('\n');
         out.push_str(&item_src);
@@ -474,7 +476,7 @@ pub(crate) fn emit_combinator_l1_defs(program: &Program) -> Result<String, Lower
             Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 combinator-collection
             // consumer yet (increments 2b-3); inert here, mirroring the ADT-decl arm.
-            Item::Forge(_) | Item::EffectDecl(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
         }
     }
 
@@ -2142,7 +2144,7 @@ fn program_uses_string_l1(program: &Program) -> bool {
             }
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer
             // yet (increments 2b-3); skip, mirroring main's inert handling.
-            Item::Forge(_) | Item::EffectDecl(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
         }
     }
     false
@@ -2874,7 +2876,7 @@ fn program_uses_numfmt_l1(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer yet
         // (increments 2b-3); contributes nothing, mirroring the inert ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) => false,
+        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
     })
 }
 

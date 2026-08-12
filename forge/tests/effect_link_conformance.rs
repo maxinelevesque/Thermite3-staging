@@ -407,7 +407,8 @@ fn read_byte_links_and_runs_both_arms() {
         return;
     }
     // The design's read_demo (08-runnable-effect-link.md AC-2), hand-derived.
-    let prog = "#[boundary(\"os::read_byte\")] fn read_byte() -> u64\n  ! read(input)
+    let prog =
+        "shared input: u8\n#[boundary(\"os::read_byte\")] fn read_byte() -> u64\n  ! read(input)
   requires true\n  \
                 ensures result <= 256\n  ;\n\n\
                 fn doubled() -> u64\n  ! read(input)

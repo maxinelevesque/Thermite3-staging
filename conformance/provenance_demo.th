@@ -1,3 +1,6 @@
+shared db: u8
+shared log: u8
+
 struct Tainted { raw: u64 }
 #[sealed] struct Sql { stmt: u64 }
 

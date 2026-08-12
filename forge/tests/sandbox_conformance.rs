@@ -263,7 +263,7 @@ fn probe_allowed_when_fx_widens() {
     // The oracle's `rf` fixture (declared inline per cases.json `program`).
     let fixture = write_fixture(
         "rf",
-        "fn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }\n",
+        "shared src: u8\nfn rf(x: u32) -> u32 ! read(src) requires x < 100 ensures result == x { x }\n",
     );
     let (ok, stdout, stderr) = run_forge_build(&[
         fixture.to_str().unwrap(),
@@ -453,7 +453,7 @@ fn term_grant_adds_ioctl_to_the_recorded_allowlist() {
     // A pure / write entry's allowlist excludes ioctl: the grant is fx-derived.
     let write_fixture_path = write_fixture(
         "wf",
-        "fn wf(x: u32) -> u32 ! write(out) requires x < 100 ensures result <= x { x }\n",
+        "shared out: u8\nfn wf(x: u32) -> u32 ! write(out) requires x < 100 ensures result <= x { x }\n",
     );
     let (ok2, stdout2, stderr2) = run_forge_build(&[
         write_fixture_path.to_str().unwrap(),

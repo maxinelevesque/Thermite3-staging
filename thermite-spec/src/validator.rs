@@ -722,7 +722,10 @@ impl Validator {
                 // declares no `spec fn` name. A `prop fn` IS a forge-tier definition,
                 // but it is consumed by the forge increments (2b–3), not the v1 spec
                 // validator — it is not seeded as a v1 spec-fn callee here.
-                Item::Forge(_) | Item::EffectDecl(_) => None,
+                Item::Forge(_)
+                | Item::EffectDecl(_)
+                | Item::SharedDecl(_)
+                | Item::Concurrent(_) => None,
             })
             .collect();
         // Cluster C4 strings (`.design/basis/07-strings.md` REQ-8, issue #94): seed
@@ -809,7 +812,10 @@ impl Validator {
                 Item::Fn(_) | Item::SpecFn(_) => {}
                 // A forge-tier item (`.design/stage1-forge-tier.md` REQ-3) declares
                 // no enum/struct, so it raises no variant-casing concern here.
-                Item::Forge(_) | Item::EffectDecl(_) => {}
+                Item::Forge(_)
+                | Item::EffectDecl(_)
+                | Item::SharedDecl(_)
+                | Item::Concurrent(_) => {}
             }
         }
 
@@ -877,7 +883,10 @@ impl Validator {
                 // lower into the reserved `__thermite_` namespace in v1 (its
                 // consumers are increments 2b–3), so it is not reserved-name checked
                 // here.
-                Item::Forge(_) | Item::EffectDecl(_) => None,
+                Item::Forge(_)
+                | Item::EffectDecl(_)
+                | Item::SharedDecl(_)
+                | Item::Concurrent(_) => None,
             };
             if let Some((name, span)) = declared {
                 if name.starts_with(THERMITE_RESERVED_PREFIX) {
@@ -963,6 +972,7 @@ impl Validator {
                 Item::EffectDecl(declaration) => {
                     let _resolved = thermite_syntax::effect_basis::resolve_declaration(declaration);
                 }
+                Item::SharedDecl(_) | Item::Concurrent(_) => {}
             }
         }
     }

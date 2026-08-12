@@ -2221,9 +2221,9 @@ mod tests {
     fn effects_of_covers_every_variant() {
         assert_eq!(effects_of(&EffectRow::Pure), vec!["pure".to_string()]);
         let row = EffectRow::Set(vec![
-            Effect::Read("x".to_string()),
-            Effect::Write("y".to_string()),
-            Effect::Net("z".to_string()),
+            Effect::Read("x".to_string().into()),
+            Effect::Write("y".to_string().into()),
+            Effect::Net("z".to_string().into()),
             Effect::Alloc,
             Effect::Time,
             Effect::Rand,

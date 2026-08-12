@@ -23,6 +23,7 @@ fn sealed_structlit_launder_is_rejected() {
     // The #77 taint launder: a `Sql` `#[sealed]` clean type minted via `StructLit`
     // from a `Tainted` payload, outside the `parameterize` door.
     let src = r#"
+shared db: u8
 struct Tainted { raw: u64 }
 #[sealed] struct Sql { stmt: u64 }
 
@@ -56,6 +57,7 @@ fn the_safe_doored_path_validates_clean() {
     // in-language `StructLit` — so the seal does not block it. The safe path mints
     // no `Sql` literal; it validates clean (REQ-8: the door is the only mint).
     let src = r#"
+shared db: u8
 struct Tainted { raw: u64 }
 #[sealed] struct Sql { stmt: u64 }
 

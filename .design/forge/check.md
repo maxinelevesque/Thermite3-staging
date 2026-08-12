@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 7302fcaada3a5e595468e00686ef3baeb870e1b6ff1d3ab169ec3eab092babc8 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 7974647562489ff39307a8e555311d773caea46e478f663d782c29f22f085bd7.)
+audited-content-sha256: c26b1b917153d88eee6adf2ce03839adad3481454e3389827280c27fce369c51 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 7974647562489ff39307a8e555311d773caea46e478f663d782c29f22f085bd7.)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1

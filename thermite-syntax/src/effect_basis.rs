@@ -18,11 +18,11 @@
 //! | REQ-7 | SHIPPED | `EffectDeclItem`, the parser, and [`resolve_declaration`] close declarations over the five primitives. |
 //! | REQ-8 | SHIPPED | `thermite_spec::effect_commutation` computes facts from these entries. |
 //! | REQ-9 | SHIPPED | `thermite_lower::LowerError::EffectNotSubsumed` reports [`entry_for_effect`] and its frame condition without changing the missing set. |
-//! | REQ-10 | NOT-STARTED | Future RFC-9 scope owns region-granular checking and conflict detection. |
+//! | REQ-10 | SHIPPED | RFC-9's production consumer checks region overlap and computed commutation in `thermite_spec::effect_commutation`. |
 //! | REQ-11 | SHIPPED | This module does not alter `Effect`, lowering masks, or verified subsumption. |
 //! | REQ-12 | SHIPPED | [`BasisEntry::footprint`] projects region reads and writes. |
 //! | REQ-13 | SHIPPED | [`route_for_effect`] and [`route_for_given`] provide discharge classifications. |
-//! | REQ-14 | NOT-STARTED | Deferred to future RFC-9's production conflict consumer. |
+//! | REQ-14 | SHIPPED | RFC-9's production conflict consumer is wired through `thermite_spec::effect_commutation`. |
 
 use std::collections::BTreeSet;
 
@@ -210,10 +210,10 @@ pub fn entry_for_effect(effect: &Effect) -> BasisEntry {
     let state_write = |region: &str| Entry::state(region, [Operation::Get, Operation::Put]);
 
     match effect {
-        Effect::Read(region) => BasisEntry::Primitive(state_read(region)),
-        Effect::Write(region) => BasisEntry::Primitive(state_write(region)),
+        Effect::Read(region) => BasisEntry::Primitive(state_read(&region.display())),
+        Effect::Write(region) => BasisEntry::Primitive(state_write(&region.display())),
         Effect::Net(domain) => BasisEntry::Combination(vec![
-            state_write(domain),
+            state_write(&domain.display()),
             Entry::io(&format!("sigma_{domain}")),
         ]),
         Effect::Alloc => BasisEntry::Primitive(state_write("heap")),

@@ -1,3 +1,5 @@
+shared stdin: u8
+
 #[boundary("os::read_small")] fn read_small() -> Option<u64>
   ! read(stdin)
   requires true

@@ -1,7 +1,7 @@
 # Thermite — convenience targets. The build/test system is Cargo; these are
 # thin entry points. `make audit` is the headline: a FULL TRUST-CHAIN
 # re-derivation a skeptic runs on their own machine (see gates/audit.sh).
-.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test
+.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test rfc9-effect-inventory
 
 DOC_DRIFT_CI_BASE ?= origin/main
 DOC_DRIFT_CI_HEAD ?= HEAD
@@ -35,6 +35,7 @@ gauntlet:
 	cargo fmt --all --check
 	uv run python gates/req-status.py
 	uv run gates/reqs check
+	uv run gates/rfc9-effect-inventory.py --check
 
 check:
 	cargo build --workspace
@@ -139,3 +140,9 @@ paths-exist:
 
 paths-exist-test:
 	@uv run python -m unittest discover -s gates/tests -v
+
+# RFC-9 migration inventory: all standalone .th and JSON program fields have
+# declared shared roots; Rust's mixed code/prose population is explicitly
+# enumerated for reviewed burn-down.
+rfc9-effect-inventory:
+	@uv run gates/rfc9-effect-inventory.py --check

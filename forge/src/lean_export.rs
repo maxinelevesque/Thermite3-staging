@@ -2399,6 +2399,11 @@ fn export_item_with_mode(
                 "effect declaration (algebra metadata, no certification obligation)".to_string(),
             ))
         }
+        Item::SharedDecl(_) | Item::Concurrent(_) => {
+            return Err(ExportRefusal::OutOfFragment(
+                "effect-region metadata (no standalone certification obligation)".to_string(),
+            ))
+        }
     };
 
     // The env coercion frame (sorts free names).

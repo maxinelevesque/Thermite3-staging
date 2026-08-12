@@ -38,7 +38,8 @@
 //! | REQ-LOWER-EFFECTS-SUBSUMPTION | shipped | `thermite-lower/src/effects.rs` | Effect-row subsumption |  |
 //! <!-- /generated:reqs -->
 
-use std::collections::BTreeMap;
+use std::cell::RefCell;
+use std::collections::{BTreeMap, BTreeSet};
 
 use thermite_syntax::ast::{
     Block, Effect, EffectRow, Expr, IndexArg, Item, LoopKind, Program, Stmt,
@@ -115,38 +116,6 @@ impl EffectKind {
             Effect::Term => EffectKind::Term,
         }
     }
-
-    /// A representative `Effect` for this kind, used to populate the `missing`
-    /// set of an `EffectNotSubsumed` error (REQ-4). The path/domain carriers
-    /// (`Read`/`Write`/`Net`) are reported with an empty path, since v0.1
-    /// subsumption is path-insensitive (OQ-1) and the agent's fix is to add the
-    /// effect kind to the caller's row.
-    fn to_effect(self) -> Effect {
-        match self {
-            EffectKind::Read => Effect::Read(String::new()),
-            EffectKind::Write => Effect::Write(String::new()),
-            EffectKind::Net => Effect::Net(String::new()),
-            EffectKind::Alloc => Effect::Alloc,
-            EffectKind::Time => Effect::Time,
-            EffectKind::Rand => Effect::Rand,
-            EffectKind::Panic => Effect::Panic,
-            EffectKind::Diverge => Effect::Diverge,
-            EffectKind::Term => Effect::Term,
-        }
-    }
-}
-
-/// The atom-kind set of an effect row (REQ-1/REQ-2): `effects(Pure) = {}`,
-/// `effects(Set(v)) = { kind(e) | e ∈ v }`. A `BTreeSet`-like deduped, ordered
-/// `Vec` (ordering is by `EffectKind`'s derived `Ord` — deterministic, R-CODE-5).
-fn effects(row: &EffectRow) -> Vec<EffectKind> {
-    let mut kinds: Vec<EffectKind> = match row {
-        EffectRow::Pure => Vec::new(),
-        EffectRow::Set(v) => v.iter().map(EffectKind::of).collect(),
-    };
-    kinds.sort_unstable();
-    kinds.dedup();
-    kinds
 }
 
 /// The 9-atom `u16` bitset of an effect row (one bit per `EffectKind`, see
@@ -181,24 +150,46 @@ pub fn subsumes(caller: &EffectRow, callee: &EffectRow) -> bool {
     thermite_verified::subsumes_masks(mask(caller), mask(callee))
 }
 
-/// The atoms the callee has that the caller's row lacks (`effects(callee) \
-/// effects(caller)`) — the `missing` set of an `EffectNotSubsumed` error
-/// (REQ-4). Empty iff `subsumes(caller, callee)`. Returned as concrete `Effect`s
-/// (path-insensitive representatives) so the diagnostic names the effect
-/// kinds the agent must add to the caller's row.
-fn missing_atoms(caller: &EffectRow, callee: &EffectRow) -> Vec<Effect> {
-    let caller_set = effects(caller);
-    effects(callee)
-        .into_iter()
-        .filter(|k| !caller_set.contains(k))
-        .map(EffectKind::to_effect)
-        .collect()
+/// Region-sensitive difference used by RFC-9 call propagation. Unlike the
+/// compatibility `subsumes` projection, carrier effects retain their complete
+/// paths. A declaration on an ancestor region is a valid frame upper bound for
+/// an operation on a descendant region.
+fn missing_footprint(caller: &EffectRow, callee: &EffectRow) -> Vec<Effect> {
+    let declared = match caller {
+        EffectRow::Pure => &[][..],
+        EffectRow::Set(effects) => effects.as_slice(),
+    };
+    let inferred = match callee {
+        EffectRow::Pure => &[][..],
+        EffectRow::Set(effects) => effects.as_slice(),
+    };
+    let mut missing: Vec<Effect> = inferred
+        .iter()
+        .filter(|effect| {
+            !declared
+                .iter()
+                .any(|bound| effect_is_covered(bound, effect))
+        })
+        .cloned()
+        .collect();
+    missing.sort();
+    missing.dedup();
+    missing
+}
+
+fn effect_is_covered(bound: &Effect, operation: &Effect) -> bool {
+    match (bound, operation) {
+        (Effect::Read(outer), Effect::Read(inner))
+        | (Effect::Write(outer), Effect::Write(inner))
+        | (Effect::Net(outer), Effect::Net(inner)) => inner.segments.starts_with(&outer.segments),
+        _ => bound == operation,
+    }
 }
 
 /// What a callee name resolves to in the program's effect call graph (REQ-3).
-enum Callee<'a> {
+enum Callee {
     /// A declared `fn` with its own `fx` row.
-    Fn(&'a EffectRow),
+    Fn,
     /// A `spec fn` (no `fx`; pure by construction — §4.2 spec sublanguage is
     /// total/effect-free) or a registry combinator. Always subsumed.
     Pure,
@@ -206,6 +197,41 @@ enum Callee<'a> {
     /// combinator. A no-op for subsumption: the #2 validator owns unknown-name
     /// rejection (AC-5), so the effect checker does not panic or error here.
     Unresolved,
+}
+
+/// A declared operation that fixed-point inference did not find in the body or
+/// any transitive callee. Warnings are data, not lowerer-side stderr output, so
+/// Forge and other structured consumers can choose their release policy.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EffectWarning {
+    pub function: String,
+    pub excess: Vec<Effect>,
+    pub span: Span,
+}
+
+impl std::fmt::Display for EffectWarning {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let excess: Vec<String> = self
+            .excess
+            .iter()
+            .map(|effect| format!("{effect:?}"))
+            .collect();
+        write!(
+            formatter,
+            "effect row of `{}` is over-conservative at byte {}..{}: excess effect(s) [{}]",
+            self.function,
+            self.span.start,
+            self.span.end(),
+            excess.join(", ")
+        )
+    }
+}
+
+/// RFC-9's complete effect-analysis product.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EffectAnalysis {
+    pub footprints: BTreeMap<String, BTreeSet<Effect>>,
+    pub warnings: Vec<EffectWarning>,
 }
 
 /// The compile-time effect-subsumption check (REQ-3). Builds a name→`Contract.effects`
@@ -218,6 +244,14 @@ enum Callee<'a> {
 /// always permitted; an unresolved callee is a no-op (AC-5). Never panics: a
 /// pathological body returns `LowerError::TooDeep` (REQ-4 / AC-5).
 pub fn check_effects(program: &Program) -> Result<(), Vec<LowerError>> {
+    analyze_effects(program).map(|_| ())
+}
+
+/// Infer exact transitive footprints to a deterministic least fixed point and
+/// compare them with declared frame bounds. Foreign boundary functions seed
+/// inference with their declared row; in-language functions seed it with
+/// recognized direct intrinsics and then union resolved callees until stable.
+pub fn analyze_effects(program: &Program) -> Result<EffectAnalysis, Vec<LowerError>> {
     // name → declared `fx` row, over the `FnItem`s. `SpecFnItem` names are noted
     // as pure (they carry no `fx`). On a duplicate name the first declaration
     // wins (deterministic; duplicate-name rejection is the #2 validator's job).
@@ -241,25 +275,32 @@ pub fn check_effects(program: &Program) -> Result<(), Vec<LowerError>> {
             Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 effect consumer yet
             // (increments 2b-3); inert here, mirroring the ADT-decl arm.
-            Item::Forge(_) | Item::EffectDecl(_) => {}
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
         }
     }
 
-    let resolve = |name: &str| -> Callee<'_> {
-        if let Some(row) = fn_rows.get(name) {
-            Callee::Fn(row)
-        } else if spec_names.contains_key(name) || thermite_spec::lookup(name).is_some() {
-            Callee::Pure
-        } else {
-            Callee::Unresolved
-        }
-    };
-
     let mut errors: Vec<LowerError> = Vec::new();
+    let mut calls: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut footprints: BTreeMap<String, BTreeSet<Effect>> = BTreeMap::new();
     for item in &program.items {
         // Only `fn` items have an `fx` row and so can be a checked caller; a
         // `spec fn` is pure by construction and makes no effectful calls.
         if let Item::Fn(f) = item {
+            let direct = RefCell::new(BTreeSet::new());
+            let called = RefCell::new(BTreeSet::new());
+            let resolve = |name: &str| -> Callee {
+                if fn_rows.contains_key(name) {
+                    called.borrow_mut().insert(name.to_string());
+                    Callee::Fn
+                } else if let Some(effect) = intrinsic_effect(name) {
+                    direct.borrow_mut().insert(effect);
+                    Callee::Pure
+                } else if spec_names.contains_key(name) || thermite_spec::lookup(name).is_some() {
+                    Callee::Pure
+                } else {
+                    Callee::Unresolved
+                }
+            };
             // A boundary fn (ffi-boundary.md REQ-2) has `body: None`; its body is
             // foreign and makes no in-language calls to subsume (its own `fx` row
             // is trusted by fiat, OQ-4; the row is still checked at the call site,
@@ -275,14 +316,171 @@ pub fn check_effects(program: &Program) -> Result<(), Vec<LowerError>> {
                     0,
                     &mut errors,
                 );
+                calls.insert(f.name.clone(), called.into_inner());
+                footprints.insert(f.name.clone(), direct.into_inner());
+            } else {
+                calls.insert(f.name.clone(), BTreeSet::new());
+                footprints.insert(f.name.clone(), row_effects(&f.contract.effects));
             }
         }
     }
 
+    if errors
+        .iter()
+        .any(|error| matches!(error, LowerError::TooDeep { .. }))
+    {
+        return Err(errors);
+    }
+
+    // Monotone union over finite effect sets. Source-order maps and sets make
+    // both convergence and diagnostics deterministic, including recursive SCCs.
+    loop {
+        let previous = footprints.clone();
+        for (caller, callees) in &calls {
+            let footprint = footprints.entry(caller.clone()).or_default();
+            for callee in callees {
+                if let Some(callee_footprint) = previous.get(callee) {
+                    footprint.extend(callee_footprint.iter().cloned());
+                }
+            }
+        }
+        if footprints == previous {
+            break;
+        }
+    }
+
+    let mut warnings = Vec::new();
+    for item in &program.items {
+        let Item::Fn(function) = item else { continue };
+        if function.body.is_none() {
+            continue;
+        }
+        let inferred = footprints.get(&function.name).cloned().unwrap_or_default();
+        let inferred_row = EffectRow::Set(inferred.iter().cloned().collect());
+        let missing = missing_footprint(&function.contract.effects, &inferred_row);
+        if !missing.is_empty() {
+            errors.push(LowerError::EffectNotSubsumed {
+                caller: function.name.clone(),
+                callee: "inferred transitive footprint".into(),
+                missing,
+                span: function.span,
+            });
+        }
+        let mut excess: Vec<Effect> = row_effects(&function.contract.effects)
+            .into_iter()
+            .filter(|declared| {
+                !inferred
+                    .iter()
+                    .any(|effect| effect_is_covered(declared, effect))
+            })
+            .collect();
+        excess.sort();
+        if !excess.is_empty() {
+            warnings.push(EffectWarning {
+                function: function.name.clone(),
+                excess,
+                span: function.span,
+            });
+        }
+    }
+
     if errors.is_empty() {
-        Ok(())
+        let region_span = program
+            .items
+            .iter()
+            .find_map(|item| match item {
+                Item::SharedDecl(item) => Some(item.span),
+                Item::Concurrent(item) => Some(item.span),
+                _ => None,
+            })
+            .unwrap_or(Span::new(0, 0));
+        // Region honesty is a property of every program, not an opt-in feature
+        // activated by `shared` or `concurrent` metadata. Building the index
+        // unconditionally makes a named state effect with no declaration fail
+        // closed, including legacy programs that contain neither new item form.
+        let regions = thermite_spec::RegionIndex::build(program).map_err(|region_errors| {
+            region_errors
+                .into_iter()
+                .map(|error| LowerError::EffectAnalysis {
+                    detail: format!("region resolution: {error:?}"),
+                    span: region_span,
+                })
+                .collect::<Vec<_>>()
+        })?;
+        if program
+            .items
+            .iter()
+            .any(|item| matches!(item, Item::Concurrent(_)))
+        {
+            let conflicts = thermite_spec::effect_commutation::concurrent_conflicts(
+                program,
+                &regions,
+                &footprints,
+            )
+            .map_err(|detail| {
+                vec![LowerError::EffectAnalysis {
+                    detail,
+                    span: Span::new(0, 0),
+                }]
+            })?;
+            if !conflicts.is_empty() {
+                return Err(conflicts
+                    .into_iter()
+                    .map(|conflict| LowerError::EffectAnalysis {
+                        span: program
+                            .items
+                            .iter()
+                            .find_map(|item| match item {
+                                Item::Concurrent(item)
+                                    if item.name == conflict.composition => Some(item.span),
+                                _ => None,
+                            })
+                            .unwrap_or(Span::new(0, 0)),
+                        detail: format!(
+                            "concurrent `{}` roots `{}` and `{}` conflict: {:?} versus {:?}; overlap {:?}",
+                            conflict.composition,
+                            conflict.left_root,
+                            conflict.right_root,
+                            conflict.left_effect,
+                            conflict.right_effect,
+                            conflict.overlap
+                        ),
+                    })
+                    .collect());
+            }
+        }
+        Ok(EffectAnalysis {
+            footprints,
+            warnings,
+        })
     } else {
         Err(errors)
+    }
+}
+
+fn row_effects(row: &EffectRow) -> BTreeSet<Effect> {
+    match row {
+        EffectRow::Pure => BTreeSet::new(),
+        EffectRow::Set(effects) => effects.iter().cloned().collect(),
+    }
+}
+
+/// Closed mapping for effectful intrinsic call names that the expression walk
+/// can identify without type reconstruction. Ambiguous names remain for the
+/// typed lowering hook rather than being guessed here.
+fn intrinsic_effect(name: &str) -> Option<Effect> {
+    match name {
+        "__string_literal"
+        | "__owned_constructor"
+        | "push"
+        | "push_byte"
+        | "insert"
+        | "concat"
+        | "slice"
+        | "to_string"
+        | "split"
+        | "trim" => Some(Effect::Alloc),
+        _ => None,
     }
 }
 
@@ -292,12 +490,12 @@ pub fn check_effects(program: &Program) -> Result<(), Vec<LowerError>> {
     clippy::too_many_arguments,
     reason = "the walk threads caller row, name, span, resolver, depth, and the error sink through one recursive family; bundling them into a context struct would not reduce the surface"
 )]
-fn check_block<'a>(
-    block: &'a Block,
+fn check_block(
+    block: &Block,
     caller_fx: &EffectRow,
     caller_name: &str,
     caller_span: Span,
-    resolve: &dyn Fn(&str) -> Callee<'a>,
+    resolve: &dyn Fn(&str) -> Callee,
     depth: usize,
     errors: &mut Vec<LowerError>,
 ) {
@@ -422,12 +620,12 @@ fn check_block<'a>(
 /// code and is walked (in the `Stmt::Loop` arm of `check_block`); the loop's
 /// `inv`/`dec` spec clauses are not walked, since contract/spec positions are
 /// pure by construction (§4.2).
-fn check_expr<'a>(
-    expr: &'a Expr,
+fn check_expr(
+    expr: &Expr,
     caller_fx: &EffectRow,
     caller_name: &str,
     caller_span: Span,
-    resolve: &dyn Fn(&str) -> Callee<'a>,
+    resolve: &dyn Fn(&str) -> Callee,
     depth: usize,
     errors: &mut Vec<LowerError>,
 ) {
@@ -445,6 +643,22 @@ fn check_expr<'a>(
             // registry-free; combinator/fn calls are plain `Expr::Call` with a
             // `Path` callee; `ast.rs` module doc / lower.rs precedent).
             if let Expr::Path(segs) = callee.as_ref() {
+                if matches!(
+                    segs.as_slice(),
+                    [owner, operation]
+                        if (matches!(owner.as_str(), "Vec" | "Map" | "String" | "Box")
+                            && operation == "new")
+                            || (owner == "String" && operation == "from_byte")
+                ) {
+                    check_call(
+                        "__owned_constructor",
+                        caller_fx,
+                        caller_name,
+                        caller_span,
+                        resolve,
+                        errors,
+                    );
+                }
                 if let Some(name) = segs.last() {
                     check_call(name, caller_fx, caller_name, caller_span, resolve, errors);
                 }
@@ -681,7 +895,15 @@ fn check_expr<'a>(
                 errors,
             );
         }
-        Expr::IntLit { .. } | Expr::BoolLit(_) | Expr::Path(_) | Expr::StrLit(_) => {}
+        Expr::StrLit(_) => check_call(
+            "__string_literal",
+            caller_fx,
+            caller_name,
+            caller_span,
+            resolve,
+            errors,
+        ),
+        Expr::IntLit { .. } | Expr::BoolLit(_) | Expr::Path(_) => {}
     }
 }
 
@@ -690,25 +912,19 @@ fn check_expr<'a>(
 /// `EffectNotSubsumed` with the exact `missing` set on failure (REQ-4). A `spec
 /// fn` / combinator callee is pure ⇒ always subsumed; an unresolved callee is a
 /// no-op (AC-5).
-fn check_call<'a>(
+fn check_call(
     name: &str,
-    caller_fx: &EffectRow,
-    caller_name: &str,
-    caller_span: Span,
-    resolve: &dyn Fn(&str) -> Callee<'a>,
-    errors: &mut Vec<LowerError>,
+    _caller_fx: &EffectRow,
+    _caller_name: &str,
+    _caller_span: Span,
+    resolve: &dyn Fn(&str) -> Callee,
+    _errors: &mut Vec<LowerError>,
 ) {
     match resolve(name) {
-        Callee::Fn(callee_fx) => {
-            if !subsumes(caller_fx, callee_fx) {
-                errors.push(LowerError::EffectNotSubsumed {
-                    caller: caller_name.to_string(),
-                    callee: name.to_string(),
-                    missing: missing_atoms(caller_fx, callee_fx),
-                    span: caller_span,
-                });
-            }
-        }
+        // Merely resolving the call records its graph edge in `analyze_effects`.
+        // Authorization happens once, after the least fixed point, so an
+        // overdeclared callee cannot pollute its callers' inferred footprints.
+        Callee::Fn => {}
         Callee::Pure | Callee::Unresolved => {}
     }
 }

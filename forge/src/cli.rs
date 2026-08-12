@@ -2053,6 +2053,7 @@ fn run_check(
     mutation_floor: f64,
     engine: check::EngineSelection,
 ) -> Result<ExitCode, ForgeError> {
+    emit_effect_warnings(file, json)?;
     // The default (no flag) uses automatic L3 routing; `--level l2` is an explicit
     // choice that runs the Kani bounded model check instead, never an automatic
     // degrade (`.design/lower/l2-kani.md` REQ-7; #10 owns the auto-degrade). The
@@ -2442,6 +2443,7 @@ fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
         out,
         target,
     } = request;
+    emit_effect_warnings(file, json)?;
     if matches!(level, BuildLevel::L1) {
         let manifest = build::build_file(file, entry, sandbox, out, target)?;
         if json {
@@ -3637,9 +3639,67 @@ fn write_file(path: &Path, contents: &str) -> Result<(), ForgeError> {
     })
 }
 
+fn emit_effect_warnings(file: &Path, json: bool) -> Result<(), ForgeError> {
+    for warning in check::effect_warnings_for_file(file)? {
+        if json {
+            eprintln!("{}", effect_warning_json(&warning));
+        } else {
+            eprintln!("warning: {warning}");
+        }
+    }
+    Ok(())
+}
+
+fn effect_warning_json(warning: &thermite_lower::EffectWarning) -> serde_json::Value {
+    let excess: Vec<String> = warning.excess.iter().map(effect_spelling).collect();
+    serde_json::json!({
+        "kind": "effect-row-excess",
+        "severity": "warning",
+        "function": warning.function,
+        "span": { "start": warning.span.start, "end": warning.span.end() },
+        "excess": excess,
+    })
+}
+
+fn effect_spelling(effect: &thermite_syntax::Effect) -> String {
+    match effect {
+        thermite_syntax::Effect::Read(path) => format!("read({path})"),
+        thermite_syntax::Effect::Write(path) => format!("write({path})"),
+        thermite_syntax::Effect::Net(path) => format!("net({path})"),
+        thermite_syntax::Effect::Alloc => "alloc".into(),
+        thermite_syntax::Effect::Time => "time".into(),
+        thermite_syntax::Effect::Rand => "rand".into(),
+        thermite_syntax::Effect::Panic => "panic".into(),
+        thermite_syntax::Effect::Diverge => "diverge".into(),
+        thermite_syntax::Effect::Term => "term".into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn effect_warning_json_is_structured_and_canonical() {
+        let warning = thermite_lower::EffectWarning {
+            function: "overdeclared".into(),
+            excess: vec![
+                thermite_syntax::Effect::Write("db.child".into()),
+                thermite_syntax::Effect::Alloc,
+            ],
+            span: thermite_syntax::Span::new(7, 11),
+        };
+        assert_eq!(
+            effect_warning_json(&warning),
+            serde_json::json!({
+                "kind": "effect-row-excess",
+                "severity": "warning",
+                "function": "overdeclared",
+                "span": { "start": 7, "end": 18 },
+                "excess": ["write(db.child)", "alloc"],
+            })
+        );
+    }
 
     fn argv(parts: &[&str]) -> Vec<String> {
         parts.iter().map(|s| s.to_string()).collect()

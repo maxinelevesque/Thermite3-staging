@@ -303,6 +303,26 @@ pub fn check_file_with_rlimit(
 /// `cli::run_check` passes the `--rlimit` and `--mutation-floor` flag values so a
 /// non-default floor (e.g. `0.2`) flips the §7 step-4 gate (AC-3). The corpus
 /// certifies at the default floor, so the cert-oracle is unperturbed.
+/// Structured RFC-9 warning surface for Forge clients. This performs the
+/// shared parse/spec/effect front without invoking a proof backend.
+pub fn effect_warnings_for_file(
+    path: impl AsRef<Path>,
+) -> Result<Vec<thermite_lower::EffectWarning>, ForgeError> {
+    let path = path.as_ref();
+    let src = std::fs::read_to_string(path).map_err(|e| ForgeError::Io {
+        path: path.display().to_string(),
+        source: e,
+    })?;
+    let parsed = thermite_syntax::parse(&src);
+    if !parsed.is_clean() {
+        return Err(ForgeError::Parse(parsed.errors));
+    }
+    thermite_spec::validate(&parsed.program).map_err(ForgeError::Spec)?;
+    Ok(thermite_lower::analyze_effects(&parsed.program)
+        .map_err(ForgeError::Effects)?
+        .warnings)
+}
+
 pub fn check_file_with_options(
     path: impl AsRef<Path>,
     options: CheckOptions,
@@ -4738,6 +4758,9 @@ fn item_subprogram(
         Item::EffectDecl(_) => Program {
             items: vec![item.clone()],
         },
+        Item::SharedDecl(_) | Item::Concurrent(_) => Program {
+            items: vec![item.clone()],
+        },
     }
 }
 
@@ -4992,7 +5015,12 @@ fn mint_item_obligations(program: &Program, item: &Item) -> ItemObligations {
         // certification obligation in v1 (no v1 consumer until increments 2b-3); mint
         // the same empty contract obligation as the ADT-decl arm so the function stays
         // total without a panic (R-APG-1) — it is never discharged.
-        Item::Struct(_) | Item::Enum(_) | Item::Forge(_) | Item::EffectDecl(_) => (
+        Item::Struct(_)
+        | Item::Enum(_)
+        | Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_) => (
             Obligation {
                 item: item.name().to_string(),
                 class: crate::obligation::ObligationClass::Contract,
@@ -5459,7 +5487,12 @@ fn collect_item_adt_refs(
         // fixed point (`collect_decl_field_adt_refs`), not here.
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 ADT-ref consumer yet
         // (increments 2b-3); references no in-file ADT here, mirroring the ADT-decl arm.
-        Item::Struct(_) | Item::Enum(_) | Item::Forge(_) | Item::EffectDecl(_) => {}
+        Item::Struct(_)
+        | Item::Enum(_)
+        | Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_) => {}
     }
 }
 
@@ -5497,7 +5530,12 @@ fn collect_decl_field_adt_refs(
         }
         // Forge-tier item (stage1-forge-tier.md REQ-3): not an ADT decl → no field
         // type graph to follow (increments 2b-3); inert, mirroring the non-decl arm.
-        Item::Fn(_) | Item::SpecFn(_) | Item::Forge(_) | Item::EffectDecl(_) => {}
+        Item::Fn(_)
+        | Item::SpecFn(_)
+        | Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_) => {}
     }
 }
 
@@ -6288,7 +6326,9 @@ pub(crate) fn item_effects(item: &Item) -> Vec<String> {
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 cert consumer yet
         // (increments 2b-3); declares no effect row → the same neutral `pure`
         // projection as a `spec fn`/ADT decl, mirroring the inert ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) => vec!["pure".to_string()],
+        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
+            vec!["pure".to_string()]
+        }
     }
 }
 

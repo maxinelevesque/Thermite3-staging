@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: aa4da3ae9658405448feaea17eea72261eafa54a3e6df831cc20d4c3ef605209 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 370e1f3c7b38984ed7fe7d5f74e2a6820c97b5d8488f3ac3c04a71435a1d5d32.)
+audited-content-sha256: 1c59feeb19bfefe5f60b5c0f3ad2dd871e089b27f48593bda1b0d5d0ba2079df (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 370e1f3c7b38984ed7fe7d5f74e2a6820c97b5d8488f3ac3c04a71435a1d5d32.)
 decision: Option A — compile the canonical Verus executable body that was verified
 issue: github:dollspace-gay/Thermite#101, github:dollspace-gay/Thermite#103, github:dollspace-gay/Thermite#104, github:dollspace-gay/Thermite#108, github:dollspace-gay/Thermite#111
 governs:

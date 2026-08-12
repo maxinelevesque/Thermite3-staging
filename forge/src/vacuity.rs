@@ -598,7 +598,7 @@ mod tests {
     #[test]
     fn maximal_fx_no_slag_rejected_d() {
         let f = fn_item(
-            "fn f(x: u32) -> u32 ! read(a), write(a), net(a), alloc, time, rand, panic, diverge requires true ensures result == x { x }",
+            "shared a: u8\nfn f(x: u32) -> u32 ! read(a), write(a), net(a), alloc, time, rand, panic, diverge requires true ensures result == x { x }",
         );
         assert_eq!(cause_tag(&f).as_deref(), Some("MaximalFxWithoutSlag"));
     }
@@ -607,7 +607,7 @@ mod tests {
     #[test]
     fn maximal_fx_with_slag_passes_d() {
         let f = fn_item(
-            "#[slag(reason = \"x\", owner = \"y\", review = \"required\")] \
+            "shared a: u8\n#[slag(reason = \"x\", owner = \"y\", review = \"required\")] \
              fn f(x: u32) -> u32 ! read(a), write(a), net(a), alloc, time, rand, panic, diverge requires true ensures result == x { x }",
         );
         assert_eq!(cause_tag(&f), None);
@@ -628,7 +628,7 @@ mod tests {
     #[test]
     fn partial_fx_is_not_maximal() {
         assert!(!effect_row_is_maximal(&EffectRow::Pure));
-        let partial = EffectRow::Set(vec![Effect::Read("a".to_string()), Effect::Alloc]);
+        let partial = EffectRow::Set(vec![Effect::Read("a".to_string().into()), Effect::Alloc]);
         assert!(!effect_row_is_maximal(&partial));
     }
 

@@ -520,6 +520,16 @@ fn render_item_arm(item: &Item) -> SkillFragment {
             description: "an effect label declared as a combination of algebraic-basis primitives",
             example: "effect platform(d) = state(d) + io(d)",
         },
+        Item::SharedDecl(_) => SkillFragment {
+            fragment: "shared NAME: TYPE",
+            description: "a typed root in the shared-region containment forest",
+            example: "shared WORLD: World",
+        },
+        Item::Concurrent(_) => SkillFragment {
+            fragment: "concurrent NAME { ROOT, .. }",
+            description: "a named set of shared roots whose effect footprints must commute",
+            example: "concurrent workers { LEFT, RIGHT }",
+        },
     }
 }
 
@@ -1112,9 +1122,9 @@ fn pattern_inventory() -> Vec<Pattern> {
 /// One representative value per `Effect` atom (REQ-10). See [`type_inventory`].
 fn effect_inventory() -> Vec<Effect> {
     vec![
-        Effect::Read(String::new()),
-        Effect::Write(String::new()),
-        Effect::Net(String::new()),
+        Effect::Read(String::new().into()),
+        Effect::Write(String::new().into()),
+        Effect::Net(String::new().into()),
         Effect::Alloc,
         Effect::Time,
         Effect::Rand,

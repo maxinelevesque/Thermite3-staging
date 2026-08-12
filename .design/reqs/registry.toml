@@ -17654,49 +17654,84 @@ note = "the route for blocks: §Metatheory records binary session duality and it
 id = "REQ-SYNTAX-SHARED-DECL"
 title = "`shared` declarations name a region"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "syntax"
 summary = "A `shared name: Type` declaration is what makes an effect row checkable: a shared thing is named in the row and a resource thing is not."
-remaining_scope = "Parse the declaration and resolve region names in effect rows against it. Proposed by RFC-9; staged and not filed."
-contributors = [".design/rfcs/0009-verified-effect-rows.md"]
+remaining_scope = ""
+contributors = [".design/rfcs/0009-verified-effect-rows.md", ".design/syntax/verified-effect-rows.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/rfcs/0009-verified-effect-rows.md"
 note = "the proposal, with its design record and probe results"
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/verified-effect-rows.md"
+note = "the implementation contract: REQ-1 through REQ-3 define shared declarations, typed region paths, field-derived containment, and the mandatory containment spike; AC-1 and AC-2 make them executable"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-spec/tests/verified_effect_rows.rs"
+note = "shared-root validation, nested containment, recursive-type termination, and structured rejection fixtures"
 
 [[requirement]]
 id = "REQ-SPEC-EFFECT-ROW-CHECKED"
 title = "The effect row is checked against the body"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "spec"
 summary = "Today the row is unchecked in both directions: a function declaring write() on a region that does not exist, over a body that touches nothing, certifies at L3."
-remaining_scope = "Check that every region a body touches appears in the row, and that every region the row names exists. Probed at 84d276e7; the verdict is recorded in RFC-7's appendix. Proposed by RFC-9; staged and not filed."
-contributors = [".design/rfcs/0009-verified-effect-rows.md"]
+remaining_scope = ""
+contributors = [".design/rfcs/0009-verified-effect-rows.md", ".design/syntax/verified-effect-rows.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/rfcs/0009-verified-effect-rows.md"
 note = "the proposal, with its design record and probe results"
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/verified-effect-rows.md"
+note = "the implementation contract: REQ-4 through REQ-7 and REQ-14 define exact inference, intrinsic mappings, missing-effect errors, excess-effect warnings, and deterministic call propagation; AC-3 through AC-5 exercise them"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/effects.rs"
+note = "fixed-point propagation, canonical intrinsic footprints, missing errors, and deterministic excess warnings"
 
 [[requirement]]
 id = "REQ-SPEC-EFFECT-CONFLICT"
 title = "The conflict rule over declared regions"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "spec"
 summary = "Two rows conflict when their state effects fail to commute on a shared region, which is the purely syntactic check that makes sequential proofs valid on multiple CPUs."
-remaining_scope = "Implement the conflict rule over declared regions, deriving it from the commutation facts rather than stipulating a table. Proposed by RFC-9; staged and not filed."
-contributors = [".design/rfcs/0009-verified-effect-rows.md"]
+remaining_scope = ""
+contributors = [".design/rfcs/0009-verified-effect-rows.md", ".design/syntax/verified-effect-rows.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/rfcs/0009-verified-effect-rows.md"
 note = "the proposal, with its design record and probe results"
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/verified-effect-rows.md"
+note = "the implementation contract: REQ-8 through REQ-14 define concurrent declarations, the computed commutation consumer, kernel classification, migration, and the formal boundary; AC-6 through AC-12 exercise them"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-spec/tests/verified_effect_rows.rs"
+note = "computed pairwise conflict checks cover overlapping ancestry and disjoint siblings"
+
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/build.rs"
+note = "Bulla policy fixture covers kernel-owned acceptance, ambient rejection, and unavailable-policy failure"
 
 [[requirement]]
 id = "REQ-SYNTAX-LOCK-DECL"

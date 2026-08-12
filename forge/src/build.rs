@@ -73,7 +73,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use serde::Serialize;
-use thermite_syntax::{FnItem, Item, PrimType, Program, Type};
+use thermite_syntax::{FnItem, Item, PrimType, Program, RegionPath, Type};
 
 use std::collections::BTreeSet;
 
@@ -131,20 +131,6 @@ pub enum BuildTarget {
 /// kernel host's `#[panic_handler]` under `panic=abort` (REQ-4, OQ-1). The
 /// `#![allow(internal_features)]`-free, deterministic fixed string (R-CODE-5).
 const FREESTANDING_PRELUDE: &str = "#![no_std]\nextern crate alloc;\nuse alloc::vec::Vec;\n\n";
-
-/// The ambient-syscall effect verbs a [`BuildTarget::Freestanding`] build refuses (REQ-3):
-/// `read`/`write`/`net`/`term` carry a userspace syscall surface (the #57 seccomp
-/// allowlist maps them to `openat`/`socket`/`ioctl`/…) with no kernel analogue, and
-/// `time`/`rand` carry std-bodied effect wrappers (`effect_wrappers::WRAPPERS`
-/// `os::now` = `std::time::SystemTime::now()` → `clock_gettime`; `getrandom`) which
-/// `emit_mod_os` would emit into the `#![no_std]` crate (a raw `E0433` leak); a kernel
-/// has no ambient clock/entropy. So a fn whose
-/// transitive `fx` carries any of these cannot be a freestanding kernel library item.
-/// The admit set is `pure`/`alloc`/`panic`/`diverge` (`.design/build/
-/// kernel-target.md` OQ-2, amended by #198: the original "time/rand benign" premise
-/// was falsified by the std-bodied `os::now` wrapper). Matched by the leading verb of
-/// each `effects_of` token (`read(stdin)` → `read`), mirroring `sandbox::syscall_allowlist`.
-const KERNEL_REJECTED_FX: &[&str] = &["read", "write", "net", "term", "time", "rand"];
 
 /// The artifact kind `forge build` produces (REQ-3). The default is a library;
 /// `--entry <fn>` produces a runnable executable.
@@ -335,7 +321,7 @@ pub fn build_file(
         // `?N` body-hole refusal — a holed proof must not ship a trust-stamped
         // artifact. Hole-free forge items contribute no reason (`None`).
         Item::Forge(forge) => crate::goal_repl::open_proof_hole_reason(forge),
-        Item::EffectDecl(_) => None,
+        Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => None,
     }) {
         return Err(ForgeError::Usage(format!(
             "`forge build` refuses a holed item: {detail} `forge build` lowers to a \
@@ -485,35 +471,57 @@ pub fn emit_source(
     Ok(source)
 }
 
-/// Refuse a [`BuildTarget::Freestanding`] build of `program` if any in-language `fn`'s
-/// transitive `fx` carries an ambient-syscall effect (`read`/`write`/`net`/`term`,
-/// [`KERNEL_REJECTED_FX`]) — REQ-3. Kernel code has no ambient userspace syscall
-/// surface, so an item carrying one cannot be a freestanding kernel library item.
-/// Reuses `sandbox::transitive_fx` (the #57 reachability walk the userspace seccomp
-/// allowlist is derived from) per `Item::Fn`, scanning the whole function class
-/// (not just an `--entry` closure — a kernel build has no `--entry`). Returns a
-/// structured `ForgeError::Usage` naming the rejected effect + the carrying fn on
-/// the first offender (source order, deterministic — R-CODE-5); `Ok(())` when every
-/// fn is ambient-syscall-free (`pure`/`alloc`/`panic`/`diverge` admit; `time`/`rand`
-/// are rejected — #198, their std-bodied effect wrappers leak into the `#![no_std]`
-/// crate and a kernel has no ambient clock/entropy).
+/// Fail closed at the RFC-9/Bulla classification boundary. Region-bearing
+/// operations are admitted only once a platform policy classifies their region
+/// as kernel-owned; Thermite never infers ambientness from the operation verb.
 fn reject_ambient_fx_for_freestanding(program: &Program) -> Result<(), ForgeError> {
-    for item in &program.items {
-        let Item::Fn(f) = item else { continue };
-        let fx = sandbox::transitive_fx(program, &f.name);
-        for tok in &fx {
-            // Match the leading verb (before any `(`), mirroring
-            // `sandbox::syscall_allowlist` so `read(stdin)` → `read`.
-            let verb = tok.split('(').next().unwrap_or(tok);
-            if KERNEL_REJECTED_FX.contains(&verb) {
-                return Err(ForgeError::Usage(format!(
-                    "`forge build --target freestanding` refuses `{}`: its transitive effect row \
-                     carries the ambient-syscall effect `{tok}` (a `{verb}` userspace syscall), \
-                     which kernel code has no ambient surface for. The admitted kernel effects \
-                     are pure/alloc/panic/diverge; build it for the default (std) target, or \
-                     remove the `{verb}` effect.",
-                    f.name
-                )));
+    validate_freestanding_effects_with(program, |_| None)
+}
+
+/// Validate a freestanding program against a platform region policy. Thermite
+/// supplies exact canonical region identities; Bulla (or another kernel
+/// integration) supplies ownership. `None` is deliberately fail-closed.
+pub fn validate_freestanding_effects_with(
+    program: &Program,
+    classify: impl Fn(&RegionPath) -> Option<thermite_spec::regions::RegionClass>,
+) -> Result<(), ForgeError> {
+    let analysis = thermite_lower::analyze_effects(program).map_err(ForgeError::Effects)?;
+    for (function, footprint) in analysis.footprints {
+        for effect in footprint {
+            let effect_name = match &effect {
+                thermite_syntax::Effect::Read(_) => "read",
+                thermite_syntax::Effect::Write(_) => "write",
+                thermite_syntax::Effect::Net(_) => "net",
+                thermite_syntax::Effect::Alloc => "alloc",
+                thermite_syntax::Effect::Time => "time",
+                thermite_syntax::Effect::Rand => "rand",
+                thermite_syntax::Effect::Panic => "panic",
+                thermite_syntax::Effect::Diverge => "diverge",
+                thermite_syntax::Effect::Term => "term",
+            };
+            let basis = thermite_syntax::effect_basis::entry_for_effect(&effect).footprint();
+            for instance in basis.reads.iter().chain(&basis.writes) {
+                let region = RegionPath::from(instance.0.as_str());
+                match classify(&region) {
+                    Some(thermite_spec::regions::RegionClass::KernelOwned) => {}
+                    Some(thermite_spec::regions::RegionClass::Ambient) => {
+                        return Err(ForgeError::Usage(format!(
+                            "`forge build --target freestanding` rejects ambient region \
+                             `{region}` in the transitive footprint of `{function}` \
+                             (effect `{effect_name}`, {effect:?}); the Bulla region policy classifies it as \
+                             syscall-backed rather than kernel-owned."
+                        )));
+                    }
+                    None => {
+                        return Err(ForgeError::Usage(format!(
+                            "`forge build --target freestanding` cannot classify region \
+                             `{region}` in the transitive footprint of `{function}` \
+                             (effect `{effect_name}`, {effect:?}). Thermite does not infer kernel ownership \
+                             from the operation verb; supply the Bulla kernel-region policy. \
+                             The target fails closed while classification is unavailable."
+                        )));
+                    }
+                }
             }
         }
     }
@@ -539,7 +547,9 @@ fn reachable_boundary_targets(program: &Program) -> BTreeSet<String> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 boundary-target
             // consumer yet (increments 2b-3); declares no boundary crossing (neutral
             // `None`), mirroring the inert ADT-decl arm.
-            Item::Forge(_) | Item::EffectDecl(_) => None,
+            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
+                None
+            }
         })
         .collect()
 }
@@ -565,7 +575,11 @@ fn build_functions(program: &Program) -> Vec<BuildFunction> {
             // item carries no `fx` contract row → contributes no manifest
             // function (neutral value `None`). Dead-in-1a: an ADT program dies
             // at the validator before `forge build` projects its functions.
-            Item::Struct(_) | Item::Enum(_) | Item::EffectDecl(_) => None,
+            Item::Struct(_)
+            | Item::Enum(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_) => None,
         })
         .collect()
 }
@@ -601,6 +615,9 @@ fn find_entry_fn<'a>(program: &'a Program, name: &str) -> Result<&'a FnItem, For
         ))),
         Some(Item::EffectDecl(_)) => Err(ForgeError::Usage(format!(
             "`--entry {name}` names an effect declaration, not a runnable `fn`; name a `fn`"
+        ))),
+        Some(Item::SharedDecl(_)) | Some(Item::Concurrent(_)) => Err(ForgeError::Usage(format!(
+            "`--entry {name}` names effect-region metadata, not a runnable `fn`; name a `fn`"
         ))),
         None => Err(ForgeError::Usage(format!(
             "`--entry {name}` names no `fn` in the program"
@@ -971,6 +988,43 @@ fn resolve_rustc_version() -> Result<String, ForgeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn region_program(region: &str) -> Program {
+        let source = format!(
+            "shared {region}: u8\n#[boundary(\"kernel::touch\")] fn touch() -> u8 \
+             ! write({region}) requires nothing ensures result == 0;"
+        );
+        let parsed = thermite_syntax::parse(&source);
+        assert!(
+            parsed.is_clean(),
+            "kernel region fixture must parse: {:?}",
+            parsed.errors
+        );
+        parsed.program
+    }
+
+    #[test]
+    fn bulla_region_policy_controls_freestanding_acceptance() {
+        let kernel = region_program("scheduler");
+        assert!(validate_freestanding_effects_with(&kernel, |path| {
+            (path.to_string() == "scheduler")
+                .then_some(thermite_spec::regions::RegionClass::KernelOwned)
+        })
+        .is_ok());
+
+        let ambient = region_program("stdout");
+        let rejected = validate_freestanding_effects_with(&ambient, |_| {
+            Some(thermite_spec::regions::RegionClass::Ambient)
+        })
+        .expect_err("ambient classification must reject");
+        assert!(rejected.to_string().contains("ambient region `stdout`"));
+
+        let unavailable = validate_freestanding_effects_with(&kernel, |_| None)
+            .expect_err("missing Bulla classification must fail closed");
+        let detail = unavailable.to_string();
+        assert!(detail.contains("cannot classify region `scheduler`"));
+        assert!(detail.contains("operation verb"));
+    }
 
     fn corpus(name: &str) -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
