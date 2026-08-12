@@ -16,7 +16,7 @@
 //! | REQ-5 | SHIPPED | [`entry_for_effect`] exhaustively maps all nine [`Effect`] variants. |
 //! | REQ-6 | SHIPPED | [`BasisEntry::Combination`] represents `net` as state plus free I/O. |
 //! | REQ-7 | NOT-STARTED | Deferred to the declaration-surface increment over `ast.rs` and `parser.rs`. |
-//! | REQ-8 | NOT-STARTED | Commutation is owned by the unbuilt `thermite-spec` module. |
+//! | REQ-8 | SHIPPED | `thermite_spec::effect_commutation` computes facts from these entries. |
 //! | REQ-9 | NOT-STARTED | Deferred to the lowerer diagnostic increment. |
 //! | REQ-10 | NOT-STARTED | Future RFC-9 scope owns region-granular checking and conflict detection. |
 //! | REQ-11 | SHIPPED | This module does not alter `Effect`, lowering masks, or verified subsumption. |
