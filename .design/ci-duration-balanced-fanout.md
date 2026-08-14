@@ -51,37 +51,37 @@ editor_content_pinned_ops_still_certify_l3` at 303.310s.
 
 ## Acceptance Criteria
 
-- [ ] AC-1: (REQ-1, REQ-3) A partition simulation over the checked-in baseline
+- [x] AC-1: (REQ-1, REQ-3) A partition simulation over the checked-in baseline
   produces thirteen buckets, assigns the longest measured reconstruction test
   alone or with
   only work that keeps its predicted bucket at the target bound, and reports no
   predicted bucket above the longest indivisible test except a documented
   timing-noise tolerance.
-- [ ] AC-2: (REQ-2) The partition coverage gate exits zero only when the union of
+- [x] AC-2: (REQ-2) The partition coverage gate exits zero only when the union of
   explicit assignments and the catch-all equals `cargo nextest list` exactly and
   explicit assignments are pairwise disjoint; deletion, duplication, and rename
   mutants each make it exit nonzero.
-- [ ] AC-3: (REQ-4) Each former case in
+- [x] AC-3: (REQ-4) Each former case in
   `every_tv_phase_and_nonpass_class_blocks_publication` and
   `every_injected_commitment_failure_is_atomic` is independently selectable,
   and a manifest-backed test proves the original 16-case and 12-case sets remain
   complete.
-- [ ] AC-4: (REQ-5, REQ-6) GitHub Actions displays all six G3/G4 child checks and
+- [x] AC-4: (REQ-5, REQ-6) GitHub Actions displays all six G3/G4 child checks and
   aggregate `g3`/`g4`; forcing any child to fail makes only its aggregate fail
   while unrelated children finish and report their results.
-- [ ] AC-5: (REQ-7) Every proof-backed test partition retains the live Lean,
+- [x] AC-5: (REQ-7) Every proof-backed test partition retains the live Lean,
   Verus, CaDiCaL, drat-trim, and Z3 environment required by its selected tests;
   removing any required tool fails the owning partition rather than skipping.
-- [ ] AC-6: (REQ-8) Every test partition uploads nextest JUnit timing data and
+- [x] AC-6: (REQ-8) Every test partition uploads nextest JUnit timing data and
   every gate child prints and uploads segment timing data with stable logical
   names.
-- [ ] AC-7: (REQ-9) Two consecutive green validation runs show no missing tests
+- [x] AC-7: (REQ-9) Two consecutive green validation runs show no missing tests
   and a test critical path no greater than the longest observed indivisible test
   plus setup and a 15% timing-noise allowance.
-- [ ] AC-8: (REQ-9) The before/after report accounts separately for execution,
+- [x] AC-8: (REQ-9) The before/after report accounts separately for execution,
   setup, queue delay, and total runner-minutes; improvement is not claimed from
   queue delay or skipped work.
-- [ ] AC-9: (REQ-10) The implementation branch merge-base is the post-#50
+- [x] AC-9: (REQ-10) The implementation branch merge-base is the post-#50
   `staging` tip, and its pull request contains no RFC-10 implementation rewrite.
 
 ## Architecture
@@ -176,6 +176,32 @@ This design serves `telos/the-corpus-still-certifies`: the same complete suite
 must run, with stronger static evidence that its partition union is exhaustive.
 It also serves `telos/residual-trust-is-named`: historical timing is an explicit
 maintenance input, not an invisible scheduler oracle.
+
+## Validation evidence
+
+The baseline is green run `31811912559`: 22m19s end-to-end critical path,
+89m31s aggregate runner time, and four test jobs totaling 47m03s. Coverage was
+the same 1,533 tests after the two long matrix loops were atomized.
+
+The initial ten-bucket topology was green twice in run `31837152080` attempts 1
+and 2. Critical path was 14m42s and 14m41s; aggregate runner time was 120m52s
+and 121m57s. JUnit exposed a 4m22s..9m14s test-execution spread, so it improved
+the baseline but did not satisfy AC-7's irreducible-path bound.
+
+The selected thirteen-bucket topology was green twice in run `31843256167`
+attempts 1 and 2. Critical path was 12m11s and 14m09s (13m10s average, 41.0%
+below baseline); aggregate runner time was 124m40s and 137m08s (130m54s
+average, 46.2% above baseline and 7.8% above the ten-bucket average). The
+slowest nextest suite was 384.433s and 415.912s, both below the 422.194s live
+bound. Every run reported 1,533 tests exactly once; catch-all was empty. Fan-out
+queue delay was 0..4s. Non-suite per-test-job time (checkout, Lean/tool restore,
+inventory, and upload) ranged from roughly 2m06s to 4m04s and is excluded from
+the execution-bound claim. G4 LRAT/cache, not a test partition, determined both
+selected-run critical paths at 470.618s and 615.460s of gate execution.
+
+Thirteen wins the stated tradeoff: versus ten it reduces average critical path
+10.4% for 7.8% more runner time, satisfies the two-run bound, and leaves the
+remaining critical-path variance in an independently visible irreducible gate.
 
 ## Residual trust
 

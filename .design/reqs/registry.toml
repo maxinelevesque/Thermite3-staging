@@ -18441,15 +18441,19 @@ note = "JUnit and per-segment timing JSON artifacts upload under always()"
 id = "REQ-CI-BEFORE-AFTER-EVIDENCE"
 title = "Parallelization reports honest before-and-after metrics"
 owner = ".design/ci-duration-balanced-fanout.md"
-status = "not_started"
+status = "shipped"
 scope = "ci"
 summary = "Critical path, setup, queue delay, aggregate runner time, balance, and coverage are reported separately."
-remaining_scope = "Collect two green optimized runs and compare them with baseline run 31811912559."
+remaining_scope = ""
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/ci-duration-balanced-fanout.md"
 note = "REQ-9 and AC-7/AC-8 define the measurement contract"
+[[requirement.evidence]]
+kind = "file"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "validation evidence compares baseline, two ten-bucket greens, and two selected thirteen-bucket greens across critical path, execution, setup, queue delay, runner time, balance, and coverage"
 
 [[requirement]]
 id = "REQ-CI-SEPARATE-LANDING"
