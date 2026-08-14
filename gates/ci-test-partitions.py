@@ -20,7 +20,7 @@ except ImportError:  # pragma: no cover
 MANIFEST = Path("gates/ci-test-partitions.toml")
 EXPLICIT_BUCKETS = 9
 CATCH_ALL = 10
-BASELINE_RUN = 31811912559
+BASELINE_RUN = 31837152080
 EFFECTIVE_PARALLELISM = 3.18
 NOISE_ALLOWANCE = 1.15
 
