@@ -642,6 +642,20 @@ indistinguishable mutants (REQ-3, R-DEFER-9).
 
 ## Open questions
 
+The shipped holding-body extension has an explicit finite support boundary. A
+sole value-producing `holding` is observationally transparent to the result
+comparison. Read-only scalar shared places used by the function are represented
+by one symbolic snapshot parameter per canonical path, and the same parameter
+is substituted into both real and mutant bodies. This permits Verus to prove
+equivalence (or exhibit failure to prove it) for realistic shared reads without
+silently treating the two executions as different worlds. Shared writes,
+non-scalar shared observations, richer state traces, and any `requires` that
+mentions a shared observation remain structured `Unsupported`; an entry-time
+precondition cannot constrain the later value observed after lock acquisition.
+In every unsupported case, the survivor stays counted. This is policy completeness over the
+declared read-only scalar fragment, not a claim of language-wide mutation-policy
+completeness.
+
 - **OQ-1 (equivalence over richer return types):** the GROUNDED cases are scalar
   (`u64`) returns where observable equality is value equality. For
   reference/slice/`Vec`/`String` returns (the #48/#74/#80 early-return classes)
@@ -649,11 +663,12 @@ indistinguishable mutants (REQ-3, R-DEFER-9).
   value (`==` over the lowered wrapper); the formulation generalizes (the spec-fn
   pair returns the wrapper type and `ensures` its `==`), but only scalar returns
   are GROUNDED here. **(Least confident — see report.)**
-- **OQ-2 (effectful bodies):** v0.1 mutation scores `! pure` exec bodies; an
-  effectful body's "observable result" would also include its effect trace, not
-  just the return value. The corpus forced-output fns are `pure`, so value
-  equality is the full observable. A non-pure forced-output fn is out of v0.1
-  scope (effects subsume at compile time, §4).
+- **OQ-2 (effectful bodies):** mutation scoring reaches effectful exec bodies,
+  but equivalence exclusion covers only the explicitly modeled observation:
+  scalar return values plus read-only scalar shared snapshots under one
+  continuous holding. Shared writes and every richer effect trace are structured
+  `Unsupported` and remain counted. Extending observable equality to general
+  effect traces is deferred.
 - **OQ-3 (the per-survivor cost vs. the cap):** the cost is one Verus run per
   SURVIVOR, bounded by `MUTANT_CAP` and the proof cache. For a contract with many
   survivors (a very weak contract) the equivalence sweep runs once per survivor —
@@ -686,7 +701,7 @@ indistinguishable mutants (REQ-3, R-DEFER-9).
 | REQ-1 (per-survivor Verus equivalence check) | SHIPPED | The seam `thermite_lower::lower_equivalence_obligation` (`thermite-lower/src/lower.rs`, exported in `lib.rs`) renders `f`'s real body + a survivor's body into the GROUNDED `spec fn equiv_real_<n>` / `spec fn equiv_mut_<n>` + `proof fn equiv_check_<n> requires <req> ensures mut == real {}` Verus unit, REUSING the L3 exec coercions (`lower_expr` + the `(expr) as <ret>` bounded-arith coercion — a naive spec render of `x + 0` over `u64` fails `verus` with `expected u64, found int`, R-CHAR-3 no hand-emit). Consumer: `check::equivalence_proves_equal` (`check.rs`), called per SURVIVOR from `check::mutation_score`. Verified: `thermite-lower/tests/equivalence_obligation.rs` (real verus — equivalent body VERIFIES, distinguishing `x + 1` / `loose` early-return FAIL, non-scalar → `Unsupported`) + `forge/tests/equivalent_mutants_conformance.rs`. **#269 caveat (scope, not status):** the shipped form is sound ONLY for CALL-FREE bodies — a call-bearing scalar body is rendered into an ILL-FORMED self-contained unit (`render_body_as_spec_value`'s tail arm lowers a call with no callee decl woven; "no §9/ADT composition deps are woven" per `equivalence_proves_equal`'s doc), which verus rejects → `Ok(false)` → conservative but FALSE-GATING for a genuinely-equivalent survivor. RESOLVED by REQ-7/REQ-9 (the call-bearing arm is now the exec harness — the `lower_equivalence_obligation` signature gained `callee_deps: &[Item]`; a CALL-FREE body still takes this self-contained spec-fn path UNCHANGED). |
 | REQ-2 (PROVED-equivalent → drop from denominator; sound-but-incomplete) | SHIPPED | `check::mutation_score` runs `equivalence_proves_equal` on each SURVIVOR; a VERIFIED query (`mutant_outcome_is_survivor`/`mutant_cert_is_survivor` true) `continue`s WITHOUT incrementing `scored` (the survivor drops from the denominator) and bumps `MutationScore.equivalent`; an unproven query (counterexample/timeout/un-renderable) increments `scored` (stays counted). Verified: `forge/tests/equivalent_mutants_conformance.rs::ac1_forced_output_excludes_equivalents_and_certifies` (`clamp_zero` 1/3 → 1/1 L3, real verus). |
 | REQ-3 (soundness line — distinguishing mutant never excluded) | SHIPPED | Exclusion is gated on `equivalence_proves_equal == Ok(true)` (a Verus PROOF, `0 errors`); a counterexample/timeout/`Unsupported` returns `Ok(false)` → the survivor stays counted. Verified: `forge/tests/equivalent_mutants_conformance.rs::ac2_weak_contract_survivor_stays_counted` (`loose`'s distinguishing early-`return 0` FAILS the query → STILL `WeakContract`, NOT laundered) + the seam test's `distinguishing_offbyone_fails` / `loose_early_return_stays_distinguishing`. |
-| REQ-4 (`MutationScore` denominator + `K/N` cert) | SHIPPED | `mutation::MutationScore` gains `equivalent: usize` (the proved-equivalent exclusion count); `scored` is now NET of proved-equivalents, so `kill_ratio = killed / scored` and `mutants_killed_string` reflect the REDUCED denominator. The `0/0` backstop in `kill_ratio` is unchanged (`scored == 0 ⟹ 0.0`). Verified: `clamp_zero` cert `mutants_killed = "1/1"` (AC-1); `refuse` `"0/0"` (AC-3); `loose` below floor (AC-2). |
+| REQ-4 (`MutationScore` denominator + `K/N` cert) | SHIPPED | `mutation::MutationScore` carries `equivalent: usize`; `scored` is NET of proved equivalents, so `kill_ratio = killed / scored` and `mutants_killed_string` reflect the reduced denominator. Certificates surface a nonzero count as `contract_quality.equivalent_mutants_excluded`, making denominator narrowing operator-visible while omitting zero for schema compatibility. The `0/0` backstop remains (`scored == 0 ⟹ 0.0`). Verified by the equivalent-mutant conformance suite. |
 | REQ-5 (`CHECK_SCHEMA_VERSION` bump) | SHIPPED | `cache::CHECK_SCHEMA_VERSION` bumped `4 → 5` (`cache.rs`, with the schema-history note): the verdict-changing exclusion invalidates stale forced-output verdicts so a `WeakContract` cached under schema 4 is re-scored under the new logic. *(REQ-7's landing bumps again per the same rule — the verdict changes for call-bearing fns.)* |
 | REQ-6 (determinism + bounded per-survivor cost) | SHIPPED | `equivalence_proves_equal` content-addresses the obligation through the SAME `cache::cache_key`/`load`/`store` (#8) and runs the deterministic pinned-seed/rlimit `run_verus`; ONE extra run PER SURVIVOR (a killed mutant is never queried — `mutation_score` `continue`s before the query). Verified: `forge/tests/equivalent_mutants_conformance.rs::req6_exclusion_is_deterministic` (byte-identical reduced `mutants_killed` across runs). |
 | REQ-7 (call-bearing obligation — equivalence modulo callee contracts, the exec harness) | SHIPPED | `thermite_lower::lower_equivalence_obligation(f, mutant_body, callee_deps)` (`thermite-lower/src/lower.rs`) routes a NON-EMPTY `callee_deps` (a call-bearing body) to `lower_call_bearing_equivalence_obligation`, which emits the EXEC-position harness `fn equiv_check_<n>(<params>) -> (eq: bool) requires <req>, ensures eq { let real_v: <ret> = { <real> }; let mutant_v: <ret> = { <mutant> }; real_v == mutant_v }` with the callee closure woven via the EXISTING `lower` dispatch (a boundary/slag dep → `lower_external_body_fn`'s `#[verifier::external_body]` signature, a regular dep → its full `lower_fn` def — the SAME weave `item_subprogram` drives, modulo callee contracts §9). Each compared body renders as an exec block VALUE via `render_body_as_exec_value` (leading early-return → its returned expr, bare tail, or immutable let-chain-plus-tail; a call is LEGAL — the closure declares every callee). Binders are `real_v`/`mutant_v` (NOT `real`, a vstd-imported type name). Consumer: `check::equivalence_proves_equal` threads the SAME `fn_deps` closure `mutation_score` weaves into each mutant's `item_subprogram`. Verified: `thermite-lower/tests/equivalence_obligation.rs::{call_bearing_obligation_emits_the_woven_exec_harness, call_bearing_identity_through_strong_contract_verifies}` (real verus — the woven ext_id external_body + the identity harness VERIFIES) + `forge/tests/composition_conformance.rs::{direct_boundary_caller_verifies_through_the_contract, transitive_boundary_caller_weaves_real_and_external_body_deps}` (AC-6/AC-7 GREEN — `caller`'s `return x` excluded → L3). |

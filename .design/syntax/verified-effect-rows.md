@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 30c4929bb28d1ae27fbb335df5bf5e22894edd5c668d6bd20884e8132c1cf46a (pinned 2026-08-12 after the full RFC-9 implementation and acceptance pass: shared/concurrent syntax, field-derived regions, exact fixed-point footprints, structured warnings, computed commutation, Bulla policy seam, fail-closed reviewed migration inventory, corpus comparison, and the scoped Lean formal boundary.)
+audited-content-sha256: 60a8667d4efbfc3a4d76269c095dc3588f46ae23dfce04f6402018244879246a (pinned 2026-08-12 after the full RFC-9 implementation and acceptance pass: shared/concurrent syntax, field-derived regions, exact fixed-point footprints, structured warnings, computed commutation, Bulla policy seam, fail-closed reviewed migration inventory, corpus comparison, and the scoped Lean formal boundary.)
 -->
 
 ## Summary

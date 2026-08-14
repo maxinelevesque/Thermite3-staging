@@ -97,6 +97,98 @@ const EDITION: &str = "2021";
 /// proof. Not an L3 claim (R-DEFER-9).
 const ASSURANCE_L1: &str = "L1 (built, runtime-checked)";
 
+/// Explicit non-production provider used only by repository conformance tests.
+pub fn repository_test_lock_provider(
+    path: impl AsRef<Path>,
+) -> Result<thermite_lower::LockProvider, ForgeError> {
+    let program = parse_program(path.as_ref())?;
+    let mut source = String::from("use std::sync::atomic::{AtomicUsize, Ordering};\nstatic __THERMITE_ACQUIRES: AtomicUsize = AtomicUsize::new(0);\nstatic __THERMITE_RELEASES: AtomicUsize = AtomicUsize::new(0);\n");
+    for lock in program.items.iter().filter_map(|item| match item {
+        Item::LockDecl(lock) => Some(lock.name.as_str()),
+        _ => None,
+    }) {
+        let acquire = thermite_lower::LockProvider::acquire_symbol(lock);
+        let release = thermite_lower::LockProvider::release_symbol(lock);
+        source.push_str(&format!("fn {acquire}() {{ __THERMITE_ACQUIRES.fetch_add(1, Ordering::SeqCst); }}\nfn {release}() {{ __THERMITE_RELEASES.fetch_add(1, Ordering::SeqCst); }}\n"));
+    }
+    for shared in program.items.iter().filter_map(|item| match item {
+        Item::SharedDecl(shared) => Some(shared),
+        _ => None,
+    }) {
+        let Type::Named(ty) = &shared.ty else {
+            continue;
+        };
+        let symbol = thermite_lower::LockProvider::shared_symbol(&shared.name);
+        let storage = format!("{}__STORAGE", symbol.to_ascii_uppercase());
+        let wrapper = format!("{storage}__CELL");
+        let initializer = repository_test_initializer(&program, &shared.ty, &mut Vec::new())
+            .ok_or_else(|| {
+                ForgeError::Usage(format!(
+                "repository test lock provider cannot safely initialize shared `{}` of type `{ty}`",
+                shared.name
+            ))
+            })?;
+        source.push_str(&format!(
+            "struct {wrapper}(std::cell::UnsafeCell<{ty}>);\nunsafe impl Sync for {wrapper} {{}}\nstatic {storage}: {wrapper} = {wrapper}(std::cell::UnsafeCell::new({initializer}));\nfn {symbol}() -> &'static mut {ty} {{ unsafe {{ &mut *{storage}.0.get() }} }}\n"
+        ));
+    }
+    Ok(thermite_lower::LockProvider {
+        name: "repository-test".to_string(),
+        rust_source: source,
+        verus_source: String::new(),
+        proves_exclusive_acquire: true,
+        proves_restore_before_release: true,
+        states_interrupt_policy: true,
+    })
+}
+
+fn repository_test_initializer(
+    program: &Program,
+    ty: &Type,
+    stack: &mut Vec<String>,
+) -> Option<String> {
+    match ty {
+        Type::Prim(PrimType::Bool) => Some("false".into()),
+        Type::Prim(_) => Some("0".into()),
+        Type::Unit => Some("()".into()),
+        Type::Named(name) => {
+            if stack.contains(name) {
+                return None;
+            }
+            let item = program.items.iter().find_map(|item| match item {
+                Item::Struct(item) if item.name == *name => Some(item),
+                _ => None,
+            })?;
+            stack.push(name.clone());
+            let fields = item
+                .fields
+                .iter()
+                .map(|field| {
+                    repository_test_initializer(program, &field.ty, stack)
+                        .map(|value| format!("{}: {value}", field.name))
+                })
+                .collect::<Option<Vec<_>>>()?;
+            stack.pop();
+            Some(format!("{name} {{ {} }}", fields.join(", ")))
+        }
+        Type::Tuple(items) => {
+            let values = items
+                .iter()
+                .map(|item| repository_test_initializer(program, item, stack))
+                .collect::<Option<Vec<_>>>()?;
+            Some(format!("({},)", values.join(", ")))
+        }
+        Type::Option(_) => Some("None".into()),
+        Type::String => Some("TString { data: Vec::new() }".into()),
+        Type::Vec(_) | Type::Map(_, _) => None,
+        Type::Ref { .. }
+        | Type::Slice(_)
+        | Type::Generic { .. }
+        | Type::Box(_)
+        | Type::Result(_, _) => None,
+    }
+}
+
 /// The codegen target profile `forge build --target` selects
 /// (`.design/build/freestanding-target.md` REQ-1). The default ([`BuildTarget::Std`])
 /// is the unchanged hosted profile; [`BuildTarget::Freestanding`] emits a freestanding
@@ -238,6 +330,9 @@ pub struct BuildManifest {
     /// (`.design/forge/build.md` REQ-4), so this records the L1 statement
     /// `"L1 (built, runtime-checked)"`, not an L3 proof claim.
     pub assurance: String,
+    /// Explicit RFC-10 synchronization provider selected for this artifact.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lock_provider: Option<String>,
     /// The `--entry` fn, when a runnable executable was produced (REQ-3 (b)).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entry: Option<String>,
@@ -272,6 +367,28 @@ pub fn build_file(
     sandbox: SandboxConfig,
     out: Option<&Path>,
     target: BuildTarget,
+) -> Result<BuildManifest, ForgeError> {
+    build_file_inner(path, entry, sandbox, out, target, None)
+}
+
+pub fn build_file_with_lock_provider(
+    path: impl AsRef<Path>,
+    entry: Option<&str>,
+    sandbox: SandboxConfig,
+    out: Option<&Path>,
+    target: BuildTarget,
+    provider: &thermite_lower::LockProvider,
+) -> Result<BuildManifest, ForgeError> {
+    build_file_inner(path, entry, sandbox, out, target, Some(provider))
+}
+
+fn build_file_inner(
+    path: impl AsRef<Path>,
+    entry: Option<&str>,
+    sandbox: SandboxConfig,
+    out: Option<&Path>,
+    target: BuildTarget,
+    lock_provider: Option<&thermite_lower::LockProvider>,
 ) -> Result<BuildManifest, ForgeError> {
     let path = path.as_ref();
     let program = parse_program(path)?;
@@ -321,7 +438,7 @@ pub fn build_file(
         // `?N` body-hole refusal — a holed proof must not ship a trust-stamped
         // artifact. Hole-free forge items contribute no reason (`None`).
         Item::Forge(forge) => crate::goal_repl::open_proof_hole_reason(forge),
-        Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => None,
+        Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => None,
     }) {
         return Err(ForgeError::Usage(format!(
             "`forge build` refuses a holed item: {detail} `forge build` lowers to a \
@@ -334,7 +451,7 @@ pub fn build_file(
     // prelude) — the byte-deterministic emission the reproducibility check
     // (AC-6) asserts is stable (`emit_source` is this build's source-of-truth,
     // REQ-5).
-    let source = emit_source(path, entry, sandbox, target)?;
+    let source = emit_source_inner(path, entry, sandbox, target, lock_provider)?;
 
     // REQ-3: a `--entry` produced the deterministic generated runner inside
     // `emit_source` → a runnable executable; the default is a library (rlib) of the
@@ -394,6 +511,7 @@ pub fn build_file(
         artifact,
         crate_type,
         assurance: ASSURANCE_L1.to_string(),
+        lock_provider: lock_provider.map(|provider| provider.name.clone()),
         entry: entry_name,
         functions,
         sandbox: sandbox_record,
@@ -426,15 +544,41 @@ fn parse_program(path: &Path) -> Result<Program, ForgeError> {
 /// reproducibility test asserts they are byte-identical across two calls (forge
 /// owns the emission determinism, independent of any rustc nondeterminism). The
 /// `--entry` runner is appended deterministically (`synthesize_entry_main`).
+#[allow(dead_code)]
 pub fn emit_source(
     path: impl AsRef<Path>,
     entry: Option<&str>,
     sandbox: SandboxConfig,
     target: BuildTarget,
 ) -> Result<String, ForgeError> {
+    emit_source_inner(path, entry, sandbox, target, None)
+}
+
+#[allow(dead_code)]
+pub fn emit_source_with_lock_provider(
+    path: impl AsRef<Path>,
+    entry: Option<&str>,
+    sandbox: SandboxConfig,
+    target: BuildTarget,
+    provider: &thermite_lower::LockProvider,
+) -> Result<String, ForgeError> {
+    emit_source_inner(path, entry, sandbox, target, Some(provider))
+}
+
+fn emit_source_inner(
+    path: impl AsRef<Path>,
+    entry: Option<&str>,
+    sandbox: SandboxConfig,
+    target: BuildTarget,
+    lock_provider: Option<&thermite_lower::LockProvider>,
+) -> Result<String, ForgeError> {
     let path = path.as_ref();
     let program = parse_program(path)?;
-    let lowered = thermite_lower::lower_l1(&program).map_err(ForgeError::Lower)?;
+    let lowered = match lock_provider {
+        Some(provider) => thermite_lower::lower_l1_with_lock_provider(&program, provider),
+        None => thermite_lower::lower_l1(&program),
+    }
+    .map_err(ForgeError::Lower)?;
 
     // `.design/build/freestanding-target.md` REQ-2: under the kernel target, prepend the
     // `#![no_std]` + `extern crate alloc;` + `use alloc::vec::Vec;` prelude (a crate
@@ -498,6 +642,7 @@ pub fn validate_freestanding_effects_with(
                 thermite_syntax::Effect::Panic => "panic",
                 thermite_syntax::Effect::Diverge => "diverge",
                 thermite_syntax::Effect::Term => "term",
+                thermite_syntax::Effect::Owns(_) => "owns",
             };
             let basis = thermite_syntax::effect_basis::entry_for_effect(&effect).footprint();
             for instance in basis.reads.iter().chain(&basis.writes) {
@@ -547,9 +692,11 @@ fn reachable_boundary_targets(program: &Program) -> BTreeSet<String> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 boundary-target
             // consumer yet (increments 2b-3); declares no boundary crossing (neutral
             // `None`), mirroring the inert ADT-decl arm.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
-                None
-            }
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => None,
         })
         .collect()
 }
@@ -579,7 +726,8 @@ fn build_functions(program: &Program) -> Vec<BuildFunction> {
             | Item::Enum(_)
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
-            | Item::Concurrent(_) => None,
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => None,
         })
         .collect()
 }
@@ -616,9 +764,11 @@ fn find_entry_fn<'a>(program: &'a Program, name: &str) -> Result<&'a FnItem, For
         Some(Item::EffectDecl(_)) => Err(ForgeError::Usage(format!(
             "`--entry {name}` names an effect declaration, not a runnable `fn`; name a `fn`"
         ))),
-        Some(Item::SharedDecl(_)) | Some(Item::Concurrent(_)) => Err(ForgeError::Usage(format!(
-            "`--entry {name}` names effect-region metadata, not a runnable `fn`; name a `fn`"
-        ))),
+        Some(Item::SharedDecl(_)) | Some(Item::Concurrent(_)) | Some(Item::LockDecl(_)) => {
+            Err(ForgeError::Usage(format!(
+                "`--entry {name}` names effect-region metadata, not a runnable `fn`; name a `fn`"
+            )))
+        }
         None => Err(ForgeError::Usage(format!(
             "`--entry {name}` names no `fn` in the program"
         ))),
@@ -1072,6 +1222,37 @@ mod tests {
             !source.contains("fn main"),
             "a kernel LIBRARY emits no `fn main`:\n{source}"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn rfc10_build_requires_and_records_explicit_provider() -> Result<(), ForgeError> {
+        let path = std::env::temp_dir().join(format!("forge-rfc10-{}.th", std::process::id()));
+        std::fs::write(
+            &path,
+            "struct S { n: u64 } keeps n < 10\nshared state: S\nlock gate guards state\nfn f() -> u64 ! owns(gate) requires true ensures result == 0 { holding gate { } 0 }",
+        )
+        .map_err(|source| ForgeError::Io { path: path.display().to_string(), source })?;
+        let missing = emit_source(&path, None, SandboxConfig::default(), BuildTarget::Std)
+            .expect_err("holding must not erase without a provider");
+        assert!(missing
+            .to_string()
+            .contains("explicit target lock provider"));
+
+        let provider = repository_test_lock_provider(&path)?;
+        let emitted = emit_source_with_lock_provider(
+            &path,
+            None,
+            SandboxConfig::default(),
+            BuildTarget::Std,
+            &provider,
+        )?;
+        assert!(emitted.contains("__thermite_lock_acquire_gate();"));
+        assert!(emitted.contains("__thermite_lock_release_gate"));
+        std::fs::remove_file(&path).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
         Ok(())
     }
 }

@@ -272,3 +272,17 @@ fn multi_adt_corpus_program_certifies_end_to_end() {
         );
     }
 }
+
+#[test]
+fn standalone_nested_adt_weaves_its_field_type() {
+    if !verus_present() {
+        eprintln!("SKIP: verus not available — nested ADT weave not run.");
+        return;
+    }
+    let certs = check_program(
+        "nested",
+        "struct Inner { n: u64 } keeps n < 10\nstruct Outer { inner: Inner } keeps true",
+    );
+    assert_eq!(level_of(&certs, "Inner"), "L3");
+    assert_eq!(level_of(&certs, "Outer"), "L3");
+}

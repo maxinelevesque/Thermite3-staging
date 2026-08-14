@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 042e0f91723630d464c8228a7afb0877b2845e44ec4b32edcac1147a55c8cb6a (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 55c034ea94c0283ee13516c799661f264d2247d0a41b459491f4b5a39f8e11cf.)
+audited-content-sha256: 11ab4ce696abddd44c79655c7f6b5ad1792f8a851f9fb649d04c874ba3490830 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 55c034ea94c0283ee13516c799661f264d2247d0a41b459491f4b5a39f8e11cf.)
 governs: forge/src/build.rs
 governs: forge/src/effect_wrappers.rs
 (the thermite-stdlib/src/effect/* paths this doc originally listed were never

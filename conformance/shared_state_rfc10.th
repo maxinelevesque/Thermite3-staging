@@ -1,0 +1,14 @@
+// RFC-10 production-route anchor: the guarded type is referenced through the
+// shared declaration rather than the function signature, so Forge's per-item
+// dependency weaving must retain it through Lean replay and L3 lowering.
+struct State { n: u64 } keeps n < 10
+shared state: State
+lock gate guards state
+
+fn read_state() -> u64
+  ! owns(gate), read(state.n)
+  requires true
+  ensures result == 1
+{
+  holding gate { state.n; 1 }
+}

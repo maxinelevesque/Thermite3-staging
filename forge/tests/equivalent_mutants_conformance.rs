@@ -188,6 +188,12 @@ fn ac1_forced_output_excludes_equivalents_and_certifies() {
         "AC-1: after excluding the proved-equivalent survivors the ratio is 1.0 \
          (every remaining scored mutant killed); got `{mk}`"
     );
+    assert!(
+        cert["contract_quality"]["equivalent_mutants_excluded"]
+            .as_u64()
+            .is_some_and(|count| count >= 1),
+        "AC-1: denominator narrowing must be visible in the certificate: {cert}"
+    );
     let _ = std::fs::remove_file(&path);
 }
 
@@ -256,6 +262,12 @@ fn ac3_all_equivalent_reduces_to_zero_over_zero_still_gated() {
         "0/0",
         "AC-3: the sole proved-equivalent survivor leaves the denominator EMPTY \
          (0/0), not a spurious 1/1; cert: {cert}"
+    );
+    assert!(
+        cert["contract_quality"]["equivalent_mutants_excluded"]
+            .as_u64()
+            .is_some_and(|count| count >= 1),
+        "AC-3: every removed equivalent must be surfaced: {cert}"
     );
     let _ = std::fs::remove_file(&path);
 }

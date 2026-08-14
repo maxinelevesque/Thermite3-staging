@@ -466,6 +466,11 @@ fn eval_stmts(
                     "loop / break / continue is outside the covenant scalar fragment".to_string(),
                 ));
             }
+            Stmt::Holding { .. } => {
+                return Err(CovenantEvalError::Unsupported(
+                    "holding block is outside the covenant scalar fragment".to_string(),
+                ));
+            }
         }
     }
     Ok(None)

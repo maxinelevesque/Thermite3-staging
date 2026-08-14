@@ -86,6 +86,10 @@ pub enum ForgeError {
     /// or it reported an internal (VIR) error (never swallowed, REQ-3 /
     /// R-CODE-4).
     VerusOutput { detail: String },
+    /// RFC-10 Lean replay could not be invoked or communicated with.
+    Rfc10ReplayUnavailable { detail: String },
+    /// RFC-10 Lean replay ran and kernel-rejected the checked witness.
+    Rfc10ReplayRejected { detail: String },
     /// The `cargo kani` / kani binary was not found on `PATH` — an environment
     /// error, not a verification failure (`.design/lower/l2-kani.md` REQ-8). The
     /// L2 parallel of `VerusAbsent`.
@@ -193,6 +197,12 @@ impl fmt::Display for ForgeError {
             ForgeError::VerusOutput { detail } => {
                 write!(f, "could not interpret verus output: {detail}")
             }
+            ForgeError::Rfc10ReplayUnavailable { detail } => {
+                write!(f, "RFC-10 Lean replay unavailable: {detail}")
+            }
+            ForgeError::Rfc10ReplayRejected { detail } => {
+                write!(f, "RFC-10 verified replay rejected: {detail}")
+            }
             ForgeError::KaniAbsent { binary } => write!(
                 f,
                 "the `{binary}` bounded model checker was not found on PATH (environment error, \
@@ -250,11 +260,11 @@ impl std::error::Error for ForgeError {}
 
 impl ForgeError {
     /// The exit code class for this error (REQ-5). Every `ForgeError` is an
-    /// environment/usage/IO outcome — a verification failure is a reported
-    /// certificate, not a `ForgeError`. So every variant maps to
-    /// [`EXIT_ENVIRONMENT`].
     fn exit_code(&self) -> u8 {
-        EXIT_ENVIRONMENT
+        match self {
+            Self::Rfc10ReplayRejected { .. } => EXIT_VERIFICATION_FAILURE,
+            _ => EXIT_ENVIRONMENT,
+        }
     }
 }
 
@@ -364,6 +374,7 @@ enum Command {
         /// library rlib (no `main`/seccomp, `panic=abort`) and refuses ambient-syscall
         /// `fx` rows. `--target freestanding` + `--entry` is a usage error.
         target: BuildTarget,
+        lock_provider: Option<String>,
     },
     /// `forge verify-build <bundle-dir> [--replay] [--json]` validates the
     /// canonical receipt and all bound files, and optionally reproduces the
@@ -909,6 +920,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             let mut composition_shells = Vec::new();
             let mut crate_name = None;
             let mut sandbox_flag_seen = false;
+            let mut lock_provider = None;
             let mut iter = iter.peekable();
             while let Some(arg) = iter.next() {
                 match arg.as_str() {
@@ -988,6 +1000,19 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                         })?;
                         entry = Some(value.to_string());
                     }
+                    "--lock-provider" => {
+                        let value = iter.next().ok_or_else(|| {
+                            ForgeError::Usage(
+                                "`--lock-provider` requires a provider name (`test`)".to_string(),
+                            )
+                        })?;
+                        if value != "test" {
+                            return Err(ForgeError::Usage(format!(
+                                "unknown lock provider `{value}` (only the non-production `test` provider is repository-owned; production providers are target integrations)"
+                            )));
+                        }
+                        lock_provider = Some(value.to_string());
+                    }
                     "--out" | "-o" => {
                         // `--out <PATH>` / `-o <PATH>` (#128; REQ-7). The value is a
                         // separate token; a missing value is a Usage error, never a
@@ -1035,6 +1060,12 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             })?;
             match level {
                 BuildLevel::L3 => {
+                    if lock_provider.is_some() {
+                        return Err(ForgeError::Usage(
+                            "`--lock-provider test` currently supplies the L1 executable provider only; L3 provider mappings must come from the target integration and are not silently accepted"
+                                .to_string(),
+                        ));
+                    }
                     if entry.is_some() || sandbox_flag_seen {
                         return Err(ForgeError::Usage(
                             "`forge build --level l3` is a library build and rejects `--entry`, \
@@ -1084,6 +1115,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                 },
                 out,
                 target,
+                lock_provider,
             })
         }
         ForgeMethod::VerifyBuild => {
@@ -1718,6 +1750,7 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             sandbox,
             out,
             target,
+            lock_provider,
         } => run_build(BuildRun {
             file: &file,
             level,
@@ -1730,6 +1763,7 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             sandbox,
             out: out.as_deref(),
             target,
+            lock_provider: lock_provider.as_deref(),
         }),
         Command::VerifyBuild {
             bundle,
@@ -2131,7 +2165,11 @@ fn run_check(
     // failure — non-zero, but a valid cert document on stdout (verdict-in-cert).
     // The #10 assurance aggregate's `Failed` headline and this all-certified check
     // agree (both use `manifest::cert_certifies`).
-    let all_certified = matches!(manifest.project, ProjectAssurance::Certified(_));
+    // An explicit L2 request that produced no function certificate did not run
+    // a bounded check. `[]` is useful machine output, but it is not vacuous
+    // project certification and therefore must not exit successfully.
+    let all_certified = !matches!(level, CheckLevel::L2) || !certs.is_empty();
+    let all_certified = all_certified && matches!(manifest.project, ProjectAssurance::Certified(_));
     if all_certified {
         Ok(ExitCode::SUCCESS)
     } else {
@@ -2427,6 +2465,7 @@ struct BuildRun<'a> {
     sandbox: build::SandboxConfig,
     out: Option<&'a Path>,
     target: BuildTarget,
+    lock_provider: Option<&'a str>,
 }
 
 fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
@@ -2442,10 +2481,16 @@ fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
         sandbox,
         out,
         target,
+        lock_provider,
     } = request;
     emit_effect_warnings(file, json)?;
     if matches!(level, BuildLevel::L1) {
-        let manifest = build::build_file(file, entry, sandbox, out, target)?;
+        let manifest = if lock_provider.is_some() {
+            let provider = build::repository_test_lock_provider(file)?;
+            build::build_file_with_lock_provider(file, entry, sandbox, out, target, &provider)?
+        } else {
+            build::build_file(file, entry, sandbox, out, target)?
+        };
         if json {
             let doc =
                 serde_json::to_string_pretty(&manifest).map_err(|e| ForgeError::RustcOutput {
@@ -3089,6 +3134,9 @@ fn render_build(manifest: &BuildManifest) -> String {
         ));
     }
     out.push_str(&format!("assurance: {}\n", manifest.assurance));
+    if let Some(provider) = &manifest.lock_provider {
+        out.push_str(&format!("lock-provider: {provider}\n"));
+    }
     out.push_str("functions:\n");
     for f in &manifest.functions {
         out.push_str(&format!("  {} fx=[{}]\n", f.name, f.fx.join(", ")));
@@ -3672,6 +3720,7 @@ fn effect_spelling(effect: &thermite_syntax::Effect) -> String {
         thermite_syntax::Effect::Panic => "panic".into(),
         thermite_syntax::Effect::Diverge => "diverge".into(),
         thermite_syntax::Effect::Term => "term".into(),
+        thermite_syntax::Effect::Owns(lock) => format!("owns({lock})"),
     }
 }
 
@@ -3977,6 +4026,7 @@ mod tests {
                 },
                 out: None,
                 target: BuildTarget::Std,
+                lock_provider: None,
             })
         );
         // --no-sandbox opts out.
@@ -4115,6 +4165,7 @@ mod tests {
                 sandbox: build::SandboxConfig::default(),
                 out: Some(PathBuf::from("a.verified")),
                 target: BuildTarget::Freestanding,
+                lock_provider: None,
             })
         );
         assert_eq!(
@@ -4155,6 +4206,7 @@ mod tests {
                 sandbox: build::SandboxConfig::default(),
                 out: None,
                 target: BuildTarget::Freestanding,
+                lock_provider: None,
             })
         );
         for args in [
@@ -4272,6 +4324,10 @@ mod tests {
         assert_eq!(e.exit_code(), EXIT_ENVIRONMENT);
         let e = ForgeError::Usage("x".to_string());
         assert_eq!(e.exit_code(), EXIT_ENVIRONMENT);
+        let e = ForgeError::Rfc10ReplayRejected {
+            detail: "kernel rejected witness".to_string(),
+        };
+        assert_eq!(e.exit_code(), EXIT_VERIFICATION_FAILURE);
     }
 
     // REQ-7: scaffold layout + no-clobber.

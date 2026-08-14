@@ -112,6 +112,9 @@ const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    ! pure
 const LOOSE: &str = "fn loose(x: u64) -> u64\n    ! pure
     requires x <= 100\n    ensures result <= 1000\n{\n    let y: u64 = x + 0;\n    y\n}\n";
 
+const HELD_IDENTITY: &str = "fn held_identity(x: u64) -> u64\n    ! owns(gate)
+    requires x == 0\n    ensures result == 0\n{\n    holding gate { x }\n}\n";
+
 #[test]
 fn equivalent_early_return_verifies() {
     // `clamp_zero`'s early-`return 0` is observably equal to `x + 0` under
@@ -170,6 +173,102 @@ fn loose_early_return_stays_distinguishing() {
         "under req x <= 100 the early-return-0 mutant is distinguishing (x = 5); \
          the obligation must FAIL (the verdict is verus's, not syntactic).\n\
          --- obligation ---\n{obligation}"
+    );
+}
+
+#[test]
+fn sole_holding_body_participates_in_equivalence_proof() {
+    if !verus_present() {
+        eprintln!("SKIP sole_holding_body_participates_in_equivalence_proof: verus absent");
+        return;
+    }
+    let f = parse_fn(HELD_IDENTITY);
+    let mutant = early_return_body(f.body.as_ref().unwrap(), 0);
+    let obligation = thermite_lower::lower_equivalence_obligation(&f, &mutant, &[])
+        .expect("a sole value-producing holding body lowers");
+    assert!(verus_verifies(&obligation, "held_equiv"), "{obligation}");
+}
+
+#[test]
+fn sole_holding_body_does_not_hide_a_distinguishing_mutant() {
+    if !verus_present() {
+        eprintln!("SKIP sole_holding_body_does_not_hide_a_distinguishing_mutant: verus absent");
+        return;
+    }
+    let f = parse_fn(HELD_IDENTITY);
+    let mutant = early_return_body(f.body.as_ref().unwrap(), 1);
+    let obligation = thermite_lower::lower_equivalence_obligation(&f, &mutant, &[])
+        .expect("a sole value-producing holding body lowers");
+    assert!(
+        !verus_verifies(&obligation, "held_distinguish"),
+        "{obligation}"
+    );
+}
+
+#[test]
+fn shared_read_in_requires_is_unsupported_across_the_acquire_boundary() {
+    let source = "struct State { n: u64 } keeps n < 10\n\
+        shared state: State\n\
+        lock gate guards state\n\
+        fn read() -> u64 ! owns(gate), read(state.n)\n\
+          requires state.n == 0 ensures result == 0\n\
+        { holding gate { state.n } }";
+    let program = thermite_syntax::parse(source).program;
+    let f = program
+        .items
+        .iter()
+        .find_map(|item| match item {
+            thermite_syntax::ast::Item::Fn(f) => Some(f.clone()),
+            _ => None,
+        })
+        .unwrap();
+    let observations = thermite_lower::equivalence_shared_observations(&program, "read").unwrap();
+    assert_eq!(observations.len(), 1);
+    let mutant = early_return_body(f.body.as_ref().unwrap(), 0);
+    let error =
+        thermite_lower::lower_equivalence_obligation_with_shared(&f, &mutant, &[], &observations)
+            .expect_err("entry-time shared requires must not constrain a later held read");
+    assert!(
+        error.to_string().contains("function-entry shared state"),
+        "{error}"
+    );
+}
+
+#[test]
+fn shared_read_holding_uses_one_symbolic_observation_in_both_bodies() {
+    if !verus_present() {
+        eprintln!(
+            "SKIP shared_read_holding_uses_one_symbolic_observation_in_both_bodies: verus absent"
+        );
+        return;
+    }
+    let source = "struct State { n: u64 } keeps n < 10\n\
+        shared state: State\n\
+        lock gate guards state\n\
+        fn read() -> u64 ! owns(gate), read(state.n)\n\
+          requires true ensures result < 10\n\
+        { holding gate { state.n } }";
+    let program = thermite_syntax::parse(source).program;
+    let f = program
+        .items
+        .iter()
+        .find_map(|item| match item {
+            thermite_syntax::ast::Item::Fn(f) => Some(f.clone()),
+            _ => None,
+        })
+        .unwrap();
+    let observations = thermite_lower::equivalence_shared_observations(&program, "read").unwrap();
+    let obligation = thermite_lower::lower_equivalence_obligation_with_shared(
+        &f,
+        f.body.as_ref().unwrap(),
+        &[],
+        &observations,
+    )
+    .expect("read-only holding-time observation lowers when requires is entry-state neutral");
+    assert!(obligation.contains("__thermite_shared_state_n: u64"));
+    assert!(
+        verus_verifies(&obligation, "shared_held_equiv"),
+        "{obligation}"
     );
 }
 

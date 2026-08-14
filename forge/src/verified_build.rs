@@ -1151,7 +1151,8 @@ fn closure_program(program: &Program, closure: &VerifiedClosure) -> Program {
             | Item::Forge(_)
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
-            | Item::Concurrent(_) => false,
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => false,
         })
         .collect();
     let adt_names: BTreeSet<String> = crate::check::reachable_adt_deps(program, &referrers)
@@ -1170,7 +1171,8 @@ fn closure_program(program: &Program, closure: &VerifiedClosure) -> Program {
                 Item::Forge(_)
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
-                | Item::Concurrent(_) => false,
+                | Item::Concurrent(_)
+                | Item::LockDecl(_) => false,
             })
             .cloned()
             .collect(),
@@ -1485,6 +1487,7 @@ fn make_plan(input: PlanInput<'_>) -> ArtifactPlanV1 {
             Item::EffectDecl(_) => (false, "effect_decl"),
             Item::SharedDecl(_) => (false, "shared_decl"),
             Item::Concurrent(_) => (false, "concurrent"),
+            Item::LockDecl(_) => (false, "lock"),
         };
         dispositions.push(PlannedItemDisposition {
             name: item.name().to_string(),
@@ -1638,15 +1641,17 @@ fn planned_node_parts(item: &Item) -> PlannedNodeParts {
             contract_sha256: None,
             effects_sha256: None,
         },
-        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
-            PlannedNodeParts {
-                source_start: None,
-                source_end: None,
-                body_sha256: None,
-                contract_sha256: None,
-                effects_sha256: None,
-            }
-        }
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => PlannedNodeParts {
+            source_start: None,
+            source_end: None,
+            body_sha256: None,
+            contract_sha256: None,
+            effects_sha256: None,
+        },
     }
 }
 
@@ -1674,7 +1679,8 @@ fn reject_certificates(
                 Item::Forge(_)
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
-                | Item::Concurrent(_) => None,
+                | Item::Concurrent(_)
+                | Item::LockDecl(_) => None,
             })
             .map(|(start, end)| format!(" (Thermite bytes {start}..{end})"))
             .unwrap_or_default();

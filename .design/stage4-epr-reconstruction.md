@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: ee75c27856292c89a496571d08df05c71968210fd37a2cbc0db11680780ac3a3 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 5e03364c86d7cbf259b8a4c8a3640c6cf1a6fc13ded0fd492c93fead590aa86a.)
+audited-content-sha256: ca950b15d227b32ceba1d66b9e5f59176cf6d437b19515f55b3da3faa140d177 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 5e03364c86d7cbf259b8a4c8a3640c6cf1a6fc13ded0fd492c93fead590aa86a.)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

@@ -120,8 +120,46 @@ pub(crate) fn zero_span() -> Span {
 /// `fn` with its `req`/`ens`/`inv` checks woven in (REQ-1). The output compiles
 /// and runs under `rustc` (REQ-6).
 pub fn lower_l1(program: &Program) -> Result<String, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    let program = checked.source();
+    if crate::program_uses_holding(program) {
+        return Err(LowerError::Unsupported {
+            what: "executable `holding` requires an explicit target lock provider".to_string(),
+            span: zero_span(),
+        });
+    }
+    lower_l1_inner(program, None)
+}
+
+pub fn lower_l1_with_lock_provider(
+    program: &Program,
+    provider: &crate::LockProvider,
+) -> Result<String, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    provider.validate()?;
+    lower_l1_inner(checked.source(), Some(provider))
+}
+
+fn lower_l1_inner(
+    program: &Program,
+    lock_provider: Option<&crate::LockProvider>,
+) -> Result<String, LowerError> {
+    let rewritten;
+    let program = if lock_provider.is_some() {
+        rewritten = crate::locks::rewrite_shared_places(program);
+        &rewritten
+    } else {
+        program
+    };
     let mut out = String::new();
+    if let Some(provider) = lock_provider {
+        out.push_str(&provider.rust_source);
+        out.push_str("\nstruct __ThermiteLockGuard { close: fn(), release: fn() }\nimpl Drop for __ThermiteLockGuard { fn drop(&mut self) { (self.close)(); (self.release)(); } }\n\n");
+    }
     out.push_str(&emit_check_macro());
+    if lock_provider.is_some() {
+        out.push_str(&emit_lock_close_l1(program)?);
+    }
 
     // (2) the L1 runnable forms of every combinator referenced anywhere in a
     // contract/spec position, deduped in source order (REQ-3).
@@ -184,7 +222,7 @@ pub fn lower_l1(program: &Program) -> Result<String, LowerError> {
             // `ens`-checks; the foreign body is not lowered or verified. An
             // in-language fn lowers with its body.
             Item::Fn(f) if f.boundary.is_some() => lower_boundary_fn_l1(f, &variants)?,
-            Item::Fn(f) => lower_fn_l1(f, &variants, &inv_structs)?,
+            Item::Fn(f) => lower_fn_l1(f, &variants, &inv_structs, lock_provider)?,
             // Basis Stage 1c (`.design/basis/01-adts.md` REQ-8/REQ-9): a `struct`
             // lowers to a plain Rust `struct` + a `well_formed` method (the
             // always-active invariant predicate); an `enum` to a plain Rust `enum`.
@@ -192,15 +230,53 @@ pub fn lower_l1(program: &Program) -> Result<String, LowerError> {
             Item::Enum(e) => lower_enum_l1(e)?,
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer
             // yet (increments 2b-3); emit nothing, mirroring the inert ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
-                continue
-            }
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => continue,
         };
         out.push('\n');
         out.push_str(&item_src);
         out.push('\n');
     }
 
+    Ok(out)
+}
+
+fn emit_lock_close_l1(program: &Program) -> Result<String, LowerError> {
+    let regions =
+        thermite_spec::RegionIndex::build(program).map_err(|errors| LowerError::Unsupported {
+            what: format!("cannot emit lock close obligations: {errors:?}"),
+            span: zero_span(),
+        })?;
+    let mut out = String::new();
+    for item in &program.items {
+        let Item::LockDecl(lock) = item else { continue };
+        let invariant =
+            regions
+                .invariant_region(&lock.guards)
+                .ok_or_else(|| LowerError::Unsupported {
+                    what: format!(
+                        "lock `{}` has no invariant-bearing guarded place",
+                        lock.name
+                    ),
+                    span: lock.span,
+                })?;
+        let Some(root) = invariant.segments.first() else {
+            return Err(LowerError::Unsupported {
+                what: format!("lock `{}` resolved to an empty invariant region", lock.name),
+                span: lock.span,
+            });
+        };
+        let mut place = format!("{}()", crate::LockProvider::shared_symbol(root));
+        for field in invariant.segments.iter().skip(1) {
+            place.push('.');
+            place.push_str(field);
+        }
+        let close = crate::LockProvider::close_symbol(&lock.name);
+        writeln!(out, "fn {close}() {{ thermite_check!(\"keeps\", \"{invariant}.well_formed()\", {place}.well_formed()); }}").ok();
+    }
     Ok(out)
 }
 
@@ -476,7 +552,11 @@ pub(crate) fn emit_combinator_l1_defs(program: &Program) -> Result<String, Lower
             Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 combinator-collection
             // consumer yet (increments 2b-3); inert here, mirroring the ADT-decl arm.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
 
@@ -761,6 +841,7 @@ fn lower_fn_l1(
     f: &FnItem,
     variants: &[(&str, &str)],
     inv_structs: &[&str],
+    lock_provider: Option<&crate::LockProvider>,
 ) -> Result<String, LowerError> {
     let ret = lower_type(&f.ret)?;
     let mut out = String::new();
@@ -840,7 +921,7 @@ fn lower_fn_l1(
         span: f.span,
     })?;
     writeln!(out, "    let result = {{").ok();
-    out.push_str(&lower_fn_body_l1(body, f, variants, 2)?);
+    out.push_str(&lower_fn_body_l1(body, f, variants, 2, lock_provider)?);
     writeln!(out, "    }};").ok();
 
     // ens on exit, in source order, against the bound `result` (REQ-1/REQ-2). A
@@ -1114,6 +1195,7 @@ fn block_references_ident(block: &Block, ident: &str) -> bool {
         }
         Stmt::Expr(e) => expr_references_ident(e, ident),
         Stmt::Loop(l) => block_references_ident(&l.body, ident),
+        Stmt::Holding { body, .. } => block_references_ident(body, ident),
         // break/continue carry no sub-expression (#93): reference nothing.
         Stmt::Break | Stmt::Continue => false,
     });
@@ -1215,13 +1297,30 @@ fn lower_fn_body_l1(
     f: &FnItem,
     variants: &[(&str, &str)],
     indent: usize,
+    lock_provider: Option<&crate::LockProvider>,
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let mut out = String::new();
-    for stmt in &block.stmts {
+    for (index, stmt) in block.stmts.iter().enumerate() {
         match stmt {
-            Stmt::Loop(l) => out.push_str(&lower_loop_l1(l, variants, indent)?),
-            other => out.push_str(&lower_stmt_l1(other, indent, variants)?),
+            Stmt::Loop(l) => out.push_str(&lower_loop_l1_with_provider(
+                l,
+                variants,
+                indent,
+                lock_provider,
+            )?),
+            other => {
+                let mut rendered =
+                    lower_stmt_l1_with_provider(other, indent, variants, lock_provider)?;
+                if matches!(other, Stmt::Holding { .. })
+                    && (block.tail.is_some() || index + 1 < block.stmts.len())
+                    && rendered.ends_with("}\n")
+                {
+                    rendered.truncate(rendered.len() - 2);
+                    rendered.push_str("};\n");
+                }
+                out.push_str(&rendered);
+            }
         }
     }
     if let Some(tail) = &block.tail {
@@ -1237,10 +1336,11 @@ fn lower_fn_body_l1(
 /// emitted: termination is a proof-time (L3) / bounded (L2) obligation, out of
 /// L1's runtime scope (REQ-5, OQ-3). A runtime check cannot prove a
 /// still-running loop terminates.
-fn lower_loop_l1(
+fn lower_loop_l1_with_provider(
     l: &LoopNode,
     variants: &[(&str, &str)],
     indent: usize,
+    lock_provider: Option<&crate::LockProvider>,
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let ipad = "    ".repeat(indent + 1);
@@ -1260,8 +1360,18 @@ fn lower_loop_l1(
     // Loop body statements (a nested loop recurses through `lower_loop_l1`).
     for stmt in &l.body.stmts {
         match stmt {
-            Stmt::Loop(inner) => out.push_str(&lower_loop_l1(inner, variants, indent + 1)?),
-            other => out.push_str(&lower_stmt_l1(other, indent + 1, variants)?),
+            Stmt::Loop(inner) => out.push_str(&lower_loop_l1_with_provider(
+                inner,
+                variants,
+                indent + 1,
+                lock_provider,
+            )?),
+            other => out.push_str(&lower_stmt_l1_with_provider(
+                other,
+                indent + 1,
+                variants,
+                lock_provider,
+            )?),
         }
     }
     if let Some(tail) = &l.body.tail {
@@ -1329,12 +1439,38 @@ fn lower_block_inner(
     span: Span,
     variants: &[(&str, &str)],
 ) -> Result<String, LowerError> {
+    lower_block_inner_with_provider(block, indent, span, variants, None)
+}
+
+fn lower_block_inner_with_provider(
+    block: &Block,
+    indent: usize,
+    span: Span,
+    variants: &[(&str, &str)],
+    lock_provider: Option<&crate::LockProvider>,
+) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let mut out = String::new();
-    for stmt in &block.stmts {
+    for (index, stmt) in block.stmts.iter().enumerate() {
         match stmt {
-            Stmt::Loop(l) => out.push_str(&lower_loop_l1(l, variants, indent)?),
-            other => out.push_str(&lower_stmt_l1(other, indent, variants)?),
+            Stmt::Loop(l) => out.push_str(&lower_loop_l1_with_provider(
+                l,
+                variants,
+                indent,
+                lock_provider,
+            )?),
+            other => {
+                let mut rendered =
+                    lower_stmt_l1_with_provider(other, indent, variants, lock_provider)?;
+                if matches!(other, Stmt::Holding { .. })
+                    && (block.tail.is_some() || index + 1 < block.stmts.len())
+                    && rendered.ends_with("}\n")
+                {
+                    rendered.truncate(rendered.len() - 2);
+                    rendered.push_str("};\n");
+                }
+                out.push_str(&rendered);
+            }
         }
     }
     if let Some(tail) = &block.tail {
@@ -1351,6 +1487,15 @@ pub(crate) fn lower_stmt_l1(
     stmt: &Stmt,
     indent: usize,
     variants: &[(&str, &str)],
+) -> Result<String, LowerError> {
+    lower_stmt_l1_with_provider(stmt, indent, variants, None)
+}
+
+fn lower_stmt_l1_with_provider(
+    stmt: &Stmt,
+    indent: usize,
+    variants: &[(&str, &str)],
+    lock_provider: Option<&crate::LockProvider>,
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     match stmt {
@@ -1406,10 +1551,22 @@ pub(crate) fn lower_stmt_l1(
         },
         Stmt::If { cond, then, else_ } => {
             let c = lower_expr_exec(cond, 0, zero_span(), variants)?;
-            let t = lower_block_inner(then, indent + 1, zero_span(), variants)?;
+            let t = lower_block_inner_with_provider(
+                then,
+                indent + 1,
+                zero_span(),
+                variants,
+                lock_provider,
+            )?;
             let mut out = format!("{pad}if {c} {{\n{t}{pad}}}");
             if let Some(e) = else_ {
-                let es = lower_block_inner(e, indent + 1, zero_span(), variants)?;
+                let es = lower_block_inner_with_provider(
+                    e,
+                    indent + 1,
+                    zero_span(),
+                    variants,
+                    lock_provider,
+                )?;
                 write!(out, " else {{\n{es}{pad}}}").ok();
             }
             out.push('\n');
@@ -1429,6 +1586,24 @@ pub(crate) fn lower_stmt_l1(
                 .to_string(),
             span: zero_span(),
         }),
+        Stmt::Holding { lock, body, .. } => {
+            // The public whole-program entry rejects holding unless it was
+            // given a validated provider. Expression lowering historically
+            // lost that Option while descending through Expr::If/Match blocks;
+            // emission itself needs only the provider's canonical symbols, so
+            // nested blocks may lower uniformly once the entry gate passed.
+            let acquire = crate::LockProvider::acquire_symbol(lock);
+            let release = crate::LockProvider::release_symbol(lock);
+            let close = crate::LockProvider::close_symbol(lock);
+            let inner = lower_block_inner_with_provider(
+                body,
+                indent + 1,
+                zero_span(),
+                variants,
+                lock_provider,
+            )?;
+            Ok(format!("{pad}{{\n{pad}    {acquire}();\n{pad}    let __thermite_lock_guard = __ThermiteLockGuard {{ close: {close}, release: {release} }};\n{pad}    let __thermite_holding_result = {{\n{inner}{pad}    }};\n{pad}    drop(__thermite_lock_guard);\n{pad}    __thermite_holding_result\n{pad}}}\n"))
+        }
     }
 }
 
@@ -2144,7 +2319,11 @@ fn program_uses_string_l1(program: &Program) -> bool {
             }
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer
             // yet (increments 2b-3); skip, mirroring main's inert handling.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     false
@@ -2174,6 +2353,7 @@ fn stmt_has_str_lit_l1(stmt: &Stmt) -> bool {
                 || else_.as_ref().map(block_has_str_lit_l1).unwrap_or(false)
         }
         Stmt::Loop(l) => block_has_str_lit_l1(&l.body),
+        Stmt::Holding { body, .. } => block_has_str_lit_l1(body),
         Stmt::Expr(e) => expr_has_str_lit_l1(e),
         // break/continue carry no sub-expression (#93): no string literal.
         Stmt::Break | Stmt::Continue => false,
@@ -2876,7 +3056,11 @@ fn program_uses_numfmt_l1(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer yet
         // (increments 2b-3); contributes nothing, mirroring the inert ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
@@ -2904,6 +3088,7 @@ fn stmt_has_to_string(stmt: &Stmt) -> bool {
                 || else_.as_ref().map(block_has_to_string).unwrap_or(false)
         }
         Stmt::Loop(l) => block_has_to_string(&l.body),
+        Stmt::Holding { body, .. } => block_has_to_string(body),
         Stmt::Expr(e) => expr_has_to_string(e),
         Stmt::Break | Stmt::Continue => false,
     }

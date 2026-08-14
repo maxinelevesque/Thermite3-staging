@@ -17737,49 +17737,377 @@ note = "Bulla policy fixture covers kernel-owned acceptance, ambient rejection, 
 id = "REQ-SYNTAX-LOCK-DECL"
 title = "`lock N guards T [after M]`"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "syntax"
 summary = "A lock declaration names what it guards and, optionally, what it must be taken after, which is what makes an acquisition order checkable."
-remaining_scope = "Parse the declaration and the optional ordering constraint. Proposed by RFC-10; staged and not filed."
-contributors = [".design/rfcs/0010-shared-state-invariants.md"]
+remaining_scope = ""
+contributors = [".design/rfcs/0010-shared-state-invariants.md", ".design/syntax/shared-state-invariants.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/rfcs/0010-shared-state-invariants.md"
 note = "the proposal, with its design record and probe results"
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/shared-state-invariants.md"
+note = "the approved implementation contract: REQ-1 and REQ-2 define region-guarding lock declarations, the optional ordering relation, and the inv-to-keeps surface migration; AC-1 and AC-2 make the syntax mechanically testable"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-syntax/tests/shared_state_invariants.rs"
+note = "parses root and nested-region guards, optional after edges, and rejects the legacy struct inv spelling"
 
 [[requirement]]
 id = "REQ-SYNTAX-HOLDING-BLOCK"
 title = "`holding r { … }` marks the critical section"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "syntax"
 summary = "The row declares which lock a function takes; the block declares where. Neither is inferred, so an over-declared lock is an error rather than invisible."
-remaining_scope = "Parse the block and check it against owns(r) in the row. Proposed by RFC-10; staged and not filed."
-contributors = [".design/rfcs/0010-shared-state-invariants.md"]
+remaining_scope = ""
+contributors = [".design/rfcs/0010-shared-state-invariants.md", ".design/syntax/shared-state-invariants.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/rfcs/0010-shared-state-invariants.md"
 note = "the proposal, with its design record and probe results"
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/shared-state-invariants.md"
+note = "the approved implementation contract: REQ-2 through REQ-5 define lexical holding, two-way owns honesty, and invariant restoration; AC-2 through AC-5 enumerate parser and exit-path evidence"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-syntax/tests/shared_state_invariants.rs"
+note = "distinguishes public owns effects from lexical holding statements in the parsed program"
 
 [[requirement]]
 id = "REQ-SPEC-LOCK-DISCIPLINE"
 title = "One lock unless ordered, and a handler's lock needs masking"
 owner = ".design/rfcs"
-status = "not_started"
+status = "partial"
 scope = "spec"
 summary = "A function holds at most one lock unless the locks are ordered with `after`. A lock any interrupt handler takes needs masking rather than ordering, which is the defect no acquisition order catches."
-remaining_scope = "Check the one-lock default, the declared order, and the masking rule. Proposed by RFC-10; staged and not filed."
-contributors = [".design/rfcs/0010-shared-state-invariants.md"]
+remaining_scope = "Static ordering and direct/transitive reentrancy are enforced in statement and expression positions; guarded-region access, handler masking, explicit provider evidence, provider-backed L3 critical sections, restoration fixtures, and the Tier A relational-frame consequence are implemented. Provider-backed L1 lowering of expression-position `holding` remains unsupported and fails closed; that executable coverage remains before this umbrella requirement can ship."
+contributors = [".design/rfcs/0010-shared-state-invariants.md", ".design/syntax/shared-state-invariants.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/rfcs/0010-shared-state-invariants.md"
 note = "the proposal, with its design record and probe results"
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/shared-state-invariants.md"
+note = "the approved implementation contract: REQ-3 through REQ-11 define transitive ownership, guarded access, ordering, reentrancy, masking, the executable provider seam, and the Tier A relational frame consequence; AC-3 through AC-11 cover the discipline"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/shared_state_invariants.rs"
+note = "covers guarded-region bypass and disjointness, declared nesting order, direct and transitive reentrancy, and handler-visible lock ownership with and without owns(interrupts)"
+
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-lower/src/locks.rs"
+note = "defines the explicit executable provider attestation and its fail-closed exclusivity, restoration-before-release, interrupt-policy, and identity checks"
+
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/build.rs"
+note = "provider-free build rejection and explicit repository-test provider emission; the build manifest records the selected provider"
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.EffectRows.relational_frame"
+note = "axiom-probed Tier A result congruence and non-modification theorem over the canonical effect/write footprint"
+
+[[requirement]]
+id = "REQ-SPEC-SHARED-PLACE"
+title = "Shared declarations are executable place roots"
+owner = ".design/syntax/shared-state-invariants.md"
+status = "shipped"
+scope = "spec"
+summary = "An unshadowed shared declaration resolves as a distinct provider-backed place root in executable expressions, retaining ordinary field syntax."
+remaining_scope = ""
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/shared-state-invariants.md"
+note = "REQ-13 and AC-13 define shared-root resolution and lexical shadowing."
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/shared_state_invariants.rs"
+note = "shared places infer exact region effects, reject unknown fields, and parameters/locals shadow shared roots"
+
+[[requirement]]
+id = "REQ-SPEC-SHARED-LEXICAL-AUTHORITY"
+title = "Holding, not owns alone, authorizes shared access"
+owner = ".design/syntax/shared-state-invariants.md"
+status = "shipped"
+scope = "spec"
+summary = "A guarded shared place is accessible only inside the matching lexical holding scope; the public owns footprint alone is not body authority."
+remaining_scope = ""
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/shared-state-invariants.md"
+note = "REQ-14 and AC-14 define lexical authorization and wrong-lock rejection."
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/shared_state_invariants.rs"
+note = "matching holding accepts while owns-only access and wrong-lock holding reject"
+
+[[requirement]]
+id = "REQ-SPEC-SHARED-ESCAPE"
+title = "Shared-place values cannot escape an open invariant"
+owner = ".design/syntax/shared-state-invariants.md"
+status = "shipped"
+scope = "spec"
+summary = "Copy reads and in-place mutation are admitted while non-Copy moves and shared-derived borrow escapes are rejected; explicit clones become owned values."
+remaining_scope = ""
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/shared-state-invariants.md"
+note = "REQ-15 and AC-15 define the initial affine shared-place discipline."
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/shared_state_invariants.rs"
+note = "Copy reads, explicit clone and in-place assignment accept; non-Copy moves and shared-derived references reject"
+
+[[requirement]]
+id = "REQ-LOWER-HOLDING-CLOSE"
+title = "Every holding exit closes the invariant exactly once"
+owner = ".design/syntax/shared-state-invariants.md"
+status = "shipped"
+scope = "lower"
+summary = "Every edge leaving holding normalizes through one well_formed close operation followed by provider release, with Drop only as the unwind backstop."
+remaining_scope = ""
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/syntax/shared-state-invariants.md"
+note = "REQ-16 and AC-16 define normalized close semantics across fallthrough, early control flow, errors, and unwind."
+
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-lower/src/locks.rs"
+note = "normalizes acquisition and inner-to-outer close calls across holding fallthrough, tail evaluation, return, break, and continue"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/shared_state_invariants.rs"
+note = "L1 fixtures count release on fallthrough, return, break, continue, and unwind; restoration failure prevents release; L3 source fixtures check edge normalization"
+
+[[requirement]]
+id = "REQ-RFC10-CANONICAL-CHILDREN"
+title = "One canonical semantic child relation"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "syntax"
+summary = "Executable AST nodes and wrapper records have stable identities and one exhaustive child inventory."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-syntax/src/semantic.rs"
+note = "canonical NodeId, SemanticFact, ChildRole, and wrapper-aware relation"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-syntax/tests/semantic_inventory.rs"
+note = "conditions, guards, patterns, expression blocks, and stable event coverage"
+
+[[requirement]]
+id = "REQ-RFC10-ITERATIVE-TRAVERSAL"
+title = "Finite-tree traversal is iterative and resource-bounded"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "syntax"
+summary = "Semantic inventory and enter/leave traversal use explicit worklists; exhaustion is non-certifying ResourceLimit."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-syntax/tests/semantic_inventory.rs"
+note = "10,000-node traversal and structured exhaustion negative control"
+
+[[requirement]]
+id = "REQ-RFC10-UNIFORM-HOLDING"
+title = "Holding semantics are uniform across executable blocks"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "spec"
+summary = "Every grammar-admitted executable block uses the same holding authority, ordering, and close semantics."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/shared_state_invariants.rs"
+note = "statement conditions, match guards, expression-owned blocks, early exits, and L1/L3 behavior"
+
+[[requirement]]
+id = "REQ-RFC10-CHECKED-IR"
+title = "RFC-10 semantics produce checked IR"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "lower"
+summary = "CheckedProgram binds inventory, resolved regions, footprints, capabilities, shared authority, held transitions, and close edges."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-lower/src/checked.rs"
+note = "all-or-nothing checked construction and typed fact records"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/checked_program.rs"
+note = "resolved facts, transitions, close evidence, and phase-equivalent diagnostics"
+
+[[requirement]]
+id = "REQ-RFC10-BACKEND-CONVERGENCE"
+title = "Whole-program backends require checked IR"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "lower"
+summary = "L1, L2, L3, Forge checking, mutation, vacuity, strengthening, and artifact routes validate before lowering."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/checked_program.rs"
+note = "all public whole-program lowering routes reject the same invalid source"
+[[requirement.evidence]]
+kind = "file"
+target = "forge/src/check.rs"
+note = "Forge certification constructs and replays checked witness evidence before L3"
+
+[[requirement]]
+id = "REQ-RFC10-WITNESS-PRODUCER"
+title = "Rust analysis emits deterministic source-bound evidence"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "lower"
+summary = "A canonical JSON witness binds complete AST bytes and enumerates structural and RFC-10 semantic evidence."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-lower/src/witness.rs"
+note = "SHA-256-bound deterministic witness format and producer"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/traversal_witness.rs"
+note = "byte determinism, JSON roundtrip, source binding, and mutated evidence rejection"
+
+[[requirement]]
+id = "REQ-RFC10-VERIFIED-REPLAY"
+title = "L3 requires successful witness replay"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "verified"
+summary = "Forge requires Lean-kernel replay of separate canonical-AST and production-witness values before L3 certification."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "file"
+target = "forge/src/check.rs"
+note = "production certification renders canonical AST and witness projections into Lean and fails closed unless the kernel proves verify = true"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "kernel replay mutation battery rejects structure, footprint, call, holding, close, capability, shared-place, and authority mutations"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/check_conformance.rs"
+note = "production RFC-10 L3 anchor plus frozen 18-file corpus certification-level sweep"
+
+[[requirement]]
+id = "REQ-RFC10-FORMAL-SOUNDNESS"
+title = "The checked traversal verifier has kernel-checked soundness"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "verified"
+summary = "Lean proves exact structural and semantic evidence agreement, computed footprint closure, producer completeness, and non-certifying resource exhaustion for witness version 3."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.CheckedTraversal.verify_sound"
+note = "aggregate checker theorem, included in the repository axiom probe"
+[[requirement.evidence]]
+kind = "file"
+target = "lean/Thermite/CheckedTraversal.lean"
+note = "finite production-schema checker and soundness theorems executed by Forge replay"
+
+[[requirement]]
+id = "REQ-RFC10-EVIDENCE-COMPLETENESS"
+title = "The RFC-10 replay fragment has kernel-checked completeness"
+owner = ".design/rfc10-evidence-completeness.md"
+status = "shipped"
+scope = "verified"
+summary = "Lean defines SupportedRFC10, a logical producer, producer completeness, and exact acceptance; each Rust artifact proves equality to the logical product."
+remaining_scope = "Language-wide source-to-canonical and certification-stage expansion is tracked by GitHub issue 48."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.CheckedTraversal.verify_complete"
+note = "supported evidence is accepted by the executable checker"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.CheckedTraversal.verify_iff_supported"
+note = "exact acceptance characterization for the versioned rung-4 fragment"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.CheckedTraversal.produce_complete"
+note = "logical producer totality and checker acceptance over supported canonical inputs"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/traversal_witness.rs"
+note = "cross-language current-inventory matrix invokes the universal theorem through Lean"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-syntax/tests/semantic_inventory.rs"
+note = "exact sufficient-budget boundary separates language support from resource availability"
+
+[[requirement]]
+id = "REQ-RFC10-CONFORMANCE-MATRIX"
+title = "Generated traversal and phase conformance matrix"
+owner = ".design/rfc10-checked-traversal.md"
+status = "partial"
+scope = "test"
+summary = "Generated fixtures cross ten positions with core positive, rejection, and deep-expression payloads through parser, checked IR, replay, L1, and L3."
+remaining_scope = "GitHub issue 49: cross non-Copy move, escaping-borrow, invariant-mutation payloads and every compatible L2/Forge route in the generated matrix."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/rfc10_conformance_matrix.rs"
+note = "ten-position generated matrix with compile/execute L1, L3, witness replay, rejection classes, and deep finite terms"
+
+[[requirement]]
+id = "REQ-RFC10-DELTA-LEDGER"
+title = "RFC-10 amendment and residual trust stay explicit"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "spec"
+summary = "Language, backend, proof, resource, compatibility, and trusted-correspondence deltas are recorded separately."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "file"
+target = ".design/rfc10-checked-traversal.md"
+note = "language and assurance delta ledger plus named residual-trust boundary"
 
 [[requirement]]
 id = "REQ-SYNTAX-RESOURCE-MODIFIER"

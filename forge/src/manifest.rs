@@ -413,9 +413,17 @@ pub struct ContractQuality {
     /// Mutation kill ratio `"killed/total"` (issue #12) — `"0/0"` (unscored) in
     /// #5; typed `String` to match the Appendix A `"17/18"` shape (OQ-1).
     pub mutants_killed: String,
+    /// Survivors removed from the denominator only after a proof of observable
+    /// equivalence. Omitted when zero to preserve pre-exclusion certificate JSON.
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub equivalent_mutants_excluded: usize,
     /// The surviving-mutant description (issue #12) — `None` (unscored) in #5.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub survivor: Option<String>,
+}
+
+fn is_zero_usize(value: &usize) -> bool {
+    *value == 0
 }
 
 impl ContractQuality {
@@ -427,6 +435,7 @@ impl ContractQuality {
             tautology: false,
             vacuous_precondition: false,
             mutants_killed: "0/0".to_string(),
+            equivalent_mutants_excluded: 0,
             survivor: None,
         }
     }
@@ -978,6 +987,17 @@ impl Certificate {
         self
     }
 
+    pub fn with_mutation_score_and_equivalents(
+        self,
+        mutants_killed: String,
+        survivor: Option<String>,
+        equivalent_mutants_excluded: usize,
+    ) -> Self {
+        let mut scored = self.with_mutation_score(mutants_killed, survivor);
+        scored.contract_quality.equivalent_mutants_excluded = equivalent_mutants_excluded;
+        scored
+    }
+
     /// Attach the §7 step-5 strengthening suggestions to this certificate (#14;
     /// `.design/forge/strengthening-probes.md` REQ-4). Advisory: only the additive
     /// `strengthening` field and the reserved `suggested_move` headline change —
@@ -1462,6 +1482,7 @@ fn effect_token(effect: &Effect) -> String {
         // The #106 terminal-control atom (`fx term` → the `ioctl` seccomp grant,
         // runtime-sandbox.md REQ-7). A bare atom like `alloc`/`time`.
         Effect::Term => "term".to_string(),
+        Effect::Owns(lock) => format!("owns({lock})"),
     }
 }
 
@@ -1951,11 +1972,21 @@ mod tests {
         let base = Certificate::new("sum", Level::L3, vec!["pure".to_string()], 0, vec![]);
         // Forward-declared default before scoring.
         assert_eq!(base.contract_quality.mutants_killed, "0/0");
+        assert_eq!(base.contract_quality.equivalent_mutants_excluded, 0);
         assert!(base.contract_quality.survivor.is_none());
 
         let scored = base.clone().with_mutation_score("17/18".to_string(), None);
         assert_eq!(scored.contract_quality.mutants_killed, "17/18");
         assert!(scored.contract_quality.survivor.is_none());
+        let narrowed =
+            base.clone()
+                .with_mutation_score_and_equivalents("17/17".to_string(), None, 2);
+        assert_eq!(narrowed.contract_quality.equivalent_mutants_excluded, 2);
+        assert_eq!(
+            serde_json::to_value(&narrowed).unwrap()["contract_quality"]
+                ["equivalent_mutants_excluded"],
+            2
+        );
         // The kill ratio is oracle-excluded: a graduated cert is oracle-equal to the
         // forward-declared one (OQ-1 — the ratio is verus-version-sensitive).
         assert!(oracle_eq(&base, &scored));

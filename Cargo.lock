@@ -176,6 +176,9 @@ dependencies = [
 name = "thermite-lower"
 version = "0.0.1"
 dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
  "thermite-spec",
  "thermite-syntax",
  "thermite-verified",

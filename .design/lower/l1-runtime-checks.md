@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 6b86f74476122cfddbdcf168d37a3561d2598054 (re-pinned 2026-06-16 for PR #46 after merging main: lower_l1's TString runtime gate now treats String-typed ADT declarations as TString users so ADT fields cannot name an unemitted runtime; main's inert Item::Forge skip is preserved; core req/ens/keeps check emission is unchanged.)
-audited-content-sha256: 17a226e4bd37ce4f5eac1ac702fbeb36944b88fb88254d72d48d4e3bc2796349 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 998cc145d4abc11bc78540430a3d001ca9dfc42bba97c2c61b3992d313e0eff4.)
+audited-content-sha256: 3e18dc5c863793275837c6623af1422f678ea25e44e03df37be28a9931d96480 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 998cc145d4abc11bc78540430a3d001ca9dfc42bba97c2c61b3992d313e0eff4.)
 governs: thermite-lower/src/l1.rs
 thesis-refs:
   - thermite-design.md §4.2

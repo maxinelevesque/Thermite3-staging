@@ -36,6 +36,54 @@ The observation that makes it small: **a resource invariant is a struct
 invariant.** `keeps` already exists and already means "always true of this type".
 The only new thing is a scope in which it may be temporarily false.
 
+## Revision 2 — checked traversal and proof-carrying interpretation
+
+Implementation and three cold adversarial reviews established that the original
+proposal specified the obligations on `holding`, but not a single authoritative
+interpretation of the syntax carrying those obligations. Independent handwritten
+walks repeatedly disagreed about expression-owned blocks, statement conditions,
+match guards, and traversal bounds. That phase skew allowed a construct observed
+by lowering to be missed by lock discipline, or observed by an unbounded
+specialist only after a bounded pass had skipped one of its fields.
+
+[The checked-traversal amendment](../rfc10-checked-traversal.md) is therefore
+part of RFC-10. It makes the following normative changes without changing the
+source spelling:
+
+The eight revision-2 implementation slices are complete. The canonical
+inventory, checked IR, uniform L1/L3 expression-position lowering, deterministic
+witness, production Lean-kernel replay, and generated core matrix are present.
+The rung-4 checker binds canonical syntax, direct effects, calls, transitive
+closure, holding/shared-place coverage, exact holding lock identity, and
+structural close/authority evidence. A production Forge anchor and frozen root
+corpus sweep prevent replay or dependency-weaving regressions from hiding behind
+library-only tests.
+This is not yet the amendment's proof-complete stage gate: exact independent
+interpretation of lock/order/close/authority records and the full
+payload-by-position-by-phase cross-product remain open exactly as recorded in
+the amendment and requirement registry.
+
+1. one repository-wide canonical semantic-child relation inventories all
+   executable syntax fields;
+2. analysis constructs checked IR, and every certifying or executable backend
+   consumes that IR rather than independently interpreting parsed syntax;
+3. `holding` has uniform lexical semantics in every ordinary executable block,
+   including expression-owned blocks;
+4. the abstract semantics ranges over all finite syntax trees, while iterative
+   implementation traversal may return a non-certifying operational resource
+   limit;
+5. production analysis emits source-bound evidence checked by a small verifier
+   whose correctness is proved in Lean before RFC-10 L3 certification; and
+6. a generated payload-by-child-position matrix checks phase agreement and
+   corpus preservation.
+
+The uniform-block rule may be weakened to direct statement-control blocks only
+after an impossibility proof under the amendment's stated assumptions and a new
+RFC decision. Backend difficulty, proof complexity, a missing lemma, or failure
+to find a mechanization path is not such a proof. A future project may strengthen
+the interpretation proof—including a proved AST-to-checked-IR transformation—
+without changing this language surface.
+
 ## Proposal
 
 ```thermite

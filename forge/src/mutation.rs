@@ -782,6 +782,7 @@ impl MutantSink {
             // target in v0.1 (#93, verus-lowering.md OQ-4): the scan produces no
             // mutant for them (a leaf, like `Return(None)`).
             Stmt::Break | Stmt::Continue => {}
+            Stmt::Holding { body, .. } => self.scan_block(body, ctr),
         }
     }
 
@@ -1041,6 +1042,11 @@ impl Applier<'_> {
             // verbatim (not a mutation target — OQ-4).
             Stmt::Break => Stmt::Break,
             Stmt::Continue => Stmt::Continue,
+            Stmt::Holding { lock, body, span } => Stmt::Holding {
+                lock: lock.clone(),
+                body: self.apply_block(body),
+                span: *span,
+            },
         }
     }
 

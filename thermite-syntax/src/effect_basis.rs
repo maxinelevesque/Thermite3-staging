@@ -216,6 +216,10 @@ pub fn entry_for_effect(effect: &Effect) -> BasisEntry {
             state_write(&domain.display()),
             Entry::io(&format!("sigma_{domain}")),
         ]),
+        // Acquisition is a checked stateful effect over the symbolic lock
+        // instance. RFC-10's compatibility consumer distinguishes holder/holder
+        // serialization from ordinary state writes.
+        Effect::Owns(lock) => BasisEntry::Primitive(state_write(&format!("lock:{lock}"))),
         Effect::Alloc => BasisEntry::Primitive(state_write("heap")),
         Effect::Time => BasisEntry::Primitive(state_read("clock")),
         Effect::Rand => BasisEntry::Primitive(state_write("entropy")),
@@ -264,6 +268,7 @@ pub const fn route_for_effect(effect: &Effect) -> ObligationRoute {
         Effect::Read(_)
         | Effect::Write(_)
         | Effect::Net(_)
+        | Effect::Owns(_)
         | Effect::Alloc
         | Effect::Time
         | Effect::Rand

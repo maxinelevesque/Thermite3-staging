@@ -273,7 +273,8 @@ fn check_parse_facts(facts_file: &str) {
             | Item::Forge(_)
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
-            | Item::Concurrent(_) => {
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {
                 panic!(
                     "{}: unexpected non-(spec)fn item in the corpus fixture",
                     fact.name
@@ -379,7 +380,8 @@ fn recover_per_item() {
             | Item::Forge(_)
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
-            | Item::Concurrent(_) => {
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {
                 panic!("`ok` should be a fn, not an ADT/forge item")
             }
         }

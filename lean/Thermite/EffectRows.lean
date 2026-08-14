@@ -82,4 +82,59 @@ theorem disjoint_pairs_impose_no_commutation
   intro l lMember r rMember overlap
   exact False.elim (disjoint l lMember r rMember overlap)
 
+/- RFC-10 Tier A: a semantic item is characterized by the same finite effect
+   list as the Rust consumer. `resultCongruent` is functional dependence on the
+   declared footprint; `framesWrites` is the canonical write-frame obligation. -/
+abbrev State := Region → Nat
+
+def HasOperation (operation : Operation) (footprint : Footprint) (region : Region) : Prop :=
+  ∃ effect ∈ footprint, effect.operation = operation ∧ effect.region = region
+
+def AgreesOnFootprint (left right : State) (footprint : Footprint) : Prop :=
+  ∀ effect ∈ footprint, left effect.region = right effect.region
+
+structure ItemSemantics (Result : Type) (footprint : Footprint) where
+  run : State → Result → State → Prop
+  resultCongruent :
+    ∀ {s₁ s₂ r₁ r₂ t₁ t₂},
+      AgreesOnFootprint s₁ s₂ footprint → run s₁ r₁ t₁ → run s₂ r₂ t₂ → r₁ = r₂
+  framesWrites :
+    ∀ {s r t region}, run s r t → ¬ HasOperation .write footprint region → t region = s region
+
+theorem relational_frame
+    {Result : Type}
+    (footprint : Footprint)
+    (semantics : ItemSemantics Result footprint)
+    {s₁ s₂ : State} {r₁ r₂ : Result} {t₁ t₂ : State}
+    (agree : AgreesOnFootprint s₁ s₂ footprint)
+    (run₁ : semantics.run s₁ r₁ t₁)
+    (run₂ : semantics.run s₂ r₂ t₂) :
+    r₁ = r₂ ∧
+      (∀ region, ¬ HasOperation .write footprint region →
+        t₁ region = s₁ region ∧ t₂ region = s₂ region) := by
+  constructor
+  · exact semantics.resultCongruent agree run₁ run₂
+  · intro region outside
+    exact ⟨semantics.framesWrites run₁ outside, semantics.framesWrites run₂ outside⟩
+
+theorem pure_deterministic
+    {Result : Type}
+    (semantics : ItemSemantics Result [])
+    {s₁ s₂ : State} {r₁ r₂ : Result} {t₁ t₂ : State}
+    (run₁ : semantics.run s₁ r₁ t₁)
+    (run₂ : semantics.run s₂ r₂ t₂) : r₁ = r₂ := by
+  exact semantics.resultCongruent (by intro effect member; contradiction) run₁ run₂
+
+theorem outside_write_equal
+    {Result : Type}
+    (footprint : Footprint)
+    (semantics : ItemSemantics Result footprint)
+    {s₁ s₂ : State} {r₁ r₂ : Result} {t₁ t₂ : State} {region : Region}
+    (initiallyEqual : s₁ region = s₂ region)
+    (outside : ¬ HasOperation .write footprint region)
+    (run₁ : semantics.run s₁ r₁ t₁)
+    (run₂ : semantics.run s₂ r₂ t₂) : t₁ region = t₂ region := by
+  rw [semantics.framesWrites run₁ outside, semantics.framesWrites run₂ outside]
+  exact initiallyEqual
+
 end Thermite.EffectRows
