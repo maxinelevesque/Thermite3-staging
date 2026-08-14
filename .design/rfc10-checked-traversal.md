@@ -1,5 +1,9 @@
 # Feature: RFC-10 checked traversal and proof-carrying interpretation
 
+<!--
+audited-content-sha256: f376ba8d0728b41d824b1dd13139c9e5cf4baa51d5933cfd2aea9ec4216d062f (pinned 2026-08-14 after RFC-10 revision 2 landed; covers the canonical semantic inventory, checked IR, lock lowering, and deterministic witness producer.)
+-->
+
 ## Summary
 
 This amendment makes RFC-10 semantics structural rather than pass-local. A
