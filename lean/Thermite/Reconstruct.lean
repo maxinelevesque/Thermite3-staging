@@ -9,6 +9,7 @@ import Lean.Elab.Tactic.BVDecide.Frontend
 import Lean.Meta.Tactic.Cbv
 import Lean.Meta.Tactic.Grind.Util
 import Std.Tactic.BVDecide
+import Thermite.CheckedTraversal
 
 open Lean
 open Lean.Meta
