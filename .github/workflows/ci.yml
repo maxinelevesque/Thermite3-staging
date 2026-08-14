@@ -117,11 +117,18 @@ jobs:
         with:
           python-version-file: .python-version
 
+      - name: Install cargo-nextest for partition coverage
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
       - name: cargo fmt
         run: cargo fmt --all --check
 
       - name: tooling gate tests (gates/tests)
         run: uv run python -m unittest discover -s gates/tests
+      - name: duration-partition coverage (complete and disjoint)
+        run: uv run python gates/ci-test-partitions.py check
       - name: doc-drift tripwire (design-doc freshness)
         run: uv run python gates/doc-drift.py
       # The gate that guards the gates (crosslink #93): asserts the two
@@ -255,7 +262,7 @@ jobs:
       # Surface every shard's failures, not just the first.
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        bucket: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -351,10 +358,32 @@ jobs:
           echo "THERMITE_EPR_CADICAL=$PWD/target/g4-tools/bin/cadical" >> "$GITHUB_ENV"
           echo "THERMITE_EPR_DRAT_TRIM=$PWD/target/g4-tools/bin/drat-trim" >> "$GITHUB_ENV"
 
-      # Shard the suite across the matrix: nextest assigns each test to one
-      # partition deterministically, so the union of shards is the full suite.
-      - name: cargo nextest run (shard ${{ matrix.shard }}/4)
-        run: cargo nextest run --workspace --partition count:${{ matrix.shard }}/4
+      # Nine reviewed duration-balanced buckets target the measured longest
+      # indivisible test. Bucket 10 is the fail-safe catch-all; the checks job
+      # rejects any unreviewed member before these runners begin.
+      - name: cargo nextest run (duration bucket ${{ matrix.bucket }}/10)
+        run: >-
+          python3 gates/ci-test-partitions.py run ${{ matrix.bucket }} --
+          --profile ci
+
+      # nextest does not create JUnit for a successful zero-test selection.
+      # The reviewed state normally leaves the fail-safe catch-all empty.
+      - name: Materialize an empty catch-all timing report
+        if: matrix.bucket == 10
+        run: |
+          if [ ! -f target/nextest/ci/junit.xml ]; then
+            mkdir -p target/nextest/ci
+            printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?><testsuites tests="0" failures="0" errors="0" time="0" />' > target/nextest/ci/junit.xml
+          fi
+
+      - name: Publish nextest timing report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextest-junit-bucket-${{ matrix.bucket }}
+          path: target/nextest/ci/junit.xml
+          if-no-files-found: error
+          retention-days: 14
 
   # The Lean spine + axiom probe (trust-audit finding F4: until now `lake build` and the
   # `#print axioms` gate ran only in a local `make audit`, so a commit breaking the Lean
@@ -507,11 +536,15 @@ jobs:
           cargo run -q -p forge -- strat-tv
           cargo run -q -p forge -- strat-faithful-tv
 
-  # Keep the parser lock, fixed-width checks, and Lean replay in one gate.
-  g3:
+  # G3's two independent serial paths share the prepared Lean artifact.
+  g3_children:
     needs: [changes, lean-prepare]
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        segment: [parser-lowering, checked-replay]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -571,17 +604,48 @@ jobs:
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
         with:
-          key: g3
+          key: g3-${{ matrix.segment }}
 
-      - name: Gate G3
-        run: bash gates/g3.sh
+      - name: Gate G3 / ${{ matrix.segment }}
+        run: >-
+          python3 gates/time-command.py
+          --out g3-${{ matrix.segment }}-timing.json
+          --label g3-${{ matrix.segment }} --
+          bash gates/g3.sh ${{ matrix.segment }}
 
-  # Stage 4 closes the admitted S₂.0 relation/array residual. Keep its pinned
-  # SAT/LRAT tools and complete replay matrix visible as one fail-fast check.
-  g4:
+      - name: Publish G3 segment timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g3-${{ matrix.segment }}-timing
+          path: g3-${{ matrix.segment }}-timing.json
+          if-no-files-found: error
+          retention-days: 14
+
+  # Stable branch-protection name. This job runs even when a child fails and
+  # succeeds only when the complete G3 matrix succeeded.
+  g3:
+    needs: [changes, g3_children]
+    if: always() && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Require every G3 child
+        env:
+          CHILD_RESULT: ${{ needs.g3_children.result }}
+        run: python3 gates/ci-aggregate.py G3 "$CHILD_RESULT"
+
+  # Stage 4 closes the admitted S₂.0 relation/array residual through four
+  # independently visible serial paths.
+  g4_children:
     needs: [changes, lean-prepare]
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        segment: [bridge-lean, lrat-cache, release-routing, hygiene]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -628,7 +692,7 @@ jobs:
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
         with:
-          key: g4
+          key: g4-${{ matrix.segment }}
 
       - name: Cache Stage 4 proof tools
         uses: actions/cache@v4
@@ -646,5 +710,31 @@ jobs:
         with:
           python-version-file: .python-version
 
-      - name: Gate G4
-        run: bash gates/g4.sh
+      - name: Gate G4 / ${{ matrix.segment }}
+        run: >-
+          python3 gates/time-command.py
+          --out g4-${{ matrix.segment }}-timing.json
+          --label g4-${{ matrix.segment }} --
+          bash gates/g4.sh ${{ matrix.segment }}
+
+      - name: Publish G4 segment timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g4-${{ matrix.segment }}-timing
+          path: g4-${{ matrix.segment }}-timing.json
+          if-no-files-found: error
+          retention-days: 14
+
+  # Stable branch-protection name; all four Stage-4 children are mandatory.
+  g4:
+    needs: [changes, g4_children]
+    if: always() && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Require every G4 child
+        env:
+          CHILD_RESULT: ${{ needs.g4_children.result }}
+        run: python3 gates/ci-aggregate.py G4 "$CHILD_RESULT"

@@ -67,6 +67,9 @@ class PartitionTests(unittest.TestCase):
         self.assertIn("binary_id(=pkg::two)", expression)
         self.assertEqual(expression.count("test(=same)"), 2)
 
+    def test_empty_catch_all_still_has_a_valid_nextest_filter(self):
+        self.assertEqual(PARTITIONS.filter_expression([]), "not all()")
+
     def test_simulation_uses_longest_test_as_lower_bound(self):
         test = PARTITIONS.TestId("pkg::bin", "elephant")
         rows = PARTITIONS.simulation([PARTITIONS.Assignment(test, 319.485, 1)])

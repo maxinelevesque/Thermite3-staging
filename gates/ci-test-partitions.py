@@ -325,9 +325,6 @@ def main() -> int:
     if args.command == "select":
         print(expression)
         return 0
-    if not selected:
-        print(f"partition {args.bucket}: no tests selected")
-        return 0
     command = ["cargo", "nextest", "run", "--workspace", "-E", expression]
     command.extend(arg for arg in args.nextest_args if arg != "--")
     print(f"partition {args.bucket}: running {len(selected)} tests", flush=True)
