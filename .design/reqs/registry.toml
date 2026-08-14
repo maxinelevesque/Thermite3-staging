@@ -18257,43 +18257,59 @@ note = "the proposal, with its design record and probe results"
 id = "REQ-CI-DURATION-PARTITIONS"
 title = "Ten deterministic duration-balanced test partitions"
 owner = ".design/ci-duration-balanced-fanout.md"
-status = "not_started"
+status = "partial"
 scope = "ci"
 summary = "Nine reviewed duration-balanced buckets plus one catch-all run the complete workspace test suite."
-remaining_scope = "Implement the partition manifest, selectors, and ten-job workflow matrix."
+remaining_scope = "Wire the generated selectors into the ten-job workflow matrix."
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/ci-duration-balanced-fanout.md"
 note = "REQ-1 and architecture define the measured ten-partition topology"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/ci-test-partitions.toml"
+note = "1533-test reviewed assignment across nine explicit buckets plus catch-all metadata"
 
 [[requirement]]
 id = "REQ-CI-PARTITION-COVERAGE"
 title = "Partition coverage is complete and disjoint"
 owner = ".design/ci-duration-balanced-fanout.md"
-status = "not_started"
+status = "partial"
 scope = "ci"
 summary = "A fail-closed gate rejects omitted, duplicated, stale, or catch-all-free nextest assignments."
-remaining_scope = "Implement the manifest checker and deletion, duplication, and rename mutants."
+remaining_scope = "Wire the passing checker into the compile-light CI job."
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/ci-duration-balanced-fanout.md"
 note = "REQ-2 and AC-2 define the coverage invariant"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_ci_test_partitions.py"
+note = "deletion, duplication, rename, exact identity, and catch-all mutants"
 
 [[requirement]]
 id = "REQ-CI-DETERMINISTIC-BALANCE"
 title = "Timing-based allocation is deterministic"
 owner = ".design/ci-duration-balanced-fanout.md"
-status = "not_started"
+status = "shipped"
 scope = "ci"
 summary = "Checked-in timings feed a longest-processing-time allocator with lexical and bucket-index tie breaks."
-remaining_scope = "Implement the timing fixture, allocator, simulation report, and target-bound check."
+remaining_scope = ""
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/ci-duration-balanced-fanout.md"
 note = "REQ-3 and AC-1 define deterministic allocation"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/ci-test-partitions.py"
+note = "lexically tied LPT generator, manifest validation, selector runner, and bound simulation"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/fixtures/ci-test-timings-run-31811912559.tsv"
+note = "green baseline run timing observations with the split matrix durations apportioned to named cases"
 
 [[requirement]]
 id = "REQ-CI-MATRIX-ATOMIZATION"
