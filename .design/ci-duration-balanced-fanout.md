@@ -19,8 +19,8 @@ editor_content_pinned_ops_still_certify_l3` at 303.310s.
 
 ## Requirements
 
-- REQ-1: The workspace test suite shall run in ten deterministic partitions:
-  nine duration-balanced partitions plus one partition that owns every new or
+- REQ-1: The workspace test suite shall run in thirteen deterministic partitions:
+  twelve duration-balanced partitions plus one partition that owns every new or
   otherwise unassigned test.
 - REQ-2: A checked-in partition manifest shall assign every known nextest test
   exactly once, and a fail-closed coverage gate shall reject duplicates,
@@ -36,7 +36,7 @@ editor_content_pinned_ops_still_certify_l3` at 303.310s.
   defaults/automatic routing, and hygiene/axiom jobs.
 - REQ-6: Thin aggregate `g3` and `g4` jobs shall retain the existing required
   check names and fail unless every corresponding child job succeeds.
-- REQ-7: The ten test jobs shall share the existing prepared Lean artifact,
+- REQ-7: The thirteen test jobs shall share the existing prepared Lean artifact,
   pinned Verus distribution, pinned Stage-4 proof tools, and Rust caches without
   weakening tool presence, version, axiom, or placeholder checks.
 - REQ-8: CI shall publish machine-readable per-test and per-gate-segment timing
@@ -52,7 +52,8 @@ editor_content_pinned_ops_still_certify_l3` at 303.310s.
 ## Acceptance Criteria
 
 - [ ] AC-1: (REQ-1, REQ-3) A partition simulation over the checked-in baseline
-  produces ten buckets, assigns the 319.485s reconstruction test alone or with
+  produces thirteen buckets, assigns the longest measured reconstruction test
+  alone or with
   only work that keeps its predicted bucket at the target bound, and reports no
   predicted bucket above the longest indivisible test except a documented
   timing-noise tolerance.
@@ -98,23 +99,25 @@ test to the currently lightest bucket, using bucket number as the final stable
 tie-breaker. Matrix tests split under REQ-4 participate as ordinary independent
 tests. The manifest records the timing-run SHA and run ID.
 
-Nine buckets contain explicit assignments. Bucket ten is the catch-all and runs
+Twelve buckets contain explicit assignments. Bucket thirteen is the catch-all and runs
 the complement of those assignments, so a newly discovered test runs immediately
 instead of disappearing. The coverage gate still fails to require a reviewed
 rebalance; execution is fail-safe while maintenance is fail-closed. The checker
 also verifies that every explicit identifier exists and occurs once.
 
 The test matrix in `.github/workflows/ci.yml` changes from nextest
-`count:${shard}/4` partitioning to ten selector names. Every job keeps the current
+`count:${shard}/4` partitioning to thirteen selector names. Every job keeps the current
 tool and artifact setup. JUnit output is uploaded even on failure. A local
 simulation prints predicted bucket totals and the longest member of each bucket.
 
-Ten follows from the measured bound rather than a round-number preference. The
-four current test phases total 47m03s of runner wall time; nine fully utilized
-partitions are the theoretical minimum to fit that work under the 5m20s
-indivisible-test execution bound. The tenth partition provides the required
-catch-all and timing-growth headroom. Setup remains visible and is not folded
-into the execution-bound claim.
+The count follows from the measured bound rather than a round-number preference.
+The initial baseline model selected nine explicit buckets plus catch-all from
+47m03s of runner wall and 3.18x effective within-job parallelism. Two green live
+runs then measured 2.17x at the slowest bucket under full fan-out and a 367.125s
+longest indivisible test. Twelve explicit buckets are the minimum satisfying
+`9840.129 / (367.125 * 2.17)`, with bucket thirteen providing the required
+catch-all. Setup remains visible and is not folded into the execution-bound
+claim.
 
 ### Splitting matrix tests
 
@@ -191,7 +194,8 @@ proof-tool and compiler trust boundaries are unchanged from the existing suite.
 
 - Q-1: The change lands after PR #50 as a separate pull request from fresh `staging`.
 - Q-2: Partition count is derived from the longest irreducible test, not fixed in
-  advance; the measured derivation selects ten partitions.
+  advance; live full-fan-out measurement selects twelve explicit partitions plus
+  catch-all.
 - Q-3: Partition membership and timing inputs are checked in, deterministic, and
   protected by complete/disjoint coverage checks.
 - Q-4: G3 and G4 fan out internally while preserving their aggregate required-check

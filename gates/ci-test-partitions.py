@@ -18,10 +18,10 @@ except ImportError:  # pragma: no cover
 
 
 MANIFEST = Path("gates/ci-test-partitions.toml")
-EXPLICIT_BUCKETS = 9
-CATCH_ALL = 10
+EXPLICIT_BUCKETS = 12
+CATCH_ALL = 13
 BASELINE_RUN = 31837152080
-EFFECTIVE_PARALLELISM = 3.18
+EFFECTIVE_PARALLELISM = 2.17
 NOISE_ALLOWANCE = 1.15
 
 COMMITMENT_CASES = [
@@ -223,7 +223,13 @@ def validate_manifest(data: dict, assignments: list[Assignment], tests: list[Tes
     duplicates = sorted({test for test in identities if identities.count(test) > 1})
     stale = sorted(set(identities) - set(tests))
     missing = sorted(set(tests) - set(identities))
-    bad_buckets = sorted({item.bucket for item in assignments if not 1 <= item.bucket <= 9})
+    bad_buckets = sorted(
+        {
+            item.bucket
+            for item in assignments
+            if not 1 <= item.bucket <= EXPLICIT_BUCKETS
+        }
+    )
     if duplicates:
         errors.append(f"duplicate assignments: {', '.join(t.render() for t in duplicates[:10])}")
     if stale:
@@ -287,7 +293,10 @@ def main() -> int:
         assignments = allocate(tests, read_timings(timings_path))
         out = args.out if args.out.is_absolute() else root / args.out
         write_manifest(out, assignments, args.timings)
-        print(f"wrote {out.relative_to(root)}: {len(assignments)} tests in 9 explicit buckets")
+        print(
+            f"wrote {out.relative_to(root)}: {len(assignments)} tests in "
+            f"{EXPLICIT_BUCKETS} explicit buckets"
+        )
         return 0
 
     data, assignments = load_manifest(manifest_path)

@@ -262,7 +262,7 @@ jobs:
       # Surface every shard's failures, not just the first.
       fail-fast: false
       matrix:
-        bucket: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        bucket: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -358,10 +358,10 @@ jobs:
           echo "THERMITE_EPR_CADICAL=$PWD/target/g4-tools/bin/cadical" >> "$GITHUB_ENV"
           echo "THERMITE_EPR_DRAT_TRIM=$PWD/target/g4-tools/bin/drat-trim" >> "$GITHUB_ENV"
 
-      # Nine reviewed duration-balanced buckets target the measured longest
-      # indivisible test. Bucket 10 is the fail-safe catch-all; the checks job
+      # Twelve reviewed duration-balanced buckets target the measured longest
+      # indivisible test. Bucket 13 is the fail-safe catch-all; the checks job
       # rejects any unreviewed member before these runners begin.
-      - name: cargo nextest run (duration bucket ${{ matrix.bucket }}/10)
+      - name: cargo nextest run (duration bucket ${{ matrix.bucket }}/13)
         run: >-
           python3 gates/ci-test-partitions.py run ${{ matrix.bucket }} --
           --profile ci
@@ -369,7 +369,7 @@ jobs:
       # nextest does not create JUnit for a successful zero-test selection.
       # The reviewed state normally leaves the fail-safe catch-all empty.
       - name: Materialize an empty catch-all timing report
-        if: matrix.bucket == 10
+        if: matrix.bucket == 13
         run: |
           if [ ! -f target/nextest/ci/junit.xml ]; then
             mkdir -p target/nextest/ci

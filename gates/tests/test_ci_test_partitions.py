@@ -20,9 +20,9 @@ class PartitionTests(unittest.TestCase):
     def manifest(self):
         return {
             "schema": 1,
-            "bucket_count": 10,
-            "explicit_bucket_count": 9,
-            "catch_all_bucket": 10,
+            "bucket_count": 13,
+            "explicit_bucket_count": 12,
+            "catch_all_bucket": 13,
         }
 
     def test_lpt_allocation_is_deterministic_and_complete(self):
@@ -32,7 +32,7 @@ class PartitionTests(unittest.TestCase):
         reverse = PARTITIONS.allocate(list(reversed(tests)), timings)
         self.assertEqual(forward, reverse)
         self.assertEqual({item.test for item in forward}, set(tests))
-        self.assertTrue(all(1 <= item.bucket <= 9 for item in forward))
+        self.assertTrue(all(1 <= item.bucket <= 12 for item in forward))
 
     def test_duplicate_assignment_fails_closed(self):
         tests = self.sample_tests(2)

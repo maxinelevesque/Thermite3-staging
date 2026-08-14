@@ -18255,25 +18255,25 @@ note = "the proposal, with its design record and probe results"
 
 [[requirement]]
 id = "REQ-CI-DURATION-PARTITIONS"
-title = "Ten deterministic duration-balanced test partitions"
+title = "Thirteen deterministic duration-balanced test partitions"
 owner = ".design/ci-duration-balanced-fanout.md"
 status = "shipped"
 scope = "ci"
-summary = "Nine reviewed duration-balanced buckets plus one catch-all run the complete workspace test suite."
+summary = "Twelve reviewed duration-balanced buckets plus one catch-all run the complete workspace test suite."
 remaining_scope = ""
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/ci-duration-balanced-fanout.md"
-note = "REQ-1 and architecture define the measured ten-partition topology"
+note = "REQ-1 and architecture define the measured thirteen-partition topology"
 [[requirement.evidence]]
 kind = "file"
 target = "gates/ci-test-partitions.toml"
-note = "1533-test reviewed assignment across nine explicit buckets plus catch-all metadata"
+note = "1533-test reviewed assignment across twelve explicit buckets plus catch-all metadata"
 [[requirement.evidence]]
 kind = "file"
 target = ".github/workflows/ci.yml"
-note = "ten-bucket matrix executes the checked-in selectors"
+note = "thirteen-bucket matrix executes the checked-in selectors"
 
 [[requirement]]
 id = "REQ-CI-PARTITION-COVERAGE"
