@@ -18333,15 +18333,27 @@ note = "28 named cases replace the 12-case commitment and 16-case TV loops; froz
 id = "REQ-CI-GATE-FANOUT"
 title = "G3 and G4 expose independent child gates"
 owner = ".design/ci-duration-balanced-fanout.md"
-status = "not_started"
+status = "partial"
 scope = "ci"
 summary = "G3 has parser/lowering and replay children; G4 has bridge/Lean, LRAT/cache, release-routing, and hygiene children."
-remaining_scope = "Add closed segment selectors to both scripts and wire six workflow children."
+remaining_scope = "Wire the six script segments as independent workflow children."
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/ci-duration-balanced-fanout.md"
 note = "REQ-5 and gate fan-out architecture name all six children"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_ci_gate_segments.py"
+note = "closed selector inventories, invalid-segment rejection, and G4 memory-limit argument preservation"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/g3.sh"
+note = "parser-lowering and checked-replay segments with an aggregate all path"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/g4.sh"
+note = "bridge-lean, lrat-cache, release-routing, and hygiene segments with segment-local tool checks"
 
 [[requirement]]
 id = "REQ-CI-STABLE-AGGREGATES"
