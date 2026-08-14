@@ -86,6 +86,8 @@ def inventory(root: Path) -> list[TestId]:
             "nextest",
             "list",
             "--workspace",
+            "--color",
+            "never",
             "-T",
             "oneline",
             "--cargo-quiet",

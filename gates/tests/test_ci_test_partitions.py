@@ -2,6 +2,7 @@ import importlib.util
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).parents[1] / "ci-test-partitions.py"
@@ -69,6 +70,18 @@ class PartitionTests(unittest.TestCase):
 
     def test_empty_catch_all_still_has_a_valid_nextest_filter(self):
         self.assertEqual(PARTITIONS.filter_expression([]), "not all()")
+
+    def test_inventory_disables_ci_forced_color(self):
+        completed = PARTITIONS.subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="pkg::bin test_name\n", stderr=""
+        )
+        with mock.patch.object(PARTITIONS.subprocess, "run", return_value=completed) as run:
+            self.assertEqual(
+                PARTITIONS.inventory(Path("/repo")),
+                [PARTITIONS.TestId("pkg::bin", "test_name")],
+            )
+        command = run.call_args.args[0]
+        self.assertEqual(command[command.index("--color") + 1], "never")
 
     def test_simulation_uses_longest_test_as_lower_bound(self):
         test = PARTITIONS.TestId("pkg::bin", "elephant")
