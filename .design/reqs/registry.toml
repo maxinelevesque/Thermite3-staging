@@ -18299,15 +18299,19 @@ note = "REQ-3 and AC-1 define deterministic allocation"
 id = "REQ-CI-MATRIX-ATOMIZATION"
 title = "Serial verified-build matrices are independently schedulable"
 owner = ".design/ci-duration-balanced-fanout.md"
-status = "not_started"
+status = "shipped"
 scope = "ci"
 summary = "The 16 TV phase/verdict cases and 12 commitment-fault cases retain their assertions as named tests."
-remaining_scope = "Refactor both loops into shared helpers and independently selectable cases with inventory locks."
+remaining_scope = ""
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/ci-duration-balanced-fanout.md"
 note = "REQ-4 and AC-3 freeze the two matrices"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/verified_build.rs"
+note = "28 named cases replace the 12-case commitment and 16-case TV loops; frozen inventory test checks cardinality and uniqueness"
 
 [[requirement]]
 id = "REQ-CI-GATE-FANOUT"
