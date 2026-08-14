@@ -94,6 +94,18 @@ pub(crate) const SLICE_BOUND: usize = 4;
 /// plain `rustc` (kani injects the `kani` cfg + the `kani` crate). The body and
 /// spec fns are not cfg-gated (kani compiles and reasons over them).
 pub fn lower_l2(program: &Program) -> Result<String, LowerError> {
+    if let Some(span) = program.items.iter().find_map(|item| match item {
+        Item::SharedDecl(item) => Some(item.span),
+        Item::LockDecl(item) => Some(item.span),
+        _ => None,
+    }) {
+        return Err(LowerError::Unsupported {
+            what: "RFC-10 shared-state L2 Kani harness (use L3 verified replay; the L2 runtime lock/capability model is not implemented)".to_string(),
+            span,
+        });
+    }
+    let checked = crate::checked::require_checked(program)?;
+    let program = checked.source();
     let mut out = String::new();
     out.push_str("// L2 Kani-harness lowering (.design/lower/l2-kani.md). Self-contained; the\n");
     out.push_str(
@@ -163,7 +175,8 @@ pub fn lower_l2(program: &Program) -> Result<String, LowerError> {
                     span,
                 });
             }
-            Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
+            Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => {
+            }
         }
     }
 
@@ -426,9 +439,11 @@ pub fn bound_string(program: &Program) -> String {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 L2 consumer yet
             // (increments 2b-3); no loop body to unwind-bound → contributes nothing
             // (neutral `None`), mirroring the inert ADT-decl arm.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
-                None
-            }
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => None,
         })
         .max()
         .unwrap_or(SLICE_BOUND + 1);

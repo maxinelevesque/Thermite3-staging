@@ -1334,3 +1334,44 @@ crate_pattern = "lean/Thermite/EffectRows.lean"
 design = ".design/syntax/verified-effect-rows.md"
 reference = [".design/research/relational-contracts.md"]
 conformance_ops = ["gates/lean-axiom-probe.sh"]
+
+# ---------------------------------------------------------------------
+# Shared-state invariants and checked traversal (RFC-10 revision 2)
+# ---------------------------------------------------------------------
+[[route]]
+crate_pattern = "thermite-syntax/src/semantic.rs"
+design = ".design/rfc10-checked-traversal.md"
+reference = [
+  ".design/rfcs/0010-shared-state-invariants.md",
+  ".design/syntax/shared-state-invariants.md",
+  ".design/rfc10-evidence-completeness.md",
+]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/checked.rs"
+design = ".design/rfc10-checked-traversal.md"
+reference = [
+  ".design/rfcs/0010-shared-state-invariants.md",
+  ".design/syntax/shared-state-invariants.md",
+  ".design/rfc10-evidence-completeness.md",
+]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/locks.rs"
+design = ".design/rfc10-checked-traversal.md"
+reference = [
+  ".design/rfcs/0010-shared-state-invariants.md",
+  ".design/syntax/shared-state-invariants.md",
+]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/witness.rs"
+design = ".design/rfc10-checked-traversal.md"
+reference = [
+  ".design/rfcs/0010-shared-state-invariants.md",
+  ".design/rfc10-evidence-completeness.md",
+]
+conformance_ops = []

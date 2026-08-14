@@ -992,6 +992,7 @@ mod tests {
             tautology: false,
             vacuous_precondition: false,
             mutants_killed: "17/18".to_string(),
+            equivalent_mutants_excluded: 0,
             survivor: Some(
                 "mutant#11: `i = i + 1` → `i = i + 2` survives ens but killed by inv#2".to_string(),
             ),

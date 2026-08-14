@@ -475,6 +475,10 @@ fn reject_out_of_subset_stmt(stmt: &Stmt) -> Result<(), RefEncodeError> {
              fixpoint inside the outer body-step — OUT of v1, Skipped honestly)"
                 .to_string(),
         )),
+        Stmt::Holding { .. } => Err(RefEncodeError::Unsupported(
+            "`holding` in the frozen v1 statement-TV subset (lock-provider semantics are outside this encoder)"
+                .to_string(),
+        )),
         Stmt::Break => Err(RefEncodeError::Unsupported(
             "`break` in a v1 loop body (a `break` is a multi-exit form — the after-loop \
              characterization needs per-exit invariant conjuncts, a v2 extension; \
@@ -540,6 +544,7 @@ fn collect_assigned_cells_block(
                     collect_assigned_cells_block(else_block, cells)?;
                 }
             }
+            Stmt::Holding { body, .. } => collect_assigned_cells_block(body, cells)?,
             // A `let` introduces a fresh (branch-local or body-local) binding, not a
             // mutated outer cell; an `Expr`-stmt has no state effect. Neither
             // contributes a mutated loop cell.
@@ -766,6 +771,10 @@ fn thread_stmt(stmt: &Stmt, env: &mut Env) -> Result<(), RefEncodeError> {
         )),
         Stmt::Continue => Err(RefEncodeError::Unsupported(
             "`continue` outside a loop body (loop-control is step 2.2.2)".to_string(),
+        )),
+        Stmt::Holding { .. } => Err(RefEncodeError::Unsupported(
+            "`holding` in a straight-line statement-TV body requires target lock semantics"
+                .to_string(),
         )),
     }
 }

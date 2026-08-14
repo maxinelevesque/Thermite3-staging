@@ -643,7 +643,7 @@ impl<'a> Parser<'a> {
                     | TokKind::HashBracket
                     | TokKind::Struct
                     | TokKind::Enum
-            ) || matches!(self.peek(), TokKind::Ident(word) if matches!(word.as_str(), "effect" | "shared" | "concurrent"))
+            ) || matches!(self.peek(), TokKind::Ident(word) if matches!(word.as_str(), "effect" | "shared" | "concurrent" | "lock" | "handlers"))
             {
                 break;
             }
@@ -681,6 +681,18 @@ impl<'a> Parser<'a> {
                 return Err(self.unexpected("a concurrent declaration takes no attribute"));
             }
             return self.parse_concurrent(start_span);
+        }
+        if matches!(self.peek(), TokKind::Ident(word) if word == "lock") {
+            if attr.is_some() {
+                return Err(self.unexpected("a lock declaration takes no attribute"));
+            }
+            return self.parse_lock_decl(start_span);
+        }
+        if matches!(self.peek(), TokKind::Ident(word) if word == "handlers") {
+            if attr.is_some() {
+                return Err(self.unexpected("a handlers declaration takes no attribute"));
+            }
+            return self.parse_handlers(start_span);
         }
 
         // A `struct` item (`.design/basis/01-adts.md` REQ-1) accepts the
@@ -832,6 +844,52 @@ impl<'a> Parser<'a> {
         self.consume(&TokKind::RBrace, "`}`")?;
         let span = start_span.to(self.prev_span());
         Ok(Item::Concurrent(ConcurrentItem { name, roots, span }))
+    }
+
+    fn parse_lock_decl(&mut self, start_span: Span) -> PResult<Item> {
+        self.expect_contextual("lock")?;
+        let name = self.take_ident("a lock name")?;
+        self.expect_contextual("guards")?;
+        let guards = self.parse_region_path()?;
+        let after = if matches!(self.peek(), TokKind::Ident(word) if word == "after") {
+            self.expect_contextual("after")?;
+            Some(self.take_ident("a predecessor lock name")?)
+        } else {
+            None
+        };
+        self.eat(&TokKind::Semi);
+        let span = start_span.to(self.prev_span());
+        Ok(Item::LockDecl(LockDeclItem {
+            name,
+            guards,
+            after,
+            span,
+        }))
+    }
+
+    fn parse_handlers(&mut self, start_span: Span) -> PResult<Item> {
+        self.expect_contextual("handlers")?;
+        self.consume(&TokKind::LBrace, "`{`")?;
+        let mut roots = Vec::new();
+        while !self.check(&TokKind::RBrace) {
+            roots.push(self.take_ident("a handler function name")?);
+            self.expect_contextual("at")?;
+            match self.peek() {
+                TokKind::Int { .. } => {
+                    self.bump();
+                }
+                _ => return Err(self.unexpected("an integer handler priority")),
+            }
+            if !self.eat(&TokKind::Comma) {
+                break;
+            }
+        }
+        self.consume(&TokKind::RBrace, "`}`")?;
+        Ok(Item::Concurrent(ConcurrentItem {
+            name: "__handlers".to_string(),
+            roots,
+            span: start_span.to(self.prev_span()),
+        }))
     }
 
     fn parse_effect_primitive(&mut self) -> PResult<EffectPrimitive> {
@@ -1070,9 +1128,9 @@ impl<'a> Parser<'a> {
         }))
     }
 
-    /// Parse a `[#[sealed]] struct NAME { field: type, … } [inv <expr>]` item
+    /// Parse a `[#[sealed]] struct NAME { field: type, … } [keeps <expr>]` item
     /// (`.design/basis/01-adts.md` REQ-1; the seal is
-    /// `.design/basis/06-provenance-and-sinks.md` REQ-8). The optional `inv`
+    /// `.design/basis/06-provenance-and-sinks.md` REQ-8). The optional `keeps`
     /// type-invariant clause follows the closing brace and reuses the existing
     /// `Clause` (verbatim text + parsed expr). `sealed` is the `#[sealed]`
     /// abstraction-barrier flag the caller already parsed from the leading
@@ -1083,7 +1141,7 @@ impl<'a> Parser<'a> {
         self.consume(&TokKind::Struct, "`struct`")?;
         let name = self.take_ident("a struct name")?;
         let fields = self.parse_field_defs()?;
-        // The optional `inv <expr>` type-invariant clause (REQ-1) follows the
+        // The optional `keeps <expr>` type-invariant clause (REQ-1) follows the
         // field block. Absent -> `None` (a struct may declare no invariant).
         let inv = if self.check(&TokKind::Keeps) {
             Some(self.parse_clause(&TokKind::Keeps)?)
@@ -1798,6 +1856,12 @@ impl<'a> Parser<'a> {
                     _ => Effect::Net(arg),
                 })
             }
+            "owns" => {
+                self.consume(&TokKind::LParen, "`(`")?;
+                let lock = self.take_ident("a lock name")?;
+                self.consume(&TokKind::RParen, "`)`")?;
+                Ok(Effect::Owns(lock))
+            }
             "alloc" => Ok(Effect::Alloc),
             "time" => Ok(Effect::Time),
             "rand" => Ok(Effect::Rand),
@@ -1805,7 +1869,7 @@ impl<'a> Parser<'a> {
             "diverge" => Ok(Effect::Diverge),
             "term" => Ok(Effect::Term),
             _ => Err(SyntaxError::Unexpected {
-                expected: "an effect (read/write/net/alloc/time/rand/panic/diverge/term)"
+                expected: "an effect (read/write/net/owns/alloc/time/rand/panic/diverge/term)"
                     .to_string(),
                 found: format!("identifier `{name}`"),
                 span: self.prev_span(),
@@ -1840,6 +1904,9 @@ impl<'a> Parser<'a> {
                 TokKind::Return => stmts.push(self.parse_return()?),
                 TokKind::Loop => {
                     stmts.push(Stmt::Loop(self.parse_loop()?));
+                }
+                TokKind::Ident(name) if name == "holding" => {
+                    stmts.push(self.parse_holding()?);
                 }
                 // `while` is the bare loop OR the C10 `while let P = e inv … { B }`
                 // ergonomic (REQ-5), distinguished by a `let` after `while`. The
@@ -1954,6 +2021,15 @@ impl<'a> Parser<'a> {
         }
         self.consume(&TokKind::RBrace, "`}`")?;
         Ok(Block { stmts, tail })
+    }
+
+    fn parse_holding(&mut self) -> PResult<Stmt> {
+        let start = self.peek_span();
+        self.expect_contextual("holding")?;
+        let lock = self.take_ident("a lock name after `holding`")?;
+        let body = self.parse_block()?;
+        let span = start.to(self.prev_span());
+        Ok(Stmt::Holding { lock, body, span })
     }
 
     /// Parse a `let` binding. Returns 1+ statements: a scalar `let x = e;` is one
@@ -3503,8 +3579,8 @@ fn token_text(kind: &TokKind) -> &'static str {
         TokKind::Requires => "req",
         TokKind::Ensures => "ens",
         TokKind::Effects => "!",
-        TokKind::Keeps => "inv",
-        TokKind::Measures => "dec",
+        TokKind::Keeps => "keeps",
+        TokKind::Measures => "measures",
         TokKind::Pure => "pure",
         TokKind::Let => "let",
         TokKind::Mut => "mut",

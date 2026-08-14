@@ -191,7 +191,25 @@ fn cache_hit_serves_l3_with_verus_unavailable() {
     // ForgeError::VerusAbsent (exit 2, empty stdout) per check.md REQ-6 — the
     // decisive solver-skip evidence (AC-1).
     let mut no_verus = HashMap::new();
-    no_verus.insert("PATH".to_string(), String::new());
+    let lake = Command::new("which")
+        .arg("lake")
+        .output()
+        .expect("locate lake for the independent RFC-10 replay boundary");
+    assert!(
+        lake.status.success(),
+        "lake must be present for RFC-10 replay"
+    );
+    no_verus.insert(
+        "THERMITE_LEAN_LAKE".to_string(),
+        String::from_utf8(lake.stdout)
+            .expect("lake path is UTF-8")
+            .trim()
+            .to_string(),
+    );
+    // Lake may invoke ordinary system tools while resolving its already-pinned
+    // package graph. Preserve only the system path, which intentionally omits
+    // the user-local directory containing Verus.
+    no_verus.insert("PATH".to_string(), "/usr/bin:/bin".to_string());
     let (code2, certs2) = run_check(&fixture, &cache_dir, &no_verus);
     assert_eq!(
         code2,

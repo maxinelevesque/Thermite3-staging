@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use thermite_spec::effect_commutation::concurrent_conflicts;
+use thermite_spec::effect_commutation::{
+    concurrent_conflicts, effects_commute, footprint_frames_region, Commutation,
+};
 use thermite_spec::{RegionError, RegionIndex};
 use thermite_syntax::{parse, Effect, RegionPath, Type};
 
@@ -100,4 +102,60 @@ fn concurrent_consumer_fails_closed_without_an_inferred_root() {
     let error = concurrent_conflicts(&parsed.program, &regions, &BTreeMap::new())
         .expect_err("unknown footprint must not be treated as pure");
     assert!(error.contains("no inferred footprint for `left`"));
+}
+
+#[test]
+fn lock_guards_resolve_and_order_cycles_fail_closed() {
+    let parsed = parse(
+        "struct S { a: u64, b: u64 } keeps a < 10\n\
+         shared state: S\n\
+         lock first guards state.a\n\
+         lock second guards state.b after first",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    let index = RegionIndex::build(&parsed.program).expect("lock metadata resolves");
+    assert_eq!(
+        index.guarded_region("first"),
+        Some(&RegionPath::from("state.a"))
+    );
+    assert!(index.is_after("second", "first"));
+
+    let cyclic = parse(
+        "struct S { a: u64 } keeps a < 10\nshared state: S\n\
+         lock first guards state after second\nlock second guards state after first",
+    );
+    let errors = RegionIndex::build(&cyclic.program).expect_err("cycle must reject");
+    assert!(errors
+        .iter()
+        .any(|e| matches!(e, RegionError::LockOrderCycle { .. })));
+}
+
+#[test]
+fn ownership_conflicts_with_guarded_access_and_frame_uses_writes_only() {
+    let parsed = parse(
+        "struct S { guarded: u64, free: u64 } keeps guarded < 10\nshared state: S\nlock gate guards state.guarded",
+    );
+    let regions = RegionIndex::build(&parsed.program).unwrap();
+    assert_eq!(
+        effects_commute(
+            &Effect::Owns("gate".into()),
+            &Effect::Read("state.guarded".into()),
+            &regions,
+        ),
+        Commutation::Reject
+    );
+    let footprint = BTreeSet::from([
+        Effect::Read("state.guarded".into()),
+        Effect::Write("state.free".into()),
+    ]);
+    assert!(footprint_frames_region(
+        &footprint,
+        &RegionPath::from("state.guarded"),
+        &regions
+    ));
+    assert!(!footprint_frames_region(
+        &footprint,
+        &RegionPath::from("state.free"),
+        &regions
+    ));
 }

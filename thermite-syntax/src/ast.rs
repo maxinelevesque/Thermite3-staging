@@ -204,7 +204,7 @@ pub struct Program {
 pub enum Item {
     Fn(FnItem),
     SpecFn(SpecFnItem),
-    /// A `struct NAME { field: type, … } [inv <expr>]` product type
+    /// A `struct NAME { field: type, … } [keeps <expr>]` product type
     /// (`.design/basis/01-adts.md` REQ-1).
     Struct(StructItem),
     /// An `enum NAME { Variant, Variant(type, …), Variant { field: type, … } }`
@@ -227,6 +227,8 @@ pub enum Item {
     SharedDecl(SharedDeclItem),
     /// An RFC-9 named set of roots that may execute concurrently.
     Concurrent(ConcurrentItem),
+    /// An RFC-10 lock guarding one RFC-9 shared-state region.
+    LockDecl(LockDeclItem),
 }
 
 impl Item {
@@ -244,6 +246,7 @@ impl Item {
             Item::EffectDecl(effect) => &effect.name,
             Item::SharedDecl(shared) => &shared.name,
             Item::Concurrent(composition) => &composition.name,
+            Item::LockDecl(lock) => &lock.name,
         }
     }
 }
@@ -261,6 +264,15 @@ pub struct SharedDeclItem {
 pub struct ConcurrentItem {
     pub name: Ident,
     pub roots: Vec<Ident>,
+    pub span: Span,
+}
+
+/// `lock NAME guards REGION [after LOCK]` — a symbolic lock and its order edge.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LockDeclItem {
+    pub name: Ident,
+    pub guards: RegionPath,
+    pub after: Option<Ident>,
     pub span: Span,
 }
 
@@ -745,6 +757,8 @@ pub enum Effect {
     Read(RegionPath),
     Write(RegionPath),
     Net(RegionPath),
+    /// Public, transitive acquisition footprint for an RFC-10 lock.
+    Owns(Ident),
     Alloc,
     Time,
     Rand,
@@ -787,6 +801,12 @@ pub enum Stmt {
         else_: Option<Block>,
     },
     Loop(LoopNode),
+    /// A lexical RFC-10 critical section.
+    Holding {
+        lock: Ident,
+        body: Block,
+        span: Span,
+    },
     /// `break;` — the loop-control statement (ast.md REQ-12, #93). Payload-less
     /// and value-less (no loop label, no `break expr` — §2.3). Lowers to the
     /// Verus-native `break;` (`verus-lowering.md` REQ-12). Valid only inside a

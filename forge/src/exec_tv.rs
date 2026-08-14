@@ -298,7 +298,11 @@ pub fn exec_tv_file(path: &Path, seed: u64, rlimit: f64) -> Result<ExecTvReport,
             Item::SpecFn(_) | Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 exec-TV consumer
             // yet (increments 2b-3); inert here, mirroring the spec/ADT no-op arm.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     Ok(report)
@@ -528,6 +532,7 @@ fn exec_tv_fn(
                 },
             }),
             Stmt::Expr(_) | Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
+            Stmt::Holding { .. } => {}
         }
     }
 

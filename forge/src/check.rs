@@ -125,9 +125,12 @@
 //! | REQ-FORGE-CHECK-ERGONOMICS-DEPS | shipped | `forge/src/check.rs` | Ergonomics dependency walker ripple |  |
 //! <!-- /generated:reqs -->
 
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::time::Instant;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
+
+use sha2::{Digest, Sha256};
 
 use thermite_syntax::{Item, Program};
 
@@ -347,7 +350,25 @@ pub fn check_file_with_options(
     // subsumption is a whole-program property (a caller's row must subsume every
     // callee's), so it is checked once over the full program before any per-item
     // split.
-    thermite_lower::check_effects(&parsed.program).map_err(ForgeError::Effects)?;
+    let checked = thermite_lower::check_program(&parsed.program).map_err(ForgeError::Effects)?;
+    let traversal_witness = thermite_lower::emit_witness(&checked);
+    let traversal_witness_json =
+        traversal_witness
+            .canonical_json()
+            .map_err(|error| ForgeError::VerusOutput {
+                detail: format!("RFC-10 witness serialization failed: {error:?}"),
+            })?;
+    let traversal_witness = thermite_lower::TraversalWitness::from_json(&traversal_witness_json)
+        .map_err(|error| ForgeError::VerusOutput {
+            detail: format!("RFC-10 witness decoding failed: {error:?}"),
+        })?;
+    let canonical_ast =
+        thermite_lower::canonical_ast_projection(&parsed.program).map_err(|error| {
+            ForgeError::VerusOutput {
+                detail: format!("RFC-10 canonical AST projection failed: {error:?}"),
+            }
+        })?;
+    run_rfc10_lean_replay(&canonical_ast, &traversal_witness)?;
 
     // 4/5/6/7. Per-item certification (`thermite-design.md` §5.3 — "proof
     // results content-addressed and cached per item"; "an edit to `f` cannot
@@ -530,6 +551,17 @@ pub fn check_file_with_options(
             continue;
         }
 
+        // Shared-state declarations are whole-program metadata consumed by
+        // CheckedProgram and woven into each executable item's sub-program.
+        // They carry no standalone proof obligation and cannot be lowered in
+        // isolation (a `shared` item without its declaring ADT is incomplete).
+        if matches!(
+            item,
+            Item::SharedDecl(_) | Item::LockDecl(_) | Item::Concurrent(_)
+        ) {
+            continue;
+        }
+
         // #6 gate: structural vacuity triage + `#[slag]` short-circuit run before
         // the L3 proof ("a function does not certify until its contract
         // certifies", §7). A `spec fn` carries no contract (ast.rs `SpecFnItem`),
@@ -707,7 +739,10 @@ pub fn check_file_with_options(
         }
         referrers.extend(item_spec_items.iter());
         let adt_deps = reachable_adt_deps(&parsed.program, &referrers);
-        let sub = item_subprogram(item, &item_spec_items, &fn_deps, &adt_deps);
+        let sub = with_shared_state_metadata(
+            &parsed.program,
+            item_subprogram(item, &item_spec_items, &fn_deps, &adt_deps),
+        );
         let lowered = thermite_lower::lower(&sub).map_err(ForgeError::Lower)?;
 
         // #8 proof cache (`.design/forge/proof-cache.md` REQ-1/REQ-3): the lowered
@@ -770,6 +805,12 @@ pub fn check_file_with_options(
         // (OQ-2): a later hit serves the cached reject / clean cert without a verus
         // spawn (the cache-hit verus-free invariant, proof-cache.md AC-1).
         if let Item::Fn(f) = item {
+            let vacuity_deps: Vec<Item> = sub
+                .items
+                .iter()
+                .filter(|item| !matches!(item, Item::Fn(_) | Item::SpecFn(_)))
+                .cloned()
+                .collect();
             // #275: thread the reachable `struct`/`enum` decls (the same `adt_deps`
             // woven into this item's L3 sub-program above) into the vacuity
             // harnesses. Without them an ADT-returning / ADT-taking fn's harness
@@ -780,7 +821,7 @@ pub fn check_file_with_options(
                 crate::vacuity_solver::solver_vacuity_check(
                     f,
                     &spec_items,
-                    &adt_deps,
+                    &vacuity_deps,
                     seed,
                     rlimit,
                 )?
@@ -896,6 +937,7 @@ pub fn check_file_with_options(
             if cert.level == Level::L3 && cert.reject.is_none() {
                 let score = mutation_score(
                     f,
+                    &parsed.program,
                     &spec_items,
                     &fn_deps,
                     &adt_deps,
@@ -919,10 +961,14 @@ pub fn check_file_with_options(
                     // `suggested_move` headline; `level`/`reject`/oracle subset
                     // untouched, REQ-4). An environment failure on a candidate verus
                     // run propagates (R-CODE-4).
-                    let scored_cert = cert
-                        .with_mutation_score(score.mutants_killed_string(), score.survivor.clone());
+                    let scored_cert = cert.with_mutation_score_and_equivalents(
+                        score.mutants_killed_string(),
+                        score.survivor.clone(),
+                        score.equivalent,
+                    );
                     let suggestions = strengthen_certificate(
                         f,
+                        &parsed.program,
                         &spec_items,
                         &fn_deps,
                         &adt_deps,
@@ -955,6 +1001,11 @@ pub fn check_file_with_options(
                         effects,
                         score.mutants_killed_string(),
                         survivor,
+                    )
+                    .with_mutation_score_and_equivalents(
+                        score.mutants_killed_string(),
+                        score.survivor.clone(),
+                        score.equivalent,
                     )
                 }
             } else {
@@ -1020,6 +1071,114 @@ pub fn check_file_with_options(
         })
         .collect();
     Ok(certs)
+}
+
+fn run_rfc10_lean_replay(
+    ast: &thermite_lower::CanonicalAstProjection,
+    witness: &thermite_lower::TraversalWitness,
+) -> Result<(), ForgeError> {
+    const CHECKER_SOURCE: &str = include_str!("../../lean/Thermite/CheckedTraversal.lean");
+    const ACCEPTANCE_TOKEN: &str = "THERMITE_RFC10_REPLAY_ACCEPTED_V3";
+    const REPLAY_TIMEOUT: Duration = Duration::from_secs(60);
+
+    let checker_path = lean_package_root().join("Thermite/CheckedTraversal.lean");
+    let runtime_checker =
+        std::fs::read(&checker_path).map_err(|error| ForgeError::Rfc10ReplayUnavailable {
+            detail: format!(
+                "could not read RFC-10 checker `{}`: {error}",
+                checker_path.display()
+            ),
+        })?;
+    let compiled_hash = Sha256::digest(CHECKER_SOURCE.as_bytes());
+    let runtime_hash = Sha256::digest(&runtime_checker);
+    if compiled_hash != runtime_hash {
+        return Err(ForgeError::Rfc10ReplayUnavailable {
+            detail: format!(
+                "RFC-10 checker content differs from the checker embedded in forge \
+                 (compiled {compiled_hash:x}, runtime {runtime_hash:x})"
+            ),
+        });
+    }
+    let source = thermite_lower::lean_replay_source(ast, witness);
+    // Keep the kernel replay independently addressable from PATH. Besides being
+    // useful for hermetic builds, this lets cache tests make Verus unavailable
+    // without accidentally removing the distinct Lean trust boundary.
+    let lake = std::env::var_os("THERMITE_LEAN_LAKE").unwrap_or_else(|| "lake".into());
+    let mut child = Command::new(lake)
+        .args(["env", "lean", "--stdin", "--threads=1"])
+        .current_dir(lean_package_root())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| ForgeError::Rfc10ReplayUnavailable {
+            detail: format!("could not invoke `lake env lean`: {error}"),
+        })?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| ForgeError::Rfc10ReplayUnavailable {
+            detail: "Lean process did not expose stdin".to_string(),
+        })?
+        .write_all(source.as_bytes())
+        .map_err(|error| ForgeError::Rfc10ReplayUnavailable {
+            detail: format!("could not write Lean input: {error}"),
+        })?;
+    let started = Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if started.elapsed() < REPLAY_TIMEOUT => {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(ForgeError::Rfc10ReplayUnavailable {
+                    detail: format!(
+                        "RFC-10 Lean replay exceeded the {} second timeout",
+                        REPLAY_TIMEOUT.as_secs()
+                    ),
+                });
+            }
+            Err(error) => {
+                return Err(ForgeError::Rfc10ReplayUnavailable {
+                    detail: format!("could not poll Lean replay: {error}"),
+                });
+            }
+        }
+    }
+    let output = child
+        .wait_with_output()
+        .map_err(|error| ForgeError::Rfc10ReplayUnavailable {
+            detail: format!("could not collect Lean output: {error}"),
+        })?;
+    let combined = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let (accepted, axiom_reports_present, forbidden_axiom) =
+        rfc10_replay_output_evidence(&combined, ACCEPTANCE_TOKEN);
+    if output.status.success() && accepted && axiom_reports_present && !forbidden_axiom {
+        return Ok(());
+    }
+    Err(ForgeError::Rfc10ReplayRejected {
+        detail: format!(
+            "exit={:?}, acceptance_token={accepted}, axiom_reports={axiom_reports_present}, \
+             forbidden_sorryAx={forbidden_axiom}: {}",
+            output.status.code(),
+            combined.chars().take(1200).collect::<String>()
+        ),
+    })
+}
+
+fn rfc10_replay_output_evidence(combined: &str, token: &str) -> (bool, bool, bool) {
+    let accepted = combined.lines().any(|line| line.trim() == token);
+    let axiom_reports_present =
+        combined.contains("rfc10_artifact_refines") && combined.contains("rfc10_artifact_verified");
+    let forbidden_axiom = combined.contains("sorryAx");
+    (accepted, axiom_reports_present, forbidden_axiom)
 }
 
 /// Run a non-legacy proof route. [`check_file_with_options`] supplies the
@@ -1773,6 +1932,7 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
 
         let mut reconstructed = Vec::new();
         let mut terminal = None;
+        let mut optional_upgrade_unavailable = false;
         for (index, clause) in function.contract.ensures.iter().enumerate() {
             let Some(outcome) = epr_clause_outcome(program, function, index, clause) else {
                 continue;
@@ -1798,6 +1958,12 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
                     break;
                 }
                 crate::epr_reconstruct::EprOutcome::Timeout(reason) => {
+                    // Reconstruction is an optional upgrade. Resource exhaustion
+                    // cannot erase an independently established clean L3 result.
+                    if clean_l3_base(&cert) {
+                        optional_upgrade_unavailable = true;
+                        break;
+                    }
                     terminal = Some(epr_timeout_cert(
                         &function.name,
                         &cert.effects,
@@ -1809,6 +1975,14 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
                     break;
                 }
                 crate::epr_reconstruct::EprOutcome::Failed(reason) => {
+                    // EPR is an assurance upgrade over the already-established
+                    // base certificate. An unavailable or incompatible optional
+                    // tool must not erase a clean Verus L3 result; preserve the
+                    // base and let a usable toolchain upgrade it to L4.
+                    if epr_environment_failure(&reason) && clean_l3_base(&cert) {
+                        optional_upgrade_unavailable = true;
+                        break;
+                    }
                     terminal = Some(epr_failure_cert(
                         &function.name,
                         &cert.effects,
@@ -1820,6 +1994,10 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
                     break;
                 }
             }
+        }
+        if optional_upgrade_unavailable {
+            out.push(cert);
+            continue;
         }
         if let Some(terminal) = terminal {
             out.push(terminal);
@@ -1867,6 +2045,21 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
         }
     }
     out
+}
+
+fn clean_l3_base(cert: &Certificate) -> bool {
+    cert.level == Level::L3 && cert.reject.is_none()
+}
+
+fn epr_environment_failure(reason: &str) -> bool {
+    [
+        "EprSolverUnavailable:",
+        "EprSolverVersion:",
+        "EprLratToolUnavailable:",
+        "EprLratToolVersion:",
+    ]
+    .iter()
+    .any(|prefix| reason.starts_with(prefix))
 }
 
 /// Whether at least one clause is admitted by the canonical S₂.0 IR and needs
@@ -2531,9 +2724,18 @@ fn bv_fn_cert(
                     .survivor
                     .clone()
                     .unwrap_or_else(|| "the mutated body".to_string()),
+            )
+            .with_mutation_score_and_equivalents(
+                score.mutants_killed_string(),
+                score.survivor.clone(),
+                score.equivalent,
             );
         }
-        cert = cert.with_mutation_score(score.mutants_killed_string(), score.survivor.clone());
+        cert = cert.with_mutation_score_and_equivalents(
+            score.mutants_killed_string(),
+            score.survivor.clone(),
+            score.equivalent,
+        );
     }
     cert
 }
@@ -3547,6 +3749,11 @@ fn forge_gate_item_cert(
             score.survivor.clone().unwrap_or_else(|| {
                 "the L3 clause could not be mutation-validated (no scoreable mutant)".to_string()
             }),
+        )
+        .with_mutation_score_and_equivalents(
+            score.mutants_killed_string(),
+            score.survivor.clone(),
+            score.equivalent,
         );
     }
 
@@ -3565,7 +3772,11 @@ fn forge_gate_item_cert(
         .graduate_triage_clean()
         .with_engine_attribution(item_attribution)
         .with_meaning_audit(meaning_audit)
-        .with_mutation_score(score.mutants_killed_string(), score.survivor.clone());
+        .with_mutation_score_and_equivalents(
+            score.mutants_killed_string(),
+            score.survivor.clone(),
+            score.equivalent,
+        );
     if let Some(receipt) = burn {
         cert = cert.with_burn(receipt);
     }
@@ -4419,7 +4630,10 @@ pub fn check_l2_file(path: impl AsRef<Path>) -> Result<Vec<Certificate>, ForgeEr
         // The explicit `--level l2` path does not weave the §9 composition deps
         // (#52) nor the #68 ADT decls — the kani-backed L2 corpus is scalar-only
         // and the composition/ADT oracles are L3; keep this byte-stable.
-        let sub = item_subprogram(item, &spec_items, &[], &[]);
+        let sub = with_shared_state_metadata(
+            &parsed.program,
+            item_subprogram(item, &spec_items, &[], &[]),
+        );
         let harness = thermite_lower::lower_l2(&sub).map_err(ForgeError::Lower)?;
         let bound = thermite_lower::bound_string(&sub);
         let l2 = crate::kani::run_kani(&harness, &f.name, &bound)?;
@@ -4758,10 +4972,35 @@ fn item_subprogram(
         Item::EffectDecl(_) => Program {
             items: vec![item.clone()],
         },
-        Item::SharedDecl(_) | Item::Concurrent(_) => Program {
+        Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => Program {
             items: vec![item.clone()],
         },
     }
+}
+
+fn with_shared_state_metadata(program: &Program, mut sub: Program) -> Program {
+    if !sub.items.iter().any(|item| matches!(item, Item::Fn(_))) {
+        return sub;
+    }
+    let present: std::collections::BTreeSet<String> = sub
+        .items
+        .iter()
+        .map(|item| item.name().to_string())
+        .collect();
+    let mut metadata: Vec<Item> = program
+        .items
+        .iter()
+        .filter(|candidate| {
+            matches!(
+                candidate,
+                Item::Struct(_) | Item::Enum(_) | Item::SharedDecl(_) | Item::LockDecl(_)
+            ) && !present.contains(candidate.name())
+        })
+        .cloned()
+        .collect();
+    metadata.extend(sub.items);
+    sub.items = metadata;
+    sub
 }
 
 /// The in-file `Item::Fn`s a fn named `start` transitively references — the §9
@@ -5020,7 +5259,8 @@ fn mint_item_obligations(program: &Program, item: &Item) -> ItemObligations {
         | Item::Forge(_)
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
-        | Item::Concurrent(_) => (
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => (
             Obligation {
                 item: item.name().to_string(),
                 class: crate::obligation::ObligationClass::Contract,
@@ -5273,6 +5513,7 @@ fn collect_stmt_spec_fn_calls(
         Stmt::Expr(e) => collect_expr_spec_fn_calls(e, spec_decls, out),
         // break/continue carry no sub-expression (#93): no spec-fn call.
         Stmt::Break | Stmt::Continue => {}
+        Stmt::Holding { body, .. } => collect_block_spec_fn_calls(body, spec_decls, out),
     }
 }
 
@@ -5483,16 +5724,17 @@ fn collect_item_adt_refs(
             collect_expr_adt_refs(&s.measures.expr, adt_decls, out);
             collect_block_adt_refs(&s.body, adt_decls, out);
         }
-        // A struct/enum decl's own field types are followed by the type-graph
-        // fixed point (`collect_decl_field_adt_refs`), not here.
+        // A checked struct/enum is itself a root of the type graph. Seed its
+        // immediate field dependencies here; the fixed point follows those
+        // dependencies transitively and filters the checked item during weave.
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 ADT-ref consumer yet
         // (increments 2b-3); references no in-file ADT here, mirroring the ADT-decl arm.
-        Item::Struct(_)
-        | Item::Enum(_)
-        | Item::Forge(_)
+        Item::Struct(_) | Item::Enum(_) => collect_decl_field_adt_refs(item, adt_decls, out),
+        Item::Forge(_)
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
-        | Item::Concurrent(_) => {}
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => {}
     }
 }
 
@@ -5535,7 +5777,8 @@ fn collect_decl_field_adt_refs(
         | Item::Forge(_)
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
-        | Item::Concurrent(_) => {}
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => {}
     }
 }
 
@@ -5779,6 +6022,7 @@ fn collect_stmt_adt_refs(
         Stmt::Expr(e) => collect_expr_adt_refs(e, adt_decls, out),
         // break/continue carry no type and no sub-expression (#93): no ADT ref.
         Stmt::Break | Stmt::Continue => {}
+        Stmt::Holding { body, .. } => collect_block_adt_refs(body, adt_decls, out),
     }
 }
 
@@ -6326,7 +6570,11 @@ pub(crate) fn item_effects(item: &Item) -> Vec<String> {
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 cert consumer yet
         // (increments 2b-3); declares no effect row → the same neutral `pure`
         // projection as a `spec fn`/ADT decl, mirroring the inert ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => {
             vec!["pure".to_string()]
         }
     }
@@ -6562,6 +6810,7 @@ fn ladder_for_timeout(
 )]
 fn mutation_score(
     f: &thermite_syntax::FnItem,
+    program: &Program,
     spec_items: &[Item],
     fn_deps: &[Item],
     adt_deps: &[Item],
@@ -6588,7 +6837,10 @@ fn mutation_score(
         // boundary/regular callees + ADT types, so they must resolve in the
         // mutant's sub-program too (else every mutant fails to lower and the score
         // is the 0/0 backstop — a spurious `WeakContract` reject of an ADT fn).
-        let sub = item_subprogram(&item, spec_items, fn_deps, adt_deps);
+        let sub = with_shared_state_metadata(
+            program,
+            item_subprogram(&item, spec_items, fn_deps, adt_deps),
+        );
         // OQ-5: a mutant that fails to lower (structurally degenerate) is dropped
         // from the denominator, never an `Err` that fails the whole gate.
         let lowered = match thermite_lower::lower(&sub) {
@@ -6644,6 +6896,7 @@ fn mutation_score(
         let equiv = equivalence_proves_equal(
             f,
             mutant_item.body.as_ref(),
+            program,
             fn_deps,
             seed,
             rlimit,
@@ -6733,6 +6986,7 @@ fn mutation_score(
 fn equivalence_proves_equal(
     f: &thermite_syntax::FnItem,
     mutant_body: Option<&thermite_syntax::ast::Block>,
+    program: &Program,
     fn_deps: &[Item],
     seed: u64,
     rlimit: f64,
@@ -6745,7 +6999,16 @@ fn equivalence_proves_equal(
         // boundary fn), but treat a missing body as no-proof (stays counted).
         return Ok(EquivOutcome::NotProved);
     };
-    let obligation = match thermite_lower::lower_equivalence_obligation(f, body, fn_deps) {
+    let observations = match thermite_lower::equivalence_shared_observations(program, &f.name) {
+        Ok(observations) => observations,
+        Err(e) => return Ok(EquivOutcome::Unsupported(e.to_string())),
+    };
+    let obligation = match thermite_lower::lower_equivalence_obligation_with_shared(
+        f,
+        body,
+        fn_deps,
+        &observations,
+    ) {
         Ok(s) => s,
         // REQ-9: an un-renderable obligation (non-scalar / out-of-scope shape) is
         // no proof — the survivor stays counted — and the structured reason is
@@ -6852,6 +7115,7 @@ enum EquivOutcome {
 )]
 fn strengthen_certificate(
     f: &thermite_syntax::FnItem,
+    program: &Program,
     spec_items: &[Item],
     fn_deps: &[Item],
     adt_deps: &[Item],
@@ -6881,7 +7145,10 @@ fn strengthen_certificate(
         // The candidate weaves the same §9 composition deps as `f` (#52) and the
         // same #68 ADT decls so a boundary/regular callee in `f`'s body + every
         // referenced ADT type resolves in the candidate too.
-        let sub = item_subprogram(&item, spec_items, fn_deps, adt_deps);
+        let sub = with_shared_state_metadata(
+            program,
+            item_subprogram(&item, spec_items, fn_deps, adt_deps),
+        );
         let lowered = match thermite_lower::lower(&sub) {
             Ok(s) => s,
             Err(_) => return Ok(false),
@@ -6945,6 +7212,149 @@ fn mutant_cert_is_survivor(cert: &Certificate) -> bool {
 mod tests {
     use super::*;
     use crate::manifest::ObligationStatus;
+
+    #[test]
+    fn rfc10_replay_requires_positive_axiom_clean_evidence() {
+        let token = "THERMITE_RFC10_REPLAY_ACCEPTED_V3";
+        assert_eq!(
+            rfc10_replay_output_evidence("", token),
+            (false, false, false)
+        );
+        assert_eq!(
+            rfc10_replay_output_evidence(token, token),
+            (true, false, false),
+            "a bare exit-zero stub that prints only the token lacks axiom reports"
+        );
+        let clean = format!(
+            "rfc10_artifact_refines depends on axioms: [propext]\n\
+             rfc10_artifact_verified depends on axioms: [propext]\n{token}\n"
+        );
+        assert_eq!(
+            rfc10_replay_output_evidence(&clean, token),
+            (true, true, false)
+        );
+        assert_eq!(
+            rfc10_replay_output_evidence(&(clean + "sorryAx\n"), token),
+            (true, true, true)
+        );
+    }
+
+    #[test]
+    fn rfc10_kernel_replay_rejects_each_secured_witness_family() {
+        let source = "struct State { n: u64 } keeps n < 10\n\
+            shared state: State\n\
+            lock gate guards state\n\
+            fn read() -> u64 ! owns(gate), read(state.n) requires true ensures result < 10\n\
+            { holding gate { state.n } }";
+        let parsed = thermite_syntax::parse(source);
+        assert!(parsed.is_clean(), "{:?}", parsed.errors);
+        let checked = thermite_lower::check_program(&parsed.program).unwrap();
+        let witness = thermite_lower::emit_witness(&checked);
+        let ast = thermite_lower::canonical_ast_projection(&parsed.program).unwrap();
+        run_rfc10_lean_replay(&ast, &witness).expect("faithful witness kernel-replays");
+
+        let mut cases = Vec::new();
+        let mut digest = witness.clone();
+        digest.canonical_ast_sha256 = "forged".into();
+        cases.push(("digest", digest));
+        let mut edge = witness.clone();
+        edge.edges.pop();
+        cases.push(("edge", edge));
+        let mut direct = witness.clone();
+        direct.direct_footprints.get_mut("read").unwrap().clear();
+        cases.push(("direct footprint", direct));
+        let mut calls = witness.clone();
+        calls.calls.get_mut("read").unwrap().push("ghost".into());
+        cases.push(("call graph", calls));
+        let mut footprint = witness.clone();
+        footprint.footprints.get_mut("read").unwrap().clear();
+        cases.push(("transitive footprint", footprint));
+        let mut omitted_holding = witness.clone();
+        omitted_holding.holdings.clear();
+        cases.push(("holding coverage", omitted_holding));
+        let mut close = witness.clone();
+        close.holdings[0].close_edges[0].inner_to_outer.clear();
+        cases.push(("close", close));
+        let mut authority = witness.clone();
+        authority.shared_places[0].authorizing_locks.clear();
+        cases.push(("authority", authority));
+        let mut omitted_place = witness.clone();
+        omitted_place.shared_places.clear();
+        cases.push(("shared-place coverage", omitted_place));
+        let mut capability = witness.clone();
+        capability.holdings[0].capability = "capability@4294967295".into();
+        cases.push(("holding capability", capability));
+        let mut wrong_lock = witness.clone();
+        wrong_lock.holdings[0].lock = "TOTALLY-WRONG-LOCK".into();
+        wrong_lock.holdings[0].close_edges[0].inner_to_outer = vec!["TOTALLY-WRONG-LOCK".into()];
+        cases.push(("canonical holding lock", wrong_lock));
+        let mut guarded_region = witness.clone();
+        guarded_region.holdings[0].guarded_region = "forged.region".into();
+        cases.push(("guarded region", guarded_region));
+        let mut held_sets = witness.clone();
+        held_sets.holdings[0].incoming_held = vec!["phantom".into()];
+        held_sets.holdings[0].outgoing_held = vec!["phantom".into()];
+        cases.push(("held-set contents", held_sets));
+        let mut close_reason = witness.clone();
+        close_reason.holdings[0].close_edges[0].reason = "Return".into();
+        cases.push(("close reason", close_reason));
+        let mut place_path = witness.clone();
+        place_path.shared_places[0].path = "state.forged".into();
+        cases.push(("shared-place path", place_path));
+        let mut place_mode = witness.clone();
+        place_mode.shared_places[0].mode = "Write".into();
+        cases.push(("shared-place mode", place_mode));
+
+        for (family, mutant) in cases {
+            assert!(
+                run_rfc10_lean_replay(&ast, &mutant).is_err(),
+                "Lean must reject mutated {family} evidence"
+            );
+        }
+
+        let call_source = "fn leaf() -> u64 ! pure requires true ensures true { 1 }\n\
+            fn root() -> u64 ! pure requires true ensures true { leaf() }";
+        let call_parsed = thermite_syntax::parse(call_source);
+        assert!(call_parsed.is_clean(), "{:?}", call_parsed.errors);
+        let call_checked = thermite_lower::check_program(&call_parsed.program).unwrap();
+        let mut call_witness = thermite_lower::emit_witness(&call_checked);
+        let call_ast = thermite_lower::canonical_ast_projection(&call_parsed.program).unwrap();
+        run_rfc10_lean_replay(&call_ast, &call_witness)
+            .expect("faithful call graph kernel-replays");
+        call_witness.calls.get_mut("root").unwrap().clear();
+        assert!(
+            run_rfc10_lean_replay(&call_ast, &call_witness).is_err(),
+            "Lean must reject an omitted canonical call edge"
+        );
+    }
+
+    #[test]
+    fn rfc10_shared_type_survives_per_item_dependency_weaving() {
+        let source = "struct State { n: u64 } keeps n < 10\n\
+            shared state: State\n\
+            lock gate guards state\n\
+            fn read_state() -> u64 ! owns(gate), read(state.n)\n\
+              requires true ensures result < 10\n\
+            { holding gate { state.n } }";
+        let parsed = thermite_syntax::parse(source);
+        assert!(parsed.is_clean(), "{:?}", parsed.errors);
+        let item = parsed
+            .program
+            .items
+            .iter()
+            .find(|item| item.name() == "read_state")
+            .unwrap();
+        let mut referrers = vec![item];
+        let fn_deps = reachable_fn_deps(&parsed.program, item.name());
+        referrers.extend(fn_deps.iter());
+        let adt_deps = reachable_adt_deps(&parsed.program, &referrers);
+        let sub = with_shared_state_metadata(
+            &parsed.program,
+            item_subprogram(item, &[], &fn_deps, &adt_deps),
+        );
+        assert!(sub.items.iter().any(|item| item.name() == "State"));
+        thermite_lower::lower(&sub).expect("guarded shared type remains resolvable");
+    }
 
     // REQ-6 / AC-10 (increment 2d, anti-Goodhart defense (b)): the L3 re-elaboration
     // mutation battery reuses the frozen mutation operator catalogue
@@ -8098,6 +8508,31 @@ requires xs.len() > 0\n\
             },
         );
         (parsed.program, base)
+    }
+
+    #[test]
+    fn optional_epr_environment_failures_are_base_preserving() {
+        for reason in [
+            "EprSolverUnavailable: missing cadical",
+            "EprSolverVersion: wrong cadical",
+            "EprLratToolUnavailable: missing drat-trim",
+            "EprLratToolVersion: wrong drat-trim",
+        ] {
+            assert!(epr_environment_failure(reason), "{reason}");
+        }
+        assert!(!epr_environment_failure("EprKernelFailure: bad proof"));
+
+        let clean = Certificate::new("f", Level::L3, vec!["pure".to_string()], 0, vec![]);
+        assert!(clean_l3_base(&clean));
+        assert!(!clean_l3_base(&Certificate::rejected(
+            "f",
+            vec!["pure".to_string()],
+            false,
+            RejectReason {
+                cause: "VerusTimeout".to_string(),
+                detail: "not independently proved".to_string(),
+            },
+        )));
     }
 
     #[test]

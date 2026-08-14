@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (review.rs) is the additive REQ-9 burned_lemmas partition + BurnedLemma projection (a certified lemma surfaces like any certified item); the v1 intent-reviewable / battery-failing partitions are unchanged (REQ-S1-9). prior: 92396428567edc6940a9e2845217f5ff4c2ea3c6)
-audited-content-sha256: a37d0410ccb97a7316a5d44a462ea01c7cf70d16fa2135981479b63ef5499ca6 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 5fe06ffac3c4d4a1ac46f7a9ff6c924adf24383eb62632f083af621ee7240beb.)
+audited-content-sha256: e39c9dcb76dd2b8217d2ef926ce27c8de7d50aa9ca19190225a5317ce536cce4 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 5fe06ffac3c4d4a1ac46f7a9ff6c924adf24383eb62632f083af621ee7240beb.)
 governs: forge/src/review.rs
 thesis-refs:
   - thermite-design.md §7

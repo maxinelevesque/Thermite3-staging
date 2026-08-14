@@ -44,6 +44,7 @@ pub mod desugar;
 pub mod effect_basis;
 pub mod lexer;
 pub mod parser;
+pub mod semantic;
 
 pub use address::{addresses_of, resolve, AddrKind, AddressEntry, AddressError};
 pub use ast::{
@@ -56,3 +57,8 @@ pub use ast::{
 };
 pub use lexer::{tokenize, Span, TokKind, Token};
 pub use parser::{parse, ParseResult, SyntaxError};
+pub use semantic::{
+    is_lexically_shadowed, semantic_inventory, walk_semantic, ChildRole, NodeId, NodeKind,
+    ResourceLimit, SemanticEdge, SemanticEvent, SemanticFact, SemanticInventory, SemanticNode,
+    WorkBudget,
+};

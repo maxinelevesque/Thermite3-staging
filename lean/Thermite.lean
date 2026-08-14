@@ -49,3 +49,6 @@ import Thermite.PinGroundingCompleteness
 import Thermite.PinInstantiationOmission
 import Thermite.PinStructuralSkolemScopes
 import Thermite.PinEprReplay
+
+-- RFC-10 canonical traversal/witness replay checker.
+import Thermite.CheckedTraversal

@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: 1800f6c67ad86bab9c4d470dd0da7cefcb079305865c31f06794802da744ce8a (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 1b78069cfb3366771bfc869082ca8f3f4619333a7a4ce7645065cae3d4fdb317)
+audited-content-sha256: 7d7fe9e43f6200cd8c90248797aeedf763e77e7cfbc2edcedd58c3b37160a998 (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 1b78069cfb3366771bfc869082ca8f3f4619333a7a4ce7645065cae3d4fdb317)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1

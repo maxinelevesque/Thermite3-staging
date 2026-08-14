@@ -58,6 +58,14 @@
     },
     {
       "atoms": [
+        "read(state.n)"
+      ],
+      "classification": "RFC-10 shared-state invariant program fixtures",
+      "path": "forge/src/check.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
         "write(db.child)"
       ],
       "classification": "structured diagnostic expected-output token",
@@ -122,6 +130,14 @@
       ],
       "classification": "Rust filesystem API calls; not Thermite syntax",
       "path": "forge/src/verified_build/composition.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
+        "read(state.n)"
+      ],
+      "classification": "RFC-10 shared-state invariant conformance fixtures",
+      "path": "forge/tests/check_conformance.rs",
       "sites": 2
     },
     {
@@ -199,6 +215,15 @@
     },
     {
       "atoms": [
+        "read(counter.n)",
+        "read(right.n)"
+      ],
+      "classification": "RFC-10 checked-program fixtures",
+      "path": "thermite-lower/tests/checked_program.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
         "net(d)",
         "read(missing)",
         "read(state.child)",
@@ -209,6 +234,48 @@
       "classification": "migrated programs plus intentional undeclared-root rejection fixture",
       "path": "thermite-lower/tests/effects.rs",
       "sites": 9
+    },
+    {
+      "atoms": [
+        "read(state.n)"
+      ],
+      "classification": "RFC-10 equivalence-obligation fixtures",
+      "path": "thermite-lower/tests/equivalence_obligation.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
+        "read(state.n)",
+        "write(state.n)"
+      ],
+      "classification": "RFC-10 phase cross-product fixtures",
+      "path": "thermite-lower/tests/rfc10_conformance_matrix.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(state.free)",
+        "read(state.guarded)",
+        "read(state.missing)",
+        "read(state.n)",
+        "read(state.text)",
+        "write(state.free)",
+        "write(state.guarded)",
+        "write(state.inner)",
+        "write(state.n)",
+        "write(state.text)"
+      ],
+      "classification": "RFC-10 shared-state invariant lowering fixtures",
+      "path": "thermite-lower/tests/shared_state_invariants.rs",
+      "sites": 37
+    },
+    {
+      "atoms": [
+        "read(state.n)"
+      ],
+      "classification": "RFC-10 traversal-witness fixtures",
+      "path": "thermite-lower/tests/traversal_witness.rs",
+      "sites": 3
     },
     {
       "atoms": [
@@ -240,6 +307,14 @@
     },
     {
       "atoms": [
+        "read(state.n)"
+      ],
+      "classification": "RFC-10 shared-contract validation fixtures",
+      "path": "thermite-spec/tests/shared_contract_validate.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
         "read(missing.field)",
         "read(scheduler.runqueue)",
         "read(scheduler.runqueue.head)",
@@ -261,6 +336,14 @@
     },
     {
       "atoms": [
+        "write(counters.n)"
+      ],
+      "classification": "RFC-10 shared-state invariant parser fixtures",
+      "path": "thermite-syntax/tests/shared_state_invariants.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
         "read(scheduler.runqueue.head)"
       ],
       "classification": "RFC-9 parser program fixtures and expected syntax",
@@ -272,11 +355,11 @@
   "summary": {
     "json_missing_shared": 0,
     "json_program_fields_with_state_effects": 5,
-    "rust_files_reviewed": 22,
-    "rust_reviewed_sites": 125,
+    "rust_files_reviewed": 31,
+    "rust_reviewed_sites": 179,
     "th_missing_shared": 0,
-    "th_programs_with_state_effects": 4,
-    "tracked_th_files": 65
+    "th_programs_with_state_effects": 5,
+    "tracked_th_files": 66
   },
   "thermite_programs": [
     {
@@ -301,6 +384,13 @@
       ],
       "missing_shared": [],
       "path": "conformance/provenance_demo.th"
+    },
+    {
+      "atoms": [
+        "read(state.n)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/shared_state_rfc10.th"
     },
     {
       "atoms": [

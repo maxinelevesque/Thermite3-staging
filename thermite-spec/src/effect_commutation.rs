@@ -112,11 +112,38 @@ fn overlapping_ancestor(
 /// algebra. Operation commutation remains derived from basis entries here;
 /// consumers do not carry a second read/write conflict table.
 pub fn effects_commute(left: &Effect, right: &Effect, regions: &RegionIndex) -> Commutation {
+    match (left, right) {
+        (Effect::Owns(left), Effect::Owns(right)) if left == right => return Commutation::Reject,
+        (Effect::Owns(lock), effect) | (effect, Effect::Owns(lock)) => {
+            if let (Some(guard), Some(path)) = (regions.guarded_region(lock), effect_path(effect)) {
+                if regions.overlaps(guard, path) {
+                    return Commutation::Reject;
+                }
+            }
+        }
+        _ => {}
+    }
     let overlap = match (effect_path(left), effect_path(right)) {
         (Some(left), Some(right)) => regions.overlaps(left, right),
         _ => false,
     };
     commutes_with_overlap(&entry_for_effect(left), &entry_for_effect(right), overlap)
+}
+
+/// RFC-10's production Tier-A non-modification query. This is the executable
+/// consumer of the same canonical `write` footprint used by the Lean theorem.
+pub fn writes_region(effect: &Effect, region: &RegionPath, regions: &RegionIndex) -> bool {
+    matches!(effect, Effect::Write(path) if regions.overlaps(path, region))
+}
+
+pub fn footprint_frames_region<'a>(
+    footprint: impl IntoIterator<Item = &'a Effect>,
+    region: &RegionPath,
+    regions: &RegionIndex,
+) -> bool {
+    !footprint
+        .into_iter()
+        .any(|effect| writes_region(effect, region, regions))
 }
 
 /// Compute whether two basis entries commute.

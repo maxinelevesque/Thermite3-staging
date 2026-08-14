@@ -218,6 +218,13 @@ pub enum LowerError {
     /// An expression/type/statement nested past `MAX_EMIT_DEPTH` — surfaced
     /// structurally so input can never overflow the C stack (REQ-9, R-CODE-2).
     TooDeep { limit: usize, span: Span },
+    /// Canonical semantic inventory or checked analysis exhausted its explicit
+    /// operational work budget. This is non-certifying and is not a source
+    /// language validity judgment.
+    ResourceLimit {
+        budget: usize,
+        required_at_least: usize,
+    },
     /// A construct the v0.1 lowering does not cover (e.g. a `Type` or `Expr`
     /// shape outside the corpus mapping tables). Carries a human description.
     Unsupported { what: String, span: Span },
@@ -300,6 +307,13 @@ impl std::fmt::Display for LowerError {
                 span.start,
                 span.end()
             ),
+            LowerError::ResourceLimit {
+                budget,
+                required_at_least,
+            } => write!(
+                f,
+                "checked semantic analysis exhausted its work budget of {budget} units (requires at least {required_at_least}); no certificate or executable lowering was produced"
+            ),
             LowerError::Unsupported { what, span } => write!(
                 f,
                 "unsupported construct for L3 lowering: {what} at byte {}..{}",
@@ -349,6 +363,7 @@ fn effect_atom_name(effect: &thermite_syntax::ast::Effect) -> &'static str {
         Effect::Panic => "panic",
         Effect::Diverge => "diverge",
         Effect::Term => "term",
+        Effect::Owns(_) => "owns",
     }
 }
 
@@ -695,7 +710,15 @@ fn zero_span() -> Span {
 /// in source order with their shape-derived proof aids, and (3) a trailing
 /// `fn main() {}`.
 pub fn lower(program: &Program) -> Result<String, LowerError> {
-    lower_with_profile(program, None)
+    let checked = crate::checked::require_checked(program)?;
+    let program = checked.source();
+    if crate::program_uses_holding(program) {
+        let prepared = crate::locks::prepare_l3_shared(program)?;
+        let seam = crate::locks::verification_lock_provider_source(program)?;
+        lower_with_profile(&prepared, None, Some(&seam))
+    } else {
+        lower_with_profile(program, None, None)
+    }
 }
 
 /// Emit the canonical executable Verus library compiled by the L3 verified-build
@@ -708,6 +731,14 @@ pub fn lower_l3_library(
     exports: &[L3Export],
     target: L3LibraryTarget,
 ) -> Result<String, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    let program = checked.source();
+    if crate::program_uses_holding(program) {
+        return Err(LowerError::Unsupported {
+            what: "executable L3 `holding` requires a target provider integration; provider-free lowering is verification-only and must not produce an artifact".to_string(),
+            span: zero_span(),
+        });
+    }
     let mut by_source: BTreeMap<&str, &L3Export> = BTreeMap::new();
     for export in exports {
         if by_source.insert(&export.source_name, export).is_some() {
@@ -727,12 +758,52 @@ pub fn lower_l3_library(
             });
         }
     }
-    lower_with_profile(program, Some((by_source, target)))
+    lower_with_profile(program, Some((by_source, target)), None)
+}
+
+/// Provider-backed L3 artifact lowering for RFC-10 shared state. The provider's
+/// Verus declarations establish acquisition and make each normalized close call
+/// prove invariant restoration before releasing the target lock.
+pub fn lower_l3_library_with_lock_provider(
+    program: &Program,
+    exports: &[L3Export],
+    target: L3LibraryTarget,
+    provider: &crate::LockProvider,
+) -> Result<String, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    let program = checked.source();
+    provider.validate_l3()?;
+    let prepared = crate::locks::prepare_l3_shared(program)?;
+    let mut by_source: BTreeMap<&str, &L3Export> = BTreeMap::new();
+    for export in exports {
+        if by_source.insert(&export.source_name, export).is_some() {
+            return Err(LowerError::Unsupported {
+                what: format!("duplicate L3 export `{}`", export.source_name),
+                span: zero_span(),
+            });
+        }
+        if !program
+            .items
+            .iter()
+            .any(|item| matches!(item, Item::Fn(f) if f.name == export.source_name))
+        {
+            return Err(LowerError::Unsupported {
+                what: format!("unknown L3 export `{}`", export.source_name),
+                span: zero_span(),
+            });
+        }
+    }
+    lower_with_profile(
+        &prepared,
+        Some((by_source, target)),
+        Some(&provider.verus_source),
+    )
 }
 
 fn lower_with_profile(
     program: &Program,
     library: Option<(BTreeMap<&str, &L3Export>, L3LibraryTarget)>,
+    provider_source: Option<&str>,
 ) -> Result<String, LowerError> {
     // Verus 0.2026.05.24 synthesizes named-enum projection helpers by iterating
     // a randomly seeded HashMap. That order reaches `lib.rmeta`, so an otherwise
@@ -769,6 +840,12 @@ fn lower_with_profile(
         out.push_str("use vstd::prelude::*;\n");
     }
     out.push_str("verus! {\n");
+    if let Some(source) = provider_source {
+        out.push_str(source);
+        if !source.ends_with('\n') {
+            out.push('\n');
+        }
+    }
 
     if deterministic_composition_enums
         && program
@@ -1113,9 +1190,11 @@ fn lower_with_profile(
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering/cert
             // consumer yet (increments 2b-3); emit nothing, mirroring the inert
             // ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {
-                continue
-            }
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => continue,
         };
         out.push('\n');
         out.push_str(&item_src);
@@ -1195,7 +1274,11 @@ fn program_needs_kernel_alloc(program: &Program) -> bool {
                 .iter()
                 .any(|field| type_needs_kernel_alloc(&field.ty)),
         }),
-        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
@@ -1822,7 +1905,11 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
             Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 combinator-collection
             // consumer yet (increments 2b-3); inert here, mirroring the ADT-decl arm.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
 
@@ -3557,6 +3644,15 @@ pub fn lower_equivalence_obligation(
     mutant_body: &Block,
     callee_deps: &[Item],
 ) -> Result<String, LowerError> {
+    lower_equivalence_obligation_with_shared(f, mutant_body, callee_deps, &[])
+}
+
+pub fn lower_equivalence_obligation_with_shared(
+    f: &FnItem,
+    mutant_body: &Block,
+    callee_deps: &[Item],
+    observations: &[crate::witness::SharedObservation],
+) -> Result<String, LowerError> {
     let real_body = f.body.as_ref().ok_or_else(|| LowerError::Unsupported {
         what: "equivalence obligation reached a bodyless (boundary) fn; a boundary \
                fn is never mutation-scored (equivalent-mutants.md OQ-2)"
@@ -3564,12 +3660,42 @@ pub fn lower_equivalence_obligation(
         span: f.span,
     })?;
 
+    // A shared observation denotes the value obtained while the holding is
+    // active. It is not the function-entry value seen by `requires`: another
+    // actor may change guarded state before this function acquires the lock.
+    // Equating those instants is unsound, so keep such survivors counted until
+    // the obligation models a two-state acquire relation explicitly.
+    if !observations.is_empty() {
+        let rendered_req = lower_expr(
+            &f.contract.requires.expr,
+            Ctx::spec(NO_SLICES, NO_SLICES),
+            0,
+            f.span,
+        )?;
+        if replace_shared_observations(rendered_req.clone(), observations) != rendered_req {
+            return Err(LowerError::Unsupported {
+                what: format!(
+                    "equivalence obligation for `{}` does not identify function-entry \
+                     shared state in `requires` with a later holding-time observation",
+                    f.name
+                ),
+                span: f.contract.requires.span,
+            });
+        }
+    }
+
     // Call-bearing arm (REQ-7): a non-empty callee closure means the compared
     // bodies invoke in-file fns whose contracts govern the call sites; the
     // self-contained spec-fn pair below cannot declare them, so route to the
     // exec harness with the closure woven (modulo callee contracts, §9).
     if !callee_deps.is_empty() {
-        return lower_call_bearing_equivalence_obligation(f, real_body, mutant_body, callee_deps);
+        return lower_call_bearing_equivalence_obligation(
+            f,
+            real_body,
+            mutant_body,
+            callee_deps,
+            observations,
+        );
     }
 
     // Scope gate (OQ-1): every param + the return must be a scalar primitive so
@@ -3600,9 +3726,22 @@ pub fn lower_equivalence_obligation(
     // nat-fns. The same context the L3 spec path uses for a scalar predicate.
     let ctx = Ctx::spec(NO_SLICES, NO_SLICES);
 
-    let params = obligation_param_list(&f.params)?;
-    let real_value = render_body_as_spec_value(real_body, &ret_spelling, ctx, f.span)?;
-    let mut_value = render_body_as_spec_value(mutant_body, &ret_spelling, ctx, f.span)?;
+    let mut params = obligation_param_list(&f.params)?;
+    let observation_params = observation_param_list(observations)?;
+    if !observation_params.is_empty() {
+        if !params.is_empty() {
+            params.push_str(", ");
+        }
+        params.push_str(&observation_params);
+    }
+    let real_value = replace_shared_observations(
+        render_body_as_spec_value(real_body, &ret_spelling, ctx, f.span)?,
+        observations,
+    );
+    let mut_value = replace_shared_observations(
+        render_body_as_spec_value(mutant_body, &ret_spelling, ctx, f.span)?,
+        observations,
+    );
     let req = lower_expr(&f.contract.requires.expr, ctx, 0, f.span)?;
 
     let name = &f.name;
@@ -3624,7 +3763,14 @@ pub fn lower_equivalence_obligation(
     if req != "true" {
         writeln!(out, "    requires {req},").map_err(|_| fmt_err())?;
     }
-    let arg_names = obligation_arg_names(&f.params);
+    let mut arg_names = obligation_arg_names(&f.params);
+    let observation_args = observation_arg_names(observations);
+    if !observation_args.is_empty() {
+        if !arg_names.is_empty() {
+            arg_names.push_str(", ");
+        }
+        arg_names.push_str(&observation_args);
+    }
     writeln!(
         out,
         "    ensures equiv_mut_{name}({arg_names}) == equiv_real_{name}({arg_names}),"
@@ -3686,6 +3832,7 @@ fn lower_call_bearing_equivalence_obligation(
     real_body: &Block,
     mutant_body: &Block,
     callee_deps: &[Item],
+    observations: &[crate::witness::SharedObservation],
 ) -> Result<String, LowerError> {
     // Scope gate (REQ-7 v1): scalar params + return. The harness compares two
     // scalar block values with `==`. A non-scalar shape is Unsupported (REQ-9).
@@ -3736,9 +3883,22 @@ fn lower_call_bearing_equivalence_obligation(
     // here: the closure declares every callee). The early-return mutant's
     // observable value is its returned expression; a tail body's is its tail.
     let exec = Ctx::exec();
-    let real_value = render_body_as_exec_value(real_body, exec, f.span)?;
-    let mut_value = render_body_as_exec_value(mutant_body, exec, f.span)?;
-    let params = obligation_param_list(&f.params)?;
+    let real_value = replace_shared_observations(
+        render_body_as_exec_value(real_body, exec, f.span)?,
+        observations,
+    );
+    let mut_value = replace_shared_observations(
+        render_body_as_exec_value(mutant_body, exec, f.span)?,
+        observations,
+    );
+    let mut params = obligation_param_list(&f.params)?;
+    let observation_params = observation_param_list(observations)?;
+    if !observation_params.is_empty() {
+        if !params.is_empty() {
+            params.push_str(", ");
+        }
+        params.push_str(&observation_params);
+    }
     let req = lower_expr(
         &f.contract.requires.expr,
         Ctx::spec(NO_SLICES, NO_SLICES),
@@ -3820,6 +3980,16 @@ fn render_body_as_exec_value(body: &Block, ctx: Ctx, span: Span) -> Result<Strin
             span,
         })?;
         return lower_expr(e, ctx, 0, span);
+    }
+
+    // Lock acquisition and invariant close do not change the scalar value of a
+    // sole value-producing holding block. Compare its body recursively; shared
+    // observations inside it are still lowered normally and must be in scope in
+    // the surrounding equivalence harness.
+    if body.tail.is_none() {
+        if let [Stmt::Holding { body: held, .. }] = body.stmts.as_slice() {
+            return render_body_as_exec_value(held, ctx, span);
+        }
     }
 
     // A bare tail body (`{ ext_id(x) }`): the observable value is the tail.
@@ -3911,6 +4081,78 @@ fn obligation_arg_names(params: &[Param]) -> String {
         .join(", ")
 }
 
+fn observation_name(path: &str) -> String {
+    format!(
+        "__thermite_shared_{}",
+        path.chars()
+            .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '_' })
+            .collect::<String>()
+    )
+}
+
+fn observation_param_list(
+    observations: &[crate::witness::SharedObservation],
+) -> Result<String, LowerError> {
+    observations
+        .iter()
+        .map(|observation| {
+            let ty =
+                scalar_obligation_type(&observation.ty).ok_or_else(|| LowerError::Unsupported {
+                    what: format!(
+                        "equivalence obligation shared observation `{}` is non-scalar",
+                        observation.path
+                    ),
+                    span: zero_span(),
+                })?;
+            Ok(format!("{}: {ty}", observation_name(&observation.path)))
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(|items| items.join(", "))
+}
+
+fn observation_arg_names(observations: &[crate::witness::SharedObservation]) -> String {
+    observations
+        .iter()
+        .map(|observation| observation_name(&observation.path))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn replace_shared_observations(
+    mut rendered: String,
+    observations: &[crate::witness::SharedObservation],
+) -> String {
+    let mut ordered = observations.iter().collect::<Vec<_>>();
+    ordered.sort_by_key(|observation| std::cmp::Reverse(observation.path.len()));
+    for observation in ordered {
+        let replacement = observation_name(&observation.path);
+        let mut out = String::with_capacity(rendered.len());
+        let mut cursor = 0usize;
+        while let Some(relative) = rendered[cursor..].find(&observation.path) {
+            let start = cursor + relative;
+            let end = start + observation.path.len();
+            let left_is_path = rendered[..start]
+                .chars()
+                .next_back()
+                .is_some_and(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '.');
+            let right_is_path = rendered[end..]
+                .chars()
+                .next()
+                .is_some_and(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '.');
+            if left_is_path || right_is_path {
+                out.push_str(&rendered[cursor..end]);
+            } else {
+                out.push_str(&rendered[cursor..start]);
+                out.push_str(&replacement);
+            }
+            cursor = end;
+        }
+        out.push_str(&rendered[cursor..]);
+        rendered = out;
+    }
+    rendered
+}
+
 /// Render an exec body as the spec-fn body of an equivalence-obligation
 /// (REQ-1). The observable result of:
 ///
@@ -3940,6 +4182,15 @@ fn render_body_as_spec_value(
         })?;
         let lowered = lower_expr(e, ctx, 0, span)?;
         return Ok(coerce_obligation_expr(&lowered, ret));
+    }
+
+    // A sole holding statement is observationally transparent for this scalar
+    // value relation. This admits the common RFC-10 `{ holding gate { value } }`
+    // body without treating acquire/release as a result-producing operation.
+    if body.tail.is_none() {
+        if let [Stmt::Holding { body: held, .. }] = body.stmts.as_slice() {
+            return render_body_as_spec_value(held, ret, ctx, span);
+        }
     }
 
     // A let-chain plus tail: render each `let` (init coerced to its declared type,
@@ -4014,6 +4265,7 @@ fn stmt_kind(stmt: &Stmt) -> &'static str {
         Stmt::Break => "a `break`",
         Stmt::Continue => "a `continue`",
         Stmt::Expr(_) => "an expression statement",
+        Stmt::Holding { .. } => "a `holding` statement",
     }
 }
 
@@ -4906,7 +5158,11 @@ pub(crate) fn collect_vec_elem_types(program: &Program) -> Vec<Type> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 type-reachability
             // consumer yet (increments 2b-3); contributes no Vec element types,
             // mirroring the inert ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     // Cluster C5 (`.design/basis/07-strings.md` REQ-15, issue #102): the emitted
@@ -5004,6 +5260,7 @@ fn note_stmt_vec_elems(stmt: &Stmt, elems: &mut Vec<Type>) {
             }
         }
         Stmt::Loop(l) => note_block_vec_elems(&l.body, elems),
+        Stmt::Holding { body, .. } => note_block_vec_elems(body, elems),
         Stmt::Assign { .. } | Stmt::Return(_) | Stmt::Expr(_) | Stmt::Break | Stmt::Continue => {}
     }
 }
@@ -5302,7 +5559,11 @@ pub(crate) fn collect_map_kv_types(program: &Program) -> Vec<(Type, Type)> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 type-reachability
             // consumer yet (increments 2b-3); contributes no Map (K,V) pairs,
             // mirroring the inert ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     pairs
@@ -5365,6 +5626,7 @@ fn note_stmt_map_kv(stmt: &Stmt, pairs: &mut Vec<(Type, Type)>) {
             }
         }
         Stmt::Loop(l) => note_block_map_kv(&l.body, pairs),
+        Stmt::Holding { body, .. } => note_block_map_kv(body, pairs),
         Stmt::Assign { .. } | Stmt::Return(_) | Stmt::Expr(_) | Stmt::Break | Stmt::Continue => {}
     }
 }
@@ -5693,7 +5955,11 @@ fn program_uses_string(program: &Program) -> bool {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 String-reachability
             // consumer yet (increments 2b-3); reaches no String, so fall through
             // without returning, mirroring the inert ADT-decl arms.
-            Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     false
@@ -5725,6 +5991,7 @@ fn stmt_has_string_local(stmt: &Stmt) -> bool {
                 || else_.as_ref().map(block_has_string_local).unwrap_or(false)
         }
         Stmt::Loop(l) => block_has_string_local(&l.body),
+        Stmt::Holding { body, .. } => block_has_string_local(body),
         // break/continue declare no local (#93): no string-typed binding.
         Stmt::Assign { .. } | Stmt::Return(_) | Stmt::Expr(_) | Stmt::Break | Stmt::Continue => {
             false
@@ -5753,6 +6020,7 @@ fn stmt_has_str_lit(stmt: &Stmt) -> bool {
                 || else_.as_ref().map(block_has_str_lit).unwrap_or(false)
         }
         Stmt::Loop(l) => block_has_str_lit(&l.body),
+        Stmt::Holding { body, .. } => block_has_str_lit(body),
         Stmt::Expr(e) => expr_has_str_lit(e),
         // break/continue carry no sub-expression (#93): no string literal.
         Stmt::Break | Stmt::Continue => false,
@@ -6348,7 +6616,11 @@ pub(crate) fn program_uses_string_search(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
@@ -6395,6 +6667,7 @@ fn stmt_uses_string_search(stmt: &Stmt, shadow: &[&str]) -> bool {
                     .unwrap_or(false)
         }
         Stmt::Loop(l) => block_uses_string_search(&l.body, shadow),
+        Stmt::Holding { body, .. } => block_uses_string_search(body, shadow),
         Stmt::Expr(e) => expr_uses_string_search(e, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
@@ -6536,7 +6809,11 @@ fn program_uses_numfmt(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
@@ -6581,6 +6858,7 @@ fn stmt_uses_numfmt(stmt: &Stmt, shadow: &[&str]) -> bool {
                     .unwrap_or(false)
         }
         Stmt::Loop(l) => block_uses_numfmt(&l.body, shadow),
+        Stmt::Holding { body, .. } => block_uses_numfmt(body, shadow),
         Stmt::Expr(e) => expr_uses_numfmt(e, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
@@ -7109,7 +7387,11 @@ pub(crate) fn program_uses_parse(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
@@ -7151,6 +7433,7 @@ fn stmt_uses_parse(stmt: &Stmt, shadow: &[&str]) -> bool {
                     .unwrap_or(false)
         }
         Stmt::Loop(l) => block_uses_parse(&l.body, shadow),
+        Stmt::Holding { body, .. } => block_uses_parse(body, shadow),
         Stmt::Expr(e) => expr_uses_parse(e, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
@@ -7371,7 +7654,11 @@ pub(crate) fn program_uses_bytes_eq(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) | Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
@@ -7413,6 +7700,7 @@ fn stmt_uses_bytes_eq(stmt: &Stmt, shadow: &[&str]) -> bool {
                     .unwrap_or(false)
         }
         Stmt::Loop(l) => block_uses_bytes_eq(&l.body, shadow),
+        Stmt::Holding { body, .. } => block_uses_bytes_eq(body, shadow),
         Stmt::Expr(e) => expr_uses_bytes_eq(e, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
@@ -9210,6 +9498,7 @@ fn collect_block_local_muls(block: &Block, muls: &mut Vec<Expr>) {
             // block (emitted by `lower_loop`), since a body-start fact does not
             // flow past the loop head (#196).
             Stmt::Loop(_) => {}
+            Stmt::Holding { body, .. } => collect_block_local_muls(body, muls),
         }
     }
     if let Some(tail) = &block.tail {
@@ -9379,6 +9668,10 @@ fn lower_stmt(stmt: &Stmt, ctx: Ctx, indent: usize) -> Result<String, LowerError
             what: "nested loop without fn-aid context".to_string(),
             span: zero_span(),
         }),
+        Stmt::Holding { body, .. } => {
+            let inner = lower_block_inner(body, ctx, indent + 1, zero_span())?;
+            Ok(format!("{pad}{{\n{inner}{pad}}}\n"))
+        }
     }
 }
 

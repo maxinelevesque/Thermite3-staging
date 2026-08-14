@@ -191,7 +191,7 @@ fn corpus_lowers_ok_no_panic() {
 #[test]
 fn string_runtime_emits_for_adt_field_without_direct_string_signature() {
     let src = "struct Buf { text: String, cursor: u64 }\n\n\
-               fn make(n: u64) -> Buf\n  ! pure
+               fn make(n: u64) -> Buf\n  ! alloc
   requires true\n  ensures result.cursor == n\n{\n  Buf { text: String::new(), cursor: n }\n}\n";
     let parsed = thermite_syntax::parse(src);
     assert!(

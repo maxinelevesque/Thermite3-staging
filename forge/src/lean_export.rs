@@ -1896,6 +1896,9 @@ fn encode_exec_stmt(stmt: &Stmt, ctx: &mut ExecCtx) -> Result<String, ExportRefu
         Stmt::Continue => Err(ExportRefusal::LoopBody(
             "`continue` (a loop-control statement; S_B has no loops — §4.1.7)".to_string(),
         )),
+        Stmt::Holding { .. } => Err(ExportRefusal::LoopBody(
+            "holding block requires RFC-10 lock-provider semantics".to_string(),
+        )),
     }
 }
 
@@ -2399,7 +2402,7 @@ fn export_item_with_mode(
                 "effect declaration (algebra metadata, no certification obligation)".to_string(),
             ))
         }
-        Item::SharedDecl(_) | Item::Concurrent(_) => {
+        Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => {
             return Err(ExportRefusal::OutOfFragment(
                 "effect-region metadata (no standalone certification obligation)".to_string(),
             ))
@@ -2923,6 +2926,9 @@ fn reject_out_of_while_subset_stmt(stmt: &Stmt) -> Result<(), ExportRefusal> {
             ))),
         },
         Stmt::Let { .. } | Stmt::Expr(_) => Ok(()),
+        Stmt::Holding { .. } => Err(ExportRefusal::LoopBody(
+            "holding block is outside the v1 while subset".to_string(),
+        )),
     }
 }
 

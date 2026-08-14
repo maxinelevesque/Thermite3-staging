@@ -928,7 +928,8 @@ impl OpaqueSorts {
                 Item::Forge(_)
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
-                | Item::Concurrent(_) => {}
+                | Item::Concurrent(_)
+                | Item::LockDecl(_) => {}
             }
         }
         for clause in clauses {
@@ -1129,6 +1130,7 @@ fn walk_block(block: &Block, f: &mut impl FnMut(&Expr)) {
                 walk_expr(&loop_.measures.expr, f);
                 walk_block(&loop_.body, f);
             }
+            Stmt::Holding { body, .. } => walk_block(body, f),
         }
     }
     if let Some(tail) = &block.tail {
@@ -1556,6 +1558,13 @@ fn write_stmt(stmt: &Stmt, out: &mut String) {
             write_expr(&loop_.measures.expr, out);
             out.push(' ');
             write_block(&loop_.body, out);
+            out.push(')');
+        }
+        Stmt::Holding { lock, body, .. } => {
+            out.push_str("(holding ");
+            push_name(out, lock);
+            out.push(' ');
+            write_block(body, out);
             out.push(')');
         }
         Stmt::Break => out.push_str("(break)"),

@@ -2,6 +2,9 @@
 """Oracle tests for gates/req-registry.py."""
 
 import os
+import contextlib
+import importlib.util
+import io
 import subprocess
 import sys
 import tempfile
@@ -97,6 +100,21 @@ class ReqRegistryOracleTest(unittest.TestCase):
         self.tmpdir = tempfile.TemporaryDirectory()
         self.root = Path(self.tmpdir.name)
         self.fx = Fixture(self.root)
+
+    def test_missing_tomllib_is_inconclusive_and_nonzero(self):
+        self.fx.valid_registry()
+        spec = importlib.util.spec_from_file_location("req_registry_missing_toml", GATE)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        module.tomllib = None
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            status = module.main(["--root", str(self.root), "--check"])
+        self.assertEqual(status, 3)
+        self.assertIn("tomllib is unavailable", stderr.getvalue())
 
     def tearDown(self):
         self.tmpdir.cleanup()

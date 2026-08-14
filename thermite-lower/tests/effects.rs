@@ -12,8 +12,8 @@
 
 use thermite_lower::{analyze_effects, check_effects, subsumes, LowerError};
 use thermite_syntax::ast::{
-    Block, Clause, Contract, Effect, EffectRow, Expr, FnItem, Item, PrimType, Program,
-    SharedDeclItem, Type,
+    Block, Clause, Contract, Effect, EffectRow, Expr, FnItem, Item, MatchArm, Pattern, PrimType,
+    Program, SharedDeclItem, Type,
 };
 use thermite_syntax::lexer::Span;
 
@@ -696,6 +696,43 @@ fn deeply_nested_body_returns_result_not_panic() {
         ),
         Ok(()) => panic!("expected a TooDeep structured error for a 2000-deep body"),
     }
+}
+
+#[test]
+fn deeply_nested_match_guard_returns_too_deep_not_stack_overflow() {
+    let mut guard = Expr::Path(vec!["x".to_string()]);
+    for _ in 0..2000 {
+        guard = Expr::Ref {
+            mutable: false,
+            expr: Box::new(guard),
+        };
+    }
+    let mut item = fn_calling("deep_guard", pure(), &[]);
+    let Item::Fn(function) = &mut item else {
+        unreachable!()
+    };
+    function.body = Some(Block {
+        stmts: vec![],
+        tail: Some(Box::new(Expr::Match {
+            scrutinee: Box::new(Expr::IntLit {
+                value: 0,
+                raw: "0".into(),
+            }),
+            arms: vec![MatchArm {
+                pattern: Pattern::Wildcard,
+                guard: Some(guard),
+                body: Expr::IntLit {
+                    value: 0,
+                    raw: "0".into(),
+                },
+            }],
+        })),
+    });
+    let errors = analyze_effects(&Program { items: vec![item] })
+        .expect_err("deep guard must fail with a structured bound");
+    assert!(errors
+        .iter()
+        .any(|error| matches!(error, LowerError::TooDeep { limit, .. } if *limit == 256)));
 }
 
 // ---------------------------------------------------------------------------

@@ -530,6 +530,11 @@ fn render_item_arm(item: &Item) -> SkillFragment {
             description: "a named set of shared roots whose effect footprints must commute",
             example: "concurrent workers { LEFT, RIGHT }",
         },
+        Item::LockDecl(_) => SkillFragment {
+            fragment: "lock NAME guards REGION [after LOCK]",
+            description: "a symbolic lock guarding an RFC-9 shared region",
+            example: "lock scheduler_lock guards scheduler",
+        },
     }
 }
 
@@ -837,6 +842,11 @@ fn render_effect_arm(effect: &Effect) -> SkillFragment {
             fragment: "net(domain)",
             description: "performs network I/O to a domain",
             example: "! net(\"api.example.com\")",
+        },
+        Effect::Owns(_) => SkillFragment {
+            fragment: "owns(lock)",
+            description: "takes a declared lock through a lexical holding block",
+            example: "! owns(scheduler_lock)",
         },
         Effect::Alloc => SkillFragment {
             fragment: "alloc",

@@ -169,7 +169,8 @@ impl CallGraph {
                 Item::Forge(_)
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
-                | Item::Concurrent(_) => {}
+                | Item::Concurrent(_)
+                | Item::LockDecl(_) => {}
             }
         }
         CallGraph { nodes }
@@ -374,7 +375,8 @@ pub fn verified_closure(
             | Item::Forge(_)
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
-            | Item::Concurrent(_) => {}
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
 
@@ -516,7 +518,8 @@ fn collect_verified_calls(item: &Item) -> Vec<VerifiedCall> {
         | Item::Forge(_)
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
-        | Item::Concurrent(_) => {}
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => {}
     }
     calls
 }
@@ -553,6 +556,7 @@ fn collect_verified_block_calls(block: &Block, calls: &mut Vec<VerifiedCall>) {
             }
             Stmt::Expr(expr) => collect_verified_expr_calls(expr, calls),
             Stmt::Break | Stmt::Continue => {}
+            Stmt::Holding { .. } => {}
         }
     }
     if let Some(tail) = &block.tail {
@@ -707,6 +711,7 @@ fn walk_stmt(stmt: &Stmt, in_file: &BTreeSet<&str>, out: &mut Vec<String>) {
         // break/continue carry no sub-expression and no callee (#93): no
         // call-graph edge (the layer-neutral leaf value).
         Stmt::Break | Stmt::Continue => {}
+        Stmt::Holding { .. } => {}
     }
 }
 

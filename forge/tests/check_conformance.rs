@@ -78,6 +78,28 @@ fn run_check_json(file: &Path) -> (Option<i32>, Vec<Value>) {
     (out.status.code(), arr)
 }
 
+fn run_check_json_with_env(file: &Path, key: &str, value: &str) -> (Option<i32>, Vec<Value>) {
+    let out = Command::new(forge_bin())
+        .arg("check")
+        .arg(file)
+        .arg("--json")
+        .env("THERMITE_EPR_CACHE_DISABLE", "1")
+        .env(key, value)
+        .output()
+        .unwrap_or_else(|e| panic!("spawn forge: {e}"));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let value: Value = serde_json::from_str(stdout.trim()).unwrap_or_else(|e| {
+        panic!(
+            "forge --json stdout must be one JSON document: {e}\nstdout:\n{stdout}\nstderr:\n{}",
+            String::from_utf8_lossy(&out.stderr)
+        )
+    });
+    (
+        out.status.code(),
+        value.as_array().expect("certificate array").clone(),
+    )
+}
+
 /// The golden certificate JSON for `<name>` (the external oracle, R-CHAR-3).
 fn golden_cert(name: &str) -> Value {
     let path = corpus_dir().join(format!("{name}.cert.json"));
@@ -336,6 +358,144 @@ fn has_key_cert_matches_golden_deterministic_subset() {
     );
 }
 
+#[test]
+fn rfc10_shared_state_certifies_through_the_production_route() {
+    if !verus_present() {
+        eprintln!("SKIP: verus not available — RFC-10 production-route anchor not run.");
+        return;
+    }
+    let (code, certs) = run_check_json(&corpus_dir().join("shared_state_rfc10.th"));
+    assert_eq!(code, Some(0), "the RFC-10 anchor must certify end to end");
+    let cert = find_cert(&certs, "read_state");
+    assert_eq!(cert["level"], Value::from("L3"));
+    assert_eq!(
+        cert["effects"],
+        serde_json::json!(["owns(gate)", "read(state.n)"])
+    );
+}
+
+#[test]
+fn explicit_l2_cleanly_refuses_rfc10_without_losing_metadata() {
+    let out = Command::new(forge_bin())
+        .arg("check")
+        .arg(corpus_dir().join("shared_state_rfc10.th"))
+        .args(["--level", "l2"])
+        .output()
+        .expect("spawn forge");
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("RFC-10 shared-state L2 Kani harness"),
+        "{stderr}"
+    );
+    assert!(!stderr.contains("unknown lock"), "{stderr}");
+}
+
+#[test]
+fn every_root_corpus_item_preserves_its_frozen_certification_level() {
+    if !verus_present() {
+        eprintln!("SKIP: verus not available — full corpus certification sweep not run.");
+        return;
+    }
+    let mut baseline: serde_json::Map<String, Value> = serde_json::from_str(
+        &std::fs::read_to_string(corpus_dir().join("forge-corpus-baseline.json")).unwrap(),
+    )
+    .unwrap();
+    let provenance = baseline
+        .remove("__provenance")
+        .expect("baseline provenance");
+    assert_eq!(provenance["kind"], "post-fix-round freeze");
+    for (file, expected) in baseline {
+        let (_code, certs) = run_check_json(&corpus_dir().join(&file));
+        let expected = expected.as_object().unwrap();
+        assert_eq!(
+            certs.len(),
+            expected.len(),
+            "certificate count drifted for {file}"
+        );
+        for (item, expectation) in expected {
+            let cert = find_cert(&certs, item);
+            let (level, cause) = match expectation {
+                Value::String(_) => (expectation.clone(), None),
+                Value::Object(fields) => (
+                    fields.get("level").expect("baseline level").clone(),
+                    fields.get("cause").cloned(),
+                ),
+                other => panic!("invalid baseline entry for {file}::{item}: {other}"),
+            };
+            if cert["level"] == level {
+                if let Some(cause) = cause {
+                    assert_eq!(
+                        cert.pointer("/reject/cause").unwrap_or(&Value::Null),
+                        &cause,
+                        "reject cause drifted for {file}::{item}"
+                    );
+                }
+                continue;
+            }
+            let environment_only = expectation
+                .as_object()
+                .and_then(|fields| fields.get("fallback_level"))
+                == Some(&cert["level"]);
+            assert!(
+                environment_only,
+                "certification level drifted for {file}::{item}: expected {level}, got {}",
+                cert["level"]
+            );
+        }
+    }
+}
+
+#[test]
+fn unavailable_epr_tools_preserve_the_clean_l3_base() {
+    if !verus_present() {
+        eprintln!("SKIP: verus not available — EPR fallback routes not run.");
+        return;
+    }
+    let fixture = corpus_dir().join("string_demo.th");
+    for variable in ["THERMITE_EPR_CADICAL", "THERMITE_EPR_DRAT_TRIM"] {
+        let (code, certs) = run_check_json_with_env(&fixture, variable, "/nonexistent");
+        let cert = find_cert(&certs, "greeting_len");
+        assert_eq!(code, Some(0), "{variable} absence must preserve success");
+        assert_eq!(
+            cert["level"],
+            Value::from("L3"),
+            "{variable} absence must preserve the independently proved L3"
+        );
+        assert!(cert["reject"].is_null(), "{variable}: {cert}");
+    }
+}
+
+#[test]
+fn shared_state_in_a_contract_is_a_structured_front_door_rejection() {
+    let fixture = std::env::temp_dir().join(format!(
+        "thermite-shared-contract-{}.th",
+        std::process::id()
+    ));
+    std::fs::write(
+        &fixture,
+        "struct State { n: u64 } keeps n < 10
+         shared state: State
+         lock gate guards state
+         fn read_state() -> u64 ! owns(gate), read(state.n)
+         requires state.n == 0 ensures result < 10
+         { holding gate { state.n } }",
+    )
+    .expect("write fixture");
+    let out = Command::new(forge_bin())
+        .arg("check")
+        .arg(&fixture)
+        .output()
+        .expect("spawn forge");
+    std::fs::remove_file(&fixture).expect("remove fixture");
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("shared-state root `state`"), "{stderr}");
+    assert!(stderr.contains("`requires`"), "{stderr}");
+    assert!(!stderr.contains("E0425"), "{stderr}");
+    assert!(!stderr.contains("vacuity harness"), "{stderr}");
+}
+
 // ---- AC-2 (stream discipline) + AC-1: usage error exits non-zero ----------
 
 #[test]
@@ -353,5 +513,29 @@ fn missing_file_is_usage_error_nonzero() {
     assert!(
         !out.stderr.is_empty(),
         "a usage error writes a diagnostic to stderr"
+    );
+}
+
+#[test]
+fn explicit_l2_empty_certificate_array_is_not_success() {
+    let fixture = std::env::temp_dir().join(format!("thermite-l2-empty-{}.th", std::process::id()));
+    std::fs::write(&fixture, "spec fn only(x: u64) -> u64 measures x { x }\n").unwrap();
+    let out = Command::new(forge_bin())
+        .arg("check")
+        .arg(&fixture)
+        .args(["--level", "l2", "--json"])
+        .output()
+        .expect("spawn forge");
+    let _ = std::fs::remove_file(&fixture);
+    assert_eq!(
+        String::from_utf8_lossy(&out.stdout).trim(),
+        "[]",
+        "stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "no bounded-check certificate is not successful L2 verification"
     );
 }

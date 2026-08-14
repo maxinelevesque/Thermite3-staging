@@ -47,6 +47,7 @@ IMPORTS=(
   "Thermite.PinStructuralSkolemScopes"
   "Thermite.PinEprReplay"
   "Thermite.EffectRows"
+  "Thermite.CheckedTraversal"
 )
 
 # Universal soundness theorems and the permanent reconstruction probe.
@@ -75,6 +76,19 @@ THEOREMS=(
   "Thermite.EffectRows.overlaps_symmetric"
   "Thermite.EffectRows.accepted_pair_commutes"
   "Thermite.EffectRows.disjoint_pairs_impose_no_commutation"
+  "Thermite.EffectRows.relational_frame"
+  "Thermite.EffectRows.pure_deterministic"
+  "Thermite.EffectRows.outside_write_equal"
+  "Thermite.CheckedTraversal.verify_sound"
+  "Thermite.CheckedTraversal.verify_complete"
+  "Thermite.CheckedTraversal.verify_iff_supported"
+  "Thermite.CheckedTraversal.produce_complete"
+  "Thermite.CheckedTraversal.produce_supported"
+  "Thermite.CheckedTraversal.structural_complete_of_verify"
+  "Thermite.CheckedTraversal.evidence_well_formed_of_verify"
+  "Thermite.CheckedTraversal.footprint_closure_sound_of_verify"
+  "Thermite.CheckedTraversal.holding_coverage_sound_of_verify"
+  "Thermite.CheckedTraversal.resource_limit_not_certifying"
 )
 ALLOWED="propext Classical.choice Quot.sound"
 
