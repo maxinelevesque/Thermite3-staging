@@ -47,6 +47,7 @@ IMPORTS=(
   "Thermite.PinStructuralSkolemScopes"
   "Thermite.PinEprReplay"
   "Thermite.EffectRows"
+  "Thermite.LanguageCompleteness"
   "Thermite.CheckedTraversal"
 )
 
@@ -79,6 +80,9 @@ THEOREMS=(
   "Thermite.EffectRows.relational_frame"
   "Thermite.EffectRows.pure_deterministic"
   "Thermite.EffectRows.outside_write_equal"
+  "Thermite.LanguageCompleteness.expands_refl"
+  "Thermite.LanguageCompleteness.expands_trans"
+  "Thermite.CheckedTraversal.supportedRFC10_refines_language_fragment"
   "Thermite.CheckedTraversal.verify_sound"
   "Thermite.CheckedTraversal.verify_complete"
   "Thermite.CheckedTraversal.verify_iff_supported"

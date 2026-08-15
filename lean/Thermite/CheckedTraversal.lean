@@ -1,6 +1,9 @@
 import Std
+import Thermite.LanguageCompleteness
 
 namespace Thermite.CheckedTraversal
+
+open Thermite.LanguageCompleteness
 
 structure Edge where
   parent : Nat
@@ -173,6 +176,27 @@ def SupportedRFC10 (ast : CanonicalAst) (witness : Witness) : Prop :=
     witness.holdings.all (holdingWellFormed ast) = true) ∧
     witness.sharedPlaces = ast.sharedPlaces) ∧
     witness.sharedPlaces.all (sharedPlaceWellFormed ast) = true
+
+/-- RFC-10's canonical AST projection into the language-wide neutral program. -/
+def toLanguageProgram (ast : CanonicalAst) : Program :=
+  { digest := ast.digest
+    constructs := ast.nodeKinds
+    facts := ast.nodeFacts }
+
+/-- RFC-10 v1 is a named fragment of neutral programs. Membership means that
+some checked-traversal witness realizes the program and satisfies the existing
+declarative RFC-10 support predicate. -/
+def rfc10FragmentV1 : Fragment :=
+  { version := ⟨"rfc10-checked-traversal", 1⟩
+    admits := fun program => ∃ ast witness,
+      toLanguageProgram ast = program ∧ SupportedRFC10 ast witness }
+
+/-- The existing RFC-10 predicate is an instance of neutral fragment
+membership, rather than the foundation of the language-wide vocabulary. -/
+theorem supportedRFC10_refines_language_fragment {ast : CanonicalAst}
+    {witness : Witness} (supported : SupportedRFC10 ast witness) :
+    rfc10FragmentV1.admits (toLanguageProgram ast) := by
+  exact ⟨ast, witness, rfl, supported⟩
 
 /-- Completeness of the executable replay checker over the explicitly declared
 RFC-10 rung-4 evidence fragment. -/

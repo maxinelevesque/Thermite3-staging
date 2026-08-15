@@ -18110,6 +18110,209 @@ target = ".design/rfc10-checked-traversal.md"
 note = "language and assurance delta ledger plus named residual-trust boundary"
 
 [[requirement]]
+id = "REQ-COMPLETE-LANGUAGE-INVENTORY"
+title = "Every claimed language construct has a stage disposition"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "spec"
+summary = "A fail-closed inventory classifies every current construct and claimed behavior across parser, validation, semantics, checked IR, lowering, proof, policy, and certification stages."
+remaining_scope = "Build the source and claim inventory, stage dispositions, and missing-entry gate described by REQ-1 and AC-1."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-1 and AC-1 define the language-wide inventory"
+
+[[requirement]]
+id = "REQ-COMPLETE-GAP-LEDGER"
+title = "Claim and proof gaps have checked dispositions"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "spec"
+summary = "Documented language claims are compared with executable and formal evidence, and every gap is implemented, bounded out, or linked to the completeness-review track."
+remaining_scope = "Generate the initial gap report and enforce exactly one evidence-bearing disposition per unresolved gap as required by REQ-2 and AC-2."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-2 and AC-2 define sources, gap identities, and dispositions"
+
+[[requirement]]
+id = "REQ-COMPLETE-NEUTRAL-FORMAL-LAYER"
+title = "Language-wide fragment semantics are neutral"
+owner = ".design/versioned-language-completeness.md"
+status = "shipped"
+scope = "verified"
+summary = "A neutral Lean layer defines canonical programs, validity, versioned fragments, and stage outcomes, with RFC-10 proved as an instance or refinement."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "file"
+target = "lean/Thermite/LanguageCompleteness.lean"
+note = "neutral Program, SemanticValidity, versioned Fragment, stage Outcome, and evolution laws"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.CheckedTraversal.supportedRFC10_refines_language_fragment"
+note = "RFC-10 support refines into the neutral v1 fragment"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/lean-axiom-probe.sh"
+note = "kernel axiom probe covers fragment evolution and RFC-10 refinement theorems"
+
+[[requirement]]
+id = "REQ-COMPLETE-MONOTONE-VERSIONS"
+title = "Ordinary fragment revisions prove monotone inclusion"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "verified"
+summary = "Every ordinary fragment expansion proves old-to-new inclusion; narrowing creates an explicit compatibility lineage with a concrete non-inclusion witness."
+remaining_scope = "Define immutable version identities, prove an initial inclusion, and gate both expansion and narrowing paths as required by REQ-4 and AC-4."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-4 and AC-4 define monotone evolution and compatibility breaks"
+
+[[requirement]]
+id = "REQ-COMPLETE-STAGE-SEPARATION"
+title = "Completeness claims remain stage-indexed"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "verified"
+summary = "Evidence, producer, lowering, proof-route, policy, and certification completeness are distinct predicates joined only by explicit composition theorems."
+remaining_scope = "Encode the stage-indexed claims and composition premises so a weaker theorem cannot discharge a stronger stage per REQ-5 and AC-5."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-5 and AC-5 define the completeness ladder without implication laundering"
+
+[[requirement]]
+id = "REQ-COMPLETE-PRODUCER-REFINEMENT"
+title = "Bounded Rust evidence refines the logical producer"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "verified"
+summary = "A total logical producer covers its claimed fragment and the Rust producer, serialization, and decoding refine it under an exact sufficient-budget premise."
+remaining_scope = "Absorb issue #49's general refinement work, prove the budgeted correspondence, and add boundary mutations per REQ-6 and AC-6."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-6 and AC-6 define logical production and Rust/serialization refinement"
+
+[[requirement]]
+id = "REQ-COMPLETE-TOTAL-CLASSIFICATION"
+title = "Every attempted stage returns one named outcome"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "forge"
+summary = "Structured results distinguish unsupported language, invalid source, unsupported policy, resource and environment failures, counterexamples, proof failures, soundness alarms, and certification."
+remaining_scope = "Implement the closed outcome vocabulary and generated stage matrix without silent downgrade per REQ-7 and AC-7."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-7 and AC-7 define total stage classification"
+
+[[requirement]]
+id = "REQ-COMPLETE-RFC3-COORDINATES"
+title = "Completeness uses RFC-3 certification coordinates"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "manifest"
+summary = "Certification uses scope/refutation/trust@boundary and its product order rather than a parallel model or a live Lx projection."
+remaining_scope = "Audit RFC-3 increments, connect fragment classification to its coordinates, and migrate the public manifest surface per REQ-8 and AC-8."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-8 and AC-8 adopt RFC-3 as the authoritative certification structure"
+
+[[requirement]]
+id = "REQ-COMPLETE-SOLVER-HONESTY"
+title = "Solver limits remain explicit outcomes"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "verified"
+summary = "Solver routes prove progress or classification under named premises and preserve Unknown, timeout, unavailable, and incompatible outcomes without semantic relabeling."
+remaining_scope = "State the route theorems and exercise every environment/resource case independently of fragment membership per REQ-9 and AC-9."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-9 and AC-9 define the non-claim about external solver completeness"
+
+[[requirement]]
+id = "REQ-COMPLETE-FINITE-POLICY"
+title = "Policy completeness is finite or explicitly unsupported"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "forge"
+summary = "Mutation and contract-quality policy totally decide a stated finite fragment and return unsupported-policy outside it without changing semantic or proof validity."
+remaining_scope = "Define the finite policy predicate, total decision theorem, boundary mutations, and outside-fragment outcome per REQ-10 and AC-10."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-10 and AC-10 define the policy fragment"
+
+[[requirement]]
+id = "REQ-COMPLETE-RFC-EXPANSION-DISCIPLINE"
+title = "Language RFCs update completeness fragments"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "process"
+summary = "Every language RFC declares preservation, expansion, or narrowing and supplies classifier cases, inclusion evidence, support views, and negative-space witnesses."
+remaining_scope = "Add RFC guidance and a fixture gate proving incomplete expansion and silent narrowing fail per REQ-11 and AC-11."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-11 and AC-11 define the ongoing RFC discipline"
+
+[[requirement]]
+id = "REQ-COMPLETE-REVIEW-TRACK"
+title = "Gap inventory and completeness-review backlog agree"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "process"
+summary = "The durable completeness-review issue track agrees bidirectionally with unresolved gap dispositions and closes items only with cited executable or formal evidence."
+remaining_scope = "Establish the track, consistency gate, and evidence-bearing close transition per REQ-12 and AC-12."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-12 and AC-12 define the completeness-review backlog contract"
+
+[[requirement]]
+id = "REQ-COMPLETE-PROVED-DISPLAY"
+title = "Engineer labels have kernel-checked meanings"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "verified"
+summary = "A total versioned projection maps coherent formal positions to closed engineer labels, with one entailment theorem per label and one common-semantics theorem per collapse."
+remaining_scope = "Define the display vocabulary, projection, meaning and collapse theorems, and generated lost-distinction disclosures per REQ-13 and AC-13/AC-14."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-13 and AC-13/AC-14 define the proved non-specialist projection"
+
+[[requirement]]
+id = "REQ-COMPLETE-DISPLAY-NONAUTHORITATIVE"
+title = "Display labels never decide certification"
+owner = ".design/versioned-language-completeness.md"
+status = "not_started"
+scope = "manifest"
+summary = "Stored display labels validate against formal positions and a collapse-policy version, while gates, routing, floors, aggregation, and certification consume only formal data."
+remaining_scope = "Implement round-trip validation, mutation coverage, and structural non-consumption checks per REQ-14 and AC-15."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/versioned-language-completeness.md"
+note = "REQ-14 and AC-15 define display-label validation and non-authority"
+
+[[requirement]]
 id = "REQ-SYNTAX-RESOURCE-MODIFIER"
 title = "`resource struct` marks a linear type"
 owner = ".design/rfcs"

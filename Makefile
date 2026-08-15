@@ -1,7 +1,7 @@
 # Thermite — convenience targets. The build/test system is Cargo; these are
 # thin entry points. `make audit` is the headline: a FULL TRUST-CHAIN
 # re-derivation a skeptic runs on their own machine (see gates/audit.sh).
-.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test rfc9-effect-inventory
+.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test rfc9-effect-inventory language-completeness-inventory
 
 DOC_DRIFT_CI_BASE ?= origin/main
 DOC_DRIFT_CI_HEAD ?= HEAD
@@ -36,6 +36,7 @@ gauntlet:
 	uv run python gates/req-status.py
 	uv run gates/reqs check
 	uv run gates/rfc9-effect-inventory.py --check
+	uv run python gates/language-completeness-inventory.py
 
 check:
 	cargo build --workspace
@@ -146,3 +147,8 @@ paths-exist-test:
 # enumerated for reviewed burn-down.
 rfc9-effect-inventory:
 	@uv run gates/rfc9-effect-inventory.py --check
+
+# Issue #48: fail closed when the public AST, documented claim anchors, gap
+# dispositions, or RFC-3 increment ledger changes without review.
+language-completeness-inventory:
+	@uv run python gates/language-completeness-inventory.py

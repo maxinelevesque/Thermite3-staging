@@ -1,0 +1,338 @@
+version = 1
+ast_source = "thermite-syntax/src/ast.rs"
+
+# This conservative profile states what the repository can honestly claim for
+# every parser construct before issue 48 supplies per-fragment theorems. Parser
+# admission and validation are executable; every stronger stage is partial.
+[[profile]]
+id = "current-language"
+parser = "supported"
+validator = "partial"
+canonical_semantics = "partial"
+checked_ir = "partial"
+lowering = "partial"
+proof_route = "partial"
+policy = "partial"
+certification = "partial"
+evidence = [
+  "thermite-syntax/src/parser.rs",
+  "thermite-spec/src/validator.rs",
+  "thermite-syntax/src/semantic.rs",
+  "thermite-lower/src/lower.rs",
+  "forge/src/engine.rs",
+]
+
+# Explicit enumeration is the fail-closed seam: adding or removing a public AST
+# variant changes the derived set and fails until this ledger is reviewed.
+construct = [
+  { id = "BinOp::Add", profile = "current-language" },
+  { id = "BinOp::And", profile = "current-language" },
+  { id = "BinOp::BitAnd", profile = "current-language" },
+  { id = "BinOp::BitOr", profile = "current-language" },
+  { id = "BinOp::BitXor", profile = "current-language" },
+  { id = "BinOp::Div", profile = "current-language" },
+  { id = "BinOp::Eq", profile = "current-language" },
+  { id = "BinOp::Ge", profile = "current-language" },
+  { id = "BinOp::Gt", profile = "current-language" },
+  { id = "BinOp::Le", profile = "current-language" },
+  { id = "BinOp::Lt", profile = "current-language" },
+  { id = "BinOp::Mul", profile = "current-language" },
+  { id = "BinOp::Ne", profile = "current-language" },
+  { id = "BinOp::Or", profile = "current-language" },
+  { id = "BinOp::Rem", profile = "current-language" },
+  { id = "BinOp::Shl", profile = "current-language" },
+  { id = "BinOp::Shr", profile = "current-language" },
+  { id = "BinOp::Sub", profile = "current-language" },
+  { id = "BvWidth::W16", profile = "current-language" },
+  { id = "BvWidth::W32", profile = "current-language" },
+  { id = "BvWidth::W64", profile = "current-language" },
+  { id = "BvWidth::W8", profile = "current-language" },
+  { id = "Effect::Alloc", profile = "current-language" },
+  { id = "Effect::Diverge", profile = "current-language" },
+  { id = "Effect::Net", profile = "current-language" },
+  { id = "Effect::Owns", profile = "current-language" },
+  { id = "Effect::Panic", profile = "current-language" },
+  { id = "Effect::Rand", profile = "current-language" },
+  { id = "Effect::Read", profile = "current-language" },
+  { id = "Effect::Term", profile = "current-language" },
+  { id = "Effect::Time", profile = "current-language" },
+  { id = "Effect::Write", profile = "current-language" },
+  { id = "EffectPrimitive::Accrues", profile = "current-language" },
+  { id = "EffectPrimitive::Exception", profile = "current-language" },
+  { id = "EffectPrimitive::Io", profile = "current-language" },
+  { id = "EffectPrimitive::Partiality", profile = "current-language" },
+  { id = "EffectPrimitive::State", profile = "current-language" },
+  { id = "EffectRow::Pure", profile = "current-language" },
+  { id = "EffectRow::Set", profile = "current-language" },
+  { id = "Expr::Binary", profile = "current-language" },
+  { id = "Expr::BoolLit", profile = "current-language" },
+  { id = "Expr::Call", profile = "current-language" },
+  { id = "Expr::Cast", profile = "current-language" },
+  { id = "Expr::Closure", profile = "current-language" },
+  { id = "Expr::Deref", profile = "current-language" },
+  { id = "Expr::Field", profile = "current-language" },
+  { id = "Expr::If", profile = "current-language" },
+  { id = "Expr::Index", profile = "current-language" },
+  { id = "Expr::IntLit", profile = "current-language" },
+  { id = "Expr::Is", profile = "current-language" },
+  { id = "Expr::Match", profile = "current-language" },
+  { id = "Expr::MethodCall", profile = "current-language" },
+  { id = "Expr::Path", profile = "current-language" },
+  { id = "Expr::Quantifier", profile = "current-language" },
+  { id = "Expr::Ref", profile = "current-language" },
+  { id = "Expr::StrLit", profile = "current-language" },
+  { id = "Expr::StructLit", profile = "current-language" },
+  { id = "Expr::Tuple", profile = "current-language" },
+  { id = "Expr::TupleProj", profile = "current-language" },
+  { id = "Expr::Unary", profile = "current-language" },
+  { id = "ForgeItem::Lemma", profile = "current-language" },
+  { id = "ForgeItem::Proof", profile = "current-language" },
+  { id = "ForgeItem::PropFn", profile = "current-language" },
+  { id = "ForgeItem::Witness", profile = "current-language" },
+  { id = "HoleContext::Body", profile = "current-language" },
+  { id = "HoleContext::Proof", profile = "current-language" },
+  { id = "IndexArg::Range", profile = "current-language" },
+  { id = "IndexArg::RangeFrom", profile = "current-language" },
+  { id = "IndexArg::RangeTo", profile = "current-language" },
+  { id = "IndexArg::Single", profile = "current-language" },
+  { id = "Item::Concurrent", profile = "current-language" },
+  { id = "Item::EffectDecl", profile = "current-language" },
+  { id = "Item::Enum", profile = "current-language" },
+  { id = "Item::Fn", profile = "current-language" },
+  { id = "Item::Forge", profile = "current-language" },
+  { id = "Item::LockDecl", profile = "current-language" },
+  { id = "Item::SharedDecl", profile = "current-language" },
+  { id = "Item::SpecFn", profile = "current-language" },
+  { id = "Item::Struct", profile = "current-language" },
+  { id = "LoopKind::Loop", profile = "current-language" },
+  { id = "LoopKind::While", profile = "current-language" },
+  { id = "Pattern::Binding", profile = "current-language" },
+  { id = "Pattern::Enum", profile = "current-language" },
+  { id = "Pattern::Literal", profile = "current-language" },
+  { id = "Pattern::Or", profile = "current-language" },
+  { id = "Pattern::Slice", profile = "current-language" },
+  { id = "Pattern::Struct", profile = "current-language" },
+  { id = "Pattern::Wildcard", profile = "current-language" },
+  { id = "PrimType::Bool", profile = "current-language" },
+  { id = "PrimType::U16", profile = "current-language" },
+  { id = "PrimType::U32", profile = "current-language" },
+  { id = "PrimType::U64", profile = "current-language" },
+  { id = "PrimType::U8", profile = "current-language" },
+  { id = "PrimType::Usize", profile = "current-language" },
+  { id = "Quant::Exists", profile = "current-language" },
+  { id = "Quant::Forall", profile = "current-language" },
+  { id = "RefinementTarget::Param", profile = "current-language" },
+  { id = "RefinementTarget::Result", profile = "current-language" },
+  { id = "SlicePat::Pat", profile = "current-language" },
+  { id = "SlicePat::Rest", profile = "current-language" },
+  { id = "Stmt::Assign", profile = "current-language" },
+  { id = "Stmt::Break", profile = "current-language" },
+  { id = "Stmt::Continue", profile = "current-language" },
+  { id = "Stmt::Expr", profile = "current-language" },
+  { id = "Stmt::Holding", profile = "current-language" },
+  { id = "Stmt::If", profile = "current-language" },
+  { id = "Stmt::Let", profile = "current-language" },
+  { id = "Stmt::Loop", profile = "current-language" },
+  { id = "Stmt::Return", profile = "current-language" },
+  { id = "Type::Box", profile = "current-language" },
+  { id = "Type::Generic", profile = "current-language" },
+  { id = "Type::Map", profile = "current-language" },
+  { id = "Type::Named", profile = "current-language" },
+  { id = "Type::Option", profile = "current-language" },
+  { id = "Type::Prim", profile = "current-language" },
+  { id = "Type::Ref", profile = "current-language" },
+  { id = "Type::Result", profile = "current-language" },
+  { id = "Type::Slice", profile = "current-language" },
+  { id = "Type::String", profile = "current-language" },
+  { id = "Type::Tuple", profile = "current-language" },
+  { id = "Type::Unit", profile = "current-language" },
+  { id = "Type::Vec", profile = "current-language" },
+  { id = "UnaryOp::Not", profile = "current-language" },
+  { id = "VariantShape::Struct", profile = "current-language" },
+  { id = "VariantShape::Tuple", profile = "current-language" },
+  { id = "VariantShape::Unit", profile = "current-language" },
+]
+
+# Claim groups are deliberately broader than individual prose sentences. Their
+# exact source anchors make deletion/renaming visible; evidence says what exists
+# now, while `gap` states where the prose outruns that evidence.
+[[claim]]
+id = "CLAIM-LANGUAGE-THREE-PROMISES"
+source = "docs/language.md"
+source_sha256 = "f2cddabc16844255faec8d3416d28c22984967d645c40586858c71e5a474c1e2"
+anchor = "## Three promises"
+evidence = ["thermite-syntax/src/parser.rs", "thermite-spec/src/validator.rs"]
+gap = "GAP-LANGUAGE-WIDE-THEOREM"
+
+[[claim]]
+id = "CLAIM-LANGUAGE-SPEC-SOUNDNESS"
+source = "docs/language.md"
+source_sha256 = "f2cddabc16844255faec8d3416d28c22984967d645c40586858c71e5a474c1e2"
+anchor = "## The specification language"
+evidence = ["lean/Thermite/", "gates/lean-axiom-probe.sh"]
+gap = "GAP-LANGUAGE-WIDE-THEOREM"
+
+[[claim]]
+id = "CLAIM-DESIGN-TRUSTABLE"
+source = "thermite-design.md"
+source_sha256 = "1f6aec57f11bc42f1be753a266d6d2a553b6fa4fb0cbacc900bcc34c2071751a"
+anchor = "### What \"trustable\" means"
+evidence = ["gates/audit.sh", "lean/Thermite/"]
+gap = "GAP-CORRESPONDENCE-BOUNDARY"
+
+[[claim]]
+id = "CLAIM-DESIGN-SPEC-EXECUTABLE"
+source = "thermite-design.md"
+source_sha256 = "1f6aec57f11bc42f1be753a266d6d2a553b6fa4fb0cbacc900bcc34c2071751a"
+anchor = "Spec functions are executable."
+evidence = ["thermite-syntax/src/ast.rs", "thermite-lower/src/lower.rs"]
+gap = "GAP-TOTAL-PRODUCER"
+
+[[claim]]
+id = "CLAIM-DESIGN-EFFECT-SANDBOX"
+source = "thermite-design.md"
+source_sha256 = "1f6aec57f11bc42f1be753a266d6d2a553b6fa4fb0cbacc900bcc34c2071751a"
+anchor = "The runtime enforces the row as a sandbox"
+evidence = ["forge/src/sandbox.rs", "thermite-spec/src/effect_commutation.rs"]
+gap = "GAP-POLICY-FRAGMENT"
+
+[[claim]]
+id = "CLAIM-VERIFICATION-TRANSLATION"
+source = "docs/verification.md"
+source_sha256 = "48559c006fab1f40453447782a466d4dfb659df1bb4fc858c75743fd010b4de4"
+anchor = "## Translation validation"
+evidence = ["forge/src/engine.rs", "lean/Thermite/"]
+gap = "GAP-CORRESPONDENCE-BOUNDARY"
+
+[[claim]]
+id = "CLAIM-V2-VERDICTS"
+source = "docs/v2/semantics.md"
+source_sha256 = "42464fa92a7197d70158e9786ac35c9f7de03bc382bceb52242c1ca2e2e7d8f2"
+anchor = "## 2. The seven certificate verdicts"
+evidence = ["forge/src/engine.rs", "forge/src/manifest.rs"]
+gap = "GAP-TOTAL-STAGE-OUTCOMES"
+
+[[claim]]
+id = "CLAIM-V2-FRAGMENTS"
+source = "docs/v2/semantics.md"
+source_sha256 = "42464fa92a7197d70158e9786ac35c9f7de03bc382bceb52242c1ca2e2e7d8f2"
+anchor = "## 3. The fragments"
+evidence = ["thermite-spec/src/classifier.rs", "lean/Thermite/CheckedTraversal.lean"]
+gap = "GAP-VERSIONED-FRAGMENTS"
+
+[[claim]]
+id = "CLAIM-RFC3-COORDINATES"
+source = ".design/rfcs/0003-certification-surface.md"
+source_sha256 = "177023137acdba866aec18429c3265a09ed646c8038cd7a2d479b928ff5571bd"
+anchor = "## 1. The four coordinates"
+evidence = ["forge/src/manifest.rs", "forge/src/engine.rs"]
+gap = "GAP-RFC3-MIGRATION"
+
+[[claim]]
+id = "CLAIM-REGISTRY-SHIPPED-EVIDENCE"
+source = ".design/reqs/registry.toml"
+source_sha256 = "76328b699f31b1c7064f0e81725b5816d1040d73338044414f1cce08b7888d41"
+anchor = "[[requirement]]"
+evidence = ["gates/req-registry.py", "gates/req-status.py"]
+gap = "GAP-CLAIM-EVIDENCE-CLOSURE"
+
+[[gap]]
+id = "GAP-LANGUAGE-WIDE-THEOREM"
+claimed = "The language prose describes sound checked behavior without a versioned whole-language fragment."
+observed = "Existing Lean theorems cover named feature fragments, especially RFC-10, not every parser construct."
+trust_consequence = "Readers can mistake feature-local soundness for language-wide coverage."
+disposition = "issue_48"
+evidence = ["lean/Thermite/CheckedTraversal.lean"]
+
+[[gap]]
+id = "GAP-CORRESPONDENCE-BOUNDARY"
+claimed = "Generated evidence corresponds to source semantics across the advertised route."
+observed = "Correspondence is checked at several boundaries but no general producer/serialization refinement closes the chain."
+trust_consequence = "The producer and wire-format correspondence remain trusted outside named checks."
+disposition = "issue_48"
+evidence = ["thermite-lower/src/witness.rs", "forge/src/manifest.rs"]
+
+[[gap]]
+id = "GAP-TOTAL-PRODUCER"
+claimed = "Every spec function is executable and an L1 fallback always exists."
+observed = "No language-wide total logical producer theorem or exact sufficient-budget refinement is recorded."
+trust_consequence = "Operational production limits may be read as semantic exclusion."
+disposition = "issue_48"
+evidence = ["thermite-lower/src/witness.rs"]
+
+[[gap]]
+id = "GAP-POLICY-FRAGMENT"
+claimed = "Effects and contract-quality policy are enforced."
+observed = "Executable checks exist, but their finite completeness fragment and outside-fragment result are not formalized."
+trust_consequence = "Policy refusal can be confused with semantic or evidence failure."
+disposition = "issue_48"
+evidence = ["forge/src/sandbox.rs", "forge/src/vacuity.rs"]
+
+[[gap]]
+id = "GAP-TOTAL-STAGE-OUTCOMES"
+claimed = "The verdict map never silently converts results."
+observed = "Verdicts are structured, but there is no closed language-wide outcome vocabulary for every attempted stage."
+trust_consequence = "Missing tools, resource limits, unsupported syntax, and proof failure lack one checked separation theorem."
+disposition = "issue_48"
+evidence = ["forge/src/engine.rs"]
+
+[[gap]]
+id = "GAP-VERSIONED-FRAGMENTS"
+claimed = "Named fragments characterize supported verification inputs."
+observed = "A neutral immutable version family now exists and RFC-10 refines into v1, but no later version or language-wide coverage theorem exists yet."
+trust_consequence = "A later narrowing could silently reuse an old completeness name."
+disposition = "issue_48"
+evidence = ["lean/Thermite/CheckedTraversal.lean"]
+
+[[gap]]
+id = "GAP-RFC3-MIGRATION"
+claimed = "Certification is a scope/refutation/trust@boundary coordinate rather than an Lx ladder."
+observed = "Trust and scope data are partial; Level remains live and classification/refutation are not fully persisted."
+trust_consequence = "The scalar projection can continue to conflate incomparable assurance positions."
+disposition = "issue_48"
+evidence = ["forge/src/manifest.rs", ".design/rfcs/0003-certification-surface.md"]
+
+[[gap]]
+id = "GAP-CLAIM-EVIDENCE-CLOSURE"
+claimed = "Shipped requirement evidence identifies implemented behavior."
+observed = "Registry links are checked structurally, not as a proof that each prose claim follows from its evidence."
+trust_consequence = "A present evidence path can be mistaken for semantic entailment."
+disposition = "issue_48"
+evidence = ["gates/req-registry.py"]
+
+[[rfc3_increment]]
+id = "R2-1"
+status = "absent"
+evidence = ["forge/src/manifest.rs"]
+[[rfc3_increment]]
+id = "R2-2"
+status = "partial"
+evidence = ["forge/src/manifest.rs", "forge/src/engine.rs"]
+[[rfc3_increment]]
+id = "R2-3"
+status = "partial"
+evidence = ["forge/src/manifest.rs"]
+[[rfc3_increment]]
+id = "R2-4"
+status = "absent"
+evidence = ["forge/src/manifest.rs"]
+[[rfc3_increment]]
+id = "R2-5"
+status = "absent"
+evidence = ["forge/src/manifest.rs", "forge/src/audit.rs"]
+[[rfc3_increment]]
+id = "R2-6"
+status = "absent"
+evidence = ["forge/src/audit.rs"]
+[[rfc3_increment]]
+id = "R2-7"
+status = "absent"
+evidence = ["forge/src/manifest.rs", "forge/src/engine.rs"]
+[[rfc3_increment]]
+id = "R2-8"
+status = "absent"
+evidence = ["thermite-spec/src/classifier.rs", "forge/src/manifest.rs"]
+[[rfc3_increment]]
+id = "R2-9"
+status = "absent"
+evidence = ["forge/src/manifest.rs", "docs/v2/semantics.md"]

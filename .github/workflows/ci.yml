@@ -151,6 +151,8 @@ jobs:
         run: uv run python gates/paths-exist.py
       - name: RFC-9 effect-region migration inventory
         run: uv run gates/rfc9-effect-inventory.py --check
+      - name: language completeness inventory
+        run: uv run python gates/language-completeness-inventory.py
 
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2

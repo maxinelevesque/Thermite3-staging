@@ -1329,6 +1329,32 @@ design = ".design/syntax/verified-effect-rows.md"
 reference = ["gates/rfc9-effect-inventory.py"]
 conformance_ops = []
 
+# Issue #48 first implementation slice: the derived public-AST inventory, its
+# explicit ledger, and fail-closed oracle tests are one governed surface.
+[[route]]
+crate_pattern = "gates/language-completeness-inventory.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-completeness-inventory.toml"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-completeness-inventory.toml"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-completeness-inventory.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_language_completeness_inventory.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-completeness-inventory.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/LanguageCompleteness.lean"
+design = ".design/versioned-language-completeness.md"
+reference = ["lean/Thermite/CheckedTraversal.lean", "gates/lean-axiom-probe.sh"]
+conformance_ops = []
+
 [[route]]
 crate_pattern = "lean/Thermite/EffectRows.lean"
 design = ".design/syntax/verified-effect-rows.md"
