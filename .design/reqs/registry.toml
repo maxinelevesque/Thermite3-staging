@@ -18162,15 +18162,22 @@ note = "kernel axiom probe covers fragment evolution and RFC-10 refinement theor
 id = "REQ-COMPLETE-MONOTONE-VERSIONS"
 title = "Ordinary fragment revisions prove monotone inclusion"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "Every ordinary fragment expansion proves old-to-new inclusion; narrowing creates an explicit compatibility lineage with a concrete non-inclusion witness."
-remaining_scope = "Define immutable version identities, prove an initial inclusion, and gate both expansion and narrowing paths as required by REQ-4 and AC-4."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-4 and AC-4 define monotone evolution and compatibility breaks"
+kind = "symbol"
+target = "Thermite.LanguageCompleteness.coreV1_expands_to_coreV2"
+note = "kernel-checked same-lineage v1-to-v2 inclusion"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.LanguageCompleteness.narrowing_is_not_expansion"
+note = "fresh-lineage narrowing is refuted as an ordinary expansion by a concrete witness"
+[[requirement.evidence]]
+kind = "test"
+target = "lean/Thermite/PinLanguageNarrowing.lean"
+note = "negative-space mutant that silently labels the narrowing as expansion is rejected"
 
 [[requirement]]
 id = "REQ-COMPLETE-STAGE-SEPARATION"

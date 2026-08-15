@@ -231,7 +231,7 @@ gap = "GAP-RFC3-MIGRATION"
 [[claim]]
 id = "CLAIM-REGISTRY-SHIPPED-EVIDENCE"
 source = ".design/reqs/registry.toml"
-source_sha256 = "76328b699f31b1c7064f0e81725b5816d1040d73338044414f1cce08b7888d41"
+source_sha256 = "6a88a3b83a5ce6b4dfb0f0a9a51e81ae14ed261fb7d69ea02bcb3efed1664cc4"
 anchor = "[[requirement]]"
 evidence = ["gates/req-registry.py", "gates/req-status.py"]
 gap = "GAP-CLAIM-EVIDENCE-CLOSURE"

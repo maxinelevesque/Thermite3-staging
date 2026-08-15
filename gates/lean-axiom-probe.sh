@@ -48,6 +48,7 @@ IMPORTS=(
   "Thermite.PinEprReplay"
   "Thermite.EffectRows"
   "Thermite.LanguageCompleteness"
+  "Thermite.PinLanguageNarrowing"
   "Thermite.CheckedTraversal"
 )
 
@@ -82,6 +83,9 @@ THEOREMS=(
   "Thermite.EffectRows.outside_write_equal"
   "Thermite.LanguageCompleteness.expands_refl"
   "Thermite.LanguageCompleteness.expands_trans"
+  "Thermite.LanguageCompleteness.coreV1_expands_to_coreV2"
+  "Thermite.LanguageCompleteness.narrowing_is_not_expansion"
+  "Thermite.LanguageCompleteness.mutant_silent_narrowing_rejected"
   "Thermite.CheckedTraversal.supportedRFC10_refines_language_fragment"
   "Thermite.CheckedTraversal.verify_sound"
   "Thermite.CheckedTraversal.verify_complete"

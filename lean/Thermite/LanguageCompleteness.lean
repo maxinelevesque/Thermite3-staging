@@ -98,4 +98,42 @@ def CompleteAt (fragment : Fragment) (valid : SemanticValidity) (stage : Stage)
   ∀ program, fragment.admits program → valid program →
     ∃ value, run program = ⟨Outcome.success value⟩
 
+/-! The first concrete version lineage. These small predicates make evolution
+executable and testable without pretending that the full language is complete. -/
+
+def coreV1 : Fragment :=
+  { version := ⟨"thermite-core", 1⟩
+    admits := fun program => program.constructs.contains "Fn" }
+
+def coreV2 : Fragment :=
+  { version := ⟨"thermite-core", 2⟩
+    admits := fun program =>
+      program.constructs.contains "Fn" ∨ program.constructs.contains "SpecFn" }
+
+theorem coreV1_expands_to_coreV2 : Expands coreV1 coreV2 := by
+  refine ⟨rfl, by decide, ?_⟩
+  intro program admitted
+  exact Or.inl admitted
+
+/-- A real narrowing uses a fresh lineage: executable functions are removed. -/
+def specOnlyV1 : Fragment :=
+  { version := ⟨"thermite-spec-only", 1⟩
+    admits := fun program => program.constructs.contains "SpecFn" }
+
+def executableWitness : Program :=
+  { digest := "compatibility-witness-fn"
+    constructs := ["Fn"]
+    facts := [] }
+
+def coreV2_to_specOnly_break : CompatibilityBreak coreV2 specOnlyV1 :=
+  { lineageChanged := by decide
+    witness := executableWitness
+    admittedBefore := by simp [coreV2, executableWitness]
+    excludedAfter := by simp [specOnlyV1, executableWitness] }
+
+theorem narrowing_is_not_expansion : ¬Expands coreV2 specOnlyV1 := by
+  intro expansion
+  exact coreV2_to_specOnly_break.excludedAfter
+    (expansion.2.2 executableWitness coreV2_to_specOnly_break.admittedBefore)
+
 end Thermite.LanguageCompleteness

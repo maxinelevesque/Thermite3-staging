@@ -1352,7 +1352,13 @@ conformance_ops = []
 [[route]]
 crate_pattern = "lean/Thermite/LanguageCompleteness.lean"
 design = ".design/versioned-language-completeness.md"
-reference = ["lean/Thermite/CheckedTraversal.lean", "gates/lean-axiom-probe.sh"]
+reference = ["lean/Thermite/CheckedTraversal.lean", "lean/Thermite/PinLanguageNarrowing.lean", "gates/lean-axiom-probe.sh"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/PinLanguageNarrowing.lean"
+design = ".design/versioned-language-completeness.md"
+reference = ["lean/Thermite/LanguageCompleteness.lean", "gates/lean-axiom-probe.sh"]
 conformance_ops = []
 
 [[route]]

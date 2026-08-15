@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 37173cb574cb71ac4c2802bc1b673d6cd7613b34e48a64d66d8ee3303e40cbe2 (issue-48 inventory and neutral-formal slices: reviewed the fail-closed ledger plus the stage-indexed vocabulary, immutable fragment identity/evolution, RFC-10 refinement, and axiom-probe coverage together)
+audited-content-sha256: 2621b8e421b52ae7f018890d9f070dd12f95bbb944b6d1af91b5dc2d56a6b920 (issue-48 inventory and formal slices: reviewed the fail-closed ledger, stage-indexed vocabulary, RFC-10 refinement, same-lineage expansion, explicit narrowing witness, negative pin, and axiom-probe coverage together)
 
 ## Summary
 
@@ -108,7 +108,7 @@ checker vocabulary as the language-wide ontology.
   program, validity, fragment, and stage predicates; RFC-10 has a kernel-checked
   refinement into that vocabulary, and the axiom probe covers the theorem
   family.
-- [ ] AC-4: (REQ-4) At least two fragment versions exist with a kernel-checked
+- [x] AC-4: (REQ-4) At least two fragment versions exist with a kernel-checked
   inclusion theorem and a negative mutation that makes the inclusion proof
   fail; the compatibility-break path is separately tested with a concrete
   narrowing witness.

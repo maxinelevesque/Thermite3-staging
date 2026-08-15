@@ -52,4 +52,5 @@ import Thermite.PinEprReplay
 
 -- RFC-10 canonical traversal/witness replay checker.
 import Thermite.LanguageCompleteness
+import Thermite.PinLanguageNarrowing
 import Thermite.CheckedTraversal
