@@ -647,104 +647,340 @@ fn every_bad_body_mutation_is_source_located_and_publishes_nothing() {
     }
 }
 
-#[test]
-fn every_injected_commitment_failure_is_atomic() {
-    let temp = TempDir::new("faults");
-    for (fault, file, export) in [
-        ("after-plan-source-mutation", "identity.th", "identity"),
-        ("after-plan-body-mutation", "identity.th", "identity"),
-        ("after-plan-helper-mutation", "closure.th", "closure_root"),
-        (
-            "after-plan-wrapper-mutation",
-            "bounded_inc.th",
-            "bounded_inc",
-        ),
-        ("before-verus", "identity.th", "identity"),
-        ("after-verus", "identity.th", "identity"),
-        ("after-codegen", "identity.th", "identity"),
-        ("after-artifact-hash", "identity.th", "identity"),
-        ("after-plan-hash", "identity.th", "identity"),
-        ("after-evidence-hash", "identity.th", "identity"),
-        ("after-toolchain-hash", "identity.th", "identity"),
-        ("after-receipt-staging", "identity.th", "identity"),
-    ] {
-        let bundle = temp.0.join(format!("{fault}.verified"));
-        let source = format!("conformance/verified-build/{file}");
-        let output = Command::new(env!("CARGO_BIN_EXE_forge"))
-            .current_dir(root())
-            .env("THERMITE_L3_TEST_FAULT", fault)
-            .args([
-                "build",
-                &source,
-                "--level",
-                "l3",
-                "--export",
-                export,
-                "--crate-name",
-                "fault_identity",
-                "--out",
-                bundle.to_string_lossy().as_ref(),
-            ])
-            .output()
-            .unwrap();
-        assert!(
-            !output.status.success(),
-            "fault `{fault}` unexpectedly succeeded"
-        );
-        assert!(!bundle.exists(), "fault `{fault}` published a bundle");
+const COMMITMENT_FAILURE_CASES: [(&str, &str, &str); 12] = [
+    ("after-plan-source-mutation", "identity.th", "identity"),
+    ("after-plan-body-mutation", "identity.th", "identity"),
+    ("after-plan-helper-mutation", "closure.th", "closure_root"),
+    (
+        "after-plan-wrapper-mutation",
+        "bounded_inc.th",
+        "bounded_inc",
+    ),
+    ("before-verus", "identity.th", "identity"),
+    ("after-verus", "identity.th", "identity"),
+    ("after-codegen", "identity.th", "identity"),
+    ("after-artifact-hash", "identity.th", "identity"),
+    ("after-plan-hash", "identity.th", "identity"),
+    ("after-evidence-hash", "identity.th", "identity"),
+    ("after-toolchain-hash", "identity.th", "identity"),
+    ("after-receipt-staging", "identity.th", "identity"),
+];
 
-        let stage_prefix = format!(".{fault}.verified.stage.");
-        let leaked = fs::read_dir(&temp.0)
-            .unwrap()
-            .filter_map(Result::ok)
-            .any(|entry| {
-                entry
-                    .file_name()
-                    .to_string_lossy()
-                    .starts_with(&stage_prefix)
-            });
-        assert!(!leaked, "fault `{fault}` leaked a staging tree");
-    }
+fn assert_injected_commitment_failure_is_atomic(fault: &str, file: &str, export: &str) {
+    let temp = TempDir::new(fault);
+    let bundle = temp.0.join(format!("{fault}.verified"));
+    let source = format!("conformance/verified-build/{file}");
+    let output = Command::new(env!("CARGO_BIN_EXE_forge"))
+        .current_dir(root())
+        .env("THERMITE_L3_TEST_FAULT", fault)
+        .args([
+            "build",
+            &source,
+            "--level",
+            "l3",
+            "--export",
+            export,
+            "--crate-name",
+            "fault_identity",
+            "--out",
+            bundle.to_string_lossy().as_ref(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        !output.status.success(),
+        "fault `{fault}` unexpectedly succeeded"
+    );
+    assert!(!bundle.exists(), "fault `{fault}` published a bundle");
+
+    let stage_prefix = format!(".{fault}.verified.stage.");
+    let leaked = fs::read_dir(&temp.0)
+        .unwrap()
+        .filter_map(Result::ok)
+        .any(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with(&stage_prefix)
+        });
+    assert!(!leaked, "fault `{fault}` leaked a staging tree");
 }
 
-#[test]
-fn every_tv_phase_and_nonpass_class_blocks_publication() {
-    let temp = TempDir::new("tv-matrix");
-    for (phase, file, export) in [
-        ("contract", "identity.th", "identity"),
-        ("exec", "identity.th", "identity"),
-        ("body", "identity.th", "identity"),
-        ("loop", "loop_count.th", "count_to"),
-    ] {
-        for verdict in ["divergent", "unsupported", "skipped", "unverifiable"] {
-            let fault = format!("tv-{phase}-{verdict}");
-            let bundle = temp.0.join(format!("{phase}-{verdict}.verified"));
-            let source = format!("conformance/verified-build/{file}");
-            let output = Command::new(env!("CARGO_BIN_EXE_forge"))
-                .current_dir(root())
-                .env("THERMITE_L3_TEST_FAULT", &fault)
-                .args([
-                    "build",
-                    &source,
-                    "--level",
-                    "l3",
-                    "--export",
-                    export,
-                    "--crate-name",
-                    "tv_matrix",
-                    "--out",
-                    bundle.to_string_lossy().as_ref(),
-                    "--json",
-                ])
-                .output()
-                .unwrap();
-            assert_eq!(output.status.code(), Some(1), "{fault}");
-            assert!(!bundle.exists(), "{fault} published a bundle");
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            assert!(stdout.contains(phase), "{fault}: {stdout}");
-            assert!(stdout.contains(verdict), "{fault}: {stdout}");
+macro_rules! commitment_failure_case {
+    ($name:ident, $fault:literal, $file:literal, $export:literal) => {
+        #[test]
+        fn $name() {
+            assert_injected_commitment_failure_is_atomic($fault, $file, $export);
         }
-    }
+    };
+}
+
+commitment_failure_case!(
+    commitment_after_plan_source_mutation_is_atomic,
+    "after-plan-source-mutation",
+    "identity.th",
+    "identity"
+);
+commitment_failure_case!(
+    commitment_after_plan_body_mutation_is_atomic,
+    "after-plan-body-mutation",
+    "identity.th",
+    "identity"
+);
+commitment_failure_case!(
+    commitment_after_plan_helper_mutation_is_atomic,
+    "after-plan-helper-mutation",
+    "closure.th",
+    "closure_root"
+);
+commitment_failure_case!(
+    commitment_after_plan_wrapper_mutation_is_atomic,
+    "after-plan-wrapper-mutation",
+    "bounded_inc.th",
+    "bounded_inc"
+);
+commitment_failure_case!(
+    commitment_before_verus_is_atomic,
+    "before-verus",
+    "identity.th",
+    "identity"
+);
+commitment_failure_case!(
+    commitment_after_verus_is_atomic,
+    "after-verus",
+    "identity.th",
+    "identity"
+);
+commitment_failure_case!(
+    commitment_after_codegen_is_atomic,
+    "after-codegen",
+    "identity.th",
+    "identity"
+);
+commitment_failure_case!(
+    commitment_after_artifact_hash_is_atomic,
+    "after-artifact-hash",
+    "identity.th",
+    "identity"
+);
+commitment_failure_case!(
+    commitment_after_plan_hash_is_atomic,
+    "after-plan-hash",
+    "identity.th",
+    "identity"
+);
+commitment_failure_case!(
+    commitment_after_evidence_hash_is_atomic,
+    "after-evidence-hash",
+    "identity.th",
+    "identity"
+);
+commitment_failure_case!(
+    commitment_after_toolchain_hash_is_atomic,
+    "after-toolchain-hash",
+    "identity.th",
+    "identity"
+);
+commitment_failure_case!(
+    commitment_after_receipt_staging_is_atomic,
+    "after-receipt-staging",
+    "identity.th",
+    "identity"
+);
+
+const TV_NONPASS_CASES: [(&str, &str, &str, &str); 16] = [
+    ("contract", "divergent", "identity.th", "identity"),
+    ("contract", "unsupported", "identity.th", "identity"),
+    ("contract", "skipped", "identity.th", "identity"),
+    ("contract", "unverifiable", "identity.th", "identity"),
+    ("exec", "divergent", "identity.th", "identity"),
+    ("exec", "unsupported", "identity.th", "identity"),
+    ("exec", "skipped", "identity.th", "identity"),
+    ("exec", "unverifiable", "identity.th", "identity"),
+    ("body", "divergent", "identity.th", "identity"),
+    ("body", "unsupported", "identity.th", "identity"),
+    ("body", "skipped", "identity.th", "identity"),
+    ("body", "unverifiable", "identity.th", "identity"),
+    ("loop", "divergent", "loop_count.th", "count_to"),
+    ("loop", "unsupported", "loop_count.th", "count_to"),
+    ("loop", "skipped", "loop_count.th", "count_to"),
+    ("loop", "unverifiable", "loop_count.th", "count_to"),
+];
+
+fn assert_tv_nonpass_blocks_publication(phase: &str, verdict: &str, file: &str, export: &str) {
+    let fault = format!("tv-{phase}-{verdict}");
+    let temp = TempDir::new(&fault);
+    let bundle = temp.0.join(format!("{phase}-{verdict}.verified"));
+    let source = format!("conformance/verified-build/{file}");
+    let output = Command::new(env!("CARGO_BIN_EXE_forge"))
+        .current_dir(root())
+        .env("THERMITE_L3_TEST_FAULT", &fault)
+        .args([
+            "build",
+            &source,
+            "--level",
+            "l3",
+            "--export",
+            export,
+            "--crate-name",
+            "tv_matrix",
+            "--out",
+            bundle.to_string_lossy().as_ref(),
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(
+        output.status.code(),
+        Some(1),
+        "{fault}\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(!bundle.exists(), "{fault} published a bundle");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains(phase), "{fault}: {stdout}");
+    assert!(stdout.contains(verdict), "{fault}: {stdout}");
+}
+
+macro_rules! tv_nonpass_case {
+    ($name:ident, $phase:literal, $verdict:literal, $file:literal, $export:literal) => {
+        #[test]
+        fn $name() {
+            assert_tv_nonpass_blocks_publication($phase, $verdict, $file, $export);
+        }
+    };
+}
+
+tv_nonpass_case!(
+    tv_contract_divergent_blocks_publication,
+    "contract",
+    "divergent",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_contract_unsupported_blocks_publication,
+    "contract",
+    "unsupported",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_contract_skipped_blocks_publication,
+    "contract",
+    "skipped",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_contract_unverifiable_blocks_publication,
+    "contract",
+    "unverifiable",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_exec_divergent_blocks_publication,
+    "exec",
+    "divergent",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_exec_unsupported_blocks_publication,
+    "exec",
+    "unsupported",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_exec_skipped_blocks_publication,
+    "exec",
+    "skipped",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_exec_unverifiable_blocks_publication,
+    "exec",
+    "unverifiable",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_body_divergent_blocks_publication,
+    "body",
+    "divergent",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_body_unsupported_blocks_publication,
+    "body",
+    "unsupported",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_body_skipped_blocks_publication,
+    "body",
+    "skipped",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_body_unverifiable_blocks_publication,
+    "body",
+    "unverifiable",
+    "identity.th",
+    "identity"
+);
+tv_nonpass_case!(
+    tv_loop_divergent_blocks_publication,
+    "loop",
+    "divergent",
+    "loop_count.th",
+    "count_to"
+);
+tv_nonpass_case!(
+    tv_loop_unsupported_blocks_publication,
+    "loop",
+    "unsupported",
+    "loop_count.th",
+    "count_to"
+);
+tv_nonpass_case!(
+    tv_loop_skipped_blocks_publication,
+    "loop",
+    "skipped",
+    "loop_count.th",
+    "count_to"
+);
+tv_nonpass_case!(
+    tv_loop_unverifiable_blocks_publication,
+    "loop",
+    "unverifiable",
+    "loop_count.th",
+    "count_to"
+);
+
+#[test]
+fn parallelized_case_inventories_are_frozen() {
+    assert_eq!(COMMITMENT_FAILURE_CASES.len(), 12);
+    assert_eq!(TV_NONPASS_CASES.len(), 16);
+    let mut commitment_faults: Vec<_> =
+        COMMITMENT_FAILURE_CASES.iter().map(|case| case.0).collect();
+    commitment_faults.sort_unstable();
+    commitment_faults.dedup();
+    assert_eq!(commitment_faults.len(), COMMITMENT_FAILURE_CASES.len());
+    let mut tv_faults: Vec<_> = TV_NONPASS_CASES
+        .iter()
+        .map(|case| (case.0, case.1))
+        .collect();
+    tv_faults.sort_unstable();
+    tv_faults.dedup();
+    assert_eq!(tv_faults.len(), TV_NONPASS_CASES.len());
 }
 
 #[test]

@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 # Gate G4: canonical S₂.0 bridge, finite EPR replay, and production defaults.
-# Missing proof or solver tooling is a hard failure.
+# Named segments are directly runnable CI units; `all` remains the aggregate.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-for tool in cargo lake prlimit uv z3; do
+SEGMENT="${1:-all}"
+case "$SEGMENT" in
+  all|bridge-lean|lrat-cache|release-routing|hygiene) ;;
+  *)
+    echo "usage: $0 [all|bridge-lean|lrat-cache|release-routing|hygiene]" >&2
+    exit 2
+    ;;
+esac
+
+for tool in cargo prlimit; do
   command -v "$tool" >/dev/null 2>&1 || {
     echo "g4-gate: required tool not found: $tool" >&2
     exit 2
@@ -29,59 +38,84 @@ export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-1}"
 # The SAT solver and LRAT converter are built from the exact revisions in
 # dev/g4-toolchain.env. The gate never falls back to a system package.
 # shellcheck source=dev/g4-toolchain.env
-source "$ROOT/dev/g4-toolchain.env"
-export THERMITE_EPR_CADICAL="$ROOT/target/g4-tools/bin/cadical"
-export THERMITE_EPR_DRAT_TRIM="$ROOT/target/g4-tools/bin/drat-trim"
-THERMITE_EPR_Z3="$(command -v z3)"
-export THERMITE_EPR_Z3
+run_bridge_lean() {
+  command -v lake >/dev/null 2>&1 || {
+    echo "g4-gate: required tool not found: lake" >&2
+    exit 2
+  }
+  echo "[G4 bridge-lean 1/2] canonical bridge and classifier differential"
+  cargo test -p thermite-spec -p thermite-tv --no-fail-fast -- --test-threads=1
 
-[[ -x "$THERMITE_EPR_CADICAL" ]] || {
-  echo "g4-gate: pinned CaDiCaL is missing; run dev/install-g4-tools.sh" >&2
-  exit 2
-}
-[[ -x "$THERMITE_EPR_DRAT_TRIM" ]] || {
-  echo "g4-gate: pinned drat-trim is missing; run dev/install-g4-tools.sh" >&2
-  exit 2
-}
-[[ "$("$THERMITE_EPR_CADICAL" --version)" == "$CADICAL_VERSION" ]] || {
-  echo "g4-gate: CaDiCaL version does not match the Stage 4 pin" >&2
-  exit 2
-}
-[[ "$("$THERMITE_EPR_DRAT_TRIM" --thermite-version)" == \
-   "drat-trim $DRAT_TRIM_REV" ]] || {
-  echo "g4-gate: drat-trim revision does not match the Stage 4 pin" >&2
-  exit 2
+  echo "[G4 bridge-lean 2/2] Lean normalization, Skolemization, grounding, and replay pins"
+  (
+    cd lean
+    lake build \
+      Thermite.PinSubstitutionCapture \
+      Thermite.PinSkolemDependencies \
+      Thermite.PinGroundingCompleteness \
+      Thermite.PinInstantiationOmission \
+      Thermite.PinEprReplay \
+      Thermite.Strat.TestModel
+  )
 }
 
-echo "[G4 1/6] canonical bridge and classifier differential"
-cargo test -p thermite-spec -p thermite-tv --no-fail-fast -- --test-threads=1
+run_lrat_cache() {
+  command -v z3 >/dev/null 2>&1 || {
+    echo "g4-gate: required tool not found: z3" >&2
+    exit 2
+  }
+  source "$ROOT/dev/g4-toolchain.env"
+  export THERMITE_EPR_CADICAL="$ROOT/target/g4-tools/bin/cadical"
+  export THERMITE_EPR_DRAT_TRIM="$ROOT/target/g4-tools/bin/drat-trim"
+  THERMITE_EPR_Z3="$(command -v z3)"
+  export THERMITE_EPR_Z3
 
-echo "[G4 2/6] Lean normalization, Skolemization, grounding, and replay pins"
-(
-  cd lean
-  lake build \
-    Thermite.PinSubstitutionCapture \
-    Thermite.PinSkolemDependencies \
-    Thermite.PinGroundingCompleteness \
-    Thermite.PinInstantiationOmission \
-    Thermite.PinEprReplay \
-    Thermite.Strat.TestModel
-)
+  [[ -x "$THERMITE_EPR_CADICAL" ]] || {
+    echo "g4-gate: pinned CaDiCaL is missing; run dev/install-g4-tools.sh" >&2
+    exit 2
+  }
+  [[ -x "$THERMITE_EPR_DRAT_TRIM" ]] || {
+    echo "g4-gate: pinned drat-trim is missing; run dev/install-g4-tools.sh" >&2
+    exit 2
+  }
+  [[ "$("$THERMITE_EPR_CADICAL" --version)" == "$CADICAL_VERSION" ]] || {
+    echo "g4-gate: CaDiCaL version does not match the Stage 4 pin" >&2
+    exit 2
+  }
+  [[ "$("$THERMITE_EPR_DRAT_TRIM" --thermite-version)" == \
+     "drat-trim $DRAT_TRIM_REV" ]] || {
+    echo "g4-gate: drat-trim revision does not match the Stage 4 pin" >&2
+    exit 2
+  }
 
-echo "[G4 3/6] production LRAT replay and cache tamper checks"
-cargo test -p forge --bin forge epr_reconstruct::tests:: -- \
-  --nocapture --test-threads=1
+  echo "[G4 lrat-cache] production LRAT replay and cache tamper checks"
+  cargo test -p forge --bin forge epr_reconstruct::tests:: -- \
+    --nocapture --test-threads=1
+}
 
-echo "[G4 4/6] axiom footprint"
-bash gates/lean-axiom-probe.sh
+run_release_routing() {
+  command -v z3 >/dev/null 2>&1 || {
+    echo "g4-gate: required tool not found: z3" >&2
+    exit 2
+  }
+  echo "[G4 release-routing] release defaults and automatic BV routing"
+  cargo build -p forge --release
+  cargo test -p forge --bin forge check::tests -- \
+    --nocapture --test-threads=1
+}
 
-echo "[G4 5/6] release defaults and automatic BV routing"
-cargo build -p forge --release
-cargo test -p forge --bin forge check::tests -- \
-  --nocapture --test-threads=1
+run_hygiene() {
+  for tool in lake uv; do
+    command -v "$tool" >/dev/null 2>&1 || {
+      echo "g4-gate: required tool not found: $tool" >&2
+      exit 2
+    }
+  done
+  echo "[G4 hygiene 1/2] axiom footprint"
+  bash gates/lean-axiom-probe.sh
 
-echo "[G4 6/6] no proof placeholders or custom axioms"
-uv run python - lean/Thermite <<'PY'
+  echo "[G4 hygiene 2/2] no proof placeholders or custom axioms"
+  uv run python - lean/Thermite <<'PY'
 from pathlib import Path
 import re
 import sys
@@ -158,5 +192,19 @@ if failures:
     print("\n".join(failures), file=sys.stderr)
     raise SystemExit(1)
 PY
+}
 
-echo "G4 gate passed"
+case "$SEGMENT" in
+  all)
+    run_bridge_lean
+    run_lrat_cache
+    run_release_routing
+    run_hygiene
+    ;;
+  bridge-lean) run_bridge_lean ;;
+  lrat-cache) run_lrat_cache ;;
+  release-routing) run_release_routing ;;
+  hygiene) run_hygiene ;;
+esac
+
+echo "G4 $SEGMENT gate passed"

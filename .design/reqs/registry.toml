@@ -18254,6 +18254,222 @@ target = ".design/rfcs/0014-crash-clause.md"
 note = "the proposal, with its design record and probe results"
 
 [[requirement]]
+id = "REQ-CI-DURATION-PARTITIONS"
+title = "Thirteen deterministic duration-balanced test partitions"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "Twelve reviewed duration-balanced buckets plus one catch-all run the complete workspace test suite."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "REQ-1 and architecture define the measured thirteen-partition topology"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/ci-test-partitions.toml"
+note = "1533-test reviewed assignment across twelve explicit buckets plus catch-all metadata"
+[[requirement.evidence]]
+kind = "file"
+target = ".github/workflows/ci.yml"
+note = "thirteen-bucket matrix executes the checked-in selectors"
+
+[[requirement]]
+id = "REQ-CI-PARTITION-COVERAGE"
+title = "Partition coverage is complete and disjoint"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "A fail-closed gate rejects omitted, duplicated, stale, or catch-all-free nextest assignments."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "REQ-2 and AC-2 define the coverage invariant"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_ci_test_partitions.py"
+note = "deletion, duplication, rename, exact identity, and catch-all mutants"
+[[requirement.evidence]]
+kind = "file"
+target = ".github/workflows/ci.yml"
+note = "checks job rejects incomplete or overlapping partition membership"
+
+[[requirement]]
+id = "REQ-CI-DETERMINISTIC-BALANCE"
+title = "Timing-based allocation is deterministic"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "Checked-in timings feed a longest-processing-time allocator with lexical and bucket-index tie breaks."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "REQ-3 and AC-1 define deterministic allocation"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/ci-test-partitions.py"
+note = "lexically tied LPT generator, manifest validation, selector runner, and bound simulation"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/fixtures/ci-test-timings-run-31811912559.tsv"
+note = "green baseline run timing observations with the split matrix durations apportioned to named cases"
+
+[[requirement]]
+id = "REQ-CI-MATRIX-ATOMIZATION"
+title = "Serial verified-build matrices are independently schedulable"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "The 16 TV phase/verdict cases and 12 commitment-fault cases retain their assertions as named tests."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "REQ-4 and AC-3 freeze the two matrices"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/verified_build.rs"
+note = "28 named cases replace the 12-case commitment and 16-case TV loops; frozen inventory test checks cardinality and uniqueness"
+
+[[requirement]]
+id = "REQ-CI-GATE-FANOUT"
+title = "G3 and G4 expose independent child gates"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "G3 has parser/lowering and replay children; G4 has bridge/Lean, LRAT/cache, release-routing, and hygiene children."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "REQ-5 and gate fan-out architecture name all six children"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_ci_gate_segments.py"
+note = "closed selector inventories, invalid-segment rejection, and G4 memory-limit argument preservation"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/g3.sh"
+note = "parser-lowering and checked-replay segments with an aggregate all path"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/g4.sh"
+note = "bridge-lean, lrat-cache, release-routing, and hygiene segments with segment-local tool checks"
+[[requirement.evidence]]
+kind = "file"
+target = ".github/workflows/ci.yml"
+note = "two-child G3 and four-child G4 matrices run independently"
+
+[[requirement]]
+id = "REQ-CI-STABLE-AGGREGATES"
+title = "G3 and G4 aggregate check names remain stable"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "Thin fail-closed aggregate jobs preserve branch-protection names while child jobs report independently."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "REQ-6 and AC-4 define stable aggregate behavior"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_ci_aggregate.py"
+note = "success passes while failure, cancellation, and skipped results fail closed"
+[[requirement.evidence]]
+kind = "file"
+target = ".github/workflows/ci.yml"
+note = "stable g3 and g4 jobs inspect their complete child matrix under always()"
+
+[[requirement]]
+id = "REQ-CI-PROOF-TOOL-PARITY"
+title = "Every partition retains its required proof tools"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "Fan-out reuses the prepared Lean artifact and pinned Verus, Z3, CaDiCaL, and drat-trim dependencies without fail-open skips."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "REQ-7 and AC-5 preserve the proof-tool boundary"
+[[requirement.evidence]]
+kind = "file"
+target = ".github/workflows/ci.yml"
+note = "each test and gate child restores Lean and installs its pinned solver/reconstruction dependencies"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/g4.sh"
+note = "segment-local tool and exact CaDiCaL/drat-trim pin checks fail closed"
+
+[[requirement]]
+id = "REQ-CI-TIMING-ARTIFACTS"
+title = "CI publishes machine-readable timing evidence"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "Test and gate children publish stable timing artifacts suitable for reviewed rebalancing."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "REQ-8 and AC-6 define timing evidence"
+[[requirement.evidence]]
+kind = "file"
+target = ".config/nextest.toml"
+note = "CI profile emits JUnit test durations"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_time_command.py"
+note = "gate timing JSON records success and failure without masking the child exit status"
+[[requirement.evidence]]
+kind = "file"
+target = ".github/workflows/ci.yml"
+note = "JUnit and per-segment timing JSON artifacts upload under always()"
+
+[[requirement]]
+id = "REQ-CI-BEFORE-AFTER-EVIDENCE"
+title = "Parallelization reports honest before-and-after metrics"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "Critical path, setup, queue delay, aggregate runner time, balance, and coverage are reported separately."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "REQ-9 and AC-7/AC-8 define the measurement contract"
+[[requirement.evidence]]
+kind = "file"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "validation evidence compares baseline, two ten-bucket greens, and two selected thirteen-bucket greens across critical path, execution, setup, queue delay, runner time, balance, and coverage"
+
+[[requirement]]
+id = "REQ-CI-SEPARATE-LANDING"
+title = "CI optimization lands separately from RFC-10"
+owner = ".design/ci-duration-balanced-fanout.md"
+status = "shipped"
+scope = "ci"
+summary = "The implementation branch starts from post-#50 staging and does not rewrite RFC-10."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "file"
+target = ".design/ci-duration-balanced-fanout.md"
+note = "branch ci/duration-balanced-fanout was created from staging merge commit 15d362df after PR #50 merged"
+
+[[requirement]]
 id = "REQ-SPEC-CRASH-MODEL"
 title = "The crash model is a named per-device assumption"
 owner = ".design/rfcs"
