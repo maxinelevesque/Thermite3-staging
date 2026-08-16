@@ -59,6 +59,8 @@ IMPORTS=(
   "Thermite.CertificationShape"
   "Thermite.ImplementationModel"
   "Thermite.PinImplementationModel"
+  "Thermite.TcbDischarge"
+  "Thermite.PinTcbDischarge"
 )
 
 # Universal soundness theorems and the permanent reconstruction probe.
@@ -150,6 +152,19 @@ THEOREMS=(
   "Thermite.CertificationMetatheory.thermite_rust_narrowing_is_explicit"
   "Thermite.CertificationMetatheory.silent_rustc_version_substitution_rejected"
   "Thermite.CertificationMetatheory.silent_rust_fragment_narrowing_rejected"
+  "Thermite.CertificationMetatheory.discharge_rust_witness_admitted"
+  "Thermite.CertificationMetatheory.rustc195_artifact_corresponds"
+  "Thermite.CertificationMetatheory.model_only_retains_rustc"
+  "Thermite.CertificationMetatheory.universal_reduction_discharges_exact_rustc"
+  "Thermite.CertificationMetatheory.universal_reduction_context_refines"
+  "Thermite.CertificationMetatheory.checked_reduction_discharges_exact_rustc"
+  "Thermite.CertificationMetatheory.checked_reduction_context_refines"
+  "Thermite.CertificationMetatheory.accepted_artifact_sound_despite_incomplete_coverage"
+  "Thermite.CertificationMetatheory.illicit_assumption_deletion_rejected"
+  "Thermite.CertificationMetatheory.illicit_tcb_reduction_rejected"
+  "Thermite.CertificationMetatheory.checked_evidence_is_artifact_pinned"
+  "Thermite.CertificationMetatheory.coverage_does_not_supply_correspondence"
+  "Thermite.CertificationMetatheory.complete_coverage_cannot_mask_version_substitution"
 )
 ALLOWED="propext Classical.choice Quot.sound"
 

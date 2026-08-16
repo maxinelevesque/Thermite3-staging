@@ -114,11 +114,11 @@ already-shipped AC-1 through AC-12 work.
   vocabulary and a first versioned `rustc` model instance over a named
   Thermite-emitted Rust fragment. Expanding or narrowing that fragment follows
   the existing inclusion/compatibility-break discipline.
-- [ ] AC-8: (REQ-7, REQ-8) Fixtures distinguish model-only, universal-refinement,
+- [x] AC-8: (REQ-7, REQ-8) Fixtures distinguish model-only, universal-refinement,
   and checked-per-artifact discharge. Model-only evidence leaves the component
   residual; either checked discharge path removes exactly the named assumption
   while retaining and reporting its replacement premises.
-- [ ] AC-9: (REQ-8) Lean proves residual-context entailment for every fixture TCB
+- [x] AC-9: (REQ-8) Lean proves residual-context entailment for every fixture TCB
   reduction. A mutation that deletes an assumption without supplying a
   refinement or checker-soundness path fails, while missing producer/checker
   completeness changes coverage and does not invalidate an already accepted
@@ -300,7 +300,21 @@ an `Expands` witness; narrowing uses `CompatibilityBreak`. Mutations reject an
 unchanged behavior payload relabeled as rustc 1.96.0 and a same-lineage v3 that
 silently drops the v2-only witness. This checkpoint defines a model and names
 trust only: it supplies no universal or per-artifact refinement and makes no
-TCB-discharge claim; AC-8 and AC-9 remain open.
+TCB-discharge claim; AC-8 and AC-9 supply those separate fixtures below.
+
+AC-8 and AC-9 add `lean/Thermite/TcbDischarge.lean` and its negative-space
+pins. `ModelOnlyTrust` retains the exact modeled component and cannot construct
+a reduction. `DischargeEvidence` has only universal and checked-per-artifact
+constructors. Both rustc fixtures produce a `TcbReduction` naming rustc 1.95.0,
+replacement evidence, and the platform/checker premises that remain; each
+record contains the checked `ContextRefines new old` entailment. The artifact
+checker binds its evidence to the exact model version, program digest, and
+target. Negative pins reject assumption deletion without entailment and reuse
+of evidence for another artifact. Coverage is stored in a separate type and
+cannot produce correspondence; an accepted artifact stays sound even when
+producer, checker, and workflow completeness are false. These fixtures narrow
+the modeled residual for their stated certificate only; they do not claim
+whole-rustc, producer, checker, fragment, or workflow completeness.
 
 ## Resolved Questions
 
@@ -334,20 +348,23 @@ TCB-discharge claim; AC-8 and AC-9 remain open.
 
 ## Residual trust
 
-AC-1 through AC-6 establish the indexed judgment, generic refinement laws,
-bound/boundary order pins, the finite realizable-order probe, and a sound
-versioned abstraction for the currently enabled floor consumer, but
-the seven-position Rust order in `forge/src/manifest.rs` remains an
-implementation probe rather than a proved abstraction. Unequal bounds and
-boundary contexts do not yet have a Lean-checked order; no `rustc` executable
-correspondence theorem exists; model-family composition and semantic TCB
-reduction are unproved; and `Level` remains live. The completed foundation does
-not itself discharge any certification or trusted-implementation assumption.
+AC-1 through AC-9 establish the indexed judgment and refinement laws, checked
+bound/boundary and realizable-order probes, the sound finite floor abstraction,
+typed model families, narrow rustc correspondence, and the two permitted
+certificate-specific discharge theorem shapes. The rustc model is still a
+deliberately small Lean fixture over tagged representative programs; no theorem
+connects the production rustc executable or a production artifact checker to
+that denotation. The seven-position Rust order in `forge/src/manifest.rs`
+remains an implementation probe, no generated Rust/Lean replay covers the
+formal fields, and `Level` remains live. Consequently these fixtures prove how
+a future reduction must be justified but do not reduce the effective TCB of any
+current Thermite certificate.
 
 ## Out of Scope
 
-- Implementing the Lean metatheory, Rust schema migration, policy gate, or
-  `rustc` model in this design-recording pass.
+- Implementing the Rust schema migration, production executable-refinement or
+  artifact-checker bridge, policy consumers, or certificate TCB reduction in
+  this slice.
 - Claiming a complete semantics for Rust, `rustc`, Verus, Z3, Lean, operating
   systems, or hardware in the first model version.
 - Declaring the realizable certification sub-poset a lattice before joins and
