@@ -84,6 +84,8 @@ THEOREMS=(
   "Thermite.LanguageCompleteness.expands_refl"
   "Thermite.LanguageCompleteness.expands_trans"
   "Thermite.LanguageCompleteness.composeGuaranteeComplete"
+  "Thermite.LanguageCompleteness.solverRoute_classifies"
+  "Thermite.LanguageCompleteness.solverProgress_preserves_membership"
   "Thermite.LanguageCompleteness.coreV1_expands_to_coreV2"
   "Thermite.LanguageCompleteness.narrowing_is_not_expansion"
   "Thermite.LanguageCompleteness.mutant_silent_narrowing_rejected"

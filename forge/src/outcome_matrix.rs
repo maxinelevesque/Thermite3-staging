@@ -72,6 +72,94 @@ pub struct StageOutcome {
     pub class: OutcomeClass,
 }
 
+/// Whether the representative program belongs to the semantic fragment being
+/// attempted. Solver progress is recorded alongside this fact and never
+/// rewrites it: an unavailable solver does not make a program unsupported.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FragmentMembership {
+    Admitted,
+    Excluded,
+}
+
+/// Environment facts checked before a solver is invoked.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SolverEnvironment {
+    Available,
+    Unavailable { tool: String },
+    Incompatible { tool: String, version: String },
+}
+
+/// A solver route claims progress/classification, not solver completeness.
+/// `Unknown` is intentionally distinct from resource exhaustion and from a
+/// proof failure that the route can diagnose.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SolverObservation {
+    Success,
+    Timeout { resource: String },
+    Unknown { detail: String },
+    Counterexample { witness: String },
+    ProofFailure { detail: String },
+    SoundnessAlarm { detail: String },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SolverProgressClass {
+    Success,
+    Timeout,
+    Unknown,
+    ToolUnavailable,
+    ToolIncompatible,
+    Counterexample,
+    ProofFailure,
+    SoundnessAlarm,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SolverRouteOutcome {
+    pub program: String,
+    pub membership: FragmentMembership,
+    pub class: SolverProgressClass,
+}
+
+/// Total solver-route classifier under explicit environment and resource
+/// observations. The input membership is copied unchanged into every result.
+pub fn classify_solver_route(
+    program: String,
+    membership: FragmentMembership,
+    environment: SolverEnvironment,
+    observation: Option<SolverObservation>,
+) -> SolverRouteOutcome {
+    let class = match (environment, observation) {
+        (SolverEnvironment::Unavailable { .. }, None) => SolverProgressClass::ToolUnavailable,
+        (SolverEnvironment::Incompatible { .. }, None) => SolverProgressClass::ToolIncompatible,
+        (SolverEnvironment::Available, Some(SolverObservation::Success)) => {
+            SolverProgressClass::Success
+        }
+        (SolverEnvironment::Available, Some(SolverObservation::Timeout { .. })) => {
+            SolverProgressClass::Timeout
+        }
+        (SolverEnvironment::Available, Some(SolverObservation::Unknown { .. })) => {
+            SolverProgressClass::Unknown
+        }
+        (SolverEnvironment::Available, Some(SolverObservation::Counterexample { .. })) => {
+            SolverProgressClass::Counterexample
+        }
+        (SolverEnvironment::Available, Some(SolverObservation::ProofFailure { .. })) => {
+            SolverProgressClass::ProofFailure
+        }
+        (SolverEnvironment::Available, Some(SolverObservation::SoundnessAlarm { .. }))
+        | (SolverEnvironment::Available, None)
+        | (SolverEnvironment::Unavailable { .. }, Some(_))
+        | (SolverEnvironment::Incompatible { .. }, Some(_)) => SolverProgressClass::SoundnessAlarm,
+    };
+    SolverRouteOutcome {
+        program,
+        membership,
+        class,
+    }
+}
+
 /// Total classifier shared by every stage adapter. No branch degrades to a
 /// different stage or assurance level. An all-false adapter result is success.
 pub fn classify(facts: &AttemptFacts) -> OutcomeClass {
@@ -165,5 +253,92 @@ mod tests {
             ..AttemptFacts::default()
         };
         assert_eq!(classify(&facts), OutcomeClass::SoundnessAlarm);
+    }
+
+    #[test]
+    fn solver_progress_cases_do_not_relabel_fragment_membership() {
+        let cases = [
+            (
+                SolverEnvironment::Available,
+                Some(SolverObservation::Success),
+                SolverProgressClass::Success,
+            ),
+            (
+                SolverEnvironment::Available,
+                Some(SolverObservation::Timeout {
+                    resource: "rlimit".to_string(),
+                }),
+                SolverProgressClass::Timeout,
+            ),
+            (
+                SolverEnvironment::Available,
+                Some(SolverObservation::Unknown {
+                    detail: "solver returned unknown".to_string(),
+                }),
+                SolverProgressClass::Unknown,
+            ),
+            (
+                SolverEnvironment::Unavailable {
+                    tool: "z3".to_string(),
+                },
+                None,
+                SolverProgressClass::ToolUnavailable,
+            ),
+            (
+                SolverEnvironment::Incompatible {
+                    tool: "z3".to_string(),
+                    version: "unsupported".to_string(),
+                },
+                None,
+                SolverProgressClass::ToolIncompatible,
+            ),
+            (
+                SolverEnvironment::Available,
+                Some(SolverObservation::Counterexample {
+                    witness: "x = 0".to_string(),
+                }),
+                SolverProgressClass::Counterexample,
+            ),
+            (
+                SolverEnvironment::Available,
+                Some(SolverObservation::ProofFailure {
+                    detail: "residual goal".to_string(),
+                }),
+                SolverProgressClass::ProofFailure,
+            ),
+            (
+                SolverEnvironment::Available,
+                Some(SolverObservation::SoundnessAlarm {
+                    detail: "adapter contradiction".to_string(),
+                }),
+                SolverProgressClass::SoundnessAlarm,
+            ),
+        ];
+
+        for membership in [FragmentMembership::Admitted, FragmentMembership::Excluded] {
+            for (environment, observation, expected) in &cases {
+                let outcome = classify_solver_route(
+                    "representative-program".to_string(),
+                    membership,
+                    environment.clone(),
+                    observation.clone(),
+                );
+                assert_eq!(outcome.class, *expected);
+                assert_eq!(outcome.membership, membership);
+            }
+        }
+
+        assert_eq!(
+            classify_solver_route(
+                "contradictory-adapter".to_string(),
+                FragmentMembership::Admitted,
+                SolverEnvironment::Unavailable {
+                    tool: "z3".to_string(),
+                },
+                Some(SolverObservation::Success),
+            )
+            .class,
+            SolverProgressClass::SoundnessAlarm
+        );
     }
 }

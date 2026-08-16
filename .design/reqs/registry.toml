@@ -18276,15 +18276,26 @@ note = "same_assurance_different_trust_bases_survive_audit_projection proves equ
 id = "REQ-COMPLETE-SOLVER-HONESTY"
 title = "Solver limits remain explicit outcomes"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "Solver routes prove progress or classification under named premises and preserve Unknown, timeout, unavailable, and incompatible outcomes without semantic relabeling."
-remaining_scope = "State the route theorems and exercise every environment/resource case independently of fragment membership per REQ-9 and AC-9."
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/versioned-language-completeness.md"
 note = "REQ-9 and AC-9 define the non-claim about external solver completeness"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.LanguageCompleteness.SolverClassifies"
+note = "Lean route contract classifies progress under explicit environment, tool-version, and resource-budget premises without claiming solver success"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.LanguageCompleteness.solverProgress_preserves_membership"
+note = "kernel-checked theorem keeps semantic-fragment membership independent of operational solver progress"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/language_outcome_matrix.rs"
+note = "timeout, Unknown, unavailable, incompatible, counterexample, proof failure, soundness alarm, and success are independently exercised for admitted and excluded programs"
 
 [[requirement]]
 id = "REQ-COMPLETE-FINITE-POLICY"

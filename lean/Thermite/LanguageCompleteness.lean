@@ -98,6 +98,48 @@ def CompleteAt (fragment : Fragment) (valid : SemanticValidity) (stage : Stage)
   ∀ program, fragment.admits program → valid program →
     ∃ value, run program = ⟨Outcome.success value⟩
 
+/-- Solver routes promise a terminal progress classification, not that an
+external solver proves every admitted valid program. -/
+inductive SolverProgress where
+  | success
+  | timeout (resource : String)
+  | unknown (detail : String)
+  | toolUnavailable (tool : String)
+  | toolIncompatible (tool version : String)
+  | counterexample (witness : String)
+  | proofFailure (detail : String)
+  | soundnessAlarm (detail : String)
+deriving DecidableEq, Repr
+
+/-- Explicit operational premises for a solver attempt. Membership is absent
+because environment and resource limits do not define the language fragment. -/
+structure SolverPremises where
+  environment : String
+  toolVersion : String
+  resourceBudget : Nat
+deriving DecidableEq, Repr
+
+/-- The honest solver-route theorem shape: under named environment/resource
+premises, every admitted program receives a progress classification. It makes
+no `Outcome.success` or solver-completeness claim. -/
+def SolverClassifies (fragment : Fragment)
+    (run : SolverPremises → Program → SolverProgress) : Prop :=
+  ∀ premises program, fragment.admits program →
+    ∃ progress, run premises program = progress
+
+theorem solverRoute_classifies (fragment : Fragment)
+    (run : SolverPremises → Program → SolverProgress) :
+    SolverClassifies fragment run := by
+  intro premises program _
+  exact ⟨run premises program, rfl⟩
+
+/-- Operational solver progress cannot alter the separately supplied semantic
+fragment fact. -/
+theorem solverProgress_preserves_membership {fragment : Fragment} {program : Program}
+    (admitted : fragment.admits program) (_progress : SolverProgress) :
+    fragment.admits program := by
+  exact admitted
+
 /-- A proposition whose stage index is part of its type. Evidence completeness
 cannot be passed where lowering or certification completeness is required. -/
 structure StageGuarantee (stage : Stage) where

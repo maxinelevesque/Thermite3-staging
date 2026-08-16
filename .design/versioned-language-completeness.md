@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 0e9ef5d1786c561b758edfcb73f80267dc2f78c052ff7bad676c2e38f96519f6 (issue-48 through AC-8: reviewed the inventory/formal layers, producer refinement, total outcome matrix, and assurance/trust audit projection.)
+audited-content-sha256: 65efd1f2a3dde7c4a95ad44c1e97984e491cb8066f40e73bb6ac3fe15f544fb1 (issue-48 through AC-9: reviewed the inventory/formal layers, producer refinement, total outcome matrix, assurance/trust audit projection, and solver-progress classification.)
 
 ## Summary
 
@@ -127,7 +127,7 @@ checker vocabulary as the language-wide ontology.
   trust profile as independently inspectable data, and tests show that two
   routes with the same assurance level but different trusted bases remain
   distinguishable.
-- [ ] AC-9: (REQ-9) Solver-route theorems state progress/classification rather
+- [x] AC-9: (REQ-9) Solver-route theorems state progress/classification rather
   than solver completeness; timeout, `Unknown`, unavailable, incompatible, and
   successful cases are each exercised without changing semantic-fragment
   membership.
