@@ -1,0 +1,26 @@
+version = 1
+
+# RFCs present when AC-11 shipped are historical records. Every later RFC must
+# opt into the checked `language-evolution` contract in its front matter.
+baseline_rfc = [
+  "0001-thermite-2.md",
+  "0002-canonical-req-registry.md",
+  "0003-certification-surface.md",
+  "0004-versioning.md",
+  "0005-rfc-process.md",
+  "0006-full-words.md",
+  "0007-thermite-3.md",
+  "0008-effect-algebra.md",
+  "0009-verified-effect-rows.md",
+  "0010-shared-state-invariants.md",
+  "0011-resource-types.md",
+  "0012-interference-clauses.md",
+  "0013-protocol-types.md",
+  "0014-crash-clause.md",
+  "0015-harness-agnostic-tooling.md",
+  "0016-what-a-pin-should-pin.md",
+  "0017-one-vocabulary.md",
+  "0018-layout-by-role.md",
+  "0019-the-proof-layer.md",
+  "0020-rfc-template.md",
+]

@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 65efd1f2a3dde7c4a95ad44c1e97984e491cb8066f40e73bb6ac3fe15f544fb1 (issue-48 through AC-9: reviewed the inventory/formal layers, producer refinement, total outcome matrix, assurance/trust audit projection, and solver-progress classification.)
+audited-content-sha256: 46864fb12b2bbfdddb02e0b0b6c149ddfe2613cbfee7022cfbc423485ff4a600 (issue-48 through AC-11: re-audited the governed completeness surface; future RFCs enter a closed preserve/expand/narrow contract with resolving classifier, theorem, matrix, and negative-space evidence.)
 
 ## Summary
 
@@ -131,11 +131,11 @@ checker vocabulary as the language-wide ontology.
   than solver completeness; timeout, `Unknown`, unavailable, incompatible, and
   successful cases are each exercised without changing semantic-fragment
   membership.
-- [ ] AC-10: (REQ-10) The finite policy fragment has a total decision theorem
+- [x] AC-10: (REQ-10) The finite policy fragment has a total decision theorem
   and mutation pins for every boundary condition, while an outside-fragment
   fixture yields the named unsupported-policy outcome and remains eligible for
   non-policy semantic and proof analysis.
-- [ ] AC-11: (REQ-11) A fixture RFC expansion cannot pass CI without updating
+- [x] AC-11: (REQ-11) A fixture RFC expansion cannot pass CI without updating
   the fragment classifier, old-to-new theorem, support matrix, and a
   negative-space witness; a semantic narrowing cannot pass as an ordinary
   monotone revision.

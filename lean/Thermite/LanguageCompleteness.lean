@@ -140,6 +140,74 @@ theorem solverProgress_preserves_membership {fragment : Fragment} {program : Pro
     fragment.admits program := by
   exact admitted
 
+/-! A deliberately finite mutation/contract-quality policy. The rational
+floor makes every comparison exact; scores outside the stated 1..64 domain are
+classified as unsupported policy rather than semantic invalidity. -/
+
+structure PolicyInput where
+  mutantsKilled : Nat
+  mutantsScored : Nat
+  floorNumerator : Nat
+  floorDenominator : Nat
+  tautology : Bool
+  vacuousPrecondition : Bool
+deriving DecidableEq, Repr
+
+def finitePolicyFragment (input : PolicyInput) : Bool :=
+  decide (0 < input.mutantsScored ∧ input.mutantsScored ≤ 64 ∧
+    input.mutantsKilled ≤ input.mutantsScored ∧
+    0 < input.floorDenominator ∧ input.floorNumerator ≤ input.floorDenominator)
+
+inductive PolicyDecision where
+  | accepted
+  | rejectedTautology
+  | rejectedVacuousPrecondition
+  | rejectedWeakContract
+deriving DecidableEq, Repr
+
+def decideFinitePolicy (input : PolicyInput) : PolicyDecision :=
+  if input.tautology then .rejectedTautology
+  else if input.vacuousPrecondition then .rejectedVacuousPrecondition
+  else if input.mutantsKilled * input.floorDenominator <
+      input.floorNumerator * input.mutantsScored then .rejectedWeakContract
+  else .accepted
+
+def runPolicy (input : PolicyInput) : StageResult .policy PolicyDecision :=
+  if finitePolicyFragment input then
+    ⟨.success (decideFinitePolicy input)⟩
+  else
+    ⟨.unsupportedPolicy "outside finite mutation/contract-quality policy"⟩
+
+/-- The policy is a total decision procedure on exactly its stated fragment. -/
+theorem finitePolicy_total (input : PolicyInput)
+    (inside : finitePolicyFragment input = true) :
+    runPolicy input = ⟨Outcome.success (decideFinitePolicy input)⟩ := by
+  simp [runPolicy, inside]
+
+/-- Policy classification, including unsupported policy, cannot alter a
+separately established semantic-fragment fact. -/
+theorem policyOutcome_preserves_membership {fragment : Fragment} {program : Program}
+    (admitted : fragment.admits program) (_outcome : Outcome PolicyDecision) :
+    fragment.admits program := by
+  exact admitted
+
+def exactFloorPolicy : PolicyInput :=
+  ⟨3, 5, 3, 5, false, false⟩
+
+theorem exact_floor_is_accepted :
+    decideFinitePolicy exactFloorPolicy = .accepted := by decide
+
+theorem below_floor_is_rejected :
+    decideFinitePolicy { exactFloorPolicy with mutantsKilled := 2 } =
+      .rejectedWeakContract := by decide
+
+theorem zero_scored_is_outside :
+    finitePolicyFragment
+      { exactFloorPolicy with mutantsKilled := 0, mutantsScored := 0 } = false := by decide
+
+theorem over_cap_is_outside :
+    finitePolicyFragment { exactFloorPolicy with mutantsScored := 65 } = false := by decide
+
 /-- A proposition whose stage index is part of its type. Evidence completeness
 cannot be passed where lowering or certification completeness is required. -/
 structure StageGuarantee (stage : Stage) where

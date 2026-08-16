@@ -122,6 +122,76 @@ pub struct SolverRouteOutcome {
     pub class: SolverProgressClass,
 }
 
+/// The deliberately finite contract-quality policy fragment. Integer ratios
+/// avoid importing floating-point edge cases into the completeness claim.
+pub const POLICY_MUTANT_CAP: u16 = 64;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct PolicyInput {
+    pub mutants_killed: u16,
+    pub mutants_scored: u16,
+    pub floor_numerator: u16,
+    pub floor_denominator: u16,
+    pub tautology: bool,
+    pub vacuous_precondition: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PolicyDecision {
+    Accepted,
+    RejectedTautology,
+    RejectedVacuousPrecondition,
+    RejectedWeakContract,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PolicyClass {
+    Decided(PolicyDecision),
+    UnsupportedPolicy,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct PolicyOutcome {
+    pub class: PolicyClass,
+    /// Policy incompleteness is not semantic exclusion.
+    pub membership: FragmentMembership,
+    /// An unsupported policy does not suppress non-policy proof analysis.
+    pub proof_analysis_eligible: bool,
+}
+
+/// Membership in the finite policy domain. Every boundary is inclusive where
+/// it represents a valid ratio: 1..=64 scored mutants, killed <= scored, and a
+/// rational floor with 0 <= numerator <= denominator and denominator > 0.
+pub fn in_finite_policy_fragment(input: PolicyInput) -> bool {
+    (1..=POLICY_MUTANT_CAP).contains(&input.mutants_scored)
+        && input.mutants_killed <= input.mutants_scored
+        && input.floor_denominator > 0
+        && input.floor_numerator <= input.floor_denominator
+}
+
+/// Total decision over the finite fragment. Cross multiplication is exact and
+/// safe because every input is a bounded `u16` widened before multiplication.
+pub fn classify_policy(input: PolicyInput, membership: FragmentMembership) -> PolicyOutcome {
+    let class = if !in_finite_policy_fragment(input) {
+        PolicyClass::UnsupportedPolicy
+    } else if input.tautology {
+        PolicyClass::Decided(PolicyDecision::RejectedTautology)
+    } else if input.vacuous_precondition {
+        PolicyClass::Decided(PolicyDecision::RejectedVacuousPrecondition)
+    } else if u32::from(input.mutants_killed) * u32::from(input.floor_denominator)
+        < u32::from(input.floor_numerator) * u32::from(input.mutants_scored)
+    {
+        PolicyClass::Decided(PolicyDecision::RejectedWeakContract)
+    } else {
+        PolicyClass::Decided(PolicyDecision::Accepted)
+    };
+    PolicyOutcome {
+        class,
+        membership,
+        proof_analysis_eligible: true,
+    }
+}
+
 /// Total solver-route classifier under explicit environment and resource
 /// observations. The input membership is copied unchanged into every result.
 pub fn classify_solver_route(
@@ -340,5 +410,101 @@ mod tests {
             .class,
             SolverProgressClass::SoundnessAlarm
         );
+    }
+
+    #[test]
+    fn finite_policy_boundary_mutations_are_pinned() {
+        let base = PolicyInput {
+            mutants_killed: 3,
+            mutants_scored: 5,
+            floor_numerator: 3,
+            floor_denominator: 5,
+            tautology: false,
+            vacuous_precondition: false,
+        };
+        let classify = |input| classify_policy(input, FragmentMembership::Admitted).class;
+
+        assert_eq!(
+            classify(base),
+            PolicyClass::Decided(PolicyDecision::Accepted)
+        );
+        assert_eq!(
+            classify(PolicyInput {
+                mutants_killed: 2,
+                ..base
+            }),
+            PolicyClass::Decided(PolicyDecision::RejectedWeakContract)
+        );
+        assert_eq!(
+            classify(PolicyInput {
+                tautology: true,
+                ..base
+            }),
+            PolicyClass::Decided(PolicyDecision::RejectedTautology)
+        );
+        assert_eq!(
+            classify(PolicyInput {
+                vacuous_precondition: true,
+                ..base
+            }),
+            PolicyClass::Decided(PolicyDecision::RejectedVacuousPrecondition)
+        );
+
+        for outside in [
+            PolicyInput {
+                mutants_scored: 0,
+                mutants_killed: 0,
+                ..base
+            },
+            PolicyInput {
+                mutants_scored: POLICY_MUTANT_CAP + 1,
+                ..base
+            },
+            PolicyInput {
+                mutants_killed: 6,
+                ..base
+            },
+            PolicyInput {
+                floor_denominator: 0,
+                ..base
+            },
+            PolicyInput {
+                floor_numerator: 6,
+                ..base
+            },
+        ] {
+            assert_eq!(classify(outside), PolicyClass::UnsupportedPolicy);
+        }
+
+        assert_eq!(
+            classify(PolicyInput {
+                mutants_killed: POLICY_MUTANT_CAP,
+                mutants_scored: POLICY_MUTANT_CAP,
+                floor_numerator: 1,
+                floor_denominator: 1,
+                ..base
+            }),
+            PolicyClass::Decided(PolicyDecision::Accepted)
+        );
+    }
+
+    #[test]
+    fn unsupported_policy_preserves_non_policy_analysis() {
+        for membership in [FragmentMembership::Admitted, FragmentMembership::Excluded] {
+            let outcome = classify_policy(
+                PolicyInput {
+                    mutants_killed: 0,
+                    mutants_scored: POLICY_MUTANT_CAP + 1,
+                    floor_numerator: 3,
+                    floor_denominator: 5,
+                    tautology: false,
+                    vacuous_precondition: false,
+                },
+                membership,
+            );
+            assert_eq!(outcome.class, PolicyClass::UnsupportedPolicy);
+            assert_eq!(outcome.membership, membership);
+            assert!(outcome.proof_analysis_eligible);
+        }
     }
 }

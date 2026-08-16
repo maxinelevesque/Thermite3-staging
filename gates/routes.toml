@@ -1386,6 +1386,24 @@ reference = ["gates/language-outcome-matrix.py"]
 conformance_ops = []
 
 [[route]]
+crate_pattern = "gates/language-rfc-evolution.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-rfc-evolution.toml", "gates/tests/test_language_rfc_evolution.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-rfc-evolution.toml"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-rfc-evolution.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_language_rfc_evolution.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-rfc-evolution.py"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "lean/Thermite/LanguageCompleteness.lean"
 design = ".design/versioned-language-completeness.md"
 reference = ["lean/Thermite/CheckedTraversal.lean", "lean/Thermite/PinLanguageNarrowing.lean", "gates/lean-axiom-probe.sh"]

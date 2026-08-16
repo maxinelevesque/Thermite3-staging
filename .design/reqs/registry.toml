@@ -18301,29 +18301,47 @@ note = "timeout, Unknown, unavailable, incompatible, counterexample, proof failu
 id = "REQ-COMPLETE-FINITE-POLICY"
 title = "Policy completeness is finite or explicitly unsupported"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "forge"
 summary = "Mutation and contract-quality policy totally decide a stated finite fragment and return unsupported-policy outside it without changing semantic or proof validity."
-remaining_scope = "Define the finite policy predicate, total decision theorem, boundary mutations, and outside-fragment outcome per REQ-10 and AC-10."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-10 and AC-10 define the policy fragment"
+kind = "symbol"
+target = "Thermite.LanguageCompleteness.finitePolicy_total"
+note = "kernel-checked total decision theorem over the exact finite mutation-policy domain"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.LanguageCompleteness.policyOutcome_preserves_membership"
+note = "policy outcomes cannot rewrite separately established semantic membership"
+[[requirement.evidence]]
+kind = "file"
+target = "forge/src/outcome_matrix.rs"
+note = "bounded integer-ratio policy classifier returns UnsupportedPolicy outside its domain and preserves proof-analysis eligibility"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/language_outcome_matrix.rs"
+note = "exact-floor, below-floor, zero, cap, over-cap, malformed-ratio, tautology, vacuity, and outside-fragment preservation pins"
 
 [[requirement]]
 id = "REQ-COMPLETE-RFC-EXPANSION-DISCIPLINE"
 title = "Language RFCs update completeness fragments"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "process"
 summary = "Every language RFC declares preservation, expansion, or narrowing and supplies classifier cases, inclusion evidence, support views, and negative-space witnesses."
-remaining_scope = "Add RFC guidance and a fixture gate proving incomplete expansion and silent narrowing fail per REQ-11 and AC-11."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-11 and AC-11 define the ongoing RFC discipline"
+kind = "file"
+target = "gates/language-rfc-evolution.py"
+note = "future RFCs must declare unaffected or tracked evolution, with change-specific resolving evidence"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/language-rfc-evolution.toml"
+note = "freezes the historical RFC baseline so every later RFC enters the closed evolution contract"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_language_rfc_evolution.py"
+note = "fixture expansion fails for each omitted artifact and semantic narrowing fails when labeled ordinary inclusion"
 
 [[requirement]]
 id = "REQ-COMPLETE-REVIEW-TRACK"
