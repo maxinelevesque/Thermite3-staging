@@ -7672,3 +7672,62 @@ test = "thermite-tv::loop_teeth l1_entry_obligation_verifies"
 bucket = 12
 seconds = 0.018
 test = "thermite-tv::strat_two_phase_corpus corpus_sweep_is_entirely_syntactic"
+[[assignment]]
+bucket = 1
+seconds = 0.010
+test = "forge::bin/forge audit::tests::same_assurance_different_trust_bases_survive_audit_projection"
+
+[[assignment]]
+bucket = 2
+seconds = 0.010
+test = "forge::bin/forge manifest::tests::rfc3_coordinates::coherent_cells_validate"
+
+[[assignment]]
+bucket = 3
+seconds = 0.010
+test = "forge::bin/forge manifest::tests::rfc3_coordinates::explicit_position_is_validated_before_storage"
+
+[[assignment]]
+bucket = 4
+seconds = 0.010
+test = "forge::bin/forge manifest::tests::rfc3_coordinates::incoherent_cells_fail_closed"
+
+[[assignment]]
+bucket = 5
+seconds = 0.010
+test = "forge::bin/forge manifest::tests::rfc3_coordinates::product_order_preserves_solver_forge_incomparability"
+
+[[assignment]]
+bucket = 6
+seconds = 0.010
+test = "forge::language_outcome_matrix outcome_matrix::tests::contradictory_adapter_facts_fail_closed"
+
+[[assignment]]
+bucket = 7
+seconds = 0.010
+test = "forge::language_outcome_matrix outcome_matrix::tests::finite_policy_boundary_mutations_are_pinned"
+
+[[assignment]]
+bucket = 8
+seconds = 0.010
+test = "forge::language_outcome_matrix outcome_matrix::tests::generated_matrix_drives_the_total_classifier"
+
+[[assignment]]
+bucket = 9
+seconds = 0.010
+test = "forge::language_outcome_matrix outcome_matrix::tests::solver_progress_cases_do_not_relabel_fragment_membership"
+
+[[assignment]]
+bucket = 10
+seconds = 0.010
+test = "forge::language_outcome_matrix outcome_matrix::tests::unsupported_policy_preserves_non_policy_analysis"
+
+[[assignment]]
+bucket = 11
+seconds = 0.010
+test = "thermite-lower::traversal_witness bounded_producer_succeeds_at_exact_budget_and_exhausts_one_below"
+
+[[assignment]]
+bucket = 12
+seconds = 0.010
+test = "thermite-lower::traversal_witness wire_format_rejects_truncation_version_skew_and_same_shape_payload_change"
