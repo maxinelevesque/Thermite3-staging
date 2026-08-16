@@ -18254,15 +18254,23 @@ note = "missing stages, missing outcomes, and mismatched terminal facts fail the
 id = "REQ-COMPLETE-RFC3-COORDINATES"
 title = "Completeness uses RFC-3 certification coordinates"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "partial"
 scope = "manifest"
 summary = "Certification uses scope/refutation/trust@boundary and its product order rather than a parallel model or a live Lx projection."
-remaining_scope = "Audit RFC-3 increments, connect fragment classification to its coordinates, and migrate the public manifest surface per REQ-8 and AC-8."
+remaining_scope = "AC-8 now preserves certificate engine/trust attribution independently through forge audit. Complete RFC-3 R2-1 through R2-9: typed scope/refutation/trust@boundary coordinates, coherence, product order, classification certificates, and eventual Lx removal."
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/versioned-language-completeness.md"
 note = "REQ-8 and AC-8 adopt RFC-3 as the authoritative certification structure"
+[[requirement.evidence]]
+kind = "file"
+target = "forge/src/audit.rs"
+note = "FunctionRow projects engine_attribution independently from level and assurance_scope"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/audit.rs"
+note = "same_assurance_different_trust_bases_survive_audit_projection proves equal L3/scope positions retain distinct Lean and Verus trusted bases in certificate and audit JSON"
 
 [[requirement]]
 id = "REQ-COMPLETE-SOLVER-HONESTY"

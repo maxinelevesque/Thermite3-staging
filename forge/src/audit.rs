@@ -271,6 +271,11 @@ pub struct FunctionRow {
     /// default; mirrors the cert field), `#[serde(skip_serializing_if)]`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub assurance_scope: Option<AssuranceScope>,
+    /// The discharging engine and its enumerated trusted base, copied independently
+    /// from the assurance result. Two functions at the same historical `Level` remain
+    /// distinguishable when one was kernel-checked and another trusts a solver.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub engine_attribution: Option<crate::engine::EngineAttribution>,
     /// The §7 contract-quality battery block (presence/shape asserted by the
     /// oracle; the version-sensitive `mutants_killed`/`survivor` ratio is not —
     /// OQ-2). A copy of `Certificate::contract_quality`.
@@ -292,6 +297,7 @@ impl FunctionRow {
             name: cert.item.clone(),
             level: cert.level,
             assurance_scope: cert.assurance_scope.clone(),
+            engine_attribution: cert.engine_attribution.clone(),
             contract_quality: cert.contract_quality.clone(),
             slag: cert.slag,
             boundary: cert.boundary,
@@ -1124,6 +1130,52 @@ mod tests {
         assert!(
             m.residual_trust.is_none(),
             "no bv shadow ⇒ no residual-trust statement (v1 byte-identical)"
+        );
+    }
+
+    // Issue #48 AC-8: assurance and trust are independent certificate/audit data.
+    // Both functions occupy the same historical L3 assurance result and the same
+    // end-to-end boundary, yet their trusted bases remain visibly distinct.
+    #[test]
+    fn same_assurance_different_trust_bases_survive_audit_projection() {
+        let lean = Certificate::new("lean_fn", Level::L3, vec!["pure".into()], 0, vec![])
+            .with_assurance_scope(AssuranceScope::EndToEnd)
+            .with_engine_attribution(crate::engine::EngineAttribution {
+                engine: "lean-auto".into(),
+                trust_profile: vec!["Lean kernel".into(), "propext".into()],
+            });
+        let verus = Certificate::new("verus_fn", Level::L3, vec!["pure".into()], 0, vec![])
+            .with_assurance_scope(AssuranceScope::EndToEnd)
+            .with_engine_attribution(crate::engine::EngineAttribution {
+                engine: "verus".into(),
+                trust_profile: vec!["Z3".into(), "Verus VC generation".into()],
+            });
+
+        let cert_json = serde_json::to_value([&lean, &verus]).expect("certificate JSON");
+        assert_eq!(cert_json[0]["level"], cert_json[1]["level"]);
+        assert_ne!(
+            cert_json[0]["engine_attribution"], cert_json[1]["engine_attribution"],
+            "certificate trust bases must remain independently inspectable"
+        );
+
+        let audit = AuditManifest::from_certificates(&[lean, verus], &empty_program(), toolchain());
+        assert_eq!(audit.functions[0].level, audit.functions[1].level);
+        assert_eq!(
+            audit.functions[0].assurance_scope,
+            audit.functions[1].assurance_scope
+        );
+        assert_ne!(
+            audit.functions[0].engine_attribution, audit.functions[1].engine_attribution,
+            "audit must not collapse equal-assurance routes with different trust"
+        );
+        let audit_json = serde_json::to_value(audit).expect("audit JSON");
+        assert_eq!(
+            audit_json["functions"][0]["engine_attribution"]["engine"],
+            "lean-auto"
+        );
+        assert_eq!(
+            audit_json["functions"][1]["engine_attribution"]["engine"],
+            "verus"
         );
     }
 }

@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 9faa1c98c2d6bd18a8746f794371c22151b414c617ca32a3254fa9bcb618e53a (issue-48 through AC-7: reviewed the inventory/formal layers, producer refinement, and executable fail-closed stage/outcome matrix.)
+audited-content-sha256: 0e9ef5d1786c561b758edfcb73f80267dc2f78c052ff7bad676c2e38f96519f6 (issue-48 through AC-8: reviewed the inventory/formal layers, producer refinement, total outcome matrix, and assurance/trust audit projection.)
 
 ## Summary
 
@@ -123,7 +123,7 @@ checker vocabulary as the language-wide ontology.
   programs through every available stage and distinguishes all named outcome
   classes. No resource or environment failure is reported as unsupported
   language, proof refutation, successful certification, or silent downgrade.
-- [ ] AC-8: (REQ-8) Certificates and audit output expose assurance result and
+- [x] AC-8: (REQ-8) Certificates and audit output expose assurance result and
   trust profile as independently inspectable data, and tests show that two
   routes with the same assurance level but different trusted bases remain
   distinguishable.

@@ -1356,6 +1356,12 @@ reference = ["forge/tests/language_outcome_matrix.rs", "gates/language-outcome-m
 conformance_ops = []
 
 [[route]]
+crate_pattern = "forge/src/audit.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["forge/src/manifest.rs", ".design/rfcs/0003-certification-surface.md"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "forge/tests/language_outcome_matrix.rs"
 design = ".design/versioned-language-completeness.md"
 reference = ["forge/src/outcome_matrix.rs", "gates/language-outcome-matrix.json"]
