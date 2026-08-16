@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: faae4822ca4890727ebb150d9c8ea3951d899ce9894a05863052cffedb204aa8 (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 66b66dd28c5f2a6162547b51f132891e11dd6c751ebd0310c05825d895e097cb.)
+audited-content-sha256: 38fdd11650443797b26247b6b94012e1a19b082768f86fd21f07ca76b5099ac2 (re-pinned 2026-08-16 after re-auditing the RFC-3 Kani migration: a successful bounded check now persists the exact obligation-bound description in matching bounded/trace coordinates. Failed L2 runs retain their existing counterexample/resource classification. prior: faae4822ca4890727ebb150d9c8ea3951d899ce9894a05863052cffedb204aa8)
 governs: thermite-lower/src/l2.rs, forge/src/kani.rs
 thesis-refs:
   - thermite-design.md §6
@@ -33,8 +33,9 @@ shipped L3 (`lower.rs` + `forge::check::run_verus`) and L1 (`l1.rs`) rungs:
    the real `cargo kani` / `kani` binary on the harness (temp crate/file), checks
    exit status (`goal.md` R-CODE-4), and parses Kani's output into
    **verified-up-to-bound** vs a **concrete counterexample** (§5.1 "counterexamples,
-   not adjectives"). Emits a `Level::L2` certificate (`manifest.rs` `Level::L2`
-   already exists).
+   not adjectives"). Emits a certificate carrying the exact RFC-3
+   `bounded(bound)/trace(bound)/solver` position. `Level::L2` remains only as
+   the temporary beta migration field.
 
 This is the **#9 / v0.2** ladder component (`thermite-design.md §13` v0.2: "Kani-
 backed L2 with type-driven bound inference"). The headline of #9 is **type-driven

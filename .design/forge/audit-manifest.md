@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: a6e4952dd33b52a4d58addcec4312e5c4fe923c0af4e11b8c9a0a7935a62be20 (re-pinned 2026-08-08 for the RFC-17 wire-format pinning: three serialized structs gained #[serde(rename)] so the audit manifest and certificate bindings keep their v1 keys while the Rust fields carry the full word. Attributes only; no logic changed. prior: 8aa463ad277f39c712df7315ff2f79acabebae5f5dcb4c74cc2bb5e7fa310bcd, previously (re-pinned 2026-08-08 for RFC-17: the AST field names and TokKind variants moved to the full words the surface already uses - Contract{req,ens,fx} to {requires,ensures,effects}, TokKind::{Req,Ens,Fx,Inv,Dec} to {Requires,Ensures,Effects,Keeps,Measures}. A type-directed rename with no semantic content: cargo check --workspace --all-targets exiting 0 IS the completeness proof, since an unrenamed site does not compile. prior: ec0fa157f63502f59d7bf9262f2fc6d08ba217a5e38376ec21b83f1f9eeceb5a, previously (re-pinned 2026-08-08 for rustfmt only: migrating `req`/`ens`/`fx` to `requires`/`ensures`/`!` lengthened call sites past the width, so rustfmt re-wrapped them and added trailing commas. No governed file changed meaning; the wrapped lines are `parse_program(...)`-style test fixtures. prior: bda2a902327f127e161e17ecdb49add32cff4564c9b356d8834d1c38694b4757, previously (re-pinned 2026-08-07 for RFC-6: the governed files moved from the v2 clause surface (`req`/`ens`/`fx`/`inv`/`dec`) to full words with the effect row on the arrow (`requires`/`ensures`/`!`/`keeps`/`measures`). Prose in this document was migrated in the same commit, so the pin covers a re-read rather than a bump. prior: f07b4f4149f471a3c37d5443a6e1178e3e7deec4845c9941a327a9aa5f65150f))))
+audited-content-sha256: 93eae7cb03317b567d21a8138b4dbd1d4426de20bff0d655f20dba6309593c98 (re-pinned 2026-08-16 after re-auditing the RFC-3 additive projection: each function row copies the formal certification tuple and pre-discharge classification independently from historical level and engine attribution. The audit still computes the legacy project headline pending R2-7/R2-9. prior: a6e4952dd33b52a4d58addcec4312e5c4fe923c0af4e11b8c9a0a7935a62be20)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6
@@ -38,6 +38,13 @@ Gate G4 adds one backward-compatible residual-trust field:
 relation/array surface. The accompanying `unsupported_fragments` list now names
 only genuine boundaries: formulas rejected by the S₂.0 classifier and
 quantifier-free leaves outside the checked QF_LIA/QF_BV source surface.
+
+RFC-3 migration adds two optional, verbatim per-function projections:
+`certification` (`scope/refutation/residual_trust@boundary`) and
+`classification` (the fragment prognosis before discharge). They are copied
+from the certificate rather than recomputed. The historical `level` and
+project scalar aggregate remain during the beta migration and are not an
+independent source for either new field.
 
 ## Decided scope
 

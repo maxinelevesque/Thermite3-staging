@@ -348,7 +348,7 @@ evidence = ["gates/req-registry.py"]
 
 [[rfc3_increment]]
 id = "R2-1"
-status = "absent"
+status = "partial"
 evidence = ["forge/src/manifest.rs"]
 [[rfc3_increment]]
 id = "R2-2"
@@ -360,15 +360,15 @@ status = "partial"
 evidence = ["forge/src/manifest.rs"]
 [[rfc3_increment]]
 id = "R2-4"
-status = "absent"
+status = "partial"
 evidence = ["forge/src/manifest.rs"]
 [[rfc3_increment]]
 id = "R2-5"
-status = "absent"
+status = "partial"
 evidence = ["forge/src/manifest.rs", "forge/src/audit.rs"]
 [[rfc3_increment]]
 id = "R2-6"
-status = "absent"
+status = "partial"
 evidence = ["forge/src/audit.rs"]
 [[rfc3_increment]]
 id = "R2-7"
@@ -376,7 +376,7 @@ status = "absent"
 evidence = ["forge/src/manifest.rs", "forge/src/engine.rs"]
 [[rfc3_increment]]
 id = "R2-8"
-status = "absent"
+status = "partial"
 evidence = ["thermite-spec/src/classifier.rs", "forge/src/manifest.rs"]
 [[rfc3_increment]]
 id = "R2-9"

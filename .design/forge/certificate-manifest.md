@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: 7d7fe9e43f6200cd8c90248797aeedf763e77e7cfbc2edcedd58c3b37160a998 (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 1b78069cfb3366771bfc869082ca8f3f4619333a7a4ce7645065cae3d4fdb317)
+audited-content-sha256: bf136331691756bf2ad432d5c9a4922edd1038650968b25a9d4792b51ce52e0e (re-pinned 2026-08-16 after re-auditing the RFC-3 coordinate migration: certificates add typed scope/refutation/residual-trust/boundary coordinates and a typed pre-discharge classification slot; coherence rejects cells outside RFC-3 and historical L2 remains unmigrated because Level never stored its bound. Lx remains temporarily live, so REQ-COMPLETE-RFC3-COORDINATES is still partial. prior: 7d7fe9e43f6200cd8c90248797aeedf763e77e7cfbc2edcedd58c3b37160a998)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -29,6 +29,16 @@ code-local choice.
 This component is SHIPPED (`forge/src/manifest.rs`; all REQs SHIPPED — see the
 REQ status table). The "two-speed schema" below has since EXECUTED and the
 certificate gained a family of ADDITIVE fields — see the Amendment.
+
+> **RFC-3 migration amendment, 2026-08-16.** `Certificate::certification`
+> persists the typed `scope/refutation/residual-trust@boundary` position and
+> `Certificate::classification` reserves the typed pre-discharge fragment
+> prognosis. `CertificationPosition::validate` admits only RFC-3's coherent
+> cells; `partial_cmp_assurance` preserves the solver/forge incomparability.
+> Kani records its actual bound in matching `bounded/trace` coordinates.
+> Historical L2 values cannot be inferred and therefore remain absent. The old
+> `level` field and its project aggregation remain live during this migration;
+> RFC-3 R2-7/R2-9 are not claimed complete by this amendment.
 
 > **Amendment 2026-06-12 (doc-freshness re-audit, #262).** Re-verified against the
 > current tree (`dff9ae86`, 12 post-pin commits to `manifest.rs`). Corrections and

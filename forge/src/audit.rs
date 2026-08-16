@@ -46,8 +46,8 @@ use thermite_syntax::{Contract, EffectRow, Item, Program};
 use crate::cli::ForgeError;
 use crate::lean_export::{self, ExportRefusal};
 use crate::manifest::{
-    effects_of, AssuranceManifest, AssuranceScope, Certificate, ContractQuality, Level,
-    ProjectAssurance, ProjectScope,
+    effects_of, AssuranceManifest, AssuranceScope, Certificate, CertificationPosition,
+    ClassificationCertificate, ContractQuality, Level, ProjectAssurance, ProjectScope,
 };
 
 /// The stable format tag for the v1 audit manifest schema (REQ-1, R-SPEC-2). A
@@ -266,6 +266,15 @@ pub struct FunctionRow {
     pub name: String,
     /// The achieved assurance level (`L0..L3`).
     pub level: Level,
+    /// RFC-3 formal certification coordinates, copied verbatim from the
+    /// certificate. This is the authoritative assurance surface during the
+    /// beta-line removal of the historical scalar.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub certification: Option<CertificationPosition>,
+    /// The classifier prognosis copied before discharge; a routing reason is
+    /// retained even when the eventual proof succeeds or fails differently.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub classification: Option<ClassificationCertificate>,
     /// The §9 assurance scope (end-to-end vs to-the-boundary), from
     /// `Certificate::assurance_scope`. `None` reads as end-to-end (the golden
     /// default; mirrors the cert field), `#[serde(skip_serializing_if)]`.
@@ -296,6 +305,8 @@ impl FunctionRow {
         FunctionRow {
             name: cert.item.clone(),
             level: cert.level,
+            certification: cert.certification.clone(),
+            classification: cert.classification.clone(),
             assurance_scope: cert.assurance_scope.clone(),
             engine_attribution: cert.engine_attribution.clone(),
             contract_quality: cert.contract_quality.clone(),
@@ -1167,6 +1178,10 @@ mod tests {
         assert_ne!(
             audit.functions[0].engine_attribution, audit.functions[1].engine_attribution,
             "audit must not collapse equal-assurance routes with different trust"
+        );
+        assert_ne!(
+            audit.functions[0].certification, audit.functions[1].certification,
+            "the RFC-3 tuple must separate empirical Lean from incomplete solver refutation"
         );
         let audit_json = serde_json::to_value(audit).expect("audit JSON");
         assert_eq!(

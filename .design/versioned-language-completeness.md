@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 2b9706a22412b73414307f76a9c4a573c8d7af9c2f84d6a4a35e5806a3721b42 (issue-48 through AC-12: re-audited the support/gap inventories and the bidirectional completeness-review backlog, including evidence-bearing close transitions.)
+audited-content-sha256: 4b1c0525e5e06df545113393679f6a9bc945a3370e63fcf07738a794a3bba9e6 (issue-48 RFC-3 coordinate checkpoint, 2026-08-16: re-audited typed coherent cells, partial order, certificate/audit projection, classification slot, exact Kani bounded/trace production, and the R2-1/R2-4/R2-5/R2-6/R2-8 partial inventory transitions. Lx retirement, declared floors/frontier, and complete classifier wiring remain open, so the requirement remains partial.)
 
 ## Summary
 

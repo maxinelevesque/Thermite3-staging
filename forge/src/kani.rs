@@ -410,13 +410,32 @@ fn is_under_bound_failure(description: &str) -> bool {
 /// (REQ-6). `Level::L2` (programmatically distinct from L3, §12) with the bound
 /// recorded in the obligations. Consumer: `check::check_l2_file`.
 pub fn assemble_l2_certificate(item: &str, effects: Vec<String>, result: &L2Result) -> Certificate {
-    Certificate::new(
+    let cert = Certificate::new(
         item,
         result.level,
         effects,
         result.solver_time_ms,
         result.obligations.clone(),
-    )
+    );
+    if result.level != Level::L2 {
+        return cert;
+    }
+    let bound = result
+        .obligations
+        .iter()
+        .find(|obligation| obligation.status == ObligationStatus::Discharged)
+        .map(|obligation| obligation.name.clone())
+        .expect("an L2 result always records its bounded-check obligation");
+    cert.with_certification(crate::manifest::CertificationPosition {
+        scope: crate::manifest::CertificationScope::Bounded {
+            bound: bound.clone(),
+        },
+        refutation: crate::manifest::RefutationChannel::Trace { bound },
+        residual_trust: crate::manifest::ResidualTrust::Solver,
+        discharged_trust: Vec::new(),
+        boundary: crate::manifest::CertificationBoundary::EndToEnd,
+    })
+    .expect("the Kani bounded/trace position is coherent by construction")
 }
 
 #[cfg(test)]

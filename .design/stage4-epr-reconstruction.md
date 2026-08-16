@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 099888a9bc60aff14444467258d7154b703da6945081c1110210c14514266aa3 (re-pinned 2026-08-14 after re-auditing the G4 bridge/Lean, LRAT/cache, release-routing, and hygiene segmentation. The commands and fail-closed proof-tool/version checks are unchanged; only their independently runnable ownership changed.)
+audited-content-sha256: 5b84eec477b2f3c2fca14dacbad337bb95751c0f80af90eb7098cdbfc0c9a7df (re-pinned 2026-08-16 after re-auditing the additive RFC-3 audit projection. G4 reconstruction, LRAT/cache, routing, and fail-closed tool checks are unchanged; audit rows now also copy formal certification/classification fields.)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

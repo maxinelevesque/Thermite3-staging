@@ -114,6 +114,194 @@ use thermite_syntax::{Effect, EffectRow};
 use crate::profile::SolverProfile;
 use crate::strengthen::Suggestion;
 
+/// RFC-3 certification scope: the population quantified over by the claim.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CertificationScope {
+    All,
+    Bounded { bound: String },
+    PerExecution,
+    None,
+}
+
+/// RFC-3 falsification channel. A false clause is not silently collapsed into
+/// an assurance level: the certificate states what kind of witness can exist.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum RefutationChannel {
+    Complete,
+    Incomplete,
+    Empirical,
+    Trace { bound: String },
+    Abort,
+    None,
+}
+
+/// Residual trust after discharged proof obligations have been removed. The
+/// relax route and an unreconstructed cage differ in discharged evidence but
+/// intentionally occupy the same residual-trust order position.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResidualTrust {
+    LeanChecked,
+    Solver,
+    Fiat,
+}
+
+/// RFC-3 boundary qualification: how far the certified claim closes.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CertificationBoundary {
+    EndToEnd,
+    ToBoundary { via: String },
+    ToPlatform { platform: String },
+}
+
+/// The authoritative RFC-3 formal certification position. `discharged_trust`
+/// records bridge/reconstruction facts without treating them as residual risk.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct CertificationPosition {
+    pub scope: CertificationScope,
+    pub refutation: RefutationChannel,
+    pub residual_trust: ResidualTrust,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub discharged_trust: Vec<String>,
+    pub boundary: CertificationBoundary,
+}
+
+/// Pre-discharge RFC-3 classification certificate. Classification determines
+/// which refutation fiber is available; discharge later fills the trust
+/// position without erasing the routing prognosis.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ClassificationCertificate {
+    /// Stable, versioned fragment/classifier identity.
+    pub fragment: String,
+    pub verdict: ClassificationVerdict,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum ClassificationVerdict {
+    Admitted,
+    Rejected { reason: String },
+    Unknown { reason: String },
+}
+
+/// A schema-level failure: the coordinate tuple lands outside RFC-3's eight
+/// coherent cells.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IncoherentCertificationPosition {
+    pub reason: &'static str,
+}
+
+impl std::fmt::Display for IncoherentCertificationPosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "incoherent RFC-3 certification position: {}",
+            self.reason
+        )
+    }
+}
+
+impl std::error::Error for IncoherentCertificationPosition {}
+
+/// The seven order-elements in RFC-3 §3.2. Relax and unreconstructed cage
+/// routes are deliberately order-equivalent at `CompleteSolver`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum AssuranceElement {
+    NoClaim,
+    Runtime,
+    Bounded,
+    IncompleteSolver,
+    CompleteSolver,
+    EmpiricalLean,
+    CompleteLean,
+}
+
+impl CertificationPosition {
+    /// Reject every tuple outside RFC-3 §3.1's eight coherent cells.
+    pub fn validate(&self) -> Result<(), IncoherentCertificationPosition> {
+        // Self-dominance exercises the same comparison path used by declared
+        // floors; a newly-added cell cannot validate while being absent from
+        // the order relation.
+        let _ = self.dominates(self)?;
+        Ok(())
+    }
+
+    fn element(&self) -> Result<AssuranceElement, IncoherentCertificationPosition> {
+        use AssuranceElement::*;
+        use CertificationScope as S;
+        use RefutationChannel as R;
+        use ResidualTrust as T;
+
+        match (&self.scope, &self.refutation, self.residual_trust) {
+            (S::None, R::None, T::Fiat) => Ok(NoClaim),
+            (S::PerExecution, R::Abort, T::Fiat) => Ok(Runtime),
+            (S::Bounded { bound: a }, R::Trace { bound: b }, T::Solver) if a == b => Ok(Bounded),
+            (S::All, R::Incomplete, T::Solver) => Ok(IncompleteSolver),
+            (S::All, R::Complete, T::Solver) => Ok(CompleteSolver),
+            (S::All, R::Empirical, T::LeanChecked) => Ok(EmpiricalLean),
+            (S::All, R::Complete, T::LeanChecked) => Ok(CompleteLean),
+            (S::Bounded { .. }, R::Trace { .. }, T::Solver) => {
+                Err(IncoherentCertificationPosition {
+                    reason: "bounded scope and trace refutation must carry the same bound",
+                })
+            }
+            _ => Err(IncoherentCertificationPosition {
+                reason: "scope, refutation, and residual trust do not form an RFC-3 cell",
+            }),
+        }
+    }
+
+    /// Product-order comparison. `Some(Ordering)` means comparable; `None`
+    /// preserves RFC-3's intentionally incomparable solver/forge positions.
+    pub fn partial_cmp_assurance(
+        &self,
+        other: &Self,
+    ) -> Result<Option<std::cmp::Ordering>, IncoherentCertificationPosition> {
+        use std::cmp::Ordering;
+        use AssuranceElement::*;
+
+        let a = self.element()?;
+        let b = other.element()?;
+        if a == b {
+            return Ok(Some(Ordering::Equal));
+        }
+        let rank = |e| match e {
+            NoClaim => 0,
+            Runtime => 1,
+            Bounded => 2,
+            IncompleteSolver | EmpiricalLean => 3,
+            CompleteSolver => 4,
+            CompleteLean => 5,
+        };
+        let incomparable = matches!(
+            (a, b),
+            (EmpiricalLean, IncompleteSolver | CompleteSolver)
+                | (IncompleteSolver | CompleteSolver, EmpiricalLean)
+        );
+        if incomparable {
+            Ok(None)
+        } else {
+            Ok(Some(rank(a).cmp(&rank(b))))
+        }
+    }
+
+    /// True when this position meets a declared formal floor. Boundary values
+    /// must match exactly; platform/boundary assumptions are never silently
+    /// erased by the assurance order.
+    pub fn dominates(&self, floor: &Self) -> Result<bool, IncoherentCertificationPosition> {
+        if self.boundary != floor.boundary {
+            return Ok(false);
+        }
+        Ok(matches!(
+            self.partial_cmp_assurance(floor)?,
+            Some(std::cmp::Ordering::Equal | std::cmp::Ordering::Greater)
+        ))
+    }
+}
+
 /// The §9 assurance scope of a function (issue #17,
 /// `.design/forge/e2e-vs-boundary.md` REQ-2/REQ-3; `thermite-design.md` §9). The
 /// manifest distinction between "verified to the boundary" and "verified, period":
@@ -217,6 +405,43 @@ pub enum Level {
     /// reconstructed fixed-width BV, and reconstructed finite relation/sequence
     /// clauses. Above L3 on the ladder.
     L4,
+}
+
+/// Temporary beta-line bridge for producers not yet converted to explicit
+/// classification certificates. L2 intentionally returns `None`: the scalar
+/// never stored its bound, so inventing one would repeat the lossy migration
+/// RFC-3 is removing.
+fn legacy_position(level: Level) -> Option<CertificationPosition> {
+    let (scope, refutation, residual_trust) = match level {
+        Level::L0 => (
+            CertificationScope::None,
+            RefutationChannel::None,
+            ResidualTrust::Fiat,
+        ),
+        Level::L1 => (
+            CertificationScope::PerExecution,
+            RefutationChannel::Abort,
+            ResidualTrust::Fiat,
+        ),
+        Level::L2 => return None,
+        Level::L3 => (
+            CertificationScope::All,
+            RefutationChannel::Incomplete,
+            ResidualTrust::Solver,
+        ),
+        Level::L4 => (
+            CertificationScope::All,
+            RefutationChannel::Complete,
+            ResidualTrust::Solver,
+        ),
+    };
+    Some(CertificationPosition {
+        scope,
+        refutation,
+        residual_trust,
+        discharged_trust: Vec::new(),
+        boundary: CertificationBoundary::EndToEnd,
+    })
 }
 
 /// The status of a single proof obligation (REQ-5). v0.1 records discharged or
@@ -500,6 +725,16 @@ pub struct Certificate {
     pub item: String,
     /// The assurance level (REQ-2: L3 iff verus reports 0 errors).
     pub level: Level,
+    /// RFC-3's authoritative certification tuple. During the beta migration the
+    /// historical `level` remains readable, but new producers persist this
+    /// independently inspectable surface and audit copies it verbatim.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub certification: Option<CertificationPosition>,
+    /// The pre-discharge fragment prognosis (RFC-3 R2-8). `None` only for
+    /// historical certificates and producers not yet migrated to the classifier
+    /// seam; never reconstructed from the post-discharge result.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub classification: Option<ClassificationCertificate>,
     /// Wall-clock solver time in ms — non-deterministic, excluded from the
     /// oracle comparison (REQ-6; `conformance/README.md`). `#[serde(default)]`
     /// so the golden deterministic-subset cert (which omits this non-det field)
@@ -718,6 +953,8 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level,
+            certification: legacy_position(level),
+            classification: None,
             solver_time_ms,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -767,6 +1004,8 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L0,
+            certification: legacy_position(Level::L0),
+            classification: None,
             solver_time_ms,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -826,6 +1065,8 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L1,
+            certification: legacy_position(Level::L1),
+            classification: None,
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -868,6 +1109,8 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L1,
+            certification: legacy_position(Level::L1),
+            classification: None,
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -911,6 +1154,8 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L0,
+            certification: legacy_position(Level::L0),
+            classification: None,
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1076,8 +1321,27 @@ impl Certificate {
     /// L3 fn whose closure crosses a boundary stays `Level::L3` + `ToBoundary`).
     /// Set by `check::check_file_with_options` after `closure::classify`.
     pub fn with_assurance_scope(mut self, scope: AssuranceScope) -> Self {
+        if let Some(position) = &mut self.certification {
+            position.boundary = match &scope {
+                AssuranceScope::EndToEnd => CertificationBoundary::EndToEnd,
+                AssuranceScope::ToBoundary { via } => {
+                    CertificationBoundary::ToBoundary { via: via.clone() }
+                }
+            };
+        }
         self.assurance_scope = Some(scope);
         self
+    }
+
+    /// Replace the migration bridge with an explicitly classified RFC-3
+    /// position. Incoherent tuples never enter a certificate.
+    pub fn with_certification(
+        mut self,
+        position: CertificationPosition,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        position.validate()?;
+        self.certification = Some(position);
+        Ok(self)
     }
 
     /// Attach the per-obligation engine attribution (`.design/verified/
@@ -1094,6 +1358,12 @@ impl Certificate {
         mut self,
         attribution: crate::engine::EngineAttribution,
     ) -> Self {
+        if attribution.engine.starts_with("lean") {
+            if let Some(position) = &mut self.certification {
+                position.refutation = RefutationChannel::Empirical;
+                position.residual_trust = ResidualTrust::LeanChecked;
+            }
+        }
         self.engine_attribution = Some(attribution);
         self
     }
@@ -1198,6 +1468,8 @@ impl Certificate {
         Certificate {
             item,
             level: Level::L0,
+            certification: legacy_position(Level::L0),
+            classification: None,
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1489,6 +1761,160 @@ fn effect_token(effect: &Effect) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod rfc3_coordinates {
+        use super::*;
+
+        fn position(
+            scope: CertificationScope,
+            refutation: RefutationChannel,
+            residual_trust: ResidualTrust,
+        ) -> CertificationPosition {
+            CertificationPosition {
+                scope,
+                refutation,
+                residual_trust,
+                discharged_trust: Vec::new(),
+                boundary: CertificationBoundary::EndToEnd,
+            }
+        }
+
+        #[test]
+        fn coherent_cells_validate() {
+            let cells = [
+                position(
+                    CertificationScope::None,
+                    RefutationChannel::None,
+                    ResidualTrust::Fiat,
+                ),
+                position(
+                    CertificationScope::PerExecution,
+                    RefutationChannel::Abort,
+                    ResidualTrust::Fiat,
+                ),
+                position(
+                    CertificationScope::Bounded {
+                        bound: "8".to_string(),
+                    },
+                    RefutationChannel::Trace {
+                        bound: "8".to_string(),
+                    },
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Incomplete,
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Complete,
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Empirical,
+                    ResidualTrust::LeanChecked,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Complete,
+                    ResidualTrust::LeanChecked,
+                ),
+            ];
+            for cell in cells {
+                cell.validate().expect("an RFC-3 cell must validate");
+            }
+        }
+
+        #[test]
+        fn incoherent_cells_fail_closed() {
+            let cases = [
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Complete,
+                    ResidualTrust::Fiat,
+                ),
+                position(
+                    CertificationScope::None,
+                    RefutationChannel::Incomplete,
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::Bounded {
+                        bound: "8".to_string(),
+                    },
+                    RefutationChannel::Trace {
+                        bound: "7".to_string(),
+                    },
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Incomplete,
+                    ResidualTrust::LeanChecked,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Empirical,
+                    ResidualTrust::Solver,
+                ),
+            ];
+            for case in cases {
+                assert!(
+                    case.validate().is_err(),
+                    "incoherent tuple accepted: {case:?}"
+                );
+            }
+        }
+
+        #[test]
+        fn product_order_preserves_solver_forge_incomparability() {
+            let bounded = position(
+                CertificationScope::Bounded {
+                    bound: "8".to_string(),
+                },
+                RefutationChannel::Trace {
+                    bound: "8".to_string(),
+                },
+                ResidualTrust::Solver,
+            );
+            let solver = position(
+                CertificationScope::All,
+                RefutationChannel::Incomplete,
+                ResidualTrust::Solver,
+            );
+            let forge = position(
+                CertificationScope::All,
+                RefutationChannel::Empirical,
+                ResidualTrust::LeanChecked,
+            );
+            let top = position(
+                CertificationScope::All,
+                RefutationChannel::Complete,
+                ResidualTrust::LeanChecked,
+            );
+
+            assert_eq!(solver.partial_cmp_assurance(&forge).unwrap(), None);
+            assert_eq!(forge.partial_cmp_assurance(&solver).unwrap(), None);
+            assert!(solver.dominates(&bounded).unwrap());
+            assert!(forge.dominates(&bounded).unwrap());
+            assert!(top.dominates(&solver).unwrap());
+            assert!(top.dominates(&forge).unwrap());
+        }
+
+        #[test]
+        fn explicit_position_is_validated_before_storage() {
+            let bad = position(
+                CertificationScope::PerExecution,
+                RefutationChannel::Complete,
+                ResidualTrust::Fiat,
+            );
+            assert!(Certificate::new("f", Level::L3, vec![], 0, vec![])
+                .with_certification(bad)
+                .is_err());
+        }
+    }
 
     /// Test-local serializer (mirrors `cli::run_check`'s
     /// `serde_json::to_string_pretty`).
