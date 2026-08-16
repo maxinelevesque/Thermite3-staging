@@ -34,6 +34,7 @@ structure ImplementationModelFamily where
   Behavior : Type
   identity : ModelIdentity
   toProgram : Input → Program
+  inputIdentity : Input → String
   fragment : Fragment
   denotes : Input → Behavior → Prop
   observe : Input → ModelObservation Behavior
@@ -154,6 +155,7 @@ def rustc195Family : ImplementationModelFamily where
   Behavior := RustcBehavior
   identity := rustc195Identity
   toProgram := RustcInput.emitted
+  inputIdentity := fun input => input.emitted.digest
   fragment := thermiteRustV1
   denotes := rustc195Denotation
   observe := fun input => ⟨rustc195Identity, rustc195Behavior input⟩

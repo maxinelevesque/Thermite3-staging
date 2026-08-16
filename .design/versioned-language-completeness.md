@@ -248,6 +248,29 @@ allowing it to become the second source of truth RFC-3 rejects.
 
 ### CI and review
 
+The second adversarial-review repair makes the AC-4 order and AC-8/AC-9
+checked-discharge semantics structural rather than nominal. Representative
+positions now differ by concrete program predicates (construct-count bounds
+and the Lean-only `Fn` boundary); the executable table is proved equivalent to
+full-judgment `Refines` in both directions using explicit separating programs.
+No theorem derives refinement from copied labels, `True` claims, or a second
+order table.
+
+Checked discharge no longer lets an implementation choose an arbitrary
+evidence carrier. `ReplayEvidence family input` is indexed by the exact model
+family and input and must carry a nonempty replay payload, that input's identity,
+and a decoded observation whose model is proof-equal to the family identity.
+`ArtifactChecker` must prove that decoding returns that carried observation and
+that accepted evidence denotes the indexed input. Negative probes confirm that
+the former `Unit`/always-true checker is ill-typed, an empty replay payload is
+uninhabitable, and mutated concrete payloads are rejected.
+
+These constructions still do not discharge rustc, LLVM, checker, operating
+system, or platform trust. They specify the proof shape required to reduce a
+named assumption; only an actual universal refinement or accepted, sound replay
+for the exact artifact supplies such a reduction. The fixture instances remain
+narrow version-pinned examples, not a claim of production TCB discharge.
+
 `gates/lean-axiom-probe.sh` covers all soundness, completeness, inclusion,
 classification, and refinement theorems. Generated negative-space cases remove
 one classifier premise or corrupt one boundary artifact and must fail at the

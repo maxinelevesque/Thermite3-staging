@@ -13,6 +13,7 @@ def silentlySubstitutedRustcFamily : ImplementationModelFamily where
   Behavior := RustcBehavior
   identity := rustc195Identity
   toProgram := RustcInput.emitted
+  inputIdentity := fun input => input.emitted.digest
   fragment := thermiteRustV1
   denotes := rustc195Denotation
   observe := fun input =>

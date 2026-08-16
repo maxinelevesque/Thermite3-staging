@@ -34,12 +34,12 @@ def representativeLeq : RepresentativePosition → RepresentativePosition → Bo
 
 def runtimeBoundary : BoundaryContext := ⟨"runtime", fun _ => True⟩
 def boundedBoundary : BoundaryContext :=
-  ⟨"bounded", fun program => program.facts.contains "bounded" ∨
-    program.facts.contains "solver" ∨ program.facts.contains "lean"⟩
+  ⟨"bounded", fun program => program.constructs.length ≤ 5⟩
 def solverBoundary : BoundaryContext :=
-  ⟨"solver-complete", fun program => program.facts.contains "solver"⟩
+  ⟨"solver-complete", fun program => program.constructs.length ≤ 2⟩
 def leanEmpiricalBoundary : BoundaryContext :=
-  ⟨"lean-empirical", fun program => program.facts.contains "lean"⟩
+  ⟨"lean-empirical", fun program => program.constructs.length ≤ 3 ∧
+    ∀ construct ∈ program.constructs, construct = "Fn"⟩
 
 def representativeBoundary : RepresentativePosition → BoundaryContext
   | .runtime => runtimeBoundary
@@ -66,11 +66,27 @@ def RepresentativeLE (left right : RepresentativePosition) : Prop :=
   Refines (representativeJudgment right) (representativeJudgment left)
 
 def boundaryRefinesOfDecision : ∀ {left right}, representativeLeq left right = true →
-    BoundaryRefines (representativeBoundary right) (representativeBoundary left) := by
-  intro left right accepted program qualified
-  cases left <;> cases right <;>
-    simp_all [representativeLeq, representativeBoundary, runtimeBoundary,
-      boundedBoundary, solverBoundary, leanEmpiricalBoundary]
+    BoundaryRefines (representativeBoundary right) (representativeBoundary left)
+  | .runtime, _, _ => by
+      intro _ _
+      trivial
+  | .bounded, .bounded, _ => fun _ qualified => qualified
+  | .bounded, .solverComplete, _ => by
+      intro _ qualified
+      exact Nat.le_trans qualified (by decide)
+  | .bounded, .leanEmpirical, _ => by
+      intro _ qualified
+      exact Nat.le_trans qualified.1 (by decide)
+  | .solverComplete, .solverComplete, _ => fun _ qualified => qualified
+  | .leanEmpirical, .leanEmpirical, _ => fun _ qualified => qualified
+  | .bounded, .runtime, accepted
+  | .solverComplete, .runtime, accepted
+  | .solverComplete, .bounded, accepted
+  | .solverComplete, .leanEmpirical, accepted
+  | .leanEmpirical, .runtime, accepted
+  | .leanEmpirical, .bounded, accepted
+  | .leanEmpirical, .solverComplete, accepted => by
+      simp [representativeLeq] at accepted
 
 theorem decision_implies_representative_refinement : ∀ {left right},
     representativeLeq left right = true → RepresentativeLE left right := by
@@ -88,10 +104,12 @@ theorem decision_implies_representative_refinement : ∀ {left right},
       ⟨certified.1, boundaryRefinesOfDecision accepted program certified.2⟩
   }⟩
 
-def runtimeOnlyWitness : Program := ⟨"runtime-only", ["Fn"], []⟩
-def boundedOnlyWitness : Program := ⟨"bounded-only", ["Fn"], ["bounded"]⟩
-def solverOnlyWitness : Program := ⟨"solver-only", ["Fn"], ["solver"]⟩
-def leanOnlyWitness : Program := ⟨"lean-only", ["Fn"], ["lean"]⟩
+def runtimeOnlyWitness : Program :=
+  ⟨"runtime-only", ["Fn", "Fn", "Fn", "Fn", "Fn", "Fn"], []⟩
+def boundedOnlyWitness : Program :=
+  ⟨"bounded-only", ["SpecFn", "SpecFn", "SpecFn", "SpecFn"], []⟩
+def solverOnlyWitness : Program := ⟨"solver-only", ["SpecFn"], []⟩
+def leanOnlyWitness : Program := ⟨"lean-only", ["Fn", "Fn", "Fn"], []⟩
 
 theorem refinement_implies_decision : ∀ {left right},
     RepresentativeLE left right → representativeLeq left right = true := by

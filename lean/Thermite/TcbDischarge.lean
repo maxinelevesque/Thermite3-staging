@@ -23,19 +23,34 @@ structure UniversalExecutableRefinement (family : ImplementationModelFamily)
     (implementation.run input).model = implementation.identity ∧
     family.denotes input (implementation.run input).behavior
 
-/-- The checker is indexed by the exact artifact. Soundness consumes accepted,
-decoded evidence and establishes the decoded modeled behavior. -/
+/-- Replay evidence is intrinsically bound to the model and exact input.  Its
+payload cannot be empty, and the observation names the same model identity.
+Thus a content-free carrier such as `Unit` cannot instantiate checked
+refinement. -/
+structure ReplayEvidence (family : ImplementationModelFamily) (input : family.Input) where
+  model : ModelIdentity
+  inputId : String
+  observation : ModelObservation family.Behavior
+  payload : String
+  payloadNonempty : payload ≠ ""
+  modelBound : model = family.identity
+  inputBound : inputId = family.inputIdentity input
+  observationModel : observation.model = model
+
+/-- The checker is indexed by the exact artifact and consumes only a replay
+envelope carrying that artifact's identity and decoded observation. -/
 structure ArtifactChecker (family : ImplementationModelFamily) (input : family.Input) where
-  Evidence : Type
-  check : Evidence → Bool
-  decode : Evidence → Option (ModelObservation family.Behavior)
-  evidenceId : Evidence → String
-  sound : ∀ evidence observation, check evidence = true →
-    decode evidence = some observation → BehaviorCorresponds family input observation
+  check : ReplayEvidence family input → Bool
+  decode : ReplayEvidence family input → Option (ModelObservation family.Behavior)
+  evidenceId : ReplayEvidence family input → String
+  decodeBinds : ∀ evidence observation, decode evidence = some observation →
+    observation = evidence.observation
+  sound : ∀ evidence, check evidence = true →
+    family.denotes input evidence.observation.behavior
 
 structure CheckedArtifactRefinement (family : ImplementationModelFamily)
     (input : family.Input) (checker : ArtifactChecker family input) where
-  evidence : checker.Evidence
+  evidence : ReplayEvidence family input
   observation : ModelObservation family.Behavior
   accepted : checker.check evidence = true
   decoded : checker.decode evidence = some observation
@@ -44,9 +59,12 @@ def CheckedArtifactRefinement.corresponds
     {family : ImplementationModelFamily} {input : family.Input}
     {checker : ArtifactChecker family input}
     (refinement : CheckedArtifactRefinement family input checker) :
-    BehaviorCorresponds family input refinement.observation :=
-  checker.sound refinement.evidence refinement.observation
-    refinement.accepted refinement.decoded
+    BehaviorCorresponds family input refinement.observation := by
+  have bound := checker.decodeBinds refinement.evidence refinement.observation
+    refinement.decoded
+  rw [bound]
+  exact ⟨refinement.evidence.observationModel.trans refinement.evidence.modelBound,
+    checker.sound refinement.evidence refinement.accepted⟩
 
 structure UniversalDischarge (family : ImplementationModelFamily) (input : family.Input) where
   implementation : ExecutableImplementation family
@@ -155,37 +173,47 @@ def rustcUniversalReduction : TcbReduction rustc195Family dischargeRustWitness :
   ⟨.universal ⟨fixtureRustcExecutable, fixtureRustcUniversalRefinement,
     discharge_rust_witness_admitted⟩⟩
 
-structure RustcArtifactEvidence where
-  model : ModelIdentity
-  digest : String
-  target : String
-  behavior : RustcBehavior
-deriving DecidableEq, Repr
+def expectedRustcEvidence : ReplayEvidence rustc195Family dischargeRustWitness :=
+  { model := rustc195Identity
+    inputId := "discharge-rust"
+    observation := ⟨rustc195Identity, rustc195Behavior dischargeRustWitness⟩
+    payload := "rustc-1.95.0:discharge-rust:x86_64-unknown-linux-gnu"
+    payloadNonempty := by decide
+    modelBound := rfl
+    inputBound := rfl
+    observationModel := rfl }
 
-def expectedRustcEvidence : RustcArtifactEvidence :=
-  ⟨rustc195Identity, "discharge-rust", "x86_64-unknown-linux-gnu",
-    rustc195Behavior dischargeRustWitness⟩
+def replayRustcBehavior
+    (evidence : ReplayEvidence rustc195Family dischargeRustWitness) : RustcBehavior :=
+  evidence.observation.behavior
 
-def rustcEvidenceValid (evidence : RustcArtifactEvidence) : Bool :=
-  decide (evidence = expectedRustcEvidence)
+def rustcEvidenceValid
+    (evidence : ReplayEvidence rustc195Family dischargeRustWitness) : Bool :=
+  decide (evidence.model = expectedRustcEvidence.model ∧
+    evidence.inputId = expectedRustcEvidence.inputId ∧
+    evidence.observation.model = expectedRustcEvidence.observation.model ∧
+    replayRustcBehavior evidence = replayRustcBehavior expectedRustcEvidence ∧
+    evidence.payload = expectedRustcEvidence.payload)
 
 def rustcArtifactChecker : ArtifactChecker rustc195Family dischargeRustWitness where
-  Evidence := RustcArtifactEvidence
   check := rustcEvidenceValid
   decode := fun evidence => if rustcEvidenceValid evidence then
-    some ⟨evidence.model, evidence.behavior⟩ else none
-  evidenceId := fun evidence => evidence.model.version ++ ":" ++ evidence.digest ++
-    ":" ++ evidence.target
+    some evidence.observation else none
+  evidenceId := fun evidence => evidence.model.version ++ ":" ++ evidence.inputId ++
+    ":" ++ evidence.payload
+  decodeBinds := by
+    intro evidence observation decoded
+    by_cases accepted : rustcEvidenceValid evidence = true <;>
+      simp [accepted] at decoded
+    exact decoded.symm
   sound := by
-    intro evidence observation accepted decoded
-    have exactEvidence : evidence = expectedRustcEvidence := by
-      simpa [rustcEvidenceValid] using accepted
-    subst evidence
-    simp [rustcEvidenceValid] at decoded
-    cases decoded
-    exact ⟨rfl, by
-      simp [expectedRustcEvidence, dischargeRustWitness, thermiteRustV1Admits,
-        rustc195Family, rustc195Denotation, rustc195Behavior]⟩
+    intro evidence accepted
+    simp only [rustcEvidenceValid] at accepted
+    have facts := of_decide_eq_true accepted
+    change rustc195Family.denotes dischargeRustWitness (replayRustcBehavior evidence)
+    rw [facts.2.2.2.1]
+    simp [replayRustcBehavior, expectedRustcEvidence, dischargeRustWitness, thermiteRustV1Admits,
+      rustc195Family, rustc195Denotation, rustc195Behavior]
 
 def rustcCheckedRefinement :
     CheckedArtifactRefinement rustc195Family dischargeRustWitness rustcArtifactChecker :=
