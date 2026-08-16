@@ -50,18 +50,29 @@ def representativeBoundary : RepresentativePosition → BoundaryContext
 def representativeFrame (position : RepresentativePosition) : SemanticFrame :=
   ⟨"thermite-language", 1, "neutral", 1, representativeBoundary position⟩
 
+/-- Minimal declarative semantics for the representative order: under every
+Boolean interpretation satisfying the program's stated facts, each claimed
+construct must hold.  This is fixed independently of certificates and route
+labels, so a proof object cannot choose a vacuous claim. -/
+def representativeSemanticValidity (program : Program) : Prop :=
+  ∀ interpretation : String → Bool,
+    (∀ fact ∈ program.facts, interpretation fact = true) →
+    ∀ construct ∈ program.constructs, interpretation construct = true
+
 /-- A solver certificate is a kernel-checked derivation of the exact semantic
 shape represented by the solver-complete point.  It is deliberately not a
 self-authenticating digest string. -/
 structure SolverCertificate (program : Program) : Type where
   bounded : program.constructs.length ≤ 2
   derivation : ∀ construct ∈ program.constructs, construct = "SpecFn"
+  valid : representativeSemanticValidity program
 
 /-- The empirical Lean branch likewise carries a checked proof object for its
 exact program rather than a nominal route label. -/
 structure LeanCertificate (program : Program) : Type where
   bounded : program.constructs.length ≤ 3
   derivation : ∀ construct ∈ program.constructs, construct = "Fn"
+  valid : representativeSemanticValidity program
 
 /-- Route evidence is program-bound. Runtime/bounded receipts identify their
 operational runs; proof-complete branches additionally require dependent,
@@ -113,6 +124,16 @@ theorem solver_accepted_supplies_checked_derivation
   cases certificate : evidence.solverCertificate with
   | none => simp [certificate] at accepted
   | some checked => exact ⟨checked⟩
+
+/-- Solver acceptance is load-bearing for the fixed semantic claim, regardless
+of whether the certificate was produced by an external solver or directly in
+the kernel. -/
+theorem solver_accepted_proves_semantic_validity
+    (evidence : RepresentativeEvidence) (program : Program)
+    (accepted : solverEvidenceAccepted evidence program = true) :
+    representativeSemanticValidity program := by
+  let ⟨certificate⟩ := solver_accepted_supplies_checked_derivation evidence program accepted
+  exact certificate.valid
 
 /-- The claim at each point is the existence of accepted, program-bound route
 evidence, not a display label or a trivially inhabited proposition. -/
