@@ -1,7 +1,7 @@
 # Feature: RFC-10 checked traversal and proof-carrying interpretation
 
 <!--
-audited-content-sha256: f376ba8d0728b41d824b1dd13139c9e5cf4baa51d5933cfd2aea9ec4216d062f (pinned 2026-08-14 after RFC-10 revision 2 landed; covers the canonical semantic inventory, checked IR, lock lowering, and deterministic witness producer.)
+audited-content-sha256: f35bbdc682c58206f60cffe0b6ba1ee5d4a8aed6d6538fca611e63a303d8df52 (re-pinned 2026-08-15 after reviewing the additive exact-budget producer API and truncation/version/payload mutation tests; canonical witness fields and replay semantics are unchanged.)
 -->
 
 ## Summary

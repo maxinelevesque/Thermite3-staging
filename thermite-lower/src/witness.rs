@@ -103,6 +103,30 @@ impl TraversalWitness {
     }
 }
 
+/// Exact semantic-node budget required by the bounded Rust producer on the
+/// currently claimed fragment. Computing it uses the repository ceiling; an
+/// input beyond that ceiling remains an explicit resource-limit outcome.
+pub fn required_witness_budget(source: &Program) -> Result<WorkBudget, WitnessError> {
+    semantic_inventory(source, WorkBudget(crate::DEFAULT_SEMANTIC_WORK_BUDGET))
+        .map(|inventory| WorkBudget(inventory.kinds.len()))
+        .map_err(|limit| {
+            WitnessError::Construction(vec![LowerError::ResourceLimit {
+                budget: limit.budget.0,
+                required_at_least: limit.required_at_least,
+            }])
+        })
+}
+
+/// Bounded producer with its resource premise in the public type signature.
+pub fn emit_witness_with_budget(
+    source: &Program,
+    budget: WorkBudget,
+) -> Result<TraversalWitness, WitnessError> {
+    CheckedProgram::build_with_budget(source, budget)
+        .map(|checked| emit_witness(&checked))
+        .map_err(WitnessError::Construction)
+}
+
 pub fn emit_witness(checked: &CheckedProgram) -> TraversalWitness {
     let inventory = checked.inventory();
     let footprints = checked

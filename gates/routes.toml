@@ -1362,6 +1362,18 @@ reference = ["lean/Thermite/LanguageCompleteness.lean", "gates/lean-axiom-probe.
 conformance_ops = []
 
 [[route]]
+crate_pattern = "thermite-lower/src/witness.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["thermite-lower/tests/traversal_witness.rs", "lean/Thermite/CheckedTraversal.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/tests/traversal_witness.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["thermite-lower/src/witness.rs", "lean/Thermite/CheckedTraversal.lean"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "lean/Thermite/EffectRows.lean"
 design = ".design/syntax/verified-effect-rows.md"
 reference = [".design/research/relational-contracts.md"]

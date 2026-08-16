@@ -1,8 +1,9 @@
+use thermite_lower::witness::{emit_witness_with_budget, required_witness_budget};
 use thermite_lower::{
     canonical_ast_projection, check_program, emit_witness, replay_witness, TraversalWitness,
     WitnessError,
 };
-use thermite_syntax::parse;
+use thermite_syntax::{parse, WorkBudget};
 
 fn lean_replays(source: &str) {
     use std::io::Write;
@@ -57,6 +58,54 @@ fn witness_is_deterministic_json_and_replays_against_source() {
     let json = first.canonical_json().unwrap();
     assert_eq!(TraversalWitness::from_json(&json).unwrap(), first);
     replay_witness(&parsed.program, &first).expect("faithful witness replays");
+}
+
+#[test]
+fn bounded_producer_succeeds_at_exact_budget_and_exhausts_one_below() {
+    let parsed = parse(SOURCE);
+    let exact = required_witness_budget(&parsed.program).unwrap();
+    let produced = emit_witness_with_budget(&parsed.program, exact).unwrap();
+    replay_witness(&parsed.program, &produced).unwrap();
+
+    let insufficient = WorkBudget(exact.0 - 1);
+    assert!(matches!(
+        emit_witness_with_budget(&parsed.program, insufficient),
+        Err(WitnessError::Construction(errors))
+            if matches!(errors.as_slice(), [thermite_lower::LowerError::ResourceLimit {
+                budget,
+                required_at_least,
+            }] if *budget == insufficient.0 && *required_at_least == exact.0)
+    ));
+}
+
+#[test]
+fn wire_format_rejects_truncation_version_skew_and_same_shape_payload_change() {
+    let parsed = parse(SOURCE);
+    let witness = emit_witness(&check_program(&parsed.program).unwrap());
+    let json = witness.canonical_json().unwrap();
+
+    assert!(matches!(
+        TraversalWitness::from_json(&json[..json.len() - 1]),
+        Err(WitnessError::Json(_))
+    ));
+
+    let mut skewed: serde_json::Value = serde_json::from_str(&json).unwrap();
+    skewed["version"] = serde_json::json!(witness.version + 1);
+    let skewed = TraversalWitness::from_json(&skewed.to_string()).unwrap();
+    assert_eq!(
+        replay_witness(&parsed.program, &skewed).unwrap_err(),
+        WitnessError::Mismatch { field: "version" }
+    );
+
+    let mut changed: serde_json::Value = serde_json::from_str(&json).unwrap();
+    changed["node_facts"][0] = serde_json::json!("None-but-mutated");
+    let changed = TraversalWitness::from_json(&changed.to_string()).unwrap();
+    assert_eq!(
+        replay_witness(&parsed.program, &changed).unwrap_err(),
+        WitnessError::Mismatch {
+            field: "node_facts"
+        }
+    );
 }
 
 #[test]

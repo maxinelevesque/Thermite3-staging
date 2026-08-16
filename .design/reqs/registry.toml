@@ -18208,15 +18208,22 @@ note = "composition theorem remains inside the allowed axiom set"
 id = "REQ-COMPLETE-PRODUCER-REFINEMENT"
 title = "Bounded Rust evidence refines the logical producer"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "A total logical producer covers its claimed fragment and the Rust producer, serialization, and decoding refine it under an exact sufficient-budget premise."
-remaining_scope = "Absorb issue #49's general refinement work, prove the budgeted correspondence, and add boundary mutations per REQ-6 and AC-6."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-6 and AC-6 define logical production and Rust/serialization refinement"
+kind = "symbol"
+target = "Thermite.CheckedTraversal.produce_complete"
+note = "logical producer is total and accepted on SupportedCanonicalAst"
+[[requirement.evidence]]
+kind = "symbol"
+target = "required_witness_budget"
+note = "Rust producer exposes the exact semantic-node resource premise"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/traversal_witness.rs"
+note = "exact/insufficient budgets, Lean refinement replay, deterministic round-trip, truncation, version-skew, and same-shape mutations"
 
 [[requirement]]
 id = "REQ-COMPLETE-TOTAL-CLASSIFICATION"

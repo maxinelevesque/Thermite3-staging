@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 176e7896b9c151441fe8f820361e99cbb38f387a70172ef7da90efeb60f25b6d (issue-48 formal slices: reviewed the inventory, fragment evolution, stage-indexed guarantees, explicit cross-stage composition premise, and axiom-probe coverage together)
+audited-content-sha256: 78dfa5aede44aece8c68940ed6aca9c2fb651bbdac705d4549159c672c67cde6 (issue-48 through producer refinement: reviewed the inventory/formal layers plus exact-budget Rust production, generated Lean refinement replay, deterministic serialization, and boundary mutations.)
 
 ## Summary
 
@@ -115,7 +115,7 @@ checker vocabulary as the language-wide ontology.
 - [x] AC-5: (REQ-5) Lean type signatures and composition theorems prevent an
   evidence-completeness result from being used as lowering, proof-route, policy,
   or certification completeness without the intervening premises.
-- [ ] AC-6: (REQ-6) The logical producer is total on the initial claimed
+- [x] AC-6: (REQ-6) The logical producer is total on the initial claimed
   producer fragment; Rust output refines it under the exact sufficient-budget
   premise; serialization mutations, truncation, version skew, and same-shape
   payload changes fail preservation checks.
