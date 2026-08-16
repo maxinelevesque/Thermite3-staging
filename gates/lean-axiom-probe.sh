@@ -50,6 +50,8 @@ IMPORTS=(
   "Thermite.LanguageCompleteness"
   "Thermite.PinLanguageNarrowing"
   "Thermite.CheckedTraversal"
+  "Thermite.CertificationMetatheory"
+  "Thermite.PinCertificationRefinement"
 )
 
 # Universal soundness theorems and the permanent reconstruction probe.
@@ -106,6 +108,18 @@ THEOREMS=(
   "Thermite.CheckedTraversal.footprint_closure_sound_of_verify"
   "Thermite.CheckedTraversal.holding_coverage_sound_of_verify"
   "Thermite.CheckedTraversal.resource_limit_not_certifying"
+  "Thermite.CertificationMetatheory.refines_refl"
+  "Thermite.CertificationMetatheory.refines_trans"
+  "Thermite.CertificationMetatheory.expansion_refines_membership"
+  "Thermite.CertificationMetatheory.composition_refines_guarantee"
+  "Thermite.CertificationMetatheory.rfc10_producer_refines_certification"
+  "Thermite.CertificationMetatheory.frame_refines_refl"
+  "Thermite.CertificationMetatheory.frame_refines_trans"
+  "Thermite.CertificationMetatheory.bounded_scope_monotone"
+  "Thermite.CertificationMetatheory.bounded_two_refines_five"
+  "Thermite.CertificationMetatheory.end_to_end_refines_platform"
+  "Thermite.CertificationMetatheory.unequal_bound_reverse_rejected"
+  "Thermite.CertificationMetatheory.boundary_upgrade_rejected"
 )
 ALLOWED="propext Classical.choice Quot.sound"
 

@@ -84,16 +84,16 @@ already-shipped AC-1 through AC-12 work.
 
 ## Acceptance Criteria
 
-- [ ] AC-1: (REQ-1, REQ-10) A new neutral Lean module defines the indexed
+- [x] AC-1: (REQ-1, REQ-10) A new neutral Lean module defines the indexed
   certification judgment, semantic meaning, and separately typed theorem
   families; the axiom probe reports no assumptions beyond the repository's
   allowed set.
-- [ ] AC-2: (REQ-2) Lean proves refinement reflexivity and transitivity and
+- [x] AC-2: (REQ-2) Lean proves refinement reflexivity and transitivity and
   supplies checked examples connecting existing `Expands`,
   `CompositionPremise`, and producer-refinement results from
   `lean/Thermite/LanguageCompleteness.lean` to the generalized refinement
   relation.
-- [ ] AC-3: (REQ-3) Lean proves monotonicity for at least two unequal bounded
+- [x] AC-3: (REQ-3) Lean proves monotonicity for at least two unequal bounded
   scopes and for boundary-context weakening; negative pins fail if unequal
   bounds or semantically distinct boundary contexts are identified without an
   equivalence proof.
@@ -247,6 +247,23 @@ ordered:
 `gates/language-completeness-inventory.toml` continues to report RFC-3
 increments as partial until their complete acceptance evidence exists.
 
+### Implemented foundation
+
+`lean/Thermite/CertificationMetatheory.lean` completes AC-1 and AC-2 without
+treating the earlier Rust coordinate probe as the metatheory. It defines the
+fully indexed judgment, semantic meaning, distinct classifier/producer/proof/
+refutation/stage theorem families, and an explicit semantic refinement witness.
+Refinement is reflexive and transitive. Checked bridges embed the existing
+fragment-expansion, stage-composition, and RFC-10 logical-producer results into
+the general relation. `gates/lean-axiom-probe.sh` builds the module and probes
+all five bridge/refinement theorems within the repository's allowed axiom set.
+
+AC-3 adds unequal-bound monotonicity, an executable two-to-five bound witness,
+and explicit end-to-end-to-platform boundary weakening. Negative pins reject
+both the reversed five-to-two bound and an upgrade from platform-qualified to
+end-to-end certification. The concrete semantic order, policy abstraction,
+model families, TCB discharge, replay, and `Level` retirement remain open.
+
 ## Resolved Questions
 
 - The metatheory is a separate `.design/rfc3-certification-metatheory.md`
@@ -279,14 +296,14 @@ increments as partial until their complete acceptance evidence exists.
 
 ## Residual trust
 
-This design records a theorem program, not its completion. Until its acceptance
-criteria pass, the seven-position Rust order in `forge/src/manifest.rs` is an
-implementation probe rather than a proved abstraction; unequal bounds and
+AC-1 through AC-3 establish the indexed judgment, generic refinement laws, and
+the first bound/boundary order pins, but
+the seven-position Rust order in `forge/src/manifest.rs` remains an
+implementation probe rather than a proved abstraction. Unequal bounds and
 boundary contexts do not yet have a Lean-checked order; no `rustc` executable
 correspondence theorem exists; model-family composition and semantic TCB
-reduction are unproved; and `Level` remains live. The design document and Kan
-record establish intent and decisions only. They discharge no certification or
-trusted-implementation assumption.
+reduction are unproved; and `Level` remains live. The completed foundation does
+not itself discharge any certification or trusted-implementation assumption.
 
 ## Out of Scope
 
