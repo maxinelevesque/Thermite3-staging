@@ -253,17 +253,25 @@ checked-discharge semantics structural rather than nominal. Representative
 positions now differ by concrete program predicates (construct-count bounds
 and the Lean-only `Fn` boundary); the executable table is proved equivalent to
 full-judgment `Refines` in both directions using explicit separating programs.
-No theorem derives refinement from copied labels, `True` claims, or a second
+The follow-up repair also replaces the former `True` claim and `Unit` evidence:
+each position's claim now existentially requires program-bound route evidence,
+and its executable verifier checks the appropriate runtime, bounded, solver,
+or Lean receipt plus the route's semantic side conditions. Stronger evidence
+transports to weaker evidence through the full-judgment refinement proof. No
+theorem derives refinement from copied labels, trivial claims, or a second
 order table.
 
 Checked discharge no longer lets an implementation choose an arbitrary
 evidence carrier. `ReplayEvidence family input` is indexed by the exact model
 family and input and must carry a nonempty replay payload, that input's identity,
 and a decoded observation whose model is proof-equal to the family identity.
+The implementation-model family owns the replay decoder, and evidence must
+prove that this fixed decoder maps the exact payload bytes to that observation.
 `ArtifactChecker` must prove that decoding returns that carried observation and
 that accepted evidence denotes the indexed input. Negative probes confirm that
 the former `Unit`/always-true checker is ill-typed, an empty replay payload is
-uninhabitable, and mutated concrete payloads are rejected.
+uninhabitable, arbitrary nonempty bytes cannot acquire a replay proof, and
+mutated concrete payloads are rejected.
 
 These constructions still do not discharge rustc, LLVM, checker, operating
 system, or platform trust. They specify the proof shape required to reduce a

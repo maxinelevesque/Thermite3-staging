@@ -18,6 +18,7 @@ def silentlySubstitutedRustcFamily : ImplementationModelFamily where
   denotes := rustc195Denotation
   observe := fun input =>
     ⟨⟨"rustc", "1.96.0"⟩, rustc195Behavior input⟩
+  decodeReplay := rustc195DecodeReplay
 
 def pinnedRustWitness : RustcInput :=
   ⟨⟨"pinned-rust", [],

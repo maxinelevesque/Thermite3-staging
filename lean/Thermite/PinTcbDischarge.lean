@@ -32,14 +32,14 @@ def otherRustArtifact : RustcInput :=
   ⟨⟨"other-rust", [],
     ["thermite-rust-v1", "target:x86_64-unknown-linux-gnu"]⟩⟩
 
-def wrongArtifactEvidence : ReplayEvidence rustc195Family dischargeRustWitness :=
-  { expectedRustcEvidence with
-    payload := "rustc-1.95.0:other-rust:x86_64-unknown-linux-gnu"
-    payloadNonempty := by decide }
-
 theorem checked_evidence_is_artifact_pinned :
-    rustcEvidenceValid wrongArtifactEvidence = false := by
-  decide
+    ¬ ∃ evidence : ReplayEvidence rustc195Family dischargeRustWitness,
+      evidence.payload = "rustc-1.95.0:other-rust:x86_64-unknown-linux-gnu" := by
+  rintro ⟨evidence, wrongPayload⟩
+  have replayed := evidence.replayed
+  rw [wrongPayload] at replayed
+  simp [rustc195Family, rustc195DecodeReplay, rustc195ReplayPayload,
+    dischargeRustWitness] at replayed
 
 /-- Completeness booleans cannot be projected into artifact soundness; the
 only public theorem keeps the checked correspondence premise explicit. -/

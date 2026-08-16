@@ -50,16 +50,61 @@ def representativeBoundary : RepresentativePosition → BoundaryContext
 def representativeFrame (position : RepresentativePosition) : SemanticFrame :=
   ⟨"thermite-language", 1, "neutral", 1, representativeBoundary position⟩
 
-def representativeClaim (_position : RepresentativePosition) : Program → Prop :=
-  fun _ => True
+/-- Route evidence is program-bound and carries distinct receipts for each
+certification mechanism.  The verifier, rather than the evidence constructor,
+decides which receipts and semantic side conditions a position requires. -/
+structure RepresentativeEvidence where
+  program : Program
+  runtimeReceipt : String
+  boundedReceipt : String
+  solverCertificate : String
+  leanProof : String
+deriving DecidableEq, Repr
+
+def certificateMatches (routePrefix certificate : String) (program : Program) : Bool :=
+  certificate == routePrefix ++ program.digest
+
+def runtimeEvidenceAccepted (evidence : RepresentativeEvidence) (program : Program) : Bool :=
+  decide (evidence.program = program) &&
+    certificateMatches "runtime:" evidence.runtimeReceipt program
+
+def boundedEvidenceAccepted (evidence : RepresentativeEvidence) (program : Program) : Bool :=
+  runtimeEvidenceAccepted evidence program &&
+    certificateMatches "bounded:" evidence.boundedReceipt program &&
+    decide (program.constructs.length ≤ 5)
+
+def solverEvidenceAccepted (evidence : RepresentativeEvidence) (program : Program) : Bool :=
+  boundedEvidenceAccepted evidence program &&
+    certificateMatches "solver:" evidence.solverCertificate program &&
+    decide (program.constructs.length ≤ 2) &&
+    program.constructs.all (· = "SpecFn")
+
+def leanEvidenceAccepted (evidence : RepresentativeEvidence) (program : Program) : Bool :=
+  boundedEvidenceAccepted evidence program &&
+    certificateMatches "lean:" evidence.leanProof program &&
+    decide (program.constructs.length ≤ 3) &&
+    program.constructs.all (· = "Fn")
+
+def representativeEvidenceAccepted :
+    RepresentativePosition → RepresentativeEvidence → Program → Bool
+  | .runtime => runtimeEvidenceAccepted
+  | .bounded => boundedEvidenceAccepted
+  | .solverComplete => solverEvidenceAccepted
+  | .leanEmpirical => leanEvidenceAccepted
+
+/-- The claim at each point is the existence of accepted, program-bound route
+evidence, not a display label or a trivially inhabited proposition. -/
+def representativeClaim (position : RepresentativePosition) : Program → Prop :=
+  fun program => ∃ evidence, representativeEvidenceAccepted position evidence program = true
 
 /-- Every position in the executable order denotes a full indexed judgment,
 not merely an enum value or display label. -/
 def representativeJudgment (position : RepresentativePosition) :
     CertificationJudgment (representativeFrame position) noResiduals coreV2
-      logicalProcedure (representativeClaim position) Unit noObservation :=
-  ⟨fun _ program => coreV2.admits program ∧
-    (representativeBoundary position).qualifies program⟩
+      logicalProcedure (representativeClaim position) RepresentativeEvidence noObservation :=
+  ⟨fun evidence program =>
+    representativeEvidenceAccepted position evidence program = true ∧
+      coreV2.admits program ∧ (representativeBoundary position).qualifies program⟩
 
 /-- Semantic order: `right` refines `left` as full indexed judgments. -/
 def RepresentativeLE (left right : RepresentativePosition) : Prop :=
@@ -98,10 +143,26 @@ theorem decision_implies_representative_refinement : ∀ {left right},
     procedure := rfl
     context := fun held => held
     membership := fun _ admitted => admitted
-    claim := fun _ _ => trivial
+    claim := by
+      intro program claim
+      rcases claim with ⟨evidence, acceptedEvidence⟩
+      exact ⟨evidence, by
+        cases left <;> cases right <;>
+          simp_all [representativeLeq, representativeEvidenceAccepted,
+            runtimeEvidenceAccepted, boundedEvidenceAccepted,
+            solverEvidenceAccepted, leanEvidenceAccepted] <;>
+          exact acceptedEvidence.2⟩
     observation := fun _ _ => trivial
-    certification := fun _ program certified =>
-      ⟨certified.1, boundaryRefinesOfDecision accepted program certified.2⟩
+    certification := by
+      intro evidence program certified
+      refine ⟨?_, certified.2.1,
+        boundaryRefinesOfDecision accepted program certified.2.2⟩
+      cases left <;> cases right <;>
+        simp_all [representativeJudgment, representativeLeq,
+          representativeEvidenceAccepted,
+          runtimeEvidenceAccepted, boundedEvidenceAccepted,
+          solverEvidenceAccepted, leanEvidenceAccepted] <;>
+        exact certified.1.2
   }⟩
 
 def runtimeOnlyWitness : Program :=

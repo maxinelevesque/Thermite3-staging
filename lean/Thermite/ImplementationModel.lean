@@ -38,6 +38,7 @@ structure ImplementationModelFamily where
   fragment : Fragment
   denotes : Input → Behavior → Prop
   observe : Input → ModelObservation Behavior
+  decodeReplay : Input → String → Option (ModelObservation Behavior)
 
 /-- Executable observation corresponds only when both its exact model version
 and its behavior agree with the family denotation. -/
@@ -141,6 +142,15 @@ def rustc195Behavior (input : RustcInput) : RustcBehavior :=
   else
     ⟨.rejected, "x86_64-unknown-linux-gnu"⟩
 
+def rustc195ReplayPayload (input : RustcInput) : String :=
+  "rustc-1.95.0:" ++ input.emitted.digest ++ ":x86_64-unknown-linux-gnu"
+
+def rustc195DecodeReplay (input : RustcInput) (payload : String) :
+    Option (ModelObservation RustcBehavior) :=
+  if payload = rustc195ReplayPayload input then
+    some ⟨rustc195Identity, rustc195Behavior input⟩
+  else none
+
 /-- Declarative behavior contract, stated independently of the executable
 observation function. -/
 def rustc195Denotation (input : RustcInput) (behavior : RustcBehavior) : Prop :=
@@ -159,6 +169,7 @@ def rustc195Family : ImplementationModelFamily where
   fragment := thermiteRustV1
   denotes := rustc195Denotation
   observe := fun input => ⟨rustc195Identity, rustc195Behavior input⟩
+  decodeReplay := rustc195DecodeReplay
 
 /-- Correspondence is deliberately limited to the named Thermite-emitted
 fragment; it says nothing about whole-Rust behavior. -/

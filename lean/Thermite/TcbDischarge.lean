@@ -36,6 +36,7 @@ structure ReplayEvidence (family : ImplementationModelFamily) (input : family.In
   modelBound : model = family.identity
   inputBound : inputId = family.inputIdentity input
   observationModel : observation.model = model
+  replayed : family.decodeReplay input payload = some observation
 
 /-- The checker is indexed by the exact artifact and consumes only a replay
 envelope carrying that artifact's identity and decoded observation. -/
@@ -181,7 +182,10 @@ def expectedRustcEvidence : ReplayEvidence rustc195Family dischargeRustWitness :
     payloadNonempty := by decide
     modelBound := rfl
     inputBound := rfl
-    observationModel := rfl }
+    observationModel := rfl
+    replayed := by
+      simp [rustc195Family, rustc195DecodeReplay, rustc195ReplayPayload,
+        dischargeRustWitness, rustc195Behavior, thermiteRustV1Admits] }
 
 def replayRustcBehavior
     (evidence : ReplayEvidence rustc195Family dischargeRustWitness) : RustcBehavior :=
