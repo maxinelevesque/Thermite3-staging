@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 78dfa5aede44aece8c68940ed6aca9c2fb651bbdac705d4549159c672c67cde6 (issue-48 through producer refinement: reviewed the inventory/formal layers plus exact-budget Rust production, generated Lean refinement replay, deterministic serialization, and boundary mutations.)
+audited-content-sha256: 9faa1c98c2d6bd18a8746f794371c22151b414c617ca32a3254fa9bcb618e53a (issue-48 through AC-7: reviewed the inventory/formal layers, producer refinement, and executable fail-closed stage/outcome matrix.)
 
 ## Summary
 
@@ -119,7 +119,7 @@ checker vocabulary as the language-wide ontology.
   producer fragment; Rust output refines it under the exact sufficient-budget
   premise; serialization mutations, truncation, version skew, and same-shape
   payload changes fail preservation checks.
-- [ ] AC-7: (REQ-7, REQ-9) A generated outcome matrix drives representative
+- [x] AC-7: (REQ-7, REQ-9) A generated outcome matrix drives representative
   programs through every available stage and distinguishes all named outcome
   classes. No resource or environment failure is reported as unsupported
   language, proof refutation, successful certification, or silent downgrade.

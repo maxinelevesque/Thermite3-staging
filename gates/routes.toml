@@ -1350,6 +1350,36 @@ reference = ["gates/language-completeness-inventory.py"]
 conformance_ops = []
 
 [[route]]
+crate_pattern = "forge/src/outcome_matrix.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["forge/tests/language_outcome_matrix.rs", "gates/language-outcome-matrix.json", "lean/Thermite/LanguageCompleteness.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/tests/language_outcome_matrix.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["forge/src/outcome_matrix.rs", "gates/language-outcome-matrix.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-outcome-matrix.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-outcome-matrix.json", "forge/src/outcome_matrix.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-outcome-matrix.json"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-outcome-matrix.py", "forge/src/outcome_matrix.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_language_outcome_matrix.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-outcome-matrix.py"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "lean/Thermite/LanguageCompleteness.lean"
 design = ".design/versioned-language-completeness.md"
 reference = ["lean/Thermite/CheckedTraversal.lean", "lean/Thermite/PinLanguageNarrowing.lean", "gates/lean-axiom-probe.sh"]

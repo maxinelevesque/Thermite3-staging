@@ -18229,15 +18229,26 @@ note = "exact/insufficient budgets, Lean refinement replay, deterministic round-
 id = "REQ-COMPLETE-TOTAL-CLASSIFICATION"
 title = "Every attempted stage returns one named outcome"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "forge"
 summary = "Structured results distinguish unsupported language, invalid source, unsupported policy, resource and environment failures, counterexamples, proof failures, soundness alarms, and certification."
-remaining_scope = "Implement the closed outcome vocabulary and generated stage matrix without silent downgrade per REQ-7 and AC-7."
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/versioned-language-completeness.md"
-note = "REQ-7 and AC-7 define total stage classification"
+note = "REQ-7 and AC-7 define the closed, stage-indexed total-classification contract"
+[[requirement.evidence]]
+kind = "file"
+target = "forge/src/outcome_matrix.rs"
+note = "executable ten-way terminal classifier preserves the attempted stage and fails contradictory adapter facts closed"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/language-outcome-matrix.json"
+note = "representative generated matrix covers all eight stages and all ten neutral outcomes"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_language_outcome_matrix.py"
+note = "missing stages, missing outcomes, and mismatched terminal facts fail the matrix gate"
 
 [[requirement]]
 id = "REQ-COMPLETE-RFC3-COORDINATES"

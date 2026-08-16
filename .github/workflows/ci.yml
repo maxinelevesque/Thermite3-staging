@@ -153,6 +153,8 @@ jobs:
         run: uv run gates/rfc9-effect-inventory.py --check
       - name: language completeness inventory
         run: uv run python gates/language-completeness-inventory.py
+      - name: language stage/outcome matrix
+        run: uv run python gates/language-outcome-matrix.py
 
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2

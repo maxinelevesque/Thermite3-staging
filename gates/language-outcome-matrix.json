@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "case": [
+    {"id":"parser-valid","stage":"parser","program":"fn identity(x: u64) -> u64 { x }","expected":"success"},
+    {"id":"parser-invalid","stage":"parser","program":"fn {","expected":"invalid_source","facts":{"invalid_source":true}},
+    {"id":"validator-fragment-exclusion","stage":"validator","program":"fx net fn fetch()","expected":"unsupported_language","facts":{"unsupported_language":true}},
+    {"id":"canonical-valid","stage":"canonical_semantics","program":"fn identity(x: u64) -> u64 { x }","expected":"success"},
+    {"id":"checked-ir-resource-limit","stage":"checked_ir","program":"deeply nested expression","expected":"resource_exhausted","facts":{"resource_exhausted":true}},
+    {"id":"lowering-tool-version","stage":"lowering","program":"fn identity(x: u64) -> u64 { x }","expected":"tool_incompatible","facts":{"tool_incompatible":true}},
+    {"id":"proof-route-tool-absent","stage":"proof_route","program":"fn identity(x: u64) -> u64 { x }","expected":"tool_unavailable","facts":{"tool_unavailable":true}},
+    {"id":"proof-route-counterexample","stage":"proof_route","program":"fn bad(x: u64) ensures result > x { x }","expected":"counterexample","facts":{"counterexample":true}},
+    {"id":"proof-route-unknown","stage":"proof_route","program":"solver returns unknown","expected":"proof_failure","facts":{"proof_failure":true}},
+    {"id":"policy-outside-fragment","stage":"policy","program":"unbounded mutation policy","expected":"unsupported_policy","facts":{"unsupported_policy":true}},
+    {"id":"certification-success","stage":"certification","program":"proved identity certificate","expected":"success"},
+    {"id":"certification-disagreement","stage":"certification","program":"engines disagree on witnessed result","expected":"soundness_alarm","facts":{"soundness_alarm":true}}
+  ]
+}
