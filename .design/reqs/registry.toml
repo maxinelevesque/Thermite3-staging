@@ -18183,15 +18183,26 @@ note = "negative-space mutant that silently labels the narrowing as expansion is
 id = "REQ-COMPLETE-STAGE-SEPARATION"
 title = "Completeness claims remain stage-indexed"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "Evidence, producer, lowering, proof-route, policy, and certification completeness are distinct predicates joined only by explicit composition theorems."
-remaining_scope = "Encode the stage-indexed claims and composition premises so a weaker theorem cannot discharge a stronger stage per REQ-5 and AC-5."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-5 and AC-5 define the completeness ladder without implication laundering"
+kind = "symbol"
+target = "Thermite.LanguageCompleteness.StageGuarantee"
+note = "the guarantee stage is part of its Lean type"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.LanguageCompleteness.CompositionPremise"
+note = "cross-stage transport is an explicit independently supplied premise"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.LanguageCompleteness.composeGuaranteeComplete"
+note = "kernel-checked completeness composition requires that premise"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/lean-axiom-probe.sh"
+note = "composition theorem remains inside the allowed axiom set"
 
 [[requirement]]
 id = "REQ-COMPLETE-PRODUCER-REFINEMENT"

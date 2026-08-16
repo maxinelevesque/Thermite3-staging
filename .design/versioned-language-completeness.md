@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 2621b8e421b52ae7f018890d9f070dd12f95bbb944b6d1af91b5dc2d56a6b920 (issue-48 inventory and formal slices: reviewed the fail-closed ledger, stage-indexed vocabulary, RFC-10 refinement, same-lineage expansion, explicit narrowing witness, negative pin, and axiom-probe coverage together)
+audited-content-sha256: 176e7896b9c151441fe8f820361e99cbb38f387a70172ef7da90efeb60f25b6d (issue-48 formal slices: reviewed the inventory, fragment evolution, stage-indexed guarantees, explicit cross-stage composition premise, and axiom-probe coverage together)
 
 ## Summary
 
@@ -112,7 +112,7 @@ checker vocabulary as the language-wide ontology.
   inclusion theorem and a negative mutation that makes the inclusion proof
   fail; the compatibility-break path is separately tested with a concrete
   narrowing witness.
-- [ ] AC-5: (REQ-5) Lean type signatures and composition theorems prevent an
+- [x] AC-5: (REQ-5) Lean type signatures and composition theorems prevent an
   evidence-completeness result from being used as lowering, proof-route, policy,
   or certification completeness without the intervening premises.
 - [ ] AC-6: (REQ-6) The logical producer is total on the initial claimed

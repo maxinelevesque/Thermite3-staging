@@ -98,6 +98,29 @@ def CompleteAt (fragment : Fragment) (valid : SemanticValidity) (stage : Stage)
   ∀ program, fragment.admits program → valid program →
     ∃ value, run program = ⟨Outcome.success value⟩
 
+/-- A proposition whose stage index is part of its type. Evidence completeness
+cannot be passed where lowering or certification completeness is required. -/
+structure StageGuarantee (stage : Stage) where
+  holds : Program → Prop
+
+/-- The only language-wide bridge between completeness stages. Its premise is
+named and proved independently rather than inferred from either endpoint. -/
+structure CompositionPremise (sourceStage targetStage : Stage)
+    (source : StageGuarantee sourceStage) (target : StageGuarantee targetStage) where
+  transport : ∀ program, source.holds program → target.holds program
+
+def GuaranteeComplete (fragment : Fragment) {stage : Stage}
+    (guarantee : StageGuarantee stage) : Prop :=
+  ∀ program, fragment.admits program → guarantee.holds program
+
+theorem composeGuaranteeComplete {fragment : Fragment} {sourceStage targetStage : Stage}
+    {source : StageGuarantee sourceStage} {target : StageGuarantee targetStage}
+    (sourceComplete : GuaranteeComplete fragment source)
+    (premise : CompositionPremise sourceStage targetStage source target) :
+    GuaranteeComplete fragment target := by
+  intro program admitted
+  exact premise.transport program (sourceComplete program admitted)
+
 /-! The first concrete version lineage. These small predicates make evolution
 executable and testable without pretending that the full language is complete. -/
 
