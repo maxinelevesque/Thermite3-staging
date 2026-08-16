@@ -57,6 +57,8 @@ IMPORTS=(
   "Thermite.CertificationPolicy"
   "Thermite.PinCertificationPolicy"
   "Thermite.CertificationShape"
+  "Thermite.ImplementationModel"
+  "Thermite.PinImplementationModel"
 )
 
 # Universal soundness theorems and the permanent reconstruction probe.
@@ -141,6 +143,13 @@ THEOREMS=(
   "Thermite.CertificationMetatheory.solver_lean_have_no_realizable_join"
   "Thermite.CertificationMetatheory.selected_domain_is_not_five_point"
   "Thermite.CertificationMetatheory.replacement_shape_witness"
+  "Thermite.CertificationMetatheory.model_refinement_refl"
+  "Thermite.CertificationMetatheory.model_refinement_trans"
+  "Thermite.CertificationMetatheory.rustc195_corresponds_on_thermite_fragment"
+  "Thermite.CertificationMetatheory.thermite_rust_v1_expands_to_v2"
+  "Thermite.CertificationMetatheory.thermite_rust_narrowing_is_explicit"
+  "Thermite.CertificationMetatheory.silent_rustc_version_substitution_rejected"
+  "Thermite.CertificationMetatheory.silent_rust_fragment_narrowing_rejected"
 )
 ALLOWED="propext Classical.choice Quot.sound"
 

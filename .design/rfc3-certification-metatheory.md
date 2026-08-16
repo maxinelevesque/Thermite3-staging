@@ -110,7 +110,7 @@ already-shipped AC-1 through AC-12 work.
   domain, including its joins, meets, non-modularity, and quotient/collapse
   relation, or replaced by a differently shaped checked domain with the
   counterexample that forced the change recorded.
-- [ ] AC-7: (REQ-6) Lean defines the generic typed model-family/refinement
+- [x] AC-7: (REQ-6) Lean defines the generic typed model-family/refinement
   vocabulary and a first versioned `rustc` model instance over a named
   Thermite-emitted Rust fragment. Expanding or narrowing that fragment follows
   the existing inclusion/compatibility-break discipline.
@@ -288,6 +288,19 @@ is the solver/Lean pair: it has bounded as a meet but no realizable upper bound,
 so no join exists. `lean/Thermite/CertificationShape.lean` proves both the
 missing join and the four-not-five cardinality. The domain is therefore not
 declared a lattice or non-modular N5, and no synthetic top is added.
+
+AC-7 adds `lean/Thermite/ImplementationModel.lean` and its negative-space pin
+module. The generic family keeps component-specific input and behavior types,
+an exact model/version identity, a named `Fragment`, denotation, and executable
+observation; typed refinements compose without forcing unrelated components
+through a shared behavior type. The first instance is exactly `rustc 1.95.0`
+on the named Thermite-emitted v1 Linux-target fragment and proves observation
+correspondence there, not for whole Rust. Ordinary v1-to-v2 fragment growth is
+an `Expands` witness; narrowing uses `CompatibilityBreak`. Mutations reject an
+unchanged behavior payload relabeled as rustc 1.96.0 and a same-lineage v3 that
+silently drops the v2-only witness. This checkpoint defines a model and names
+trust only: it supplies no universal or per-artifact refinement and makes no
+TCB-discharge claim; AC-8 and AC-9 remain open.
 
 ## Resolved Questions
 
