@@ -106,7 +106,7 @@ already-shipped AC-1 through AC-12 work.
   every policy consumer enabled in Rust. A mutation that maps a concrete
   position to an abstract point incapable of justifying the same floor decision
   fails.
-- [ ] AC-6: (REQ-5) The N5 claim is either proved for the selected abstract
+- [x] AC-6: (REQ-5) The N5 claim is either proved for the selected abstract
   domain, including its joins, meets, non-modularity, and quotient/collapse
   relation, or replaced by a differently shaped checked domain with the
   counterexample that forced the change recorded.
@@ -281,6 +281,14 @@ A mutation that collapses solver-complete onto Lean-empirical accepts an
 unjustified floor and is rejected. No Pareto, aggregation, display consumer, or
 Galois-connection claim is enabled by this checkpoint.
 
+AC-6 resolves the candidate-shape question against N5. The selected domain is
+a checked four-point fork: runtime below bounded, with incomparable
+solver-complete and Lean-empirical branches above it. The concrete counterexample
+is the solver/Lean pair: it has bounded as a meet but no realizable upper bound,
+so no join exists. `lean/Thermite/CertificationShape.lean` proves both the
+missing join and the four-not-five cardinality. The domain is therefore not
+declared a lattice or non-modular N5, and no synthetic top is added.
+
 ## Resolved Questions
 
 - The metatheory is a separate `.design/rfc3-certification-metatheory.md`
@@ -313,7 +321,7 @@ Galois-connection claim is enabled by this checkpoint.
 
 ## Residual trust
 
-AC-1 through AC-5 establish the indexed judgment, generic refinement laws,
+AC-1 through AC-6 establish the indexed judgment, generic refinement laws,
 bound/boundary order pins, the finite realizable-order probe, and a sound
 versioned abstraction for the currently enabled floor consumer, but
 the seven-position Rust order in `forge/src/manifest.rs` remains an
