@@ -18113,29 +18113,43 @@ note = "language and assurance delta ledger plus named residual-trust boundary"
 id = "REQ-COMPLETE-LANGUAGE-INVENTORY"
 title = "Every claimed language construct has a stage disposition"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "spec"
 summary = "A fail-closed inventory classifies every current construct and claimed behavior across parser, validation, semantics, checked IR, lowering, proof, policy, and certification stages."
-remaining_scope = "Build the source and claim inventory, stage dispositions, and missing-entry gate described by REQ-1 and AC-1."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-1 and AC-1 define the language-wide inventory"
+kind = "file"
+target = "gates/language-support-matrix.json"
+note = "checked generated matrix classifies all 126 public AST constructs and all reviewed claim groups across eight stages"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/language-completeness-inventory.py"
+note = "authoritative source population, AST variants, profiles, claims, and generated matrix fail closed"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_language_completeness_inventory.py"
+note = "new variants, missing claim profiles, source-population shrinkage, and stale matrix mutations fail"
 
 [[requirement]]
 id = "REQ-COMPLETE-GAP-LEDGER"
 title = "Claim and proof gaps have checked dispositions"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "spec"
 summary = "Documented language claims are compared with executable and formal evidence, and every gap is implemented, bounded out, or linked to the completeness-review track."
-remaining_scope = "Generate the initial gap report and enforce exactly one evidence-bearing disposition per unresolved gap as required by REQ-2 and AC-2."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-2 and AC-2 define sources, gap identities, and dispositions"
+kind = "file"
+target = "gates/language-completeness-inventory.toml"
+note = "eight audited gaps name stages, smallest counterexamples, observed/claimed outcomes, trust consequences, resolution state, and open disposition"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/language-completeness-inventory.py"
+note = "resolved gaps require evidence; open gaps require exactly one current-project, bounded-exclusion, or issue-backed review disposition"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_language_completeness_inventory.py"
+note = "missing disposition-specific tracking evidence fails closed"
 
 [[requirement]]
 id = "REQ-COMPLETE-NEUTRAL-FORMAL-LAYER"

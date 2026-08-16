@@ -12,6 +12,8 @@ SPEC.loader.exec_module(MODULE)
 
 
 class AstInventoryTests(unittest.TestCase):
+    ROOT = GATE.parents[1]
+
     def test_extracts_all_variant_shapes_and_ignores_comments(self):
         source = """
         // pub enum Fake { Nope }
@@ -58,6 +60,56 @@ evidence = ["evidence.rs"]
             path.write_text(inventory, encoding="utf-8")
             errors = MODULE.check(root, path)
             self.assertTrue(any("Item::New" in error for error in errors), errors)
+
+    def test_checked_support_matrix_is_generated_from_ledger(self):
+        data = MODULE.tomllib.loads(
+            (self.ROOT / MODULE.INVENTORY).read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            (self.ROOT / MODULE.MATRIX).read_text(encoding="utf-8"),
+            MODULE.matrix_text(data),
+        )
+        self.assertEqual(len(MODULE.support_matrix(data)["constructs"]), 126)
+        self.assertEqual(len(MODULE.support_matrix(data)["claims"]), 10)
+
+    def test_claim_without_stage_profile_fails_closed(self):
+        text = (self.ROOT / MODULE.INVENTORY).read_text(encoding="utf-8")
+        text = text.replace('profile = "current-language"\n', "", 1)
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as handle:
+            handle.write(text)
+            path = Path(handle.name)
+        try:
+            errors = MODULE.check(self.ROOT, path)
+            self.assertTrue(any("missing stage profile" in error for error in errors), errors)
+        finally:
+            path.unlink()
+
+    def test_authoritative_source_population_cannot_silently_shrink(self):
+        text = (self.ROOT / MODULE.INVENTORY).read_text(encoding="utf-8")
+        text = text.replace('"docs/verification.md",', '"docs/does-not-exist.md",')
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as handle:
+            handle.write(text)
+            path = Path(handle.name)
+        try:
+            errors = MODULE.check(self.ROOT, path)
+            self.assertTrue(any("matches nothing" in error for error in errors), errors)
+        finally:
+            path.unlink()
+
+    def test_open_gap_requires_disposition_specific_evidence(self):
+        text = (self.ROOT / MODULE.INVENTORY).read_text(encoding="utf-8")
+        text = text.replace(
+            'disposition = "completeness_review"\nissue = "https://github.com/maxinelevesque/Thermite3-staging/issues/48"',
+            'disposition = "completeness_review"',
+        )
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as handle:
+            handle.write(text)
+            path = Path(handle.name)
+        try:
+            errors = MODULE.check(self.ROOT, path)
+            self.assertTrue(any("requires a GitHub issue URL" in error for error in errors), errors)
+        finally:
+            path.unlink()
 
 
 if __name__ == "__main__":

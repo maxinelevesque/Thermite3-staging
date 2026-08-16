@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 46864fb12b2bbfdddb02e0b0b6c149ddfe2613cbfee7022cfbc423485ff4a600 (issue-48 through AC-11: re-audited the governed completeness surface; future RFCs enter a closed preserve/expand/narrow contract with resolving classifier, theorem, matrix, and negative-space evidence.)
+audited-content-sha256: 4d500af783aa95fc1ca20d3f8025c73d3191720061a72be76b31892510956626 (issue-48 through AC-11 plus AC-1/AC-2: re-audited all authoritative source populations, the 126-construct/eight-stage generated matrix, ten claim groups, and eight stateful gap dispositions.)
 
 ## Summary
 
@@ -95,11 +95,11 @@ checker vocabulary as the language-wide ontology.
 
 ## Acceptance Criteria
 
-- [ ] AC-1: (REQ-1, REQ-2) A checked, generated support matrix covers every
+- [x] AC-1: (REQ-1, REQ-2) A checked, generated support matrix covers every
   current AST construct and every documented language claim across all named
   stages; deleting a construct disposition or adding an undispositioned AST
   variant makes its gate fail.
-- [ ] AC-2: (REQ-2, REQ-12) The initial gap report names every mismatch found
+- [x] AC-2: (REQ-2, REQ-12) The initial gap report names every mismatch found
   between the authoritative documents, requirement registry, implementation,
   tests, and Lean theorems, and every unresolved gap has exactly one checked
   disposition: current-project slice, bounded exclusion, or open

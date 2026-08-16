@@ -1340,7 +1340,13 @@ conformance_ops = []
 [[route]]
 crate_pattern = "gates/language-completeness-inventory.toml"
 design = ".design/versioned-language-completeness.md"
-reference = ["gates/language-completeness-inventory.py"]
+reference = ["gates/language-completeness-inventory.py", "gates/language-support-matrix.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-support-matrix.json"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-completeness-inventory.py", "gates/language-completeness-inventory.toml"]
 conformance_ops = []
 
 [[route]]
