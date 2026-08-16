@@ -101,7 +101,7 @@ already-shipped AC-1 through AC-12 work.
   full judgments and reports whether the realizable sub-poset has each requested
   join and meet. Missing operations are named rather than filled with an
   uninterpreted or policy-only point.
-- [ ] AC-5: (REQ-4, REQ-5) Lean defines the semantic denotation order and the
+- [x] AC-5: (REQ-4, REQ-5) Lean defines the semantic denotation order and the
   candidate finite policy domain, then proves a sound abstraction theorem for
   every policy consumer enabled in Rust. A mutation that maps a concrete
   position to an abstract point incapable of justifying the same floor decision
@@ -271,6 +271,16 @@ their meet is the bounded position and their join is reported absent. No
 lattice instance or synthetic policy top is introduced, and negative pins
 reject either branch being substituted as the missing join.
 
+AC-5 adds the versioned finite abstraction in
+`lean/Thermite/CertificationPolicy.lean`. The repository consumer audit found
+that the only enabled `CertificationPosition` order decision is the
+`dominates(self)` coherence path; other order calls are tests. The general
+`floor_allows_sound` theorem nevertheless covers every pair in the candidate
+domain: abstract floor acceptance entails the concrete representative order.
+A mutation that collapses solver-complete onto Lean-empirical accepts an
+unjustified floor and is rejected. No Pareto, aggregation, display consumer, or
+Galois-connection claim is enabled by this checkpoint.
+
 ## Resolved Questions
 
 - The metatheory is a separate `.design/rfc3-certification-metatheory.md`
@@ -303,8 +313,9 @@ reject either branch being substituted as the missing join.
 
 ## Residual trust
 
-AC-1 through AC-4 establish the indexed judgment, generic refinement laws,
-bound/boundary order pins, and the finite realizable-order probe, but
+AC-1 through AC-5 establish the indexed judgment, generic refinement laws,
+bound/boundary order pins, the finite realizable-order probe, and a sound
+versioned abstraction for the currently enabled floor consumer, but
 the seven-position Rust order in `forge/src/manifest.rs` remains an
 implementation probe rather than a proved abstraction. Unequal bounds and
 boundary contexts do not yet have a Lean-checked order; no `rustc` executable
