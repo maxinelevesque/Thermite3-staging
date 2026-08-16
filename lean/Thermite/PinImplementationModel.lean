@@ -14,7 +14,7 @@ def silentlySubstitutedRustcFamily : ImplementationModelFamily where
   identity := rustc195Identity
   toProgram := RustcInput.emitted
   fragment := thermiteRustV1
-  denotes := fun input behavior => behavior = rustc195Behavior input
+  denotes := rustc195Denotation
   observe := fun input =>
     ⟨⟨"rustc", "1.96.0"⟩, rustc195Behavior input⟩
 

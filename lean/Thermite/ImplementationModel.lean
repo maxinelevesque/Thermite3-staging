@@ -84,6 +84,7 @@ structure ModelExpansion (old new : ImplementationModelFamily)
     (sameBehavior : old.Behavior = new.Behavior) where
   identity : old.identity = new.identity
   fragment : Expands old.fragment new.fragment
+  semanticRefinement : ModelRefinement old new
 
 /-- Semantic narrowing is a compatibility event, never an ordinary version
 increment.  The existing fragment witness discipline is reused directly. -/
@@ -139,13 +140,22 @@ def rustc195Behavior (input : RustcInput) : RustcBehavior :=
   else
     ⟨.rejected, "x86_64-unknown-linux-gnu"⟩
 
+/-- Declarative behavior contract, stated independently of the executable
+observation function. -/
+def rustc195Denotation (input : RustcInput) (behavior : RustcBehavior) : Prop :=
+  behavior.targetTriple = "x86_64-unknown-linux-gnu" ∧
+    if thermiteRustV1Admits input then
+      behavior.disposition = .accepted
+    else
+      behavior.disposition = .rejected
+
 def rustc195Family : ImplementationModelFamily where
   Input := RustcInput
   Behavior := RustcBehavior
   identity := rustc195Identity
   toProgram := RustcInput.emitted
   fragment := thermiteRustV1
-  denotes := fun input behavior => behavior = rustc195Behavior input
+  denotes := rustc195Denotation
   observe := fun input => ⟨rustc195Identity, rustc195Behavior input⟩
 
 /-- Correspondence is deliberately limited to the named Thermite-emitted
@@ -153,7 +163,10 @@ fragment; it says nothing about whole-Rust behavior. -/
 theorem rustc195_corresponds_on_thermite_fragment :
     ModelCorresponds rustc195Family := by
   intro input _
-  exact ⟨rfl, rfl⟩
+  constructor
+  · rfl
+  · by_cases admitted : thermiteRustV1Admits input = true <;>
+      simp [rustc195Family, rustc195Denotation, rustc195Behavior, admitted]
 
 theorem thermite_rust_v1_expands_to_v2 : Expands thermiteRustV1 thermiteRustV2 := by
   exact ⟨rfl, by decide, fun _ admitted => ⟨Or.inl admitted.1, admitted.2⟩⟩

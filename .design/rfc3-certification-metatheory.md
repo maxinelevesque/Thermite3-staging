@@ -360,6 +360,30 @@ formal fields, and `Level` remains live. Consequently these fixtures prove how
 a future reduction must be justified but do not reduce the effective TCB of any
 current Thermite certificate.
 
+### Adversarial-review repair
+
+Cold review verdict `bafyreicbspfqlnnc7oiobduko7tpucfiigq65rcu22cj77o5l2hrzar7h4`
+blocked the first AC-4/AC-5 and AC-8/AC-9 signatures. The repair removes the
+parallel semantic-order claim: `RepresentativeLE left right` is now literally
+`Refines (representativeJudgment right) (representativeJudgment left)`, and the
+finite Boolean table is retained only with a proved iff against that relation.
+The representative judgments use distinct semantic boundary predicates;
+positive edges carry full refinement witnesses and negative edges are refuted
+by concrete boundary counterexamples. Policy-floor soundness crosses through
+that iff rather than comparing two copied tables.
+
+`TcbReduction` now contains only a dependent `DischargeEvidence`; component
+identity, replacement-evidence label, remaining premises, and both contexts are
+derived accessors and cannot be independently supplied. Universal refinement
+quantifies over a distinct `ExecutableImplementation.run`, not model
+observation. Checked refinement is indexed by the artifact and requires an
+accepted evidence value whose decoder produces the exact modeled observation;
+the fixture checker proves soundness by reducing the complete evidence record,
+not by importing model self-correspondence. The rustc denotation is also stated
+independently of its executable observation. These repairs close the hostile
+constructions while preserving the existing non-claim: the executable and
+checker are formal fixtures, not production TCB-discharge evidence.
+
 ## Out of Scope
 
 - Implementing the Rust schema migration, production executable-refinement or

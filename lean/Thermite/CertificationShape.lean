@@ -17,8 +17,10 @@ theorem solver_lean_have_no_realizable_join :
     ¬ ∃ candidate, IsLeastUpperBound .solverComplete .leanEmpirical candidate := by
   intro alleged
   rcases alleged with ⟨candidate, upper, _least⟩
+  have leftDecision := refinement_implies_decision upper.1
+  have rightDecision := refinement_implies_decision upper.2
   cases candidate <;>
-    simp [IsUpperBound, RepresentativeLE, representativeLeq] at upper
+    simp [representativeLeq] at leftDecision rightDecision
 
 /-- The selected checked domain has four realizable points, not the five points
 required by N5. -/

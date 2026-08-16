@@ -51,6 +51,7 @@ def floorAllows (actual floor : RepresentativePosition) : Bool :=
 theorem floor_allows_sound : ∀ actual floor,
     floorAllows actual floor = true → RepresentativeLE floor actual := by
   intro actual floor accepted
+  apply decision_implies_representative_refinement
   cases actual <;> cases floor <;> exact accepted
 
 /-- The current Rust validation consumer asks only whether a coherent position

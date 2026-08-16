@@ -6,8 +6,11 @@ namespace Thermite.CertificationMetatheory
 
 /-- The two realizable upper branches must not be collapsed into an order. -/
 theorem incomparable_branches_remain_incomparable :
-    representativeLeq .solverComplete .leanEmpirical = false ∧
-      representativeLeq .leanEmpirical .solverComplete = false := by decide
+    ¬ RepresentativeLE .solverComplete .leanEmpirical ∧
+      ¬ RepresentativeLE .leanEmpirical .solverComplete := by
+  constructor <;> intro refined <;>
+    have decision := refinement_implies_decision refined <;>
+    simp [representativeLeq] at decision
 
 /-- A policy-only top must not be invented to make the realizable probe a
 lattice. -/

@@ -21,12 +21,10 @@ theorem illicit_assumption_deletion_rejected :
 
 theorem illicit_tcb_reduction_rejected :
     ¬ ∃ reduction : TcbReduction rustc195Family dischargeRustWitness,
-      reduction.oldContext = assumptionRequiredContext ∧
-      reduction.newContext = illicitDeletionContext := by
-  rintro ⟨reduction, oldContext, newContext⟩
-  have entailment := reduction.entailsOldObligation
-  rw [oldContext, newContext] at entailment
-  exact illicit_assumption_deletion_rejected entailment
+      reduction.dischargedAssumption = ⟨"unrelated-component", "0"⟩ := by
+  rintro ⟨reduction, forged⟩
+  simp [TcbReduction.dischargedAssumption, rustc195Family,
+    rustc195Identity] at forged
 
 /-- An artifact for a different digest cannot reuse the pinned artifact's
 checked evidence: the checker accepts only the exact replay key. -/
@@ -34,20 +32,19 @@ def otherRustArtifact : RustcInput :=
   ⟨⟨"other-rust", [],
     ["thermite-rust-v1", "target:x86_64-unknown-linux-gnu"]⟩⟩
 
-def wrongArtifactCheck (evidence : String) : Bool :=
-  evidence == "rustc-1.95.0:discharge-rust:x86_64-unknown-linux-gnu"
+def wrongArtifactEvidence : RustcArtifactEvidence :=
+  { expectedRustcEvidence with digest := "other-rust" }
 
 theorem checked_evidence_is_artifact_pinned :
-    wrongArtifactCheck
-      "rustc-1.95.0:other-rust:x86_64-unknown-linux-gnu" = false := by
+    rustcEvidenceValid wrongArtifactEvidence = false := by
   decide
 
 /-- Completeness booleans cannot be projected into artifact soundness; the
 only public theorem keeps the checked correspondence premise explicit. -/
 theorem coverage_does_not_supply_correspondence
     (_coverage : CoverageClaims)
-    (sound : ArtifactCorresponds rustc195Family dischargeRustWitness) :
-    ArtifactCorresponds rustc195Family dischargeRustWitness := by
+    (sound : ArtifactModeled rustc195Family dischargeRustWitness) :
+    ArtifactModeled rustc195Family dischargeRustWitness := by
   exact sound
 
 def nominallyCompleteCoverage : CoverageClaims :=
@@ -56,7 +53,8 @@ def nominallyCompleteCoverage : CoverageClaims :=
 /-- Even every completeness flag set to true cannot establish correspondence
 for an observation carrying the wrong model version. -/
 theorem complete_coverage_cannot_mask_version_substitution :
-    ¬ ArtifactCorresponds silentlySubstitutedRustcFamily pinnedRustWitness := by
+    ¬ BehaviorCorresponds silentlySubstitutedRustcFamily pinnedRustWitness
+      (silentlySubstitutedRustcFamily.observe pinnedRustWitness) := by
   have _coverage := nominallyCompleteCoverage
   intro corresponds
   have versionMatches := corresponds.1

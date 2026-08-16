@@ -22,8 +22,9 @@ deriving DecidableEq, Repr
 def allRepresentativePositions : List RepresentativePosition :=
   [.runtime, .bounded, .solverComplete, .leanEmpirical]
 
-/-- The realizable order has two incomparable upper branches and deliberately
-contains no artificial point above both of them. -/
+/-- Executable decision procedure for the four representative judgments.  Its
+semantic adequacy is proved below; consumers do not treat this table as the
+definition of the order. -/
 def representativeLeq : RepresentativePosition → RepresentativePosition → Bool
   | .runtime, _ => true
   | .bounded, .bounded | .bounded, .solverComplete | .bounded, .leanEmpirical => true
@@ -31,45 +32,124 @@ def representativeLeq : RepresentativePosition → RepresentativePosition → Bo
   | .leanEmpirical, .leanEmpirical => true
   | _, _ => false
 
-def RepresentativeLE (left right : RepresentativePosition) : Prop :=
-  representativeLeq left right = true
+def runtimeBoundary : BoundaryContext := ⟨"runtime", fun _ => True⟩
+def boundedBoundary : BoundaryContext :=
+  ⟨"bounded", fun program => program.facts.contains "bounded" ∨
+    program.facts.contains "solver" ∨ program.facts.contains "lean"⟩
+def solverBoundary : BoundaryContext :=
+  ⟨"solver-complete", fun program => program.facts.contains "solver"⟩
+def leanEmpiricalBoundary : BoundaryContext :=
+  ⟨"lean-empirical", fun program => program.facts.contains "lean"⟩
 
-instance representativeLEDecidable (left right : RepresentativePosition) :
-    Decidable (RepresentativeLE left right) := by
-  unfold RepresentativeLE
-  infer_instance
+def representativeBoundary : RepresentativePosition → BoundaryContext
+  | .runtime => runtimeBoundary
+  | .bounded => boundedBoundary
+  | .solverComplete => solverBoundary
+  | .leanEmpirical => leanEmpiricalBoundary
 
-theorem representative_le_refl : ∀ position, RepresentativeLE position position := by
-  intro position
-  cases position <;> decide
+def representativeFrame (position : RepresentativePosition) : SemanticFrame :=
+  ⟨"thermite-language", 1, "neutral", 1, representativeBoundary position⟩
 
-theorem representative_le_antisymm : ∀ {left right},
-    RepresentativeLE left right → RepresentativeLE right left → left = right := by
-  intro left right
-  cases left <;> cases right <;> decide
-
-theorem representative_le_trans : ∀ {first second third},
-    RepresentativeLE first second → RepresentativeLE second third →
-      RepresentativeLE first third := by
-  intro first second third
-  cases first <;> cases second <;> cases third <;> decide
-
-def representativeFrame : RepresentativePosition → SemanticFrame
-  | .leanEmpirical => endToEndFrame
-  | _ => platformFrame
-
-def representativeClaim : RepresentativePosition → Program → Prop
-  | .runtime => fun _ => True
-  | .bounded => BoundedScope 5
-  | .solverComplete => coreV2.admits
-  | .leanEmpirical => coreV2.admits
+def representativeClaim (_position : RepresentativePosition) : Program → Prop :=
+  fun _ => True
 
 /-- Every position in the executable order denotes a full indexed judgment,
 not merely an enum value or display label. -/
 def representativeJudgment (position : RepresentativePosition) :
     CertificationJudgment (representativeFrame position) noResiduals coreV2
       logicalProcedure (representativeClaim position) Unit noObservation :=
-  ⟨fun _ program => coreV2.admits program ∧ representativeClaim position program⟩
+  ⟨fun _ program => coreV2.admits program ∧
+    (representativeBoundary position).qualifies program⟩
+
+/-- Semantic order: `right` refines `left` as full indexed judgments. -/
+def RepresentativeLE (left right : RepresentativePosition) : Prop :=
+  Refines (representativeJudgment right) (representativeJudgment left)
+
+def boundaryRefinesOfDecision : ∀ {left right}, representativeLeq left right = true →
+    BoundaryRefines (representativeBoundary right) (representativeBoundary left) := by
+  intro left right accepted program qualified
+  cases left <;> cases right <;>
+    simp_all [representativeLeq, representativeBoundary, runtimeBoundary,
+      boundedBoundary, solverBoundary, leanEmpiricalBoundary]
+
+theorem decision_implies_representative_refinement : ∀ {left right},
+    representativeLeq left right = true → RepresentativeLE left right := by
+  intro left right accepted
+  exact ⟨{
+    reindexProgram := id
+    translateEvidence := id
+    frame := ⟨rfl, rfl, rfl, rfl, boundaryRefinesOfDecision accepted⟩
+    procedure := rfl
+    context := fun held => held
+    membership := fun _ admitted => admitted
+    claim := fun _ _ => trivial
+    observation := fun _ _ => trivial
+    certification := fun _ program certified =>
+      ⟨certified.1, boundaryRefinesOfDecision accepted program certified.2⟩
+  }⟩
+
+def runtimeOnlyWitness : Program := ⟨"runtime-only", ["Fn"], []⟩
+def boundedOnlyWitness : Program := ⟨"bounded-only", ["Fn"], ["bounded"]⟩
+def solverOnlyWitness : Program := ⟨"solver-only", ["Fn"], ["solver"]⟩
+def leanOnlyWitness : Program := ⟨"lean-only", ["Fn"], ["lean"]⟩
+
+theorem refinement_implies_decision : ∀ {left right},
+    RepresentativeLE left right → representativeLeq left right = true := by
+  intro left right refined
+  rcases refined with ⟨refined⟩
+  cases left <;> cases right <;> try rfl
+  · have := refined.frame.boundary runtimeOnlyWitness trivial
+    simp [representativeFrame, representativeBoundary, boundedBoundary,
+      runtimeOnlyWitness] at this
+  · have := refined.frame.boundary runtimeOnlyWitness trivial
+    simp [representativeFrame, representativeBoundary, solverBoundary,
+      runtimeOnlyWitness] at this
+  · have := refined.frame.boundary boundedOnlyWitness (by
+      simp [representativeFrame, representativeBoundary, boundedBoundary,
+        boundedOnlyWitness])
+    simp [representativeFrame, representativeBoundary, solverBoundary,
+      boundedOnlyWitness] at this
+  · have := refined.frame.boundary leanOnlyWitness (by
+      simp [representativeFrame, representativeBoundary, leanEmpiricalBoundary,
+        leanOnlyWitness])
+    simp [representativeFrame, representativeBoundary, solverBoundary,
+      leanOnlyWitness] at this
+  · have := refined.frame.boundary runtimeOnlyWitness trivial
+    simp [representativeFrame, representativeBoundary, leanEmpiricalBoundary,
+      runtimeOnlyWitness] at this
+  · have := refined.frame.boundary boundedOnlyWitness (by
+      simp [representativeFrame, representativeBoundary, boundedBoundary,
+        boundedOnlyWitness])
+    simp [representativeFrame, representativeBoundary, leanEmpiricalBoundary,
+      boundedOnlyWitness] at this
+  · have := refined.frame.boundary solverOnlyWitness (by
+      simp [representativeFrame, representativeBoundary, solverBoundary,
+        solverOnlyWitness])
+    simp [representativeFrame, representativeBoundary, leanEmpiricalBoundary,
+      solverOnlyWitness] at this
+
+theorem representative_decision_iff_refines : ∀ left right,
+    representativeLeq left right = true ↔ RepresentativeLE left right := by
+  intro left right
+  exact ⟨decision_implies_representative_refinement,
+    refinement_implies_decision⟩
+
+theorem representative_le_refl : ∀ position, RepresentativeLE position position := by
+  intro position
+  exact decision_implies_representative_refinement (by cases position <;> rfl)
+
+theorem representative_le_antisymm : ∀ {left right},
+    RepresentativeLE left right → RepresentativeLE right left → left = right := by
+  intro left right forward reverse
+  have f := refinement_implies_decision forward
+  have r := refinement_implies_decision reverse
+  cases left <;> cases right <;> simp [representativeLeq] at f r ⊢
+
+theorem representative_le_trans : ∀ {first second third},
+    RepresentativeLE first second → RepresentativeLE second third →
+      RepresentativeLE first third := by
+  intro first second third firstSecond secondThird
+  exact refines_trans secondThird firstSecond
 
 def upperBounds (left right : RepresentativePosition) : List RepresentativePosition :=
   allRepresentativePositions.filter fun candidate =>

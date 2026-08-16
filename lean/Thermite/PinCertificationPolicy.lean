@@ -17,6 +17,10 @@ the concrete positions are incomparable. -/
 theorem unsound_policy_collapse_rejected :
     mutantFloorAllows .solverComplete .leanEmpirical = true ∧
       ¬ RepresentativeLE .leanEmpirical .solverComplete := by
-  constructor <;> decide
+  constructor
+  · decide
+  · intro refined
+    have decision := refinement_implies_decision refined
+    simp [representativeLeq] at decision
 
 end Thermite.CertificationMetatheory
