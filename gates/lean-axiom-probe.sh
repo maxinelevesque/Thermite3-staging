@@ -137,7 +137,6 @@ THEOREMS=(
   "Thermite.CertificationMetatheory.representative_decision_iff_refines"
   "Thermite.CertificationMetatheory.solver_accepted_supplies_checked_derivation"
   "Thermite.CertificationMetatheory.solver_accepted_proves_semantic_validity"
-  "Thermite.CertificationMetatheory.never_solved_shape_is_not_solver_certificate"
   "Thermite.CertificationMetatheory.representative_population_is_complete"
   "Thermite.CertificationMetatheory.incomparable_branches_have_no_join"
   "Thermite.CertificationMetatheory.incomparable_branches_have_bounded_meet"

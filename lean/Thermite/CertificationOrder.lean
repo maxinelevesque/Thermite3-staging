@@ -50,14 +50,12 @@ def representativeBoundary : RepresentativePosition → BoundaryContext
 def representativeFrame (position : RepresentativePosition) : SemanticFrame :=
   ⟨"thermite-language", 1, "neutral", 1, representativeBoundary position⟩
 
-/-- Minimal declarative semantics for the representative order: under every
-Boolean interpretation satisfying the program's stated facts, each claimed
-construct must hold.  This is fixed independently of certificates and route
-labels, so a proof object cannot choose a vacuous claim. -/
-def representativeSemanticValidity (program : Program) : Prop :=
-  ∀ interpretation : String → Bool,
-    (∀ fact ∈ program.facts, interpretation fact = true) →
-    ∀ construct ∈ program.constructs, interpretation construct = true
+/-- The semantic validity obligation consumed by representative proof routes.
+It is intentionally opaque at the neutral `Program` projection: this layer has
+no canonical denotation from which to invent it.  A future production bridge
+must supply proofs from the actual language semantics.  In particular, facts,
+digest strings, and construct shape cannot reduce or construct this predicate. -/
+opaque representativeSemanticValidity : SemanticValidity
 
 /-- A solver certificate is a kernel-checked derivation of the exact semantic
 shape represented by the solver-complete point.  It is deliberately not a

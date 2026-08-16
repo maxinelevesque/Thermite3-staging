@@ -259,12 +259,15 @@ and its executable verifier checks the appropriate runtime, bounded, solver,
 or Lean evidence plus the route's semantic side conditions. Solver-complete
 and Lean-empirical evidence use dependent certificates whose fields are
 kernel-checked derivations for the exact program. Each certificate must also
-prove the fixed `representativeSemanticValidity`: every Boolean interpretation
-satisfying the program's stated facts satisfies each claimed construct. This
-claim is defined independently of certificate data and route labels.
+prove the fixed `representativeSemanticValidity`. That predicate is opaque at
+the neutral `Program` projection because this layer has no canonical language
+denotation; neither free-form facts nor route data define it. A later production
+bridge must derive it from the actual semantics rather than this layer
+inventing a toy interpretation.
 Digest-shaped strings cannot inhabit certificates; solver acceptance exposes
-both `Nonempty (SolverCertificate program)` and the semantic validity theorem,
-while an all-false interpretation refutes the pinned `never-solved` program.
+both `Nonempty (SolverCertificate program)` and the semantic validity theorem.
+The formerly circular `facts = constructs` construction cannot synthesize the
+opaque obligation without adding an axiom or an external proof bridge.
 Stronger evidence transports to weaker evidence through the
 full-judgment refinement proof. No
 theorem derives refinement from copied labels, trivial claims, or a second
