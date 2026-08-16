@@ -135,6 +135,7 @@ THEOREMS=(
   "Thermite.CertificationMetatheory.decision_implies_representative_refinement"
   "Thermite.CertificationMetatheory.refinement_implies_decision"
   "Thermite.CertificationMetatheory.representative_decision_iff_refines"
+  "Thermite.CertificationMetatheory.solver_accepted_supplies_checked_derivation"
   "Thermite.CertificationMetatheory.representative_population_is_complete"
   "Thermite.CertificationMetatheory.incomparable_branches_have_no_join"
   "Thermite.CertificationMetatheory.incomparable_branches_have_bounded_meet"

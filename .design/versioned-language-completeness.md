@@ -256,8 +256,12 @@ full-judgment `Refines` in both directions using explicit separating programs.
 The follow-up repair also replaces the former `True` claim and `Unit` evidence:
 each position's claim now existentially requires program-bound route evidence,
 and its executable verifier checks the appropriate runtime, bounded, solver,
-or Lean receipt plus the route's semantic side conditions. Stronger evidence
-transports to weaker evidence through the full-judgment refinement proof. No
+or Lean evidence plus the route's semantic side conditions. Solver-complete
+and Lean-empirical evidence use dependent certificates whose fields are
+kernel-checked derivations for the exact program; digest-shaped strings cannot
+inhabit them, and solver acceptance exposes `Nonempty (SolverCertificate
+program)`. Stronger evidence transports to weaker evidence through the
+full-judgment refinement proof. No
 theorem derives refinement from copied labels, trivial claims, or a second
 order table.
 

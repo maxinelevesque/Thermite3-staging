@@ -50,16 +50,28 @@ def representativeBoundary : RepresentativePosition → BoundaryContext
 def representativeFrame (position : RepresentativePosition) : SemanticFrame :=
   ⟨"thermite-language", 1, "neutral", 1, representativeBoundary position⟩
 
-/-- Route evidence is program-bound and carries distinct receipts for each
-certification mechanism.  The verifier, rather than the evidence constructor,
-decides which receipts and semantic side conditions a position requires. -/
+/-- A solver certificate is a kernel-checked derivation of the exact semantic
+shape represented by the solver-complete point.  It is deliberately not a
+self-authenticating digest string. -/
+structure SolverCertificate (program : Program) : Type where
+  bounded : program.constructs.length ≤ 2
+  derivation : ∀ construct ∈ program.constructs, construct = "SpecFn"
+
+/-- The empirical Lean branch likewise carries a checked proof object for its
+exact program rather than a nominal route label. -/
+structure LeanCertificate (program : Program) : Type where
+  bounded : program.constructs.length ≤ 3
+  derivation : ∀ construct ∈ program.constructs, construct = "Fn"
+
+/-- Route evidence is program-bound. Runtime/bounded receipts identify their
+operational runs; proof-complete branches additionally require dependent,
+kernel-checked certificates for this exact program. -/
 structure RepresentativeEvidence where
   program : Program
   runtimeReceipt : String
   boundedReceipt : String
-  solverCertificate : String
-  leanProof : String
-deriving DecidableEq, Repr
+  solverCertificate : Option (SolverCertificate program)
+  leanCertificate : Option (LeanCertificate program)
 
 def certificateMatches (routePrefix certificate : String) (program : Program) : Bool :=
   certificate == routePrefix ++ program.digest
@@ -75,15 +87,11 @@ def boundedEvidenceAccepted (evidence : RepresentativeEvidence) (program : Progr
 
 def solverEvidenceAccepted (evidence : RepresentativeEvidence) (program : Program) : Bool :=
   boundedEvidenceAccepted evidence program &&
-    certificateMatches "solver:" evidence.solverCertificate program &&
-    decide (program.constructs.length ≤ 2) &&
-    program.constructs.all (· = "SpecFn")
+    evidence.solverCertificate.isSome
 
 def leanEvidenceAccepted (evidence : RepresentativeEvidence) (program : Program) : Bool :=
   boundedEvidenceAccepted evidence program &&
-    certificateMatches "lean:" evidence.leanProof program &&
-    decide (program.constructs.length ≤ 3) &&
-    program.constructs.all (· = "Fn")
+    evidence.leanCertificate.isSome
 
 def representativeEvidenceAccepted :
     RepresentativePosition → RepresentativeEvidence → Program → Bool
@@ -91,6 +99,20 @@ def representativeEvidenceAccepted :
   | .bounded => boundedEvidenceAccepted
   | .solverComplete => solverEvidenceAccepted
   | .leanEmpirical => leanEvidenceAccepted
+
+/-- Acceptance at the solver-complete point exposes a dependent proof object
+for this exact program; formatted receipt strings alone cannot establish it. -/
+theorem solver_accepted_supplies_checked_derivation
+    (evidence : RepresentativeEvidence) (program : Program)
+    (accepted : solverEvidenceAccepted evidence program = true) :
+    Nonempty (SolverCertificate program) := by
+  simp [solverEvidenceAccepted, boundedEvidenceAccepted,
+    runtimeEvidenceAccepted] at accepted
+  have programBound : evidence.program = program := accepted.1.1.1.1
+  subst program
+  cases certificate : evidence.solverCertificate with
+  | none => simp [certificate] at accepted
+  | some checked => exact ⟨checked⟩
 
 /-- The claim at each point is the existence of accepted, program-bound route
 evidence, not a display label or a trivially inhabited proposition. -/
