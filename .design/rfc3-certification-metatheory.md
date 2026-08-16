@@ -97,7 +97,7 @@ already-shipped AC-1 through AC-12 work.
   scopes and for boundary-context weakening; negative pins fail if unequal
   bounds or semantically distinct boundary contexts are identified without an
   equivalence proof.
-- [ ] AC-4: (REQ-3, REQ-4) A finite executable model enumerates representative
+- [x] AC-4: (REQ-3, REQ-4) A finite executable model enumerates representative
   full judgments and reports whether the realizable sub-poset has each requested
   join and meet. Missing operations are named rather than filled with an
   uninterpreted or policy-only point.
@@ -264,6 +264,13 @@ both the reversed five-to-two bound and an upgrade from platform-qualified to
 end-to-end certification. The concrete semantic order, policy abstraction,
 model families, TCB discharge, replay, and `Level` retirement remain open.
 
+AC-4 adds `lean/Thermite/CertificationOrder.lean`, a four-position executable
+realizable sub-poset whose 16 pairwise join/meet requests are computed from the
+order. The solver-complete and Lean-empirical branches remain incomparable:
+their meet is the bounded position and their join is reported absent. No
+lattice instance or synthetic policy top is introduced, and negative pins
+reject either branch being substituted as the missing join.
+
 ## Resolved Questions
 
 - The metatheory is a separate `.design/rfc3-certification-metatheory.md`
@@ -296,8 +303,8 @@ model families, TCB discharge, replay, and `Level` retirement remain open.
 
 ## Residual trust
 
-AC-1 through AC-3 establish the indexed judgment, generic refinement laws, and
-the first bound/boundary order pins, but
+AC-1 through AC-4 establish the indexed judgment, generic refinement laws,
+bound/boundary order pins, and the finite realizable-order probe, but
 the seven-position Rust order in `forge/src/manifest.rs` remains an
 implementation probe rather than a proved abstraction. Unequal bounds and
 boundary contexts do not yet have a Lean-checked order; no `rustc` executable
