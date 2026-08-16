@@ -1,7 +1,7 @@
 # Thermite — convenience targets. The build/test system is Cargo; these are
 # thin entry points. `make audit` is the headline: a FULL TRUST-CHAIN
 # re-derivation a skeptic runs on their own machine (see gates/audit.sh).
-.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test rfc9-effect-inventory language-completeness-inventory language-outcome-matrix language-rfc-evolution
+.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test rfc9-effect-inventory language-completeness-inventory language-outcome-matrix language-rfc-evolution completeness-review
 
 DOC_DRIFT_CI_BASE ?= origin/main
 DOC_DRIFT_CI_HEAD ?= HEAD
@@ -159,3 +159,6 @@ language-outcome-matrix:
 
 language-rfc-evolution:
 	@uv run python gates/language-rfc-evolution.py
+
+completeness-review:
+	@uv run python gates/completeness-review.py

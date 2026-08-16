@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 4d500af783aa95fc1ca20d3f8025c73d3191720061a72be76b31892510956626 (issue-48 through AC-11 plus AC-1/AC-2: re-audited all authoritative source populations, the 126-construct/eight-stage generated matrix, ten claim groups, and eight stateful gap dispositions.)
+audited-content-sha256: 2b9706a22412b73414307f76a9c4a573c8d7af9c2f84d6a4a35e5806a3721b42 (issue-48 through AC-12: re-audited the support/gap inventories and the bidirectional completeness-review backlog, including evidence-bearing close transitions.)
 
 ## Summary
 
@@ -139,7 +139,7 @@ checker vocabulary as the language-wide ontology.
   the fragment classifier, old-to-new theorem, support matrix, and a
   negative-space witness; a semantic narrowing cannot pass as an ordinary
   monotone revision.
-- [ ] AC-12: (REQ-12) The completeness-review backlog and gap inventory agree
+- [x] AC-12: (REQ-12) The completeness-review backlog and gap inventory agree
   in both directions, and closing a fixture backlog item without adding its
   cited executable or formal evidence fails the track's consistency gate.
 - [ ] AC-13: (REQ-13) Lean defines the closed engineer-label vocabulary and

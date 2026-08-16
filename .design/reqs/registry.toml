@@ -18361,15 +18361,22 @@ note = "fixture expansion fails for each omitted artifact and semantic narrowing
 id = "REQ-COMPLETE-REVIEW-TRACK"
 title = "Gap inventory and completeness-review backlog agree"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "process"
 summary = "The durable completeness-review issue track agrees bidirectionally with unresolved gap dispositions and closes items only with cited executable or formal evidence."
-remaining_scope = "Establish the track, consistency gate, and evidence-bearing close transition per REQ-12 and AC-12."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-12 and AC-12 define the completeness-review backlog contract"
+kind = "file"
+target = "gates/completeness-review.toml"
+note = "durable backlog item CR-001 links the open semantic evidence-closure gap to issue 48"
+[[requirement.evidence]]
+kind = "file"
+target = "gates/completeness-review.py"
+note = "gap and backlog inventories agree bidirectionally and closure requires resolving executable/formal evidence"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_completeness_review.py"
+note = "missing, orphan, premature, mismatched, and evidence-free closure transitions fail"
 
 [[requirement]]
 id = "REQ-COMPLETE-PROVED-DISPLAY"

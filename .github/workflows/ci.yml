@@ -157,6 +157,8 @@ jobs:
         run: uv run python gates/language-outcome-matrix.py
       - name: language RFC fragment-evolution discipline
         run: uv run python gates/language-rfc-evolution.py
+      - name: completeness-review backlog consistency
+        run: uv run python gates/completeness-review.py
 
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
