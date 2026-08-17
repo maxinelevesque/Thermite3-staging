@@ -859,12 +859,6 @@ mod tests {
     };
     use crate::meaning::MeaningAudit;
 
-    #[test]
-    fn empty_mutation_denominator_is_below_the_positive_floor() {
-        assert!(mutation_ratio_below_floor("0/0"));
-        assert!(!mutation_ratio_is_asserted_below_floor("0/0"));
-    }
-
     fn effects() -> Vec<String> {
         vec!["pure".into()]
     }
@@ -923,6 +917,9 @@ mod tests {
 
     #[test]
     fn total_combination_preserves_settled_policy_and_handles_both_disagreements() {
+        assert!(mutation_ratio_below_floor("0/0"));
+        assert!(!mutation_ratio_is_asserted_below_floor("0/0"));
+
         let accepted = ItemOutcome::accepted(
             Certificate::new("f", Level::L3, effects(), 0, vec![]),
             "verus",
