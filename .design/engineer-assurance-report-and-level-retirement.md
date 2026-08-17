@@ -75,6 +75,12 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   Engineer projection shall be total by constructor family and parameters,
   preserve exact bounds and boundary identities, characterize every
   many-to-one fiber, and generate the distinctions each label forgets.
+  Adding an admitted producer family shall incur the complete extension tax:
+  extend the closed admitted wrapper, V2 abstraction, symbolic order and
+  antichain-intersection laws, engineer projection and disclosure, generated
+  Rust replay, issuance inventory, negative mutations, and documentation in one
+  governed change. Familiar coordinates or an existing label shall not waive
+  any part of that tax.
 - REQ-5: The stored engineer display shall contain typed claim, typed coverage,
   and collapse-policy version. Issuance shall compute it from the formal record;
   validation shall recompute the unique licensed projection. The
@@ -140,7 +146,13 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   cross-version or cross-procedure normalization requires new typed semantic,
   model, and procedure-simulation witnesses translating programs, claims,
   evidence, and observations. Raw comparison across unsupported fibers is
-  forbidden.
+  forbidden. Every new semantic/model version or admitted procedure family
+  shall declare its comparison domain as part of the extension tax. For each
+  supported predecessor it shall provide the checked transport/refinement or
+  simulation theorem; for an intentionally incompatible predecessor it shall
+  provide a checked non-comparability declaration with a negative witness and
+  force explicit policy-skew reporting. An extension with an unclassified
+  predecessor relationship cannot enter current authority.
 - REQ-10: Lean shall define `PortfolioLift`, its induced heterogeneous
   `ItemClaimSet`, and a project judgment whose claim
   is the conjunction of the complete `ProjectPopulation`'s source-ordered item
@@ -285,7 +297,11 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   simulations always remain separate. Compatible same-version boundary/context
   fixtures remain separate by default and aggregate only after exact checked
   rebasing. No shipped equality-based `FrameRefines` test is described as
-  cross-version transport.
+  cross-version transport. A fixture adding a semantic/model version or
+  admitted procedure without classifying every declared predecessor relation
+  fails issuance. Compatible cases require checked transports and replay;
+  incompatible cases require a negative witness and deterministically render
+  policy skew.
 - [ ] AC-7: (REQ-7, REQ-10) A mixed-route fixture proves `PortfolioLift` from
   every expected addressed clause into an item conjunction; dropping a clause
   makes the lift impossible. A multi-item fixture then proves `ProjectLift` for
@@ -431,6 +447,16 @@ Certificate issuance stores `EngineerDisplayV1 { policy_version, claim,
 coverage }`; validation recomputes it from realized formal authority. Formal
 authority and presentation have separate digests so a display-policy change is
 visible and tamper-evident without changing what was certified.
+
+This makes extension deliberately proof-carrying. A new backend, admitted
+producer family, semantic/model version, or procedure version is incomplete
+until it extends the admitted-family exhaustiveness proof, V2 abstraction,
+symbolic order/intersection rules, label meaning and loss disclosure, Rust
+replay, and comparison matrix. The comparison matrix is not an optional later
+cleanup: every declared predecessor edge contains either a checked transport /
+simulation theorem or a checked incompatibility witness that forces skew. This
+is the verification extension tax that prevents today’s accumulated ambiguity
+from becoming tomorrow’s compatibility backlog.
 
 ### Project aggregation as common semantics
 
@@ -691,6 +717,10 @@ visibility but does not change an existing certificate's formal meaning.
 - Q-5: The trust deliverable has multiple disclosure levels and is generated,
   diffed, and published by CI in the interaction style of a coverage-reporting
   service while retaining all authority inside Thermite's checked formal data.
+- Q-6: Cross-version and cross-procedure comparison is part of the extension
+  tax. Every new admitted family/version classifies its predecessor relations
+  with checked transport/simulation theorems or checked incompatibility
+  witnesses; it may not defer those relationships into an untracked backlog.
 
 ## Out of Scope
 
