@@ -790,6 +790,13 @@ pub fn check_file_with_options(
                 // pre-execution artifact. Validation never restores private
                 // audit authority across the serialization boundary.
                 if stored.persisted_verus_artifact_matches(&l3_artifact) {
+                    let stored =
+                        crate::result_arbiter::ItemOutcome::from_persisted_certificate(stored)
+                            .map_err(|error| ForgeError::ResultArbiterAlarm {
+                                item: error.item,
+                                detail: error.detail,
+                            })?
+                            .into_certificate();
                     certs.push(stored.with_cached(true));
                     continue;
                 }
@@ -839,6 +846,14 @@ pub fn check_file_with_options(
                     crate::vacuity_solver::SolverVacuityCause::SemanticTautology => (true, false),
                     crate::vacuity_solver::SolverVacuityCause::VacuousPrecondition => (false, true),
                 };
+                let kind = match cause {
+                    crate::vacuity_solver::SolverVacuityCause::SemanticTautology => {
+                        crate::result_arbiter::PolicyRejection::SemanticTautology
+                    }
+                    crate::vacuity_solver::SolverVacuityCause::VacuousPrecondition => {
+                        crate::result_arbiter::PolicyRejection::VacuousPrecondition
+                    }
+                };
                 let cert = Certificate::rejected_vacuity(
                     f.name.clone(),
                     effects_of(&f.contract.effects),
@@ -851,6 +866,14 @@ pub fn check_file_with_options(
                 )
                 .with_verus_artifact(&l3_artifact, false)
                 .expect("the pre-Verus policy gate retains checked classification");
+                let cert = crate::result_arbiter::ItemOutcome::from_policy(
+                    crate::result_arbiter::PolicyDecision::Rejected {
+                        kind,
+                        certificate: cert,
+                    },
+                    "solver-vacuity",
+                )
+                .into_certificate();
                 // A #13 reject is a settled, deterministic verdict (a function of the
                 // lowered contract + seed + versions), so it is cached like a
                 // counterexample cert: a re-check serves the hit without re-running
@@ -868,7 +891,7 @@ pub fn check_file_with_options(
         // runs the real L3 proof (REQ-3). Assemble the cert as the
         // non-cached path always has.
         let verus = run_verus(lowered, item.name(), seed, rlimit)?;
-        let cert = assemble_certificate(item, &verus, Some(&l3_artifact));
+        let cert = assemble_certificate(item, &verus, Some(&l3_artifact)).into_certificate();
 
         // #10 automatic degrade ladder (`.design/forge/degrade-ladder.md`, the
         // default `forge check` path). On a `VerusOutcome::Timeout` (verus could
@@ -946,6 +969,7 @@ pub fn check_file_with_options(
         // graduates `mutants_killed`/`survivor` on the certified cert.
         let cert = if let Item::Fn(f) = item {
             if cert.level == Level::L3 && cert.reject.is_none() {
+                let outcome = crate::result_arbiter::ItemOutcome::accepted(cert, "verus");
                 let score = mutation_score(
                     f,
                     &parsed.program,
@@ -972,11 +996,14 @@ pub fn check_file_with_options(
                     // `suggested_move` headline; `level`/`reject`/oracle subset
                     // untouched, REQ-4). An environment failure on a candidate verus
                     // run propagates (R-CODE-4).
-                    let scored_cert = cert.with_mutation_score_and_equivalents(
-                        score.mutants_killed_string(),
-                        score.survivor.clone(),
-                        score.equivalent,
-                    );
+                    let scored_cert = outcome
+                        .certificate()
+                        .clone()
+                        .with_mutation_score_and_equivalents(
+                            score.mutants_killed_string(),
+                            score.survivor.clone(),
+                            score.equivalent,
+                        );
                     let suggestions = strengthen_certificate(
                         f,
                         &parsed.program,
@@ -990,7 +1017,11 @@ pub fn check_file_with_options(
                         &cache_dir,
                         use_cache,
                     )?;
-                    scored_cert.with_strengthening(suggestions)
+                    outcome
+                        .apply_policy(crate::result_arbiter::PolicyDecision::Accepted(
+                            scored_cert.with_strengthening(suggestions),
+                        ))
+                        .into_certificate()
                 } else {
                     // Sub-floor: the contract under-constrains the body. Below the
                     // floor a survivor is normally present (a < 1.0 ratio means ≥1
@@ -1007,7 +1038,7 @@ pub fn check_file_with_options(
                             "a mutant survived the contract".to_string()
                         }
                     });
-                    Certificate::rejected_weak_contract(
+                    let rejected = Certificate::rejected_weak_contract(
                         f.name.clone(),
                         effects,
                         score.mutants_killed_string(),
@@ -1019,7 +1050,13 @@ pub fn check_file_with_options(
                         score.mutants_killed_string(),
                         score.survivor.clone(),
                         score.equivalent,
-                    )
+                    );
+                    outcome
+                        .apply_policy(crate::result_arbiter::PolicyDecision::Rejected {
+                            kind: crate::result_arbiter::PolicyRejection::WeakContract,
+                            certificate: rejected,
+                        })
+                        .into_certificate()
                 }
             } else {
                 cert
@@ -1945,7 +1982,6 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
 
         let mut reconstructed = Vec::new();
         let mut terminal = None;
-        let mut optional_upgrade_unavailable = false;
         for (index, clause) in function.contract.ensures.iter().enumerate() {
             let Some(outcome) = epr_clause_outcome(program, function, index, clause) else {
                 continue;
@@ -1960,60 +1996,31 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
                     ));
                 }
                 crate::epr_reconstruct::EprOutcome::Counterexample(model) => {
-                    terminal = Some(epr_counterexample_cert(
-                        &function.name,
-                        &cert.effects,
-                        function.slag.is_some(),
-                        index,
-                        &model,
-                        &epr_countermodel_attribution(),
-                    ));
+                    terminal = Some(crate::result_arbiter::ProofCandidate::Refuted {
+                        engine: "epr".to_string(),
+                        certificate: epr_counterexample_cert(
+                            &function.name,
+                            &cert.effects,
+                            function.slag.is_some(),
+                            index,
+                            &model,
+                            &epr_countermodel_attribution(),
+                        ),
+                    });
                     break;
                 }
-                crate::epr_reconstruct::EprOutcome::Timeout(reason) => {
-                    // Reconstruction is an optional upgrade. Resource exhaustion
-                    // cannot erase an independently established clean L3 result.
-                    if clean_l3_base(&cert) {
-                        optional_upgrade_unavailable = true;
-                        break;
-                    }
-                    terminal = Some(epr_timeout_cert(
-                        &function.name,
-                        &cert.effects,
-                        function.slag.is_some(),
-                        index,
-                        &reason,
-                        &epr_undecided_attribution(),
-                    ));
+                crate::epr_reconstruct::EprOutcome::Timeout(_) => {
+                    terminal = Some(crate::result_arbiter::ProofCandidate::Unavailable);
                     break;
                 }
-                crate::epr_reconstruct::EprOutcome::Failed(reason) => {
-                    // EPR is an assurance upgrade over the already-established
-                    // base certificate. An unavailable or incompatible optional
-                    // tool must not erase a clean Verus L3 result; preserve the
-                    // base and let a usable toolchain upgrade it to L4.
-                    if epr_environment_failure(&reason) && clean_l3_base(&cert) {
-                        optional_upgrade_unavailable = true;
-                        break;
-                    }
-                    terminal = Some(epr_failure_cert(
-                        &function.name,
-                        &cert.effects,
-                        function.slag.is_some(),
-                        index,
-                        &reason,
-                        &epr_undecided_attribution(),
-                    ));
+                crate::epr_reconstruct::EprOutcome::Failed(_) => {
+                    terminal = Some(crate::result_arbiter::ProofCandidate::Unavailable);
                     break;
                 }
             }
         }
-        if optional_upgrade_unavailable {
-            out.push(cert);
-            continue;
-        }
         if let Some(terminal) = terminal {
-            out.push(terminal);
+            out.push(settle_epr_candidate(cert, function, terminal));
             continue;
         }
         if reconstructed.is_empty() {
@@ -2038,22 +2045,13 @@ fn finish_epr_reconstruction(
     reconstructed: Vec<ObligationResult>,
 ) -> Certificate {
     if reconstructed.len() != function.contract.ensures.len() {
-        return cert;
-    }
-    // A base-engine counterexample contradicting a kernel-checked EPR proof
-    // is a soundness alarm, not permission to silently replace either verdict.
-    if cert.reject.as_ref().map(|reject| reject.cause.as_str()) == Some("Counterexample") {
-        return epr_failure_cert(
-            &function.name,
-            &cert.effects,
-            function.slag.is_some(),
-            0,
-            "EprVerifierDisagreement: the base engine reported a counterexample \
-             while Lean kernel replay proved every admitted S₂.0 clause",
-            &epr_undecided_attribution(),
+        return settle_epr_candidate(
+            cert,
+            function,
+            crate::result_arbiter::ProofCandidate::Partial,
         );
     }
-    Certificate::new(
+    let replacement = Certificate::new(
         function.name.clone(),
         Level::L4,
         cert.effects.clone(),
@@ -2061,22 +2059,59 @@ fn finish_epr_reconstruction(
         reconstructed,
     )
     .graduate_triage_clean()
-    .with_engine_attribution(epr_attribution())
+    .with_engine_attribution(epr_attribution());
+    settle_epr_candidate(
+        cert,
+        function,
+        crate::result_arbiter::ProofCandidate::Complete {
+            engine: "epr".to_string(),
+            certificate: replacement,
+            preserve_base_policy: true,
+        },
+    )
 }
 
-fn clean_l3_base(cert: &Certificate) -> bool {
-    cert.level == Level::L3 && cert.reject.is_none()
-}
-
-fn epr_environment_failure(reason: &str) -> bool {
-    [
-        "EprSolverUnavailable:",
-        "EprSolverVersion:",
-        "EprLratToolUnavailable:",
-        "EprLratToolVersion:",
-    ]
-    .iter()
-    .any(|prefix| reason.starts_with(prefix))
+fn settle_epr_candidate(
+    cert: Certificate,
+    function: &thermite_syntax::FnItem,
+    candidate: crate::result_arbiter::ProofCandidate,
+) -> Certificate {
+    let scope = cert.assurance_scope.clone();
+    let effects = cert.effects.clone();
+    let outcome = match crate::result_arbiter::ItemOutcome::from_persisted_certificate(cert) {
+        Ok(outcome) => outcome,
+        Err(error) => {
+            let alarm = epr_failure_cert(
+                &function.name,
+                &effects,
+                function.slag.is_some(),
+                0,
+                &format!("EprVerifierDisagreement: {}", error.detail),
+                &epr_undecided_attribution(),
+            );
+            return match scope {
+                Some(scope) => alarm.with_assurance_scope(scope),
+                None => alarm,
+            };
+        }
+    };
+    match outcome.combine(candidate) {
+        Ok(settled) => settled.into_certificate(),
+        Err(disagreement) => {
+            let alarm = epr_failure_cert(
+                &function.name,
+                &effects,
+                function.slag.is_some(),
+                0,
+                &format!("EprVerifierDisagreement: {disagreement}"),
+                &epr_undecided_attribution(),
+            );
+            match scope {
+                Some(scope) => alarm.with_assurance_scope(scope),
+                None => alarm,
+            }
+        }
+    }
 }
 
 /// Whether at least one clause is admitted by the canonical S₂.0 IR and needs
@@ -4087,7 +4122,7 @@ fn lean_engine_cert(
     selection: EngineSelection,
     mutation_floor: f64,
 ) -> Result<Certificate, ForgeError> {
-    use crate::engine::{Engine as _, EngineName, Verdict};
+    use crate::engine::{Engine as _, Verdict};
 
     match selection {
         EngineSelection::Verus => Ok(verus_cert),
@@ -4106,37 +4141,60 @@ fn lean_engine_cert(
         // (R-APG-1 — no panic on a future wiring change).
         EngineSelection::Bv => Ok(verus_cert),
         EngineSelection::Auto => {
-            // Verus first: settled proofs and failures are kept. Lean is only a
-            // fallback for a genuinely inconclusive Verus run (a timeout or a
-            // lower-rung timeout degrade). In particular, body-safety witnesses
-            // and the vacuity, triage, slag, and mutation gates are conclusive
-            // results; a contract-only Lean proof must never erase them.
-            let verus_verdict = verus_verdict_of(&verus_cert);
-            if !auto_should_try_lean(&verus_cert) {
-                return Ok(verus_cert);
+            let base = crate::result_arbiter::ItemOutcome::from_persisted_certificate(verus_cert)
+                .map_err(|error| ForgeError::ResultArbiterAlarm {
+                item: error.item,
+                detail: error.detail,
+            })?;
+            if !base.needs_fallback() {
+                return Ok(base.into_certificate());
             }
-            // Verus inconclusive → try Lean (the §6 ordering). The disagreement guard
-            // (REQ-5) fires only if Verus witnessed a refutation (Refuted) and Lean
-            // proves — the real-unsoundness case. A Verus Unknown/timeout + a Lean
-            // Proven is benign (Verus could not decide).
             let lean_verdict = lean.discharge(obligation, &CovenantRecord::none());
-            if let Err(disagreement) = crate::engine::check_disagreement(
-                &obligation.item,
-                EngineName::Verus,
-                &verus_verdict,
-                lean.name(),
-                &lean_verdict,
-            ) {
-                return Err(ForgeError::SoundnessAlarm(disagreement));
-            }
-            match lean_verdict {
-                Verdict::Proven(_) => Ok(lean_proven_cert(lean, &verus_cert, mutation_floor)),
-                // Lean could not discharge either — keep the Verus base cert (the
-                // degrade/timeout verdict stands).
-                _ => Ok(verus_cert),
-            }
+            let candidate = match lean_verdict {
+                Verdict::Proven(_) => {
+                    let result = lean_proven_result(lean, base.certificate(), mutation_floor);
+                    return base
+                        .combine(crate::result_arbiter::ProofCandidate::Complete {
+                            engine: lean.name().tag().to_string(),
+                            certificate: result.proof,
+                            preserve_base_policy: false,
+                        })
+                        .map(|settled| settled.apply_policy(result.policy).into_certificate())
+                        .map_err(ForgeError::SoundnessAlarm);
+                }
+                Verdict::Refuted(counterexample) => {
+                    crate::result_arbiter::ProofCandidate::Refuted {
+                        engine: lean.name().tag().to_string(),
+                        certificate: Certificate::new(
+                            &obligation.item,
+                            Level::L0,
+                            base.certificate().effects.clone(),
+                            0,
+                            counterexample.obligations,
+                        ),
+                    }
+                }
+                Verdict::Unknown(reason) => crate::result_arbiter::ProofCandidate::Inconclusive {
+                    engine: lean.name().tag().to_string(),
+                    certificate: lean_unverifiable_cert(base.certificate(), &reason),
+                },
+            };
+            base.combine(candidate)
+                .map(crate::result_arbiter::ItemOutcome::into_certificate)
+                .map_err(ForgeError::SoundnessAlarm)
         }
         EngineSelection::Lean => {
+            let base = crate::result_arbiter::ItemOutcome::from_persisted_certificate(verus_cert)
+                .map_err(|error| ForgeError::ResultArbiterAlarm {
+                item: error.item,
+                detail: error.detail,
+            })?;
+            if matches!(
+                base.disposition(),
+                crate::result_arbiter::BaseDisposition::PolicyRejected(_)
+            ) {
+                return Ok(base.into_certificate());
+            }
             // LeanEngine only: discharge the item by Lean. Tier-(c) → interactive
             // replay; auto tiers → live lake; non-exportable → a skip.
             let (verdict, interactive) = if lean.admits_auto(obligation) {
@@ -4148,73 +4206,46 @@ fn lean_engine_cert(
                 // (the author is a reviewed step, REQ-7(ii)/OQ-4).
                 (lean.replay_interactive(source_file, obligation), true)
             };
-            match verdict {
+            let candidate = match verdict {
                 Verdict::Proven(_) if interactive => {
-                    Ok(lean_interactive_proven_cert(lean, &verus_cert))
+                    crate::result_arbiter::ProofCandidate::Complete {
+                        engine: lean.name().tag().to_string(),
+                        certificate: lean_interactive_proven_cert(lean, base.certificate()),
+                        preserve_base_policy: false,
+                    }
                 }
-                Verdict::Proven(_) => Ok(lean_proven_cert(lean, &verus_cert, mutation_floor)),
-                Verdict::Refuted(_) => {
-                    // A Lean witnessed refutation (not produced by the current export
-                    // path, but total): an L0 reject, never a silent pass.
-                    Ok(Certificate::rejected(
-                        &verus_cert.item,
-                        verus_cert.effects.clone(),
-                        false,
-                        crate::manifest::RejectReason {
-                            cause: "LeanRefuted".to_string(),
-                            detail: "the Lean engine refuted the obligation".to_string(),
-                        },
-                    ))
+                Verdict::Proven(_) => {
+                    let result = lean_proven_result(lean, base.certificate(), mutation_floor);
+                    return base
+                        .select(crate::result_arbiter::ProofCandidate::Complete {
+                            engine: lean.name().tag().to_string(),
+                            certificate: result.proof,
+                            preserve_base_policy: false,
+                        })
+                        .map(|settled| settled.apply_policy(result.policy).into_certificate())
+                        .map_err(ForgeError::SoundnessAlarm);
                 }
-                Verdict::Unknown(reason) => Ok(lean_unverifiable_cert(&verus_cert, &reason)),
-            }
+                Verdict::Refuted(counterexample) => {
+                    crate::result_arbiter::ProofCandidate::Refuted {
+                        engine: lean.name().tag().to_string(),
+                        certificate: Certificate::new(
+                            &base.certificate().item,
+                            Level::L0,
+                            base.certificate().effects.clone(),
+                            0,
+                            counterexample.obligations,
+                        ),
+                    }
+                }
+                Verdict::Unknown(reason) => crate::result_arbiter::ProofCandidate::Inconclusive {
+                    engine: lean.name().tag().to_string(),
+                    certificate: lean_unverifiable_cert(base.certificate(), &reason),
+                },
+            };
+            base.select(candidate)
+                .map(crate::result_arbiter::ItemOutcome::into_certificate)
+                .map_err(ForgeError::SoundnessAlarm)
         }
-    }
-}
-
-/// Whether automatic engine selection may try Lean after the Verus pass.
-///
-/// The automatic degrade ladder marks timeout-derived lower rungs with
-/// `lowered_assurance`. A raw timeout can also reach this seam in tests and in a
-/// future ladder configuration. Every other non-L3 certificate is a settled
-/// failure or policy gate, not an invitation to replace the whole item verdict
-/// with a contract-only proof.
-fn auto_should_try_lean(cert: &Certificate) -> bool {
-    cert.lowered_assurance
-        || cert
-            .reject
-            .as_ref()
-            .is_some_and(|reject| reject.cause == "VerusTimeout")
-}
-
-/// Reconstruct an `engine::Verdict` from a Verus base cert (`.design/verified/
-/// proof-backends.md` REQ-5 — for the disagreement check + the `auto` inconclusive
-/// test). L3 + no reject = `Proven`; a counterexample reject (a witnessed
-/// `postcondition not satisfied`) = `Refuted`; everything else (timeout / degrade /
-/// L0-no-witness) = `Unknown`. The `Refuted` reconstruction keys on a witnessing
-/// obligation location (REQ-3.1: a witness-less failure is `Unknown`, never `Refuted`).
-fn verus_verdict_of(cert: &Certificate) -> crate::engine::Verdict {
-    use crate::engine::{CacheKey, Counterexample, Evidence, Reason, Verdict};
-    let key = CacheKey {
-        engine: crate::engine::EngineName::Verus,
-        content_address: format!("verus::{}", cert.item),
-    };
-    if cert.level == Level::L3 && cert.reject.is_none() {
-        return Verdict::Proven(Evidence { verified: 1, key });
-    }
-    // A witnessed counterexample (a failing obligation carrying a `--> span`) is a
-    // refutation; a witness-less failure (timeout / fast-unknown) is Unknown
-    // (REQ-3.1 — refutation requires a witnessing input).
-    let witnessed = cert.obligations.iter().any(|o| o.location.is_some());
-    if witnessed {
-        Verdict::Refuted(Counterexample {
-            obligations: cert.obligations.clone(),
-        })
-    } else {
-        Verdict::Unknown(Reason::IncompleteUnknown(format!(
-            "verus did not prove `{}` (no witnessing counterexample)",
-            cert.item
-        )))
     }
 }
 
@@ -4225,11 +4256,16 @@ fn verus_verdict_of(cert: &Certificate) -> crate::engine::Verdict {
 /// path, the kill ratio + the "untested against lean" count). The `Level` is
 /// unchanged-meaning L3 ("proven for all inputs"); the attribution records which
 /// engine + its base; the mutation qualifier is attached additively.
-fn lean_proven_cert(
+struct LeanProofResult {
+    proof: Certificate,
+    policy: crate::result_arbiter::PolicyDecision,
+}
+
+fn lean_proven_result(
     lean: &crate::engine::LeanEngine,
     base: &Certificate,
     mutation_floor: f64,
-) -> Certificate {
+) -> LeanProofResult {
     let attribution = crate::engine::attribution_for(lean);
     // Schema-v2 per-clause block (REQ-1/AC-4): a Lean-discharged clause records its
     // engine, named trust base, and the cert-level verdict (`Proved` — this function is
@@ -4259,7 +4295,10 @@ fn lean_proven_cert(
     // `ens`. A `spec fn` (no `ens`) has no mutation obligation, so it certifies on the
     // Lean kernel proof alone (no floor gate — there is nothing to mutate).
     let Some(Item::Fn(f)) = crate::lean_export::find_item(lean_program(lean), &base.item) else {
-        return cert;
+        return LeanProofResult {
+            proof: cert.clone(),
+            policy: crate::result_arbiter::PolicyDecision::Accepted(cert),
+        };
     };
     let tally = lean_mutation_score(lean, f);
     // REQ-9/AC-7 (the floor gates the Lean path — proof-backends.md §7, the #248 fix):
@@ -4274,17 +4313,29 @@ fn lean_proven_cert(
     // `WeakContract` reject, never a silent L3). A below-floor item (survivors the
     // contract does not catch) likewise rejects.
     if tally.meets_floor(mutation_floor) {
-        cert.with_mutation_score(tally.qualifier(), None)
+        LeanProofResult {
+            proof: cert.clone(),
+            policy: crate::result_arbiter::PolicyDecision::Accepted(
+                cert.with_mutation_score(tally.qualifier(), None),
+            ),
+        }
     } else {
         // Below the floor (or 0/0 with mutants generated): a `WeakContract`-style reject
         // — the contract under-constrains the body, so the Lean kernel proof does not
         // license an L3 cert (proof-backends REQ-9/AC-7; the WeakContract mirror).
-        Certificate::rejected_weak_contract(
+        let rejected = Certificate::rejected_weak_contract(
             &base.item,
             base.effects.clone(),
             tally.mutants_killed_string(),
             tally.survivor_detail(),
-        )
+        );
+        LeanProofResult {
+            proof: cert,
+            policy: crate::result_arbiter::PolicyDecision::Rejected {
+                kind: crate::result_arbiter::PolicyRejection::WeakContract,
+                certificate: rejected,
+            },
+        }
     }
 }
 
@@ -6638,7 +6689,7 @@ fn assemble_certificate(
     item: &Item,
     verus: &VerusResult,
     artifact: Option<&thermite_lower::L3Artifact>,
-) -> Certificate {
+) -> crate::result_arbiter::ItemOutcome {
     let effects = item_effects(item);
     let succeeded = matches!(&verus.outcome, VerusOutcome::Proved { .. });
     let cert = match &verus.outcome {
@@ -6673,11 +6724,22 @@ fn assemble_certificate(
             obligations.clone(),
         ),
     };
-    match artifact {
+    let cert = match artifact {
         Some(artifact) => cert
             .with_verus_artifact(artifact, succeeded)
             .expect("checked Verus lowering and certificate assembly agree"),
         None => cert,
+    };
+    match &verus.outcome {
+        VerusOutcome::Proved { .. } => crate::result_arbiter::ItemOutcome::accepted(cert, "verus"),
+        VerusOutcome::Timeout { .. } => crate::result_arbiter::ItemOutcome::inconclusive(
+            cert,
+            "verus",
+            crate::result_arbiter::InconclusiveReason::VerusTimeout,
+        ),
+        VerusOutcome::Counterexample { .. } => {
+            crate::result_arbiter::ItemOutcome::refuted(cert, "verus")
+        }
     }
 }
 
@@ -6924,7 +6986,7 @@ fn mutation_score(
                 mutant_cert_is_survivor(&stored)
             } else {
                 let verus = run_verus(&lowered, item.name(), seed, rlimit)?;
-                let cert = assemble_certificate(&item, &verus, None);
+                let cert = assemble_certificate(&item, &verus, None).into_certificate();
                 let _ = cache::store(cache_dir, &key, &cert);
                 mutant_cert_is_survivor(&cert)
             }
@@ -7100,7 +7162,7 @@ fn equivalence_proves_equal(
             // the same cert shape the mutant kill-check stores, keyed on the
             // obligation source so a re-`forge check` serves it without re-spawning
             // verus.
-            let cert = assemble_certificate(&Item::Fn(f.clone()), &verus, None);
+            let cert = assemble_certificate(&Item::Fn(f.clone()), &verus, None).into_certificate();
             let _ = cache::store(cache_dir, &key, &cert);
             proved
         }
@@ -7226,7 +7288,7 @@ fn strengthen_certificate(
                 return Ok(mutant_cert_is_survivor(&stored));
             }
             let verus = run_verus(&lowered, item.name(), seed, rlimit)?;
-            let cert = assemble_certificate(&item, &verus, None);
+            let cert = assemble_certificate(&item, &verus, None).into_certificate();
             let _ = cache::store(cache_dir, &key, &cert);
             Ok(mutant_cert_is_survivor(&cert))
         } else {
@@ -7725,7 +7787,8 @@ fn measured(xs: &[u32]) -> u64
                 solver_time_ms: 1,
             },
             Some(&artifact),
-        );
+        )
+        .into_certificate();
         let failure = assemble_certificate(
             item,
             &VerusResult {
@@ -7739,7 +7802,8 @@ fn measured(xs: &[u32]) -> u64
                 solver_time_ms: 1,
             },
             Some(&artifact),
-        );
+        )
+        .into_certificate();
         for cert in [&success, &failure] {
             assert_eq!(
                 cert.classification.as_ref().unwrap().fragment,
@@ -8685,28 +8749,20 @@ requires xs.len() > 0\n\
     }
 
     #[test]
-    fn optional_epr_environment_failures_are_base_preserving() {
-        for reason in [
-            "EprSolverUnavailable: missing cadical",
-            "EprSolverVersion: wrong cadical",
-            "EprLratToolUnavailable: missing drat-trim",
-            "EprLratToolVersion: wrong drat-trim",
-        ] {
-            assert!(epr_environment_failure(reason), "{reason}");
+    fn optional_epr_unavailability_preserves_every_base_disposition() {
+        let (program, timeout) = epr_route_fixture();
+        let Item::Fn(function) = &program.items[0] else {
+            panic!("fixture must contain a function");
+        };
+        let clean = Certificate::new("epr_route", Level::L3, vec!["pure".into()], 0, vec![]);
+        for base in [clean, timeout] {
+            let settled = settle_epr_candidate(
+                base.clone(),
+                function,
+                crate::result_arbiter::ProofCandidate::Unavailable,
+            );
+            assert_eq!(settled, base);
         }
-        assert!(!epr_environment_failure("EprKernelFailure: bad proof"));
-
-        let clean = Certificate::new("f", Level::L3, vec!["pure".to_string()], 0, vec![]);
-        assert!(clean_l3_base(&clean));
-        assert!(!clean_l3_base(&Certificate::rejected(
-            "f",
-            vec!["pure".to_string()],
-            false,
-            RejectReason {
-                cause: "VerusTimeout".to_string(),
-                detail: "not independently proved".to_string(),
-            },
-        )));
     }
 
     #[test]
@@ -8789,6 +8845,98 @@ requires true\n\
             settled.classification.as_ref().unwrap().fragment,
             "thermite-verus-v1"
         );
+    }
+
+    #[test]
+    fn complete_epr_uses_the_typed_arbiter_for_counterexamples_policy_and_boundary() {
+        let (program, _) = epr_route_fixture();
+        let Item::Fn(function) = &program.items[0] else {
+            panic!("fixture must contain a function");
+        };
+        let artifact = thermite_lower::lower_l3_artifact(&program, "epr_route").unwrap();
+        let counterexample = assemble_certificate(
+            &Item::Fn(function.clone()),
+            &VerusResult {
+                outcome: VerusOutcome::Counterexample {
+                    obligations: vec![ObligationResult::failed(
+                        "postcondition not satisfied",
+                        None,
+                        Some("actual assembled Verus counterexample shape".into()),
+                    )],
+                },
+                solver_time_ms: 1,
+            },
+            Some(&artifact),
+        )
+        .into_certificate();
+        assert!(counterexample.reject.is_none());
+        let alarm = finish_epr_reconstruction(
+            counterexample,
+            function,
+            vec![ObligationResult::discharged("kernel-checked EPR proof")],
+        );
+        assert_eq!(
+            alarm.reject.as_ref().map(|reject| reject.cause.as_str()),
+            Some("EprVerifierDisagreement")
+        );
+        assert_eq!(alarm.level, Level::L0);
+
+        let weak = Certificate::rejected_weak_contract(
+            "epr_route",
+            vec!["pure".into()],
+            "1/3".into(),
+            "return 0".into(),
+        );
+        let weak_settled = finish_epr_reconstruction(
+            weak.clone(),
+            function,
+            vec![ObligationResult::discharged("kernel-checked EPR proof")],
+        );
+        assert_eq!(weak_settled, weak);
+
+        for (cause, tautology, vacuous) in [
+            ("SemanticTautology", true, false),
+            ("VacuousPrecondition", false, true),
+        ] {
+            let rejected = Certificate::rejected_vacuity(
+                "epr_route",
+                vec!["pure".into()],
+                RejectReason {
+                    cause: cause.into(),
+                    detail: "settled solver policy".into(),
+                },
+                tautology,
+                vacuous,
+            );
+            assert_eq!(
+                finish_epr_reconstruction(
+                    rejected.clone(),
+                    function,
+                    vec![ObligationResult::discharged("kernel-checked EPR proof")],
+                ),
+                rejected
+            );
+        }
+
+        let scope = crate::manifest::AssuranceScope::ToBoundary {
+            via: "external_clock".into(),
+        };
+        let boundary = Certificate::new("epr_route", Level::L3, vec!["pure".into()], 0, vec![])
+            .with_mutation_score("4/4".into(), None)
+            .with_assurance_scope(scope.clone());
+        let upgraded = finish_epr_reconstruction(
+            boundary,
+            function,
+            vec![ObligationResult::discharged("kernel-checked EPR proof")],
+        );
+        assert_eq!(upgraded.level, Level::L4);
+        assert_eq!(upgraded.assurance_scope, Some(scope));
+        assert_eq!(upgraded.contract_quality.mutants_killed, "4/4");
+        assert!(matches!(
+            upgraded.certification.as_ref().map(|position| &position.boundary),
+            Some(crate::manifest::CertificationBoundary::ToBoundary { via })
+                if via == "external_clock"
+        ));
     }
 
     #[test]

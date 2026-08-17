@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (cache.rs) is the additive REQ-9 measures wf accessibility-proof cache (AccessibilityProof + accessibility_cache_key + load/store, a separate wf- on-disk namespace, CHECK_SCHEMA_VERSION-invalidated like the per-item cache); the per-item proof cache is byte-identical (REQ-S1-9). prior: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab)
-audited-content-sha256: f460e5861b19c0d4f1cd2159987fb515c9de598e2587ce9f8ece67b8fbaf882c (re-pinned 2026-08-16 for CHECK_SCHEMA_VERSION 9, query-role separation, and fresh-artifact main-hit validation. prior: d88ecd2476aad9f72f4d43185eff239d5415155579fa1678ca15f3fc412068ad)
+audited-content-sha256: 94dd8323273cf80e56322da666e57d2c302995c9d733b07fda228f0a59203bab (re-pinned 2026-08-16 for CHECK_SCHEMA_VERSION 10 and fail-closed typed result decoding on main cache hits. prior: f460e5861b19c0d4f1cd2159987fb515c9de598e2587ce9f8ece67b8fbaf882c)
 governs: forge/src/cache.rs
 thesis-refs:
   - thermite-design.md §5.3
@@ -43,7 +43,7 @@ against the current tree:
 
 - **#49 (`6d7b3aff`) — the stale-verdict gate bypass is closed: a FIFTH key
   input.** `cache_key` hashes, in addition to its four arguments, the
-  module-internal `const CHECK_SCHEMA_VERSION: u32` (currently `9` — bumped
+  module-internal `const CHECK_SCHEMA_VERSION: u32` (currently `10` — bumped
   `5 → 6` for the #269 F-IDENT/F-STRUCT-ZERO mutant families and `6 → 7` for the
   #269 call-bearing equivalence-exclusion arm; both verdict-changing) — the
   version of forge's VERDICT-AFFECTING CHECK LOGIC. `thermite_version` does
@@ -60,9 +60,10 @@ against the current tree:
   ensuring a cached pre-migration L3 result cannot bypass classification and
   live producer admission; 9 = domain-separated main-item, mutation,
   equivalence, and strengthening query roles plus the fail-closed partial-EPR
-  aggregation rule. REQ-1's "EXACTLY the four inputs" and REQ-2's four-input
-  enumeration argument are amended accordingly: four CALLER-passed inputs +
-  the check-logic version.
+  aggregation rule; 10 = typed result arbitration across Verus, Lean, EPR,
+  vacuity, and mutation, including boundary/policy-context preservation.
+  REQ-1's "EXACTLY the four inputs" and REQ-2's four-input enumeration argument
+  are amended accordingly: four CALLER-passed inputs + the check-logic version.
 - **Query-role separation (RFC-3 cache repair).** `cache_key_for_role` hashes a
   `main-item`/`mutation`/`equivalence`/`strengthening` domain before the lowered
   source. An auxiliary proof cannot become a main certificate merely because an
@@ -450,8 +451,8 @@ the dependency; the doc-author does not edit `Cargo.toml`.
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (cache-key composition) | SHIPPED | `cache::cache_key` is the main-item wrapper over `cache_key_for_role(role, lowered_src, seed, verus_version, thermite_version, effect_row)`. The latter sha256-hashes the query role plus the five prior inputs and `CHECK_SCHEMA_VERSION` (= 9, most recently bumped `8 → 9` for role separation and partial-EPR aggregation) with domain tags and length prefixes. Mutation, equivalence, and strengthening call their distinct roles. The row is fed as `effect-row-len` then one `effect` field per token. Consumer: `check::check_file`, passing the same effect row written to the certificate. |
-| REQ-2 (soundness-completeness invariant) | SHIPPED | the key captures query role and the five oracle-field-determining inputs, plus the check-logic version (schema bumps 2–9 recorded at the const). Main-item hits must also structurally match the fresh `L3Artifact`; this comparison does not restore audit authority. The two verdict-changing knobs not in the key (`rlimit`, `mutation_floor`) bypass the cache at non-default values. Verified by `key_changes_when_any_input_changes`, `auxiliary_query_roles_cannot_alias_the_main_item_keyspace`, the fresh-artifact replay test, and cache conformance. |
+| REQ-1 (cache-key composition) | SHIPPED | `cache::cache_key` is the main-item wrapper over `cache_key_for_role(role, lowered_src, seed, verus_version, thermite_version, effect_row)`. The latter sha256-hashes the query role plus the five prior inputs and `CHECK_SCHEMA_VERSION` (= 10, most recently bumped `9 → 10` for typed result arbitration and boundary/policy-context preservation) with domain tags and length prefixes. Mutation, equivalence, and strengthening call their distinct roles. The row is fed as `effect-row-len` then one `effect` field per token. Consumer: `check::check_file`, passing the same effect row written to the certificate. |
+| REQ-2 (soundness-completeness invariant) | SHIPPED | the key captures query role and the five oracle-field-determining inputs, plus the check-logic version (schema bumps 2–10 recorded at the const). Main-item hits must also structurally match the fresh `L3Artifact` and decode through the fail-closed typed result adapter; this comparison does not restore audit authority. The two verdict-changing knobs not in the key (`rlimit`, `mutation_floor`) bypass the cache at non-default values. Verified by `key_changes_when_any_input_changes`, `auxiliary_query_roles_cannot_alias_the_main_item_keyspace`, the fresh-artifact replay test, result-arbiter structural tests, and cache conformance. |
 | REQ-3 (lookup-then-store flow, per item) | SHIPPED | `check::check_file`'s L3 path calls `cache::load` BEFORE `run_verus` (HIT → return + skip verus + `continue`); on a MISS it runs verus, assembles + graduates the cert, `cache::store`s it, and returns `with_cached(false)`. Post-pin: a #13 `Certificate::rejected_vacuity` (computed inside the MISS branch) is stored too — a settled deterministic verdict, so a later HIT is verus-free end-to-end. |
 | REQ-4 (locality — per-item) | SHIPPED | the key is over the item's OWN `item_subprogram` lowered source; `check::tests::cache_key_is_local_to_the_item` asserts `g`'s key is invariant under an `f`-only edit while `f`'s key changes. |
 | REQ-5 (version-keyed invalidation) | SHIPPED | `check::resolve_verus_version` captures the verus version once per run (the `VERUS_VERSION` pin, else `verus --version`; a missing version is `ForgeError::VerusAbsent`, never an empty-string key) and `check::THERMITE_VERSION = env!("CARGO_PKG_VERSION")` feed the key. Verified by `cache::tests::key_changes_when_any_input_changes`. |

@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: 2ca4529951a0e66bf41c6fbe25a58c0a54b6e94a70b1c91a94ac66b9cd4cc89d (re-pinned 2026-08-16 after excluding partial mixed EPR evidence from authoritative Verus certificates; engine ordering and soundness alarms are unchanged. prior: 9868ba8480e9572913516b88baff7d5cd251378f057ea525197bdd766a371097)
+audited-content-sha256: 8f648d94aa27d4cb600cf51e47d95d2544d2f9e40d584c95c11a05557702b3ba (re-pinned 2026-08-16 for the shared typed arbiter across Verus, Lean, EPR, vacuity, and mutation outcomes. prior: 2ca4529951a0e66bf41c6fbe25a58c0a54b6e94a70b1c91a94ac66b9cd4cc89d)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and
@@ -182,6 +182,18 @@ build-blockers:
 > EPR is selected automatically rather than exposed as a separate CLI flag.
 > A result-bearing clause enters EPR only when its body-substituted obligation is
 > in S₂.0. An out-of-fragment body leaves the ordinary backend result intact.
+
+> **Typed combination amendment (2026-08-16).** Verus, automatic/selected Lean,
+> EPR, solver-vacuity, and mutation results now enter
+> `forge/src/result_arbiter.rs` as typed dispositions or candidates. The arbiter
+> is the single precedence authority: explicit timeout/degrade is eligible for
+> fallback, policy rejection is settled, partial/unavailable evidence preserves
+> the base, and proof/refutation conflict alarms in either order. The public
+> certificate schema is unchanged; replacement carries assurance boundary and
+> accepted policy, covenant, and meaning-audit context through a positive
+> allowlist while route-specific obligations, attribution, and coordinates
+> come from the selected proof. Refutation candidates carry their actual
+> counterexample obligations through the same typed path.
 
 ## Summary
 

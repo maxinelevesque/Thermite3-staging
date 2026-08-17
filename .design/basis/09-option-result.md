@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: db47dfabb39c17d97a69818ffbc2394b7937d926a33f0eefafe955795d79a311 (re-pinned 2026-08-16 after RFC-3 cache-domain and partial-EPR repairs in shared check.rs; Option/Result semantics are unchanged. prior: c2c3c2f42f6c330bd7d7c159954b87800e587ea5edb781b4cc3bc7b990a6e54b)
+audited-content-sha256: 4b5fb9429848ba2bda8c1c1ddf32748b860a05e47619fce1268e29116b87aa68 (re-pinned 2026-08-16 after the typed result-arbiter refactor in shared check.rs; Option/Result semantics are unchanged. prior: db47dfabb39c17d97a69818ffbc2394b7937d926a33f0eefafe955795d79a311)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

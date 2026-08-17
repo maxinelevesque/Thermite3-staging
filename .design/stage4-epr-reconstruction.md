@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: dc84c221348346bdf1e222bece6d6dc98d16bf511357290b167700e63717a817 (re-pinned 2026-08-16 for the RFC-3 aggregation repair: partial EPR reconstruction no longer enters the authoritative item certificate. prior: 3c8729cbf69c182ab422f6ec3e6b1813a89904f8fdccb485351af5d0c6d060d0)
+audited-content-sha256: fa3275e43dffc243f198dae7ab0d879231dabf9d05c30a44dc16bf547250f3e1 (re-pinned 2026-08-16 for typed EPR combination, symmetric proof/refutation alarms, settled-policy preservation, and exact proof-independent context carry. prior: dc84c221348346bdf1e222bece6d6dc98d16bf511357290b167700e63717a817)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->
@@ -16,6 +16,17 @@ clause-level RFC-3 coordinates and an aggregation rule exist, the base item
 certificate remains unchanged; only reconstruction of every clause may replace
 it with the homogeneous EPR L4 certificate. This prevents mixed EPR/Verus
 evidence from being projected under one item-level Verus classification.
+
+**Typed result-arbiter amendment, 2026-08-16.** Complete reconstruction is
+supplemental proof evidence, not a license to rewrite an arbitrary settled
+certificate. `forge/src/result_arbiter.rs` combines it with the typed base
+disposition: clean L3 and explicit timeout/degrade outcomes may upgrade; a
+Verus counterexample plus an EPR proof (or a Verus proof plus an EPR
+countermodel) is `EprVerifierDisagreement`; WeakContract and semantic-vacuity
+policy rejections remain byte-for-byte settled. Replacement retains the exact
+assurance scope/certification boundary and already-accepted mutation and
+strengthening evidence, plus covenant evidence and the meaning audit. Partial,
+unavailable, timeout, unknown, and proof-failure EPR results preserve the base.
 
 Stage 2 proved the shape of the stratified encoder, but left relation and
 array-property atoms interpreted by the solver. Stage 3 added checked replay for

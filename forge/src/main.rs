@@ -58,6 +58,7 @@ mod obligation;
 mod profile;
 mod relax;
 mod repair;
+mod result_arbiter;
 mod review;
 #[cfg(test)]
 mod rfc3_replay;

@@ -161,6 +161,10 @@ pub enum ForgeError {
     /// and the refuting counterexample). Surfaced under `--engine auto` (a Verus and a
     /// Lean verdict on the same obligation).
     SoundnessAlarm(crate::engine::Disagreement),
+    /// A persisted or legacy certificate had a contradictory structural shape
+    /// and could not be decoded into the typed result arbiter. This is a hard
+    /// soundness halt, not permission to guess a favorable disposition.
+    ResultArbiterAlarm { item: String, detail: String },
 }
 
 impl fmt::Display for ForgeError {
@@ -246,6 +250,10 @@ impl fmt::Display for ForgeError {
             }
             ForgeError::Usage(msg) => write!(f, "usage error: {msg}"),
             ForgeError::SoundnessAlarm(d) => write!(f, "SOUNDNESS ALARM: {d}"),
+            ForgeError::ResultArbiterAlarm { item, detail } => write!(
+                f,
+                "SOUNDNESS ALARM: result arbiter rejected certificate for `{item}`: {detail}"
+            ),
             ForgeError::StratDifferential { detail } => {
                 write!(
                     f,

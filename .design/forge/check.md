@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 9c73c125e9f048026c560fc74834b6d2aeb1480a0aaf8b626bd84bd1ced745d1 (re-pinned 2026-08-16 after domain-separating auxiliary queries and excluding partial EPR evidence from authoritative item certificates. prior: a129ac3391e1f9a6647965d4daee772476aab148bf26d0391f76144adfa10334)
+audited-content-sha256: e9a4c9a375332cbcd87659441ae5e0e2a7d86a345df198e17e0bd1acb73936c3 (re-pinned 2026-08-16 for typed Verus/Lean/EPR/vacuity/mutation result arbitration, symmetric disagreement, context-preserving replacement, and genuine refutation witnesses. prior: 9c73c125e9f048026c560fc74834b6d2aeb1480a0aaf8b626bd84bd1ced745d1)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -260,13 +260,20 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   does not successfully degrade,
   mutation-floor rejection, and semantic tautology/vacuity rejection retain
   the same classification and query identity with none/none/fiat. Cache schema
-  9 domain-separates main-item, mutation, equivalence, and strengthening queries,
+  10 domain-separates main-item, mutation, equivalence, and strengthening queries
+  and invalidates pre-arbiter result-combination semantics,
   and a main hit must match the fresh artifact without regaining audit authority. Mixed
   clause solver routes are excluded until clause-level coordinates exist.
   A successful timeout descent replaces the provisional Verus non-claim with
   the achieved Kani or runtime route's artifact and coordinates.
-  Partial EPR reconstruction is kept out of the authoritative item certificate;
-  only all-clause reconstruction may replace the base certificate with EPR L4.
+  `result_arbiter::ItemOutcome` is the sole transition authority for current
+  Verus, Lean, EPR, solver-vacuity, and mutation outcomes. Partial EPR
+  reconstruction is kept out of the authoritative item certificate; only
+  all-clause reconstruction of an accepted or explicitly inconclusive base may
+  install EPR L4. Counterexample/proof disagreement alarms symmetrically;
+  settled policy rejects are preserved; replacement retains boundary and
+  proof-independent policy, covenant, and meaning-audit context; a refuting
+  backend retains its actual counterexample obligations.
 
 ## Acceptance criteria
 

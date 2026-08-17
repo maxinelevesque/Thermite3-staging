@@ -1706,6 +1706,10 @@ impl std::fmt::Display for Disagreement {
 /// witness-less fast-`unknown` is `Unknown`, so it cannot fire this alarm against a
 /// Lean `Proven`; only a witnessed countermodel can, which is the real unsoundness
 /// case. Determinism: a pure function of the two verdicts (R-CODE-5).
+#[allow(
+    dead_code,
+    reason = "the result arbiter now owns production disagreement transitions; this pure engine-level contract remains directly exercised by its conformance tests"
+)]
 pub fn check_disagreement(
     item: &str,
     engine_a: EngineName,

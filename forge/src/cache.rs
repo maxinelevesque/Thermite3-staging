@@ -135,7 +135,12 @@ const DOMAIN: &[u8] = b"thermite.forge.proof-cache.v1";
 ///       strengthening queries now have distinct key roles, and partial EPR
 ///       evidence no longer enters an item-level certificate without a defined
 ///       aggregation. Schema-8 entries predate both verdict-affecting rules.
-const CHECK_SCHEMA_VERSION: u32 = 9;
+///  10 — typed result-arbiter migration: Verus, Lean fallback, EPR, vacuity, and
+///       mutation outcomes now combine through one total precedence rule. Complete
+///       supplemental proof cannot erase a counterexample or settled policy reject,
+///       and replacement preserves orthogonal boundary/policy context. Schema-9
+///       entries predate these verdict- and boundary-affecting semantics.
+const CHECK_SCHEMA_VERSION: u32 = 10;
 
 thread_local! {
     static REUSE_SUPPRESSED: Cell<bool> = const { Cell::new(false) };

@@ -270,6 +270,12 @@ design = ".design/verified/proof-backends.md"
 reference = ["conformance"]
 conformance_ops = ["sum"]
 
+[[route]]
+crate_pattern = "forge/src/result_arbiter.rs"
+design = ".design/forge-result-arbiter.md"
+reference = ["forge/src/check.rs", "forge/src/manifest.rs"]
+conformance_ops = ["result_arbiter", "complete_epr_uses_the_typed_arbiter"]
+
 # proof-backends increment (ii-b), crosslink #240 (ref #203): the Thermite→Lean
 # OBLIGATION EXPORTER (`lean_export.rs`) + the LeanEngine (`engine.rs`). The exporter
 # serializes a checked PURE-CONTRACT item into a self-contained Lean file
