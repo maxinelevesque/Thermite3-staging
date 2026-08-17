@@ -72,46 +72,37 @@ enum CandidateEvidence {
     Unavailable,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum PolicyDecision {
-    Accepted(Certificate),
-    Rejected {
-        kind: PolicyRejection,
-        certificate: Certificate,
-    },
-}
-
 impl ProofCandidate {
-    pub(crate) fn complete(engine: impl Into<String>, certificate: Certificate) -> Self {
-        let engine = engine.into();
-        let evidence = validate_complete_candidate(&engine, &certificate).map(|()| {
-            CandidateEvidence::Complete {
+    pub(crate) fn issued(authority: crate::check::ProofCandidateAuthority) -> Self {
+        let evidence = match authority.into_issued() {
+            crate::check::IssuedProofCandidate::Complete {
                 engine,
                 certificate,
-            }
-        });
-        Self { evidence }
-    }
-
-    pub(crate) fn refuted(engine: impl Into<String>, certificate: Certificate) -> Self {
-        let engine = engine.into();
-        let evidence = validate_refuted_candidate(&engine, &certificate).map(|()| {
-            CandidateEvidence::Refuted {
+            } => validate_complete_candidate(&engine, &certificate).map(|()| {
+                CandidateEvidence::Complete {
+                    engine,
+                    certificate,
+                }
+            }),
+            crate::check::IssuedProofCandidate::Refuted {
                 engine,
                 certificate,
-            }
-        });
-        Self { evidence }
-    }
-
-    pub(crate) fn inconclusive(engine: impl Into<String>, certificate: Certificate) -> Self {
-        let engine = engine.into();
-        let evidence = validate_inconclusive_candidate(&engine, &certificate).map(|()| {
-            CandidateEvidence::Inconclusive {
+            } => validate_refuted_candidate(&engine, &certificate).map(|()| {
+                CandidateEvidence::Refuted {
+                    engine,
+                    certificate,
+                }
+            }),
+            crate::check::IssuedProofCandidate::Inconclusive {
                 engine,
                 certificate,
-            }
-        });
+            } => validate_inconclusive_candidate(&engine, &certificate).map(|()| {
+                CandidateEvidence::Inconclusive {
+                    engine,
+                    certificate,
+                }
+            }),
+        };
         Self { evidence }
     }
 
@@ -130,22 +121,16 @@ impl ProofCandidate {
 
 impl ItemOutcome {
     pub(crate) fn from_policy(
-        decision: PolicyDecision,
+        authority: crate::check::PolicyDecisionAuthority,
         engine: impl Into<String>,
     ) -> Result<Self, PersistedOutcomeError> {
         let engine = engine.into();
-        match decision {
-            PolicyDecision::Accepted(certificate) => {
-                validate_live_shape(&certificate, &LiveResultDisposition::Accepted)?;
-                if certificate.obligations.is_empty() {
-                    return Err(candidate_error(
-                        &certificate,
-                        "accepted policy result lacks the discharged proof it qualifies",
-                    ));
-                }
-                Ok(Self::accepted(certificate, engine))
-            }
-            PolicyDecision::Rejected { kind, certificate } => {
+        match authority.into_issued() {
+            crate::check::IssuedPolicyDecision::Accepted(certificate) => Err(candidate_error(
+                &certificate,
+                "policy qualification cannot establish initial proof authority",
+            )),
+            crate::check::IssuedPolicyDecision::Rejected { kind, certificate } => {
                 validate_policy_rejection(&kind, &certificate)?;
                 Ok(Self::policy_rejected(certificate, engine, kind))
             }
@@ -393,12 +378,18 @@ impl ItemOutcome {
     /// rejected policy evidence settles the item.
     pub(crate) fn apply_policy(
         self,
-        decision: PolicyDecision,
+        authority: crate::check::PolicyDecisionAuthority,
     ) -> Result<Self, PersistedOutcomeError> {
-        let result = match decision {
-            PolicyDecision::Accepted(certificate) => {
+        let result = match authority.into_issued() {
+            crate::check::IssuedPolicyDecision::Accepted(certificate) => {
                 if matches!(self.disposition, BaseDisposition::PolicyRejected(_)) {
                     return Ok(self);
+                }
+                if !matches!(self.disposition, BaseDisposition::Accepted) {
+                    return Err(candidate_error(
+                        &certificate,
+                        "accepted policy qualification cannot establish proof authority",
+                    ));
                 }
                 ensure_same_item(&self.certificate, &certificate)?;
                 validate_live_shape(&certificate, &LiveResultDisposition::Accepted)?;
@@ -411,7 +402,7 @@ impl ItemOutcome {
                 let certificate = render_policy_result(&self.certificate, certificate);
                 Self::accepted(certificate, self.engine)
             }
-            PolicyDecision::Rejected { kind, certificate } => {
+            crate::check::IssuedPolicyDecision::Rejected { kind, certificate } => {
                 ensure_same_item(&self.certificate, &certificate)?;
                 validate_policy_rejection(&kind, &certificate)?;
                 let certificate = render_policy_result(&self.certificate, certificate);
@@ -834,6 +825,16 @@ mod tests {
         vec!["pure".into()]
     }
 
+    fn issued_candidate(issued: crate::check::IssuedProofCandidate) -> ProofCandidate {
+        ProofCandidate::issued(crate::check::arbiter_test_proof_authority(issued))
+    }
+
+    fn issued_policy(
+        issued: crate::check::IssuedPolicyDecision,
+    ) -> crate::check::PolicyDecisionAuthority {
+        crate::check::arbiter_test_policy_authority(issued)
+    }
+
     fn proof() -> ProofCandidate {
         proof_with_item("f")
     }
@@ -848,17 +849,17 @@ mod tests {
             attribution.trust_profile.clone(),
             crate::verdict::CertVerdict::Proved,
         );
-        ProofCandidate::complete(
-            "lean-auto",
-            Certificate::new(item, Level::L3, effects(), 0, vec![obligation])
+        issued_candidate(crate::check::IssuedProofCandidate::Complete {
+            engine: "lean-auto".into(),
+            certificate: Certificate::new(item, Level::L3, effects(), 0, vec![obligation])
                 .with_engine_attribution(attribution),
-        )
+        })
     }
 
     fn refutation() -> ProofCandidate {
-        ProofCandidate::refuted(
-            "epr",
-            Certificate::new(
+        issued_candidate(crate::check::IssuedProofCandidate::Refuted {
+            engine: "epr".into(),
+            certificate: Certificate::new(
                 "f",
                 Level::L0,
                 effects(),
@@ -873,7 +874,7 @@ mod tests {
                 engine: "epr".into(),
                 trust_profile: vec!["checked countermodel".into()],
             }),
-        )
+        })
     }
 
     #[test]
@@ -934,9 +935,9 @@ mod tests {
         );
         for candidate in [
             ProofCandidate::partial(),
-            ProofCandidate::inconclusive(
-                "epr",
-                Certificate::rejected(
+            issued_candidate(crate::check::IssuedProofCandidate::Inconclusive {
+                engine: "epr".into(),
+                certificate: Certificate::rejected(
                     "f",
                     effects(),
                     false,
@@ -949,7 +950,7 @@ mod tests {
                     engine: "epr".into(),
                     trust_profile: Vec::new(),
                 }),
-            ),
+            }),
         ] {
             assert_eq!(
                 timeout
@@ -1116,22 +1117,26 @@ mod tests {
             CandidateCase::Partial => ProofCandidate::partial(),
             CandidateCase::Refuted => refutation(),
             CandidateCase::Unavailable => ProofCandidate::unavailable(),
-            CandidateCase::Unknown => ProofCandidate::inconclusive(
-                "epr",
-                Certificate::rejected(
-                    "f",
-                    effects(),
-                    false,
-                    RejectReason {
-                        cause: "EprUnknown".into(),
-                        detail: "undecided".into(),
-                    },
-                )
-                .with_engine_attribution(crate::engine::EngineAttribution {
+            CandidateCase::Unknown => {
+                issued_candidate(crate::check::IssuedProofCandidate::Inconclusive {
                     engine: "epr".into(),
-                    trust_profile: Vec::new(),
-                }),
-            ),
+                    certificate: Certificate::rejected(
+                        "f",
+                        effects(),
+                        false,
+                        RejectReason {
+                            cause: "EprUnknown".into(),
+                            detail: "undecided".into(),
+                        },
+                    )
+                    .with_engine_attribution(
+                        crate::engine::EngineAttribution {
+                            engine: "epr".into(),
+                            trust_profile: Vec::new(),
+                        },
+                    ),
+                })
+            }
         };
 
         for base_case in [
@@ -1203,7 +1208,9 @@ mod tests {
             .clone()
             .with_mutation_score("3/3".into(), None);
         let settled = proved
-            .apply_policy(PolicyDecision::Accepted(policy_certificate))
+            .apply_policy(issued_policy(crate::check::IssuedPolicyDecision::Accepted(
+                policy_certificate,
+            )))
             .unwrap()
             .into_certificate();
         assert_eq!(settled.assurance_scope, Some(scope));
@@ -1222,12 +1229,8 @@ mod tests {
             base.clone().combine(wrong_proof),
             Err(CombinationError::InvalidEvidence(_))
         ));
-        let wrong_policy = PolicyDecision::Accepted(Certificate::new(
-            "f",
-            Level::L3,
-            vec!["read(clock)".into()],
-            0,
-            vec![],
+        let wrong_policy = issued_policy(crate::check::IssuedPolicyDecision::Accepted(
+            Certificate::new("f", Level::L3, vec!["read(clock)".into()], 0, vec![]),
         ));
         assert!(base.apply_policy(wrong_policy).is_err());
     }
@@ -1247,38 +1250,68 @@ mod tests {
             "verus",
             InconclusiveReason::VerusTimeout,
         );
-        let evidence_free_complete = ProofCandidate::complete(
-            "lean-auto",
-            Certificate::new("f", Level::L3, effects(), 0, vec![]),
-        );
+        let evidence_free_complete =
+            issued_candidate(crate::check::IssuedProofCandidate::Complete {
+                engine: "lean-auto".into(),
+                certificate: Certificate::new("f", Level::L3, effects(), 0, vec![]),
+            });
         assert!(matches!(
             base.clone().combine(evidence_free_complete),
             Err(CombinationError::InvalidEvidence(_))
         ));
 
-        let malformed_complete = ProofCandidate::complete(
-            "lean-auto",
-            Certificate::new("f", Level::L0, effects(), 0, vec![]),
-        );
+        let malformed_complete = issued_candidate(crate::check::IssuedProofCandidate::Complete {
+            engine: "lean-auto".into(),
+            certificate: Certificate::new("f", Level::L0, effects(), 0, vec![]),
+        });
         assert!(matches!(
             base.clone().combine(malformed_complete),
             Err(CombinationError::InvalidEvidence(_))
         ));
 
-        let malformed_unknown = ProofCandidate::inconclusive(
-            "lean-auto",
-            Certificate::new("f", Level::L3, effects(), 0, vec![]),
-        );
+        let malformed_unknown =
+            issued_candidate(crate::check::IssuedProofCandidate::Inconclusive {
+                engine: "lean-auto".into(),
+                certificate: Certificate::new("f", Level::L3, effects(), 0, vec![]),
+            });
         assert!(matches!(
-            base.select(malformed_unknown),
+            base.clone().select(malformed_unknown),
             Err(CombinationError::InvalidEvidence(_))
         ));
 
         assert!(ItemOutcome::from_policy(
-            PolicyDecision::Accepted(Certificate::new("f", Level::L3, effects(), 0, vec![],)),
+            issued_policy(crate::check::IssuedPolicyDecision::Accepted(
+                Certificate::new("f", Level::L3, effects(), 0, vec![],)
+            )),
             "policy",
         )
         .is_err());
+
+        let policy_cannot_prove = issued_policy(crate::check::IssuedPolicyDecision::Accepted(
+            proof_certificate_for_policy("f"),
+        ));
+        assert!(base.apply_policy(policy_cannot_prove).is_err());
+    }
+
+    fn proof_certificate_for_policy(item: &str) -> Certificate {
+        let attribution = crate::engine::EngineAttribution {
+            engine: "lean-auto".into(),
+            trust_profile: vec!["Lean kernel".into()],
+        };
+        Certificate::new(
+            item,
+            Level::L3,
+            effects(),
+            0,
+            vec![
+                ObligationResult::discharged("proved").with_clause_attribution(
+                    attribution.engine.clone(),
+                    attribution.trust_profile.clone(),
+                    crate::verdict::CertVerdict::Proved,
+                ),
+            ],
+        )
+        .with_engine_attribution(attribution)
     }
 
     #[test]

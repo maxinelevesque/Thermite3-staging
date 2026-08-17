@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: f7ac102039b93a694452b34f647705023e99fbba353081f9691fc701e7295aa6 (re-pinned 2026-08-17 for route-validated supplemental proof authority. prior: 4051573086a584b0e0a69e93c4069241dff41e4722473fb0ec30c8be2a6f3300)
+audited-content-sha256: aacad3465330d984d687dba7bc52455e3ea0de00ad49ff017f7dd0708b6c93e4 (re-pinned 2026-08-17 for opaque backend-issued supplemental proof authority. prior: f7ac102039b93a694452b34f647705023e99fbba353081f9691fc701e7295aa6)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and
@@ -197,12 +197,14 @@ build-blockers:
 > EPR disagreement certificate. A private non-serialized disposition stamp keeps
 > fresh Verus/degrade/policy outcomes typed across pipeline stages; post-proof
 > policy rendering uses the same proof-independent context merge. Candidate
-> variants are private and reached through route-aware validators: a Lean/EPR
-> `Complete` candidate must carry matching engine and trust attribution,
+> variants are private and reached only through an opaque authority token minted
+> by the orchestration module in the actual Lean/EPR verdict branch; arbitrary
+> public certificate fields cannot mint the token. Defense-in-depth validation
+> still requires matching engine and trust attribution,
 > non-empty discharged clause receipts, coherent RFC-3 coordinates, and (for
 > EPR) checked reconstruction evidence. An evidence-free L3 rendering is invalid
-> evidence, never proof authority; policy decisions validate their matching
-> policy facts before admission.
+> evidence, never proof authority. Policy decisions use a sibling opaque token;
+> accepted qualification can decorate an accepted proof but cannot create one.
 
 ## Summary
 

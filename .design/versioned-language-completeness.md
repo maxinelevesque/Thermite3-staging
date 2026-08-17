@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: d1e8dd6f749a05b496e173728087bd2006f962d0f6dfabf39125b98870ef2d69 (issue-48 RFC-3 typed-arbiter cold re-review repair, 2026-08-17: supplemental proof authority is bound to route evidence rather than an L3 label. Clause coordinates, displays, and final Lx retirement remain open. prior: 5967cc4a9d80d70ce9ff475f3e2a25ce01efe9694c328bdd457c54c427cf468a)
+audited-content-sha256: c42359f5cfdc6b0f554a09d4d7b9aff00df37f74429b051983d849e0f36def0c (issue-48 RFC-3 typed-arbiter cold re-review repair, 2026-08-17: proof/policy authority now requires opaque producer-issued tokens, not self-attested public evidence. Clause coordinates, displays, and final Lx retirement remain open. prior: d1e8dd6f749a05b496e173728087bd2006f962d0f6dfabf39125b98870ef2d69)
 
 ## Summary
 
@@ -298,11 +298,14 @@ and all current Verus, Lean fallback, EPR, solver-vacuity, and mutation results
 share one preserve/upgrade/refute/alarm precedence relation. Fresh outcomes use
 a non-serialized typed disposition stamp rather than round-tripping through
 reject-cause interpretation.
-Supplemental candidates are not constructible as public enum variants: private
-candidate states are reached through validators that bind engine/trust
-attribution, discharged clause receipts, RFC-3 coordinates, and EPR
-reconstruction evidence. Thus a coherent-looking but evidence-free L3
-certificate cannot become authority merely by being labeled `Complete`.
+Supplemental candidates are not constructible from public certificate evidence:
+private candidate states require an opaque authority token whose production
+issuer is private to the actual Lean/EPR observation module. Rendered
+engine/trust attribution, clause receipts, RFC-3 coordinates, and EPR
+reconstruction evidence remain defense-in-depth checks, not the source of
+authority. A `cfg(test)` issuer supports transition fixtures but is absent from
+production. Policy tokens follow the same boundary, and accepted policy may
+decorate only an already-authoritative accepted proof.
 When a timeout successfully descends to Kani or runtime enforcement, the final
 certificate truthfully carries that achieved route's artifact and coordinates
 instead of retaining the superseded Verus non-claim.

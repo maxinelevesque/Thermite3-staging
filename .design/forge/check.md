@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 32a63fa4607281f5ac4a59cf83ff39a2fed01c39ec55120bc2ae5deb29e05f44 (re-pinned 2026-08-17 for route-validated candidate smart constructors and production-shaped EPR regression evidence. prior: c92fd890891dbbe3226caca03f3bf0302f16a4ae4243ccb3ee870a25631a2932)
+audited-content-sha256: e474b98d73a6e5481323bd6e72cef936c79f1208dfec94092e08303e7dc05645 (re-pinned 2026-08-17 for opaque proof/policy authority issued only at backend observation seams. prior: 32a63fa4607281f5ac4a59cf83ff39a2fed01c39ec55120bc2ae5deb29e05f44)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -277,13 +277,14 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   backend and a rendered EPR disagreement retain the actual counterexample
   obligations. A non-serialized live disposition stamp carries fresh typed
   outcomes across public-rendering stages without reparsing reject text.
-  Supplemental Lean/EPR results enter through `ProofCandidate` smart
-  constructors whose variants are private: same-item/effects identity is
-  necessary but insufficient. Complete authority also requires matching
-  producer/trust attribution, non-empty discharged per-clause receipts,
-  coherent route-specific RFC-3 coordinates, and EPR reconstruction evidence.
-  A coherent but evidence-free L3 certificate therefore alarms instead of
-  upgrading a timeout.
+  `check.rs` is the producer-observation boundary: only this module can construct
+  `ProofCandidateAuthority` and `PolicyDecisionAuthority`, whose fields are
+  private. It issues them inside actual Lean/EPR and solver-vacuity/mutation
+  result branches; the arbiter accepts no strings or certificates without that
+  token. Same-item/effects identity and rendered-evidence validation remain
+  defense in depth. Test-only token issuers are `cfg(test)` and absent from the
+  production API. Accepted policy qualification only decorates an already
+  authoritative Accepted outcome and cannot upgrade a timeout.
 
 ## Acceptance criteria
 

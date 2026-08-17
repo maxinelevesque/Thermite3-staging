@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: d05fb13cf458f33db09b5ea055e3092022cf548a9d3609b421ee35ad35b09c0d (re-pinned 2026-08-17 after cold re-review repair made candidate variants private and bound proof authority to producer, clause, RFC-3, and reconstruction evidence.)
+audited-content-sha256: 09190686b0e8fc5ca7be6b4ebceb0b6524535a43609644610734330421c0a669 (re-pinned 2026-08-17 after cold re-review repair required opaque producer-issued proof and policy authority.)
 pin-extract: forge/src/result_arbiter.rs=code-normalized
 governs: forge/src/result_arbiter.rs
 -->
@@ -30,9 +30,10 @@ or boundary facts.
   The combination operation shall be total over the currently produced Verus,
   Lean, EPR, solver-vacuity, and mutation outcomes; `forge/src/check.rs` shall
   not decide replacement eligibility by matching certificate reject strings.
-  Supplemental proof/refutation/unknown candidates shall be minted only through
-  validating constructors; a level label or arbitrary full `Certificate` is not
-  proof authority.
+  Supplemental proof/refutation/unknown candidates shall require an opaque
+  authority token issued at the actual backend-observation seam; a level label,
+  arbitrary full `Certificate`, or mutually consistent public evidence fields
+  are not proof authority.
 - REQ-2: The arbiter shall implement a single precedence rule: an explicitly
   inconclusive result may be settled by complete checked proof or refutation
   evidence; compatible accepted proof evidence may strengthen an accepted
@@ -60,8 +61,10 @@ or boundary facts.
   contract, semantic tautology, and vacuous precondition—and every relevant
   supplemental disposition—complete proof, partial proof, counterexample,
   unavailable, and unknown—through the same arbiter API.
-  The hostile same-item/effects, evidence-free L3 candidate is rejected before
-  it can upgrade an inconclusive base.
+  The hostile same-item/effects L3 candidate—whether empty or populated with
+  fabricated attribution and discharged-receipt fields—cannot obtain a
+  production authority token and therefore cannot enter the arbiter. Accepted
+  policy qualification cannot establish acceptance on an inconclusive base.
 - [x] AC-2: (REQ-2) A certificate assembled by
   `check::assemble_certificate` from an actual `VerusOutcome::Counterexample`
   combined with complete EPR proof evidence produces
@@ -114,16 +117,19 @@ obligations and attribution. It cannot overwrite the base directly and carries
 no caller-controlled policy-preservation switch. `combine`, `select`, and
 `apply_policy` reject candidate item/effect identity mismatches before rendering,
 so an arbitrary full certificate payload cannot be relabeled as the base item.
-The public-in-crate candidate is a struct over private variants: smart
-constructors validate the producer tag, matching engine/trust attribution,
-non-empty discharged per-clause proof receipts, coherent route-specific RFC-3
-coordinates, and—on EPR—the checked reconstruction receipt for every clause.
-Refutation requires matching producer attribution and a concrete failed witness.
-Invalid construction is retained as typed invalid evidence and becomes a
-fail-closed arbiter alarm when combined; callers cannot construct a trusted
-variant directly. Policy entry likewise validates that a rejection carries its
-matching mutation/vacuity fact and that an accepted policy result still carries
-the proof it qualifies.
+The public-in-crate candidate is a struct over private variants. Its only
+authoritative constructor consumes `check::ProofCandidateAuthority`, whose field
+and production issuer are private to the orchestration module that observes the
+actual Lean/EPR verdict. Other modules can see the issued payload for exhaustive
+matching but cannot wrap it in authority. `cfg(test)` exposes an explicitly
+test-only issuer for the transition table; it is absent from production builds.
+After unwrapping authority, defense-in-depth validation still checks producer
+tag, matching engine/trust attribution, non-empty discharged per-clause receipts,
+coherent route-specific RFC-3 coordinates, and EPR reconstruction receipts.
+Refutation likewise requires a concrete witness. Policy decisions cross the
+same kind of opaque `PolicyDecisionAuthority` boundary. An accepted policy token
+may decorate only an already-`Accepted` outcome; it can never establish proof
+authority. Rejection tokens retain mutation/vacuity fact validation.
 
 ### Total combination
 

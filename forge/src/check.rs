@@ -140,6 +140,110 @@ use crate::covenant::CovenantRecord;
 use crate::manifest::{effects_of, Certificate, Level, ObligationResult, RejectReason};
 use crate::profile::{self, SolverProfile};
 
+/// Opaque authority issued only inside this module after an actual backend
+/// verdict or checked EPR reconstruction. Other crate modules may consume it
+/// but cannot manufacture one from certificate fields.
+pub(crate) struct ProofCandidateAuthority {
+    issued: IssuedProofCandidate,
+}
+
+pub(crate) enum IssuedProofCandidate {
+    Complete {
+        engine: String,
+        certificate: Certificate,
+    },
+    Refuted {
+        engine: String,
+        certificate: Certificate,
+    },
+    Inconclusive {
+        engine: String,
+        certificate: Certificate,
+    },
+}
+
+impl ProofCandidateAuthority {
+    pub(crate) fn into_issued(self) -> IssuedProofCandidate {
+        self.issued
+    }
+}
+
+fn issue_proof_candidate(issued: IssuedProofCandidate) -> ProofCandidateAuthority {
+    ProofCandidateAuthority { issued }
+}
+
+fn issued_complete(
+    engine: impl Into<String>,
+    certificate: Certificate,
+) -> crate::result_arbiter::ProofCandidate {
+    crate::result_arbiter::ProofCandidate::issued(issue_proof_candidate(
+        IssuedProofCandidate::Complete {
+            engine: engine.into(),
+            certificate,
+        },
+    ))
+}
+
+fn issued_refuted(
+    engine: impl Into<String>,
+    certificate: Certificate,
+) -> crate::result_arbiter::ProofCandidate {
+    crate::result_arbiter::ProofCandidate::issued(issue_proof_candidate(
+        IssuedProofCandidate::Refuted {
+            engine: engine.into(),
+            certificate,
+        },
+    ))
+}
+
+fn issued_inconclusive(
+    engine: impl Into<String>,
+    certificate: Certificate,
+) -> crate::result_arbiter::ProofCandidate {
+    crate::result_arbiter::ProofCandidate::issued(issue_proof_candidate(
+        IssuedProofCandidate::Inconclusive {
+            engine: engine.into(),
+            certificate,
+        },
+    ))
+}
+
+pub(crate) struct PolicyDecisionAuthority {
+    issued: IssuedPolicyDecision,
+}
+
+pub(crate) enum IssuedPolicyDecision {
+    Accepted(Certificate),
+    Rejected {
+        kind: crate::result_arbiter::PolicyRejection,
+        certificate: Certificate,
+    },
+}
+
+impl PolicyDecisionAuthority {
+    pub(crate) fn into_issued(self) -> IssuedPolicyDecision {
+        self.issued
+    }
+}
+
+fn issue_policy_decision(issued: IssuedPolicyDecision) -> PolicyDecisionAuthority {
+    PolicyDecisionAuthority { issued }
+}
+
+#[cfg(test)]
+pub(crate) fn arbiter_test_proof_authority(
+    issued: IssuedProofCandidate,
+) -> ProofCandidateAuthority {
+    issue_proof_candidate(issued)
+}
+
+#[cfg(test)]
+pub(crate) fn arbiter_test_policy_authority(
+    issued: IssuedPolicyDecision,
+) -> PolicyDecisionAuthority {
+    issue_policy_decision(issued)
+}
+
 /// The `forge` toolchain version (`.design/forge/proof-cache.md` REQ-1c/REQ-5):
 /// a verdict-determining cache-key input. Sourced deterministically from the
 /// crate version at compile time (R-CODE-5 — no wall-clock).
@@ -867,10 +971,10 @@ pub fn check_file_with_options(
                 .with_verus_artifact(&l3_artifact, false)
                 .expect("the pre-Verus policy gate retains checked classification");
                 let cert = crate::result_arbiter::ItemOutcome::from_policy(
-                    crate::result_arbiter::PolicyDecision::Rejected {
+                    issue_policy_decision(IssuedPolicyDecision::Rejected {
                         kind,
                         certificate: cert,
-                    },
+                    }),
                     "solver-vacuity",
                 )
                 .map_err(result_arbiter_shape_error)?
@@ -1035,9 +1139,9 @@ pub fn check_file_with_options(
                         use_cache,
                     )?;
                     outcome
-                        .apply_policy(crate::result_arbiter::PolicyDecision::Accepted(
+                        .apply_policy(issue_policy_decision(IssuedPolicyDecision::Accepted(
                             scored_cert.with_strengthening(suggestions),
-                        ))
+                        )))
                         .map_err(result_arbiter_shape_error)?
                         .into_certificate()
                 } else {
@@ -1070,10 +1174,10 @@ pub fn check_file_with_options(
                         score.equivalent,
                     );
                     outcome
-                        .apply_policy(crate::result_arbiter::PolicyDecision::Rejected {
+                        .apply_policy(issue_policy_decision(IssuedPolicyDecision::Rejected {
                             kind: crate::result_arbiter::PolicyRejection::WeakContract,
                             certificate: rejected,
-                        })
+                        }))
                         .map_err(result_arbiter_shape_error)?
                         .into_certificate()
                 }
@@ -2015,7 +2119,7 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
                     ));
                 }
                 crate::epr_reconstruct::EprOutcome::Counterexample(model) => {
-                    terminal = Some(crate::result_arbiter::ProofCandidate::refuted(
+                    terminal = Some(issued_refuted(
                         "epr",
                         epr_counterexample_cert(
                             &function.name,
@@ -2079,11 +2183,7 @@ fn finish_epr_reconstruction(
     )
     .graduate_triage_clean()
     .with_engine_attribution(epr_attribution());
-    settle_epr_candidate(
-        cert,
-        function,
-        crate::result_arbiter::ProofCandidate::complete("epr", replacement),
-    )
+    settle_epr_candidate(cert, function, issued_complete("epr", replacement))
 }
 
 fn settle_epr_candidate(
@@ -4188,10 +4288,7 @@ fn lean_engine_cert(
                 Verdict::Proven(_) => {
                     let result = lean_proven_result(lean, base.certificate(), mutation_floor);
                     return base
-                        .combine(crate::result_arbiter::ProofCandidate::complete(
-                            lean.name().tag(),
-                            result.proof,
-                        ))
+                        .combine(issued_complete(lean.name().tag(), result.proof))
                         .map_err(result_arbiter_combination_error)
                         .and_then(|settled| {
                             settled
@@ -4200,7 +4297,7 @@ fn lean_engine_cert(
                                 .map_err(result_arbiter_shape_error)
                         });
                 }
-                Verdict::Refuted(counterexample) => crate::result_arbiter::ProofCandidate::refuted(
+                Verdict::Refuted(counterexample) => issued_refuted(
                     lean.name().tag(),
                     Certificate::new(
                         &obligation.item,
@@ -4211,7 +4308,7 @@ fn lean_engine_cert(
                     )
                     .with_engine_attribution(crate::engine::attribution_for(lean)),
                 ),
-                Verdict::Unknown(reason) => crate::result_arbiter::ProofCandidate::inconclusive(
+                Verdict::Unknown(reason) => issued_inconclusive(
                     lean.name().tag(),
                     lean_unverifiable_cert(base.certificate(), &reason)
                         .with_engine_attribution(crate::engine::attribution_for(lean)),
@@ -4246,19 +4343,14 @@ fn lean_engine_cert(
                 (lean.replay_interactive(source_file, obligation), true)
             };
             let candidate = match verdict {
-                Verdict::Proven(_) if interactive => {
-                    crate::result_arbiter::ProofCandidate::complete(
-                        lean.name().tag(),
-                        lean_interactive_proven_cert(lean, base.certificate()),
-                    )
-                }
+                Verdict::Proven(_) if interactive => issued_complete(
+                    lean.name().tag(),
+                    lean_interactive_proven_cert(lean, base.certificate()),
+                ),
                 Verdict::Proven(_) => {
                     let result = lean_proven_result(lean, base.certificate(), mutation_floor);
                     return base
-                        .select(crate::result_arbiter::ProofCandidate::complete(
-                            lean.name().tag(),
-                            result.proof,
-                        ))
+                        .select(issued_complete(lean.name().tag(), result.proof))
                         .map_err(result_arbiter_combination_error)
                         .and_then(|settled| {
                             settled
@@ -4267,7 +4359,7 @@ fn lean_engine_cert(
                                 .map_err(result_arbiter_shape_error)
                         });
                 }
-                Verdict::Refuted(counterexample) => crate::result_arbiter::ProofCandidate::refuted(
+                Verdict::Refuted(counterexample) => issued_refuted(
                     lean.name().tag(),
                     Certificate::new(
                         &base.certificate().item,
@@ -4278,7 +4370,7 @@ fn lean_engine_cert(
                     )
                     .with_engine_attribution(crate::engine::attribution_for(lean)),
                 ),
-                Verdict::Unknown(reason) => crate::result_arbiter::ProofCandidate::inconclusive(
+                Verdict::Unknown(reason) => issued_inconclusive(
                     lean.name().tag(),
                     lean_unverifiable_cert(base.certificate(), &reason)
                         .with_engine_attribution(crate::engine::attribution_for(lean)),
@@ -4318,7 +4410,7 @@ fn result_arbiter_combination_error(error: crate::result_arbiter::CombinationErr
 /// engine + its base; the mutation qualifier is attached additively.
 struct LeanProofResult {
     proof: Certificate,
-    policy: crate::result_arbiter::PolicyDecision,
+    policy: PolicyDecisionAuthority,
 }
 
 fn lean_proven_result(
@@ -4357,7 +4449,7 @@ fn lean_proven_result(
     let Some(Item::Fn(f)) = crate::lean_export::find_item(lean_program(lean), &base.item) else {
         return LeanProofResult {
             proof: cert.clone(),
-            policy: crate::result_arbiter::PolicyDecision::Accepted(cert),
+            policy: issue_policy_decision(IssuedPolicyDecision::Accepted(cert)),
         };
     };
     let tally = lean_mutation_score(lean, f);
@@ -4375,9 +4467,9 @@ fn lean_proven_result(
     if tally.meets_floor(mutation_floor) {
         LeanProofResult {
             proof: cert.clone(),
-            policy: crate::result_arbiter::PolicyDecision::Accepted(
+            policy: issue_policy_decision(IssuedPolicyDecision::Accepted(
                 cert.with_mutation_score(tally.qualifier(), None),
-            ),
+            )),
         }
     } else {
         // Below the floor (or 0/0 with mutants generated): a `WeakContract`-style reject
@@ -4391,10 +4483,10 @@ fn lean_proven_result(
         );
         LeanProofResult {
             proof: cert,
-            policy: crate::result_arbiter::PolicyDecision::Rejected {
+            policy: issue_policy_decision(IssuedPolicyDecision::Rejected {
                 kind: crate::result_arbiter::PolicyRejection::WeakContract,
                 certificate: rejected,
-            },
+            }),
         }
     }
 }

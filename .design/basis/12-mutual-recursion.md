@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 5833600c354abb8ddf49d8f886c38d83203c25c836650800e75fb81f92275b52 (re-pinned 2026-08-17 after candidate-authority validation in shared check.rs; mutual-recursion behavior is unchanged. prior: 30b88229f817df18c7146a4ecd9ff38a9403ad5db0f054cff0339eb8a430c8e7)
+audited-content-sha256: a6401a68ce2b80d226a3cbfa169d346efe308910c424e8e5aeb78f3c9ade7740 (re-pinned 2026-08-17 after opaque producer-authority issuance in shared check.rs; mutual-recursion behavior is unchanged. prior: 5833600c354abb8ddf49d8f886c38d83203c25c836650800e75fb81f92275b52)
 governs: forge/src/check.rs
 governs: thermite-lower/src/lower.rs
 thesis-refs:
