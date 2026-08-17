@@ -4634,9 +4634,8 @@ pub fn check_l2_file(path: impl AsRef<Path>) -> Result<Vec<Certificate>, ForgeEr
             &parsed.program,
             item_subprogram(item, &spec_items, &[], &[]),
         );
-        let harness = thermite_lower::lower_l2(&sub).map_err(ForgeError::Lower)?;
-        let bound = thermite_lower::bound_string(&sub);
-        let l2 = crate::kani::run_kani(&harness, &f.name, &bound)?;
+        let artifact = thermite_lower::lower_l2_artifact(&sub).map_err(ForgeError::Lower)?;
+        let l2 = crate::kani::run_kani(&artifact, &f.name)?;
         let effects = effects_of(&f.contract.effects);
         certs.push(crate::kani::assemble_l2_certificate(&f.name, effects, &l2));
     }
@@ -6746,9 +6745,8 @@ fn ladder_for_timeout(
         // The L2 rung (lazy): lower the same item to a kani harness, run the real
         // kani binary, classify (the OQ-2 split). An environment failure → Err.
         || {
-            let harness = thermite_lower::lower_l2(sub).map_err(ForgeError::Lower)?;
-            let bound = thermite_lower::bound_string(sub);
-            let l2 = crate::kani::run_kani(&harness, &fname, &bound)?;
+            let artifact = thermite_lower::lower_l2_artifact(sub).map_err(ForgeError::Lower)?;
+            let l2 = crate::kani::run_kani(&artifact, &fname)?;
             let verdict = crate::kani::classify_l2_outcome(&l2);
             let cert = crate::kani::assemble_l2_certificate(&fname, effects, &l2);
             Ok(crate::degrade::L2Attempt { verdict, cert })

@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: 3205b5e89233617b990a7cf97331d1a7b967147d155d1a1900c1d38648ed3ca0 (re-pinned 2026-08-16 after pinning that Kani's coordinate/classification pair survives audit projection verbatim; the legacy project headline remains pending R2-7/R2-9. prior: 93eae7cb03317b567d21a8138b4dbd1d4426de20bff0d655f20dba6309593c98)
+audited-content-sha256: 2b7911db4ae7a08b37e5ca3361b30eff840c2fc99c515453ded1f0788c2d5f7d (re-pinned 2026-08-16 after pinning that Kani's coordinate/classification pair survives audit projection verbatim; the legacy project headline remains pending R2-7/R2-9. prior: 93eae7cb03317b567d21a8138b4dbd1d4426de20bff0d655f20dba6309593c98)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6

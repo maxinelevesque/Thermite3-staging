@@ -41,7 +41,7 @@ pub use checked::{
 };
 pub use effects::{analyze_effects, check_effects, subsumes, EffectAnalysis, EffectWarning};
 pub use l1::{lower_l1, lower_l1_with_lock_provider};
-pub use l2::{bound_string, lower_l2};
+pub use l2::{bound_string, lower_l2, lower_l2_artifact, L2Artifact};
 pub use locks::{program_uses_holding, LockProvider};
 pub use lower::{
     lower, lower_contract_expr, lower_equivalence_obligation,

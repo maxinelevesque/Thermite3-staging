@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: db8ab13ecb2209ae539a222e5593d26862dcc0405926a6e956561a8971363352 (issue-48 RFC-3 Kani migration checkpoint, 2026-08-16: successful L2 production now carries structured exact bounds, atomic position/classification coordinates, and verbatim audit projection. Other producers, aggregation, displays, and Lx retirement remain open.)
+audited-content-sha256: 96d5f6aa4266f1c93c5a088b56d19fd66fc6e70f4b83a8b5c932c9c573535281 (issue-48 RFC-3 Kani migration checkpoint, 2026-08-16: successful L2 production now carries structured exact bounds, atomic position/classification coordinates, and verbatim audit projection. Other producers, aggregation, displays, and Lx retirement remain open.)
 
 ## Summary
 
@@ -223,15 +223,22 @@ RFC-3 and `.design/rfcs/0004-versioning.md`: formal coordinates and certificate
 schema versioning land before removal of Lx, and historical L3 artifacts remain
 explicitly ambiguous rather than receiving an invented translation.
 
-The first production migration cut is the successful Kani L2 path. `L2Result`
-now retains the exact exploration bound as structured producer data rather than
-asking certificate assembly to recover it from an obligation sentence.
+The first production migration cut is the Kani L2 path. Checked lowering now
+returns an opaque `L2Artifact` containing the harness source and bound metadata
+derived atomically from the same program; callers cannot pair an unwind-5
+harness with independently authored unwind-999 metadata. `L2Result` retains
+that bound as structured producer data rather than asking certificate assembly
+to recover it from an obligation sentence. Successful lowering fixes the
+`thermite-kani-v1` admitted classification before Kani runs, and the identical
+classification is retained on successful and counterexample results.
 `assemble_l2_certificate` atomically installs a coherent bounded-scope/trace
 position and the versioned `thermite-kani-v1` admitted classification; the audit
 manifest copies both objects verbatim. A bare historical `Level::L2` still maps
 to no position because it contains no bound. The migrated Kani constructor
 rejects empty classifier identities and unequal bounded/trace coordinates and
-does not expose a position-only success path.
+does not expose a position-only success path. Certificate coordinate fields are
+crate-private, the public reader rejects classification-without-position, and
+audit invokes that validation before copying the fields.
 This migrates one end-to-end producer without claiming that the remaining L0,
 L1, L3, L4, project aggregation, or display consumers have retired `Level`.
 

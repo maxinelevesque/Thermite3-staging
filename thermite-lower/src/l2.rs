@@ -82,6 +82,34 @@ use crate::lower::LowerError;
 /// stated on the certificate so L2 is not presented as a proof (REQ-6).
 pub(crate) const SLICE_BOUND: usize = 4;
 
+/// Kani source and the exact bound metadata derived from the same checked
+/// program. Fields are private so downstream callers cannot pair a harness with
+/// independently authored certification metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct L2Artifact {
+    source: String,
+    bound: String,
+}
+
+impl L2Artifact {
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+
+    pub fn bound(&self) -> &str {
+        &self.bound
+    }
+}
+
+/// Produce the executable harness and its certification bound atomically from
+/// one checked program.
+pub fn lower_l2_artifact(program: &Program) -> Result<L2Artifact, LowerError> {
+    Ok(L2Artifact {
+        source: lower_l2(program)?,
+        bound: bound_string(program),
+    })
+}
+
 /// Lower a whole `Program` to a single self-contained Kani-harness Rust source
 /// file (REQ-1). Emits, in deterministic source order: (1) the L1 runnable forms
 /// of every combinator the program references (REQ-1, reusing `l1.rs`), (2) every
@@ -598,6 +626,16 @@ mod tests {
     fn bound_string_states_the_caveat() {
         let p = parse(&std::fs::read_to_string(corpus("binary_search")).expect("read"));
         assert_eq!(bound_string(&p), "slice <= 4, unwind 6");
+    }
+
+    #[test]
+    fn artifact_binds_harness_and_certificate_metadata_from_one_program() {
+        let p = parse(
+            "fn sum(xs: &[u32]) -> u64\n  ! pure\n  requires true\n  ensures result >= 0\n{\n  let mut total: u64 = 0;\n  let mut i: usize = 0;\n  while i < xs.len()\n    keeps i <= xs.len()\n    measures xs.len() - i\n  {\n    total = total + xs[i] as u64;\n    i = i + 1;\n  }\n  total\n}\n",
+        );
+        let artifact = lower_l2_artifact(&p).expect("lower artifact");
+        assert!(artifact.source().contains("#[kani::unwind(5)]"));
+        assert_eq!(artifact.bound(), "slice <= 4, unwind 5");
     }
 
     // REQ-1: `sum` lowers to a harness reusing the L1 `spec_sum` + a check-free

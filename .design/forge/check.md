@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 9921d06edfb3ea7c260ec1e9ea415bd4592ee5625ba9d8b6d8a3f20988d77f89 (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 7974647562489ff39307a8e555311d773caea46e478f663d782c29f22f085bd7.)
+audited-content-sha256: fa6b7c888ab762c02d9a4fe11d40b8a4279db6ce61b2b738978bd3235a44b67f (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 7974647562489ff39307a8e555311d773caea46e478f663d782c29f22f085bd7.)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1

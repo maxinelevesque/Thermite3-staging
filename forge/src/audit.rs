@@ -302,6 +302,8 @@ pub struct FunctionRow {
 impl FunctionRow {
     /// Project one [`Certificate`] to its audit row (REQ-1, REQ-4) — a copy.
     fn from_certificate(cert: &Certificate) -> Self {
+        cert.rfc3_coordinates()
+            .expect("audit rejects a classification without a certification position");
         FunctionRow {
             name: cert.item.clone(),
             level: cert.level,
@@ -1200,6 +1202,10 @@ mod tests {
         let result = L2Result {
             level: Level::L2,
             bound: "slice <= 4, unwind 5".to_string(),
+            classification: ClassificationCertificate {
+                fragment: "thermite-kani-v1".to_string(),
+                verdict: crate::manifest::ClassificationVerdict::Admitted,
+            },
             obligations: vec![crate::manifest::ObligationResult::discharged(
                 "bounded model check passed (slice <= 4, unwind 5)",
             )],

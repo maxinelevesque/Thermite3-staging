@@ -729,12 +729,12 @@ pub struct Certificate {
     /// historical `level` remains readable, but new producers persist this
     /// independently inspectable surface and audit copies it verbatim.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub certification: Option<CertificationPosition>,
+    pub(crate) certification: Option<CertificationPosition>,
     /// The pre-discharge fragment prognosis (RFC-3 R2-8). `None` only for
     /// historical certificates and producers not yet migrated to the classifier
     /// seam; never reconstructed from the post-discharge result.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub classification: Option<ClassificationCertificate>,
+    pub(crate) classification: Option<ClassificationCertificate>,
     /// Wall-clock solver time in ms — non-deterministic, excluded from the
     /// oracle comparison (REQ-6; `conformance/README.md`). `#[serde(default)]`
     /// so the golden deterministic-subset cert (which omits this non-det field)
@@ -939,6 +939,25 @@ pub struct Certificate {
 }
 
 impl Certificate {
+    /// Read the RFC-3 pair through one structural seam. A classification without
+    /// a position is rejected rather than projected as a partial claim. Legacy
+    /// position-only certificates remain readable during migration.
+    pub fn rfc3_coordinates(
+        &self,
+    ) -> Result<
+        Option<(&CertificationPosition, Option<&ClassificationCertificate>)>,
+        IncoherentCertificationPosition,
+    > {
+        match (&self.certification, &self.classification) {
+            (None, Some(_)) => Err(IncoherentCertificationPosition {
+                reason: "classification cannot exist without a certification position",
+            }),
+            (position, classification) => Ok(position
+                .as_ref()
+                .map(|position| (position, classification.as_ref()))),
+        }
+    }
+
     /// Assemble a #5 certificate from the pipeline data (REQ-2). `check.rs`
     /// derives `level`/`obligations` from verus and `effects` from the item's
     /// `fx` row; the forward-declared and reserved fields take their #5
@@ -1946,6 +1965,16 @@ mod tests {
                     },
                 )
                 .is_err());
+        }
+
+        #[test]
+        fn classification_without_position_is_rejected_by_public_reader() {
+            let mut cert = Certificate::new("f", Level::L2, vec![], 0, vec![]);
+            cert.classification = Some(ClassificationCertificate {
+                fragment: "thermite-kani-v1".to_string(),
+                verdict: ClassificationVerdict::Admitted,
+            });
+            assert!(cert.rfc3_coordinates().is_err());
         }
     }
 
