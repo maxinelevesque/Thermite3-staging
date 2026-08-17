@@ -1416,6 +1416,12 @@ reference = ["gates/rfc3-certification-replay.py", "gates/rfc3-certification-rep
 conformance_ops = []
 
 [[route]]
+crate_pattern = "lean/Thermite/CertificationReplaySemantics.lean"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["lean/Thermite/CertificationReplay.lean", "gates/rfc3-certification-replay.py"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "gates/tests/test_rfc3_certification_replay.py"
 design = ".design/rfc3-certification-metatheory.md"
 reference = ["gates/rfc3-certification-replay.py", "gates/rfc3-certification-replay.json"]

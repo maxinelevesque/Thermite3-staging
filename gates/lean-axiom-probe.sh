@@ -62,6 +62,7 @@ IMPORTS=(
   "Thermite.TcbDischarge"
   "Thermite.PinTcbDischarge"
   "Thermite.CertificationReplay"
+  "Thermite.CertificationReplaySemantics"
 )
 
 # Universal soundness theorems and the permanent reconstruction probe.
@@ -174,6 +175,9 @@ THEOREMS=(
   "Thermite.CertificationMetatheory.complete_coverage_cannot_mask_version_substitution"
   "Thermite.CertificationMetatheory.every_authoritative_mutation_is_rejected"
   "Thermite.CertificationMetatheory.every_generated_row_is_formally_well_formed"
+  "Thermite.CertificationMetatheory.generated_rows_cover_every_certification_family"
+  "Thermite.CertificationMetatheory.generated_rows_construct_actual_metatheory_objects"
+  "Thermite.CertificationMetatheory.every_bound_has_a_coherent_bounded_projection"
   "Thermite.CertificationMetatheory.engineer_label_is_non_authoritative"
   "Thermite.CertificationMetatheory.engineer_label_formal_substitution_rejected"
 )

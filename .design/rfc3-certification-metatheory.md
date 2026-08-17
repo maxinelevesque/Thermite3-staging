@@ -1,6 +1,6 @@
 # Feature: RFC-3 Certification Metatheory
 
-audited-content-sha256: 21111f21b1e3153563485bbdec0ca68c1a3fd2e42823e8a4ad435087601837c6 (re-pinned 2026-08-16 for the AC-10 generated Rust/Lean replay boundary.)
+audited-content-sha256: 95b3d27d487c3439c99b9d279d6d2d7964c28ac4ceb103b169d516471adbeab7 (re-pinned 2026-08-16 after the AC-10 cold-review repair replaced string-shadow validation with typed semantic decoding and exact family mapping.)
 
 ## Summary
 
@@ -323,13 +323,23 @@ AC-10 adds a single authoritative seven-row matrix at
 `CertificationPosition` and `ClassificationCertificate` vocabulary before
 comparing the formal replay projection. The checked generator emits
 `lean/Thermite/CertificationReplay.lean` from the same rows; CI rejects stale
-output. The matrix covers every coherent Rust position, all boundary kinds,
-all classification verdicts, every enabled policy point, and every model/frame
-and residual-context value used by the fixtures. Fourteen mutations independently
+output. The matrix names one representative of each of the seven coherent Rust
+position families, all boundary kinds, all classification verdicts, every enabled
+policy point, and every model/frame and residual-context value used by the fixtures.
+The bounded family is explicitly parameterized: bound 8 is the serialized fixture,
+while Lean proves coherence for every natural bound whose scope and trace agree.
+The Python gate checks the exact row-to-family mapping, not merely row count or
+marginal value coverage, so swapping policy points between rows fails closed.
+Lean decodes only exact canonical rows into typed `CertificationCell`, scope,
+refutation, trust, boundary, `ModelIdentity`, `FragmentVersion`, classification,
+and `PolicyPoint` objects, then constructs the actual `SemanticFrame`,
+`ResidualContext`, and `Fragment` objects consumed by the metatheory. Fourteen mutations independently
 change scope, refutation, residual/discharged trust, boundary kind/value,
 model identity/version, frame identity/version, residual context,
 classification fragment/verdict, and policy abstraction; Rust tests and a Lean
-theorem reject the complete set. `engineer_label` is excluded from both formal
+theorem reject the complete set semantically by making typed decoding fail.
+The decoded cell list is proved equal to `allCertificationCells`.
+`engineer_label` is excluded from both formal
 projection types: relabeling preserves replay, while substituting that label
 into formal scope fails. The generator, Rust tests, Lean axiom probe, and CI
 gate make the shared boundary fail closed.

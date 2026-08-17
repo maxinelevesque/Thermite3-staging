@@ -40,12 +40,23 @@ class ReplayGateTests(unittest.TestCase):
     def test_engineer_label_is_not_an_authoritative_field(self) -> None:
         data = matrix()
         generated = gate.generated(data["case"])
-        formal = generated.split("structure FormalReplayProjection", 1)[1].split(
+        formal = generated.split("structure RawReplayProjection", 1)[1].split(
             "deriving", 1
         )[0]
         self.assertNotIn("engineer_label", formal)
         self.assertIn("engineer_label_is_non_authoritative", generated)
         self.assertIn("engineer_label_formal_substitution_rejected", generated)
+
+    def test_policy_swap_preserving_marginal_coverage_is_rejected(self) -> None:
+        data = matrix()
+        by_id = {row["id"]: row for row in data["case"]}
+        left = by_id["no_claim"]
+        right = by_id["complete_solver"]
+        left["policy_point"], right["policy_point"] = (
+            right["policy_point"], left["policy_point"]
+        )
+        errors = gate.validate(ROOT, data)
+        self.assertTrue(any("canonical family" in error for error in errors))
 
 
 if __name__ == "__main__":
