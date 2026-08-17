@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 6b86f74476122cfddbdcf168d37a3561d2598054 (re-pinned 2026-06-16 for PR #46 after merging main: lower_l1's TString runtime gate now treats String-typed ADT declarations as TString users so ADT fields cannot name an unemitted runtime; main's inert Item::Forge skip is preserved; core req/ens/keeps check emission is unchanged.)
-audited-content-sha256: 6d0ec8d218c8b854370f54fddfc0def5d3193ba8d64688247d840589de4b949d (re-pinned 2026-08-16 after re-auditing exact effect-row retention in the opaque L1 artifact; runtime emission semantics are unchanged. prior: 49fdd9048cfa0a8daf36f9466180ac6c8b4faa23836811391fac866e78f2b1e9)
+audited-content-sha256: ba6c2a25f97368fbd2e4bacce774adc43a016c0d105947ead5a9daf6092bbced (re-pinned 2026-08-16 after re-auditing exact effect-row and slag-metadata retention in the opaque L1 artifact; runtime emission semantics are unchanged. prior: 6d0ec8d218c8b854370f54fddfc0def5d3193ba8d64688247d840589de4b949d)
 governs: thermite-lower/src/l1.rs
 thesis-refs:
   - thermite-design.md §4.2
@@ -40,9 +40,10 @@ the #262 re-audit re-verified.)
 RFC-3 migration adds `lower_l1_artifact(program, item)`. It performs checked
 lowering once and returns an opaque tuple containing the emitted source, item,
 exact effect row, SHA-256 wrapper identity, and one of four pre-execution routes: ordinary
-runtime, slag, FFI boundary with its exact target, or divergence. The artifact
+runtime, slag with its exact normalized reason/owner/review metadata, FFI boundary
+with its exact target, or divergence. The artifact
 does not itself claim certification; it prevents downstream certificate code
-from pairing a different item, effect row, route, target, or source identity with the L1
+from pairing a different item, effect row, slag metadata, route, target, or source identity with the L1
 result. `lower_l1` remains the public source-only entry point.
 
 ## Requirements

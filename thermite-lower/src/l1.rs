@@ -140,9 +140,17 @@ pub struct L1Artifact {
     source: String,
     item: String,
     effect_row: EffectRow,
+    slag_metadata: Option<L1SlagMetadata>,
     wrapper_identity: String,
     classifier_fragment: &'static str,
     route: L1Route,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct L1SlagMetadata {
+    reason: String,
+    owner: String,
+    review: String,
 }
 
 impl L1Artifact {
@@ -156,6 +164,16 @@ impl L1Artifact {
 
     pub fn effect_row(&self) -> &EffectRow {
         &self.effect_row
+    }
+
+    pub fn slag_metadata(&self) -> Option<(&str, &str, &str)> {
+        self.slag_metadata.as_ref().map(|meta| {
+            (
+                meta.reason.as_str(),
+                meta.owner.as_str(),
+                meta.review.as_str(),
+            )
+        })
     }
 
     pub fn wrapper_identity(&self) -> &str {
@@ -188,6 +206,28 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
             what: format!("L1 artifact item `{item}` is not an executable function"),
             span: zero_span(),
         })?;
+    let slag_metadata = function
+        .slag
+        .as_ref()
+        .map(|slag| {
+            let field = |value: &Option<String>, name: &str| {
+                value
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_string)
+                    .ok_or_else(|| LowerError::Unsupported {
+                        what: format!("L1 slag artifact requires non-empty `{name}` metadata"),
+                        span: slag.span,
+                    })
+            };
+            Ok(L1SlagMetadata {
+                reason: field(&slag.reason, "reason")?,
+                owner: field(&slag.owner, "owner")?,
+                review: field(&slag.review, "review")?,
+            })
+        })
+        .transpose()?;
     let (route, classifier_fragment) = if let Some(boundary) = &function.boundary {
         (
             L1Route::Boundary {
@@ -195,7 +235,7 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
             },
             "thermite-l1-boundary-v1",
         )
-    } else if function.slag.is_some() {
+    } else if slag_metadata.is_some() {
         (L1Route::Slag, "thermite-l1-slag-v1")
     } else if matches!(
         &function.contract.effects,
@@ -224,6 +264,7 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
         source,
         item: item.to_string(),
         effect_row: function.contract.effects.clone(),
+        slag_metadata,
         wrapper_identity,
         classifier_fragment,
         route,

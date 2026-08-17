@@ -1453,7 +1453,7 @@ impl Certificate {
                 verdict: ClassificationVerdict::Admitted,
             },
         )?;
-        attached.validate_l1_artifact(artifact)?;
+        attached.validate_l1_artifact(artifact, None)?;
         Ok(attached)
     }
 
@@ -1464,6 +1464,7 @@ impl Certificate {
     pub(crate) fn validate_l1_artifact(
         &self,
         artifact: &thermite_lower::L1Artifact,
+        expected_scope: Option<&AssuranceScope>,
     ) -> Result<(), IncoherentCertificationPosition> {
         if self.level != Level::L1 || self.item != artifact.item() {
             return Err(IncoherentCertificationPosition {
@@ -1514,10 +1515,26 @@ impl Certificate {
                 CertificationBoundary::EndToEnd
             }
             thermite_lower::L1Route::Slag => {
+                let expected_meta =
+                    artifact
+                        .slag_metadata()
+                        .ok_or(IncoherentCertificationPosition {
+                            reason: "checked slag artifact is missing its source metadata",
+                        })?;
+                let actual_meta =
+                    self.slag_meta
+                        .as_ref()
+                        .ok_or(IncoherentCertificationPosition {
+                            reason: "persisted slag L1 row is missing its source metadata",
+                        })?;
                 if !self.slag
-                    || self.slag_meta.is_none()
                     || self.boundary
                     || self.boundary_target.is_some()
+                    || (
+                        actual_meta.reason.as_str(),
+                        actual_meta.owner.as_str(),
+                        actual_meta.review.as_str(),
+                    ) != expected_meta
                 {
                     return Err(IncoherentCertificationPosition {
                         reason: "slag L1 route fields contradict the checked artifact",
@@ -1542,12 +1559,28 @@ impl Certificate {
                 }
             }
         };
-        let expected_boundary = match &self.assurance_scope {
-            Some(AssuranceScope::EndToEnd) => CertificationBoundary::EndToEnd,
-            Some(AssuranceScope::ToBoundary { via }) => {
-                CertificationBoundary::ToBoundary { via: via.clone() }
+        let expected_boundary = match expected_scope {
+            Some(scope) => {
+                if self.assurance_scope.as_ref() != Some(scope) {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "persisted L1 assurance scope does not match program closure",
+                    });
+                }
+                match scope {
+                    AssuranceScope::EndToEnd => CertificationBoundary::EndToEnd,
+                    AssuranceScope::ToBoundary { via } => {
+                        CertificationBoundary::ToBoundary { via: via.clone() }
+                    }
+                }
             }
-            None => route_boundary,
+            None => {
+                if self.assurance_scope.is_some() {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "pre-closure L1 artifact attachment cannot carry authored scope",
+                    });
+                }
+                route_boundary
+            }
         };
         if position.boundary != expected_boundary {
             return Err(IncoherentCertificationPosition {

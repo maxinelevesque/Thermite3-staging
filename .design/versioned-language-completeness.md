@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: d33bc3cb73f137eac115f17c6d19ae5b9e5658c9e2374ef0b04065f5402b5b73 (issue-48 RFC-3 runtime L1 repair, 2026-08-16: audit now rejects stripped or substituted persisted L1 provenance by validating against checked lowering. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: 685893c854cd06aea42bcd03e2765efe84c5b85121e1b81ff13f0a626efce765)
+audited-content-sha256: 54dd940aaee3af9a746bfa9e4c04ac67511e7a1ff449837967a04b2ee837ba66 (issue-48 RFC-3 runtime L1 repair, 2026-08-16: audit now also binds slag metadata and closure scope to the program. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: d33bc3cb73f137eac115f17c6d19ae5b9e5658c9e2374ef0b04065f5402b5b73)
 
 ## Summary
 
@@ -261,7 +261,8 @@ indistinguishable from a document stripped down to that historical shape, audit
 does not treat compatibility parsing as current provenance: it deterministically
 reconstructs the checked L1 artifact from the supplied program and validates the
 item, exact effect row, wrapper identity, classifier, slag/FFI flags and metadata,
-target, and closure-adjusted boundary before copying the row. Thus historical L1
+target, and a freshly recomputed syntactic closure scope/boundary before copying
+the row. Thus historical L1
 remains readable, but cannot be laundered into a current audit claim by deleting
 the migration pair or mutating its surrounding fields.
 Project aggregation and display continue to consume `Level` during migration.

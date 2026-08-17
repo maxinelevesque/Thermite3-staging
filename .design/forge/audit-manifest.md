@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: 6d7dc90b6c7c9d425f2f20d2b00ef67212b0616cd22c8b5930b25228a2a288c3 (re-pinned 2026-08-16 after re-auditing checked L1 provenance replay and hostile persisted-row rejection before projection; project Level aggregation remains pending retirement. prior: 0ba479072f2bae25a3865a7af75de19be30e398c9946d6c1536c04861ec6bb0e)
+audited-content-sha256: a36e6b454be368fd1ed4dab3fa799e0754d80d0d9b2abdba42c0c0f73aa4ed0a (re-pinned 2026-08-16 after re-auditing exact slag metadata and program-derived closure scope validation; project Level aggregation remains pending retirement. prior: 6d7dc90b6c7c9d425f2f20d2b00ef67212b0616cd22c8b5930b25228a2a288c3)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6
@@ -457,8 +457,10 @@ hand-derived from `thermite-design.md`, never copied from forge output).
   RFC-3 migrated L1 adds a deterministic provenance validation before that copy:
   audit reconstructs the opaque checked-lowering artifact from the supplied
   program and requires the persisted item, effect row, route/classifier, wrapper
-  identity, slag/FFI fields, target, and boundary to match. It still re-runs no
-  solver, mutation score, or closure classification. This prevents hostile JSON
+  identity, exact slag metadata, FFI fields/target, and boundary to match. Audit
+  also recomputes the deterministic syntactic closure classification and requires
+  both stored scope and formal boundary to match it. It still re-runs no solver or
+  mutation score. This prevents hostile JSON
   from deleting the migration pair to pose as current historical evidence, or
   substituting provenance fields, while standalone legacy L1 remains readable.
 - **AC-7 (#274 — membership rows present, one per fn, classes hand-derivable):**

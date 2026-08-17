@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: bb41d2546d7b67e38a35b4e06443889261dee10af990bc2b9541842ce475fab1 (re-pinned 2026-08-16 after re-auditing exact L1 effect-row provenance in shared lowering; Option/Result lowering and semantics are unchanged. prior: 836e2d8ff15c85058a2ebefe57178b6ff60e7b19e3bd01491522763d34f558bc)
+audited-content-sha256: 99d722b08a68a66308f903c4fa107845b38ba7163350ea8f7261714656b37b8d (re-pinned 2026-08-16 after re-auditing exact L1 slag metadata provenance in shared lowering; Option/Result lowering and semantics are unchanged. prior: bb41d2546d7b67e38a35b4e06443889261dee10af990bc2b9541842ce475fab1)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

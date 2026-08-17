@@ -33,6 +33,10 @@ fn route_classification_preserves_slag_ffi_and_divergence() {
     let slag = lower_l1_artifact(&slag, "s").expect("slag artifact");
     assert_eq!(slag.route(), &L1Route::Slag);
     assert_eq!(slag.classifier_fragment(), "thermite-l1-slag-v1");
+    assert_eq!(
+        slag.slag_metadata(),
+        Some(("vendored", "agent:forge-7", "required"))
+    );
 
     let boundary = parse(
         "#[boundary(\"ext::read\")] \
@@ -65,4 +69,10 @@ fn artifact_refuses_non_function_and_empty_boundary_target() {
         "#[boundary(\"\")] fn b(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
     );
     assert!(lower_l1_artifact(&boundary, "b").is_err());
+
+    let slag = parse(
+        "#[slag(reason = \"present\")] \
+         fn s(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+    );
+    assert!(lower_l1_artifact(&slag, "s").is_err());
 }
