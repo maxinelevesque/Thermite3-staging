@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 1e8b412759c3b8a1015f345d81c0fc40e34957c6f3cac9400345e777f9113cb3 (issue-48 RFC-3 typed-arbiter cold re-review repair, 2026-08-17: every proof/policy/live/persisted authority entrance is capability-gated. Clause coordinates, displays, and final Lx retirement remain open. prior: c42359f5cfdc6b0f554a09d4d7b9aff00df37f74429b051983d849e0f36def0c)
+audited-content-sha256: 0a267e3ca708d4d891508befeb3505eb2871e567c60735d2cc5d33cd2a710670 (clause-coordinate requirement registration, 2026-08-17: the completeness inventory now pins the reviewed 584-requirement registry containing seven not_started portfolio requirements. No clause-coordinate implementation is claimed. prior: 1e8b412759c3b8a1015f345d81c0fc40e34957c6f3cac9400345e777f9113cb3)
 
 ## Summary
 
