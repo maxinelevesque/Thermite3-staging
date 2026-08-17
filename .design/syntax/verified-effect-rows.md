@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 44089661422c4313edbc0e07e675347c68c2c3bb032e6a602d94385c5eca480b (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: pinned 2026-08-12 after the full RFC-9 implementation and acceptance pass: shared/concurrent syntax, field-derived regions, exact fixed-point footprints, structured warnings, computed commutation, Bulla policy seam, fail-closed reviewed migration inventory, corpus comparison, and the scoped Lean formal boundary.)
+audited-content-sha256: d2b7de30182f0a76dba8cd5bdc2a6f1974b31e7ddc6d32ffb5d0c75173cbf0f8 (re-pinned 2026-08-17 after classifying the result-arbiter effect-row fixture in the reviewed RFC-9 inventory; effect semantics are unchanged. prior: 44089661422c4313edbc0e07e675347c68c2c3bb032e6a602d94385c5eca480b)
 -->
 
 ## Summary

@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 50263d14f02f90b54578def94434d2bf08944bce52b3b51ae62c6a2e1f506820 (clause-coordinate portfolio implementation, 2026-08-17: seven shipped requirements now cover checked addresses, atomic evidence, sealed validation, heterogeneous aggregation, total mixed producers, audit/cache boundaries, and all-author mutation replay. Fresh hostile authority and terminal-adapter reviews approve the completed tree. prior: 0a267e3ca708d4d891508befeb3505eb2871e567c60735d2cc5d33cd2a710670)
+audited-content-sha256: 5996f94fe4206db8c5880a2005717fdf2e89178fe9edecf1af1b323d9a152acd (clause-coordinate portfolio CI repair, 2026-08-17: accepted mixed portfolios now stamp live audit disposition and typed WeakContract validation distinguishes explicit 0/0 rejection from legacy unscored acceptance. prior: 50263d14f02f90b54578def94434d2bf08944bce52b3b51ae62c6a2e1f506820)
 
 ## Summary
 

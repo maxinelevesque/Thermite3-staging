@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 5311ee1c3ec0f708c69dca5849fde1148af1a42658b494db8dc1a085f453f347 (re-pinned 2026-08-17 after exclusive authority sealing in shared check.rs; Option/Result semantics are unchanged. prior: 26a0ab6db1610f6c913f974bc0dccbade97fa45595e23604526fbe8ea2ac3729)
+audited-content-sha256: 08a10a1286533684da78ff2662fc567d2531d0575026f2ec22e440a3406cf8e8 (re-pinned 2026-08-17 after clause-portfolio CI acceptance stamping; Option/Result semantics are unchanged. prior: 5311ee1c3ec0f708c69dca5849fde1148af1a42658b494db8dc1a085f453f347)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized
