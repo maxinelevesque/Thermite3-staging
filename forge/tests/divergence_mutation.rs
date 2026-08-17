@@ -246,15 +246,23 @@ fn divergence_stale_same_version_cache_entry_bypasses_mutation_gate() {
             continue;
         }
         let mut d: Value = serde_json::from_str(&std::fs::read_to_string(&p).unwrap()).unwrap();
-        let is_main_weak = d
+        let certificate = d.get("certificate").unwrap_or(&d);
+        let is_main_weak = certificate
             .get("reject")
             .and_then(|r| r.get("cause"))
             .and_then(|c| c.as_str())
             == Some("WeakContract");
         if is_main_weak {
-            d["level"] = Value::String("L3".to_string());
-            d["reject"] = Value::Null;
-            if let Some(q) = d
+            // Cache entries are schema/digest envelopes now. Mutate the nested
+            // certificate while deliberately retaining the original digest:
+            // either the envelope integrity check or the stale-verdict shape
+            // check must turn this planted pre-gate row into a miss.
+            let certificate = d
+                .get_mut("certificate")
+                .expect("current cache entries carry an enveloped certificate");
+            certificate["level"] = Value::String("L3".to_string());
+            certificate["reject"] = Value::Null;
+            if let Some(q) = certificate
                 .get_mut("contract_quality")
                 .and_then(|q| q.as_object_mut())
             {
