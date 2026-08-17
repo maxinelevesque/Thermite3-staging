@@ -719,6 +719,20 @@ pub struct RejectReason {
 /// (REQ-7) and mirrors Appendix A: `item`, `level`, `solver_time_ms`,
 /// `contract_quality`, `effects`, `slag`; the #5 additive schema surface
 /// (`obligations` — REQ-5; `suggested_move` — REQ-4) follows.
+#[derive(Debug, Clone, Default)]
+struct AuditAdmission(bool);
+
+// Admission is deliberately outside the stable data contract. Equality of the
+// serialized certificate remains equality of its public evidence; the in-memory
+// capability only answers whether audit may treat that evidence as producer output.
+impl PartialEq for AuditAdmission {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for AuditAdmission {}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Certificate {
     /// The checked item's name.
@@ -735,6 +749,11 @@ pub struct Certificate {
     /// seam; never reconstructed from the post-discharge result.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) classification: Option<ClassificationCertificate>,
+    /// Non-serializable admission capability. Constructors mint it for live
+    /// producer output; deserialization defaults to unadmitted. Consequently a
+    /// persisted row is data to inspect, not authority that audit can project.
+    #[serde(skip)]
+    audit_admission: AuditAdmission,
     /// Wall-clock solver time in ms — non-deterministic, excluded from the
     /// oracle comparison (REQ-6; `conformance/README.md`). `#[serde(default)]`
     /// so the golden deterministic-subset cert (which omits this non-det field)
@@ -1003,6 +1022,12 @@ impl Certificate {
             })
     }
 
+    /// Whether this value came from a live producer (or the separately validated
+    /// proof-cache boundary), rather than directly from attacker-mutable JSON.
+    pub(crate) fn is_audit_admitted(&self) -> bool {
+        self.audit_admission.0
+    }
+
     /// Assemble a #5 certificate from the pipeline data (REQ-2). `check.rs`
     /// derives `level`/`obligations` from verus and `effects` from the item's
     /// `fx` row; the forward-declared and reserved fields take their #5
@@ -1019,6 +1044,7 @@ impl Certificate {
             level,
             certification: legacy_position(level),
             classification: None,
+            audit_admission: AuditAdmission(true),
             solver_time_ms,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1070,6 +1096,7 @@ impl Certificate {
             level: Level::L0,
             certification: legacy_position(Level::L0),
             classification: None,
+            audit_admission: AuditAdmission(true),
             solver_time_ms,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1131,6 +1158,7 @@ impl Certificate {
             level: Level::L1,
             certification: legacy_position(Level::L1),
             classification: None,
+            audit_admission: AuditAdmission(true),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1175,6 +1203,7 @@ impl Certificate {
             level: Level::L1,
             certification: legacy_position(Level::L1),
             classification: None,
+            audit_admission: AuditAdmission(true),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1220,6 +1249,7 @@ impl Certificate {
             level: Level::L0,
             certification: legacy_position(Level::L0),
             classification: None,
+            audit_admission: AuditAdmission(true),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1747,6 +1777,7 @@ impl Certificate {
             level: Level::L0,
             certification: legacy_position(Level::L0),
             classification: None,
+            audit_admission: AuditAdmission(true),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -2303,6 +2334,17 @@ mod tests {
                 .expect("legacy L1 remains readable")
                 .expect("legacy position exists");
             assert!(classification.is_none());
+        }
+
+        #[test]
+        fn deserialized_certificate_is_readable_but_not_audit_authority() {
+            let source = Certificate::new("f", Level::L1, vec![], 0, vec![]);
+            assert!(source.is_audit_admitted());
+            let json = serde_json::to_string(&source).unwrap();
+            let decoded: Certificate = serde_json::from_str(&json).unwrap();
+            assert!(decoded.rfc3_coordinates().is_ok());
+            assert!(!decoded.is_audit_admitted());
+            assert_eq!(source, decoded, "admission is outside document equality");
         }
 
         #[test]

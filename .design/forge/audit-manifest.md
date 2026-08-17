@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: 918547f7336d825b0a8616f93c05e134fa898b762c85c1baee3119173ddfc754 (re-pinned 2026-08-16 after re-auditing migrated-L1 detection independent of the mutable legacy Level; project Level aggregation remains pending retirement. prior: a36e6b454be368fd1ed4dab3fa799e0754d80d0d9b2abdba42c0c0f73aa4ed0a)
+audited-content-sha256: c9da396682d8781d9e5871214378d83580d5e20b01e4ecbc8217817d1c2694db (re-pinned 2026-08-16 after re-auditing non-serializable producer admission and coordinated L1 evidence-stripping rejection; project Level aggregation remains pending retirement. prior: 918547f7336d825b0a8616f93c05e134fa898b762c85c1baee3119173ddfc754)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6
@@ -52,7 +52,11 @@ the migrated pair before copying it, retains the checked wrapper identity in
 rows. An unmarked historical L1 row remains readable; a marked migrated L1 row
 with either half removed is rejected before projection. Audit recognizes migrated
 L1 provenance independently of the legacy `level`, so changing that scalar does
-not suppress checked-artifact validation.
+not suppress checked-artifact validation. Audit additionally requires a
+non-serializable producer admission capability: direct certificate JSON is
+readable but is never audit authority. The live check pipeline mints admission,
+and the audit command disables proof-cache certificate reuse so its input cannot
+cross a serialization boundary before projection.
 
 ## Decided scope
 
@@ -465,7 +469,8 @@ hand-derived from `thermite-design.md`, never copied from forge output).
   mutation score. This prevents hostile JSON
   from deleting the migration pair to pose as current historical evidence, or
   substituting provenance fields, including the legacy `level`, while standalone
-  legacy L1 remains readable.
+  legacy L1 remains readable. Even simultaneous deletion of the complete pair and
+  relabeling to `L3` fails because deserialization cannot mint audit admission.
 - **AC-7 (#274 — membership rows present, one per fn, classes hand-derivable):**
   `forge audit conformance/sum.th --json` emits a `lean_fragment.functions`
   array with exactly one row per `functions` row (`spec_sum`, `sum`), source

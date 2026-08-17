@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (cache.rs) is the additive REQ-9 measures wf accessibility-proof cache (AccessibilityProof + accessibility_cache_key + load/store, a separate wf- on-disk namespace, CHECK_SCHEMA_VERSION-invalidated like the per-item cache); the per-item proof cache is byte-identical (REQ-S1-9). prior: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab)
-audited-content-sha256: 04dc24667c8eb6b3d502a0857557e0714c64d6243281f833ec35f42be71355c9 (re-pinned 2026-08-11 for the proof-cache effect-row key input: `cache::cache_key` takes the item's declared effect row as a fifth caller-passed argument (REQ-1e), and `check.rs` gained `check::item_effects` as the single source for both that key input and `Certificate::effects`, so the four `cache_key` call sites moved with it. The row determines an oracle field without reaching the lowered source, so two items differing only in their row shared one cache address and the second was served the first's certificate. Pinned by forge/tests/divergence_cache_effect_row.rs. No governed behaviour outside the cache key changed. prior: 927473d2e96688240e6ca8959906bf6fbaf6d3c5b1262b769aa2d003dcdafb0f.)
+audited-content-sha256: deb813d16681e618ae813d00cfb2c04d60553f965d525059f650c7cc5099c031 (re-pinned 2026-08-16 for scoped `without_reuse`: audit forces certificate cache reads to miss, while normal check/cache behavior is unchanged. Pinned by the round-trip suppression/restoration test. prior: 04dc24667c8eb6b3d502a0857557e0714c64d6243281f833ec35f42be71355c9)
 governs: forge/src/cache.rs
 thesis-refs:
   - thermite-design.md §5.3
@@ -335,6 +335,11 @@ confirms/adds the `.gitignore` line). A corrupt or unparseable entry is a MISS:
 `load` returns `None` (re-verify + overwrite on store), never an error and never
 a stale read — a damaged cache degrades to "slower," never to "wrong" or
 "crashes" (R-CODE-2: no panic; the IO error path returns `None`/`Ok(())`).
+Loaded certificate JSON does not regain the non-serializable live-producer
+capability used by audit. Normal `forge check` may reuse the cache as before; the
+audit command runs checking inside `cache::without_reuse`, forcing cache reads to
+miss on that thread and therefore obtaining fresh producer values before
+projecting its trust deliverable.
 
 **The additive `cached` field (REQ-7).** `manifest::Certificate` gains
 `#[serde(default)] pub cached: bool`, mirroring the #6 `slag_meta`/`reject`

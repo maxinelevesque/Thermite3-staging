@@ -2211,17 +2211,19 @@ fn run_audit(
     // section — auditing a machine-semantics clause via the unbounded Verus path would be
     // wrong. Every tag-free project (the whole v1 corpus) keeps the default `check_file`
     // pipeline byte-identical (the canonical default-config entry that serves the cache).
-    let certs = if check::program_has_bv_tag(&parsed.program) {
-        check::check_file_with_engine(
-            file,
-            check::CheckOptions {
-                engine: check::EngineSelection::Bv,
-                ..Default::default()
-            },
-        )?
-    } else {
-        check::check_file(file)?
-    };
+    let certs = crate::cache::without_reuse(|| {
+        if check::program_has_bv_tag(&parsed.program) {
+            check::check_file_with_engine(
+                file,
+                check::CheckOptions {
+                    engine: check::EngineSelection::Bv,
+                    ..Default::default()
+                },
+            )
+        } else {
+            check::check_file(file)
+        }
+    })?;
 
     // The toolchain identity (the irreducible §9 TCB residue): the verus version
     // (the same deterministic sourcing the proof cache uses) + the compile-time

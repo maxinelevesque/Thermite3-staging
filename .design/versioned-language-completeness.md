@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: e82253adc39144db8684284f56be6a0b4bd488ec4800ca3b823c821163b68164 (issue-48 RFC-3 runtime L1 repair, 2026-08-16: migrated-L1 validation now triggers independently of mutable legacy Level. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: 54dd940aaee3af9a746bfa9e4c04ac67511e7a1ff449837967a04b2ee837ba66)
+audited-content-sha256: a4255787fb93fd8b867566c4139751aff5870bd4ab6495cf02639688b304334e (issue-48 RFC-3 runtime L1 repair, 2026-08-16: audit now requires live producer admission and rejects coordinated evidence stripping plus Level upgrade. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: e82253adc39144db8684284f56be6a0b4bd488ec4800ca3b823c821163b68164)
 
 ## Summary
 
@@ -268,6 +268,11 @@ the migration pair or mutating its surrounding fields. Migrated-L1 detection is
 independent of the mutable legacy `Level` projection: retained wrapper,
 classifier, or per-execution/abort/fiat evidence forces validation, and a row
 carrying migrated L1 evidence under another `Level` is rejected.
+Directly deserialized certificate JSON is compatibility data, not an audit
+capability. The audit command disables proof-cache certificate reuse, so only
+live producer output reaches projection. This closes the otherwise
+indistinguishable coordinated attack that removes every L1 marker while changing
+the legacy scalar to `L3`.
 Project aggregation and display continue to consume `Level` during migration.
 
 ### Proved display projection

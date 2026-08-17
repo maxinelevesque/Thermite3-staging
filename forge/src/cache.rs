@@ -40,6 +40,7 @@
 //! <!-- /generated:reqs -->
 
 use std::path::{Path, PathBuf};
+use std::{cell::Cell, thread_local};
 
 use sha2::{Digest, Sha256};
 
@@ -126,6 +127,27 @@ const DOMAIN: &[u8] = b"thermite.forge.proof-cache.v1";
 ///       `forge check` serves a stale schema-6 `WeakContract` on an identical
 ///       lowered-source key, REQ-2: a hit must equal a fresh verify).
 const CHECK_SCHEMA_VERSION: u32 = 7;
+
+thread_local! {
+    static REUSE_SUPPRESSED: Cell<bool> = const { Cell::new(false) };
+}
+
+struct ReuseRestore(bool);
+
+impl Drop for ReuseRestore {
+    fn drop(&mut self) {
+        REUSE_SUPPRESSED.with(|suppressed| suppressed.set(self.0));
+    }
+}
+
+/// Run `operation` with certificate cache reads forced to misses on this
+/// thread. Audit uses this so its certificate inputs come from live producers;
+/// the guard restores the prior state even during unwinding.
+pub fn without_reuse<T>(operation: impl FnOnce() -> T) -> T {
+    let previous = REUSE_SUPPRESSED.with(|suppressed| suppressed.replace(true));
+    let _restore = ReuseRestore(previous);
+    operation()
+}
 
 /// The project-local proof-cache directory (`.design/forge/proof-cache.md`
 /// REQ-6, OQ-1): `target/thermite-proof-cache/`. It is build output under the
@@ -248,6 +270,9 @@ fn entry_path(cache_dir: &Path, key: &str) -> PathBuf {
 /// value was stored (`store` persists `false`); `check::check_file` sets the
 /// observable `cached: true` via `Certificate::with_cached` on the hit it serves.
 pub fn load(cache_dir: &Path, key: &str) -> Option<Certificate> {
+    if REUSE_SUPPRESSED.with(Cell::get) {
+        return None;
+    }
     let path = entry_path(cache_dir, key);
     let src = std::fs::read_to_string(&path).ok()?;
     // A corrupt/unparseable entry is a miss (not an error): re-verify + overwrite.
@@ -618,6 +643,18 @@ mod tests {
         assert!(
             !loaded.cached,
             "stored cert is canonical fresh-verify (cached:false); provenance is set at serve time"
+        );
+        assert!(
+            !loaded.is_audit_admitted(),
+            "deserialization cannot restore live-producer audit authority"
+        );
+        assert!(
+            without_reuse(|| load(&dir, &key)).is_none(),
+            "audit cache suppression forces a stored certificate to miss"
+        );
+        assert!(
+            load(&dir, &key).is_some(),
+            "suppression is scoped and restored"
         );
         let _ = std::fs::remove_dir_all(&dir);
     }

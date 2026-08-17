@@ -311,6 +311,10 @@ impl FunctionRow {
         program: &Program,
         expected_scope: Option<&AssuranceScope>,
     ) -> Self {
+        assert!(
+            cert.is_audit_admitted(),
+            "audit projects only live producer output or a validated proof-cache hit"
+        );
         cert.rfc3_coordinates()
             .expect("audit rejects a classification without a certification position");
         if cert.requires_l1_artifact_validation() {
@@ -1451,6 +1455,31 @@ mod tests {
         assert!(
             hostile.rfc3_coordinates().is_err(),
             "migrated L1 evidence cannot be relabeled as another legacy level"
+        );
+        assert_l1_audit_rejects(hostile, &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_cannot_strip_all_evidence_and_upgrade_legacy_level() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = settle_l1_scope(
+            Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
+            "f",
+        );
+        let mut hostile = serde_json::to_value(cert).unwrap();
+        hostile["level"] = serde_json::json!("L3");
+        hostile.as_object_mut().unwrap().remove("certification");
+        hostile.as_object_mut().unwrap().remove("classification");
+        let hostile: Certificate = serde_json::from_value(hostile).unwrap();
+        assert!(
+            hostile.rfc3_coordinates().is_ok(),
+            "the stripped shape remains compatibility-readable as data"
         );
         assert_l1_audit_rejects(hostile, &parsed.program);
     }

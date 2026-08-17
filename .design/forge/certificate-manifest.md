@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: c55ef1eb6c39b6fcf3e314e2360a3206e2ac6a5cd94b6c8da3cedd4760bdd641 (re-pinned 2026-08-16 for migrated-L1 pair detection independent of the mutable legacy Level. Historical unmarked L1 remains readable and Level remains live in other consumers. prior: c52d1e8726c2b888d1a54cf870c8fb34265fd45153823d83f0022d371e8bcd82)
+audited-content-sha256: 414ba52415836c587cd509249a8cdf7991173add3fc6560fb438b86ceb263ad6 (re-pinned 2026-08-16 for non-serializable audit admission: deserialized certificates remain readable but cannot become audit authority. Historical unmarked L1 remains readable and Level remains live in other consumers. prior: c55ef1eb6c39b6fcf3e314e2360a3206e2ac6a5cd94b6c8da3cedd4760bdd641)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -57,6 +57,12 @@ certificate gained a family of ADDITIVE fields — see the Amendment.
 > substituted slag metadata or a fabricated closure boundary. Detection of the
 > migrated pair is independent of the mutable legacy `level`: relabeling a row
 > away from `L1` while retaining L1 provenance is rejected by the public reader.
+> Certificate deserialization deliberately does not mint audit authority: JSON
+> remains compatibility-readable data, but only a live producer value may be
+> projected by audit; the audit command deliberately runs its producer path with
+> proof-cache certificate reuse disabled. Therefore coordinated removal of every
+> marker plus a `Level` upgrade cannot turn attacker-controlled persistence into
+> a current claim.
 
 > **Amendment 2026-06-12 (doc-freshness re-audit, #262).** Re-verified against the
 > current tree (`dff9ae86`, 12 post-pin commits to `manifest.rs`). Corrections and
