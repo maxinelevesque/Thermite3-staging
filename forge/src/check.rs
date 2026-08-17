@@ -568,7 +568,7 @@ pub fn check_file_with_options(
         // so the gate applies only to `Item::Fn` — a `spec fn` proceeds to the
         // normal well-formedness path unchanged.
         if let Item::Fn(f) = item {
-            match gate_fn(f) {
+            match gate_fn(&parsed.program, f)? {
                 // A valid `#[slag]` item certifies L1 by fiat (no verus run,
                 // `.design/forge/slag.md` REQ-2): the L1 runtime-check codegen is
                 // thermite-lower's `l1.rs` job at build time, not here.
@@ -4683,7 +4683,7 @@ enum GateOutcome {
 ///   ▼
 /// SlagL1 (level L1, slag:true, slag_meta)
 /// ```
-fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
+fn gate_fn(program: &Program, f: &thermite_syntax::FnItem) -> Result<GateOutcome, ForgeError> {
     let effects = effects_of(&f.contract.effects);
 
     // #16 boundary (FFI) path, detected first (`.design/boundary/ffi-boundary.md`
@@ -4698,7 +4698,7 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
     if let Some(boundary_attr) = f.boundary.as_ref() {
         let target = boundary_attr.target.trim();
         if target.is_empty() {
-            return GateOutcome::Rejected(Certificate::rejected(
+            return Ok(GateOutcome::Rejected(Certificate::rejected(
                 f.name.clone(),
                 effects,
                 false,
@@ -4708,11 +4708,11 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
                              `crate::path` target"
                         .to_string(),
                 },
-            ));
+            )));
         }
         return match crate::vacuity::triage(f) {
             crate::vacuity::VacuityVerdict::Rejected { cause } => {
-                GateOutcome::Rejected(Certificate::rejected(
+                Ok(GateOutcome::Rejected(Certificate::rejected(
                     f.name.clone(),
                     effects,
                     false,
@@ -4720,13 +4720,17 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
                         cause: cause.tag().to_string(),
                         detail: cause.detail(),
                     },
-                ))
+                )))
             }
             // Triage clean → certify L1 to-the-boundary (no verus): the contract is
             // enforced at the crossing by `thermite_lower::l1`'s boundary wrapper.
-            crate::vacuity::VacuityVerdict::Passed => GateOutcome::BoundaryL1(
-                Certificate::boundary_l1(f.name.clone(), effects, target.to_string()),
-            ),
+            crate::vacuity::VacuityVerdict::Passed => {
+                Ok(GateOutcome::BoundaryL1(certify_l1_artifact(
+                    program,
+                    f,
+                    Certificate::boundary_l1(f.name.clone(), effects, target.to_string()),
+                )?))
+            }
         };
     }
 
@@ -4736,7 +4740,7 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
         let meta = match crate::slag::validate(slag_attr) {
             Ok(meta) => meta,
             Err(err) => {
-                return GateOutcome::Rejected(Certificate::rejected(
+                return Ok(GateOutcome::Rejected(Certificate::rejected(
                     f.name.clone(),
                     effects,
                     true,
@@ -4744,7 +4748,7 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
                         cause: err.tag().to_string(),
                         detail: err.detail(),
                     },
-                ));
+                )));
             }
         };
         // Valid fields: triage still applies (a)/(b)/(c) — slag exempts only (d)
@@ -4752,7 +4756,7 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
         // (d) because it is present.
         match crate::vacuity::triage(f) {
             crate::vacuity::VacuityVerdict::Rejected { cause } => {
-                GateOutcome::Rejected(Certificate::rejected(
+                Ok(GateOutcome::Rejected(Certificate::rejected(
                     f.name.clone(),
                     effects,
                     true,
@@ -4760,12 +4764,14 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
                         cause: cause.tag().to_string(),
                         detail: cause.detail(),
                     },
-                ))
+                )))
             }
             // Valid + triage clean → certify L1 by fiat (no verus).
-            crate::vacuity::VacuityVerdict::Passed => {
-                GateOutcome::SlagL1(Certificate::slag_l1(f.name.clone(), effects, meta))
-            }
+            crate::vacuity::VacuityVerdict::Passed => Ok(GateOutcome::SlagL1(certify_l1_artifact(
+                program,
+                f,
+                Certificate::slag_l1(f.name.clone(), effects, meta),
+            )?)),
         }
     } else if fn_is_diverge(f) {
         // #88 `fx diverge` partial-correctness cap (`.design/forge/check.md`
@@ -4792,7 +4798,7 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
         // the proven edit core (`insert_str`/`backspace` are L3) carry the assurance.
         match crate::vacuity::triage(f) {
             crate::vacuity::VacuityVerdict::Rejected { cause } => {
-                GateOutcome::Rejected(Certificate::rejected(
+                Ok(GateOutcome::Rejected(Certificate::rejected(
                     f.name.clone(),
                     effects,
                     false,
@@ -4800,17 +4806,17 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
                         cause: cause.tag().to_string(),
                         detail: cause.detail(),
                     },
-                ))
+                )))
             }
-            crate::vacuity::VacuityVerdict::Passed => {
-                GateOutcome::DivergeL1(diverge_l1_cert(f.name.clone(), effects))
-            }
+            crate::vacuity::VacuityVerdict::Passed => Ok(GateOutcome::DivergeL1(
+                certify_l1_artifact(program, f, diverge_l1_cert(f.name.clone(), effects))?,
+            )),
         }
     } else {
         // Non-slag path: run all four triage checks.
         match crate::vacuity::triage(f) {
             crate::vacuity::VacuityVerdict::Rejected { cause } => {
-                GateOutcome::Rejected(Certificate::rejected(
+                Ok(GateOutcome::Rejected(Certificate::rejected(
                     f.name.clone(),
                     effects,
                     false,
@@ -4818,11 +4824,29 @@ fn gate_fn(f: &thermite_syntax::FnItem) -> GateOutcome {
                         cause: cause.tag().to_string(),
                         detail: cause.detail(),
                     },
-                ))
+                )))
             }
-            crate::vacuity::VacuityVerdict::Passed => GateOutcome::ProceedToL3,
+            crate::vacuity::VacuityVerdict::Passed => Ok(GateOutcome::ProceedToL3),
         }
     }
+}
+
+/// Bind an L1 certificate to the exact checked runtime wrapper and route before
+/// the certificate can enter the manifest. Any lowering or coordinate mismatch
+/// is a hard pipeline error, never a legacy position-only success.
+fn certify_l1_artifact(
+    program: &Program,
+    f: &thermite_syntax::FnItem,
+    cert: Certificate,
+) -> Result<Certificate, ForgeError> {
+    let artifact =
+        thermite_lower::lower_l1_artifact(program, &f.name).map_err(ForgeError::Lower)?;
+    cert.with_l1_artifact(&artifact).map_err(|error| {
+        ForgeError::Lower(thermite_lower::LowerError::Unsupported {
+            what: error.to_string(),
+            span: f.span,
+        })
+    })
 }
 
 /// True iff `f`'s effect row contains `diverge` (§4.1: "divergence requires
@@ -6759,8 +6783,9 @@ fn ladder_for_timeout(
         // checks (so the recorded L1 is real, never a fiat the build cannot honor);
         // a lowering failure is an environment error (REQ-8), never a silent drop.
         || {
-            thermite_lower::lower_l1(sub).map_err(ForgeError::Lower)?;
-            Ok(Certificate::new(
+            let artifact =
+                thermite_lower::lower_l1_artifact(sub, &f.name).map_err(ForgeError::Lower)?;
+            Certificate::new(
                 f.name.clone(),
                 Level::L1,
                 l1_effects,
@@ -6770,7 +6795,14 @@ fn ladder_for_timeout(
                      thermite_lower::lower_l1); L3 proof and L2 bounded check both \
                      inconclusive within budget",
                 )],
-            ))
+            )
+            .with_l1_artifact(&artifact)
+            .map_err(|error| {
+                ForgeError::Lower(thermite_lower::LowerError::Unsupported {
+                    what: error.to_string(),
+                    span: f.span,
+                })
+            })
         },
     )
 }
@@ -7210,6 +7242,76 @@ fn mutant_cert_is_survivor(cert: &Certificate) -> bool {
 mod tests {
     use super::*;
     use crate::manifest::ObligationStatus;
+
+    fn l1_gate_certificate(source: &str) -> Certificate {
+        let parsed = thermite_syntax::parse(source);
+        assert!(parsed.is_clean(), "fixture parse: {:?}", parsed.errors);
+        thermite_spec::validate(&parsed.program).expect("fixture spec validation");
+        let function = parsed
+            .program
+            .items
+            .iter()
+            .find_map(|item| match item {
+                Item::Fn(function) => Some(function),
+                _ => None,
+            })
+            .expect("function fixture");
+        match gate_fn(&parsed.program, function).expect("L1 gate") {
+            GateOutcome::SlagL1(cert)
+            | GateOutcome::BoundaryL1(cert)
+            | GateOutcome::DivergeL1(cert) => cert,
+            _ => panic!("fixture did not reach an L1 producer"),
+        }
+    }
+
+    #[test]
+    fn production_l1_gate_preserves_runtime_route_classification() {
+        let slag = l1_gate_certificate(
+            "#[slag(reason = \"vendored\", owner = \"agent:forge-7\", review = \"required\")] \
+             fn s(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let boundary = l1_gate_certificate(
+            "#[boundary(\"ext::read\")] \
+             fn b(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+        );
+        let diverge = l1_gate_certificate(
+            "fn spin(n: u64) -> u64 ! diverge requires n <= 100 ensures result == 0 \
+             { if n == 0 { 0 } else { spin(n - 1) } }",
+        );
+
+        for (cert, fragment, boundary_kind) in [
+            (slag, "thermite-l1-slag-v1", "to_boundary"),
+            (boundary, "thermite-l1-boundary-v1", "to_boundary"),
+            (diverge, "thermite-l1-diverge-v1", "end_to_end"),
+        ] {
+            let (position, classification) = cert
+                .rfc3_coordinates()
+                .expect("valid migrated pair")
+                .expect("L1 position");
+            assert_eq!(
+                position.scope,
+                crate::manifest::CertificationScope::PerExecution
+            );
+            assert_eq!(
+                position.refutation,
+                crate::manifest::RefutationChannel::Abort
+            );
+            assert_eq!(
+                position.residual_trust,
+                crate::manifest::ResidualTrust::Fiat
+            );
+            assert_eq!(classification.expect("classification").fragment, fragment);
+            assert!(position.discharged_trust[0].starts_with("thermite-l1-wrapper-v1:"));
+            assert_eq!(
+                match position.boundary {
+                    crate::manifest::CertificationBoundary::EndToEnd => "end_to_end",
+                    crate::manifest::CertificationBoundary::ToBoundary { .. } => "to_boundary",
+                    crate::manifest::CertificationBoundary::ToPlatform { .. } => "to_platform",
+                },
+                boundary_kind
+            );
+        }
+    }
 
     #[test]
     fn rfc10_replay_requires_positive_axiom_clean_evidence() {

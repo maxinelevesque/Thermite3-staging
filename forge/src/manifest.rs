@@ -955,6 +955,17 @@ impl Certificate {
             (Some(_), None) if self.level == Level::L2 => Err(IncoherentCertificationPosition {
                 reason: "migrated L2 certification requires its classification pair",
             }),
+            (Some(position), None)
+                if self.level == Level::L1
+                    && position
+                        .discharged_trust
+                        .iter()
+                        .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:")) =>
+            {
+                Err(IncoherentCertificationPosition {
+                    reason: "migrated L1 certification requires its classification pair",
+                })
+            }
             (position, classification) => Ok(position
                 .as_ref()
                 .map(|position| (position, classification.as_ref()))),
@@ -1373,6 +1384,70 @@ impl Certificate {
         self.certification = Some(position);
         self.classification = Some(classification);
         Ok(self)
+    }
+
+    /// Attach the runtime-enforced L1 RFC-3 pair from one opaque checked-lowering
+    /// artifact. The wrapper identity is retained as a discharged bridge fact,
+    /// which both binds the certificate to emitted code and marks migrated L1
+    /// documents for fail-closed partial-pair validation. Historical unmarked L1
+    /// position-only documents remain readable.
+    pub fn with_l1_artifact(
+        self,
+        artifact: &thermite_lower::L1Artifact,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        if self.level != Level::L1 {
+            return Err(IncoherentCertificationPosition {
+                reason: "an L1 artifact can only certify Level::L1",
+            });
+        }
+        if self.item != artifact.item() {
+            return Err(IncoherentCertificationPosition {
+                reason: "the L1 artifact item must match the certificate item",
+            });
+        }
+        let boundary = match artifact.route() {
+            thermite_lower::L1Route::Runtime | thermite_lower::L1Route::Diverge => {
+                if self.slag || self.boundary {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "runtime/diverge L1 artifacts cannot certify slag or FFI rows",
+                    });
+                }
+                CertificationBoundary::EndToEnd
+            }
+            thermite_lower::L1Route::Slag => {
+                if !self.slag || self.boundary {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "a slag L1 artifact requires a slag certificate row",
+                    });
+                }
+                CertificationBoundary::ToBoundary {
+                    via: artifact.item().to_string(),
+                }
+            }
+            thermite_lower::L1Route::Boundary { target } => {
+                if !self.boundary || self.slag || self.boundary_target.as_deref() != Some(target) {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "an FFI L1 artifact requires the same certificate boundary target",
+                    });
+                }
+                CertificationBoundary::ToBoundary {
+                    via: artifact.item().to_string(),
+                }
+            }
+        };
+        self.with_rfc3_coordinates(
+            CertificationPosition {
+                scope: CertificationScope::PerExecution,
+                refutation: RefutationChannel::Abort,
+                residual_trust: ResidualTrust::Fiat,
+                discharged_trust: vec![artifact.wrapper_identity().to_string()],
+                boundary,
+            },
+            ClassificationCertificate {
+                fragment: artifact.classifier_fragment().to_string(),
+                verdict: ClassificationVerdict::Admitted,
+            },
+        )
     }
 
     /// Attach the per-obligation engine attribution (`.design/verified/
@@ -1995,6 +2070,77 @@ mod tests {
             let json = serde_json::to_string(&source).expect("position-only JSON");
             let decoded: Certificate = serde_json::from_str(&json).expect("compatibility parse");
             assert!(decoded.rfc3_coordinates().is_err());
+        }
+
+        #[test]
+        fn migrated_l1_pair_is_bound_and_serialized_half_pair_fails_closed() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            assert!(parsed.is_clean());
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f")
+                .expect("checked runtime artifact");
+            let cert = Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .expect("atomic L1 coordinates");
+            let (position, classification) = cert
+                .rfc3_coordinates()
+                .expect("valid pair")
+                .expect("position exists");
+            assert_eq!(position.scope, CertificationScope::PerExecution);
+            assert_eq!(position.refutation, RefutationChannel::Abort);
+            assert_eq!(position.residual_trust, ResidualTrust::Fiat);
+            assert_eq!(
+                classification.expect("classification").fragment,
+                "thermite-l1-runtime-v1"
+            );
+            assert_eq!(
+                position.discharged_trust,
+                vec![artifact.wrapper_identity().to_string()]
+            );
+
+            let mut hostile = serde_json::to_value(&cert).expect("serialize");
+            hostile
+                .as_object_mut()
+                .expect("certificate object")
+                .remove("classification");
+            let decoded: Certificate = serde_json::from_value(hostile).expect("compat parse");
+            assert!(decoded.rfc3_coordinates().is_err());
+        }
+
+        #[test]
+        fn historical_unmarked_l1_position_remains_readable() {
+            let historical = Certificate::new("f", Level::L1, vec![], 0, vec![]);
+            let (_, classification) = historical
+                .rfc3_coordinates()
+                .expect("legacy L1 remains readable")
+                .expect("legacy position exists");
+            assert!(classification.is_none());
+        }
+
+        #[test]
+        fn l1_artifact_cannot_be_attached_to_another_item() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+            assert!(Certificate::new("g", Level::L1, vec![], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .is_err());
+        }
+
+        #[test]
+        fn ffi_artifact_rejects_boundary_target_substitution() {
+            let parsed = thermite_syntax::parse(
+                "#[boundary(\"ext::read\")] \
+                 fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+            );
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+            assert!(
+                Certificate::boundary_l1("f", vec!["pure".into()], "ext::write".into())
+                    .with_l1_artifact(&artifact)
+                    .is_err()
+            );
         }
     }
 

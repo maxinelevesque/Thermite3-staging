@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 5089e4688967ed873a60c132c9a3107310220bee921415180250da19d96816a6 (re-pinned 2026-08-16 after adding the Kani RFC-3 audit-projection pin. G4 reconstruction, LRAT/cache, routing, and fail-closed tool checks are unchanged.)
+audited-content-sha256: 456973371b770fed337829ff4f7ca221187a1ae984dff6268d6341580cb7cb9b (re-pinned 2026-08-16 after re-auditing additive L1 pair tests in shared audit/check files; G4 reconstruction, LRAT/cache, routing, and fail-closed tool checks are unchanged. prior: 5089e4688967ed873a60c132c9a3107310220bee921415180250da19d96816a6)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

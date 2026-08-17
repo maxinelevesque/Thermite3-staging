@@ -1218,4 +1218,28 @@ mod tests {
         assert_eq!(audit.functions[0].certification, expected_position);
         assert_eq!(audit.functions[0].classification, expected_classification);
     }
+
+    #[test]
+    fn migrated_l1_pair_survives_audit_projection_verbatim() {
+        let parsed = thermite_syntax::parse(
+            "#[boundary(\"ext::read\")] \
+             fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+        );
+        assert!(parsed.is_clean());
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f")
+            .expect("checked boundary wrapper");
+        let cert = Certificate::boundary_l1("f", vec!["pure".into()], "ext::read".into())
+            .with_l1_artifact(&artifact)
+            .expect("atomic L1 pair");
+        let expected_position = cert.certification.clone();
+        let expected_classification = cert.classification.clone();
+        let audit = AuditManifest::from_certificates(&[cert], &parsed.program, toolchain());
+        assert_eq!(audit.functions[0].certification, expected_position);
+        assert_eq!(audit.functions[0].classification, expected_classification);
+        assert!(audit.functions[0].boundary);
+        assert_eq!(
+            audit.functions[0].boundary_target.as_deref(),
+            Some("ext::read")
+        );
+    }
 }

@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 6b86f74476122cfddbdcf168d37a3561d2598054 (re-pinned 2026-06-16 for PR #46 after merging main: lower_l1's TString runtime gate now treats String-typed ADT declarations as TString users so ADT fields cannot name an unemitted runtime; main's inert Item::Forge skip is preserved; core req/ens/keeps check emission is unchanged.)
-audited-content-sha256: 79832e6e165851f028462a02029e172e73e481a2f9e21ddf82ce4451bf648553 (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 998cc145d4abc11bc78540430a3d001ca9dfc42bba97c2c61b3992d313e0eff4.)
+audited-content-sha256: 49fdd9048cfa0a8daf36f9466180ac6c8b4faa23836811391fac866e78f2b1e9 (re-pinned 2026-08-16 after re-auditing the opaque L1 artifact, source digest, item binding, and route classification; runtime emission semantics are unchanged. prior: 79832e6e165851f028462a02029e172e73e481a2f9e21ddf82ce4451bf648553)
 governs: thermite-lower/src/l1.rs
 thesis-refs:
   - thermite-design.md §4.2
@@ -36,6 +36,14 @@ growth — struct-invariant `well_formed` checks, string/Vec/Map exec runtimes,
 break/continue arms, ens-snapshot cloning — is governed by the basis docs that
 share this route; this doc's REQs pin the core check-emission contract, which
 the #262 re-audit re-verified.)
+
+RFC-3 migration adds `lower_l1_artifact(program, item)`. It performs checked
+lowering once and returns an opaque tuple containing the emitted source, item,
+SHA-256 wrapper identity, and one of four pre-execution routes: ordinary
+runtime, slag, FFI boundary with its exact target, or divergence. The artifact
+does not itself claim certification; it prevents downstream certificate code
+from pairing a different item, route, target, or source identity with the L1
+result. `lower_l1` remains the public source-only entry point.
 
 ## Requirements
 

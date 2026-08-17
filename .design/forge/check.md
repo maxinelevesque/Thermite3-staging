@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: fa6b7c888ab762c02d9a4fe11d40b8a4279db6ce61b2b738978bd3235a44b67f (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 7974647562489ff39307a8e555311d773caea46e478f663d782c29f22f085bd7.)
+audited-content-sha256: 66ff41b211ca1f04d7f11c038583f93a9235e887e048e6f10fa55a28002c0fe6 (re-pinned 2026-08-16 after re-auditing all runtime-enforced L1 producers through checked artifact assembly; L3 routing, mutation, and solver semantics are unchanged. prior: fa6b7c888ab762c02d9a4fe11d40b8a4279db6ce61b2b738978bd3235a44b67f)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -241,6 +241,16 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   open blocker #88. GROUNDED: `run`'s loose `ensures result <= 256` is satisfied by
   a `return 0` body, so the mutation battery kills a minority of mutants and
   reports `WeakContract` at L0 — which is the wrong verdict the L1 cap corrects.
+
+- REQ-9 (checked L1 artifact before certification): every successful
+  runtime-enforced L1 producer — direct slag, direct FFI boundary, divergence,
+  and the L3/L2 ladder fallback — must first construct
+  `thermite_lower::L1Artifact` from the checked program. Certificate assembly
+  accepts that opaque artifact, verifies the item and route-specific flags/FFI
+  target, and installs the RFC-3 pair atomically. A lowering failure or metadata
+  mismatch is a hard pipeline error, never a legacy position-only L1 success.
+  The route classifiers remain distinct even though their formal assurance cell
+  is shared.
 
 ## Acceptance criteria
 

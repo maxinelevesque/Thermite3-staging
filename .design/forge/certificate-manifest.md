@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: bfebd2682a3de8d6b2d30b016fa4212b0b596917a1dc51f3b79a80cfec0b3153 (re-pinned 2026-08-16 for atomic position/classification attachment with fail-closed coherence and classifier-identity validation. Lx remains live outside the migrated Kani path. prior: bf136331691756bf2ad432d5c9a4922edd1038650968b25a9d4792b51ce52e0e)
+audited-content-sha256: 94bfe8a58f6373f6bd1a16da7e5eec8e5f2303b8df94632895edf188c0aefa6e (re-pinned 2026-08-16 for checked L1 artifact attachment, route/target/item coherence, and fail-closed migrated L1 half-pairs. Historical unmarked L1 remains readable and Level remains live in other consumers. prior: bfebd2682a3de8d6b2d30b016fa4212b0b596917a1dc51f3b79a80cfec0b3153)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -39,6 +39,16 @@ certificate gained a family of ADDITIVE fields — see the Amendment.
 > Historical L2 values cannot be inferred and therefore remain absent. The old
 > `level` field and its project aggregation remain live during this migration;
 > RFC-3 R2-7/R2-9 are not claimed complete by this amendment.
+
+> **Runtime L1 migration amendment, 2026-08-16.**
+> `Certificate::with_l1_artifact` accepts only an opaque checked-lowering
+> artifact for the same item and matching runtime/slag/FFI/divergence row. It
+> installs the per-execution/abort/fiat position and the route-specific admitted
+> classification atomically. The checked wrapper digest is retained as a
+> discharged bridge fact, which marks new L1 documents: deleting classification
+> from such a document fails the public reader, while historical unmarked L1
+> position-only documents remain readable. Slag and FFI keep separate fragments,
+> and FFI target substitution is rejected.
 
 > **Amendment 2026-06-12 (doc-freshness re-audit, #262).** Re-verified against the
 > current tree (`dff9ae86`, 12 post-pin commits to `manifest.rs`). Corrections and

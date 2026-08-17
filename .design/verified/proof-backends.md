@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: 917b2f943ae23cf79e8036d07de5790be125117360da617190d1745eca625448 (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 1663c632bad8d679ef17c12995673519f7db1d0da75e71b106c2b5f95c78fae3.)
+audited-content-sha256: c8c9fa2d4a5d0e067eb3e511305ed34d40772ac201dd8f8105992ecd754b66a5 (re-pinned 2026-08-16 after re-auditing the pre-prover L1 artifact gate in shared check.rs; proof-backend routing, attribution, and soundness-alarm semantics are unchanged. prior: 917b2f943ae23cf79e8036d07de5790be125117360da617190d1745eca625448)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and

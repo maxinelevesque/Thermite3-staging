@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: c03aba7473f8e5f3f2be1f46f218393a4bddef665d9390f284ebec89c2a69c29 (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: e02d16e7c24de012571c5a0ccf4145991736e7bfc3d6149af3bb446c897bc054.)
+audited-content-sha256: 1d946e6cd70011889c1c1ede65e01184f8210dc9db429300d3d6a49ba78fad42 (re-pinned 2026-08-16 after re-auditing the additive thermite-lower L1 artifact exports; L3 composition closure and artifact behavior are unchanged. prior: c03aba7473f8e5f3f2be1f46f218393a4bddef665d9390f284ebec89c2a69c29)
 decision: one canonical Verus crate with crate-visible rich Thermite roots and public shell exports
 issue: github:dollspace-gay/Thermite#104
 governs:

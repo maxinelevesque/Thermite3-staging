@@ -40,7 +40,7 @@ pub use checked::{
     CheckedSharedPlace, CloseReason, DEFAULT_SEMANTIC_WORK_BUDGET,
 };
 pub use effects::{analyze_effects, check_effects, subsumes, EffectAnalysis, EffectWarning};
-pub use l1::{lower_l1, lower_l1_with_lock_provider};
+pub use l1::{lower_l1, lower_l1_artifact, lower_l1_with_lock_provider, L1Artifact, L1Route};
 pub use l2::{bound_string, lower_l2, lower_l2_artifact, L2Artifact};
 pub use locks::{program_uses_holding, LockProvider};
 pub use lower::{

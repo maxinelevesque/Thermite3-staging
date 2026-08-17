@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 96d5f6aa4266f1c93c5a088b56d19fd66fc6e70f4b83a8b5c932c9c573535281 (issue-48 RFC-3 Kani migration checkpoint, 2026-08-16: successful L2 production now carries structured exact bounds, atomic position/classification coordinates, and verbatim audit projection. Other producers, aggregation, displays, and Lx retirement remain open.)
+audited-content-sha256: b16ebf4d17538faf35c0bda165c192b94a2a7cb89d41bfef0dea5f4ed08f0590 (issue-48 RFC-3 runtime L1 migration checkpoint, 2026-08-16: audit now pins verbatim L1 coordinate/classification projection and FFI target preservation. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: 96d5f6aa4266f1c93c5a088b56d19fd66fc6e70f4b83a8b5c932c9c573535281)
 
 ## Summary
 
@@ -243,6 +243,20 @@ position-without-classification for L2, and audit invokes that validation before
 copying the fields. Historical bare L2 with neither field remains readable.
 This migrates one end-to-end producer without claiming that the remaining L0,
 L1, L3, L4, project aggregation, or display consumers have retired `Level`.
+
+The second production cut migrates the runtime-enforced L1 family. Checked L1
+lowering returns an opaque artifact containing the emitted source, routed item,
+route-specific classifier identity, and a SHA-256 wrapper identity derived from
+that same source before certificate assembly. Ordinary runtime fallback, slag,
+FFI boundary, and divergence remain distinct classifier fragments even though
+all four occupy the RFC-3 per-execution/abort/fiat cell. Slag and FFI positions
+close at their named boundary; runtime fallback and divergence begin end-to-end,
+with the existing call-closure classifier still able to narrow the boundary.
+The wrapper identity is persisted as a discharged bridge fact, so a migrated L1
+position with its classification removed fails the public reader and audit,
+while an unmarked historical L1 position remains readable. The producer rejects
+item substitution, FFI target substitution, and route/legacy-flag mismatches.
+Project aggregation and display continue to consume `Level` during migration.
 
 ### Proved display projection
 

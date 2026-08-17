@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: 2b7911db4ae7a08b37e5ca3361b30eff840c2fc99c515453ded1f0788c2d5f7d (re-pinned 2026-08-16 after pinning that Kani's coordinate/classification pair survives audit projection verbatim; the legacy project headline remains pending R2-7/R2-9. prior: 93eae7cb03317b567d21a8138b4dbd1d4426de20bff0d655f20dba6309593c98)
+audited-content-sha256: 84c5a745d25cbabfd5a6e16c0c67a940eb485d64cbd6ab027b362ba9057433bb (re-pinned 2026-08-16 after re-auditing verbatim audit projection for the migrated L1 pair and FFI target; project Level aggregation remains pending retirement. prior: 2b7911db4ae7a08b37e5ca3361b30eff840c2fc99c515453ded1f0788c2d5f7d)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6
@@ -45,6 +45,12 @@ RFC-3 migration adds two optional, verbatim per-function projections:
 from the certificate rather than recomputed. The historical `level` and
 project scalar aggregate remain during the beta migration and are not an
 independent source for either new field.
+
+The runtime-enforced L1 migration uses the same projection seam. Audit validates
+the migrated pair before copying it, retains the checked wrapper identity in
+`certification.discharged_trust`, and preserves distinct slag and FFI boundary
+rows. An unmarked historical L1 row remains readable; a marked migrated L1 row
+with either half removed is rejected before projection.
 
 ## Decided scope
 

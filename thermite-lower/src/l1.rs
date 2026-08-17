@@ -83,10 +83,11 @@
 
 use std::fmt::Write as _;
 
+use sha2::{Digest, Sha256};
 use thermite_syntax::ast::{
-    BinOp, Block, EnumItem, Expr, FnItem, IndexArg, Item, LoopKind, LoopNode, MatchArm, Param,
-    Pattern, PrimType, Program, SlicePat, SpecFnItem, Stmt, StructItem, Type, UnaryOp,
-    VariantShape,
+    BinOp, Block, Effect, EffectRow, EnumItem, Expr, FnItem, IndexArg, Item, LoopKind, LoopNode,
+    MatchArm, Param, Pattern, PrimType, Program, SlicePat, SpecFnItem, Stmt, StructItem, Type,
+    UnaryOp, VariantShape,
 };
 use thermite_syntax::lexer::Span;
 
@@ -110,6 +111,117 @@ const MAX_EMIT_DEPTH: usize = 256;
 /// lowering does not carry a `Span` (mirrors `lower.rs::zero_span`).
 pub(crate) fn zero_span() -> Span {
     Span::new(0, 0)
+}
+
+/// The runtime route fixed by checked L1 lowering before a certificate is
+/// assembled. These variants remain distinct even though all four occupy the
+/// RFC-3 per-execution/abort/fiat cell.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum L1Route {
+    /// An ordinary in-language executable whose woven contract checks abort on
+    /// violation.
+    Runtime,
+    /// A proof-exempt in-language body whose contract is enforced at runtime.
+    Slag,
+    /// A foreign call wrapper. The target is part of the pre-execution artifact
+    /// so a certificate cannot substitute a different crossing afterward.
+    Boundary { target: String },
+    /// An in-language potentially non-terminating body: partial correctness only.
+    Diverge,
+}
+
+/// Opaque checked-lowering evidence for one runtime-enforced L1 producer.
+///
+/// The emitted source, routed item, wrapper digest, and classifier identity are
+/// constructed from one checked program. Downstream callers can inspect them but
+/// cannot independently author or mutate the tuple before certificate assembly.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct L1Artifact {
+    source: String,
+    item: String,
+    wrapper_identity: String,
+    classifier_fragment: &'static str,
+    route: L1Route,
+}
+
+impl L1Artifact {
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+
+    pub fn item(&self) -> &str {
+        &self.item
+    }
+
+    pub fn wrapper_identity(&self) -> &str {
+        &self.wrapper_identity
+    }
+
+    pub fn classifier_fragment(&self) -> &'static str {
+        self.classifier_fragment
+    }
+
+    pub fn route(&self) -> &L1Route {
+        &self.route
+    }
+}
+
+/// Produce runnable L1 source and its route/classifier evidence atomically from
+/// one checked program. The source digest plus item name is the executable
+/// wrapper identity persisted by the RFC-3 certificate producer.
+pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    let source_program = checked.source();
+    let function = source_program
+        .items
+        .iter()
+        .find_map(|candidate| match candidate {
+            Item::Fn(function) if function.name == item => Some(function),
+            _ => None,
+        })
+        .ok_or_else(|| LowerError::Unsupported {
+            what: format!("L1 artifact item `{item}` is not an executable function"),
+            span: zero_span(),
+        })?;
+    let (route, classifier_fragment) = if let Some(boundary) = &function.boundary {
+        (
+            L1Route::Boundary {
+                target: boundary.target.trim().to_string(),
+            },
+            "thermite-l1-boundary-v1",
+        )
+    } else if function.slag.is_some() {
+        (L1Route::Slag, "thermite-l1-slag-v1")
+    } else if matches!(
+        &function.contract.effects,
+        EffectRow::Set(effects) if effects.contains(&Effect::Diverge)
+    ) {
+        (L1Route::Diverge, "thermite-l1-diverge-v1")
+    } else {
+        (L1Route::Runtime, "thermite-l1-runtime-v1")
+    };
+    if matches!(&route, L1Route::Boundary { target } if target.is_empty()) {
+        return Err(LowerError::Unsupported {
+            what: "L1 boundary artifact requires a non-empty foreign target".to_string(),
+            span: function.span,
+        });
+    }
+    if crate::program_uses_holding(source_program) {
+        return Err(LowerError::Unsupported {
+            what: "executable `holding` requires an explicit target lock provider".to_string(),
+            span: zero_span(),
+        });
+    }
+    let source = lower_l1_inner(source_program, None)?;
+    let digest = format!("{:x}", Sha256::digest(source.as_bytes()));
+    let wrapper_identity = format!("thermite-l1-wrapper-v1:{item}:sha256:{digest}");
+    Ok(L1Artifact {
+        source,
+        item: item.to_string(),
+        wrapper_identity,
+        classifier_fragment,
+        route,
+    })
 }
 
 /// Lower a whole `Program` to a single self-contained, runnable L1 Rust source
