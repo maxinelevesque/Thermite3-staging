@@ -975,7 +975,38 @@ pub struct Certificate {
     /// the `meaning_audit`/`covenant_evidence` additive precedents.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub burn: Option<crate::burn::BurnReceipt>,
+    /// Process-local typed result provenance. This is deliberately absent from
+    /// the public certificate wire format: live proof/policy producers stamp it
+    /// so later backend arbitration never has to rediscover authority from
+    /// display strings, while deserialized cache rows must pass the stricter
+    /// persisted adapter.
+    #[serde(skip)]
+    pub(crate) live_disposition: LiveDispositionStamp,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum LiveResultDisposition {
+    Accepted,
+    VerusTimeout,
+    TimeoutDegrade,
+    EngineUnknown,
+    Refuted,
+    WeakContract,
+    SemanticTautology,
+    VacuousPrecondition,
+    SettledOther(String),
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct LiveDispositionStamp(Option<LiveResultDisposition>);
+
+impl PartialEq for LiveDispositionStamp {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for LiveDispositionStamp {}
 
 impl Certificate {
     /// Read the RFC-3 pair through one structural seam. A classification without
@@ -1119,6 +1150,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
     }
 
@@ -1171,6 +1203,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
     }
 
@@ -1184,6 +1217,15 @@ impl Certificate {
     pub fn with_cached(mut self, cached: bool) -> Self {
         self.cached = cached;
         self
+    }
+
+    pub(crate) fn with_live_disposition(mut self, disposition: LiveResultDisposition) -> Self {
+        self.live_disposition = LiveDispositionStamp(Some(disposition));
+        self
+    }
+
+    pub(crate) fn live_disposition(&self) -> Option<&LiveResultDisposition> {
+        self.live_disposition.0.as_ref()
     }
 
     /// Graduate the two §7.1 structural-triage `contract_quality` bools to their
@@ -1235,6 +1277,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
     }
@@ -1280,6 +1323,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
     }
@@ -1324,6 +1368,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
     }
 
@@ -2017,6 +2062,7 @@ impl Certificate {
             covenant_evidence: Some(evidence),
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
     }
 

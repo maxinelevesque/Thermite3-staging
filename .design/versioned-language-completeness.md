@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 150debbaf509033998a516e3c9ca4e17705326d9326d94738402c65e46e55c38 (issue-48 RFC-3 typed-arbiter repair, 2026-08-16: current proof and policy producers share a fail-closed precedence relation, while partial EPR, settled policy, disagreement, and proof-independent context remain explicit. Clause coordinates, displays, and final Lx retirement remain open. prior: f2c285461a5f66382526d1bc8726af474147a51c58f6cbf1a5eccac100b280b1)
+audited-content-sha256: 5967cc4a9d80d70ce9ff475f3e2a25ce01efe9694c328bdd457c54c427cf468a (issue-48 RFC-3 typed-arbiter cold-review repair, 2026-08-16: schema 11 integrity-bound cache replay, live typed dispositions, honest unknown/refutation, and context/witness preservation. Clause coordinates, displays, and final Lx retirement remain open. prior: f2c285461a5f66382526d1bc8726af474147a51c58f6cbf1a5eccac100b280b1)
 
 ## Summary
 
@@ -287,13 +287,17 @@ assembly cannot substitute an item, effects row, query digest, classifier, or
 legacy level. Audit additionally requires the live producer authority retained
 by artifact attachment and revalidates the persisted row before projection.
 Deserialized and historical bare L3 documents remain readable compatibility
-data, but cannot become current audit authority. Proof-cache schema 10 separates
+data, but cannot become current audit authority. Proof-cache schema 11 separates
 main-item, mutation, equivalence, and strengthening query roles; a main hit must
-also match the freshly constructed artifact without regaining audit authority.
-The schema-10 transition also passes persisted base outcomes through the typed
+also match the freshly constructed artifact without regaining audit authority,
+and its private envelope verifies the exact query key plus canonical certificate
+digest before any policy verdict can replay. The schema-11 transition also
+passes persisted base outcomes through the typed
 `result_arbiter::ItemOutcome` adapter: contradictory public shapes fail closed,
 and all current Verus, Lean fallback, EPR, solver-vacuity, and mutation results
-share one preserve/upgrade/refute/alarm precedence relation.
+share one preserve/upgrade/refute/alarm precedence relation. Fresh outcomes use
+a non-serialized typed disposition stamp rather than round-tripping through
+reject-cause interpretation.
 When a timeout successfully descends to Kani or runtime enforcement, the final
 certificate truthfully carries that achieved route's artifact and coordinates
 instead of retaining the superseded Verus non-claim.

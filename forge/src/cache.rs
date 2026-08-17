@@ -42,6 +42,7 @@
 use std::path::{Path, PathBuf};
 use std::{cell::Cell, thread_local};
 
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::manifest::{Certificate, ObligationStatus};
@@ -140,7 +141,11 @@ const DOMAIN: &[u8] = b"thermite.forge.proof-cache.v1";
 ///       supplemental proof cannot erase a counterexample or settled policy reject,
 ///       and replacement preserves orthogonal boundary/policy context. Schema-9
 ///       entries predate these verdict- and boundary-affecting semantics.
-const CHECK_SCHEMA_VERSION: u32 = 10;
+///  11 — cache-envelope integrity: the stored query key and canonical certificate
+///       digest are verified before any certificate is decoded as authority. A
+///       damaged policy verdict therefore misses instead of being promoted by a
+///       coherent-looking public-field edit.
+const CHECK_SCHEMA_VERSION: u32 = 11;
 
 thread_local! {
     static REUSE_SUPPRESSED: Cell<bool> = const { Cell::new(false) };
@@ -316,6 +321,23 @@ fn entry_path(cache_dir: &Path, key: &str) -> PathBuf {
     cache_dir.join(format!("{key}.json"))
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct CacheEntry {
+    schema: u32,
+    key: String,
+    certificate_digest: String,
+    certificate: Certificate,
+}
+
+fn certificate_digest(certificate: &Certificate) -> Option<String> {
+    let bytes = serde_json::to_vec(certificate).ok()?;
+    let mut hasher = Sha256::new();
+    hasher.update(b"thermite-proof-cache-certificate-v1\0");
+    hasher.update((bytes.len() as u64).to_le_bytes());
+    hasher.update(bytes);
+    Some(hex_lower(&hasher.finalize()))
+}
+
 /// Look up a cached [`Certificate`] by `key` under `cache_dir` (REQ-3/REQ-6).
 ///
 /// Returns `Some(cert)` on a hit (a present, readable, parseable entry whose key
@@ -332,7 +354,14 @@ pub fn load(cache_dir: &Path, key: &str) -> Option<Certificate> {
     let path = entry_path(cache_dir, key);
     let src = std::fs::read_to_string(&path).ok()?;
     // A corrupt/unparseable entry is a miss (not an error): re-verify + overwrite.
-    let cert = serde_json::from_str::<Certificate>(&src).ok()?;
+    let entry = serde_json::from_str::<CacheEntry>(&src).ok()?;
+    if entry.schema != CHECK_SCHEMA_VERSION || entry.key != key {
+        return None;
+    }
+    let cert = entry.certificate;
+    if certificate_digest(&cert).as_deref() != Some(entry.certificate_digest.as_str()) {
+        return None;
+    }
     // An internally-inconsistent entry is also a miss (blocker #49). A cert
     // produced under a different set of gates than the current `forge` (e.g.
     // stored by a forge before the §7 mutation floor existed) can land under the
@@ -388,7 +417,18 @@ fn is_internally_consistent(cert: &Certificate) -> bool {
 pub fn store(cache_dir: &Path, key: &str, cert: &Certificate) -> std::io::Result<()> {
     std::fs::create_dir_all(cache_dir)?;
     let canonical = cert.clone().with_cached(false);
-    let json = serde_json::to_string_pretty(&canonical)
+    let entry = CacheEntry {
+        schema: CHECK_SCHEMA_VERSION,
+        key: key.to_string(),
+        certificate_digest: certificate_digest(&canonical).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "certificate could not be serialized for its cache digest",
+            )
+        })?,
+        certificate: canonical,
+    };
+    let json = serde_json::to_string_pretty(&entry)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
     // Atomic publish: write a unique temp sibling, then rename over the target.
     let tmp = temp_sibling(cache_dir, key);
@@ -746,6 +786,43 @@ mod tests {
         assert!(
             load(&dir, &key).is_none(),
             "a corrupt entry degrades to a MISS"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn edited_policy_verdict_fails_envelope_integrity_and_misses() {
+        let dir = unique_test_dir("policy_tamper");
+        let _ = std::fs::remove_dir_all(&dir);
+        let key = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
+        let rejected =
+            Certificate::rejected_weak_contract("f", pure_row(), "1/3".into(), "return 0".into());
+        store(&dir, &key, &rejected).expect("store policy reject");
+        let path = entry_path(&dir, &key);
+        let source = std::fs::read_to_string(&path).expect("read envelope");
+        let mut value: serde_json::Value = serde_json::from_str(&source).expect("parse envelope");
+        value["certificate"]["level"] = serde_json::Value::String("L3".into());
+        value["certificate"]["reject"] = serde_json::Value::Null;
+        value["certificate"]["obligations"] = serde_json::Value::Array(Vec::new());
+        std::fs::write(&path, serde_json::to_vec_pretty(&value).unwrap()).expect("edit envelope");
+        assert!(
+            load(&dir, &key).is_none(),
+            "editing a cached policy verdict without its canonical digest must miss"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn pre_envelope_certificate_row_is_a_schema_miss() {
+        let dir = unique_test_dir("schema10_row");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        let key = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
+        let legacy = serde_json::to_vec_pretty(&sample_cert("f", Level::L3)).unwrap();
+        std::fs::write(entry_path(&dir, &key), legacy).expect("write schema-10 row");
+        assert!(
+            load(&dir, &key).is_none(),
+            "a pre-envelope certificate cannot bypass schema 11"
         );
         let _ = std::fs::remove_dir_all(&dir);
     }

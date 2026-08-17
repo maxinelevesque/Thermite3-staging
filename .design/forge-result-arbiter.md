@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: da2f85b42513f67708492b7441d1cd45b255983fd42caad3356f8089ba74abd6 (initial pin 2026-08-16 for the typed Verus/Lean/EPR/vacuity/mutation result arbiter, proof-independent context carry, and exhaustive transition tests.)
+audited-content-sha256: 66587f20b425d64e3a4a407a460977f38d573004b470ea8a85783936cb50a7fd (re-pinned 2026-08-16 after cold-review repairs for live typed stamps, candidate-shape and identity checks, exhaustive transitions, and context-safe policy rendering.)
 pin-extract: forge/src/result_arbiter.rs=code-normalized
 governs: forge/src/result_arbiter.rs
 -->
@@ -45,9 +45,10 @@ or boundary facts.
   those of the selected proof evidence.
 - REQ-4: The public serialized `Certificate` schema in
   `forge/src/manifest.rs` shall remain unchanged. Cache deserialization shall
-  pass through a single fail-closed adapter into the typed outcome model, and
-  `forge/src/cache.rs::CHECK_SCHEMA_VERSION` shall be bumped so pre-arbiter
-  verdicts cannot bypass the new combination semantics.
+  pass through a single fail-closed adapter into the typed outcome model. The
+  private cache format shall bind its query key and canonical certificate
+  digest, and `forge/src/cache.rs::CHECK_SCHEMA_VERSION` shall be bumped so
+  pre-arbiter or unbound verdicts cannot bypass the new combination semantics.
 
 ## Acceptance Criteria
 
@@ -94,13 +95,20 @@ policy itself.
 timeout, timeout-derived degradation, and an engine's unknown result.
 `PolicyRejected` carries a typed policy reason for weak contract, semantic
 tautology, or vacuous precondition. Fresh producers construct these variants
-directly. A narrow certificate adapter exists only for cache and legacy
-boundaries; contradictory shapes fail closed as an arbiter soundness alarm.
+directly. When existing pipeline stages temporarily carry the public rendering,
+the certificate has a private, non-serialized `LiveResultDisposition` stamp;
+`ItemOutcome::from_certificate` reads that stamp instead of rediscovering a
+fresh verdict from reject strings. A narrow structural adapter exists only for
+deserialized cache and legacy boundaries; contradictory shapes fail closed as
+an arbiter soundness alarm.
 
 Supplemental engines return `ProofCandidate`: complete checked proof, partial
 proof, refutation, unavailable/incompatible tool, or unknown/proof failure.
 Complete proof owns a candidate certificate carrying the selected route's
-obligations and attribution. It cannot overwrite the base directly.
+obligations and attribution. It cannot overwrite the base directly and carries
+no caller-controlled policy-preservation switch. `combine`, `select`, and
+`apply_policy` reject candidate item/effect identity mismatches before rendering,
+so an arbitrary full certificate payload cannot be relabeled as the base item.
 
 ### Total combination
 
@@ -125,8 +133,10 @@ renderer copies assurance scope, accepted contract-quality/mutation results,
 advisory strengthening data, covenant evidence, and meaning audit from the
 base, then applies the candidate's proof obligations, engine attribution, and
 certification position. The candidate's genuine counterexample obligations are
-likewise retained when it refutes. This positive allowlist prevents accidental
-transfer of stale Verus authority while making every retained field reviewable.
+likewise retained when it refutes. Policy rendering goes through a sibling
+positive-allowlist merge, so the mutation decision applied after a Lean proof
+cannot erase proof-independent context. This prevents accidental transfer of
+stale Verus authority while making every retained field reviewable.
 
 ### Producer migration
 
@@ -149,16 +159,23 @@ eligibility method.
 
 ### Compatibility and cache boundary
 
-No field is added to `Certificate`. Public JSON, audit projection, and frozen
-fixtures therefore retain their current shape. Cache hits are decoded by one
+No serialized field is added to `Certificate`; the live disposition stamp is
+`serde(skip)`. Public JSON, audit projection, and frozen fixtures therefore
+retain their current shape. Cache hits are decoded by one
 `ItemOutcome::from_persisted_certificate` adapter after existing artifact
-validation. The adapter checks the complete structural shape—level, reject,
-failed obligations, lowered-assurance marker, and policy quality fields—and
-returns a soundness alarm for contradictions rather than guessing from one
-string.
+validation and cache-envelope verification. The envelope binds schema, query
+key, and a canonical digest of the complete stored certificate. The adapter
+then checks the structural shape—level, reject, failed obligations,
+lowered-assurance marker, and vacuity/mutation policy quality fields—and returns
+a soundness alarm for contradictions rather than guessing from one string.
+The digest detects corruption and unsynchronized edits; it is not authentication
+against an actor able to rewrite both a local row and its digest, who remains
+inside the local cache trust boundary.
 
 Because the fresh result is now a different function of the same cache-key
-inputs, `forge/src/cache.rs::CHECK_SCHEMA_VERSION` advances from 9 to 10.
+inputs and the cache format is integrity-bound,
+`forge/src/cache.rs::CHECK_SCHEMA_VERSION` advances from 9 to 11 (10 was the
+first arbiter format; 11 closes the review-found unbound-policy row).
 
 ## Resolved Questions
 

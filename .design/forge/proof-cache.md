@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (cache.rs) is the additive REQ-9 measures wf accessibility-proof cache (AccessibilityProof + accessibility_cache_key + load/store, a separate wf- on-disk namespace, CHECK_SCHEMA_VERSION-invalidated like the per-item cache); the per-item proof cache is byte-identical (REQ-S1-9). prior: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab)
-audited-content-sha256: 94dd8323273cf80e56322da666e57d2c302995c9d733b07fda228f0a59203bab (re-pinned 2026-08-16 for CHECK_SCHEMA_VERSION 10 and fail-closed typed result decoding on main cache hits. prior: f460e5861b19c0d4f1cd2159987fb515c9de598e2587ce9f8ece67b8fbaf882c)
+audited-content-sha256: 67ae2b39a480a45e1e7c811a3862c9af6621fbf95ce5b71193baf8ad85076c5f (re-pinned 2026-08-16 for schema 11 key/digest-bound private cache envelopes and fail-closed typed result decoding. prior: f460e5861b19c0d4f1cd2159987fb515c9de598e2587ce9f8ece67b8fbaf882c)
 governs: forge/src/cache.rs
 thesis-refs:
   - thermite-design.md §5.3
@@ -43,7 +43,7 @@ against the current tree:
 
 - **#49 (`6d7b3aff`) — the stale-verdict gate bypass is closed: a FIFTH key
   input.** `cache_key` hashes, in addition to its four arguments, the
-  module-internal `const CHECK_SCHEMA_VERSION: u32` (currently `10` — bumped
+  module-internal `const CHECK_SCHEMA_VERSION: u32` (currently `11` — bumped
   `5 → 6` for the #269 F-IDENT/F-STRUCT-ZERO mutant families and `6 → 7` for the
   #269 call-bearing equivalence-exclusion arm; both verdict-changing) — the
   version of forge's VERDICT-AFFECTING CHECK LOGIC. `thermite_version` does
@@ -61,7 +61,9 @@ against the current tree:
   live producer admission; 9 = domain-separated main-item, mutation,
   equivalence, and strengthening query roles plus the fail-closed partial-EPR
   aggregation rule; 10 = typed result arbitration across Verus, Lean, EPR,
-  vacuity, and mutation, including boundary/policy-context preservation.
+  vacuity, and mutation, including boundary/policy-context preservation; 11 =
+  the private cache envelope binding its query key and canonical certificate
+  digest so an edited policy row misses instead of promoting.
   REQ-1's "EXACTLY the four inputs" and REQ-2's four-input enumeration argument
   are amended accordingly: four CALLER-passed inputs + the check-logic version.
 - **Query-role separation (RFC-3 cache repair).** `cache_key_for_role` hashes a
@@ -71,6 +73,13 @@ against the current tree:
   match the freshly constructed L3 artifact's item, effects, query identity,
   classification, level, position, and boundary. That comparison never restores
   the private audit capability lost at serialization.
+- **Integrity-bound private envelope (schema 11).** `store` hashes the canonical
+  `cached:false` certificate and records that digest with the exact query key;
+  `load` verifies schema, key, and digest before returning a hit. Corrupt or
+  edited policy evidence is therefore a miss and a live re-check. This is
+  corruption detection, not authentication against an actor who can rewrite
+  both a local row and its digest; that actor remains inside the local cache
+  trust boundary.
 - **Canonical-config-only caching (the floor/rlimit seam, in `check.rs`).**
   `check_file`'s `use_cache` guard consults AND populates the cache only at
   the canonical budget (`rlimit == DEFAULT_RLIMIT` and `mutation_floor ==

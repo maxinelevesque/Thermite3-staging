@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: 8f648d94aa27d4cb600cf51e47d95d2544d2f9e40d584c95c11a05557702b3ba (re-pinned 2026-08-16 for the shared typed arbiter across Verus, Lean, EPR, vacuity, and mutation outcomes. prior: 2ca4529951a0e66bf41c6fbe25a58c0a54b6e94a70b1c91a94ac66b9cd4cc89d)
+audited-content-sha256: 4051573086a584b0e0a69e93c4069241dff41e4722473fb0ec30c8be2a6f3300 (re-pinned 2026-08-16 for live typed outcomes, early fast-unknown classification, and context/witness-preserving cross-engine arbitration. prior: 2ca4529951a0e66bf41c6fbe25a58c0a54b6e94a70b1c91a94ac66b9cd4cc89d)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and
@@ -193,7 +193,10 @@ build-blockers:
 > accepted policy, covenant, and meaning-audit context through a positive
 > allowlist while route-specific obligations, attribution, and coordinates
 > come from the selected proof. Refutation candidates carry their actual
-> counterexample obligations through the same typed path.
+> counterexample obligations through the same typed path, including the rendered
+> EPR disagreement certificate. A private non-serialized disposition stamp keeps
+> fresh Verus/degrade/policy outcomes typed across pipeline stages; post-proof
+> policy rendering uses the same proof-independent context merge.
 
 ## Summary
 

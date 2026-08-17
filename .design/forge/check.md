@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: e9a4c9a375332cbcd87659441ae5e0e2a7d86a345df198e17e0bd1acb73936c3 (re-pinned 2026-08-16 for typed Verus/Lean/EPR/vacuity/mutation result arbitration, symmetric disagreement, context-preserving replacement, and genuine refutation witnesses. prior: 9c73c125e9f048026c560fc74834b6d2aeb1480a0aaf8b626bd84bd1ced745d1)
+audited-content-sha256: c92fd890891dbbe3226caca03f3bf0302f16a4ae4243ccb3ee870a25631a2932 (re-pinned 2026-08-16 for typed live outcomes, early fast-unknown classification, context-safe Lean policy rendering, and genuine EPR disagreement witnesses. prior: 9c73c125e9f048026c560fc74834b6d2aeb1480a0aaf8b626bd84bd1ced745d1)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -260,8 +260,9 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   does not successfully degrade,
   mutation-floor rejection, and semantic tautology/vacuity rejection retain
   the same classification and query identity with none/none/fiat. Cache schema
-  10 domain-separates main-item, mutation, equivalence, and strengthening queries
-  and invalidates pre-arbiter result-combination semantics,
+  11 domain-separates main-item, mutation, equivalence, and strengthening queries,
+  invalidates pre-arbiter result-combination semantics, and integrity-binds each
+  private entry to its query key and canonical certificate digest,
   and a main hit must match the fresh artifact without regaining audit authority. Mixed
   clause solver routes are excluded until clause-level coordinates exist.
   A successful timeout descent replaces the provisional Verus non-claim with
@@ -273,7 +274,9 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   install EPR L4. Counterexample/proof disagreement alarms symmetrically;
   settled policy rejects are preserved; replacement retains boundary and
   proof-independent policy, covenant, and meaning-audit context; a refuting
-  backend retains its actual counterexample obligations.
+  backend and a rendered EPR disagreement retain the actual counterexample
+  obligations. A non-serialized live disposition stamp carries fresh typed
+  outcomes across public-rendering stages without reparsing reject text.
 
 ## Acceptance criteria
 

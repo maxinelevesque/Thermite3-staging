@@ -934,14 +934,30 @@ pub fn check_file_with_options(
         let cert = if let Item::Fn(f) = item {
             // Route the L3 contract discharge through the Verus engine
             // (REQ-2/REQ-3/REQ-3.1). The contract obligation is the head of the set.
-            ladder_for_timeout(
+            let settled = ladder_for_timeout(
                 f,
                 &sub,
                 &verus.outcome,
                 cert,
                 &item_obligations.contract,
                 evidence_key,
-            )?
+            )?;
+            if settled.lowered_assurance {
+                crate::result_arbiter::ItemOutcome::inconclusive(
+                    settled,
+                    "degrade-ladder",
+                    crate::result_arbiter::InconclusiveReason::TimeoutDegrade,
+                )
+                .into_certificate()
+            } else if settled.live_disposition().is_none()
+                && settled.obligations.iter().any(|obligation| {
+                    obligation.status == crate::manifest::ObligationStatus::Failed
+                })
+            {
+                crate::result_arbiter::ItemOutcome::refuted(settled, "kani").into_certificate()
+            } else {
+                settled
+            }
         } else {
             cert
         };
@@ -1021,6 +1037,7 @@ pub fn check_file_with_options(
                         .apply_policy(crate::result_arbiter::PolicyDecision::Accepted(
                             scored_cert.with_strengthening(suggestions),
                         ))
+                        .map_err(result_arbiter_shape_error)?
                         .into_certificate()
                 } else {
                     // Sub-floor: the contract under-constrains the body. Below the
@@ -1056,6 +1073,7 @@ pub fn check_file_with_options(
                             kind: crate::result_arbiter::PolicyRejection::WeakContract,
                             certificate: rejected,
                         })
+                        .map_err(result_arbiter_shape_error)?
                         .into_certificate()
                 }
             } else {
@@ -2066,7 +2084,6 @@ fn finish_epr_reconstruction(
         crate::result_arbiter::ProofCandidate::Complete {
             engine: "epr".to_string(),
             certificate: replacement,
-            preserve_base_policy: true,
         },
     )
 }
@@ -2078,7 +2095,7 @@ fn settle_epr_candidate(
 ) -> Certificate {
     let scope = cert.assurance_scope.clone();
     let effects = cert.effects.clone();
-    let outcome = match crate::result_arbiter::ItemOutcome::from_persisted_certificate(cert) {
+    let outcome = match crate::result_arbiter::ItemOutcome::from_certificate(cert) {
         Ok(outcome) => outcome,
         Err(error) => {
             let alarm = epr_failure_cert(
@@ -2095,21 +2112,39 @@ fn settle_epr_candidate(
             };
         }
     };
-    match outcome.combine(candidate) {
+    match outcome.clone().combine(candidate) {
         Ok(settled) => settled.into_certificate(),
-        Err(disagreement) => {
+        Err(crate::result_arbiter::CombinationError::Disagreement(disagreement)) => {
+            let detail = format!("EprVerifierDisagreement: {disagreement}");
+            let mut alarm = Certificate::rejected(
+                &function.name,
+                effects,
+                function.slag.is_some(),
+                RejectReason {
+                    cause: "EprVerifierDisagreement".into(),
+                    detail,
+                },
+            );
+            alarm.obligations = disagreement.counterexample.obligations;
+            alarm = alarm.with_engine_attribution(epr_undecided_attribution());
+            outcome.render_settled_rejection(
+                crate::result_arbiter::PolicyRejection::Other("EprVerifierDisagreement".into()),
+                alarm,
+            )
+        }
+        Err(crate::result_arbiter::CombinationError::InvalidEvidence(error)) => {
             let alarm = epr_failure_cert(
                 &function.name,
                 &effects,
                 function.slag.is_some(),
                 0,
-                &format!("EprVerifierDisagreement: {disagreement}"),
+                &format!("ResultArbiterAlarm: {}", error.detail),
                 &epr_undecided_attribution(),
             );
-            match scope {
-                Some(scope) => alarm.with_assurance_scope(scope),
-                None => alarm,
-            }
+            outcome.render_settled_rejection(
+                crate::result_arbiter::PolicyRejection::Other("ResultArbiterAlarm".into()),
+                alarm,
+            )
         }
     }
 }
@@ -4141,11 +4176,12 @@ fn lean_engine_cert(
         // (R-APG-1 — no panic on a future wiring change).
         EngineSelection::Bv => Ok(verus_cert),
         EngineSelection::Auto => {
-            let base = crate::result_arbiter::ItemOutcome::from_persisted_certificate(verus_cert)
-                .map_err(|error| ForgeError::ResultArbiterAlarm {
-                item: error.item,
-                detail: error.detail,
-            })?;
+            let base = crate::result_arbiter::ItemOutcome::from_certificate(verus_cert).map_err(
+                |error| ForgeError::ResultArbiterAlarm {
+                    item: error.item,
+                    detail: error.detail,
+                },
+            )?;
             if !base.needs_fallback() {
                 return Ok(base.into_certificate());
             }
@@ -4157,10 +4193,14 @@ fn lean_engine_cert(
                         .combine(crate::result_arbiter::ProofCandidate::Complete {
                             engine: lean.name().tag().to_string(),
                             certificate: result.proof,
-                            preserve_base_policy: false,
                         })
-                        .map(|settled| settled.apply_policy(result.policy).into_certificate())
-                        .map_err(ForgeError::SoundnessAlarm);
+                        .map_err(result_arbiter_combination_error)
+                        .and_then(|settled| {
+                            settled
+                                .apply_policy(result.policy)
+                                .map(crate::result_arbiter::ItemOutcome::into_certificate)
+                                .map_err(result_arbiter_shape_error)
+                        });
                 }
                 Verdict::Refuted(counterexample) => {
                     crate::result_arbiter::ProofCandidate::Refuted {
@@ -4181,14 +4221,15 @@ fn lean_engine_cert(
             };
             base.combine(candidate)
                 .map(crate::result_arbiter::ItemOutcome::into_certificate)
-                .map_err(ForgeError::SoundnessAlarm)
+                .map_err(result_arbiter_combination_error)
         }
         EngineSelection::Lean => {
-            let base = crate::result_arbiter::ItemOutcome::from_persisted_certificate(verus_cert)
-                .map_err(|error| ForgeError::ResultArbiterAlarm {
-                item: error.item,
-                detail: error.detail,
-            })?;
+            let base = crate::result_arbiter::ItemOutcome::from_certificate(verus_cert).map_err(
+                |error| ForgeError::ResultArbiterAlarm {
+                    item: error.item,
+                    detail: error.detail,
+                },
+            )?;
             if matches!(
                 base.disposition(),
                 crate::result_arbiter::BaseDisposition::PolicyRejected(_)
@@ -4211,7 +4252,6 @@ fn lean_engine_cert(
                     crate::result_arbiter::ProofCandidate::Complete {
                         engine: lean.name().tag().to_string(),
                         certificate: lean_interactive_proven_cert(lean, base.certificate()),
-                        preserve_base_policy: false,
                     }
                 }
                 Verdict::Proven(_) => {
@@ -4220,10 +4260,14 @@ fn lean_engine_cert(
                         .select(crate::result_arbiter::ProofCandidate::Complete {
                             engine: lean.name().tag().to_string(),
                             certificate: result.proof,
-                            preserve_base_policy: false,
                         })
-                        .map(|settled| settled.apply_policy(result.policy).into_certificate())
-                        .map_err(ForgeError::SoundnessAlarm);
+                        .map_err(result_arbiter_combination_error)
+                        .and_then(|settled| {
+                            settled
+                                .apply_policy(result.policy)
+                                .map(crate::result_arbiter::ItemOutcome::into_certificate)
+                                .map_err(result_arbiter_shape_error)
+                        });
                 }
                 Verdict::Refuted(counterexample) => {
                     crate::result_arbiter::ProofCandidate::Refuted {
@@ -4244,7 +4288,25 @@ fn lean_engine_cert(
             };
             base.select(candidate)
                 .map(crate::result_arbiter::ItemOutcome::into_certificate)
-                .map_err(ForgeError::SoundnessAlarm)
+                .map_err(result_arbiter_combination_error)
+        }
+    }
+}
+
+fn result_arbiter_shape_error(error: crate::result_arbiter::PersistedOutcomeError) -> ForgeError {
+    ForgeError::ResultArbiterAlarm {
+        item: error.item,
+        detail: error.detail,
+    }
+}
+
+fn result_arbiter_combination_error(error: crate::result_arbiter::CombinationError) -> ForgeError {
+    match error {
+        crate::result_arbiter::CombinationError::Disagreement(disagreement) => {
+            ForgeError::SoundnessAlarm(disagreement)
+        }
+        crate::result_arbiter::CombinationError::InvalidEvidence(error) => {
+            result_arbiter_shape_error(error)
         }
     }
 }
@@ -6692,6 +6754,11 @@ fn assemble_certificate(
 ) -> crate::result_arbiter::ItemOutcome {
     let effects = item_effects(item);
     let succeeded = matches!(&verus.outcome, VerusOutcome::Proved { .. });
+    let incomplete_unknown = matches!(
+        &verus.outcome,
+        VerusOutcome::Counterexample { obligations }
+            if crate::engine::counterexample_is_incompleteness_unknown(obligations)
+    );
     let cert = match &verus.outcome {
         VerusOutcome::Proved { verified } => Certificate::new(
             item.name(),
@@ -6716,6 +6783,23 @@ fn assemble_certificate(
                 detail.clone(),
             )
         }
+        VerusOutcome::Counterexample { obligations } if incomplete_unknown => {
+            let detail = obligations
+                .first()
+                .and_then(|obligation| obligation.diagnostic.clone())
+                .unwrap_or_else(|| "verus returned an SMT-incompleteness `unknown`".into());
+            let mut certificate = Certificate::rejected(
+                item.name(),
+                effects,
+                false,
+                RejectReason {
+                    cause: "VerusIncompleteUnknown".into(),
+                    detail,
+                },
+            );
+            certificate.obligations = obligations.clone();
+            certificate
+        }
         VerusOutcome::Counterexample { obligations } => Certificate::new(
             item.name(),
             Level::L0,
@@ -6737,6 +6821,13 @@ fn assemble_certificate(
             "verus",
             crate::result_arbiter::InconclusiveReason::VerusTimeout,
         ),
+        VerusOutcome::Counterexample { .. } if incomplete_unknown => {
+            crate::result_arbiter::ItemOutcome::inconclusive(
+                cert,
+                "verus",
+                crate::result_arbiter::InconclusiveReason::EngineUnknown,
+            )
+        }
         VerusOutcome::Counterexample { .. } => {
             crate::result_arbiter::ItemOutcome::refuted(cert, "verus")
         }
@@ -7818,6 +7909,42 @@ fn measured(xs: &[u32]) -> u64
         assert_eq!(failure.level, Level::L0);
     }
 
+    #[test]
+    fn spec_fn_fast_unknown_is_typed_inconclusive_before_item_branching() {
+        let parsed = thermite_syntax::parse("spec fn f(x: u32) -> u32 measures x { x }");
+        assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
+        let item = parsed.program.items.first().unwrap();
+        assert!(matches!(item, Item::SpecFn(_)));
+        let outcome = assemble_certificate(
+            item,
+            &VerusResult {
+                outcome: VerusOutcome::Counterexample {
+                    obligations: vec![ObligationResult::failed(
+                        "SMT solver returned unknown",
+                        None,
+                        Some("Z3 returned unknown without a model".into()),
+                    )],
+                },
+                solver_time_ms: 1,
+            },
+            None,
+        );
+        assert!(outcome.needs_fallback());
+        let certificate = outcome.into_certificate();
+        assert_eq!(
+            certificate
+                .reject
+                .as_ref()
+                .map(|reject| reject.cause.as_str()),
+            Some("VerusIncompleteUnknown")
+        );
+        assert!(
+            crate::result_arbiter::ItemOutcome::from_certificate(certificate)
+                .unwrap()
+                .needs_fallback()
+        );
+    }
+
     // REQ-3 / AC-6: exit != 0 with unparseable output → ForgeError::VerusOutput
     // (never swallowed, never treated as success).
     #[test]
@@ -8880,6 +9007,12 @@ requires true\n\
             Some("EprVerifierDisagreement")
         );
         assert_eq!(alarm.level, Level::L0);
+        assert_eq!(alarm.obligations.len(), 1);
+        assert_eq!(alarm.obligations[0].name, "postcondition not satisfied");
+        assert_eq!(
+            alarm.obligations[0].diagnostic.as_deref(),
+            Some("actual assembled Verus counterexample shape")
+        );
 
         let weak = Certificate::rejected_weak_contract(
             "epr_route",
