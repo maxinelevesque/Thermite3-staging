@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: c42359f5cfdc6b0f554a09d4d7b9aff00df37f74429b051983d849e0f36def0c (issue-48 RFC-3 typed-arbiter cold re-review repair, 2026-08-17: proof/policy authority now requires opaque producer-issued tokens, not self-attested public evidence. Clause coordinates, displays, and final Lx retirement remain open. prior: d1e8dd6f749a05b496e173728087bd2006f962d0f6dfabf39125b98870ef2d69)
+audited-content-sha256: 1e8b412759c3b8a1015f345d81c0fc40e34957c6f3cac9400345e777f9113cb3 (issue-48 RFC-3 typed-arbiter cold re-review repair, 2026-08-17: every proof/policy/live/persisted authority entrance is capability-gated. Clause coordinates, displays, and final Lx retirement remain open. prior: c42359f5cfdc6b0f554a09d4d7b9aff00df37f74429b051983d849e0f36def0c)
 
 ## Summary
 
@@ -297,7 +297,12 @@ passes persisted base outcomes through the typed
 and all current Verus, Lean fallback, EPR, solver-vacuity, and mutation results
 share one preserve/upgrade/refute/alarm precedence relation. Fresh outcomes use
 a non-serialized typed disposition stamp rather than round-tripping through
-reject-cause interpretation.
+reject-cause interpretation, but the stamp alone is non-authoritative: the live
+adapter also consumes an opaque capability issued inside `check.rs`. Raw base
+outcome constructors are private. The persisted structural adapter consumes a
+different opaque capability issued only after cache-envelope integrity and
+fresh-artifact matching, closing the former crate-sibling bypasses around the
+candidate token.
 Supplemental candidates are not constructible from public certificate evidence:
 private candidate states require an opaque authority token whose production
 issuer is private to the actual Lean/EPR observation module. Rendered

@@ -230,6 +230,105 @@ fn issue_policy_decision(issued: IssuedPolicyDecision) -> PolicyDecisionAuthorit
     PolicyDecisionAuthority { issued }
 }
 
+/// Opaque authority for reconstructing a live producer outcome after its
+/// process-local stamp has crossed an internal certificate-shaped seam.
+pub(crate) struct LiveCertificateAuthority {
+    certificate: Certificate,
+    engine: String,
+}
+
+impl LiveCertificateAuthority {
+    pub(crate) fn into_parts(self) -> (Certificate, String) {
+        (self.certificate, self.engine)
+    }
+}
+
+fn issue_live_certificate(
+    certificate: Certificate,
+    engine: impl Into<String>,
+) -> LiveCertificateAuthority {
+    LiveCertificateAuthority {
+        certificate,
+        engine: engine.into(),
+    }
+}
+
+/// Opaque authority for the structural adapter. It is issued only after the
+/// cache envelope and the fresh pre-execution artifact have both matched.
+pub(crate) struct PersistedCertificateAuthority {
+    certificate: Certificate,
+}
+
+impl PersistedCertificateAuthority {
+    pub(crate) fn into_certificate(self) -> Certificate {
+        self.certificate
+    }
+}
+
+fn issue_persisted_certificate(certificate: Certificate) -> PersistedCertificateAuthority {
+    PersistedCertificateAuthority { certificate }
+}
+
+fn live_certificate_engine(certificate: &Certificate) -> String {
+    certificate.engine_attribution.as_ref().map_or_else(
+        || "verus".to_string(),
+        |attribution| attribution.engine.clone(),
+    )
+}
+
+fn live_accepted(
+    certificate: Certificate,
+    engine: impl Into<String>,
+) -> crate::result_arbiter::ItemOutcome {
+    let engine = engine.into();
+    let certificate =
+        certificate.with_live_disposition(crate::manifest::LiveResultDisposition::Accepted);
+    crate::result_arbiter::ItemOutcome::from_certificate(issue_live_certificate(
+        certificate,
+        engine,
+    ))
+    .expect("a producer-issued accepted certificate has a valid live shape")
+}
+
+fn live_inconclusive(
+    certificate: Certificate,
+    engine: impl Into<String>,
+    reason: crate::result_arbiter::InconclusiveReason,
+) -> crate::result_arbiter::ItemOutcome {
+    let disposition = match reason {
+        crate::result_arbiter::InconclusiveReason::VerusTimeout => {
+            crate::manifest::LiveResultDisposition::VerusTimeout
+        }
+        crate::result_arbiter::InconclusiveReason::TimeoutDegrade => {
+            crate::manifest::LiveResultDisposition::TimeoutDegrade
+        }
+        crate::result_arbiter::InconclusiveReason::EngineUnknown => {
+            crate::manifest::LiveResultDisposition::EngineUnknown
+        }
+    };
+    let engine = engine.into();
+    let certificate = certificate.with_live_disposition(disposition);
+    crate::result_arbiter::ItemOutcome::from_certificate(issue_live_certificate(
+        certificate,
+        engine,
+    ))
+    .expect("a producer-issued inconclusive certificate has a valid live shape")
+}
+
+fn live_refuted(
+    certificate: Certificate,
+    engine: impl Into<String>,
+) -> crate::result_arbiter::ItemOutcome {
+    let engine = engine.into();
+    let certificate =
+        certificate.with_live_disposition(crate::manifest::LiveResultDisposition::Refuted);
+    crate::result_arbiter::ItemOutcome::from_certificate(issue_live_certificate(
+        certificate,
+        engine,
+    ))
+    .expect("a producer-issued refutation certificate has a valid live shape")
+}
+
 #[cfg(test)]
 pub(crate) fn arbiter_test_proof_authority(
     issued: IssuedProofCandidate,
@@ -242,6 +341,13 @@ pub(crate) fn arbiter_test_policy_authority(
     issued: IssuedPolicyDecision,
 ) -> PolicyDecisionAuthority {
     issue_policy_decision(issued)
+}
+
+#[cfg(test)]
+pub(crate) fn arbiter_test_persisted_authority(
+    certificate: Certificate,
+) -> PersistedCertificateAuthority {
+    issue_persisted_certificate(certificate)
 }
 
 /// The `forge` toolchain version (`.design/forge/proof-cache.md` REQ-1c/REQ-5):
@@ -894,13 +1000,14 @@ pub fn check_file_with_options(
                 // pre-execution artifact. Validation never restores private
                 // audit authority across the serialization boundary.
                 if stored.persisted_verus_artifact_matches(&l3_artifact) {
-                    let stored =
-                        crate::result_arbiter::ItemOutcome::from_persisted_certificate(stored)
-                            .map_err(|error| ForgeError::ResultArbiterAlarm {
-                                item: error.item,
-                                detail: error.detail,
-                            })?
-                            .into_certificate();
+                    let stored = crate::result_arbiter::ItemOutcome::from_persisted_certificate(
+                        issue_persisted_certificate(stored),
+                    )
+                    .map_err(|error| ForgeError::ResultArbiterAlarm {
+                        item: error.item,
+                        detail: error.detail,
+                    })?
+                    .into_certificate();
                     certs.push(stored.with_cached(true));
                     continue;
                 }
@@ -1048,7 +1155,7 @@ pub fn check_file_with_options(
                 evidence_key,
             )?;
             if settled.lowered_assurance {
-                crate::result_arbiter::ItemOutcome::inconclusive(
+                live_inconclusive(
                     settled,
                     "degrade-ladder",
                     crate::result_arbiter::InconclusiveReason::TimeoutDegrade,
@@ -1059,7 +1166,7 @@ pub fn check_file_with_options(
                     obligation.status == crate::manifest::ObligationStatus::Failed
                 })
             {
-                crate::result_arbiter::ItemOutcome::refuted(settled, "kani").into_certificate()
+                live_refuted(settled, "kani").into_certificate()
             } else {
                 settled
             }
@@ -1090,7 +1197,7 @@ pub fn check_file_with_options(
         // graduates `mutants_killed`/`survivor` on the certified cert.
         let cert = if let Item::Fn(f) = item {
             if cert.level == Level::L3 && cert.reject.is_none() {
-                let outcome = crate::result_arbiter::ItemOutcome::accepted(cert, "verus");
+                let outcome = live_accepted(cert, "verus");
                 let score = mutation_score(
                     f,
                     &parsed.program,
@@ -2193,7 +2300,10 @@ fn settle_epr_candidate(
 ) -> Certificate {
     let scope = cert.assurance_scope.clone();
     let effects = cert.effects.clone();
-    let outcome = match crate::result_arbiter::ItemOutcome::from_certificate(cert) {
+    let engine = live_certificate_engine(&cert);
+    let outcome = match crate::result_arbiter::ItemOutcome::from_certificate(
+        issue_live_certificate(cert, engine),
+    ) {
         Ok(outcome) => outcome,
         Err(error) => {
             let alarm = epr_failure_cert(
@@ -4274,12 +4384,14 @@ fn lean_engine_cert(
         // (R-APG-1 — no panic on a future wiring change).
         EngineSelection::Bv => Ok(verus_cert),
         EngineSelection::Auto => {
-            let base = crate::result_arbiter::ItemOutcome::from_certificate(verus_cert).map_err(
-                |error| ForgeError::ResultArbiterAlarm {
-                    item: error.item,
-                    detail: error.detail,
-                },
-            )?;
+            let engine = live_certificate_engine(&verus_cert);
+            let base = crate::result_arbiter::ItemOutcome::from_certificate(
+                issue_live_certificate(verus_cert, engine),
+            )
+            .map_err(|error| ForgeError::ResultArbiterAlarm {
+                item: error.item,
+                detail: error.detail,
+            })?;
             if !base.needs_fallback() {
                 return Ok(base.into_certificate());
             }
@@ -4319,12 +4431,14 @@ fn lean_engine_cert(
                 .map_err(result_arbiter_combination_error)
         }
         EngineSelection::Lean => {
-            let base = crate::result_arbiter::ItemOutcome::from_certificate(verus_cert).map_err(
-                |error| ForgeError::ResultArbiterAlarm {
-                    item: error.item,
-                    detail: error.detail,
-                },
-            )?;
+            let engine = live_certificate_engine(&verus_cert);
+            let base = crate::result_arbiter::ItemOutcome::from_certificate(
+                issue_live_certificate(verus_cert, engine),
+            )
+            .map_err(|error| ForgeError::ResultArbiterAlarm {
+                item: error.item,
+                detail: error.detail,
+            })?;
             if matches!(
                 base.disposition(),
                 crate::result_arbiter::BaseDisposition::PolicyRejected(_)
@@ -6905,22 +7019,18 @@ fn assemble_certificate(
         None => cert,
     };
     match &verus.outcome {
-        VerusOutcome::Proved { .. } => crate::result_arbiter::ItemOutcome::accepted(cert, "verus"),
-        VerusOutcome::Timeout { .. } => crate::result_arbiter::ItemOutcome::inconclusive(
+        VerusOutcome::Proved { .. } => live_accepted(cert, "verus"),
+        VerusOutcome::Timeout { .. } => live_inconclusive(
             cert,
             "verus",
             crate::result_arbiter::InconclusiveReason::VerusTimeout,
         ),
-        VerusOutcome::Counterexample { .. } if incomplete_unknown => {
-            crate::result_arbiter::ItemOutcome::inconclusive(
-                cert,
-                "verus",
-                crate::result_arbiter::InconclusiveReason::EngineUnknown,
-            )
-        }
-        VerusOutcome::Counterexample { .. } => {
-            crate::result_arbiter::ItemOutcome::refuted(cert, "verus")
-        }
+        VerusOutcome::Counterexample { .. } if incomplete_unknown => live_inconclusive(
+            cert,
+            "verus",
+            crate::result_arbiter::InconclusiveReason::EngineUnknown,
+        ),
+        VerusOutcome::Counterexample { .. } => live_refuted(cert, "verus"),
     }
 }
 
@@ -8029,9 +8139,12 @@ fn measured(xs: &[u32]) -> u64
             Some("VerusIncompleteUnknown")
         );
         assert!(
-            crate::result_arbiter::ItemOutcome::from_certificate(certificate)
-                .unwrap()
-                .needs_fallback()
+            crate::result_arbiter::ItemOutcome::from_certificate(issue_live_certificate(
+                certificate,
+                "verus",
+            ))
+            .unwrap()
+            .needs_fallback()
         );
     }
 

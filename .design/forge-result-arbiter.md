@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 09190686b0e8fc5ca7be6b4ebceb0b6524535a43609644610734330421c0a669 (re-pinned 2026-08-17 after cold re-review repair required opaque producer-issued proof and policy authority.)
+audited-content-sha256: 0611d3083e1e582aaba1de4f75525cd78fd8407a259d8b14a4b686c8161405e7 (re-pinned 2026-08-17 after cold re-review required every authority-producing entrance to be capability-gated, with a source-level regression.)
 pin-extract: forge/src/result_arbiter.rs=code-normalized
 governs: forge/src/result_arbiter.rs
 -->
@@ -33,7 +33,11 @@ or boundary facts.
   Supplemental proof/refutation/unknown candidates shall require an opaque
   authority token issued at the actual backend-observation seam; a level label,
   arbitrary full `Certificate`, or mutually consistent public evidence fields
-  are not proof authority.
+  are not proof authority. The token boundary shall be exclusive: raw
+  `ItemOutcome` constructors are private, live-certificate reconstruction
+  requires a producer-issued capability, and structural persisted-certificate
+  reconstruction requires a distinct capability issued only after cache
+  envelope and fresh-artifact validation.
 - REQ-2: The arbiter shall implement a single precedence rule: an explicitly
   inconclusive result may be settled by complete checked proof or refutation
   evidence; compatible accepted proof evidence may strengthen an accepted
@@ -130,6 +134,13 @@ Refutation likewise requires a concrete witness. Policy decisions cross the
 same kind of opaque `PolicyDecisionAuthority` boundary. An accepted policy token
 may decorate only an already-`Accepted` outcome; it can never establish proof
 authority. Rejection tokens retain mutation/vacuity fact validation.
+The same exclusivity applies to base outcomes: `accepted`, `refuted`,
+`inconclusive`, and `policy_rejected` are private implementation constructors.
+`from_certificate` consumes an opaque `LiveCertificateAuthority`, while
+`from_persisted_certificate` consumes a separate
+`PersistedCertificateAuthority`. A crate sibling may fabricate a certificate or
+its `serde(skip)` live stamp, but cannot enter either adapter or construct an
+authoritative outcome.
 
 ### Total combination
 
@@ -186,6 +197,8 @@ retain their current shape. Cache hits are decoded by one
 `ItemOutcome::from_persisted_certificate` adapter after existing artifact
 validation and cache-envelope verification. The envelope binds schema, query
 key, and a canonical digest of the complete stored certificate. The adapter
+requires the opaque capability issued by `check.rs` only after both validations;
+it is not a crate-wide shape-only authority entrance. The adapter
 then checks the structural shape—level, reject, failed obligations,
 lowered-assurance marker, and vacuity/mutation policy quality fields—and returns
 a soundness alarm for contradictions rather than guessing from one string.

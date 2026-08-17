@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: e474b98d73a6e5481323bd6e72cef936c79f1208dfec94092e08303e7dc05645 (re-pinned 2026-08-17 for opaque proof/policy authority issued only at backend observation seams. prior: 32a63fa4607281f5ac4a59cf83ff39a2fed01c39ec55120bc2ae5deb29e05f44)
+audited-content-sha256: 838200f23f7b6c2e1df844a99eeace8ef1a390a3fec5f218b3f6aa2b1d297411 (re-pinned 2026-08-17 for exclusive proof, policy, live, and persisted authority capabilities. prior: e474b98d73a6e5481323bd6e72cef936c79f1208dfec94092e08303e7dc05645)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -276,12 +276,17 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   proof-independent policy, covenant, and meaning-audit context; a refuting
   backend and a rendered EPR disagreement retain the actual counterexample
   obligations. A non-serialized live disposition stamp carries fresh typed
-  outcomes across public-rendering stages without reparsing reject text.
+  outcomes across public-rendering stages without reparsing reject text, but the
+  stamp is metadata rather than authority: reconstruction also requires an
+  opaque `LiveCertificateAuthority`.
   `check.rs` is the producer-observation boundary: only this module can construct
-  `ProofCandidateAuthority` and `PolicyDecisionAuthority`, whose fields are
-  private. It issues them inside actual Lean/EPR and solver-vacuity/mutation
-  result branches; the arbiter accepts no strings or certificates without that
-  token. Same-item/effects identity and rendered-evidence validation remain
+  `ProofCandidateAuthority`, `PolicyDecisionAuthority`,
+  `LiveCertificateAuthority`, and `PersistedCertificateAuthority`, whose fields
+  are private. It issues them inside actual producer branches or, for persisted
+  data, only after cache-envelope and fresh-artifact matching. Raw
+  `ItemOutcome` constructors are private, so no alternate crate-visible path can
+  turn strings, a certificate, or a forged live stamp into authority.
+  Same-item/effects identity and rendered-evidence validation remain
   defense in depth. Test-only token issuers are `cfg(test)` and absent from the
   production API. Accepted policy qualification only decorates an already
   authoritative Accepted outcome and cannot upgrade a timeout.

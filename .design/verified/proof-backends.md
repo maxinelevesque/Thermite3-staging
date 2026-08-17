@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: aacad3465330d984d687dba7bc52455e3ea0de00ad49ff017f7dd0708b6c93e4 (re-pinned 2026-08-17 for opaque backend-issued supplemental proof authority. prior: f7ac102039b93a694452b34f647705023e99fbba353081f9691fc701e7295aa6)
+audited-content-sha256: 945bd67336792f8f627b32f6403d11cb67587d5809125dddcb1af5702392397b (re-pinned 2026-08-17 for exclusive backend, live, and persisted authority gates. prior: aacad3465330d984d687dba7bc52455e3ea0de00ad49ff017f7dd0708b6c93e4)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and
@@ -195,7 +195,10 @@ build-blockers:
 > come from the selected proof. Refutation candidates carry their actual
 > counterexample obligations through the same typed path, including the rendered
 > EPR disagreement certificate. A private non-serialized disposition stamp keeps
-> fresh Verus/degrade/policy outcomes typed across pipeline stages; post-proof
+> fresh Verus/degrade/policy outcomes typed across pipeline stages, but cannot by
+> itself mint authority: live reconstruction requires an opaque capability, raw
+> base-outcome constructors are private, and the persisted structural adapter
+> requires a distinct post-envelope/post-artifact capability. Post-proof
 > policy rendering uses the same proof-independent context merge. Candidate
 > variants are private and reached only through an opaque authority token minted
 > by the orchestration module in the actual Lean/EPR verdict branch; arbitrary

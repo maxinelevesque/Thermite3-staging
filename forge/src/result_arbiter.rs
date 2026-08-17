@@ -137,7 +137,7 @@ impl ItemOutcome {
         }
     }
 
-    pub(crate) fn accepted(certificate: Certificate, engine: impl Into<String>) -> Self {
+    fn accepted(certificate: Certificate, engine: impl Into<String>) -> Self {
         Self {
             certificate: certificate.with_live_disposition(LiveResultDisposition::Accepted),
             disposition: BaseDisposition::Accepted,
@@ -145,7 +145,7 @@ impl ItemOutcome {
         }
     }
 
-    pub(crate) fn inconclusive(
+    fn inconclusive(
         certificate: Certificate,
         engine: impl Into<String>,
         reason: InconclusiveReason,
@@ -162,7 +162,7 @@ impl ItemOutcome {
         }
     }
 
-    pub(crate) fn refuted(certificate: Certificate, engine: impl Into<String>) -> Self {
+    fn refuted(certificate: Certificate, engine: impl Into<String>) -> Self {
         Self {
             certificate: certificate.with_live_disposition(LiveResultDisposition::Refuted),
             disposition: BaseDisposition::Refuted,
@@ -170,7 +170,7 @@ impl ItemOutcome {
         }
     }
 
-    pub(crate) fn policy_rejected(
+    fn policy_rejected(
         certificate: Certificate,
         engine: impl Into<String>,
         kind: PolicyRejection,
@@ -191,16 +191,13 @@ impl ItemOutcome {
     /// Recover a live producer result from its non-serialized typed stamp. Only
     /// genuinely deserialized/legacy values fall back to the structural adapter.
     pub(crate) fn from_certificate(
-        certificate: Certificate,
+        authority: crate::check::LiveCertificateAuthority,
     ) -> Result<Self, PersistedOutcomeError> {
+        let (certificate, engine) = authority.into_parts();
         let Some(disposition) = certificate.live_disposition().cloned() else {
-            return Self::from_persisted_certificate(certificate);
+            return Self::from_structural_certificate(certificate);
         };
         validate_live_shape(&certificate, &disposition)?;
-        let engine = certificate
-            .engine_attribution
-            .as_ref()
-            .map_or_else(|| "verus".to_string(), |a| a.engine.clone());
         Ok(match disposition {
             LiveResultDisposition::Accepted => Self::accepted(certificate, engine),
             LiveResultDisposition::VerusTimeout => {
@@ -233,6 +230,12 @@ impl ItemOutcome {
     /// interpreted only here, together with level, failed obligations, and the
     /// lowered-assurance marker.
     pub(crate) fn from_persisted_certificate(
+        authority: crate::check::PersistedCertificateAuthority,
+    ) -> Result<Self, PersistedOutcomeError> {
+        Self::from_structural_certificate(authority.into_certificate())
+    }
+
+    fn from_structural_certificate(
         certificate: Certificate,
     ) -> Result<Self, PersistedOutcomeError> {
         let engine = certificate
@@ -1325,7 +1328,10 @@ mod tests {
                 detail: "missing quality bit".into(),
             },
         );
-        let error = ItemOutcome::from_persisted_certificate(malformed).unwrap_err();
+        let error = ItemOutcome::from_persisted_certificate(
+            crate::check::arbiter_test_persisted_authority(malformed),
+        )
+        .unwrap_err();
         assert!(error.detail.contains("contract-quality"));
 
         let contradictory = Certificate::new(
@@ -1335,7 +1341,28 @@ mod tests {
             0,
             vec![ObligationResult::failed("impossible", None, None)],
         );
-        let error = ItemOutcome::from_persisted_certificate(contradictory).unwrap_err();
+        let error = ItemOutcome::from_persisted_certificate(
+            crate::check::arbiter_test_persisted_authority(contradictory),
+        )
+        .unwrap_err();
         assert!(error.detail.contains("certifying level"));
+    }
+
+    #[test]
+    fn production_authority_entrances_are_exclusively_capability_gated() {
+        let source = include_str!("result_arbiter.rs");
+        for raw_constructor in ["accepted", "inconclusive", "refuted", "policy_rejected"] {
+            assert!(
+                !source.contains(&format!("pub(crate) fn {raw_constructor}(")),
+                "raw authority constructor `{raw_constructor}` must remain module-private"
+            );
+        }
+        assert!(source.contains("authority: crate::check::LiveCertificateAuthority"));
+        assert!(source.contains("authority: crate::check::PersistedCertificateAuthority"));
+        let ungated_persisted = format!(
+            "from_persisted_{}(\n        certificate: Certificate",
+            "certificate"
+        );
+        assert!(!source.contains(&ungated_persisted));
     }
 }
