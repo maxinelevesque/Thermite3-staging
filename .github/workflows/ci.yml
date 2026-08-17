@@ -155,6 +155,8 @@ jobs:
         run: uv run python gates/language-completeness-inventory.py
       - name: language stage/outcome matrix
         run: uv run python gates/language-outcome-matrix.py
+      - name: RFC-3 Rust/Lean certification replay
+        run: uv run python gates/rfc3-certification-replay.py
       - name: language RFC fragment-evolution discipline
         run: uv run python gates/language-rfc-evolution.py
       - name: completeness-review backlog consistency

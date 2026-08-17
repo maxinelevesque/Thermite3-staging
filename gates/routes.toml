@@ -1392,6 +1392,36 @@ reference = ["gates/language-outcome-matrix.py"]
 conformance_ops = []
 
 [[route]]
+crate_pattern = "forge/src/rfc3_replay.rs"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.json", "lean/Thermite/CertificationReplay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/rfc3-certification-replay.py"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.json", "forge/src/rfc3_replay.rs", "lean/Thermite/CertificationReplay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/rfc3-certification-replay.json"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.py", "forge/src/rfc3_replay.rs", "lean/Thermite/CertificationReplay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/CertificationReplay.lean"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.py", "gates/rfc3-certification-replay.json", "forge/src/rfc3_replay.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_rfc3_certification_replay.py"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.py", "gates/rfc3-certification-replay.json"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "gates/language-rfc-evolution.py"
 design = ".design/versioned-language-completeness.md"
 reference = ["gates/language-rfc-evolution.toml", "gates/tests/test_language_rfc_evolution.py"]

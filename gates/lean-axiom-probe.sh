@@ -61,6 +61,7 @@ IMPORTS=(
   "Thermite.PinImplementationModel"
   "Thermite.TcbDischarge"
   "Thermite.PinTcbDischarge"
+  "Thermite.CertificationReplay"
 )
 
 # Universal soundness theorems and the permanent reconstruction probe.
@@ -171,6 +172,10 @@ THEOREMS=(
   "Thermite.CertificationMetatheory.checked_evidence_is_artifact_pinned"
   "Thermite.CertificationMetatheory.coverage_does_not_supply_correspondence"
   "Thermite.CertificationMetatheory.complete_coverage_cannot_mask_version_substitution"
+  "Thermite.CertificationMetatheory.every_authoritative_mutation_is_rejected"
+  "Thermite.CertificationMetatheory.every_generated_row_is_formally_well_formed"
+  "Thermite.CertificationMetatheory.engineer_label_is_non_authoritative"
+  "Thermite.CertificationMetatheory.engineer_label_formal_substitution_rejected"
 )
 ALLOWED="propext Classical.choice Quot.sound"
 

@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 5fa613455d36b6b6dae5286112d2a015b5bededb004c7b29a28b24597140d8ee (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 370e1f3c7b38984ed7fe7d5f74e2a6820c97b5d8488f3ac3c04a71435a1d5d32.)
+audited-content-sha256: 6f177ac63f545cda83614830d2db9649ae13fdf0a68b5798eef60f351ffc3676 (re-pinned 2026-08-16 after re-auditing the additive test-only RFC-3 replay module declaration in forge/src/main.rs. Verified-build behavior is unchanged; the declaration exposes generated certification replay only to the Rust test build. Prior digest: 5fa613455d36b6b6dae5286112d2a015b5bededb004c7b29a28b24597140d8ee.)
 decision: Option A — compile the canonical Verus executable body that was verified
 issue: github:dollspace-gay/Thermite#101, github:dollspace-gay/Thermite#103, github:dollspace-gay/Thermite#104, github:dollspace-gay/Thermite#108, github:dollspace-gay/Thermite#111
 governs:

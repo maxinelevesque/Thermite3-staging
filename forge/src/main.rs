@@ -59,6 +59,8 @@ mod profile;
 mod relax;
 mod repair;
 mod review;
+#[cfg(test)]
+mod rfc3_replay;
 mod sandbox;
 /// The seven-verdict hermetic suite (REQ-10 / AC-14) — test-only.
 #[cfg(test)]

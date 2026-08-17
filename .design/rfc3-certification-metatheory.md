@@ -1,5 +1,7 @@
 # Feature: RFC-3 Certification Metatheory
 
+audited-content-sha256: 21111f21b1e3153563485bbdec0ca68c1a3fd2e42823e8a4ad435087601837c6 (re-pinned 2026-08-16 for the AC-10 generated Rust/Lean replay boundary.)
+
 ## Summary
 
 Define the proof-theoretic foundation beneath RFC-3 as versioned, indexed
@@ -123,7 +125,7 @@ already-shipped AC-1 through AC-12 work.
   refinement or checker-soundness path fails, while missing producer/checker
   completeness changes coverage and does not invalidate an already accepted
   artifact's soundness theorem.
-- [ ] AC-10: (REQ-9, REQ-10) Generated Rust/Lean replay covers every formal
+- [x] AC-10: (REQ-9, REQ-10) Generated Rust/Lean replay covers every formal
   coordinate, model/frame version, residual context, boundary context,
   classification result, and policy abstraction used by certificates. Mutating
   any authoritative field or substituting an engineer label for formal data
@@ -316,6 +318,22 @@ producer, checker, and workflow completeness are false. These fixtures narrow
 the modeled residual for their stated certificate only; they do not claim
 whole-rustc, producer, checker, fragment, or workflow completeness.
 
+AC-10 adds a single authoritative seven-row matrix at
+`gates/rfc3-certification-replay.json`. Rust deserializes each row into the real
+`CertificationPosition` and `ClassificationCertificate` vocabulary before
+comparing the formal replay projection. The checked generator emits
+`lean/Thermite/CertificationReplay.lean` from the same rows; CI rejects stale
+output. The matrix covers every coherent Rust position, all boundary kinds,
+all classification verdicts, every enabled policy point, and every model/frame
+and residual-context value used by the fixtures. Fourteen mutations independently
+change scope, refutation, residual/discharged trust, boundary kind/value,
+model identity/version, frame identity/version, residual context,
+classification fragment/verdict, and policy abstraction; Rust tests and a Lean
+theorem reject the complete set. `engineer_label` is excluded from both formal
+projection types: relabeling preserves replay, while substituting that label
+into formal scope fails. The generator, Rust tests, Lean axiom probe, and CI
+gate make the shared boundary fail closed.
+
 ## Resolved Questions
 
 - The metatheory is a separate `.design/rfc3-certification-metatheory.md`
@@ -348,15 +366,15 @@ whole-rustc, producer, checker, fragment, or workflow completeness.
 
 ## Residual trust
 
-AC-1 through AC-9 establish the indexed judgment and refinement laws, checked
+AC-1 through AC-10 establish the indexed judgment and refinement laws, checked
 bound/boundary and realizable-order probes, the sound finite floor abstraction,
 typed model families, narrow rustc correspondence, and the two permitted
 certificate-specific discharge theorem shapes. The rustc model is still a
 deliberately small Lean fixture over tagged representative programs; no theorem
 connects the production rustc executable or a production artifact checker to
-that denotation. The seven-position Rust order in `forge/src/manifest.rs`
-remains an implementation probe, no generated Rust/Lean replay covers the
-formal fields, and `Level` remains live. Consequently these fixtures prove how
+that denotation. Generated replay now checks the seven-position Rust
+serialization probe against the formal vocabulary, but `Level` remains live
+and the production semantics/executable bridges remain open. Consequently these fixtures prove how
 a future reduction must be justified but do not reduce the effective TCB of any
 current Thermite certificate.
 
@@ -386,9 +404,9 @@ checker are formal fixtures, not production TCB-discharge evidence.
 
 ## Out of Scope
 
-- Implementing the Rust schema migration, production executable-refinement or
-  artifact-checker bridge, policy consumers, or certificate TCB reduction in
-  this slice.
+- Implementing the remaining Rust schema migration, production
+  executable-refinement or artifact-checker bridge, policy consumers, or
+  certificate TCB reduction in this slice.
 - Claiming a complete semantics for Rust, `rustc`, Verus, Z3, Lean, operating
   systems, or hardware in the first model version.
 - Declaring the realizable certification sub-poset a lattice before joins and
@@ -396,6 +414,6 @@ checker are formal fixtures, not production TCB-discharge evidence.
 - Treating the seven-point abstraction or engineer labels as authority for
   admission, routing, certification, or TCB discharge.
 - Removing `Level` or marking `REQ-COMPLETE-RFC3-COORDINATES` shipped before the
-  formal replay and migration acceptance criteria pass.
+  remaining migration acceptance criteria pass.
 - Automatically filing or changing GitHub issues, upstream branches, or release
   state.
