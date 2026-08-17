@@ -956,20 +956,51 @@ impl Certificate {
                 reason: "migrated L2 certification requires its classification pair",
             }),
             (Some(position), None)
-                if self.level == Level::L1
-                    && position
-                        .discharged_trust
-                        .iter()
-                        .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:")) =>
+                if position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:")) =>
             {
                 Err(IncoherentCertificationPosition {
                     reason: "migrated L1 certification requires its classification pair",
+                })
+            }
+            (Some(position), Some(classification))
+                if self.level != Level::L1
+                    && (position
+                        .discharged_trust
+                        .iter()
+                        .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:"))
+                        || classification.fragment.starts_with("thermite-l1-")) =>
+            {
+                Err(IncoherentCertificationPosition {
+                    reason: "migrated L1 evidence requires the legacy Level::L1 projection",
                 })
             }
             (position, classification) => Ok(position
                 .as_ref()
                 .map(|position| (position, classification.as_ref()))),
         }
+    }
+
+    /// Whether this row carries any structural sign of the migrated runtime-L1
+    /// producer. Audit uses this independently of the mutable legacy `level`, so
+    /// changing that projection cannot bypass checked-artifact validation.
+    pub(crate) fn requires_l1_artifact_validation(&self) -> bool {
+        self.level == Level::L1
+            || self
+                .classification
+                .as_ref()
+                .is_some_and(|classification| classification.fragment.starts_with("thermite-l1-"))
+            || self.certification.as_ref().is_some_and(|position| {
+                position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:"))
+                    || (position.scope == CertificationScope::PerExecution
+                        && position.refutation == RefutationChannel::Abort
+                        && position.residual_trust == ResidualTrust::Fiat)
+            })
     }
 
     /// Assemble a #5 certificate from the pipeline data (REQ-2). `check.rs`
@@ -2246,6 +2277,22 @@ mod tests {
                 .remove("classification");
             let decoded: Certificate = serde_json::from_value(hostile).expect("compat parse");
             assert!(decoded.rfc3_coordinates().is_err());
+        }
+
+        #[test]
+        fn migrated_l1_pair_rejects_serialized_legacy_level_substitution() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+            let cert = Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .unwrap();
+            let mut hostile = serde_json::to_value(cert).unwrap();
+            hostile["level"] = serde_json::json!("L3");
+            let decoded: Certificate = serde_json::from_value(hostile).unwrap();
+            assert!(decoded.rfc3_coordinates().is_err());
+            assert!(decoded.requires_l1_artifact_validation());
         }
 
         #[test]

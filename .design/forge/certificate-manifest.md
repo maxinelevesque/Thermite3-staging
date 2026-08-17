@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: c52d1e8726c2b888d1a54cf870c8fb34265fd45153823d83f0022d371e8bcd82 (re-pinned 2026-08-16 for exact L1 slag metadata and program-derived closure validation alongside route provenance. Historical unmarked L1 remains readable and Level remains live in other consumers. prior: d2224affd1df1002c2e945b151832d23649999470c559492bd405c253ce2b965)
+audited-content-sha256: c55ef1eb6c39b6fcf3e314e2360a3206e2ac6a5cd94b6c8da3cedd4760bdd641 (re-pinned 2026-08-16 for migrated-L1 pair detection independent of the mutable legacy Level. Historical unmarked L1 remains readable and Level remains live in other consumers. prior: c52d1e8726c2b888d1a54cf870c8fb34265fd45153823d83f0022d371e8bcd82)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -54,7 +54,9 @@ certificate gained a family of ADDITIVE fields — see the Amendment.
 > reconstructs the checked artifact from the program and revalidates the entire
 > persisted row, so simultaneous removal of the marker and classification is
 > compatibility-readable but cannot become a current audit claim; it also rejects
-> substituted slag metadata or a fabricated closure boundary.
+> substituted slag metadata or a fabricated closure boundary. Detection of the
+> migrated pair is independent of the mutable legacy `level`: relabeling a row
+> away from `L1` while retaining L1 provenance is rejected by the public reader.
 
 > **Amendment 2026-06-12 (doc-freshness re-audit, #262).** Re-verified against the
 > current tree (`dff9ae86`, 12 post-pin commits to `manifest.rs`). Corrections and

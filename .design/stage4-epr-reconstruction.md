@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 871e8753d77d5ca8347014c9ad89fffe15a42718236faabdb8b1cf034e8b60f4 (re-pinned 2026-08-16 after re-auditing L1 slag/closure provenance validation in shared audit code; G4 reconstruction, LRAT/cache, routing, and fail-closed tool checks are unchanged. prior: eb38c62c46ad0ab1468e64af652bb669a8158a8ae1e7c56b8f52304216f959ac)
+audited-content-sha256: cf341164f12ed4878d15dd40e961ef0c13290d7bf6e18c362ab93b7d4b188ef9 (re-pinned 2026-08-16 after re-auditing legacy-Level-independent L1 provenance detection in shared audit code; G4 reconstruction, LRAT/cache, routing, and fail-closed tool checks are unchanged. prior: 871e8753d77d5ca8347014c9ad89fffe15a42718236faabdb8b1cf034e8b60f4)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

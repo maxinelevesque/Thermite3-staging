@@ -313,7 +313,7 @@ impl FunctionRow {
     ) -> Self {
         cert.rfc3_coordinates()
             .expect("audit rejects a classification without a certification position");
-        if cert.level == Level::L1 {
+        if cert.requires_l1_artifact_validation() {
             let artifact = thermite_lower::lower_l1_artifact(program, &cert.item)
                 .expect("audit requires checked lowering for every current L1 producer");
             cert.validate_l1_artifact(&artifact, expected_scope)
@@ -1430,5 +1430,28 @@ mod tests {
         hostile["certification"]["boundary"] =
             serde_json::json!({"kind": "to_boundary", "via": "ghost"});
         assert_l1_audit_rejects(serde_json::from_value(hostile).unwrap(), &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_audit_rejects_legacy_level_substitution() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = settle_l1_scope(
+            Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
+            "f",
+        );
+        let mut hostile = serde_json::to_value(cert).unwrap();
+        hostile["level"] = serde_json::json!("L3");
+        let hostile: Certificate = serde_json::from_value(hostile).unwrap();
+        assert!(
+            hostile.rfc3_coordinates().is_err(),
+            "migrated L1 evidence cannot be relabeled as another legacy level"
+        );
+        assert_l1_audit_rejects(hostile, &parsed.program);
     }
 }

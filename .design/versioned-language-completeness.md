@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 54dd940aaee3af9a746bfa9e4c04ac67511e7a1ff449837967a04b2ee837ba66 (issue-48 RFC-3 runtime L1 repair, 2026-08-16: audit now also binds slag metadata and closure scope to the program. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: d33bc3cb73f137eac115f17c6d19ae5b9e5658c9e2374ef0b04065f5402b5b73)
+audited-content-sha256: e82253adc39144db8684284f56be6a0b4bd488ec4800ca3b823c821163b68164 (issue-48 RFC-3 runtime L1 repair, 2026-08-16: migrated-L1 validation now triggers independently of mutable legacy Level. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: 54dd940aaee3af9a746bfa9e4c04ac67511e7a1ff449837967a04b2ee837ba66)
 
 ## Summary
 
@@ -264,7 +264,10 @@ item, exact effect row, wrapper identity, classifier, slag/FFI flags and metadat
 target, and a freshly recomputed syntactic closure scope/boundary before copying
 the row. Thus historical L1
 remains readable, but cannot be laundered into a current audit claim by deleting
-the migration pair or mutating its surrounding fields.
+the migration pair or mutating its surrounding fields. Migrated-L1 detection is
+independent of the mutable legacy `Level` projection: retained wrapper,
+classifier, or per-execution/abort/fiat evidence forces validation, and a row
+carrying migrated L1 evidence under another `Level` is rejected.
 Project aggregation and display continue to consume `Level` during migration.
 
 ### Proved display projection
