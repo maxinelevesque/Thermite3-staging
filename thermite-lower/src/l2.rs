@@ -89,6 +89,7 @@ pub(crate) const SLICE_BOUND: usize = 4;
 pub struct L2Artifact {
     source: String,
     bound: String,
+    classifier_fragment: &'static str,
 }
 
 impl L2Artifact {
@@ -99,6 +100,10 @@ impl L2Artifact {
     pub fn bound(&self) -> &str {
         &self.bound
     }
+
+    pub fn classifier_fragment(&self) -> &'static str {
+        self.classifier_fragment
+    }
 }
 
 /// Produce the executable harness and its certification bound atomically from
@@ -107,6 +112,7 @@ pub fn lower_l2_artifact(program: &Program) -> Result<L2Artifact, LowerError> {
     Ok(L2Artifact {
         source: lower_l2(program)?,
         bound: bound_string(program),
+        classifier_fragment: "thermite-kani-v1",
     })
 }
 
@@ -636,6 +642,7 @@ mod tests {
         let artifact = lower_l2_artifact(&p).expect("lower artifact");
         assert!(artifact.source().contains("#[kani::unwind(5)]"));
         assert_eq!(artifact.bound(), "slice <= 4, unwind 5");
+        assert_eq!(artifact.classifier_fragment(), "thermite-kani-v1");
     }
 
     // REQ-1: `sum` lowers to a harness reusing the L1 `spec_sum` + a check-free

@@ -952,6 +952,9 @@ impl Certificate {
             (None, Some(_)) => Err(IncoherentCertificationPosition {
                 reason: "classification cannot exist without a certification position",
             }),
+            (Some(_), None) if self.level == Level::L2 => Err(IncoherentCertificationPosition {
+                reason: "migrated L2 certification requires its classification pair",
+            }),
             (position, classification) => Ok(position
                 .as_ref()
                 .map(|position| (position, classification.as_ref()))),
@@ -1975,6 +1978,23 @@ mod tests {
                 verdict: ClassificationVerdict::Admitted,
             });
             assert!(cert.rfc3_coordinates().is_err());
+        }
+
+        #[test]
+        fn serialized_position_only_l2_is_rejected_by_public_reader() {
+            let mut source = Certificate::new("f", Level::L2, vec![], 0, vec![]);
+            source.certification = Some(position(
+                CertificationScope::Bounded {
+                    bound: "unwind 5".to_string(),
+                },
+                RefutationChannel::Trace {
+                    bound: "unwind 5".to_string(),
+                },
+                ResidualTrust::Solver,
+            ));
+            let json = serde_json::to_string(&source).expect("position-only JSON");
+            let decoded: Certificate = serde_json::from_str(&json).expect("compatibility parse");
+            assert!(decoded.rfc3_coordinates().is_err());
         }
     }
 

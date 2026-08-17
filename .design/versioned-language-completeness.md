@@ -224,8 +224,9 @@ schema versioning land before removal of Lx, and historical L3 artifacts remain
 explicitly ambiguous rather than receiving an invented translation.
 
 The first production migration cut is the Kani L2 path. Checked lowering now
-returns an opaque `L2Artifact` containing the harness source and bound metadata
-derived atomically from the same program; callers cannot pair an unwind-5
+returns an opaque `L2Artifact` containing the harness source, bound metadata,
+and classifier-fragment identity derived atomically from the same program;
+callers cannot pair an unwind-5
 harness with independently authored unwind-999 metadata. `L2Result` retains
 that bound as structured producer data rather than asking certificate assembly
 to recover it from an obligation sentence. Successful lowering fixes the
@@ -237,8 +238,9 @@ manifest copies both objects verbatim. A bare historical `Level::L2` still maps
 to no position because it contains no bound. The migrated Kani constructor
 rejects empty classifier identities and unequal bounded/trace coordinates and
 does not expose a position-only success path. Certificate coordinate fields are
-crate-private, the public reader rejects classification-without-position, and
-audit invokes that validation before copying the fields.
+crate-private, the public reader rejects classification-without-position and
+position-without-classification for L2, and audit invokes that validation before
+copying the fields. Historical bare L2 with neither field remains readable.
 This migrates one end-to-end producer without claiming that the remaining L0,
 L1, L3, L4, project aggregation, or display consumers have retired `Level`.
 
