@@ -55,6 +55,8 @@ mod meaning;
 mod metrics;
 mod mutation;
 mod obligation;
+#[allow(dead_code)]
+mod outcome_matrix;
 mod profile;
 mod relax;
 mod repair;

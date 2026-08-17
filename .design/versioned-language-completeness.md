@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 0a267e3ca708d4d891508befeb3505eb2871e567c60735d2cc5d33cd2a710670 (clause-coordinate requirement registration, 2026-08-17: the completeness inventory now pins the reviewed 584-requirement registry containing seven not_started portfolio requirements. No clause-coordinate implementation is claimed. prior: 1e8b412759c3b8a1015f345d81c0fc40e34957c6f3cac9400345e777f9113cb3)
+audited-content-sha256: 50263d14f02f90b54578def94434d2bf08944bce52b3b51ae62c6a2e1f506820 (clause-coordinate portfolio implementation, 2026-08-17: seven shipped requirements now cover checked addresses, atomic evidence, sealed validation, heterogeneous aggregation, total mixed producers, audit/cache boundaries, and all-author mutation replay. Fresh hostile authority and terminal-adapter reviews approve the completed tree. prior: 0a267e3ca708d4d891508befeb3505eb2871e567c60735d2cc5d33cd2a710670)
 
 ## Summary
 
@@ -315,18 +315,20 @@ When a timeout successfully descends to Kani or runtime enforcement, the final
 certificate truthfully carries that achieved route's artifact and coordinates
 instead of retaining the superseded Verus non-claim.
 
-This cut deliberately does not assign one item-level fragment to mixed
-bit-vector, nonlinear, EPR, or Lean clause portfolios. Those routes need
-clause-level classification and discharge coordinates (and an explicit
-aggregation rule) before migration; choosing one representative item label
-would invent evidence about clauses executed under a different procedure.
-Accordingly, a partial EPR reconstruction remains outside the authoritative
-item certificate: only reconstruction of every clause may replace the base row
-with the homogeneous EPR result, and then only when the typed base disposition
-is accepted or explicitly inconclusive. A settled policy rejection survives;
-proof/refutation conflict in either direction becomes a soundness alarm; exact
-boundary scope and accepted policy evidence survive a valid replacement. The
-partial evidence is not appended under the Verus item classification.
+Mixed bit-vector, nonlinear, EPR, and author-Lean routes now publish an
+authoritative, source-ordered clause portfolio rather than assigning one
+representative item fragment. Every expected clause has a checked address,
+route/input evidence, and closed terminal state; incomplete exits preserve the
+attempted prefix and root every suffix entry in a typed `NotAttempted` cause.
+Only a finally accepted, exact-homogeneous portfolio derives the legacy
+item-level classification, certification position, and engine attribution.
+Heterogeneous, incomplete, and policy-rejected portfolios remain explicit and
+cannot manufacture a scalar coordinate. Serialized portfolio data remains
+non-authoritative: live producers rebuild and content-seal it, the arbiter and
+audit revalidate it, and the existing cache stays Verus-base-only. G1 mutation
+policy likewise folds every addressed applicable author proof; body-independent
+NLSAT clauses are explicitly inapplicable rather than selected as a
+representative.
 
 ### Proved display projection
 

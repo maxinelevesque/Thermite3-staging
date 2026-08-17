@@ -996,6 +996,7 @@ mod tests {
             survivor: Some(
                 "mutant#11: `i = i + 1` → `i = i + 2` survives ens but killed by inv#2".to_string(),
             ),
+            clause_mutation_replays: Vec::new(),
         };
         c
     }

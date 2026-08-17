@@ -185,6 +185,18 @@ pub fn lia_kernel_checked_trust_profile() -> TrustProfile {
     }
 }
 
+#[must_use]
+pub fn nlsat_trust_profile() -> TrustProfile {
+    TrustProfile {
+        items: vec![
+            "Z3 nlsat (QF_NRA real-arithmetic decision)".to_string(),
+            "spine-lemma r_relax_sound (real→integer relaxation soundness, kernel-checked)"
+                .to_string(),
+            "spine-lemma rencode_sound (real-encoding faithfulness, kernel-checked)".to_string(),
+        ],
+    }
+}
+
 /// The stable marker substring used by every kernel-checked or kernel-grounded per-clause trust
 /// item carries (`.design/stage3-bv-reconstruction.md` REQ-8 / AC-9). Both the bv
 /// reconstruction profile's faithfulness lemma ([`bv_kernel_checked_trust_profile`] —
@@ -224,6 +236,31 @@ pub enum Reason {
     /// timeout-class incompleteness event (the solver could not decide), so it
     /// degrades, never hard-fails. Carries the raw stderr head for diagnosis.
     IncompleteUnknown(String),
+    /// The named backend could not be started or its required execution surface was
+    /// unavailable. This is distinct from a mathematical `unknown` and from a proof
+    /// that ran and was rejected.
+    ToolUnavailable(String),
+    /// The backend ran, but the submitted proof did not elaborate or close. This is
+    /// still an engine `Unknown` (never a witnessed counterexample), while preserving
+    /// the closed attempt outcome for portfolio accounting.
+    ProofFailure(String),
+    /// The checker accepted the theorem but the certify-time trust/axiom gate refused
+    /// the evidence. Treating this as ordinary proof failure would hide a trust-base
+    /// contradiction.
+    SoundnessAlarm(String),
+}
+
+impl Reason {
+    #[must_use]
+    pub fn detail(&self) -> &str {
+        match self {
+            Self::VerusTimeout(detail)
+            | Self::IncompleteUnknown(detail)
+            | Self::ToolUnavailable(detail)
+            | Self::ProofFailure(detail)
+            | Self::SoundnessAlarm(detail) => detail,
+        }
+    }
 }
 
 /// A witnessed countermodel (`.design/verified/proof-backends.md`
@@ -663,7 +700,7 @@ impl LeanEngine {
                 let probe_out = String::from_utf8_lossy(&out.stdout);
                 match certify_lean_axioms(source, &probe_out, item) {
                     Ok(()) => Verdict::Proven(Evidence { verified, key }),
-                    Err(reason) => Verdict::Unknown(Reason::IncompleteUnknown(format!(
+                    Err(reason) => Verdict::Unknown(Reason::SoundnessAlarm(format!(
                         "lake kernel-accepted the obligation but the certify-time axiom \
                          gate REFUSED it (REQ-2/AC-5): {reason}"
                     ))),
@@ -687,7 +724,7 @@ impl LeanEngine {
                     format!("{stdout}\n{stderr}")
                 };
                 let head: String = detail.chars().take(400).collect();
-                Verdict::Unknown(Reason::IncompleteUnknown(format!(
+                Verdict::Unknown(Reason::ProofFailure(format!(
                     "lake/lean did not kernel-accept the exported obligation (tactic \
                      failure / elaboration error — NOT a countermodel, REQ-3): {head}"
                 )))
@@ -696,7 +733,7 @@ impl LeanEngine {
                 // lake absent / spawn failure: `Unknown` (the engine could not run),
                 // never `Refuted`. R-CODE-4: the subprocess failure is surfaced
                 // structured, not swallowed as success.
-                Verdict::Unknown(Reason::IncompleteUnknown(format!(
+                Verdict::Unknown(Reason::ToolUnavailable(format!(
                     "could not invoke `lake env lean` (lake absent or un-spawnable): {e}"
                 )))
             }
@@ -982,6 +1019,69 @@ impl LeanEngine {
         verdict
     }
 
+    /// Replay an already-exported, source-bound author proof against a mutated
+    /// theorem, preserving proof rejection separately from infrastructure failure.
+    pub(crate) fn replay_mutation_source(&self, source: &str, item: &str) -> MutationReplayOutcome {
+        let thm_name = format!("thermite_obligation_{}", proof_thm_sanitize(item));
+        let probed = format!("{source}\n\n#print axioms {thm_name}\n");
+        let pid = std::process::id();
+        let nonce = NEXT_REPLAY_NONCE.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let scratch =
+            std::env::temp_dir().join(format!("forge_mutation_replay_{pid}_{nonce}.lean"));
+        if std::fs::write(&scratch, &probed).is_err() {
+            return MutationReplayOutcome::Unavailable;
+        }
+        let mut child = match std::process::Command::new(Self::lake_binary())
+            .arg("env")
+            .arg("lean")
+            .arg(&scratch)
+            .current_dir(&self.lean_root)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+        {
+            Ok(child) => child,
+            Err(_) => {
+                let _ = std::fs::remove_file(&scratch);
+                return MutationReplayOutcome::Unavailable;
+            }
+        };
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        let output = loop {
+            match child.try_wait() {
+                Ok(Some(_)) => break child.wait_with_output().ok(),
+                Ok(None) if std::time::Instant::now() < deadline => {
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                }
+                Ok(None) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    let _ = std::fs::remove_file(&scratch);
+                    return MutationReplayOutcome::Unavailable;
+                }
+                Err(_) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    let _ = std::fs::remove_file(&scratch);
+                    return MutationReplayOutcome::Unavailable;
+                }
+            }
+        };
+        let _ = std::fs::remove_file(&scratch);
+        match output {
+            Some(out) if out.status.success() => {
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                if certify_lean_axioms(&probed, &stdout, item).is_ok() {
+                    MutationReplayOutcome::Discharged
+                } else {
+                    MutationReplayOutcome::Undecided
+                }
+            }
+            Some(out) => classify_mutation_replay_failure(&out, &scratch, &probed, &thm_name),
+            None => MutationReplayOutcome::Unavailable,
+        }
+    }
+
     /// Write the exported Lean source to a deterministic scratch file in the system
     /// temp dir (`.design/verified/proof-backends.md` REQ-7, "export → write to a
     /// scratch dir"). The file name is keyed on the item + the process id so
@@ -1091,17 +1191,11 @@ impl LeanEngine {
             // arbitrary-result goal) → the ens constrains the result → clean. An env /
             // spawn / axiom-gate condition is a skip (the check could not run), never a
             // claim of clean (R-CODE-4: an undetermined run is not read as a verdict).
-            Verdict::Unknown(Reason::IncompleteUnknown(detail))
-                if detail.contains("did not kernel-accept") =>
-            {
-                ArbitraryResultOutcome::Clean
-            }
+            Verdict::Unknown(Reason::ProofFailure(_)) => ArbitraryResultOutcome::Clean,
             Verdict::Unknown(reason) => ArbitraryResultOutcome::Skipped(format!(
                 "the arbitrary-result harness run was inconclusive (env/spawn/axiom-gate, \
                  not an elaboration failure): {}",
-                match reason {
-                    Reason::VerusTimeout(d) | Reason::IncompleteUnknown(d) => d,
-                }
+                reason.detail()
             )),
             // The Lean engine never produces a witnessed `Refuted` (a tactic failure is
             // Unknown, not a countermodel, REQ-3) — defensively a skip, never a reject.
@@ -1549,6 +1643,9 @@ pub fn verdict_ladder_action(
                             "verus returned an incompleteness-`unknown` (no witnessing \
                              input); degrading per the ladder (REQ-3.1): {d}"
                         ),
+                        Reason::ToolUnavailable(d)
+                        | Reason::ProofFailure(d)
+                        | Reason::SoundnessAlarm(d) => d.clone(),
                     },
                 },
             },
@@ -1635,6 +1732,112 @@ pub struct EngineAttribution {
     /// The enumerated named trust items that engine adds on a `Proven` (the §1
     /// enumerable trusted base, the auditor-visible base).
     pub trust_profile: Vec<String>,
+}
+
+/// Mutation-only replay result. Unlike certification Verdict, a correctly bound
+/// proof rejection is useful contract-discrimination evidence but is not a
+/// semantic counterexample.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MutationReplayOutcome {
+    Discharged,
+    ProofRejected,
+    Counterexample,
+    Unavailable,
+    Undecided,
+    Inapplicable,
+}
+
+fn classify_mutation_replay_failure(
+    output: &std::process::Output,
+    scratch: &std::path::Path,
+    source: &str,
+    theorem: &str,
+) -> MutationReplayOutcome {
+    let theorem_line = source
+        .lines()
+        .position(|line| line.contains(theorem))
+        .map(|line| line + 1);
+    let probe_line = source
+        .lines()
+        .position(|line| line.trim_start().starts_with("#print axioms"))
+        .map(|line| line + 1);
+    let proof_position = theorem_line.and_then(|theorem_start| {
+        source
+            .lines()
+            .enumerate()
+            .skip(theorem_start - 1)
+            .take_while(|(index, _)| probe_line.is_none_or(|probe| index + 1 < probe))
+            .find_map(|(index, line)| line.find(":= by").map(|column| (index + 1, column)))
+    });
+    let mut detail = String::from_utf8_lossy(&output.stdout).into_owned();
+    detail.push('\n');
+    detail.push_str(&String::from_utf8_lossy(&output.stderr));
+    let path_markers = [
+        format!("{}:", scratch.display()),
+        scratch
+            .file_name()
+            .map_or_else(String::new, |name| format!("{}:", name.to_string_lossy())),
+    ];
+    let error_lines: Vec<_> = detail
+        .lines()
+        .filter(|line| line.contains(": error:"))
+        .collect();
+    let error_positions: Vec<(usize, usize)> = error_lines
+        .iter()
+        .filter_map(|line| {
+            path_markers.iter().find_map(|marker| {
+                let tail = line.split_once(marker)?.1;
+                let mut fields = tail.split(':');
+                Some((fields.next()?.parse().ok()?, fields.next()?.parse().ok()?))
+            })
+        })
+        .collect();
+    let proof_diagnostic = [
+        "omega could not prove",
+        "unsolved goals",
+        "tactic",
+        "no goals to be solved",
+        "application type mismatch",
+    ]
+    .iter()
+    .any(|needle| detail.contains(needle));
+    let lower_detail = detail.to_ascii_lowercase();
+    let resource_diagnostic = crate::tv_signal::is_kernel_budget_signal(&detail)
+        || [
+            "maximum heartbeats exceeded",
+            "heartbeat limit",
+            "resource limit",
+            "timed out",
+            "timeout",
+            "deterministic timeout",
+        ]
+        .iter()
+        .any(|needle| lower_detail.contains(needle));
+    if resource_diagnostic {
+        return MutationReplayOutcome::Unavailable;
+    }
+    match proof_position {
+        Some((start_line, start_column))
+            if proof_diagnostic
+                && !error_positions.is_empty()
+                && error_positions.len() == error_lines.len()
+                && error_positions.iter().all(|(line, column)| {
+                    let after_proof_start =
+                        *line > start_line || (*line == start_line && *column >= start_column);
+                    let before_probe = probe_line.is_none_or(|probe| *line < probe);
+                    after_proof_start && before_probe
+                }) =>
+        {
+            MutationReplayOutcome::ProofRejected
+        }
+        _ if theorem_line
+            .is_some_and(|start| error_positions.iter().any(|(line, _)| *line < start)) =>
+        {
+            MutationReplayOutcome::Unavailable
+        }
+        _ => MutationReplayOutcome::Undecided,
+    }
 }
 
 /// Build the [`EngineAttribution`] for an engine (`.design/verified/proof-backends.md`
@@ -2256,6 +2459,9 @@ pub enum NlsatOutcome {
     /// failed to render — a skip (never a false `Proved`, never a
     /// `Counterexample`). Carries the reason.
     Unknown(String),
+    /// The nlsat process could not be started or communicated with. This is a closed
+    /// environment outcome rather than a mathematical `unknown`.
+    Unavailable(String),
 }
 
 /// The nlsat real-relaxation engine (`.design/stage1-forge-tier.md` REQ-8 / Q-NLSAT,
@@ -2354,7 +2560,7 @@ impl NlsatEngine {
         // query (`check-sat-using qfnra-nlsat`).
         let (result, model) = match Self::run_z3(&input) {
             Ok(pair) => pair,
-            Err(reason) => return NlsatOutcome::Unknown(reason),
+            Err(reason) => return NlsatOutcome::Unavailable(reason),
         };
         match result.as_str() {
             "unsat" => NlsatOutcome::Proved,
@@ -2637,6 +2843,7 @@ impl Engine for NlsatEngine {
                 )))
             }
             NlsatOutcome::Unknown(detail) => Verdict::Unknown(Reason::IncompleteUnknown(detail)),
+            NlsatOutcome::Unavailable(detail) => Verdict::Unknown(Reason::ToolUnavailable(detail)),
         }
     }
 
@@ -2648,15 +2855,7 @@ impl Engine for NlsatEngine {
         // Classical.choice, Quot.sound}). An auditor sees L4-via-nlsat rests on Z3's
         // nlsat soundness + the kernel lemma, distinct from L3-via-Verus's {Z3, Verus
         // VC-gen, lowering theorem}.
-        TrustProfile {
-            items: vec![
-                "Z3 nlsat (QF_NRA real-arithmetic decision)".to_string(),
-                "spine-lemma r_relax_sound (real→integer relaxation soundness, kernel-checked)"
-                    .to_string(),
-                "spine-lemma rencode_sound (real-encoding faithfulness, kernel-checked)"
-                    .to_string(),
-            ],
-        }
+        nlsat_trust_profile()
     }
 
     fn evidence_key(&self, o: &Obligation) -> CacheKey {
@@ -5166,6 +5365,79 @@ mod tests {
             t.qualifier().contains("untested against lean"),
             "the qualifier names the untested count: {}",
             t.qualifier()
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn mutation_replay_failure_requires_an_addressed_proof_diagnostic() {
+        use std::os::unix::process::ExitStatusExt;
+
+        fn failed_output(stderr: &str) -> std::process::Output {
+            std::process::Output {
+                status: std::process::ExitStatus::from_raw(1 << 8),
+                stdout: Vec::new(),
+                stderr: stderr.as_bytes().to_vec(),
+            }
+        }
+
+        let scratch = std::path::Path::new("/tmp/forge_mutation_replay_fixture.lean");
+        let theorem = "thermite_obligation_hybrid";
+        let source = format!(
+            "import Thermite\n\ntheorem {theorem} : True := by\n  omega\n\n#print axioms {theorem}\n"
+        );
+        let proof_failure = failed_output(
+            "/tmp/forge_mutation_replay_fixture.lean:4:2: error: tactic 'omega' failed, unsolved goals",
+        );
+        assert_eq!(
+            classify_mutation_replay_failure(&proof_failure, scratch, &source, theorem),
+            MutationReplayOutcome::ProofRejected
+        );
+
+        for signal in [
+            "maximum number of heartbeats (200000) has been reached",
+            "maximum recursion depth has been reached",
+        ] {
+            let budget_failure = failed_output(&format!(
+                "/tmp/forge_mutation_replay_fixture.lean:4:2: error: tactic 'omega' failed: {signal}"
+            ));
+            assert_eq!(
+                classify_mutation_replay_failure(&budget_failure, scratch, &source, theorem),
+                MutationReplayOutcome::Unavailable,
+                "a proof-span resource failure cannot kill a mutant: {signal}"
+            );
+        }
+
+        let statement_failure = failed_output(
+            "/tmp/forge_mutation_replay_fixture.lean:3:10: error: application type mismatch",
+        );
+        assert_eq!(
+            classify_mutation_replay_failure(&statement_failure, scratch, &source, theorem),
+            MutationReplayOutcome::Undecided,
+            "an error before `:= by` is not proof-rejection authority"
+        );
+
+        let probe_failure = failed_output(
+            "/tmp/forge_mutation_replay_fixture.lean:6:0: error: unknown constant in #print axioms",
+        );
+        assert_eq!(
+            classify_mutation_replay_failure(&probe_failure, scratch, &source, theorem),
+            MutationReplayOutcome::Undecided,
+            "axiom-probe failure cannot kill a mutant"
+        );
+
+        let import_failure = failed_output(
+            "/tmp/forge_mutation_replay_fixture.lean:1:0: error: unknown module prefix 'Thermite'",
+        );
+        assert_eq!(
+            classify_mutation_replay_failure(&import_failure, scratch, &source, theorem),
+            MutationReplayOutcome::Unavailable
+        );
+
+        let unanchored = failed_output("lake: error: package configuration is malformed");
+        assert_eq!(
+            classify_mutation_replay_failure(&unanchored, scratch, &source, theorem),
+            MutationReplayOutcome::Undecided
         );
     }
 

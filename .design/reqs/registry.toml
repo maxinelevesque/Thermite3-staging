@@ -18554,106 +18554,134 @@ note = "the proposal, with its design record and probe results"
 id = "REQ-CLAUSE-PORTFOLIO-ADDRESS"
 title = "Clause certificates use checked typed identities"
 owner = ".design/clause-coordinate-portfolios.md"
-status = "not_started"
+status = "shipped"
 scope = "manifest"
 summary = "Clause evidence uses a closed item/family/zero-based ordinal address converted without overflow or authority from diagnostic strings."
-remaining_scope = "Implement REQ-1 and AC-1: checked syntax ordinal parsing, target/item-aware ClauseSelector conversion, canonical rendering, and negative identity tests."
+remaining_scope = ""
 contributors = ["thermite-syntax/src/ast.rs", "thermite-syntax/src/parser.rs", "forge/src/manifest.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/clause-coordinate-portfolios.md"
 note = "REQ-1 and AC-1 define typed clause identity and checked ordinal conversion"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-syntax/tests/forge_items.rs"
+note = "checked u128 clause ordinals, overflow rejection, and selector parsing"
 
 [[requirement]]
 id = "REQ-CLAUSE-PORTFOLIO-EVIDENCE"
 title = "Clause results atomically bind complete route evidence"
 owner = ".design/clause-coordinate-portfolios.md"
-status = "not_started"
+status = "shipped"
 scope = "manifest"
 summary = "Each migrated obligation binds its address, complete artifact and query fingerprints, formal coordinates, typed procedure/frame, route evidence, and terminal state."
-remaining_scope = "Implement REQ-2 and AC-2/AC-3: additive ClauseCertification serialization, full proof-input fingerprints, closed route evidence, clause-local burn receipts, and mutation pins."
+remaining_scope = ""
 contributors = ["forge/src/manifest.rs", "forge/src/check.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/clause-coordinate-portfolios.md"
 note = "REQ-2 and AC-2/AC-3 define atomic source/query-bound clause evidence"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/manifest.rs"
+note = "atomic route evidence, source/query binding, and hostile splice regressions"
 
 [[requirement]]
 id = "REQ-CLAUSE-PORTFOLIO-VALIDATION"
 title = "Clause portfolios validate totality and authority coherence"
 owner = ".design/clause-coordinate-portfolios.md"
-status = "not_started"
+status = "shipped"
 scope = "manifest"
 summary = "A sealed validated portfolio enforces exact inventory, rooted stop causes, route/result coherence, and bidirectional agreement with singular certificate authority."
-remaining_scope = "Implement REQ-3 and AC-2/AC-3/AC-7: exact-bijection validation, closed portfolio errors, opaque clause authority, and hostile production sibling probes."
+remaining_scope = ""
 contributors = ["forge/src/manifest.rs", "forge/src/check.rs", "forge/src/result_arbiter.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/clause-coordinate-portfolios.md"
 note = "REQ-3 defines fail-closed portfolio validation and authority invariants"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/result_arbiter.rs"
+note = "live sealed portfolio validation and malformed-authority rejection"
 
 [[requirement]]
 id = "REQ-CLAUSE-PORTFOLIO-AGGREGATION"
 title = "Portfolio aggregation preserves heterogeneous coordinates"
 owner = ".design/clause-coordinate-portfolios.md"
-status = "not_started"
+status = "shipped"
 scope = "manifest"
 summary = "Only finally accepted exact-homogeneous portfolios derive singular item coordinates; heterogeneous, incomparable, incomplete, and rejected portfolios remain explicit."
-remaining_scope = "Implement REQ-4 and AC-4/AC-8: typed portfolio surface, exact homogeneous derivation, final-acceptance gating, and no representative or invented meet."
+remaining_scope = ""
 contributors = ["forge/src/manifest.rs", "forge/src/audit.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/clause-coordinate-portfolios.md"
 note = "REQ-4 and AC-4/AC-8 define heterogeneous aggregation without scalar authority"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/manifest.rs"
+note = "homogeneous derivation and heterogeneous/incomplete portfolio regressions"
 
 [[requirement]]
 id = "REQ-CLAUSE-PORTFOLIO-MIXED-PRODUCERS"
 title = "Both heterogeneous producers emit total clause portfolios"
 owner = ".design/clause-coordinate-portfolios.md"
-status = "not_started"
+status = "shipped"
 scope = "forge"
 summary = "BV/EPR/NLSAT and G1 NLSAT/author-Lean routes preinventory every clause and preserve attempted prefixes plus typed NotAttempted causes on every exit."
-remaining_scope = "Implement REQ-5 and AC-5/AC-6: one sealed assembler for all accepting and rejecting exits, pre-clause item-gate causes, and complete source-ordered mixed-route fixtures."
+remaining_scope = ""
 contributors = ["forge/src/check.rs", "forge/src/manifest.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/clause-coordinate-portfolios.md"
 note = "REQ-5 and AC-5/AC-6 define total mixed producer migration"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "real mixed-route and two-author producer seams cover complete and typed failure exits"
 
 [[requirement]]
 id = "REQ-CLAUSE-PORTFOLIO-AUDIT-CACHE"
 title = "Audit exposes portfolios without expanding cache authority"
 owner = ".design/clause-coordinate-portfolios.md"
-status = "not_started"
+status = "shipped"
 scope = "audit"
 summary = "Audit validates and exposes portfolio state while the existing cache remains Verus-base-only and serialized mixed portfolios remain non-authoritative."
-remaining_scope = "Implement REQ-6 and AC-7/AC-8/AC-9: audit projection, arbiter validation, deterministic oracle coverage, live rebuild after base cache hits, and unchanged historical fixtures."
+remaining_scope = ""
 contributors = ["forge/src/audit.rs", "forge/src/result_arbiter.rs", "forge/src/cache.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/clause-coordinate-portfolios.md"
 note = "REQ-6 defines audit, oracle, arbiter, and Verus-base-only cache boundaries"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/audit.rs"
+note = "program-bound audit projection and historical/no-portfolio compatibility"
 
 [[requirement]]
 id = "REQ-CLAUSE-PORTFOLIO-MUTATION-REPLAY"
 title = "G1 mutation replay consumes every applicable addressed proof"
 owner = ".design/clause-coordinate-portfolios.md"
-status = "not_started"
+status = "shipped"
 scope = "forge"
 summary = "Mutation scoring replays every addressed author-Lean clause with typed outcomes, excludes body-independent NLSAT clauses, and never selects a representative proof."
-remaining_scope = "Implement REQ-7 and AC-10: typed engine replay outcomes, killed/survived/unscored fold, order invariance, infrastructure-failure separation, and regression against singular l3_clause selection."
+remaining_scope = ""
 contributors = ["forge/src/check.rs", "forge/src/engine.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/clause-coordinate-portfolios.md"
 note = "REQ-7 and AC-10 define complete addressed mutation replay and conservative scoring"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "two-author addressed mutation replay, conservative fold, and permutation invariance"
 
 [[requirement]]
 id = "REQ-CI-DURATION-PARTITIONS"

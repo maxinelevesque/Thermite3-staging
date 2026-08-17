@@ -109,6 +109,7 @@
 //! <!-- /generated:reqs -->
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use thermite_syntax::{Effect, EffectRow};
 
 use crate::profile::SolverProfile;
@@ -177,6 +178,452 @@ pub struct ClassificationCertificate {
     /// Stable, versioned fragment/classifier identity.
     pub fragment: String,
     pub verdict: ClassificationVerdict,
+}
+
+/// Stable identity of a contract clause in certificate evidence.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ClauseAddress {
+    pub item: String,
+    pub family: ClauseFamily,
+    pub index: u32,
+}
+
+impl std::fmt::Display for ClauseAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.family {
+            ClauseFamily::Ensures => write!(f, "{}::ens#{}", self.item, self.index),
+        }
+    }
+}
+
+impl ClauseAddress {
+    pub fn from_selector(
+        proof_target: &str,
+        selector: &thermite_syntax::ClauseSelector,
+        expected_item: &str,
+        expected_count: usize,
+    ) -> Result<Self, ClausePortfolioError> {
+        if proof_target != expected_item {
+            return Err(ClausePortfolioError::new(
+                "proof target does not match certificate item",
+            ));
+        }
+        if selector.keyword != "ensures" {
+            return Err(ClausePortfolioError::new(
+                "only indexed ensures clauses are certifiable",
+            ));
+        }
+        let index = selector
+            .index
+            .ok_or_else(|| ClausePortfolioError::new("ensures selector requires an ordinal"))?;
+        if index as usize >= expected_count {
+            return Err(ClausePortfolioError::new(
+                "clause ordinal is outside the contract",
+            ));
+        }
+        Ok(Self {
+            item: expected_item.to_string(),
+            family: ClauseFamily::Ensures,
+            index,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ClauseFamily {
+    Ensures,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum ClauseProcedure {
+    BitVector { frame: String },
+    Epr { frame: String },
+    Nlsat { frame: String },
+    AuthorLean { frame: String },
+}
+
+impl ClauseProcedure {
+    fn expected_fragment(&self) -> &'static str {
+        match self {
+            Self::BitVector { .. } => "thermite-bv-clause-v1",
+            Self::Epr { .. } => "thermite-epr-clause-v1",
+            Self::Nlsat { .. } => "thermite-nlsat-clause-v1",
+            Self::AuthorLean { .. } => "thermite-author-lean-clause-v1",
+        }
+    }
+
+    fn expected_engine(&self) -> &'static str {
+        match self {
+            Self::BitVector { .. } => crate::engine::EngineName::BitVector.tag(),
+            Self::Epr { .. } => crate::engine::EngineName::Epr.tag(),
+            Self::Nlsat { .. } => crate::engine::EngineName::Nlsat.tag(),
+            Self::AuthorLean { .. } => crate::engine::EngineName::LeanInteractive.tag(),
+        }
+    }
+
+    fn has_governed_frame(&self) -> bool {
+        match self {
+            Self::BitVector { frame } => matches!(
+                frame.as_str(),
+                "qf-bv8-v1" | "qf-bv16-v1" | "qf-bv32-v1" | "qf-bv64-v1"
+            ),
+            Self::Epr { frame } => frame == "s2-epr-reconstruction-v1",
+            Self::Nlsat { frame } => frame == "real-relax-v1",
+            Self::AuthorLean { frame } => frame == "author-lean-body-grounded-v1",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum ClauseRouteEvidence {
+    BitVector {
+        query_sha256: String,
+        shadow: BvShadow,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+    },
+    Epr {
+        query_sha256: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness: Option<String>,
+    },
+    Nlsat {
+        query_sha256: String,
+        result: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+    },
+    AuthorLean {
+        query_sha256: String,
+        proof_sha256: String,
+        burn: crate::burn::BurnReceipt,
+        checker: String,
+        evidence_key_sha256: String,
+        axioms: Vec<String>,
+    },
+    BitVectorAttempted {
+        query_sha256: String,
+        outcome: crate::outcome_matrix::SolverProgressClass,
+        detail: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness_sha256: Option<String>,
+    },
+    EprAttempted {
+        query_sha256: String,
+        outcome: crate::outcome_matrix::SolverProgressClass,
+        detail: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness_sha256: Option<String>,
+    },
+    NlsatAttempted {
+        query_sha256: String,
+        outcome: crate::outcome_matrix::SolverProgressClass,
+        detail: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness_sha256: Option<String>,
+    },
+    AuthorLeanAttempted {
+        query_sha256: String,
+        outcome: crate::outcome_matrix::SolverProgressClass,
+        detail: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness_sha256: Option<String>,
+    },
+    NotAttempted,
+}
+
+impl ClauseRouteEvidence {
+    fn attempted_fields(
+        &self,
+    ) -> Option<(
+        &String,
+        &crate::outcome_matrix::SolverProgressClass,
+        &String,
+        &Option<String>,
+    )> {
+        match self {
+            Self::BitVectorAttempted {
+                query_sha256,
+                outcome,
+                detail,
+                witness_sha256,
+            }
+            | Self::EprAttempted {
+                query_sha256,
+                outcome,
+                detail,
+                witness_sha256,
+            }
+            | Self::NlsatAttempted {
+                query_sha256,
+                outcome,
+                detail,
+                witness_sha256,
+            }
+            | Self::AuthorLeanAttempted {
+                query_sha256,
+                outcome,
+                detail,
+                witness_sha256,
+            } => Some((query_sha256, outcome, detail, witness_sha256)),
+            _ => None,
+        }
+    }
+
+    fn is_attempt_for(&self, procedure: &ClauseProcedure) -> bool {
+        matches!(
+            (procedure, self),
+            (
+                ClauseProcedure::BitVector { .. },
+                Self::BitVectorAttempted { .. }
+            ) | (ClauseProcedure::Epr { .. }, Self::EprAttempted { .. })
+                | (ClauseProcedure::Nlsat { .. }, Self::NlsatAttempted { .. })
+                | (
+                    ClauseProcedure::AuthorLean { .. },
+                    Self::AuthorLeanAttempted { .. }
+                )
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum PortfolioStopCause {
+    ClauseTerminal {
+        address: ClauseAddress,
+        terminal: ClauseTerminalKind,
+    },
+    ItemGate {
+        gate: ItemGateKind,
+        class: crate::outcome_matrix::OutcomeClass,
+        detail: String,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ClauseTerminalKind {
+    Refuted,
+    Undecided,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ItemGateKind {
+    Covenant,
+    MeaningTower,
+    Vacuity,
+    Body,
+    Prerequisite,
+    MutationPolicy,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum ClauseTerminalState {
+    Discharged,
+    Refuted {
+        witness_sha256: String,
+    },
+    Undecided {
+        outcome: crate::outcome_matrix::SolverProgressClass,
+    },
+    NotAttempted {
+        cause: PortfolioStopCause,
+    },
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct ClauseAuthorityStamp(Option<String>);
+
+impl PartialEq for ClauseAuthorityStamp {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+impl Eq for ClauseAuthorityStamp {}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClauseCertification {
+    pub address: ClauseAddress,
+    pub artifact_sha256: String,
+    pub query_sha256: String,
+    pub expected_count: u32,
+    pub classification: ClassificationCertificate,
+    pub procedure: ClauseProcedure,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub position: Option<CertificationPosition>,
+    pub evidence: ClauseRouteEvidence,
+    pub terminal: ClauseTerminalState,
+    #[serde(skip)]
+    authority: ClauseAuthorityStamp,
+}
+
+impl ClauseCertification {
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn issued(
+        address: ClauseAddress,
+        artifact_sha256: String,
+        query_sha256: String,
+        expected_count: u32,
+        classification: ClassificationCertificate,
+        procedure: ClauseProcedure,
+        position: Option<CertificationPosition>,
+        evidence: ClauseRouteEvidence,
+        terminal: ClauseTerminalState,
+        authority: crate::check::ClauseAuthority,
+    ) -> Self {
+        Self {
+            address,
+            artifact_sha256,
+            query_sha256,
+            expected_count,
+            classification,
+            procedure,
+            position,
+            evidence,
+            terminal,
+            authority: ClauseAuthorityStamp(None),
+        }
+        .authoritative(authority)
+    }
+
+    pub(crate) fn authoritative(mut self, _authority: crate::check::ClauseAuthority) -> Self {
+        self.authority = ClauseAuthorityStamp(Some("pending-clause-seal-v1".into()));
+        self
+    }
+
+    fn authority_digest(&self, obligation: &ObligationResult) -> String {
+        let bytes = serde_json::to_vec(&(
+            (
+                &self.address,
+                &self.artifact_sha256,
+                &self.query_sha256,
+                self.expected_count,
+                &self.classification,
+                &self.procedure,
+                &self.position,
+                &self.evidence,
+                &self.terminal,
+            ),
+            (
+                &obligation.name,
+                &obligation.status,
+                &obligation.location,
+                &obligation.diagnostic,
+                &obligation.engine,
+                &obligation.trust,
+                &obligation.verdict,
+                &obligation.bv_shadow,
+                &obligation.reconstruction,
+            ),
+        ))
+        .expect("clause authority projection is serializable");
+        let mut hash = Sha256::new();
+        hash.update(b"thermite-live-clause-authority-v1");
+        hash.update(bytes);
+        hash.finalize()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+
+    fn seal_for(&mut self, obligation: &ObligationResult) {
+        assert_eq!(
+            self.authority.0.as_deref(),
+            Some("pending-clause-seal-v1"),
+            "only freshly issued clause evidence can acquire a content seal"
+        );
+        self.authority = ClauseAuthorityStamp(Some(self.authority_digest(obligation)));
+    }
+
+    fn has_valid_seal(&self, obligation: &ObligationResult) -> bool {
+        self.authority.0.as_deref() == Some(self.authority_digest(obligation).as_str())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ClausePortfolioKind {
+    AcceptedHomogeneous,
+    Heterogeneous,
+    Incomplete,
+    PolicyRejected,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClausePortfolio {
+    pub kind: ClausePortfolioKind,
+    pub clauses: Vec<ClauseCertification>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClauseOracleEntry {
+    pub certification: ClauseCertification,
+    pub status: ObligationStatus,
+    pub engine: Option<String>,
+    pub trust: Vec<String>,
+    pub verdict: Option<crate::verdict::CertVerdict>,
+    pub bv_shadow: Option<BvShadow>,
+    pub reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClauseOraclePortfolio {
+    pub clauses: Vec<ClauseOracleEntry>,
+    pub classification: Option<ClassificationCertificate>,
+    pub certification: Option<CertificationPosition>,
+    pub engine_attribution: Option<crate::engine::EngineAttribution>,
+    pub compatibility_burn: Option<crate::burn::BurnReceipt>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClausePortfolioError {
+    pub reason: String,
+}
+impl ClausePortfolioError {
+    fn new(reason: impl Into<String>) -> Self {
+        Self {
+            reason: reason.into(),
+        }
+    }
+}
+impl std::fmt::Display for ClausePortfolioError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid clause portfolio: {}", self.reason)
+    }
+}
+impl std::error::Error for ClausePortfolioError {}
+
+pub(crate) fn clause_terminal_witness_digest(
+    obligation: &ObligationResult,
+    reject: &Option<RejectReason>,
+) -> String {
+    let bytes = serde_json::to_vec(&(
+        &obligation.name,
+        &obligation.status,
+        &obligation.location,
+        &obligation.diagnostic,
+        &obligation.engine,
+        &obligation.trust,
+        &obligation.verdict,
+        &obligation.bv_shadow,
+        &obligation.reconstruction,
+        reject,
+    ))
+    .expect("terminal witness projection is serializable");
+    let mut hash = Sha256::new();
+    hash.update(b"thermite-clause-terminal-witness-v1");
+    hash.update(bytes);
+    hash.finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -512,6 +959,9 @@ pub struct ObligationResult {
     /// its axiom report passed. Failed or unavailable replay leaves this absent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+    /// Source-bound formal coordinates for migrated mixed-route clauses.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clause_certification: Option<ClauseCertification>,
 }
 
 /// Lock 1, the bv shadow FLAG (`.design/stage3-bv-reconstruction.md` REQ-3 / AC-4 — the
@@ -560,6 +1010,7 @@ impl ObligationResult {
             verdict: None,
             bv_shadow: None,
             reconstruction: None,
+            clause_certification: None,
         }
     }
 
@@ -580,7 +1031,14 @@ impl ObligationResult {
             verdict: None,
             bv_shadow: None,
             reconstruction: None,
+            clause_certification: None,
         }
+    }
+
+    pub(crate) fn with_clause_certification(mut self, mut clause: ClauseCertification) -> Self {
+        clause.seal_for(&self);
+        self.clause_certification = Some(clause);
+        self
     }
 
     /// Attach the schema-v2 per-clause attribution block (REQ-1/AC-4): the engine that
@@ -645,6 +1103,19 @@ pub struct ContractQuality {
     /// The surviving-mutant description (issue #12) — `None` (unscored) in #5.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub survivor: Option<String>,
+    /// Every addressed G1 mutation replay contribution used by the item policy.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub clause_mutation_replays: Vec<ClauseMutationReplay>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClauseMutationReplay {
+    pub mutant_sha256: String,
+    pub mutant: String,
+    pub address: ClauseAddress,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query_sha256: Option<String>,
+    pub outcome: crate::engine::MutationReplayOutcome,
 }
 
 fn is_zero_usize(value: &usize) -> bool {
@@ -662,6 +1133,7 @@ impl ContractQuality {
             mutants_killed: "0/0".to_string(),
             equivalent_mutants_excluded: 0,
             survivor: None,
+            clause_mutation_replays: Vec::new(),
         }
     }
 }
@@ -723,6 +1195,7 @@ pub struct RejectReason {
 struct AuditAdmission {
     live: bool,
     verus: Option<VerusAuditAuthority>,
+    clause_policy_digest: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -738,6 +1211,7 @@ impl AuditAdmission {
         Self {
             live: true,
             verus: None,
+            clause_policy_digest: None,
         }
     }
 }
@@ -1100,6 +1574,679 @@ impl Certificate {
         self.audit_admission.live
     }
 
+    fn clause_policy_digest(&self) -> String {
+        let clause_coordinates: Vec<_> = self
+            .obligations
+            .iter()
+            .filter_map(|obligation| {
+                obligation
+                    .clause_certification
+                    .as_ref()
+                    .map(|clause| (&clause.address, &clause.procedure, &clause.terminal))
+            })
+            .collect();
+        let bytes = serde_json::to_vec(&(
+            &self.item,
+            &self.contract_quality,
+            &self.burn,
+            &self.reject,
+            clause_coordinates,
+        ))
+        .expect("clause policy authority projection is serializable");
+        let mut hash = Sha256::new();
+        hash.update(b"thermite-live-clause-policy-authority-v1");
+        hash.update(bytes);
+        hash.finalize()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+
+    /// Validate and expose the authoritative mixed-route clause portfolio.
+    pub fn clause_portfolio(
+        &self,
+        final_accepted: bool,
+    ) -> Result<Option<ClausePortfolio>, ClausePortfolioError> {
+        let clauses: Vec<(&ObligationResult, &ClauseCertification)> = self
+            .obligations
+            .iter()
+            .filter_map(|obligation| {
+                obligation
+                    .clause_certification
+                    .as_ref()
+                    .map(|c| (obligation, c))
+            })
+            .collect();
+        if clauses.is_empty() {
+            return Ok(None);
+        }
+        if self.audit_admission.clause_policy_digest.as_deref()
+            != Some(self.clause_policy_digest().as_str())
+        {
+            return Err(ClausePortfolioError::new(
+                "clause mutation policy lacks an intact live producer content seal",
+            ));
+        }
+        if clauses
+            .iter()
+            .any(|(obligation, clause)| !clause.has_valid_seal(obligation))
+        {
+            return Err(ClausePortfolioError::new(
+                "clause data lacks an intact live producer content seal",
+            ));
+        }
+        let expected = clauses[0].1.expected_count as usize;
+        if expected == 0 || clauses.len() != expected {
+            return Err(ClausePortfolioError::new(
+                "clause inventory is not an exact non-empty range",
+            ));
+        }
+        let item = &clauses[0].1.address.item;
+        if item != &self.item {
+            return Err(ClausePortfolioError::new(
+                "clause portfolio item does not match its certificate",
+            ));
+        }
+        let artifact = &clauses[0].1.artifact_sha256;
+        let mut prior_terminal: std::collections::HashMap<ClauseAddress, ClauseTerminalKind> =
+            std::collections::HashMap::new();
+        for (ordinal, (obligation, clause)) in clauses.iter().enumerate() {
+            if clause.address.item != *item
+                || clause.address.family != ClauseFamily::Ensures
+                || clause.address.index as usize != ordinal
+                || clause.expected_count as usize != expected
+                || clause.artifact_sha256 != *artifact
+                || clause.artifact_sha256.is_empty()
+                || clause.query_sha256.is_empty()
+                || !clause.procedure.has_governed_frame()
+                || clause.classification.fragment != clause.procedure.expected_fragment()
+            {
+                return Err(ClausePortfolioError::new(
+                    "clause addresses or fingerprints do not form one exact portfolio",
+                ));
+            }
+            clause
+                .position
+                .as_ref()
+                .map(CertificationPosition::validate)
+                .transpose()
+                .map_err(|e| ClausePortfolioError::new(e.to_string()))?;
+            let route_coherent = match (&clause.procedure, &clause.evidence) {
+                (
+                    ClauseProcedure::BitVector { .. },
+                    ClauseRouteEvidence::BitVector {
+                        query_sha256,
+                        shadow,
+                        reconstruction,
+                    },
+                ) => {
+                    query_sha256 == &clause.query_sha256
+                        && obligation.bv_shadow.as_ref() == Some(shadow)
+                        && obligation.reconstruction.as_ref() == reconstruction.as_ref()
+                }
+                (
+                    ClauseProcedure::Epr { .. },
+                    ClauseRouteEvidence::Epr {
+                        query_sha256,
+                        reconstruction,
+                        ..
+                    },
+                ) => {
+                    query_sha256 == &clause.query_sha256
+                        && obligation.reconstruction.as_ref() == reconstruction.as_ref()
+                        && obligation.bv_shadow.is_none()
+                }
+                (
+                    ClauseProcedure::Nlsat { .. },
+                    ClauseRouteEvidence::Nlsat {
+                        query_sha256,
+                        result,
+                        reconstruction,
+                    },
+                ) => {
+                    query_sha256 == &clause.query_sha256
+                        && !result.trim().is_empty()
+                        && obligation.bv_shadow.is_none()
+                        && obligation.reconstruction.as_ref() == reconstruction.as_ref()
+                }
+                (
+                    ClauseProcedure::AuthorLean { .. },
+                    ClauseRouteEvidence::AuthorLean {
+                        query_sha256,
+                        proof_sha256,
+                        checker,
+                        evidence_key_sha256,
+                        axioms,
+                        ..
+                    },
+                ) => {
+                    query_sha256 == &clause.query_sha256
+                        && !proof_sha256.is_empty()
+                        && checker == "lean-interactive axiom-gated replay v1"
+                        && !evidence_key_sha256.is_empty()
+                        && axioms.iter().map(String::as_str).eq([
+                            "propext",
+                            "Classical.choice",
+                            "Quot.sound",
+                        ])
+                        && obligation.bv_shadow.is_none()
+                        && obligation.reconstruction.is_none()
+                }
+                (procedure, evidence) if evidence.is_attempt_for(procedure) => evidence
+                    .attempted_fields()
+                    .is_some_and(|(query, _, detail, _)| {
+                        query == &clause.query_sha256 && !detail.trim().is_empty()
+                    }),
+                (_, ClauseRouteEvidence::NotAttempted) => {
+                    matches!(clause.terminal, ClauseTerminalState::NotAttempted { .. })
+                }
+                _ => false,
+            };
+            if !route_coherent {
+                return Err(ClausePortfolioError::new(
+                    "clause route evidence contradicts its procedure or obligation evidence",
+                ));
+            }
+            match (&clause.terminal, &obligation.status) {
+                (ClauseTerminalState::Discharged, ObligationStatus::Discharged) => {
+                    let (fragment, expected_engine, expected_trust, expected_position) =
+                        match (&clause.procedure, &clause.evidence) {
+                            (
+                                ClauseProcedure::BitVector { .. },
+                                ClauseRouteEvidence::BitVector { reconstruction, .. },
+                            ) => {
+                                let reconstructed = reconstruction.is_some();
+                                (
+                                    "thermite-bv-clause-v1",
+                                    crate::engine::EngineName::BitVector.tag(),
+                                    if reconstructed {
+                                        crate::engine::bv_kernel_checked_trust_profile().items
+                                    } else {
+                                        crate::engine::bv_trust_profile().items
+                                    },
+                                    CertificationPosition {
+                                        scope: CertificationScope::All,
+                                        refutation: RefutationChannel::Complete,
+                                        residual_trust: if reconstructed {
+                                            ResidualTrust::LeanChecked
+                                        } else {
+                                            ResidualTrust::Solver
+                                        },
+                                        discharged_trust: Vec::new(),
+                                        boundary: CertificationBoundary::EndToEnd,
+                                    },
+                                )
+                            }
+                            (
+                                ClauseProcedure::Epr { .. },
+                                ClauseRouteEvidence::Epr {
+                                    reconstruction: Some(_),
+                                    ..
+                                },
+                            ) => (
+                                "thermite-epr-clause-v1",
+                                crate::engine::EngineName::Epr.tag(),
+                                crate::engine::epr_kernel_checked_trust_profile().items,
+                                CertificationPosition {
+                                    scope: CertificationScope::All,
+                                    refutation: RefutationChannel::Complete,
+                                    residual_trust: ResidualTrust::LeanChecked,
+                                    discharged_trust: Vec::new(),
+                                    boundary: CertificationBoundary::EndToEnd,
+                                },
+                            ),
+                            (
+                                ClauseProcedure::Nlsat { .. },
+                                ClauseRouteEvidence::Nlsat { reconstruction, .. },
+                            ) => {
+                                let reconstructed = reconstruction.is_some();
+                                (
+                                    "thermite-nlsat-clause-v1",
+                                    crate::engine::EngineName::Nlsat.tag(),
+                                    if reconstructed {
+                                        crate::engine::lia_kernel_checked_trust_profile().items
+                                    } else {
+                                        crate::engine::nlsat_trust_profile().items
+                                    },
+                                    CertificationPosition {
+                                        scope: CertificationScope::All,
+                                        refutation: RefutationChannel::Complete,
+                                        residual_trust: if reconstructed {
+                                            ResidualTrust::LeanChecked
+                                        } else {
+                                            ResidualTrust::Solver
+                                        },
+                                        discharged_trust: Vec::new(),
+                                        boundary: CertificationBoundary::EndToEnd,
+                                    },
+                                )
+                            }
+                            (
+                                ClauseProcedure::AuthorLean { .. },
+                                ClauseRouteEvidence::AuthorLean { .. },
+                            ) => (
+                                "thermite-author-lean-clause-v1",
+                                crate::engine::EngineName::LeanInteractive.tag(),
+                                crate::engine::trust_profile_interactive().items,
+                                CertificationPosition {
+                                    scope: CertificationScope::All,
+                                    refutation: RefutationChannel::Empirical,
+                                    residual_trust: ResidualTrust::LeanChecked,
+                                    discharged_trust: Vec::new(),
+                                    boundary: CertificationBoundary::EndToEnd,
+                                },
+                            ),
+                            _ => {
+                                return Err(ClausePortfolioError::new(
+                                    "discharged clause lacks procedure-specific evidence",
+                                ));
+                            }
+                        };
+                    if clause.position.is_none()
+                        || clause.classification.verdict != ClassificationVerdict::Admitted
+                        || clause.classification.fragment != fragment
+                        || clause.position.as_ref() != Some(&expected_position)
+                        || obligation.engine.as_deref() != Some(expected_engine)
+                        || obligation.trust != expected_trust
+                        || obligation.verdict != Some(crate::verdict::CertVerdict::Proved)
+                        || matches!(
+                            clause.evidence,
+                            ClauseRouteEvidence::BitVectorAttempted { .. }
+                                | ClauseRouteEvidence::EprAttempted { .. }
+                                | ClauseRouteEvidence::NlsatAttempted { .. }
+                                | ClauseRouteEvidence::AuthorLeanAttempted { .. }
+                                | ClauseRouteEvidence::NotAttempted
+                        )
+                    {
+                        return Err(ClausePortfolioError::new(
+                            "discharged clause lacks admitted coherent coordinates",
+                        ));
+                    }
+                }
+                (ClauseTerminalState::Refuted { witness_sha256 }, ObligationStatus::Failed)
+                    if !witness_sha256.is_empty()
+                        && witness_sha256
+                            == &clause_terminal_witness_digest(obligation, &self.reject)
+                        && clause.position.is_none()
+                        && clause.classification.verdict == ClassificationVerdict::Admitted
+                        && obligation.engine.as_deref()
+                            == Some(clause.procedure.expected_engine())
+                        && matches!(
+                            obligation.verdict,
+                            Some(crate::verdict::CertVerdict::Counterexample { .. })
+                        )
+                        && clause.evidence.attempted_fields().is_some_and(
+                            |(_, outcome, _, evidence_witness)| {
+                                *outcome
+                                    == crate::outcome_matrix::SolverProgressClass::Counterexample
+                                    && evidence_witness.as_ref() == Some(witness_sha256)
+                            },
+                        ) =>
+                {
+                    prior_terminal.insert(clause.address.clone(), ClauseTerminalKind::Refuted);
+                }
+                (ClauseTerminalState::Undecided { outcome }, ObligationStatus::Failed)
+                    if clause.position.is_none()
+                        && matches!(
+                            clause.classification.verdict,
+                            ClassificationVerdict::Unknown { .. }
+                        )
+                        && obligation
+                            .engine
+                            .as_deref()
+                            .is_none_or(|engine| engine == clause.procedure.expected_engine())
+                        && !matches!(
+                            obligation.verdict,
+                            Some(crate::verdict::CertVerdict::Proved)
+                                | Some(crate::verdict::CertVerdict::Counterexample { .. })
+                        )
+                        && clause.evidence.attempted_fields().is_some_and(
+                            |(_, evidence_outcome, _, witness)| {
+                                evidence_outcome == outcome && witness.is_none()
+                            },
+                        ) =>
+                {
+                    prior_terminal.insert(clause.address.clone(), ClauseTerminalKind::Undecided);
+                }
+                (ClauseTerminalState::NotAttempted { cause }, ObligationStatus::Failed) => {
+                    if clause.position.is_some()
+                        || !matches!(
+                            clause.classification.verdict,
+                            ClassificationVerdict::Unknown { .. }
+                        )
+                        || obligation.engine.is_some()
+                        || !obligation.trust.is_empty()
+                        || obligation.verdict.is_some()
+                        || obligation.bv_shadow.is_some()
+                        || obligation.reconstruction.is_some()
+                    {
+                        return Err(ClausePortfolioError::new(
+                            "not-attempted clause carries attempted-route authority",
+                        ));
+                    }
+                    match cause {
+                        PortfolioStopCause::ClauseTerminal { address, terminal } => {
+                            if address.index >= clause.address.index
+                                || prior_terminal.get(address) != Some(terminal)
+                            {
+                                return Err(ClausePortfolioError::new("not-attempted cause is not rooted in an earlier terminal clause"));
+                            }
+                        }
+                        PortfolioStopCause::ItemGate { detail, .. } if detail.trim().is_empty() => {
+                            return Err(ClausePortfolioError::new(
+                                "item-gate cause requires an outcome",
+                            ));
+                        }
+                        PortfolioStopCause::ItemGate { gate, class, .. } => {
+                            let cause = self.reject.as_ref().map(|reason| reason.cause.as_str());
+                            let (matches_gate, expected_class) = match gate {
+                                ItemGateKind::Covenant => (
+                                    cause.is_some_and(|c| c.starts_with("Covenant")),
+                                    if cause == Some("CovenantRefuted") {
+                                        crate::outcome_matrix::OutcomeClass::Counterexample
+                                    } else {
+                                        crate::outcome_matrix::OutcomeClass::InvalidSource
+                                    },
+                                ),
+                                ItemGateKind::MeaningTower => (
+                                    cause == Some("DefinitionTowerBudget"),
+                                    crate::outcome_matrix::OutcomeClass::ResourceExhausted,
+                                ),
+                                ItemGateKind::Vacuity => (
+                                    cause == Some("VacuousPrecondition"),
+                                    crate::outcome_matrix::OutcomeClass::UnsupportedPolicy,
+                                ),
+                                ItemGateKind::Body => (
+                                    cause == Some("ForgeGateNoBody"),
+                                    crate::outcome_matrix::OutcomeClass::UnsupportedLanguage,
+                                ),
+                                ItemGateKind::Prerequisite => (
+                                    cause.is_some_and(|c| {
+                                        matches!(c, "ForgeGateMissingProof" | "Prerequisite")
+                                    }),
+                                    crate::outcome_matrix::OutcomeClass::InvalidSource,
+                                ),
+                                ItemGateKind::MutationPolicy => (
+                                    cause.is_some_and(|c| {
+                                        matches!(c, "WeakContract" | "MutationPolicy")
+                                    }),
+                                    crate::outcome_matrix::OutcomeClass::UnsupportedPolicy,
+                                ),
+                            };
+                            if !matches_gate || *class != expected_class {
+                                return Err(ClausePortfolioError::new(
+                                    "item-gate stop cause contradicts certificate policy evidence",
+                                ));
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    return Err(ClausePortfolioError::new(
+                        "terminal state contradicts obligation status",
+                    ))
+                }
+            }
+        }
+        let author_burns: Vec<&crate::burn::BurnReceipt> = clauses
+            .iter()
+            .filter_map(|(_, clause)| match &clause.evidence {
+                ClauseRouteEvidence::AuthorLean { burn, .. } => Some(burn),
+                _ => None,
+            })
+            .collect();
+        let burn_compatible = match author_burns.as_slice() {
+            [only] => self.burn.as_ref() == Some(*only),
+            [] | [_, _, ..] => self.burn.is_none(),
+        };
+        if !burn_compatible {
+            return Err(ClausePortfolioError::new(
+                "certificate-level compatibility burn contradicts clause-local evidence",
+            ));
+        }
+        let all_discharged = clauses
+            .iter()
+            .all(|(_, c)| matches!(c.terminal, ClauseTerminalState::Discharged));
+        let author_addresses: std::collections::HashSet<_> = clauses
+            .iter()
+            .filter_map(|(_, clause)| {
+                matches!(clause.procedure, ClauseProcedure::AuthorLean { .. })
+                    .then_some(clause.address.clone())
+            })
+            .collect();
+        let replays = &self.contract_quality.clause_mutation_replays;
+        if all_discharged && !author_addresses.is_empty() && replays.is_empty() {
+            return Err(ClausePortfolioError::new(
+                "an author-Lean portfolio lacks its complete mutation replay matrix",
+            ));
+        }
+        if !replays.is_empty() {
+            let expected_addresses: std::collections::HashSet<_> = clauses
+                .iter()
+                .map(|(_, clause)| clause.address.clone())
+                .collect();
+            let procedures_by_address: std::collections::HashMap<_, _> = clauses
+                .iter()
+                .map(|(_, clause)| (clause.address.clone(), &clause.procedure))
+                .collect();
+            let mut by_mutant: std::collections::BTreeMap<&str, Vec<&ClauseMutationReplay>> =
+                std::collections::BTreeMap::new();
+            for replay in replays {
+                if replay.mutant_sha256.is_empty() || replay.mutant.trim().is_empty() {
+                    return Err(ClausePortfolioError::new(
+                        "mutation replay lacks a bound mutant identity",
+                    ));
+                }
+                by_mutant
+                    .entry(replay.mutant_sha256.as_str())
+                    .or_default()
+                    .push(replay);
+            }
+            let mut killed = 0usize;
+            let mut scored = 0usize;
+            let mut surviving_mutants = Vec::new();
+            for group in by_mutant.values() {
+                let seen: std::collections::HashSet<_> =
+                    group.iter().map(|replay| replay.address.clone()).collect();
+                if group.len() != expected_addresses.len() || seen != expected_addresses {
+                    return Err(ClausePortfolioError::new(
+                        "mutation replay does not contribute exactly once at every clause address",
+                    ));
+                }
+                if group.iter().any(|replay| replay.mutant != group[0].mutant) {
+                    return Err(ClausePortfolioError::new(
+                        "one mutant digest names contradictory mutation descriptions",
+                    ));
+                }
+                let mut applicable = false;
+                let mut all_applicable_discharged = true;
+                let mut mutant_killed = false;
+                for replay in group {
+                    let Some(procedure) = procedures_by_address.get(&replay.address) else {
+                        return Err(ClausePortfolioError::new(
+                            "mutation replay address is outside the clause portfolio",
+                        ));
+                    };
+                    if replay.query_sha256.as_ref().is_some_and(String::is_empty) {
+                        return Err(ClausePortfolioError::new(
+                            "mutation replay carries an empty query identity",
+                        ));
+                    }
+                    if matches!(
+                        replay.outcome,
+                        crate::engine::MutationReplayOutcome::ProofRejected
+                            | crate::engine::MutationReplayOutcome::Counterexample
+                            | crate::engine::MutationReplayOutcome::Discharged
+                    ) && replay.query_sha256.is_none()
+                    {
+                        return Err(ClausePortfolioError::new(
+                            "decisive mutation replay lacks its exact query identity",
+                        ));
+                    }
+                    match (procedure, &replay.outcome) {
+                        (
+                            ClauseProcedure::Nlsat { .. },
+                            crate::engine::MutationReplayOutcome::Inapplicable,
+                        ) => {}
+                        (
+                            ClauseProcedure::AuthorLean { .. },
+                            crate::engine::MutationReplayOutcome::Inapplicable,
+                        )
+                        | (
+                            ClauseProcedure::Nlsat { .. },
+                            crate::engine::MutationReplayOutcome::Discharged
+                            | crate::engine::MutationReplayOutcome::ProofRejected
+                            | crate::engine::MutationReplayOutcome::Counterexample
+                            | crate::engine::MutationReplayOutcome::Unavailable
+                            | crate::engine::MutationReplayOutcome::Undecided,
+                        ) => {
+                            return Err(ClausePortfolioError::new(
+                                "mutation replay outcome contradicts its clause procedure",
+                            ));
+                        }
+                        (_, crate::engine::MutationReplayOutcome::ProofRejected)
+                        | (_, crate::engine::MutationReplayOutcome::Counterexample) => {
+                            applicable = true;
+                            mutant_killed = true;
+                        }
+                        (_, crate::engine::MutationReplayOutcome::Discharged) => {
+                            applicable = true;
+                        }
+                        (_, crate::engine::MutationReplayOutcome::Unavailable)
+                        | (_, crate::engine::MutationReplayOutcome::Undecided) => {
+                            applicable = true;
+                            all_applicable_discharged = false;
+                        }
+                        (_, crate::engine::MutationReplayOutcome::Inapplicable) => {}
+                    }
+                }
+                if mutant_killed {
+                    killed += 1;
+                    scored += 1;
+                } else if applicable && all_applicable_discharged {
+                    scored += 1;
+                    surviving_mutants.push(group[0].mutant.as_str());
+                }
+            }
+            if self.contract_quality.mutants_killed != format!("{killed}/{scored}")
+                || self.contract_quality.equivalent_mutants_excluded != 0
+                || match (
+                    &self.contract_quality.survivor,
+                    surviving_mutants.as_slice(),
+                ) {
+                    (None, []) => false,
+                    (Some(recorded), survivors) => {
+                        !survivors.iter().any(|survivor| *survivor == recorded)
+                    }
+                    _ => true,
+                }
+            {
+                return Err(ClausePortfolioError::new(
+                    "published mutation score does not equal the addressed replay fold",
+                ));
+            }
+        }
+        let first = clauses[0];
+        let homogeneous = all_discharged
+            && clauses.iter().all(|(obligation, c)| {
+                c.classification == first.1.classification
+                    && c.position == first.1.position
+                    && c.procedure == first.1.procedure
+                    && obligation.engine == first.0.engine
+                    && obligation.trust == first.0.trust
+            });
+        let kind = if !all_discharged {
+            ClausePortfolioKind::Incomplete
+        } else if !final_accepted {
+            ClausePortfolioKind::PolicyRejected
+        } else if homogeneous {
+            ClausePortfolioKind::AcceptedHomogeneous
+        } else {
+            ClausePortfolioKind::Heterogeneous
+        };
+        if kind == ClausePortfolioKind::AcceptedHomogeneous {
+            let expected_attr =
+                first
+                    .0
+                    .engine
+                    .as_ref()
+                    .map(|engine| crate::engine::EngineAttribution {
+                        engine: engine.clone(),
+                        trust_profile: first.0.trust.clone(),
+                    });
+            if self.classification.as_ref() != Some(&first.1.classification)
+                || self.certification.as_ref() != first.1.position.as_ref()
+                || self.engine_attribution != expected_attr
+            {
+                return Err(ClausePortfolioError::new(
+                    "homogeneous portfolio disagrees with singular authority",
+                ));
+            }
+        } else if self.classification.is_some()
+            || self.certification.is_some()
+            || self.engine_attribution.is_some()
+        {
+            return Err(ClausePortfolioError::new(
+                "non-homogeneous or rejected portfolio carries singular authority",
+            ));
+        }
+        Ok(Some(ClausePortfolio {
+            kind,
+            clauses: clauses.into_iter().map(|(_, c)| c.clone()).collect(),
+        }))
+    }
+
+    pub(crate) fn with_clause_portfolio(
+        mut self,
+        obligations: Vec<ObligationResult>,
+        final_accepted: bool,
+    ) -> Result<Self, ClausePortfolioError> {
+        self.obligations = obligations;
+        self.certification = None;
+        self.classification = None;
+        self.engine_attribution = None;
+        let clauses: Vec<&ObligationResult> = self
+            .obligations
+            .iter()
+            .filter(|o| o.clause_certification.is_some())
+            .collect();
+        let all_discharged = !clauses.is_empty()
+            && clauses.iter().all(|o| {
+                matches!(
+                    o.clause_certification.as_ref().unwrap().terminal,
+                    ClauseTerminalState::Discharged
+                )
+            });
+        let homogeneous = all_discharged
+            && clauses.iter().skip(1).all(|o| {
+                let a = clauses[0];
+                let x = a.clause_certification.as_ref().unwrap();
+                let y = o.clause_certification.as_ref().unwrap();
+                x.classification == y.classification
+                    && x.position == y.position
+                    && x.procedure == y.procedure
+                    && a.engine == o.engine
+                    && a.trust == o.trust
+            });
+        if final_accepted && homogeneous {
+            let first = clauses[0];
+            let clause = first.clause_certification.as_ref().unwrap();
+            self.classification = Some(clause.classification.clone());
+            self.certification = clause.position.clone();
+            self.engine_attribution =
+                first
+                    .engine
+                    .as_ref()
+                    .map(|engine| crate::engine::EngineAttribution {
+                        engine: engine.clone(),
+                        trust_profile: first.trust.clone(),
+                    });
+        }
+        self.audit_admission.clause_policy_digest = Some(self.clause_policy_digest());
+        self.clause_portfolio(final_accepted)?;
+        Ok(self)
+    }
+
     pub(crate) fn requires_verus_artifact_validation(&self) -> bool {
         self.audit_admission.verus.is_some()
             || self.classification.as_ref().is_some_and(|classification| {
@@ -1434,6 +2581,14 @@ impl Certificate {
         let mut scored = self.with_mutation_score(mutants_killed, survivor);
         scored.contract_quality.equivalent_mutants_excluded = equivalent_mutants_excluded;
         scored
+    }
+
+    pub(crate) fn with_clause_mutation_replays(
+        mut self,
+        replays: Vec<ClauseMutationReplay>,
+    ) -> Self {
+        self.contract_quality.clause_mutation_replays = replays;
+        self
     }
 
     /// Attach the §7 step-5 strengthening suggestions to this certificate (#14;
@@ -2131,7 +3286,33 @@ impl Certificate {
         Option<crate::covenant_engine::CovenantEvidence>,
         Option<crate::meaning::MeaningAudit>,
         Vec<BvShadow>,
+        Option<ClauseOraclePortfolio>,
     ) {
+        let clause_entries: Vec<_> = self
+            .obligations
+            .iter()
+            .filter_map(|obligation| {
+                obligation
+                    .clause_certification
+                    .clone()
+                    .map(|certification| ClauseOracleEntry {
+                        certification,
+                        status: obligation.status.clone(),
+                        engine: obligation.engine.clone(),
+                        trust: obligation.trust.clone(),
+                        verdict: obligation.verdict.clone(),
+                        bv_shadow: obligation.bv_shadow.clone(),
+                        reconstruction: obligation.reconstruction.clone(),
+                    })
+            })
+            .collect();
+        let clause_portfolio = (!clause_entries.is_empty()).then(|| ClauseOraclePortfolio {
+            clauses: clause_entries,
+            classification: self.classification.clone(),
+            certification: self.certification.clone(),
+            engine_attribution: self.engine_attribution.clone(),
+            compatibility_burn: self.burn.clone(),
+        });
         (
             &self.item,
             self.level,
@@ -2145,6 +3326,7 @@ impl Certificate {
                 .iter()
                 .filter_map(|o| o.bv_shadow.clone())
                 .collect(),
+            clause_portfolio,
         )
     }
 }

@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 838200f23f7b6c2e1df844a99eeace8ef1a390a3fec5f218b3f6aa2b1d297411 (re-pinned 2026-08-17 for exclusive proof, policy, live, and persisted authority capabilities. prior: e474b98d73a6e5481323bd6e72cef936c79f1208dfec94092e08303e7dc05645)
+audited-content-sha256: aefbb81b2b54344a8135e9592f4c4e63cc46f130bc9bdf53d77be1c23a15e3de (re-pinned 2026-08-17 for exclusive proof, policy, live, and persisted authority capabilities. prior: e474b98d73a6e5481323bd6e72cef936c79f1208dfec94092e08303e7dc05645)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1

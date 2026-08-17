@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 0611d3083e1e582aaba1de4f75525cd78fd8407a259d8b14a4b686c8161405e7 (re-pinned 2026-08-17 after cold re-review required every authority-producing entrance to be capability-gated, with a source-level regression.)
+audited-content-sha256: f536872cdaee474f37961fa4d2fdd192df85e7cfd5c76f107bc0be372275b522 (re-pinned 2026-08-17 after cold re-review required every authority-producing entrance to be capability-gated, with a source-level regression.)
 pin-extract: forge/src/result_arbiter.rs=code-normalized
 governs: forge/src/result_arbiter.rs
 -->

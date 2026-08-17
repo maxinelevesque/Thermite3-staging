@@ -2,7 +2,7 @@
 
 <!--
 tier: 3-component
-status: designed
+status: implemented
 governs: forge/src/manifest.rs, forge/src/check.rs, forge/src/engine.rs, forge/src/audit.rs, forge/src/result_arbiter.rs, thermite-syntax/src/ast.rs, thermite-syntax/src/parser.rs
 -->
 

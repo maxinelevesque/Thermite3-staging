@@ -49,10 +49,9 @@ use thermite_syntax::{BinOp, BvWidth, Expr, UnaryOp};
 
 /// The outcome of a `@bv` clause discharge over fixed-width QF_BV semantics
 /// (`.design/stage3-bv-reconstruction.md` REQ-2). Richer than the three-arm
-/// [`crate::engine::Verdict`]: a budget [`BvOutcome::Timeout`] (the 64-bit multiplier
-/// cost cliff) is held distinct from an [`BvOutcome::Unknown`] skip (Z3 absent
-/// / the clause outside the renderable fragment), so the route never launders the
-/// multiplier cliff into a silent `unknown` (AC-3).
+/// [`crate::engine::Verdict`]: budget exhaustion, unavailable tooling, and an
+/// unrenderable/unknown query are held distinct, so the route never launders a
+/// resource or infrastructure failure into a mathematical `unknown` (AC-3).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BvOutcome {
     /// `unsat` over QF_BV: the clause holds for every `N`-bit assignment satisfying
@@ -76,9 +75,12 @@ pub enum BvOutcome {
         /// The Z3 rlimit/timeout detail (the captured signal head).
         detail: String,
     },
-    /// A skip: Z3 is absent, the clause is outside the renderable QF_BV
-    /// fragment, or the query did not render. It is never a false verdict or the
-    /// image of a budget exhaustion (that is [`BvOutcome::Timeout`]).
+    /// Z3 could not be invoked. Kept distinct from an unrenderable query so the
+    /// closed terminal vocabulary can report `ToolUnavailable` exactly.
+    Unavailable(String),
+    /// A skip: the clause is outside the renderable QF_BV fragment, the query did
+    /// not render, or the solver returned an unrecognized result. It is never the
+    /// image of budget exhaustion or unavailable tooling.
     Unknown(String),
 }
 
@@ -345,7 +347,7 @@ impl BitVectorEngine {
     /// Is `z3` invocable? The skip-guard for the live BitVector tests — CI shards
     /// without z3 SKIP rather than fail (the sibling `NlsatEngine::z3_present`
     /// precedent). No production caller — [`BitVectorEngine::run_z3`] handles
-    /// z3-absence inline (a graceful [`BvOutcome::Unknown`] skip).
+    /// z3-absence inline (a typed [`BvOutcome::Unavailable`] terminal).
     #[allow(
         dead_code,
         reason = "REQ-2 live-test skip-guard: the in-crate live BitVector tests call it \
@@ -370,7 +372,8 @@ impl BitVectorEngine {
     /// - `sat` → [`BvOutcome::Counterexample`] carrying the witnessing bit pattern;
     /// - `unknown` with a budget set → [`BvOutcome::Timeout`] under the named profile
     ///   (the 64-bit multiplier cliff — never a bare `unknown`);
-    /// - Z3 absent / unrenderable clause → [`BvOutcome::Unknown`] (a skip).
+    /// - Z3 absent → [`BvOutcome::Unavailable`];
+    /// - unrenderable clause → [`BvOutcome::Unknown`] (a skip).
     ///
     /// `vars` are the variables in scope (parameters, plus `result` for a function
     /// whose clause has already had `result` grounded by the body); `req` is the
@@ -414,7 +417,7 @@ impl BitVectorEngine {
                     "Z3 returned an unexpected result `{other}` on the `@bv{n}` query"
                 )),
             },
-            Err(reason) => BvOutcome::Unknown(reason),
+            Err(reason) => BvOutcome::Unavailable(reason),
         }
     }
 
@@ -467,7 +470,8 @@ impl BitVectorEngine {
     /// - `unknown` under a bounded profile → [`BvOutcome::Timeout`] (the multiplier
     ///   cliff — the overflow query zero-extends a 64-bit multiply to 128 bits, so it
     ///   inherits the same dedicated budget; never a bare `unknown`);
-    /// - Z3 absent / an out-of-fragment operand → [`BvOutcome::Unknown`] (a skip).
+    /// - Z3 absent → [`BvOutcome::Unavailable`];
+    /// - an out-of-fragment operand → [`BvOutcome::Unknown`] (a skip).
     ///
     /// A clause whose body carries no wrap-prone operation (a pure comparison such as
     /// `result == a`) has nothing that could overflow, so the obligation holds vacuously
@@ -552,7 +556,7 @@ impl BitVectorEngine {
                     "Z3 returned an unexpected result `{other}` on the `@bv{n}(nowrap)` query"
                 )),
             },
-            Err(reason) => BvOutcome::Unknown(reason),
+            Err(reason) => BvOutcome::Unavailable(reason),
         }
     }
 

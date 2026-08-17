@@ -149,6 +149,17 @@ fn proof_item_parses_obligations() {
 }
 
 #[test]
+fn proof_clause_ordinal_overflow_is_rejected_without_truncation() {
+    let value = u64::from(u32::MAX) + 1;
+    let result = parse(&format!("proof for f {{ ensures#{value} by {{ omega }} }}"));
+    assert!(result.errors.iter().any(|error| matches!(
+        error,
+        SyntaxError::ClauseOrdinalOverflow { value: parsed, .. }
+            if *parsed == u128::from(value)
+    )));
+}
+
+#[test]
 fn proof_obligation_clause_and_hole_addresses() {
     let src = "proof for f { ensures#2 by { ?p3 } }";
     let addrs = address_set(src);

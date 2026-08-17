@@ -280,6 +280,9 @@ pub struct FunctionRow {
     /// retained even when the eventual proof succeeds or fails differently.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub classification: Option<ClassificationCertificate>,
+    /// The validated per-clause authority surface for mixed producers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clause_portfolio: Option<crate::manifest::ClausePortfolio>,
     /// The §9 assurance scope (end-to-end vs to-the-boundary), from
     /// `Certificate::assurance_scope`. `None` reads as end-to-end (the golden
     /// default; mirrors the cert field), `#[serde(skip_serializing_if)]`.
@@ -317,6 +320,33 @@ impl FunctionRow {
         );
         cert.rfc3_coordinates()
             .expect("audit rejects a classification without a certification position");
+        let final_accepted = matches!(
+            cert.live_disposition(),
+            Some(crate::manifest::LiveResultDisposition::Accepted)
+        );
+        let clause_portfolio = cert
+            .clause_portfolio(final_accepted)
+            .expect("audit rejects malformed clause portfolios");
+        if let Some(portfolio) = &clause_portfolio {
+            let function = program
+                .items
+                .iter()
+                .find_map(|item| match item {
+                    thermite_syntax::Item::Fn(function) if function.name == cert.item => {
+                        Some(function)
+                    }
+                    _ => None,
+                })
+                .expect("audit requires the source function for a clause portfolio");
+            let expected_artifact = crate::check::mixed_artifact_sha(program, function);
+            assert!(
+                portfolio
+                    .clauses
+                    .iter()
+                    .all(|clause| clause.artifact_sha256 == expected_artifact),
+                "audit rejects clause evidence not bound to the current program"
+            );
+        }
         if cert.requires_l1_artifact_validation() {
             let artifact = thermite_lower::lower_l1_artifact(program, &cert.item)
                 .expect("audit requires checked lowering for every current L1 producer");
@@ -332,6 +362,7 @@ impl FunctionRow {
             level: cert.level,
             certification: cert.certification.clone(),
             classification: cert.classification.clone(),
+            clause_portfolio,
             assurance_scope: cert.assurance_scope.clone(),
             engine_attribution: cert.engine_attribution.clone(),
             contract_quality: cert.contract_quality.clone(),

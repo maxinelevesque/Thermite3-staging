@@ -130,6 +130,8 @@ pub enum SyntaxError {
         clause: String,
         span: Span,
     },
+    /// A proof-clause ordinal cannot be represented by the stable u32 address schema.
+    ClauseOrdinalOverflow { value: u128, span: Span },
     /// Unexpected end of input while a production was still open.
     UnexpectedEof { expected: String, span: Span },
     /// An expression nested past the parser's recursion-depth limit. Surfaced
@@ -225,6 +227,7 @@ impl SyntaxError {
             | SyntaxError::Unexpected { span, .. }
             | SyntaxError::MissingClause { span, .. }
             | SyntaxError::ClauseOrder { span, .. }
+            | SyntaxError::ClauseOrdinalOverflow { span, .. }
             | SyntaxError::UnexpectedEof { span, .. }
             | SyntaxError::ExpressionTooDeep { span, .. }
             | SyntaxError::BreakContinueOutsideLoop { span, .. }
@@ -266,6 +269,11 @@ impl std::fmt::Display for SyntaxError {
                 f,
                 "clause `{clause}` is out of order in `{item}` (byte {})",
                 span.start
+            ),
+            SyntaxError::ClauseOrdinalOverflow { value, span } => write!(
+                f,
+                "clause ordinal {value} exceeds u32::MAX at {}..{}",
+                span.start, span.end()
             ),
             SyntaxError::UnexpectedEof { expected, span } => write!(
                 f,
@@ -1369,7 +1377,12 @@ impl<'a> Parser<'a> {
             match self.peek().clone() {
                 TokKind::Int { value, .. } => {
                     self.bump();
-                    Some(value as u32)
+                    Some(
+                        u32::try_from(value).map_err(|_| SyntaxError::ClauseOrdinalOverflow {
+                            value,
+                            span: self.prev_span(),
+                        })?,
+                    )
                 }
                 _ => return Err(self.unexpected("a clause ordinal `#k` after `#`")),
             }

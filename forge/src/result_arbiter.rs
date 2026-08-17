@@ -197,6 +197,12 @@ impl ItemOutcome {
         let Some(disposition) = certificate.live_disposition().cloned() else {
             return Self::from_structural_certificate(certificate);
         };
+        certificate
+            .clause_portfolio(matches!(disposition, LiveResultDisposition::Accepted))
+            .map_err(|error| PersistedOutcomeError {
+                item: certificate.item.clone(),
+                detail: error.to_string(),
+            })?;
         validate_live_shape(&certificate, &disposition)?;
         Ok(match disposition {
             LiveResultDisposition::Accepted => Self::accepted(certificate, engine),
@@ -238,6 +244,12 @@ impl ItemOutcome {
     fn from_structural_certificate(
         certificate: Certificate,
     ) -> Result<Self, PersistedOutcomeError> {
+        certificate
+            .clause_portfolio(false)
+            .map_err(|error| PersistedOutcomeError {
+                item: certificate.item.clone(),
+                detail: error.to_string(),
+            })?;
         let engine = certificate
             .engine_attribution
             .as_ref()
@@ -368,12 +380,10 @@ impl ItemOutcome {
         kind: PolicyRejection,
         certificate: Certificate,
     ) -> Certificate {
-        Self::policy_rejected(
-            render_policy_result(&self.certificate, certificate),
-            self.engine.clone(),
-            kind,
-        )
-        .into_certificate()
+        let certificate = render_policy_result(&self.certificate, certificate);
+        validate_policy_rejection(&kind, &certificate)
+            .expect("settled production policy rendering preserves portfolio authority");
+        Self::policy_rejected(certificate, self.engine.clone(), kind).into_certificate()
     }
 
     /// Apply a policy producer without letting later proof evidence erase a
@@ -403,12 +413,14 @@ impl ItemOutcome {
                     ));
                 }
                 let certificate = render_policy_result(&self.certificate, certificate);
+                validate_live_shape(&certificate, &LiveResultDisposition::Accepted)?;
                 Self::accepted(certificate, self.engine)
             }
             crate::check::IssuedPolicyDecision::Rejected { kind, certificate } => {
                 ensure_same_item(&self.certificate, &certificate)?;
                 validate_policy_rejection(&kind, &certificate)?;
                 let certificate = render_policy_result(&self.certificate, certificate);
+                validate_policy_rejection(&kind, &certificate)?;
                 Self::policy_rejected(certificate, self.engine, kind)
             }
         };
@@ -440,6 +452,8 @@ impl ItemOutcome {
                         let keep_policy = matches!(&self.disposition, BaseDisposition::Accepted);
                         let certificate =
                             render_replacement(&self.certificate, certificate, keep_policy);
+                        validate_live_shape(&certificate, &LiveResultDisposition::Accepted)
+                            .map_err(CombinationError::InvalidEvidence)?;
                         Ok(Self::accepted(certificate, engine))
                     }
                 }
@@ -459,6 +473,8 @@ impl ItemOutcome {
                     BaseDisposition::PolicyRejected(_) | BaseDisposition::Refuted => Ok(self),
                     BaseDisposition::Inconclusive(_) => {
                         let certificate = render_replacement(&self.certificate, certificate, false);
+                        validate_live_shape(&certificate, &LiveResultDisposition::Refuted)
+                            .map_err(CombinationError::InvalidEvidence)?;
                         Ok(Self::refuted(certificate, engine))
                     }
                 }
@@ -485,8 +501,11 @@ impl ItemOutcome {
                     .map_err(CombinationError::InvalidEvidence)?;
                 validate_live_shape(&certificate, &LiveResultDisposition::EngineUnknown)
                     .map_err(CombinationError::InvalidEvidence)?;
+                let certificate = render_replacement(&self.certificate, certificate, false);
+                validate_live_shape(&certificate, &LiveResultDisposition::EngineUnknown)
+                    .map_err(CombinationError::InvalidEvidence)?;
                 Ok(Self::inconclusive(
-                    render_replacement(&self.certificate, certificate, false),
+                    certificate,
                     engine,
                     InconclusiveReason::EngineUnknown,
                 ))
@@ -703,6 +722,9 @@ fn validate_live_shape(
     certificate: &Certificate,
     disposition: &LiveResultDisposition,
 ) -> Result<(), PersistedOutcomeError> {
+    certificate
+        .clause_portfolio(matches!(disposition, LiveResultDisposition::Accepted))
+        .map_err(|error| candidate_error(certificate, error.to_string()))?;
     let failed = certificate
         .obligations
         .iter()

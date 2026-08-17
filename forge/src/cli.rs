@@ -3571,6 +3571,7 @@ fn render_human(cert: &Certificate) -> String {
         _covenant_evidence,
         _meaning,
         _bv_shadows,
+        _clause_certifications,
     ) = cert.oracle_subset();
     let mut out = String::new();
     out.push_str(&format!("item: {item}\n"));
