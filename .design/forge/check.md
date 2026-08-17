@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: ed78ffe811aa630248d170f720a04cd22147c35e4f141c3aea833d003b4e5389 (re-pinned 2026-08-17 after adding the accepted portfolio live-disposition regression. prior: aefbb81b2b54344a8135e9592f4c4e63cc46f130bc9bdf53d77be1c23a15e3de)
+audited-content-sha256: db869c16d3ec4fd1952ccf77be70b1b4691f4952f01c5d9d8246ad7a34e3c8d7 (re-pinned 2026-08-17 for exact Assurance V2 producer-core characterizations; check behavior is unchanged. prior: d6776bf74185ea12c8637a2650f172f1412349da6c2580ac892a9efb38d41c8e)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1

@@ -477,6 +477,7 @@ fn is_under_bound_failure(description: &str) -> bool {
 /// Assemble the L2 [`Certificate`] for one item from its [`L2Result`]
 /// (REQ-6). `Level::L2` (programmatically distinct from L3, §12) with the bound
 /// recorded in the obligations. Consumer: `check::check_l2_file`.
+// ASSURANCE_V2_ISSUER bounded assemble_l2_certificate
 pub fn assemble_l2_certificate(item: &str, effects: Vec<String>, result: &L2Result) -> Certificate {
     let cert = Certificate::new(
         item,
@@ -779,6 +780,7 @@ mod tests {
 
     // REQ-6 / AC-6: assemble_l2_certificate yields an L2 cert distinct from L3,
     // carrying the bound on its obligation.
+    // ASSURANCE_V2_CHARACTERIZATION bounded forge/src/kani.rs assemble_l2_certificate
     #[test]
     fn bound_recorded_on_l2_cert() {
         let res = L2Result {

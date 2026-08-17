@@ -1,5 +1,7 @@
 # Feature: Engineer assurance report and Level retirement
 
+audited-content-sha256: 1d234f415b8e4d6618144cb854e0488f868dfb4984aa507cea012068f11e07d3 (pinned 2026-08-17 for issue #54: global display fibers, full disclosure, exhaustive predecessor dispositions, proof-carrying populations, canonical antichains, replay, digests, and exact producer-core characterizations.)
+
 ## Summary
 
 Replace the historical scalar `Level` as both Thermite's human assurance

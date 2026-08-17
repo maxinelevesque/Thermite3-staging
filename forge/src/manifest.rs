@@ -655,6 +655,7 @@ impl std::error::Error for IncoherentCertificationPosition {}
 
 /// The seven order-elements in RFC-3 §3.2. Relax and unreconstructed cage
 /// routes are deliberately order-equivalent at `CompleteSolver`.
+// ASSURANCE_V2_PREDECESSOR forge::manifest::AssuranceElement compatibility_only
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum AssuranceElement {
     NoClaim,

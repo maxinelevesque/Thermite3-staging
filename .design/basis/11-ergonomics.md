@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 08a10a1286533684da78ff2662fc567d2531d0575026f2ec22e440a3406cf8e8 (re-pinned 2026-08-17 after clause-portfolio CI acceptance stamping; ergonomics behavior is unchanged. prior: 5311ee1c3ec0f708c69dca5849fde1148af1a42658b494db8dc1a085f453f347)
+audited-content-sha256: 8391e07dcef88501919939ac094d325e0aca4a875f484751f49f8b61e0629efc (re-pinned 2026-08-17 for non-operative Assurance V2 characterization annotations; ergonomics behavior is unchanged. prior: 30dea13c62892811b8adef901c7f11329a8cfff5a2a71b2f09bc281e24a453dd)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

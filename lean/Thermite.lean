@@ -54,3 +54,7 @@ import Thermite.PinEprReplay
 import Thermite.LanguageCompleteness
 import Thermite.PinLanguageNarrowing
 import Thermite.CheckedTraversal
+
+-- Closed, parameterized assurance policy and generated Rust/Lean replay.
+import Thermite.AssurancePolicyV2
+import Thermite.AssuranceV2Replay

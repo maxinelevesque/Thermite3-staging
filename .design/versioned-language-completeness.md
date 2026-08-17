@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 5996f94fe4206db8c5880a2005717fdf2e89178fe9edecf1af1b323d9a152acd (clause-coordinate portfolio CI repair, 2026-08-17: accepted mixed portfolios now stamp live audit disposition and typed WeakContract validation distinguishes explicit 0/0 rejection from legacy unscored acceptance. prior: 50263d14f02f90b54578def94434d2bf08944bce52b3b51ae62c6a2e1f506820)
+audited-content-sha256: a961e0ce7858b516dd3583c02903e07d62333cdbf436196df7adcc4db0cf0736 (Assurance V2 extension-tax annotations, 2026-08-17: exact producer-core, predecessor, and characterization markers are non-operative and bidirectionally checked; language behavior is unchanged. prior: 169f8fb6ac3c19cf4f69a9356e8e5c183800f0b04d6ae3b11450299f9cea1d24)
 
 ## Summary
 

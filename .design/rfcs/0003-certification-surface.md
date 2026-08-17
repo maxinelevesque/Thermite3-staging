@@ -133,7 +133,21 @@ scope/refutation/trust@boundary
 
 The two rows that render identically as `L3` today — general Verus/Z3 and the Lean forge — are now visibly different objects.
 
-## 3. The lattice
+## 3. The historical coordinate-order conjecture and V2 correction
+
+> **Status correction (AssurancePolicyV2).** The seven-element diagram below is
+> the RFC's original coordinate-product conjecture, not the current authority
+> order. The subsequently checked realizable probe proved that its
+> solver-complete and Lean-empirical representatives have no realizable join;
+> therefore the realizable certification sub-poset is not a lattice. The V2
+> reporting policy does not recover the conjecture by fiat. It first separates
+> exact execution, bound, semantic/model, context, and boundary populations into
+> claim fibers. Within the all-input fiber it uses the checked six-family
+> constructor order: solver-incomplete is the common weaker claim,
+> solver-complete and Lean-empirical are incomparable, and Lean-complete is
+> their explicit common upper bound. Cross-fiber comparison is forbidden
+> without a checked transport. Project aggregation is intersection of finite
+> downset normal forms, not a raw coordinate meet.
 
 ### 3.1 Coherent cells
 
@@ -189,7 +203,9 @@ The relax route and the unreconstructed cage have identical residual, refutation
                   S                none / none / fiat
 ```
 
-**This is a bounded lattice.** Top `A`, bottom `S`, and both non-trivial pairs have meets and joins:
+**Historical conjecture (superseded as an authority claim):** this diagram was
+described as a bounded lattice with top `A`, bottom `S`, and the following
+operations:
 
 | pair | join | meet |
 |---|---|---|
@@ -212,7 +228,10 @@ The sublattice `{K, C, B, D, A}` is the **pentagon**:
         K
 ```
 
-N₅ is the forbidden sublattice for modularity, so **the assurance order is non-modular, hence non-distributive.** That is the formal statement of a fact the implementation kept rediscovering: the axes genuinely interact, and no amount of per-axis reasoning recovers the whole structure.
+If the conjectured seven-element carrier were realizable, N₅ would make it
+non-modular and non-distributive. The checked metatheory does not assert that
+premise. This remains useful history for why independent per-axis minima are
+unsound, but it is not a theorem about `AssurancePolicyV2`.
 
 Two consequences the documents should carry:
 
