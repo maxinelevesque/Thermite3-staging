@@ -3,12 +3,19 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 3c8729cbf69c182ab422f6ec3e6b1813a89904f8fdccb485351af5d0c6d060d0 (re-pinned 2026-08-16 after clippy-only removal of needless borrows in shared check.rs; G4 reconstruction and mixed EPR routing are unchanged. prior: 54d5f098571947c1b3c47fe16f7cb7830294106646c5becff552713ac7c84034)
+audited-content-sha256: dc84c221348346bdf1e222bece6d6dc98d16bf511357290b167700e63717a817 (re-pinned 2026-08-16 for the RFC-3 aggregation repair: partial EPR reconstruction no longer enters the authoritative item certificate. prior: 3c8729cbf69c182ab422f6ec3e6b1813a89904f8fdccb485351af5d0c6d060d0)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->
 
 Status: shipped. Gate G4 is `bash gates/g4.sh`.
+
+**RFC-3 aggregation amendment, 2026-08-16.** A successful reconstruction of
+only some clauses is not appended to the authoritative base certificate. Until
+clause-level RFC-3 coordinates and an aggregation rule exist, the base item
+certificate remains unchanged; only reconstruction of every clause may replace
+it with the homogeneous EPR L4 certificate. This prevents mixed EPR/Verus
+evidence from being projected under one item-level Verus classification.
 
 Stage 2 proved the shape of the stratified encoder, but left relation and
 array-property atoms interpreted by the solver. Stage 3 added checked replay for

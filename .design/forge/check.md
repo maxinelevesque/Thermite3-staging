@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: a129ac3391e1f9a6647965d4daee772476aab148bf26d0391f76144adfa10334 (re-pinned 2026-08-16 after clippy-only removal of needless source-reference borrows; homogeneous general-Verus binding semantics are unchanged. prior: 2a0f89f63bd7f15579b718e3ea2ef296c2e7c5edcc0067f9abf942f504ce7a96)
+audited-content-sha256: 9c73c125e9f048026c560fc74834b6d2aeb1480a0aaf8b626bd84bd1ced745d1 (re-pinned 2026-08-16 after domain-separating auxiliary queries and excluding partial EPR evidence from authoritative item certificates. prior: a129ac3391e1f9a6647965d4daee772476aab148bf26d0391f76144adfa10334)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -259,11 +259,14 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   assembly. Proof installs all/incomplete/solver; counterexample, a timeout that
   does not successfully degrade,
   mutation-floor rejection, and semantic tautology/vacuity rejection retain
-  the same classification and query identity with none/none/fiat. The cache
-  schema bump prevents legacy cached L3 rows from bypassing attachment. Mixed
+  the same classification and query identity with none/none/fiat. Cache schema
+  9 domain-separates main-item, mutation, equivalence, and strengthening queries,
+  and a main hit must match the fresh artifact without regaining audit authority. Mixed
   clause solver routes are excluded until clause-level coordinates exist.
   A successful timeout descent replaces the provisional Verus non-claim with
   the achieved Kani or runtime route's artifact and coordinates.
+  Partial EPR reconstruction is kept out of the authoritative item certificate;
+  only all-clause reconstruction may replace the base certificate with EPR L4.
 
 ## Acceptance criteria
 

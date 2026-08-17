@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 7aa2f6a95a6942b316558008605a1a7eea698ece21518c57c3f2f7904f3e1d8b (re-pinned 2026-08-16 after clippy-only removal of needless borrows in the shared general-Verus path; mutual-recursion behavior is unchanged. prior: d120dca7287bc743b541b4913355a348d5ad235938b50e5ba7097d6ba7756917)
+audited-content-sha256: 36298756ccc6e258ae4a6d2be393a2aedbd7ed93553caca9b51553ed612d7bbd (re-pinned 2026-08-16 after RFC-3 cache-domain and partial-EPR repairs in shared check.rs; mutual-recursion behavior is unchanged. prior: 7aa2f6a95a6942b316558008605a1a7eea698ece21518c57c3f2f7904f3e1d8b)
 governs: forge/src/check.rs
 governs: thermite-lower/src/lower.rs
 thesis-refs:

@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: c2c3c2f42f6c330bd7d7c159954b87800e587ea5edb781b4cc3bc7b990a6e54b (re-pinned 2026-08-16 after clippy-only removal of needless borrows in the general-Verus path; ergonomics desugaring and match behavior are unchanged. prior: f702ac84837aae1d4e9ed81a8f3869e9f1807c4c67b8409d5d6d34263f1f6a90)
+audited-content-sha256: db47dfabb39c17d97a69818ffbc2394b7937d926a33f0eefafe955795d79a311 (re-pinned 2026-08-16 after RFC-3 cache-domain and partial-EPR repairs in shared check.rs; ergonomics behavior is unchanged. prior: c2c3c2f42f6c330bd7d7c159954b87800e587ea5edb781b4cc3bc7b990a6e54b)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

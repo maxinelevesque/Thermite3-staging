@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: c590ed0899f81c12155cce4ef5f343783e0a427c9122a5c366ab20ea3822834a (re-pinned 2026-08-16 for opaque general-Verus attachment and live audit authority: proof and non-claim retain one pre-execution query classification. Historical bare L3 remains readable and mixed routes remain open. prior: 414ba52415836c587cd509249a8cdf7991173add3fc6560fb438b86ceb263ad6)
+audited-content-sha256: dca1fc73262141d34c44b20d2f2f3d424c8f4f4fe78d03e31aa5beb1e5240ff1 (re-pinned 2026-08-16 for fail-closed main-cache replay against the fresh artifact without restoring audit authority. Historical bare L3 remains readable. prior: c590ed0899f81c12155cce4ef5f343783e0a427c9122a5c366ab20ea3822834a)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -82,6 +82,10 @@ certificate gained a family of ADDITIVE fields — see the Amendment.
 > item-level fragment.
 > A timeout that successfully degrades is represented by the achieved Kani or
 > runtime artifact rather than by this superseded Verus non-claim.
+> Main cache replay must structurally match the fresh artifact and never restores
+> audit authority. Partial EPR reconstruction is not appended to this
+> authoritative Verus item certificate; only complete homogeneous reconstruction
+> may replace it with the EPR result.
 
 > **Amendment 2026-06-12 (doc-freshness re-audit, #262).** Re-verified against the
 > current tree (`dff9ae86`, 12 post-pin commits to `manifest.rs`). Corrections and

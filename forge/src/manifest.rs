@@ -1642,6 +1642,37 @@ impl Certificate {
                 .ok_or(IncoherentCertificationPosition {
                     reason: "migrated Verus evidence requires live artifact authority",
                 })?;
+        self.validate_verus_evidence_against(authority)
+    }
+
+    /// Validate a deserialized main-item cache candidate against the artifact
+    /// freshly constructed for this invocation. This deliberately does not mint
+    /// or restore audit authority; audit continues to reject serialized values.
+    pub(crate) fn persisted_verus_artifact_matches(
+        &self,
+        artifact: &thermite_lower::L3Artifact,
+    ) -> bool {
+        let succeeded = match self.level {
+            Level::L3 => true,
+            Level::L0 => false,
+            _ => return false,
+        };
+        let effects = artifact
+            .effect_row()
+            .map_or_else(|| vec!["pure".to_string()], effects_of);
+        let authority = VerusAuditAuthority {
+            item: artifact.item().to_string(),
+            effects,
+            query_identity: artifact.query_identity().to_string(),
+            succeeded,
+        };
+        self.validate_verus_evidence_against(&authority).is_ok()
+    }
+
+    fn validate_verus_evidence_against(
+        &self,
+        authority: &VerusAuditAuthority,
+    ) -> Result<(), IncoherentCertificationPosition> {
         let expected_level = if authority.succeeded {
             Level::L3
         } else {
@@ -2588,6 +2619,40 @@ mod tests {
             hostile.as_object_mut().unwrap().remove("classification");
             let decoded: Certificate = serde_json::from_value(hostile).unwrap();
             assert!(decoded.rfc3_coordinates().is_err());
+        }
+
+        #[test]
+        fn main_cache_replay_requires_the_fresh_artifact_without_restoring_authority() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+            let cert = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, true)
+                .unwrap();
+            let decoded: Certificate =
+                serde_json::from_value(serde_json::to_value(cert).unwrap()).unwrap();
+            assert!(decoded.persisted_verus_artifact_matches(&artifact));
+            assert!(!decoded.is_audit_admitted());
+
+            let bare: Certificate = serde_json::from_value(
+                serde_json::to_value(Certificate::new(
+                    "f",
+                    Level::L3,
+                    vec!["pure".into()],
+                    0,
+                    vec![],
+                ))
+                .unwrap(),
+            )
+            .unwrap();
+            assert!(!bare.persisted_verus_artifact_matches(&artifact));
+
+            let changed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 99 ensures result == x { x }",
+            );
+            let changed = thermite_lower::lower_l3_artifact(&changed.program, "f").unwrap();
+            assert!(!decoded.persisted_verus_artifact_matches(&changed));
         }
 
         #[test]

@@ -784,8 +784,15 @@ pub fn check_file_with_options(
                 // solver-vacuity reject was cached like a proof verdict, so a hit
                 // serves it without re-running the two harness queries (the cache
                 // hit is a verus-free path end-to-end).
-                certs.push(stored.with_cached(true));
-                continue;
+                // A schema-current entry may still have been produced by an
+                // auxiliary query in an older undomained keyspace. Accept a
+                // main-item hit only when its persisted pair matches the fresh
+                // pre-execution artifact. Validation never restores private
+                // audit authority across the serialization boundary.
+                if stored.persisted_verus_artifact_matches(&l3_artifact) {
+                    certs.push(stored.with_cached(true));
+                    continue;
+                }
             }
         }
 
@@ -2014,43 +2021,47 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
             continue;
         }
 
-        let every_clause_reconstructed = reconstructed.len() == function.contract.ensures.len();
-        if every_clause_reconstructed {
-            // A base-engine counterexample contradicting a kernel-checked EPR proof
-            // is a soundness alarm, not permission to silently replace either
-            // verdict. Keep it as a named, non-certifying result.
-            if cert.reject.as_ref().map(|reject| reject.cause.as_str()) == Some("Counterexample") {
-                out.push(epr_failure_cert(
-                    &function.name,
-                    &cert.effects,
-                    function.slag.is_some(),
-                    0,
-                    "EprVerifierDisagreement: the base engine reported a counterexample \
-                     while Lean kernel replay proved every admitted S₂.0 clause",
-                    &epr_undecided_attribution(),
-                ));
-                continue;
-            }
-            out.push(
-                Certificate::new(
-                    function.name.clone(),
-                    Level::L4,
-                    cert.effects.clone(),
-                    0,
-                    reconstructed,
-                )
-                .graduate_triage_clean()
-                .with_engine_attribution(epr_attribution()),
-            );
-        } else {
-            // EPR migrated the relation/sequence clauses, but the remaining
-            // clauses retain the base engine's verdict and item-level rung.
-            let mut mixed = cert;
-            mixed.obligations.extend(reconstructed);
-            out.push(mixed);
-        }
+        out.push(finish_epr_reconstruction(cert, function, reconstructed));
     }
     out
+}
+
+/// Settle successful EPR reconstruction without inventing item-level
+/// aggregation for a mixed clause portfolio. Only complete reconstruction may
+/// replace the base certificate with the homogeneous EPR L4 result. A partial
+/// result is deliberately not appended to the authoritative certificate: the
+/// base route remains intact until clause-level RFC-3 coordinates and an
+/// aggregation rule exist.
+fn finish_epr_reconstruction(
+    cert: Certificate,
+    function: &thermite_syntax::FnItem,
+    reconstructed: Vec<ObligationResult>,
+) -> Certificate {
+    if reconstructed.len() != function.contract.ensures.len() {
+        return cert;
+    }
+    // A base-engine counterexample contradicting a kernel-checked EPR proof
+    // is a soundness alarm, not permission to silently replace either verdict.
+    if cert.reject.as_ref().map(|reject| reject.cause.as_str()) == Some("Counterexample") {
+        return epr_failure_cert(
+            &function.name,
+            &cert.effects,
+            function.slag.is_some(),
+            0,
+            "EprVerifierDisagreement: the base engine reported a counterexample \
+             while Lean kernel replay proved every admitted S₂.0 clause",
+            &epr_undecided_attribution(),
+        );
+    }
+    Certificate::new(
+        function.name.clone(),
+        Level::L4,
+        cert.effects.clone(),
+        0,
+        reconstructed,
+    )
+    .graduate_triage_clean()
+    .with_engine_attribution(epr_attribution())
 }
 
 fn clean_l3_base(cert: &Certificate) -> bool {
@@ -6900,7 +6911,8 @@ fn mutation_score(
         // versions, so it caches like any item. The row is passed for the same
         // item the mutant derives from (REQ-1e), keeping one keyspace rule
         // across both consumers of this cache.
-        let key = cache::cache_key(
+        let key = cache::cache_key_for_role(
+            cache::CacheQueryRole::Mutation,
             &lowered,
             seed,
             verus_version,
@@ -7067,7 +7079,8 @@ fn equivalence_proves_equal(
     // `Program` purely to feed `run_verus`'s label machinery; `run_verus` now takes
     // the subject name directly, so the wrapper (and its `f.clone()`) is gone.
     // REQ-1e: `f`'s declared row, for the same keyspace rule the L3 path uses.
-    let key = cache::cache_key(
+    let key = cache::cache_key_for_role(
+        cache::CacheQueryRole::Equivalence,
         &obligation,
         seed,
         verus_version,
@@ -7200,7 +7213,8 @@ fn strengthen_certificate(
             Ok(s) => s,
             Err(_) => return Ok(false),
         };
-        let key = cache::cache_key(
+        let key = cache::cache_key_for_role(
+            cache::CacheQueryRole::Strengthening,
             &lowered,
             seed,
             verus_version,
@@ -8745,6 +8759,35 @@ requires true\n\
             evidence.checker.contains("term-producing LRAT"),
             "evidence must name the actual checker path: {}",
             evidence.checker
+        );
+    }
+
+    #[test]
+    fn partial_epr_reconstruction_does_not_enter_the_authoritative_item_certificate() {
+        let parsed = thermite_syntax::parse(
+            "fn mixed(xs: Vec<u64>) -> u64 ! pure \
+             requires xs.len() > 0 \
+             ensures forall (i : usize) in xs. xs[i] == xs[i] \
+             ensures result == 0 { 0 }",
+        );
+        assert!(parsed.is_clean(), "fixture must parse: {:?}", parsed.errors);
+        let Item::Fn(function) = &parsed.program.items[0] else {
+            panic!("fixture must contain a function");
+        };
+        let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "mixed").unwrap();
+        let base = Certificate::new("mixed", Level::L3, vec!["pure".into()], 0, vec![])
+            .with_verus_artifact(&artifact, true)
+            .unwrap();
+        let settled = finish_epr_reconstruction(
+            base.clone(),
+            function,
+            vec![ObligationResult::discharged("supplemental EPR clause")],
+        );
+        assert_eq!(settled, base);
+        assert!(settled.obligations.is_empty());
+        assert_eq!(
+            settled.classification.as_ref().unwrap().fragment,
+            "thermite-verus-v1"
         );
     }
 

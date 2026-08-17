@@ -131,7 +131,11 @@ const DOMAIN: &[u8] = b"thermite.forge.proof-cache.v1";
 ///       its query identity and classification on proof or non-claim. A schema-7
 ///       cached certificate predates that authority and cannot be upgraded after
 ///       deserialization, so it must miss and be produced again under schema 8.
-const CHECK_SCHEMA_VERSION: u32 = 8;
+///   9 — RFC-3 cache-domain repair: main-item, mutation, equivalence, and
+///       strengthening queries now have distinct key roles, and partial EPR
+///       evidence no longer enters an item-level certificate without a defined
+///       aggregation. Schema-8 entries predate both verdict-affecting rules.
+const CHECK_SCHEMA_VERSION: u32 = 9;
 
 thread_local! {
     static REUSE_SUPPRESSED: Cell<bool> = const { Cell::new(false) };
@@ -197,7 +201,48 @@ pub fn default_cache_dir() -> PathBuf {
 /// This function is pure: no wall-clock, no environment beyond the
 /// explicitly-passed arguments (R-CODE-5). Identical inputs ⇒ identical key;
 /// a differing input ⇒ a different key ⇒ a miss ⇒ re-verify.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CacheQueryRole {
+    MainItem,
+    Mutation,
+    Equivalence,
+    Strengthening,
+}
+
+impl CacheQueryRole {
+    fn tag(self) -> &'static [u8] {
+        match self {
+            Self::MainItem => b"main-item",
+            Self::Mutation => b"mutation",
+            Self::Equivalence => b"equivalence",
+            Self::Strengthening => b"strengthening",
+        }
+    }
+}
+
 pub fn cache_key(
+    lowered_src: &str,
+    seed: u64,
+    verus_version: &str,
+    thermite_version: &str,
+    effect_row: &[String],
+) -> String {
+    cache_key_for_role(
+        CacheQueryRole::MainItem,
+        lowered_src,
+        seed,
+        verus_version,
+        thermite_version,
+        effect_row,
+    )
+}
+
+/// Content address for a specific proof-query role. Auxiliary mutation,
+/// equivalence, and strengthening results must never be replayed as the main
+/// item certificate even when their lowered source later becomes identical to
+/// an authored item.
+pub fn cache_key_for_role(
+    role: CacheQueryRole,
     lowered_src: &str,
     seed: u64,
     verus_version: &str,
@@ -206,6 +251,7 @@ pub fn cache_key(
 ) -> String {
     let mut hasher = Sha256::new();
     hasher.update(DOMAIN);
+    field(&mut hasher, b"query-role", role.tag());
     field(&mut hasher, b"lowered", lowered_src.as_bytes());
     field(&mut hasher, b"seed", &seed.to_le_bytes());
     field(&mut hasher, b"verus", verus_version.as_bytes());
@@ -581,6 +627,25 @@ mod tests {
             cache_key("fn f() {}", 0, VERUS, THERMITE, &["write(log)".to_string()]),
             "a differing declared row must change the key"
         );
+    }
+
+    #[test]
+    fn auxiliary_query_roles_cannot_alias_the_main_item_keyspace() {
+        let args = ("fn f() {}", 0, VERUS, THERMITE, pure_row());
+        let main = cache_key(args.0, args.1, args.2, args.3, &args.4);
+        let roles = [
+            CacheQueryRole::Mutation,
+            CacheQueryRole::Equivalence,
+            CacheQueryRole::Strengthening,
+        ];
+        let auxiliary: Vec<_> = roles
+            .into_iter()
+            .map(|role| cache_key_for_role(role, args.0, args.1, args.2, args.3, &args.4))
+            .collect();
+        assert!(auxiliary.iter().all(|key| key != &main));
+        assert_ne!(auxiliary[0], auxiliary[1]);
+        assert_ne!(auxiliary[1], auxiliary[2]);
+        assert_ne!(auxiliary[0], auxiliary[2]);
     }
 
     // REQ-1e: the row is a SEQUENCE, so order and boundaries are significant.

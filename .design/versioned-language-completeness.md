@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 2bb2c98a4f378791182576deeda013c292c207871a43ea72488ea5fd342389cb (issue-48 RFC-3 homogeneous general-Verus migration, 2026-08-16: final clippy cleanup preserves opaque pre-execution query identity and live authority on proof and non-claim outcomes. Mixed clause routes, aggregation, displays, and final Lx retirement remain open. prior: b778982569d434ff188bc91de33972a21f89c0620826e103a980c105cf049df9)
+audited-content-sha256: f2c285461a5f66382526d1bc8726af474147a51c58f6cbf1a5eccac100b280b1 (issue-48 RFC-3 general-Verus repair, 2026-08-16: auxiliary cache roles are separated, main replay matches the fresh artifact, and the inventory records partial EPR evidence outside authoritative item coordinates. Clause aggregation, displays, and final Lx retirement remain open. prior: 663012b596a1bbfd020e21eea516509b234449311140a078b6d09b44e1e43728)
 
 ## Summary
 
@@ -287,8 +287,9 @@ assembly cannot substitute an item, effects row, query digest, classifier, or
 legacy level. Audit additionally requires the live producer authority retained
 by artifact attachment and revalidates the persisted row before projection.
 Deserialized and historical bare L3 documents remain readable compatibility
-data, but cannot become current audit authority. The proof-cache schema is
-bumped so a pre-migration cached Verus certificate cannot bypass this producer.
+data, but cannot become current audit authority. Proof-cache schema 9 separates
+main-item, mutation, equivalence, and strengthening query roles; a main hit must
+also match the freshly constructed artifact without regaining audit authority.
 When a timeout successfully descends to Kani or runtime enforcement, the final
 certificate truthfully carries that achieved route's artifact and coordinates
 instead of retaining the superseded Verus non-claim.
@@ -298,6 +299,10 @@ bit-vector, nonlinear, EPR, or Lean clause portfolios. Those routes need
 clause-level classification and discharge coordinates (and an explicit
 aggregation rule) before migration; choosing one representative item label
 would invent evidence about clauses executed under a different procedure.
+Accordingly, a partial EPR reconstruction remains outside the authoritative
+item certificate: only reconstruction of every clause may replace the base row
+with the homogeneous EPR result. The partial evidence is not appended under the
+Verus item classification.
 
 ### Proved display projection
 
