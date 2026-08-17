@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: bf136331691756bf2ad432d5c9a4922edd1038650968b25a9d4792b51ce52e0e (re-pinned 2026-08-16 after re-auditing the RFC-3 coordinate migration: certificates add typed scope/refutation/residual-trust/boundary coordinates and a typed pre-discharge classification slot; coherence rejects cells outside RFC-3 and historical L2 remains unmigrated because Level never stored its bound. Lx remains temporarily live, so REQ-COMPLETE-RFC3-COORDINATES is still partial. prior: 7d7fe9e43f6200cd8c90248797aeedf763e77e7cfbc2edcedd58c3b37160a998)
+audited-content-sha256: afc356eac033a063dfd714243b4000ed330cbcd3bff194e6e7e604f3ce1e9115 (re-pinned 2026-08-16 for atomic position/classification attachment with fail-closed coherence and classifier-identity validation. Lx remains live outside the migrated Kani path. prior: bf136331691756bf2ad432d5c9a4922edd1038650968b25a9d4792b51ce52e0e)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1

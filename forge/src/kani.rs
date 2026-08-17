@@ -56,7 +56,11 @@ use std::process::Command;
 use std::time::Instant;
 
 use crate::cli::ForgeError;
-use crate::manifest::{Certificate, Level, ObligationResult, ObligationStatus};
+use crate::manifest::{
+    Certificate, CertificationBoundary, CertificationPosition, CertificationScope,
+    ClassificationCertificate, ClassificationVerdict, Level, ObligationResult, ObligationStatus,
+    RefutationChannel, ResidualTrust,
+};
 
 /// The parsed result of one Kani run: the assurance level (L2 on success, L0 on a
 /// reported counterexample) plus the per-obligation results (REQ-5) and the
@@ -66,6 +70,9 @@ pub struct L2Result {
     /// `Level::L2` on `verification:- successful`; `Level::L0` on a reported
     /// counterexample (a non-L2 result, not a false pass, REQ-5/§6).
     pub level: Level,
+    /// Exact Kani exploration bound supplied to the run. This is formal input,
+    /// not reconstructed from the human-readable obligation message.
+    pub bound: String,
     /// The per-obligation witnesses: one discharged obligation recording the
     /// bound on success, or the failed `Failed Checks:` lines on a counterexample.
     pub obligations: Vec<ObligationResult>,
@@ -232,6 +239,7 @@ fn parse_kani_output(
         // bound caveat (REQ-6 / AC-6).
         return Ok(L2Result {
             level: Level::L2,
+            bound: bound.to_string(),
             obligations: vec![ObligationResult::discharged(format!(
                 "bounded model check passed ({bound})"
             ))],
@@ -254,6 +262,7 @@ fn parse_kani_output(
     };
     Ok(L2Result {
         level: Level::L0,
+        bound: bound.to_string(),
         obligations,
         solver_time_ms,
     })
@@ -420,21 +429,26 @@ pub fn assemble_l2_certificate(item: &str, effects: Vec<String>, result: &L2Resu
     if result.level != Level::L2 {
         return cert;
     }
-    let bound = result
-        .obligations
-        .iter()
-        .find(|obligation| obligation.status == ObligationStatus::Discharged)
-        .map(|obligation| obligation.name.clone())
-        .expect("an L2 result always records its bounded-check obligation");
-    cert.with_certification(crate::manifest::CertificationPosition {
-        scope: crate::manifest::CertificationScope::Bounded {
-            bound: bound.clone(),
+    assert!(
+        !result.bound.trim().is_empty(),
+        "an L2 result must carry its exact non-empty Kani bound"
+    );
+    let bound = result.bound.clone();
+    cert.with_rfc3_coordinates(
+        CertificationPosition {
+            scope: CertificationScope::Bounded {
+                bound: bound.clone(),
+            },
+            refutation: RefutationChannel::Trace { bound },
+            residual_trust: ResidualTrust::Solver,
+            discharged_trust: Vec::new(),
+            boundary: CertificationBoundary::EndToEnd,
         },
-        refutation: crate::manifest::RefutationChannel::Trace { bound },
-        residual_trust: crate::manifest::ResidualTrust::Solver,
-        discharged_trust: Vec::new(),
-        boundary: crate::manifest::CertificationBoundary::EndToEnd,
-    })
+        ClassificationCertificate {
+            fragment: "thermite-kani-v1".to_string(),
+            verdict: ClassificationVerdict::Admitted,
+        },
+    )
     .expect("the Kani bounded/trace position is coherent by construction")
 }
 
@@ -578,6 +592,7 @@ mod tests {
     fn classify_l2_successful_is_verified() {
         let r = L2Result {
             level: Level::L2,
+            bound: "unwind 5".to_string(),
             obligations: vec![ObligationResult::discharged("bounded model check passed")],
             solver_time_ms: 5,
         };
@@ -591,6 +606,7 @@ mod tests {
     fn classify_l2_unwinding_assertion_is_under_bound() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 2".to_string(),
             obligations: vec![ObligationResult::failed(
                 "unwinding assertion loop 0",
                 None,
@@ -612,6 +628,7 @@ mod tests {
     fn classify_l2_real_assertion_is_counterexample() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 5".to_string(),
             obligations: vec![ObligationResult::failed(
                 "assertion failed: result == spec_sum(xs)",
                 Some("src/lib.rs:22".to_string()),
@@ -637,6 +654,7 @@ mod tests {
     fn classify_l2_assertion_with_unwind_substring_is_counterexample() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 5".to_string(),
             obligations: vec![ObligationResult::failed(
                 "assertion failed: result == unwind_count(n)",
                 Some("src/lib.rs:22".to_string()),
@@ -661,6 +679,7 @@ mod tests {
     fn classify_l2_mixed_failure_is_counterexample() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 5".to_string(),
             obligations: vec![
                 ObligationResult::failed("assertion failed: result == spec_sum(xs)", None, None),
                 ObligationResult::failed("unwinding assertion loop 0", None, None),
@@ -677,6 +696,7 @@ mod tests {
     fn classify_l2_ambiguous_failure_is_counterexample() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 5".to_string(),
             obligations: vec![],
             solver_time_ms: 0,
         };
@@ -689,6 +709,7 @@ mod tests {
     fn bound_recorded_on_l2_cert() {
         let res = L2Result {
             level: Level::L2,
+            bound: BOUND.to_string(),
             obligations: vec![ObligationResult::discharged(format!(
                 "bounded model check passed ({BOUND})"
             ))],
@@ -698,5 +719,25 @@ mod tests {
         assert_eq!(cert.level, Level::L2);
         assert_ne!(cert.level, Level::L3);
         assert!(cert.obligations[0].name.contains("slice <= 4, unwind 5"));
+        let position = cert.certification.expect("L2 must carry RFC-3 coordinates");
+        assert_eq!(
+            position.scope,
+            CertificationScope::Bounded {
+                bound: BOUND.to_string()
+            }
+        );
+        assert_eq!(
+            position.refutation,
+            RefutationChannel::Trace {
+                bound: BOUND.to_string()
+            }
+        );
+        assert_eq!(
+            cert.classification,
+            Some(ClassificationCertificate {
+                fragment: "thermite-kani-v1".to_string(),
+                verdict: ClassificationVerdict::Admitted,
+            })
+        );
     }
 }

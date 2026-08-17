@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 4b1c0525e5e06df545113393679f6a9bc945a3370e63fcf07738a794a3bba9e6 (issue-48 RFC-3 coordinate checkpoint, 2026-08-16: re-audited typed coherent cells, partial order, certificate/audit projection, classification slot, exact Kani bounded/trace production, and the R2-1/R2-4/R2-5/R2-6/R2-8 partial inventory transitions. Lx retirement, declared floors/frontier, and complete classifier wiring remain open, so the requirement remains partial.)
+audited-content-sha256: db8ab13ecb2209ae539a222e5593d26862dcc0405926a6e956561a8971363352 (issue-48 RFC-3 Kani migration checkpoint, 2026-08-16: successful L2 production now carries structured exact bounds, atomic position/classification coordinates, and verbatim audit projection. Other producers, aggregation, displays, and Lx retirement remain open.)
 
 ## Summary
 
@@ -222,6 +222,18 @@ not grounds to retain `Level` as a second authority. The migration follows
 RFC-3 and `.design/rfcs/0004-versioning.md`: formal coordinates and certificate
 schema versioning land before removal of Lx, and historical L3 artifacts remain
 explicitly ambiguous rather than receiving an invented translation.
+
+The first production migration cut is the successful Kani L2 path. `L2Result`
+now retains the exact exploration bound as structured producer data rather than
+asking certificate assembly to recover it from an obligation sentence.
+`assemble_l2_certificate` atomically installs a coherent bounded-scope/trace
+position and the versioned `thermite-kani-v1` admitted classification; the audit
+manifest copies both objects verbatim. A bare historical `Level::L2` still maps
+to no position because it contains no bound. The migrated Kani constructor
+rejects empty classifier identities and unequal bounded/trace coordinates and
+does not expose a position-only success path.
+This migrates one end-to-end producer without claiming that the remaining L0,
+L1, L3, L4, project aggregation, or display consumers have retired `Level`.
 
 ### Proved display projection
 

@@ -1333,14 +1333,23 @@ impl Certificate {
         self
     }
 
-    /// Replace the migration bridge with an explicitly classified RFC-3
-    /// position. Incoherent tuples never enter a certificate.
-    pub fn with_certification(
+    /// Atomically attach the RFC-3 post-classification position and the
+    /// pre-discharge classifier prognosis. This is the migration seam for new
+    /// producers: neither half is persisted when the position is incoherent or
+    /// the classifier identity is empty.
+    pub fn with_rfc3_coordinates(
         mut self,
         position: CertificationPosition,
+        classification: ClassificationCertificate,
     ) -> Result<Self, IncoherentCertificationPosition> {
         position.validate()?;
+        if classification.fragment.trim().is_empty() {
+            return Err(IncoherentCertificationPosition {
+                reason: "classification fragment identity must be non-empty",
+            });
+        }
         self.certification = Some(position);
+        self.classification = Some(classification);
         Ok(self)
     }
 
@@ -1911,7 +1920,31 @@ mod tests {
                 ResidualTrust::Fiat,
             );
             assert!(Certificate::new("f", Level::L3, vec![], 0, vec![])
-                .with_certification(bad)
+                .with_rfc3_coordinates(
+                    bad,
+                    ClassificationCertificate {
+                        fragment: "thermite-test-v1".to_string(),
+                        verdict: ClassificationVerdict::Admitted,
+                    },
+                )
+                .is_err());
+        }
+
+        #[test]
+        fn empty_classifier_identity_fails_closed() {
+            let valid = position(
+                CertificationScope::All,
+                RefutationChannel::Incomplete,
+                ResidualTrust::Solver,
+            );
+            assert!(Certificate::new("f", Level::L3, vec![], 0, vec![])
+                .with_rfc3_coordinates(
+                    valid,
+                    ClassificationCertificate {
+                        fragment: "  ".to_string(),
+                        verdict: ClassificationVerdict::Admitted,
+                    },
+                )
                 .is_err());
         }
     }

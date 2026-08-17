@@ -775,6 +775,7 @@ fn lookup_contract<'a>(program: &'a Program, name: &str) -> Option<&'a Contract>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::kani::{assemble_l2_certificate, L2Result};
     use crate::manifest::{Certificate, SlagMeta};
 
     fn empty_program() -> Program {
@@ -1192,5 +1193,23 @@ mod tests {
             audit_json["functions"][1]["engine_attribution"]["engine"],
             "verus"
         );
+    }
+
+    #[test]
+    fn kani_rfc3_pair_survives_audit_projection_verbatim() {
+        let result = L2Result {
+            level: Level::L2,
+            bound: "slice <= 4, unwind 5".to_string(),
+            obligations: vec![crate::manifest::ObligationResult::discharged(
+                "bounded model check passed (slice <= 4, unwind 5)",
+            )],
+            solver_time_ms: 0,
+        };
+        let cert = assemble_l2_certificate("sum", vec!["pure".to_string()], &result);
+        let expected_position = cert.certification.clone();
+        let expected_classification = cert.classification.clone();
+        let audit = AuditManifest::from_certificates(&[cert], &empty_program(), toolchain());
+        assert_eq!(audit.functions[0].certification, expected_position);
+        assert_eq!(audit.functions[0].classification, expected_classification);
     }
 }
