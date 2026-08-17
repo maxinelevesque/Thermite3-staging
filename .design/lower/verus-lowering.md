@@ -3,8 +3,8 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 4c4ed207c04cb93c1cc685da83b466096a6e6925ed45960877ac1c378424a38e (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: b2f8b075048206ba61d1e33a1766597f613985b953b49745702d7ff5afdbe8c6.)
-governs: thermite-lower/src/lower.rs
+audited-content-sha256: 4cd6acfd5f508c5c4b69440423a8bb952230280500740642ce6eba25c1b36e9c (re-pinned 2026-08-16 for the opaque homogeneous L3Artifact and its query-identity tests; existing Verus emission semantics are unchanged. Prior digest: 4c4ed207c04cb93c1cc685da83b466096a6e6925ed45960877ac1c378424a38e.)
+governs: thermite-lower/src/lower.rs + thermite-lower/src/l3.rs
 thesis-refs:
   - thermite-design.md §3
   - thermite-design.md §4.1
@@ -32,6 +32,17 @@ This component is **SHIPPED** (issue **#4**, much extended since — REQ-status
 table). The exact verified Verus forms below were produced by running the real
 `verus 0.2026.05.24` binary during authoring; they are the lowering contract
 the implementation reproduces, not guesses. Post-pin arc note (#262 re-audit):
+
+The RFC-3 general-Verus migration wraps the existing lowering in
+`L3Artifact::lower_l3_artifact`. For one checked item it retains the exact
+isolated source, item, effect row, `thermite-verus-v1` classifier fragment, and
+a domain-separated SHA-256 query identity computed before solver execution.
+Those fields are private and exposed read-only, preventing certificate assembly
+from pairing independently authored metadata with another lowered query. This
+artifact describes only the homogeneous general-Verus route; mixed clause
+solver portfolios require clause-level artifacts and are intentionally not
+represented by this item-level wrapper.
+
 the #225–#238 spec-call PARAM-TYPE NARROWING threads a type-directed `as
 <callee's declared param type>` cast onto user-spec-fn call arguments across
 the loop / dec-measure / proof-aid / struct-keeps spec contexts

@@ -743,7 +743,9 @@ pub fn check_file_with_options(
             &parsed.program,
             item_subprogram(item, &item_spec_items, &fn_deps, &adt_deps),
         );
-        let lowered = thermite_lower::lower(&sub).map_err(ForgeError::Lower)?;
+        let l3_artifact =
+            thermite_lower::lower_l3_artifact(&sub, item.name()).map_err(ForgeError::Lower)?;
+        let lowered = l3_artifact.source();
 
         // #8 proof cache (`.design/forge/proof-cache.md` REQ-1/REQ-3): the lowered
         // source is the item's content-address — the bytes verus checks
@@ -772,7 +774,7 @@ pub fn check_file_with_options(
         // the lowered source, so without it two items differing only in their
         // row share an address and the second is served the first's cert.
         let item_row = item_effects(item);
-        let key = cache::cache_key(&lowered, seed, &verus_version, THERMITE_VERSION, &item_row);
+        let key = cache::cache_key(lowered, seed, &verus_version, THERMITE_VERSION, &item_row);
         if use_cache {
             if let Some(stored) = cache::load(&cache_dir, &key) {
                 // Hit: skip verus entirely (REQ-3, AC-1 — the solver-skip). The
@@ -839,7 +841,9 @@ pub fn check_file_with_options(
                     },
                     taut,
                     vac,
-                );
+                )
+                .with_verus_artifact(&l3_artifact, false)
+                .expect("the pre-Verus policy gate retains checked classification");
                 // A #13 reject is a settled, deterministic verdict (a function of the
                 // lowered contract + seed + versions), so it is cached like a
                 // counterexample cert: a re-check serves the hit without re-running
@@ -856,8 +860,8 @@ pub fn check_file_with_options(
         // Clean (or a `spec fn`, which carries no contract to check): the solver
         // runs the real L3 proof (REQ-3). Assemble the cert as the
         // non-cached path always has.
-        let verus = run_verus(&lowered, item.name(), seed, rlimit)?;
-        let cert = assemble_certificate(item, &verus);
+        let verus = run_verus(lowered, item.name(), seed, rlimit)?;
+        let cert = assemble_certificate(item, &verus, Some(&l3_artifact));
 
         // #10 automatic degrade ladder (`.design/forge/degrade-ladder.md`, the
         // default `forge check` path). On a `VerusOutcome::Timeout` (verus could
@@ -1002,6 +1006,8 @@ pub fn check_file_with_options(
                         score.mutants_killed_string(),
                         survivor,
                     )
+                    .with_verus_artifact(&l3_artifact, false)
+                    .expect("the post-Verus mutation gate retains the checked classification")
                     .with_mutation_score_and_equivalents(
                         score.mutants_killed_string(),
                         score.survivor.clone(),
@@ -6617,9 +6623,14 @@ pub(crate) fn item_effects(item: &Item) -> Vec<String> {
 ///   profile-derived `suggested_move`), distinct from a counterexample.
 /// - [`VerusOutcome::Counterexample`] → `Level::L0` with the per-obligation
 ///   witnesses (the existing #5 path), no profile.
-fn assemble_certificate(item: &Item, verus: &VerusResult) -> Certificate {
+fn assemble_certificate(
+    item: &Item,
+    verus: &VerusResult,
+    artifact: Option<&thermite_lower::L3Artifact>,
+) -> Certificate {
     let effects = item_effects(item);
-    match &verus.outcome {
+    let succeeded = matches!(&verus.outcome, VerusOutcome::Proved { .. });
+    let cert = match &verus.outcome {
         VerusOutcome::Proved { verified } => Certificate::new(
             item.name(),
             Level::L3,
@@ -6650,6 +6661,12 @@ fn assemble_certificate(item: &Item, verus: &VerusResult) -> Certificate {
             verus.solver_time_ms,
             obligations.clone(),
         ),
+    };
+    match artifact {
+        Some(artifact) => cert
+            .with_verus_artifact(artifact, succeeded)
+            .expect("checked Verus lowering and certificate assembly agree"),
+        None => cert,
     }
 }
 
@@ -6895,7 +6912,7 @@ fn mutation_score(
                 mutant_cert_is_survivor(&stored)
             } else {
                 let verus = run_verus(&lowered, item.name(), seed, rlimit)?;
-                let cert = assemble_certificate(&item, &verus);
+                let cert = assemble_certificate(&item, &verus, None);
                 let _ = cache::store(cache_dir, &key, &cert);
                 mutant_cert_is_survivor(&cert)
             }
@@ -7070,7 +7087,7 @@ fn equivalence_proves_equal(
             // the same cert shape the mutant kill-check stores, keyed on the
             // obligation source so a re-`forge check` serves it without re-spawning
             // verus.
-            let cert = assemble_certificate(&Item::Fn(f.clone()), &verus);
+            let cert = assemble_certificate(&Item::Fn(f.clone()), &verus, None);
             let _ = cache::store(cache_dir, &key, &cert);
             proved
         }
@@ -7195,7 +7212,7 @@ fn strengthen_certificate(
                 return Ok(mutant_cert_is_survivor(&stored));
             }
             let verus = run_verus(&lowered, item.name(), seed, rlimit)?;
-            let cert = assemble_certificate(&item, &verus);
+            let cert = assemble_certificate(&item, &verus, None);
             let _ = cache::store(cache_dir, &key, &cert);
             Ok(mutant_cert_is_survivor(&cert))
         } else {
@@ -7678,6 +7695,49 @@ fn measured(xs: &[u32]) -> u64
             Some("broken_check.rs:5:13"),
             "counterexample carries the basename source span, not the temp path"
         );
+    }
+
+    #[test]
+    fn verus_assembly_uses_pre_discharge_artifact_on_success_and_failure() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let item = parsed.program.items.first().unwrap();
+        let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+        let success = assemble_certificate(
+            item,
+            &VerusResult {
+                outcome: VerusOutcome::Proved { verified: 1 },
+                solver_time_ms: 1,
+            },
+            Some(&artifact),
+        );
+        let failure = assemble_certificate(
+            item,
+            &VerusResult {
+                outcome: VerusOutcome::Counterexample {
+                    obligations: vec![ObligationResult::failed(
+                        "postcondition not satisfied",
+                        None,
+                        None,
+                    )],
+                },
+                solver_time_ms: 1,
+            },
+            Some(&artifact),
+        );
+        for cert in [&success, &failure] {
+            assert_eq!(
+                cert.classification.as_ref().unwrap().fragment,
+                "thermite-verus-v1"
+            );
+            assert_eq!(
+                cert.certification.as_ref().unwrap().discharged_trust,
+                [artifact.query_identity()]
+            );
+        }
+        assert_eq!(success.level, Level::L3);
+        assert_eq!(failure.level, Level::L0);
     }
 
     // REQ-3 / AC-6: exit != 0 with unparseable output → ForgeError::VerusOutput

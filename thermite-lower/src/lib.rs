@@ -31,6 +31,7 @@ pub mod checked;
 pub mod effects;
 pub mod l1;
 pub mod l2;
+pub mod l3;
 pub mod locks;
 pub mod lower;
 pub mod witness;
@@ -42,6 +43,7 @@ pub use checked::{
 pub use effects::{analyze_effects, check_effects, subsumes, EffectAnalysis, EffectWarning};
 pub use l1::{lower_l1, lower_l1_artifact, lower_l1_with_lock_provider, L1Artifact, L1Route};
 pub use l2::{bound_string, lower_l2, lower_l2_artifact, L2Artifact};
+pub use l3::{lower_l3_artifact, L3Artifact};
 pub use locks::{program_uses_holding, LockProvider};
 pub use lower::{
     lower, lower_contract_expr, lower_equivalence_obligation,

@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 66ff41b211ca1f04d7f11c038583f93a9235e887e048e6f10fa55a28002c0fe6 (re-pinned 2026-08-16 after re-auditing all runtime-enforced L1 producers through checked artifact assembly; L3 routing, mutation, and solver semantics are unchanged. prior: fa6b7c888ab762c02d9a4fe11d40b8a4279db6ce61b2b738978bd3235a44b67f)
+audited-content-sha256: a129ac3391e1f9a6647965d4daee772476aab148bf26d0391f76144adfa10334 (re-pinned 2026-08-16 after clippy-only removal of needless source-reference borrows; homogeneous general-Verus binding semantics are unchanged. prior: 2a0f89f63bd7f15579b718e3ea2ef296c2e7c5edcc0067f9abf942f504ce7a96)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -251,6 +251,19 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   mismatch is a hard pipeline error, never a legacy position-only L1 success.
   The route classifiers remain distinct even though their formal assurance cell
   is shared.
+
+- REQ-10 (checked homogeneous Verus artifact before execution): the general
+  Verus path constructs `thermite_lower::L3Artifact` from the checked isolated
+  item before cache lookup or solver execution. The exact source, item, effects,
+  `thermite-verus-v1` fragment, and query digest stay bound through certificate
+  assembly. Proof installs all/incomplete/solver; counterexample, a timeout that
+  does not successfully degrade,
+  mutation-floor rejection, and semantic tautology/vacuity rejection retain
+  the same classification and query identity with none/none/fiat. The cache
+  schema bump prevents legacy cached L3 rows from bypassing attachment. Mixed
+  clause solver routes are excluded until clause-level coordinates exist.
+  A successful timeout descent replaces the provisional Verus non-claim with
+  the achieved Kani or runtime route's artifact and coordinates.
 
 ## Acceptance criteria
 

@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 1c8b31e1262bd92fb23e0b7a1b9d7b010fa9b68b11bbe223bff10f6b0ffdaa28 (re-pinned 2026-08-16 after re-auditing the shared check-file L1 artifact migration; dependency closure and L3 boundary weaving are unchanged. prior: 9ab701d74776b7a967b82c4a2bd47173fe4d4cfa9626e1aaf639715185cf6ef1)
+audited-content-sha256: 7aa2f6a95a6942b316558008605a1a7eea698ece21518c57c3f2f7904f3e1d8b (re-pinned 2026-08-16 after clippy-only removal of needless borrows in shared check.rs; dependency closure and L3 boundary weaving are unchanged. prior: d120dca7287bc743b541b4913355a348d5ad235938b50e5ba7097d6ba7756917)
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9

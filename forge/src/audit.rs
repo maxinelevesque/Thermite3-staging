@@ -323,6 +323,10 @@ impl FunctionRow {
             cert.validate_l1_artifact(&artifact, expected_scope)
                 .expect("audit rejects persisted L1 provenance substitution");
         }
+        if cert.requires_verus_artifact_validation() {
+            cert.validate_verus_artifact_authority()
+                .expect("audit rejects persisted Verus provenance substitution");
+        }
         FunctionRow {
             name: cert.item.clone(),
             level: cert.level,
@@ -1297,11 +1301,15 @@ mod tests {
         );
     }
 
-    fn assert_l1_audit_rejects(cert: Certificate, program: &Program) {
+    fn assert_audit_rejects(cert: Certificate, program: &Program) {
         let rejected = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             AuditManifest::from_certificates(&[cert], program, toolchain())
         }));
-        assert!(rejected.is_err(), "hostile persisted L1 row reached audit");
+        assert!(rejected.is_err(), "hostile certificate row reached audit");
+    }
+
+    fn assert_l1_audit_rejects(cert: Certificate, program: &Program) {
+        assert_audit_rejects(cert, program);
     }
 
     #[test]
@@ -1482,5 +1490,41 @@ mod tests {
             "the stripped shape remains compatibility-readable as data"
         );
         assert_l1_audit_rejects(hostile, &parsed.program);
+    }
+
+    #[test]
+    fn migrated_verus_pair_survives_projection_and_rejects_live_substitution() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+        let cert = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+            .with_verus_artifact(&artifact, true)
+            .unwrap()
+            .with_assurance_scope(AssuranceScope::EndToEnd);
+        let audit = AuditManifest::from_certificates(
+            std::slice::from_ref(&cert),
+            &parsed.program,
+            toolchain(),
+        );
+        assert_eq!(audit.functions[0].certification, cert.certification);
+        assert_eq!(audit.functions[0].classification, cert.classification);
+
+        let mut level = cert.clone();
+        level.level = Level::L4;
+        assert_audit_rejects(level, &parsed.program);
+
+        let mut item = cert.clone();
+        item.item = "renamed".into();
+        assert_audit_rejects(item, &parsed.program);
+
+        let mut query = cert.clone();
+        query.certification.as_mut().unwrap().discharged_trust =
+            vec!["thermite-verus-query-v1:f:sha256:invented".into()];
+        assert_audit_rejects(query, &parsed.program);
+
+        let mut classification = cert;
+        classification.classification.as_mut().unwrap().fragment = "thermite-kani-v1".into();
+        assert_audit_rejects(classification, &parsed.program);
     }
 }

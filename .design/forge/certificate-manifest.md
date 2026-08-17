@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: 414ba52415836c587cd509249a8cdf7991173add3fc6560fb438b86ceb263ad6 (re-pinned 2026-08-16 for non-serializable audit admission: deserialized certificates remain readable but cannot become audit authority. Historical unmarked L1 remains readable and Level remains live in other consumers. prior: c55ef1eb6c39b6fcf3e314e2360a3206e2ac6a5cd94b6c8da3cedd4760bdd641)
+audited-content-sha256: c590ed0899f81c12155cce4ef5f343783e0a427c9122a5c366ab20ea3822834a (re-pinned 2026-08-16 for opaque general-Verus attachment and live audit authority: proof and non-claim retain one pre-execution query classification. Historical bare L3 remains readable and mixed routes remain open. prior: 414ba52415836c587cd509249a8cdf7991173add3fc6560fb438b86ceb263ad6)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -63,6 +63,25 @@ certificate gained a family of ADDITIVE fields — see the Amendment.
 > proof-cache certificate reuse disabled. Therefore coordinated removal of every
 > marker plus a `Level` upgrade cannot turn attacker-controlled persistence into
 > a current claim.
+
+> **General Verus migration amendment, 2026-08-16.**
+> `Certificate::with_verus_artifact` accepts the opaque lowering artifact for
+> the same item and exact effects row. The artifact fixes
+> `thermite-verus-v1` and a SHA-256 identity of the isolated Verus source before
+> execution. A successful result atomically installs
+> all-inputs/incomplete/solver; an unsuccessful result installs the coherent
+> none/none/fiat non-claim while retaining the identical classification and
+> query identity. Counterexamples, non-degraded timeouts, mutation-floor failures, and
+> semantic tautology/vacuity failures therefore describe what was attempted
+> without turning failure into certification. Item, effect, query, classifier,
+> level, boundary, or success/failure substitution is rejected. As with migrated
+> L1, deserialization does not mint the private producer authority required by
+> audit. Historical bare L3 documents remain compatibility-readable. Mixed
+> clause portfolios remain unmigrated until clause-level coordinates and their
+> aggregation rule exist; this amendment does not collapse them into a single
+> item-level fragment.
+> A timeout that successfully degrades is represented by the achieved Kani or
+> runtime artifact rather than by this superseded Verus non-claim.
 
 > **Amendment 2026-06-12 (doc-freshness re-audit, #262).** Re-verified against the
 > current tree (`dff9ae86`, 12 post-pin commits to `manifest.rs`). Corrections and

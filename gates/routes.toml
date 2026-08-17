@@ -170,6 +170,18 @@ reference = ["tests/golden/lower"]
 conformance_ops = ["sum", "binary_search"]
 
 [[route]]
+crate_pattern = "thermite-lower/src/l3.rs"
+design = ".design/lower/verus-lowering.md"
+reference = ["thermite-lower/tests/l3_artifact.rs", ".design/rfcs/0003-certification-surface.md"]
+conformance_ops = ["lower_l3_artifact", "query_identity"]
+
+[[route]]
+crate_pattern = "thermite-lower/tests/l3_artifact.rs"
+design = ".design/lower/verus-lowering.md"
+reference = ["thermite-lower/src/l3.rs"]
+conformance_ops = ["classification-before-discharge", "query-substitution"]
+
+[[route]]
 crate_pattern = "thermite-lower/src/lower.rs"
 design = ".design/lower/struct-invariant-receiver-binding.md"
 reference = ["conformance/struct-invariant-receiver/repro.th"]
@@ -1366,6 +1378,24 @@ crate_pattern = "forge/src/audit.rs"
 design = ".design/versioned-language-completeness.md"
 reference = ["forge/src/manifest.rs", ".design/rfcs/0003-certification-surface.md"]
 conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/manifest.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["thermite-lower/src/l1.rs", "thermite-lower/src/l3.rs", ".design/rfcs/0003-certification-surface.md"]
+conformance_ops = ["CertificationPosition", "with_l1_artifact", "with_verus_artifact"]
+
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["thermite-lower/src/l3.rs", "forge/src/manifest.rs"]
+conformance_ops = ["assemble_certificate", "lower_l3_artifact"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/l3.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["forge/src/check.rs", "forge/src/manifest.rs"]
+conformance_ops = ["thermite-verus-v1", "query_identity"]
 
 [[route]]
 crate_pattern = "forge/tests/language_outcome_matrix.rs"

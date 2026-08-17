@@ -328,11 +328,11 @@ status = "open"
 stages = ["certification"]
 counterexample = "Two certificates with equal L3 projection but different engine/trust profiles."
 claimed = "Certification is a scope/refutation/trust@boundary coordinate rather than an Lx ladder."
-observed = "Checked Kani lowering now binds harness and exact bound in one opaque artifact, fixes thermite-kani-v1 classification before execution for success and failure, persists the resulting RFC-3 pair, and validates before audit projection. Other producers, project aggregation, and displays still keep Level live."
+observed = "Checked Kani, runtime L1, and homogeneous general-Verus lowering now bind the attempted source and route metadata in opaque artifacts, fix a route classifier before execution, persist coherent RFC-3 pairs on success and failure/non-claim, and require live producer validation before audit projection. Mixed clause solver routes, project aggregation, and displays still keep Level live."
 trust_consequence = "The scalar projection can continue to conflate incomparable assurance positions."
 disposition = "current_project"
 tracking_requirement = "REQ-COMPLETE-RFC3-COORDINATES"
-evidence = ["forge/src/manifest.rs", "forge/src/kani.rs", "forge/src/audit.rs", ".design/rfcs/0003-certification-surface.md"]
+evidence = ["forge/src/manifest.rs", "forge/src/kani.rs", "forge/src/check.rs", "forge/src/audit.rs", "thermite-lower/src/l1.rs", "thermite-lower/src/l3.rs", ".design/rfcs/0003-certification-surface.md"]
 
 [[gap]]
 id = "GAP-CLAIM-EVIDENCE-CLOSURE"
@@ -377,7 +377,7 @@ evidence = ["forge/src/manifest.rs", "forge/src/engine.rs"]
 [[rfc3_increment]]
 id = "R2-8"
 status = "partial"
-evidence = ["thermite-spec/src/classifier.rs", "forge/src/manifest.rs", "forge/src/kani.rs", "forge/src/audit.rs"]
+evidence = ["thermite-spec/src/classifier.rs", "forge/src/manifest.rs", "forge/src/kani.rs", "forge/src/check.rs", "forge/src/audit.rs", "thermite-lower/src/l1.rs", "thermite-lower/src/l3.rs"]
 [[rfc3_increment]]
 id = "R2-9"
 status = "absent"

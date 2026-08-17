@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: c9da396682d8781d9e5871214378d83580d5e20b01e4ecbc8217817d1c2694db (re-pinned 2026-08-16 after re-auditing non-serializable producer admission and coordinated L1 evidence-stripping rejection; project Level aggregation remains pending retirement. prior: 918547f7336d825b0a8616f93c05e134fa898b762c85c1baee3119173ddfc754)
+audited-content-sha256: 1bbe69e7e3839a9a6993bdf4ba4bd3ddb913f9e82779d6df649bb9a5a68fb7db (re-pinned 2026-08-16 after re-auditing live general-Verus artifact authority and substitution rejection; project Level aggregation remains pending retirement. prior: c9da396682d8781d9e5871214378d83580d5e20b01e4ecbc8217817d1c2694db)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6
@@ -57,6 +57,16 @@ non-serializable producer admission capability: direct certificate JSON is
 readable but is never audit authority. The live check pipeline mints admission,
 and the audit command disables proof-cache certificate reuse so its input cannot
 cross a serialization boundary before projection.
+
+The homogeneous general-Verus migration follows the same rule. Audit validates
+the live opaque artifact attachment before copying its classification and
+position: item, exact effects, isolated-query SHA-256 identity,
+`thermite-verus-v1` classifier, legacy level, success/non-claim position, and
+boundary must all agree. A retained Verus proof and non-claim retain the same pre-execution query
+classification; only discharge changes the position. A serialized row can be
+read for compatibility but has no producer authority, and a half-pair or
+substituted row cannot be projected as a current audit claim. Mixed clause
+solver routes remain outside this item-level cut pending clause coordinates.
 
 ## Decided scope
 

@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 99d722b08a68a66308f903c4fa107845b38ba7163350ea8f7261714656b37b8d (re-pinned 2026-08-16 after re-auditing exact L1 slag metadata provenance in shared lowering; ergonomics desugaring and match behavior are unchanged. prior: bb41d2546d7b67e38a35b4e06443889261dee10af990bc2b9541842ce475fab1)
+audited-content-sha256: c2c3c2f42f6c330bd7d7c159954b87800e587ea5edb781b4cc3bc7b990a6e54b (re-pinned 2026-08-16 after clippy-only removal of needless borrows in the general-Verus path; ergonomics desugaring and match behavior are unchanged. prior: f702ac84837aae1d4e9ed81a8f3869e9f1807c4c67b8409d5d6d34263f1f6a90)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

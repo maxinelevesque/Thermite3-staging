@@ -126,7 +126,12 @@ const DOMAIN: &[u8] = b"thermite.forge.proof-cache.v1";
 ///       stored under schema 6 must be re-checked under schema 7 (else
 ///       `forge check` serves a stale schema-6 `WeakContract` on an identical
 ///       lowered-source key, REQ-2: a hit must equal a fresh verify).
-const CHECK_SCHEMA_VERSION: u32 = 7;
+///   8 — RFC-3 homogeneous general-Verus migration: every current general-Verus
+///       result must be assembled from a pre-execution `L3Artifact`, retaining
+///       its query identity and classification on proof or non-claim. A schema-7
+///       cached certificate predates that authority and cannot be upgraded after
+///       deserialization, so it must miss and be produced again under schema 8.
+const CHECK_SCHEMA_VERSION: u32 = 8;
 
 thread_local! {
     static REUSE_SUPPRESSED: Cell<bool> = const { Cell::new(false) };

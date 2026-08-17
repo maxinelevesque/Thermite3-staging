@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: a4255787fb93fd8b867566c4139751aff5870bd4ab6495cf02639688b304334e (issue-48 RFC-3 runtime L1 repair, 2026-08-16: audit now requires live producer admission and rejects coordinated evidence stripping plus Level upgrade. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: e82253adc39144db8684284f56be6a0b4bd488ec4800ca3b823c821163b68164)
+audited-content-sha256: 2bb2c98a4f378791182576deeda013c292c207871a43ea72488ea5fd342389cb (issue-48 RFC-3 homogeneous general-Verus migration, 2026-08-16: final clippy cleanup preserves opaque pre-execution query identity and live authority on proof and non-claim outcomes. Mixed clause routes, aggregation, displays, and final Lx retirement remain open. prior: b778982569d434ff188bc91de33972a21f89c0620826e103a980c105cf049df9)
 
 ## Summary
 
@@ -274,6 +274,30 @@ live producer output reaches projection. This closes the otherwise
 indistinguishable coordinated attack that removes every L1 marker while changing
 the legacy scalar to `L3`.
 Project aggregation and display continue to consume `Level` during migration.
+
+The third production cut migrates the homogeneous general-Verus route. Checked
+L3 lowering now returns an opaque artifact containing the exact isolated source,
+routed item, effect row, a SHA-256 query identity derived from that source, and
+the `thermite-verus-v1` classifier fragment. Forge constructs this artifact
+before executing Verus. A proof occupies the all-inputs/incomplete/solver cell;
+a counterexample, a non-degraded timeout, mutation-floor rejection, or semantic
+tautology/vacuity rejection retains the same pre-discharge classification and
+query identity but occupies the none/none/fiat non-claim cell. Certificate
+assembly cannot substitute an item, effects row, query digest, classifier, or
+legacy level. Audit additionally requires the live producer authority retained
+by artifact attachment and revalidates the persisted row before projection.
+Deserialized and historical bare L3 documents remain readable compatibility
+data, but cannot become current audit authority. The proof-cache schema is
+bumped so a pre-migration cached Verus certificate cannot bypass this producer.
+When a timeout successfully descends to Kani or runtime enforcement, the final
+certificate truthfully carries that achieved route's artifact and coordinates
+instead of retaining the superseded Verus non-claim.
+
+This cut deliberately does not assign one item-level fragment to mixed
+bit-vector, nonlinear, EPR, or Lean clause portfolios. Those routes need
+clause-level classification and discharge coordinates (and an explicit
+aggregation rule) before migration; choosing one representative item label
+would invent evidence about clauses executed under a different procedure.
 
 ### Proved display projection
 

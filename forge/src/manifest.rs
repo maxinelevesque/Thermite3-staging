@@ -720,7 +720,27 @@ pub struct RejectReason {
 /// `contract_quality`, `effects`, `slag`; the #5 additive schema surface
 /// (`obligations` — REQ-5; `suggested_move` — REQ-4) follows.
 #[derive(Debug, Clone, Default)]
-struct AuditAdmission(bool);
+struct AuditAdmission {
+    live: bool,
+    verus: Option<VerusAuditAuthority>,
+}
+
+#[derive(Debug, Clone)]
+struct VerusAuditAuthority {
+    item: String,
+    effects: Vec<String>,
+    query_identity: String,
+    succeeded: bool,
+}
+
+impl AuditAdmission {
+    fn live() -> Self {
+        Self {
+            live: true,
+            verus: None,
+        }
+    }
+}
 
 // Admission is deliberately outside the stable data contract. Equality of the
 // serialized certificate remains equality of its public evidence; the in-memory
@@ -984,6 +1004,16 @@ impl Certificate {
                     reason: "migrated L1 certification requires its classification pair",
                 })
             }
+            (Some(position), None)
+                if position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-verus-query-v1:")) =>
+            {
+                Err(IncoherentCertificationPosition {
+                    reason: "migrated Verus certification requires its classification pair",
+                })
+            }
             (Some(position), Some(classification))
                 if self.level != Level::L1
                     && (position
@@ -994,6 +1024,17 @@ impl Certificate {
             {
                 Err(IncoherentCertificationPosition {
                     reason: "migrated L1 evidence requires the legacy Level::L1 projection",
+                })
+            }
+            (Some(position), Some(classification))
+                if position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-verus-query-v1:"))
+                    != classification.fragment.starts_with("thermite-verus-") =>
+            {
+                Err(IncoherentCertificationPosition {
+                    reason: "migrated Verus query evidence and classification must remain paired",
                 })
             }
             (position, classification) => Ok(position
@@ -1025,7 +1066,20 @@ impl Certificate {
     /// Whether this value came from a live producer (or the separately validated
     /// proof-cache boundary), rather than directly from attacker-mutable JSON.
     pub(crate) fn is_audit_admitted(&self) -> bool {
-        self.audit_admission.0
+        self.audit_admission.live
+    }
+
+    pub(crate) fn requires_verus_artifact_validation(&self) -> bool {
+        self.audit_admission.verus.is_some()
+            || self.classification.as_ref().is_some_and(|classification| {
+                classification.fragment.starts_with("thermite-verus-")
+            })
+            || self.certification.as_ref().is_some_and(|position| {
+                position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-verus-query-v1:"))
+            })
     }
 
     /// Assemble a #5 certificate from the pipeline data (REQ-2). `check.rs`
@@ -1044,7 +1098,7 @@ impl Certificate {
             level,
             certification: legacy_position(level),
             classification: None,
-            audit_admission: AuditAdmission(true),
+            audit_admission: AuditAdmission::live(),
             solver_time_ms,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1096,7 +1150,7 @@ impl Certificate {
             level: Level::L0,
             certification: legacy_position(Level::L0),
             classification: None,
-            audit_admission: AuditAdmission(true),
+            audit_admission: AuditAdmission::live(),
             solver_time_ms,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1158,7 +1212,7 @@ impl Certificate {
             level: Level::L1,
             certification: legacy_position(Level::L1),
             classification: None,
-            audit_admission: AuditAdmission(true),
+            audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1203,7 +1257,7 @@ impl Certificate {
             level: Level::L1,
             certification: legacy_position(Level::L1),
             classification: None,
-            audit_admission: AuditAdmission(true),
+            audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1249,7 +1303,7 @@ impl Certificate {
             level: Level::L0,
             certification: legacy_position(Level::L0),
             classification: None,
-            audit_admission: AuditAdmission(true),
+            audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1518,6 +1572,140 @@ impl Certificate {
         Ok(attached)
     }
 
+    /// Attach the homogeneous general-Verus route from checked lowering. The
+    /// classifier and query identity exist before solver execution and therefore
+    /// remain identical on proof success and every non-success outcome.
+    pub fn with_verus_artifact(
+        self,
+        artifact: &thermite_lower::L3Artifact,
+        succeeded: bool,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        let expected_level = if succeeded { Level::L3 } else { Level::L0 };
+        if self.level != expected_level || self.item != artifact.item() {
+            return Err(IncoherentCertificationPosition {
+                reason: "the Verus artifact item/outcome must match the certificate",
+            });
+        }
+        let expected_effects = artifact
+            .effect_row()
+            .map_or_else(|| vec!["pure".to_string()], effects_of);
+        if self.effects != expected_effects {
+            return Err(IncoherentCertificationPosition {
+                reason: "the Verus artifact effect row must match the certificate",
+            });
+        }
+        let (scope, refutation, residual_trust) = if succeeded {
+            (
+                CertificationScope::All,
+                RefutationChannel::Incomplete,
+                ResidualTrust::Solver,
+            )
+        } else {
+            (
+                CertificationScope::None,
+                RefutationChannel::None,
+                ResidualTrust::Fiat,
+            )
+        };
+        let mut attached = self.with_rfc3_coordinates(
+            CertificationPosition {
+                scope,
+                refutation,
+                residual_trust,
+                discharged_trust: vec![artifact.query_identity().to_string()],
+                boundary: CertificationBoundary::EndToEnd,
+            },
+            ClassificationCertificate {
+                fragment: artifact.classifier_fragment().to_string(),
+                verdict: ClassificationVerdict::Admitted,
+            },
+        )?;
+        attached.audit_admission.verus = Some(VerusAuditAuthority {
+            item: artifact.item().to_string(),
+            effects: expected_effects,
+            query_identity: artifact.query_identity().to_string(),
+            succeeded,
+        });
+        attached.validate_verus_artifact_authority()?;
+        Ok(attached)
+    }
+
+    /// Revalidate the persisted general-Verus coordinates against the private
+    /// live-producer facts retained across certificate transformations.
+    pub(crate) fn validate_verus_artifact_authority(
+        &self,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        let authority =
+            self.audit_admission
+                .verus
+                .as_ref()
+                .ok_or(IncoherentCertificationPosition {
+                    reason: "migrated Verus evidence requires live artifact authority",
+                })?;
+        let expected_level = if authority.succeeded {
+            Level::L3
+        } else {
+            Level::L0
+        };
+        if self.item != authority.item
+            || self.effects != authority.effects
+            || self.level != expected_level
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted Verus item/effects/outcome do not match live authority",
+            });
+        }
+        let classification =
+            self.classification
+                .as_ref()
+                .ok_or(IncoherentCertificationPosition {
+                    reason: "migrated Verus evidence requires its classification",
+                })?;
+        if classification.fragment != "thermite-verus-v1"
+            || classification.verdict != ClassificationVerdict::Admitted
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted Verus classification does not match live authority",
+            });
+        }
+        let position = self
+            .certification
+            .as_ref()
+            .ok_or(IncoherentCertificationPosition {
+                reason: "migrated Verus evidence requires its certification position",
+            })?;
+        let (scope, refutation, residual_trust) = if authority.succeeded {
+            (
+                CertificationScope::All,
+                RefutationChannel::Incomplete,
+                ResidualTrust::Solver,
+            )
+        } else {
+            (
+                CertificationScope::None,
+                RefutationChannel::None,
+                ResidualTrust::Fiat,
+            )
+        };
+        let boundary = match self.assurance_scope.as_ref() {
+            Some(AssuranceScope::ToBoundary { via }) => {
+                CertificationBoundary::ToBoundary { via: via.clone() }
+            }
+            None | Some(AssuranceScope::EndToEnd) => CertificationBoundary::EndToEnd,
+        };
+        if position.scope != scope
+            || position.refutation != refutation
+            || position.residual_trust != residual_trust
+            || position.discharged_trust != [authority.query_identity.as_str()]
+            || position.boundary != boundary
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted Verus coordinates do not match live artifact authority",
+            });
+        }
+        Ok(())
+    }
+
     /// Revalidate a persisted migrated L1 row against checked lowering from the
     /// source program. This is deliberately stronger than pair-shape validation:
     /// it binds every mutable manifest field that determines route provenance to
@@ -1777,7 +1965,7 @@ impl Certificate {
             level: Level::L0,
             certification: legacy_position(Level::L0),
             classification: None,
-            audit_admission: AuditAdmission(true),
+            audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -2324,6 +2512,82 @@ mod tests {
             let decoded: Certificate = serde_json::from_value(hostile).unwrap();
             assert!(decoded.rfc3_coordinates().is_err());
             assert!(decoded.requires_l1_artifact_validation());
+        }
+
+        #[test]
+        fn verus_artifact_preserves_classification_across_success_and_failure() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+            let success = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, true)
+                .unwrap();
+            let failure = Certificate::new("f", Level::L0, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, false)
+                .unwrap();
+            for cert in [&success, &failure] {
+                assert_eq!(
+                    cert.classification.as_ref().unwrap().fragment,
+                    "thermite-verus-v1"
+                );
+                assert_eq!(
+                    cert.certification.as_ref().unwrap().discharged_trust,
+                    [artifact.query_identity()]
+                );
+                cert.validate_verus_artifact_authority().unwrap();
+            }
+            assert_eq!(
+                success.certification.as_ref().unwrap().refutation,
+                RefutationChannel::Incomplete
+            );
+            assert_eq!(
+                failure.certification.as_ref().unwrap().scope,
+                CertificationScope::None
+            );
+        }
+
+        #[test]
+        fn verus_live_authority_rejects_provenance_and_outcome_substitution() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+            let cert = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, true)
+                .unwrap();
+
+            let mut level = cert.clone();
+            level.level = Level::L4;
+            assert!(level.validate_verus_artifact_authority().is_err());
+
+            let mut effects = cert.clone();
+            effects.effects = vec!["time".into()];
+            assert!(effects.validate_verus_artifact_authority().is_err());
+
+            let mut query = cert.clone();
+            query.certification.as_mut().unwrap().discharged_trust =
+                vec!["thermite-verus-query-v1:f:sha256:invented".into()];
+            assert!(query.validate_verus_artifact_authority().is_err());
+
+            let mut classifier = cert;
+            classifier.classification.as_mut().unwrap().fragment = "thermite-kani-v1".into();
+            assert!(classifier.validate_verus_artifact_authority().is_err());
+        }
+
+        #[test]
+        fn serialized_verus_half_pair_fails_the_public_reader() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+            let cert = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, true)
+                .unwrap();
+            let mut hostile = serde_json::to_value(cert).unwrap();
+            hostile.as_object_mut().unwrap().remove("classification");
+            let decoded: Certificate = serde_json::from_value(hostile).unwrap();
+            assert!(decoded.rfc3_coordinates().is_err());
         }
 
         #[test]
