@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: 94bfe8a58f6373f6bd1a16da7e5eec8e5f2303b8df94632895edf188c0aefa6e (re-pinned 2026-08-16 for checked L1 artifact attachment, route/target/item coherence, and fail-closed migrated L1 half-pairs. Historical unmarked L1 remains readable and Level remains live in other consumers. prior: bfebd2682a3de8d6b2d30b016fa4212b0b596917a1dc51f3b79a80cfec0b3153)
+audited-content-sha256: d2224affd1df1002c2e945b151832d23649999470c559492bd405c253ce2b965 (re-pinned 2026-08-16 for exact L1 effect/route/target/item/classifier validation against checked artifacts. Historical unmarked L1 remains readable and Level remains live in other consumers. prior: cb9bdac1dfe7832aa2543282be2693dce48fb0bbefa068bdfd69691875b55e93)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -47,8 +47,12 @@ certificate gained a family of ADDITIVE fields — see the Amendment.
 > classification atomically. The checked wrapper digest is retained as a
 > discharged bridge fact, which marks new L1 documents: deleting classification
 > from such a document fails the public reader, while historical unmarked L1
-> position-only documents remain readable. Slag and FFI keep separate fragments,
-> and FFI target substitution is rejected.
+> position-only documents remain readable. The artifact also retains the exact
+> effect row. Slag and FFI keep separate fragments, and item, effect, route, or
+> FFI-target substitution is rejected during attachment. Audit additionally
+> reconstructs the checked artifact from the program and revalidates the entire
+> persisted row, so simultaneous removal of the marker and classification is
+> compatibility-readable but cannot become a current audit claim.
 
 > **Amendment 2026-06-12 (doc-freshness re-audit, #262).** Re-verified against the
 > current tree (`dff9ae86`, 12 post-pin commits to `manifest.rs`). Corrections and

@@ -16,6 +16,7 @@ fn checked_artifact_binds_source_item_and_runtime_route() {
     let artifact = lower_l1_artifact(&program, "id").expect("checked L1 artifact");
     assert!(artifact.source().contains("fn id("));
     assert_eq!(artifact.item(), "id");
+    assert_eq!(artifact.effect_row(), &thermite_syntax::EffectRow::Pure);
     assert!(artifact
         .wrapper_identity()
         .starts_with("thermite-l1-wrapper-v1:id:sha256:"));

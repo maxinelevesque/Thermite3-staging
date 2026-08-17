@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 836e2d8ff15c85058a2ebefe57178b6ff60e7b19e3bd01491522763d34f558bc (re-pinned 2026-08-16 after re-auditing the L1 artifact migration in shared check/lowering files; ergonomics desugaring and match behavior are unchanged. prior: 29e88457cb2946b63fa667252f03b835a197f73de39016d756aecb9099fb9f24)
+audited-content-sha256: bb41d2546d7b67e38a35b4e06443889261dee10af990bc2b9541842ce475fab1 (re-pinned 2026-08-16 after re-auditing exact L1 effect-row provenance in shared lowering; ergonomics desugaring and match behavior are unchanged. prior: 836e2d8ff15c85058a2ebefe57178b6ff60e7b19e3bd01491522763d34f558bc)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

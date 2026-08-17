@@ -1405,6 +1405,11 @@ impl Certificate {
                 reason: "the L1 artifact item must match the certificate item",
             });
         }
+        if self.effects != effects_of(artifact.effect_row()) {
+            return Err(IncoherentCertificationPosition {
+                reason: "the L1 artifact effect row must match the certificate effect row",
+            });
+        }
         let boundary = match artifact.route() {
             thermite_lower::L1Route::Runtime | thermite_lower::L1Route::Diverge => {
                 if self.slag || self.boundary {
@@ -1435,7 +1440,7 @@ impl Certificate {
                 }
             }
         };
-        self.with_rfc3_coordinates(
+        let attached = self.with_rfc3_coordinates(
             CertificationPosition {
                 scope: CertificationScope::PerExecution,
                 refutation: RefutationChannel::Abort,
@@ -1447,7 +1452,109 @@ impl Certificate {
                 fragment: artifact.classifier_fragment().to_string(),
                 verdict: ClassificationVerdict::Admitted,
             },
-        )
+        )?;
+        attached.validate_l1_artifact(artifact)?;
+        Ok(attached)
+    }
+
+    /// Revalidate a persisted migrated L1 row against checked lowering from the
+    /// source program. This is deliberately stronger than pair-shape validation:
+    /// it binds every mutable manifest field that determines route provenance to
+    /// the opaque pre-execution artifact before audit projection.
+    pub(crate) fn validate_l1_artifact(
+        &self,
+        artifact: &thermite_lower::L1Artifact,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        if self.level != Level::L1 || self.item != artifact.item() {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 item/level does not match its checked artifact",
+            });
+        }
+        if self.effects != effects_of(artifact.effect_row()) {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 effects do not match the checked artifact",
+            });
+        }
+        let expected_fragment = artifact.classifier_fragment();
+        let classification =
+            self.classification
+                .as_ref()
+                .ok_or(IncoherentCertificationPosition {
+                    reason: "a checked L1 artifact requires its classification pair",
+                })?;
+        if classification.fragment != expected_fragment
+            || classification.verdict != ClassificationVerdict::Admitted
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 classification does not match the checked route",
+            });
+        }
+        let position = self
+            .certification
+            .as_ref()
+            .ok_or(IncoherentCertificationPosition {
+                reason: "a checked L1 artifact requires its certification position",
+            })?;
+        if position.scope != CertificationScope::PerExecution
+            || position.refutation != RefutationChannel::Abort
+            || position.residual_trust != ResidualTrust::Fiat
+            || position.discharged_trust != [artifact.wrapper_identity()]
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 position does not match the checked wrapper",
+            });
+        }
+        let route_boundary = match artifact.route() {
+            thermite_lower::L1Route::Runtime | thermite_lower::L1Route::Diverge => {
+                if self.slag || self.boundary || self.boundary_target.is_some() {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "runtime/diverge L1 route flags contradict the checked artifact",
+                    });
+                }
+                CertificationBoundary::EndToEnd
+            }
+            thermite_lower::L1Route::Slag => {
+                if !self.slag
+                    || self.slag_meta.is_none()
+                    || self.boundary
+                    || self.boundary_target.is_some()
+                {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "slag L1 route fields contradict the checked artifact",
+                    });
+                }
+                CertificationBoundary::ToBoundary {
+                    via: artifact.item().to_string(),
+                }
+            }
+            thermite_lower::L1Route::Boundary { target } => {
+                if self.slag
+                    || self.slag_meta.is_some()
+                    || !self.boundary
+                    || self.boundary_target.as_deref() != Some(target)
+                {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "FFI L1 route fields contradict the checked artifact",
+                    });
+                }
+                CertificationBoundary::ToBoundary {
+                    via: artifact.item().to_string(),
+                }
+            }
+        };
+        let expected_boundary = match &self.assurance_scope {
+            Some(AssuranceScope::EndToEnd) => CertificationBoundary::EndToEnd,
+            Some(AssuranceScope::ToBoundary { via }) => {
+                CertificationBoundary::ToBoundary { via: via.clone() }
+            }
+            None => route_boundary,
+        };
+        if position.boundary != expected_boundary {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 boundary does not match its route/closure classification",
+            });
+        }
+        Ok(())
     }
 
     /// Attach the per-obligation engine attribution (`.design/verified/
@@ -2138,6 +2245,20 @@ mod tests {
             let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
             assert!(
                 Certificate::boundary_l1("f", vec!["pure".into()], "ext::write".into())
+                    .with_l1_artifact(&artifact)
+                    .is_err()
+            );
+        }
+
+        #[test]
+        fn diverge_artifact_rejects_runtime_effect_substitution() {
+            let parsed = thermite_syntax::parse(
+                "fn spin(n: u64) -> u64 ! diverge requires n <= 100 ensures result == 0 \
+                 { if n == 0 { 0 } else { spin(n - 1) } }",
+            );
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "spin").unwrap();
+            assert!(
+                Certificate::new("spin", Level::L1, vec!["pure".into()], 0, vec![])
                     .with_l1_artifact(&artifact)
                     .is_err()
             );

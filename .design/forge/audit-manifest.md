@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: 84c5a745d25cbabfd5a6e16c0c67a940eb485d64cbd6ab027b362ba9057433bb (re-pinned 2026-08-16 after re-auditing verbatim audit projection for the migrated L1 pair and FFI target; project Level aggregation remains pending retirement. prior: 2b7911db4ae7a08b37e5ca3361b30eff840c2fc99c515453ded1f0788c2d5f7d)
+audited-content-sha256: 6d7dc90b6c7c9d425f2f20d2b00ef67212b0616cd22c8b5930b25228a2a288c3 (re-pinned 2026-08-16 after re-auditing checked L1 provenance replay and hostile persisted-row rejection before projection; project Level aggregation remains pending retirement. prior: 0ba479072f2bae25a3865a7af75de19be30e398c9946d6c1536c04861ec6bb0e)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6
@@ -454,6 +454,13 @@ hand-derived from `thermite-design.md`, never copied from forge output).
   certs `forge check <file>` emits for the same file (the manifest is a
   projection, not a recomputation) — the audit and check verdicts agree
   field-for-field on the deterministic (oracle) subset.
+  RFC-3 migrated L1 adds a deterministic provenance validation before that copy:
+  audit reconstructs the opaque checked-lowering artifact from the supplied
+  program and requires the persisted item, effect row, route/classifier, wrapper
+  identity, slag/FFI fields, target, and boundary to match. It still re-runs no
+  solver, mutation score, or closure classification. This prevents hostile JSON
+  from deleting the migration pair to pose as current historical evidence, or
+  substituting provenance fields, while standalone legacy L1 remains readable.
 - **AC-7 (#274 — membership rows present, one per fn, classes hand-derivable):**
   `forge audit conformance/sum.th --json` emits a `lean_fragment.functions`
   array with exactly one row per `functions` row (`spec_sum`, `sum`), source

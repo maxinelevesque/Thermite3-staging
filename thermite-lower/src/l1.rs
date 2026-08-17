@@ -139,6 +139,7 @@ pub enum L1Route {
 pub struct L1Artifact {
     source: String,
     item: String,
+    effect_row: EffectRow,
     wrapper_identity: String,
     classifier_fragment: &'static str,
     route: L1Route,
@@ -151,6 +152,10 @@ impl L1Artifact {
 
     pub fn item(&self) -> &str {
         &self.item
+    }
+
+    pub fn effect_row(&self) -> &EffectRow {
+        &self.effect_row
     }
 
     pub fn wrapper_identity(&self) -> &str {
@@ -218,6 +223,7 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
     Ok(L1Artifact {
         source,
         item: item.to_string(),
+        effect_row: function.contract.effects.clone(),
         wrapper_identity,
         classifier_fragment,
         route,

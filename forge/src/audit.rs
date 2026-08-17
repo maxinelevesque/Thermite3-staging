@@ -13,7 +13,10 @@
 //! [`AssuranceManifest`] aggregate (`manifest.rs`, #10/#17), and the toolchain
 //! identity (verus version + thermite version). It computes no verdict: it never
 //! re-runs verus, re-scores mutants, or re-classifies a closure (REQ-4). It
-//! reports the §9 enumerable trusted computing base ([`Tcb`]): exactly
+//! For migrated L1 rows it first replays deterministic checked lowering against
+//! the supplied program to validate persisted provenance; it still derives no
+//! new verdict and runs no external verifier. It reports the §9 enumerable
+//! trusted computing base ([`Tcb`]): exactly
 //! (every `#[slag]` block ∪ every `#[boundary]` contract ∪ the toolchain itself).
 //! `grep slag` over a codebase and this TCB section are the same complete
 //! inventory of fiat-trusted code (§8); nothing fiat-trusted is omitted
@@ -301,9 +304,15 @@ pub struct FunctionRow {
 
 impl FunctionRow {
     /// Project one [`Certificate`] to its audit row (REQ-1, REQ-4) — a copy.
-    fn from_certificate(cert: &Certificate) -> Self {
+    fn from_certificate(cert: &Certificate, program: &Program) -> Self {
         cert.rfc3_coordinates()
             .expect("audit rejects a classification without a certification position");
+        if cert.level == Level::L1 {
+            let artifact = thermite_lower::lower_l1_artifact(program, &cert.item)
+                .expect("audit requires checked lowering for every current L1 producer");
+            cert.validate_l1_artifact(&artifact)
+                .expect("audit rejects persisted L1 provenance substitution");
+        }
         FunctionRow {
             name: cert.item.clone(),
             level: cert.level,
@@ -722,17 +731,22 @@ impl AuditManifest {
     /// - `tcb` — the §9 enumerable TCB (REQ-3): every slag ∪ every boundary ∪ the
     ///   `toolchain`.
     ///
-    /// It re-runs no verus, re-scores no mutants, re-classifies no closure: every
-    /// field traces to a cert field, the assurance aggregate, the program's
-    /// boundary contracts, or the two version strings (REQ-4, REQ-6). `program`
-    /// supplies the boundary contracts' `req`/`ens`/`fx` text (the cert carries
-    /// only the target).
+    /// It re-runs no verus, re-scores no mutants, and re-classifies no closure.
+    /// Migrated L1 rows do replay deterministic checked lowering against `program`
+    /// solely to validate the stored wrapper/route provenance before copying it.
+    /// Every output field still traces to a cert field, the assurance aggregate,
+    /// the program's boundary contracts, or the two version strings (REQ-4,
+    /// REQ-6). `program` supplies the boundary contracts' `req`/`ens`/`fx` text
+    /// (the cert carries only the target).
     pub fn from_certificates(
         certs: &[Certificate],
         program: &Program,
         toolchain: Toolchain,
     ) -> Self {
-        let functions = certs.iter().map(FunctionRow::from_certificate).collect();
+        let functions = certs
+            .iter()
+            .map(|cert| FunctionRow::from_certificate(cert, program))
+            .collect();
         let assurance = AssuranceManifest::aggregate(certs);
         let project_assurance = ProjectAssuranceSection::from_assurance(&assurance);
         let tcb = Tcb::from_certificates(certs, program, toolchain);
@@ -816,17 +830,23 @@ mod tests {
     // REQ-3: a valid slag cert enumerates a SlagBlock carrying reason/owner/review.
     #[test]
     fn slag_cert_enumerated_in_tcb() {
+        let parsed = thermite_syntax::parse(
+            "#[slag(reason = \"hand-tuned\", owner = \"agent:x\", review = \"required\")] \
+             fn vendored(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        assert!(parsed.is_clean());
         let meta = SlagMeta {
             reason: "hand-tuned".to_string(),
             owner: "agent:x".to_string(),
             review: "required".to_string(),
         };
-        let certs = vec![Certificate::slag_l1(
-            "vendored",
-            vec!["pure".to_string()],
-            meta,
-        )];
-        let m = AuditManifest::from_certificates(&certs, &empty_program(), toolchain());
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "vendored").unwrap();
+        let certs = vec![
+            Certificate::slag_l1("vendored", vec!["pure".to_string()], meta)
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+        ];
+        let m = AuditManifest::from_certificates(&certs, &parsed.program, toolchain());
         assert_eq!(m.tcb.slag_blocks.len(), 1);
         let block = &m.tcb.slag_blocks[0];
         assert_eq!(block.name, "vendored");
@@ -838,12 +858,20 @@ mod tests {
     // REQ-3: a boundary cert enumerates a BoundaryContract carrying the target.
     #[test]
     fn boundary_cert_enumerated_in_tcb() {
+        let parsed = thermite_syntax::parse(
+            "#[boundary(\"ext::ext_f\")] \
+             fn ext_f(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+        );
+        assert!(parsed.is_clean());
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "ext_f").unwrap();
         let certs = vec![Certificate::boundary_l1(
             "ext_f",
             vec!["pure".to_string()],
             "ext::ext_f".to_string(),
-        )];
-        let m = AuditManifest::from_certificates(&certs, &empty_program(), toolchain());
+        )
+        .with_l1_artifact(&artifact)
+        .unwrap()];
+        let m = AuditManifest::from_certificates(&certs, &parsed.program, toolchain());
         assert_eq!(m.tcb.boundary_contracts.len(), 1);
         let bc = &m.tcb.boundary_contracts[0];
         assert_eq!(bc.name, "ext_f");
@@ -1241,5 +1269,81 @@ mod tests {
             audit.functions[0].boundary_target.as_deref(),
             Some("ext::read")
         );
+    }
+
+    fn assert_l1_audit_rejects(cert: Certificate, program: &Program) {
+        let rejected = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            AuditManifest::from_certificates(&[cert], program, toolchain())
+        }));
+        assert!(rejected.is_err(), "hostile persisted L1 row reached audit");
+    }
+
+    #[test]
+    fn migrated_l1_cannot_strip_pair_and_launder_as_historical_at_audit() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+            .with_l1_artifact(&artifact)
+            .unwrap();
+        let mut hostile = serde_json::to_value(cert).unwrap();
+        hostile["certification"]["discharged_trust"] = serde_json::json!([]);
+        hostile.as_object_mut().unwrap().remove("classification");
+        let hostile: Certificate = serde_json::from_value(hostile).unwrap();
+        assert!(
+            hostile.rfc3_coordinates().is_ok(),
+            "standalone historical compatibility remains readable"
+        );
+        assert_l1_audit_rejects(hostile, &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_audit_rejects_item_effect_and_route_substitution() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+            .with_l1_artifact(&artifact)
+            .unwrap();
+
+        let mut renamed = serde_json::to_value(&cert).unwrap();
+        renamed["item"] = serde_json::json!("renamed");
+        assert_l1_audit_rejects(serde_json::from_value(renamed).unwrap(), &parsed.program);
+
+        let mut effects = serde_json::to_value(&cert).unwrap();
+        effects["effects"] = serde_json::json!(["time"]);
+        assert_l1_audit_rejects(serde_json::from_value(effects).unwrap(), &parsed.program);
+
+        let mut slag = serde_json::to_value(cert).unwrap();
+        slag["slag"] = serde_json::json!(true);
+        slag["slag_meta"] = serde_json::json!({
+            "reason": "substituted",
+            "owner": "agent:hostile",
+            "review": "none"
+        });
+        slag["classification"]["fragment"] = serde_json::json!("thermite-l1-slag-v1");
+        assert_l1_audit_rejects(serde_json::from_value(slag).unwrap(), &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_audit_rejects_ffi_target_and_classifier_substitution() {
+        let parsed = thermite_syntax::parse(
+            "#[boundary(\"ext::read\")] \
+             fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = Certificate::boundary_l1("f", vec!["pure".into()], "ext::read".into())
+            .with_l1_artifact(&artifact)
+            .unwrap();
+
+        let mut target = serde_json::to_value(&cert).unwrap();
+        target["boundary_target"] = serde_json::json!("ext::write");
+        assert_l1_audit_rejects(serde_json::from_value(target).unwrap(), &parsed.program);
+
+        let mut classifier = serde_json::to_value(cert).unwrap();
+        classifier["classification"]["fragment"] = serde_json::json!("thermite-l1-runtime-v1");
+        assert_l1_audit_rejects(serde_json::from_value(classifier).unwrap(), &parsed.program);
     }
 }

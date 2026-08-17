@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: b16ebf4d17538faf35c0bda165c192b94a2a7cb89d41bfef0dea5f4ed08f0590 (issue-48 RFC-3 runtime L1 migration checkpoint, 2026-08-16: audit now pins verbatim L1 coordinate/classification projection and FFI target preservation. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: 96d5f6aa4266f1c93c5a088b56d19fd66fc6e70f4b83a8b5c932c9c573535281)
+audited-content-sha256: d33bc3cb73f137eac115f17c6d19ae5b9e5658c9e2374ef0b04065f5402b5b73 (issue-48 RFC-3 runtime L1 repair, 2026-08-16: audit now rejects stripped or substituted persisted L1 provenance by validating against checked lowering. Solver routes, aggregation, displays, and final Lx retirement remain open. prior: 685893c854cd06aea42bcd03e2765efe84c5b85121e1b81ff13f0a626efce765)
 
 ## Summary
 
@@ -246,8 +246,8 @@ L1, L3, L4, project aggregation, or display consumers have retired `Level`.
 
 The second production cut migrates the runtime-enforced L1 family. Checked L1
 lowering returns an opaque artifact containing the emitted source, routed item,
-route-specific classifier identity, and a SHA-256 wrapper identity derived from
-that same source before certificate assembly. Ordinary runtime fallback, slag,
+effect row, route-specific classifier identity, and a SHA-256 wrapper identity
+derived from that same source before certificate assembly. Ordinary runtime fallback, slag,
 FFI boundary, and divergence remain distinct classifier fragments even though
 all four occupy the RFC-3 per-execution/abort/fiat cell. Slag and FFI positions
 close at their named boundary; runtime fallback and divergence begin end-to-end,
@@ -256,6 +256,14 @@ The wrapper identity is persisted as a discharged bridge fact, so a migrated L1
 position with its classification removed fails the public reader and audit,
 while an unmarked historical L1 position remains readable. The producer rejects
 item substitution, FFI target substitution, and route/legacy-flag mismatches.
+Because an unauthenticated standalone historical document is intentionally
+indistinguishable from a document stripped down to that historical shape, audit
+does not treat compatibility parsing as current provenance: it deterministically
+reconstructs the checked L1 artifact from the supplied program and validates the
+item, exact effect row, wrapper identity, classifier, slag/FFI flags and metadata,
+target, and closure-adjusted boundary before copying the row. Thus historical L1
+remains readable, but cannot be laundered into a current audit claim by deleting
+the migration pair or mutating its surrounding fields.
 Project aggregation and display continue to consume `Level` during migration.
 
 ### Proved display projection

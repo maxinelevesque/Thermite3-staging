@@ -246,7 +246,7 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   runtime-enforced L1 producer — direct slag, direct FFI boundary, divergence,
   and the L3/L2 ladder fallback — must first construct
   `thermite_lower::L1Artifact` from the checked program. Certificate assembly
-  accepts that opaque artifact, verifies the item and route-specific flags/FFI
+  accepts that opaque artifact, verifies the item, exact effect row, and route-specific flags/FFI
   target, and installs the RFC-3 pair atomically. A lowering failure or metadata
   mismatch is a hard pipeline error, never a legacy position-only L1 success.
   The route classifiers remain distinct even though their formal assurance cell
