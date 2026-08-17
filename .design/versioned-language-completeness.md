@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 5967cc4a9d80d70ce9ff475f3e2a25ce01efe9694c328bdd457c54c427cf468a (issue-48 RFC-3 typed-arbiter cold-review repair, 2026-08-16: schema 11 integrity-bound cache replay, live typed dispositions, honest unknown/refutation, and context/witness preservation. Clause coordinates, displays, and final Lx retirement remain open. prior: f2c285461a5f66382526d1bc8726af474147a51c58f6cbf1a5eccac100b280b1)
+audited-content-sha256: d1e8dd6f749a05b496e173728087bd2006f962d0f6dfabf39125b98870ef2d69 (issue-48 RFC-3 typed-arbiter cold re-review repair, 2026-08-17: supplemental proof authority is bound to route evidence rather than an L3 label. Clause coordinates, displays, and final Lx retirement remain open. prior: 5967cc4a9d80d70ce9ff475f3e2a25ce01efe9694c328bdd457c54c427cf468a)
 
 ## Summary
 
@@ -298,6 +298,11 @@ and all current Verus, Lean fallback, EPR, solver-vacuity, and mutation results
 share one preserve/upgrade/refute/alarm precedence relation. Fresh outcomes use
 a non-serialized typed disposition stamp rather than round-tripping through
 reject-cause interpretation.
+Supplemental candidates are not constructible as public enum variants: private
+candidate states are reached through validators that bind engine/trust
+attribution, discharged clause receipts, RFC-3 coordinates, and EPR
+reconstruction evidence. Thus a coherent-looking but evidence-free L3
+certificate cannot become authority merely by being labeled `Complete`.
 When a timeout successfully descends to Kani or runtime enforcement, the final
 certificate truthfully carries that achieved route's artifact and coordinates
 instead of retaining the superseded Verus non-claim.

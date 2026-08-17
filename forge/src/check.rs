@@ -873,6 +873,7 @@ pub fn check_file_with_options(
                     },
                     "solver-vacuity",
                 )
+                .map_err(result_arbiter_shape_error)?
                 .into_certificate();
                 // A #13 reject is a settled, deterministic verdict (a function of the
                 // lowered contract + seed + versions), so it is cached like a
@@ -2014,9 +2015,9 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
                     ));
                 }
                 crate::epr_reconstruct::EprOutcome::Counterexample(model) => {
-                    terminal = Some(crate::result_arbiter::ProofCandidate::Refuted {
-                        engine: "epr".to_string(),
-                        certificate: epr_counterexample_cert(
+                    terminal = Some(crate::result_arbiter::ProofCandidate::refuted(
+                        "epr",
+                        epr_counterexample_cert(
                             &function.name,
                             &cert.effects,
                             function.slag.is_some(),
@@ -2024,15 +2025,15 @@ fn epr_check(base: Vec<Certificate>, program: &Program) -> Vec<Certificate> {
                             &model,
                             &epr_countermodel_attribution(),
                         ),
-                    });
+                    ));
                     break;
                 }
                 crate::epr_reconstruct::EprOutcome::Timeout(_) => {
-                    terminal = Some(crate::result_arbiter::ProofCandidate::Unavailable);
+                    terminal = Some(crate::result_arbiter::ProofCandidate::unavailable());
                     break;
                 }
                 crate::epr_reconstruct::EprOutcome::Failed(_) => {
-                    terminal = Some(crate::result_arbiter::ProofCandidate::Unavailable);
+                    terminal = Some(crate::result_arbiter::ProofCandidate::unavailable());
                     break;
                 }
             }
@@ -2066,7 +2067,7 @@ fn finish_epr_reconstruction(
         return settle_epr_candidate(
             cert,
             function,
-            crate::result_arbiter::ProofCandidate::Partial,
+            crate::result_arbiter::ProofCandidate::partial(),
         );
     }
     let replacement = Certificate::new(
@@ -2081,10 +2082,7 @@ fn finish_epr_reconstruction(
     settle_epr_candidate(
         cert,
         function,
-        crate::result_arbiter::ProofCandidate::Complete {
-            engine: "epr".to_string(),
-            certificate: replacement,
-        },
+        crate::result_arbiter::ProofCandidate::complete("epr", replacement),
     )
 }
 
@@ -4190,10 +4188,10 @@ fn lean_engine_cert(
                 Verdict::Proven(_) => {
                     let result = lean_proven_result(lean, base.certificate(), mutation_floor);
                     return base
-                        .combine(crate::result_arbiter::ProofCandidate::Complete {
-                            engine: lean.name().tag().to_string(),
-                            certificate: result.proof,
-                        })
+                        .combine(crate::result_arbiter::ProofCandidate::complete(
+                            lean.name().tag(),
+                            result.proof,
+                        ))
                         .map_err(result_arbiter_combination_error)
                         .and_then(|settled| {
                             settled
@@ -4202,22 +4200,22 @@ fn lean_engine_cert(
                                 .map_err(result_arbiter_shape_error)
                         });
                 }
-                Verdict::Refuted(counterexample) => {
-                    crate::result_arbiter::ProofCandidate::Refuted {
-                        engine: lean.name().tag().to_string(),
-                        certificate: Certificate::new(
-                            &obligation.item,
-                            Level::L0,
-                            base.certificate().effects.clone(),
-                            0,
-                            counterexample.obligations,
-                        ),
-                    }
-                }
-                Verdict::Unknown(reason) => crate::result_arbiter::ProofCandidate::Inconclusive {
-                    engine: lean.name().tag().to_string(),
-                    certificate: lean_unverifiable_cert(base.certificate(), &reason),
-                },
+                Verdict::Refuted(counterexample) => crate::result_arbiter::ProofCandidate::refuted(
+                    lean.name().tag(),
+                    Certificate::new(
+                        &obligation.item,
+                        Level::L0,
+                        base.certificate().effects.clone(),
+                        0,
+                        counterexample.obligations,
+                    )
+                    .with_engine_attribution(crate::engine::attribution_for(lean)),
+                ),
+                Verdict::Unknown(reason) => crate::result_arbiter::ProofCandidate::inconclusive(
+                    lean.name().tag(),
+                    lean_unverifiable_cert(base.certificate(), &reason)
+                        .with_engine_attribution(crate::engine::attribution_for(lean)),
+                ),
             };
             base.combine(candidate)
                 .map(crate::result_arbiter::ItemOutcome::into_certificate)
@@ -4249,18 +4247,18 @@ fn lean_engine_cert(
             };
             let candidate = match verdict {
                 Verdict::Proven(_) if interactive => {
-                    crate::result_arbiter::ProofCandidate::Complete {
-                        engine: lean.name().tag().to_string(),
-                        certificate: lean_interactive_proven_cert(lean, base.certificate()),
-                    }
+                    crate::result_arbiter::ProofCandidate::complete(
+                        lean.name().tag(),
+                        lean_interactive_proven_cert(lean, base.certificate()),
+                    )
                 }
                 Verdict::Proven(_) => {
                     let result = lean_proven_result(lean, base.certificate(), mutation_floor);
                     return base
-                        .select(crate::result_arbiter::ProofCandidate::Complete {
-                            engine: lean.name().tag().to_string(),
-                            certificate: result.proof,
-                        })
+                        .select(crate::result_arbiter::ProofCandidate::complete(
+                            lean.name().tag(),
+                            result.proof,
+                        ))
                         .map_err(result_arbiter_combination_error)
                         .and_then(|settled| {
                             settled
@@ -4269,22 +4267,22 @@ fn lean_engine_cert(
                                 .map_err(result_arbiter_shape_error)
                         });
                 }
-                Verdict::Refuted(counterexample) => {
-                    crate::result_arbiter::ProofCandidate::Refuted {
-                        engine: lean.name().tag().to_string(),
-                        certificate: Certificate::new(
-                            &base.certificate().item,
-                            Level::L0,
-                            base.certificate().effects.clone(),
-                            0,
-                            counterexample.obligations,
-                        ),
-                    }
-                }
-                Verdict::Unknown(reason) => crate::result_arbiter::ProofCandidate::Inconclusive {
-                    engine: lean.name().tag().to_string(),
-                    certificate: lean_unverifiable_cert(base.certificate(), &reason),
-                },
+                Verdict::Refuted(counterexample) => crate::result_arbiter::ProofCandidate::refuted(
+                    lean.name().tag(),
+                    Certificate::new(
+                        &base.certificate().item,
+                        Level::L0,
+                        base.certificate().effects.clone(),
+                        0,
+                        counterexample.obligations,
+                    )
+                    .with_engine_attribution(crate::engine::attribution_for(lean)),
+                ),
+                Verdict::Unknown(reason) => crate::result_arbiter::ProofCandidate::inconclusive(
+                    lean.name().tag(),
+                    lean_unverifiable_cert(base.certificate(), &reason)
+                        .with_engine_attribution(crate::engine::attribution_for(lean)),
+                ),
             };
             base.select(candidate)
                 .map(crate::result_arbiter::ItemOutcome::into_certificate)
@@ -8886,7 +8884,7 @@ requires xs.len() > 0\n\
             let settled = settle_epr_candidate(
                 base.clone(),
                 function,
-                crate::result_arbiter::ProofCandidate::Unavailable,
+                crate::result_arbiter::ProofCandidate::unavailable(),
             );
             assert_eq!(settled, base);
         }
@@ -8997,11 +8995,16 @@ requires true\n\
         )
         .into_certificate();
         assert!(counterexample.reject.is_none());
-        let alarm = finish_epr_reconstruction(
-            counterexample,
-            function,
-            vec![ObligationResult::discharged("kernel-checked EPR proof")],
-        );
+        let clause = &function.contract.ensures[0];
+        let evidence = match epr_clause_outcome(&program, function, 0, clause)
+            .expect("the fixture is admitted by the EPR route")
+        {
+            crate::epr_reconstruct::EprOutcome::Proved(evidence) => evidence,
+            other => panic!("the fixture must produce checked reconstruction: {other:?}"),
+        };
+        let reconstructed = epr_proved_obl(&function.name, 0, *evidence, &epr_attribution());
+        let alarm =
+            finish_epr_reconstruction(counterexample, function, vec![reconstructed.clone()]);
         assert_eq!(
             alarm.reject.as_ref().map(|reject| reject.cause.as_str()),
             Some("EprVerifierDisagreement")
@@ -9020,11 +9023,8 @@ requires true\n\
             "1/3".into(),
             "return 0".into(),
         );
-        let weak_settled = finish_epr_reconstruction(
-            weak.clone(),
-            function,
-            vec![ObligationResult::discharged("kernel-checked EPR proof")],
-        );
+        let weak_settled =
+            finish_epr_reconstruction(weak.clone(), function, vec![reconstructed.clone()]);
         assert_eq!(weak_settled, weak);
 
         for (cause, tautology, vacuous) in [
@@ -9042,11 +9042,7 @@ requires true\n\
                 vacuous,
             );
             assert_eq!(
-                finish_epr_reconstruction(
-                    rejected.clone(),
-                    function,
-                    vec![ObligationResult::discharged("kernel-checked EPR proof")],
-                ),
+                finish_epr_reconstruction(rejected.clone(), function, vec![reconstructed.clone()],),
                 rejected
             );
         }
@@ -9057,11 +9053,7 @@ requires true\n\
         let boundary = Certificate::new("epr_route", Level::L3, vec!["pure".into()], 0, vec![])
             .with_mutation_score("4/4".into(), None)
             .with_assurance_scope(scope.clone());
-        let upgraded = finish_epr_reconstruction(
-            boundary,
-            function,
-            vec![ObligationResult::discharged("kernel-checked EPR proof")],
-        );
+        let upgraded = finish_epr_reconstruction(boundary, function, vec![reconstructed]);
         assert_eq!(upgraded.level, Level::L4);
         assert_eq!(upgraded.assurance_scope, Some(scope));
         assert_eq!(upgraded.contract_quality.mutants_killed, "4/4");

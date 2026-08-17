@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 4f6fec0352b527656a85e616a401e8ed18555a66876f62aed9465962505dd8cf (re-pinned 2026-08-16 for typed EPR combination, symmetric alarms with genuine counterexample obligations, settled-policy preservation, and exact context carry. prior: dc84c221348346bdf1e222bece6d6dc98d16bf511357290b167700e63717a817)
+audited-content-sha256: 00d023e78e5159ca9efc4ef57b2741b37bf1fbd0a7215735d956cd30d7b525fa (re-pinned 2026-08-17 for route-validated EPR candidate evidence and production-shaped disagreement regression. prior: 4f6fec0352b527656a85e616a401e8ed18555a66876f62aed9465962505dd8cf)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

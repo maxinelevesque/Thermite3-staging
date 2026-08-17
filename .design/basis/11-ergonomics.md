@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 568d0bce9f3ac914a2012ba612e7abad2a358a256fda7651374002a41711b76a (re-pinned 2026-08-16 after the typed result-arbiter refactor in shared check.rs; ergonomics behavior is unchanged. prior: db47dfabb39c17d97a69818ffbc2394b7937d926a33f0eefafe955795d79a311)
+audited-content-sha256: d4c114cea0751a3a642fdf2b183703a23c1bb65212defe13693c061ec4861c0a (re-pinned 2026-08-17 after candidate-authority validation in shared check.rs; ergonomics behavior is unchanged. prior: 568d0bce9f3ac914a2012ba612e7abad2a358a256fda7651374002a41711b76a)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

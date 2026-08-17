@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: c92fd890891dbbe3226caca03f3bf0302f16a4ae4243ccb3ee870a25631a2932 (re-pinned 2026-08-16 for typed live outcomes, early fast-unknown classification, context-safe Lean policy rendering, and genuine EPR disagreement witnesses. prior: 9c73c125e9f048026c560fc74834b6d2aeb1480a0aaf8b626bd84bd1ced745d1)
+audited-content-sha256: 32a63fa4607281f5ac4a59cf83ff39a2fed01c39ec55120bc2ae5deb29e05f44 (re-pinned 2026-08-17 for route-validated candidate smart constructors and production-shaped EPR regression evidence. prior: c92fd890891dbbe3226caca03f3bf0302f16a4ae4243ccb3ee870a25631a2932)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -277,6 +277,13 @@ parse  →  validate  →  effect-check  →  lower  →  run verus  →  parse 
   backend and a rendered EPR disagreement retain the actual counterexample
   obligations. A non-serialized live disposition stamp carries fresh typed
   outcomes across public-rendering stages without reparsing reject text.
+  Supplemental Lean/EPR results enter through `ProofCandidate` smart
+  constructors whose variants are private: same-item/effects identity is
+  necessary but insufficient. Complete authority also requires matching
+  producer/trust attribution, non-empty discharged per-clause receipts,
+  coherent route-specific RFC-3 coordinates, and EPR reconstruction evidence.
+  A coherent but evidence-free L3 certificate therefore alarms instead of
+  upgrading a timeout.
 
 ## Acceptance criteria
 
