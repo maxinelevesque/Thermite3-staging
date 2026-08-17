@@ -2244,6 +2244,13 @@ impl Certificate {
         }
         self.audit_admission.clause_policy_digest = Some(self.clause_policy_digest());
         self.clause_portfolio(final_accepted)?;
+        if final_accepted {
+            // Mixed-route producers return early from the ordinary arbiter path,
+            // so this sealed assembler is the point at which their accepted live
+            // disposition becomes known. Audit must not reinterpret an unstamped,
+            // all-discharged portfolio as policy-rejected.
+            self.live_disposition = LiveDispositionStamp(Some(LiveResultDisposition::Accepted));
+        }
         Ok(self)
     }
 

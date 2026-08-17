@@ -29,6 +29,7 @@ RUST_REVIEW = {
     "forge/src/check.rs": "RFC-10 shared-state invariant program fixtures",
     "forge/src/cli.rs": "structured diagnostic expected-output token",
     "forge/src/manifest.rs": "non-program manifest tokens and documentation",
+    "forge/src/result_arbiter.rs": "non-program certificate effect-row fixture",
     "forge/src/sandbox.rs": "migrated program fixtures plus sandbox token fixtures and documentation",
     "forge/src/vacuity.rs": "migrated maximal-row program fixtures",
     "forge/src/verified_build.rs": "Rust filesystem API calls; not Thermite syntax",

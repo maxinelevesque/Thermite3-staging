@@ -84,6 +84,14 @@
     },
     {
       "atoms": [
+        "read(clock)"
+      ],
+      "classification": "non-program certificate effect-row fixture",
+      "path": "forge/src/result_arbiter.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
         "net(_)",
         "net(s)",
         "net(sock)",
@@ -355,8 +363,8 @@
   "summary": {
     "json_missing_shared": 0,
     "json_program_fields_with_state_effects": 5,
-    "rust_files_reviewed": 31,
-    "rust_reviewed_sites": 179,
+    "rust_files_reviewed": 32,
+    "rust_reviewed_sites": 180,
     "th_missing_shared": 0,
     "th_programs_with_state_effects": 5,
     "tracked_th_files": 66

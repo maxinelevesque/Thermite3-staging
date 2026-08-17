@@ -342,7 +342,8 @@ impl ItemOutcome {
                     detail: "accepted proof carries a rejecting vacuity-policy fact".into(),
                 });
             }
-            if mutation_ratio_below_floor(&certificate.contract_quality.mutants_killed) {
+            if mutation_ratio_is_asserted_below_floor(&certificate.contract_quality.mutants_killed)
+            {
                 return Err(PersistedOutcomeError {
                     item: certificate.item.clone(),
                     detail: "accepted proof carries rejecting mutation-policy evidence".into(),
@@ -788,7 +789,12 @@ fn ensure_same_item(
 
 fn mutation_ratio_below_floor(score: &str) -> bool {
     if score == "0/0" {
-        return false;
+        // The mutation producers deliberately treat an empty scoreable
+        // denominator as failing every positive floor: no tested mutant means
+        // the contract has not demonstrated discrimination. Keep the arbiter's
+        // independent policy-fact validation aligned with that fail-closed
+        // producer rule.
+        return true;
     }
     let Some((killed, total)) = score.split_once('/') else {
         return true;
@@ -797,6 +803,13 @@ fn mutation_ratio_below_floor(score: &str) -> bool {
         return true;
     };
     total == 0 || killed > total || (killed as f64 / total as f64) < crate::mutation::MUTATION_FLOOR
+}
+
+fn mutation_ratio_is_asserted_below_floor(score: &str) -> bool {
+    // `0/0` is also the legacy forward-declared/unscored value. It is a valid
+    // fact for an explicitly typed WeakContract rejection, but cannot by itself
+    // turn an otherwise accepted legacy or non-applicable item into a rejection.
+    score != "0/0" && mutation_ratio_below_floor(score)
 }
 
 fn render_replacement(
@@ -845,6 +858,12 @@ mod tests {
         AssuranceScope, CertificationBoundary, Level, ObligationResult, RejectReason,
     };
     use crate::meaning::MeaningAudit;
+
+    #[test]
+    fn empty_mutation_denominator_is_below_the_positive_floor() {
+        assert!(mutation_ratio_below_floor("0/0"));
+        assert!(!mutation_ratio_is_asserted_below_floor("0/0"));
+    }
 
     fn effects() -> Vec<String> {
         vec!["pure".into()]

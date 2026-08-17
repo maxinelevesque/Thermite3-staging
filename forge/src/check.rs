@@ -10980,6 +10980,10 @@ requires true\n\
                 && accepted.classification.is_some()
                 && accepted.engine_attribution.is_some()
         );
+        assert!(matches!(
+            accepted.live_disposition(),
+            Some(crate::manifest::LiveResultDisposition::Accepted)
+        ));
         let mut singular_splice = accepted.clone();
         singular_splice.classification = None;
         assert_ne!(
