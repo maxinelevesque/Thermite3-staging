@@ -1464,6 +1464,48 @@ reference = ["gates/rfc3-certification-replay.py", "gates/rfc3-certification-rep
 conformance_ops = []
 
 [[route]]
+crate_pattern = "lean/Thermite/AssurancePolicyV2.lean"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["lean/Thermite/AssuranceV2Replay.lean", "gates/assurance-v2-replay.json", "forge/src/assurance_v2.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/AssuranceV2Replay.lean"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["lean/Thermite/AssurancePolicyV2.lean", "gates/assurance-v2-replay.py", "gates/assurance-v2-replay.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/assurance_v2.rs"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.json", "lean/Thermite/AssuranceV2Replay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/assurance-v2-replay.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.json", "lean/Thermite/AssuranceV2Replay.lean", "forge/src/assurance_v2.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/assurance-v2-replay.json"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.py", "lean/Thermite/AssuranceV2Replay.lean", "forge/src/assurance_v2.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/assurance-v2-issuers.json"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.py", "lean/Thermite/AssurancePolicyV2.lean", "forge/src/check.rs", "forge/src/kani.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_assurance_v2_replay.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.py", "gates/assurance-v2-replay.json"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "gates/language-rfc-evolution.py"
 design = ".design/versioned-language-completeness.md"
 reference = ["gates/language-rfc-evolution.toml", "gates/tests/test_language_rfc_evolution.py"]

@@ -12,6 +12,7 @@ namespace Thermite.CertificationMetatheory
 
 open Thermite.LanguageCompleteness
 
+-- ASSURANCE_V2_PREDECESSOR Thermite.CertificationMetatheory.RepresentativePosition realizable_counterexample_probe
 inductive RepresentativePosition where
   | runtime
   | bounded

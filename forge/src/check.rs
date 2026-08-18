@@ -1964,6 +1964,7 @@ fn nlsat_item_cert(
 /// integer clause holds — the item certifies at L4 with the `engine: nlsat`
 /// attribution (the trust profile is solver(nlsat) + spine-lemma(kernel)). The
 /// per-clause verdict is [`CertVerdict::Proved`].
+// ASSURANCE_V2_ISSUER solver_complete nlsat_l4_cert
 fn nlsat_l4_cert(
     engine: &crate::engine::NlsatEngine,
     f: &thermite_syntax::FnItem,
@@ -3646,6 +3647,8 @@ fn bv_fn_cert(
     )
 }
 
+// ASSURANCE_V2_ISSUER solver_complete bv_fn_cert_with
+// ASSURANCE_V2_ISSUER lean_complete bv_fn_cert_with
 fn bv_fn_cert_with(
     bv: &crate::bitvector::BitVectorEngine,
     nlsat: &crate::engine::NlsatEngine,
@@ -4987,6 +4990,8 @@ fn forge_gate_item_cert(
     clippy::too_many_arguments,
     reason = "the sealed G1 core preserves the production inputs plus one typed route driver"
 )]
+// ASSURANCE_V2_ISSUER solver_complete forge_gate_item_cert_with
+// ASSURANCE_V2_ISSUER lean_empirical forge_gate_item_cert_with
 fn forge_gate_item_cert_with(
     nlsat: &crate::engine::NlsatEngine,
     lean: &crate::engine::LeanEngine,
@@ -5778,6 +5783,7 @@ fn forge_reelaboration_mutation_with(
 /// disagreement (REQ-5). The Verus base cert's verdict (Proven / Refuted / Unknown) is
 /// reconstructed from its `level`/`reject` for the disagreement check + the `auto`
 /// inconclusive test.
+// ASSURANCE_V2_ISSUER lean_empirical lean_engine_cert
 fn lean_engine_cert(
     lean: &crate::engine::LeanEngine,
     source_file: &Path,
@@ -6585,6 +6591,7 @@ fn gate_fn(program: &Program, f: &thermite_syntax::FnItem) -> Result<GateOutcome
 /// Bind an L1 certificate to the exact checked runtime wrapper and route before
 /// the certificate can enter the manifest. Any lowering or coordinate mismatch
 /// is a hard pipeline error, never a legacy position-only success.
+// ASSURANCE_V2_ISSUER runtime certify_l1_artifact
 fn certify_l1_artifact(
     program: &Program,
     f: &thermite_syntax::FnItem,
@@ -8368,6 +8375,7 @@ pub(crate) fn item_effects(item: &Item) -> Vec<String> {
 ///   profile-derived `suggested_move`), distinct from a counterexample.
 /// - [`VerusOutcome::Counterexample`] → `Level::L0` with the per-obligation
 ///   witnesses (the existing #5 path), no profile.
+// ASSURANCE_V2_ISSUER solver_incomplete assemble_certificate
 fn assemble_certificate(
     item: &Item,
     verus: &VerusResult,
@@ -9065,6 +9073,7 @@ mod tests {
         }
     }
 
+    // ASSURANCE_V2_CHARACTERIZATION runtime forge/src/check.rs certify_l1_artifact
     #[test]
     fn production_l1_gate_preserves_runtime_route_classification() {
         let slag = l1_gate_certificate(
@@ -9481,6 +9490,7 @@ fn measured(xs: &[u32]) -> u64
         );
     }
 
+    // ASSURANCE_V2_CHARACTERIZATION solver_incomplete forge/src/check.rs assemble_certificate
     #[test]
     fn verus_assembly_uses_pre_discharge_artifact_on_success_and_failure() {
         let parsed = thermite_syntax::parse(
@@ -9524,6 +9534,19 @@ fn measured(xs: &[u32]) -> u64
         }
         assert_eq!(success.level, Level::L3);
         assert_eq!(failure.level, Level::L0);
+        let position = success
+            .certification
+            .as_ref()
+            .expect("successful Verus issuance has exact RFC-3 coordinates");
+        assert_eq!(position.scope, crate::manifest::CertificationScope::All);
+        assert_eq!(
+            position.refutation,
+            crate::manifest::RefutationChannel::Incomplete
+        );
+        assert_eq!(
+            position.residual_trust,
+            crate::manifest::ResidualTrust::Solver
+        );
     }
 
     #[test]
@@ -9827,6 +9850,7 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
 
     /// REQ-8 / AC-9: arithmetic and bitwise `@bv` clauses both migrate to the
     /// literal-`BitVec N` kernel-checked trust base.
+    // ASSURANCE_V2_CHARACTERIZATION solver_complete forge/src/check.rs nlsat_l4_cert
     #[test]
     fn req8_arithmetic_and_bitwise_clauses_migrate_to_kernel_checked() {
         use thermite_syntax::{BinOp, BvTag, BvWidth, Expr};
@@ -9955,6 +9979,16 @@ note: Cost * Instantiations: 150 (Instantiated 10 times - 71% of the total, cost
             vec![ObligationResult::discharged("base")],
         );
         let linear_cert = nlsat_l4_cert(&nlsat, linear, &base);
+        assert_eq!(linear_cert.level, Level::L4);
+        let position = linear_cert
+            .certification
+            .as_ref()
+            .expect("nlsat L4 issuance has formal coordinates");
+        assert_eq!(position.scope, crate::manifest::CertificationScope::All);
+        assert!(matches!(
+            position.refutation,
+            crate::manifest::RefutationChannel::Complete
+        ));
         let lia = &linear_cert.obligations[0];
         assert!(
             crate::engine::trust_is_kernel_checked(&lia.trust),
@@ -11380,6 +11414,8 @@ requires true\n\
         crate::epr_reconstruct::EprOutcome::Proved(Box::new(evidence))
     }
 
+    // ASSURANCE_V2_CHARACTERIZATION solver_complete forge/src/check.rs bv_fn_cert_with
+    // ASSURANCE_V2_CHARACTERIZATION lean_complete forge/src/check.rs bv_fn_cert_with
     #[test]
     fn ac5_real_mixed_producer_preserves_typed_failures_and_exact_prefix() {
         let (program, function, base) = mixed_route_producer_fixture();
@@ -11407,6 +11443,24 @@ requires true\n\
                 crate::manifest::ClauseTerminalState::Discharged
             )),
             "scripted complete portfolio: {portfolio:?}"
+        );
+        assert_eq!(
+            portfolio.clauses[0]
+                .position
+                .as_ref()
+                .expect("discharged BV clause has a formal position")
+                .residual_trust,
+            crate::manifest::ResidualTrust::LeanChecked,
+            "the reconstructed BV clause realizes the Lean-complete family"
+        );
+        assert_eq!(
+            portfolio.clauses[2]
+                .position
+                .as_ref()
+                .expect("discharged NLSAT clause has a formal position")
+                .residual_trust,
+            crate::manifest::ResidualTrust::Solver,
+            "the nonlinear NLSAT clause realizes the solver-complete family"
         );
 
         for (outcome, expected) in [
@@ -11760,6 +11814,8 @@ requires true\n\
         )
     }
 
+    // ASSURANCE_V2_CHARACTERIZATION solver_complete forge/src/check.rs forge_gate_item_cert_with
+    // ASSURANCE_V2_CHARACTERIZATION lean_empirical forge/src/check.rs forge_gate_item_cert_with
     #[test]
     fn ac6_real_g1_producer_is_total_for_two_author_clauses_and_policy() {
         let killed_matrix = g1_replay_matrix([

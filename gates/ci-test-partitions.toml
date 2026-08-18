@@ -18,6 +18,33 @@ bucket = 1
 seconds = 2.279
 test = "forge::battery_conformance unlisted_simp_lemma_is_refused_with_name"
 
+# These tests postdate timing_source. Their focused local runtime rounded below
+# nextest's useful resolution, so the reviewed 0.007s estimate matches adjacent
+# unit tests until the next measured GitHub timing snapshot replaces it.
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::antichain_intersection_is_permutation_and_duplicate_invariant"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::authority_and_presentation_digests_have_disjoint_mutation_domains"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::complete_routes_collapse_only_in_presentation"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::generated_matrix_replays_every_constructor_pair"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
 [[assignment]]
 bucket = 1
 seconds = 0.010

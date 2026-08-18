@@ -182,6 +182,7 @@ fn engine_attribution_is_additive_and_round_trips() {
 // scalar item kernel-discharges by Lean and emits a cert with `engine_attribution`
 // naming `lean-auto` + the {Lean kernel, …, EXP} base. Expected from REQ-4 / OQ-1
 // (R-CHAR-3) — the attribution is populated whenever a non-default engine discharges.
+// ASSURANCE_V2_CHARACTERIZATION lean_empirical forge/src/check.rs lean_engine_cert
 #[test]
 fn engine_lean_attaches_smaller_trust_base_live() {
     if !lake_present() {

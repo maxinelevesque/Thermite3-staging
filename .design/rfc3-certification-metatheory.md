@@ -291,6 +291,81 @@ so no join exists. `lean/Thermite/CertificationShape.lean` proves both the
 missing join and the four-not-five cardinality. The domain is therefore not
 declared a lattice or non-modular N5, and no synthetic top is added.
 
+### AssurancePolicyV2 reconciliation
+
+GitHub #54 adds `lean/Thermite/AssurancePolicyV2.lean` as the successor policy
+layer required by the engineer-assurance report. It does not mutate or silently
+reuse any older carrier:
+
+| carrier | role after V2 | relationship |
+|---|---|---|
+| Rust `AssuranceElement` | legacy seven-case certificate-coordinate comparison | compatibility only; it includes `NoClaim` and crosses populations that V2 keeps fibered |
+| Lean `RepresentativePosition` / `CertificationOrder` | four-point realizable counterexample probe | retained to prove the old missing join; not an aggregation carrier |
+| Lean `PolicyPoint` / `CertificationPolicy` | four-point sound abstraction for the previously enabled self-floor consumer | retained for that historical theorem; not reused for reports |
+| `AssurancePolicyV2` | closed parameterized comparison, projection, and downset carrier | total only from `AdmittedRealizedCertificationV2`; `NoClaim` is outside the carrier |
+
+V2 has six constructor families but an unbounded value domain. Exact execution
+identity or bound, semantic/model versions, residual context, boundary, and
+fragment lineage live in `ClaimFiberKeyV2`; the 6×6 replay enumerates constructor
+pairs only. Runtime and bounded populations therefore do not become a
+synthetic bottom for an all-input claim. In an exact all-input fiber,
+solver-incomplete is below both solver-complete and Lean-empirical,
+solver-complete and Lean-empirical remain incomparable, and Lean-complete is
+their explicit upper bound. Their maximal common lower-bound frontier is the
+singleton solver-incomplete point.
+
+The reconciliation is checked rather than narrated: Lean proves that the
+predecessor `runtime ≤ bounded`, `bounded ≤ solverComplete`, and
+`bounded ≤ leanEmpirical` edges have no population scope in which both endpoint
+families are admitted. They are therefore explicit policy-skew witnesses, not
+silently transported V2 order edges.
+
+The open `RealizedCertification` record packages a full indexed judgment,
+interpreted population, accepted evidence for every population member, proof
+soundness, typed refutation evidence, exact evidence fiber, boundary coverage,
+axioms, and reconstruction identity. Population membership is definitionally
+characterized as the admitted fragment intersected with the qualifying boundary
+and the exact execution/bound/all-input scope; admitted families additionally
+carry non-emptiness. The actual `Program → Prop` claim is part of the Lean claim
+fiber, so equal coordinate strings cannot conflate different theorems. The
+closed `AdmittedRealizedCertificationV2` wrapper has exactly the six current
+authority-producing families; every family carries a witness tying its
+population and refutation contract to the realized record. Six nontrivial
+fixtures construct actual evidence over `coreV2` and a named, non-`True`
+boundary predicate. The order-soundness theorem consumes capabilities derived
+from those realized records rather than caller-postulated semantic edges.
+
+`AntichainNF` is a canonical finite downset representation over the six family
+constructors in one arbitrary exact fiber. `intersectNF` is structural Boolean
+intersection, so termination does not depend on enumerating bounds or versions;
+Lean proves denotational intersection, closure, commutativity, associativity,
+duplicate invariance, fixed serialization order, deduplication, and maximal
+frontier coverage, pairwise incomparability, maximality, extensional
+canonicity, arbitrary finite-fold denotation, permutation/head-swap invariance,
+and an explicit `NoItems` result. Executable fixtures pin singleton, incomparable-common-lower,
+and multiple-maximal-frontier cases. The generated
+`gates/assurance-v2-replay.json` is checked independently by Python, Lean, and
+Rust and rejects omitted families or altered lower-bound laws.
+
+This defines the extension tax for the policy layer: a new admitted backend,
+family, or version must update (1) the closed admitted wrapper, (2) total V2
+abstraction, (3) symbolic order and intersection laws, (4) engineer projection
+and loss disclosure, (5) Rust replay, (6) issuance inventory, (7) hostile
+negative mutations, (8) governed documentation, and (9) every declared
+predecessor comparison with a checked transport/simulation or an explicit
+checked incompatibility that forces policy skew. The later production issuance
+and comparison inventories are completed atomically with the authority migration;
+until then V2 is a proved policy/replay layer and does not drive admission.
+For this pre-authority stage, every currently modeled issuer and predecessor is
+marked at its source declaration. The gate requires exact bidirectional equality
+between those markers and the checked inventory, and every issuer row names a
+focused characterization test marked at that test and keyed to the exact
+`(family, issuer path, issuer symbol)` tuple. The marked test executes the issuer
+or its real production entry path and asserts the resulting formal coordinates;
+a relabeled existing function, unrelated existing test, duplicate row,
+unregistered issuer, or unclassified predecessor therefore fails the extension
+tax before #56 wires production authority.
+
 AC-7 adds `lean/Thermite/ImplementationModel.lean` and its negative-space pin
 module. The generic family keeps component-specific input and behavior types,
 an exact model/version identity, a named `Fragment`, denotation, and executable

@@ -13,6 +13,7 @@ inductive PolicyDomainVersion where
   | v1
 deriving DecidableEq, Repr
 
+-- ASSURANCE_V2_PREDECESSOR Thermite.CertificationMetatheory.PolicyPoint legacy_self_floor_abstraction
 inductive PolicyPoint where
   | runtime
   | bounded
