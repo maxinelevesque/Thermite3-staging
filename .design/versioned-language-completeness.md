@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: a961e0ce7858b516dd3583c02903e07d62333cdbf436196df7adcc4db0cf0736 (Assurance V2 extension-tax annotations, 2026-08-17: exact producer-core, predecessor, and characterization markers are non-operative and bidirectionally checked; language behavior is unchanged. prior: 169f8fb6ac3c19cf4f69a9356e8e5c183800f0b04d6ae3b11450299f9cea1d24)
+audited-content-sha256: 396435e3f6f0135d8d408d783c2bc3d071e779c0865e869bca6c3ea9ad019905 (Assurance V2 extension-tax closure, 2026-08-17: the reviewed RFC-3 content pin now names the exact V2-corrected source; producer-core, predecessor, and characterization markers remain non-operative and bidirectionally checked. prior: a961e0ce7858b516dd3583c02903e07d62333cdbf436196df7adcc4db0cf0736)
 
 ## Summary
 
