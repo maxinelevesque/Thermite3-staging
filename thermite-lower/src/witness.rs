@@ -20,11 +20,29 @@ pub struct CanonicalAstProjection {
     pub node_kinds: Vec<String>,
     pub node_facts: Vec<String>,
     pub edges: Vec<WitnessEdge>,
-    pub holdings: Vec<WitnessHolding>,
-    pub shared_places: Vec<WitnessSharedPlace>,
-    pub authority_required_nodes: Vec<u32>,
+    pub lock_decls: Vec<CanonicalLockDecl>,
+    pub events: Vec<CanonicalSemanticEvent>,
     pub direct_footprints: BTreeMap<String, Vec<String>>,
     pub calls: BTreeMap<String, Vec<String>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CanonicalLockDecl {
+    pub name: String,
+    pub guarded_region: String,
+    pub guarded_segments: Vec<String>,
+    pub after: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CanonicalSemanticEvent {
+    pub node: u32,
+    pub entering: bool,
+    pub kind: String,
+    pub value: String,
+    pub segments: Vec<String>,
+    pub mode: String,
+    pub eligible: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -78,12 +96,6 @@ pub struct WitnessSharedPlace {
 pub struct SharedObservation {
     pub path: String,
     pub ty: thermite_syntax::Type,
-}
-
-#[derive(Clone, Copy)]
-struct CanonicalHeldScope {
-    record: usize,
-    loop_depth: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -216,109 +228,6 @@ pub fn emit_witness(checked: &CheckedProgram) -> TraversalWitness {
     }
 }
 
-fn canonical_holdings(
-    inventory: &SemanticInventory,
-    regions: &thermite_spec::RegionIndex,
-) -> Result<Vec<WitnessHolding>, WitnessError> {
-    let events =
-        walk_semantic(inventory, WorkBudget(inventory.kinds.len() * 2)).map_err(|limit| {
-            WitnessError::Construction(vec![LowerError::ResourceLimit {
-                budget: limit.budget.0,
-                required_at_least: limit.required_at_least,
-            }])
-        })?;
-    let mut records: Vec<WitnessHolding> = Vec::new();
-    let mut held: Vec<CanonicalHeldScope> = Vec::new();
-    let mut loop_depth = 0usize;
-    for event in events {
-        let (id, entering) = match event {
-            SemanticEvent::Enter { id, .. } => (id, true),
-            SemanticEvent::Leave { id, .. } => (id, false),
-        };
-        let fact = &inventory.facts[id.0 as usize];
-        if entering {
-            match fact {
-                SemanticFact::Loop => loop_depth += 1,
-                SemanticFact::Holding { lock } => {
-                    let guarded = regions.guarded_region(lock).ok_or_else(|| {
-                        WitnessError::Construction(vec![LowerError::EffectAnalysis {
-                            detail: format!("canonical holding refers to unresolved lock `{lock}`"),
-                            span: thermite_syntax::Span::new(0, 0),
-                        }])
-                    })?;
-                    let incoming = held
-                        .iter()
-                        .map(|scope| records[scope.record].lock.clone())
-                        .collect::<Vec<_>>();
-                    let record = records.len();
-                    records.push(WitnessHolding {
-                        node: id.0,
-                        lock: lock.clone(),
-                        guarded_region: guarded.to_string(),
-                        capability: format!("capability@{}", id.0),
-                        incoming_held: incoming.clone(),
-                        outgoing_held: incoming,
-                        close_edges: Vec::new(),
-                    });
-                    held.push(CanonicalHeldScope { record, loop_depth });
-                }
-                SemanticFact::Return => {
-                    canonical_control_closes(&mut records, &held, id, "Return", |_| true)
-                }
-                SemanticFact::Break => {
-                    canonical_control_closes(&mut records, &held, id, "Break", |scope| {
-                        scope.loop_depth == loop_depth
-                    })
-                }
-                SemanticFact::Continue => {
-                    canonical_control_closes(&mut records, &held, id, "Continue", |scope| {
-                        scope.loop_depth == loop_depth
-                    })
-                }
-                _ => {}
-            }
-        } else {
-            match fact {
-                SemanticFact::Holding { .. } => {
-                    if let Some(scope) = held.pop() {
-                        let lock = records[scope.record].lock.clone();
-                        records[scope.record].close_edges.push(WitnessCloseEdge {
-                            at: id.0,
-                            reason: "Fallthrough".to_string(),
-                            inner_to_outer: vec![lock],
-                        });
-                    }
-                }
-                SemanticFact::Loop => loop_depth = loop_depth.saturating_sub(1),
-                _ => {}
-            }
-        }
-    }
-    Ok(records)
-}
-
-fn canonical_control_closes(
-    records: &mut [WitnessHolding],
-    held: &[CanonicalHeldScope],
-    at: NodeId,
-    reason: &str,
-    applies: impl Fn(&CanonicalHeldScope) -> bool,
-) {
-    let affected = held.iter().copied().filter(applies).collect::<Vec<_>>();
-    let sequence = affected
-        .iter()
-        .rev()
-        .map(|scope| records[scope.record].lock.clone())
-        .collect::<Vec<_>>();
-    for scope in affected {
-        records[scope.record].close_edges.push(WitnessCloseEdge {
-            at: at.0,
-            reason: reason.to_string(),
-            inner_to_outer: sequence.clone(),
-        });
-    }
-}
-
 fn canonical_shared_places(
     inventory: &SemanticInventory,
     regions: &thermite_spec::RegionIndex,
@@ -443,12 +352,89 @@ pub fn canonical_ast_projection(source: &Program) -> Result<CanonicalAstProjecti
                 .collect(),
         )
     })?;
-    let holdings = canonical_holdings(&inventory, &regions)?;
-    let shared_places = canonical_shared_places(&inventory, &regions)?;
-    let authority_required_nodes = shared_places
+    let mut lock_decls = source
+        .items
         .iter()
-        .filter(|place| !place.authorizing_locks.is_empty())
-        .map(|place| place.node)
+        .filter_map(|item| match item {
+            Item::LockDecl(lock) => Some(CanonicalLockDecl {
+                name: lock.name.clone(),
+                guarded_region: lock.guards.to_string(),
+                guarded_segments: lock.guards.segments.clone(),
+                after: lock.after.clone(),
+            }),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    lock_decls.sort_by(|left, right| left.name.cmp(&right.name));
+    let semantic_events = walk_semantic(
+        &inventory,
+        WorkBudget(inventory.kinds.len().saturating_mul(2)),
+    )
+    .map_err(|limit| {
+        WitnessError::Construction(vec![LowerError::ResourceLimit {
+            budget: limit.budget.0,
+            required_at_least: limit.required_at_least,
+        }])
+    })?;
+    let events = semantic_events
+        .into_iter()
+        .map(|event| {
+            let (id, entering) = match event {
+                SemanticEvent::Enter { id, .. } => (id, true),
+                SemanticEvent::Leave { id, .. } => (id, false),
+            };
+            let mut kind = "Other".to_string();
+            let mut value = String::new();
+            let mut segments = Vec::new();
+            let mut mode = String::new();
+            let mut eligible = false;
+            match &inventory.facts[id.0 as usize] {
+                SemanticFact::Holding { lock } => {
+                    kind = "Holding".to_string();
+                    value = lock.clone();
+                }
+                SemanticFact::Loop => kind = "Loop".to_string(),
+                SemanticFact::Return => kind = "Return".to_string(),
+                SemanticFact::Break => kind = "Break".to_string(),
+                SemanticFact::Continue => kind = "Continue".to_string(),
+                SemanticFact::Place(path) => {
+                    kind = "Place".to_string();
+                    value = path.to_string();
+                    segments = path.segments.clone();
+                    mode = if parents[id.0 as usize]
+                        .is_some_and(|(_, role)| role == ChildRole::Target)
+                    {
+                        "Write".to_string()
+                    } else {
+                        "Read".to_string()
+                    };
+                    let shadowed = path
+                        .segments
+                        .first()
+                        .is_some_and(|root| is_lexically_shadowed(&inventory, id, root));
+                    let mut ancestor = parents[id.0 as usize];
+                    let mut nested_place = false;
+                    let mut in_clause = false;
+                    while let Some((parent, _)) = ancestor {
+                        nested_place |= matches!(inventory.facts[parent], SemanticFact::Place(_));
+                        in_clause |= matches!(inventory.facts[parent], SemanticFact::Clause);
+                        ancestor = parents[parent];
+                    }
+                    eligible =
+                        !shadowed && !nested_place && !in_clause && regions.resolve(path).is_ok();
+                }
+                _ => {}
+            }
+            CanonicalSemanticEvent {
+                node: id.0,
+                entering,
+                kind,
+                value,
+                segments,
+                mode,
+                eligible,
+            }
+        })
         .collect::<Vec<_>>();
     for (node, fact) in inventory.facts.iter().enumerate() {
         let Some(function) = function_of(node) else {
@@ -536,9 +522,8 @@ pub fn canonical_ast_projection(source: &Program) -> Result<CanonicalAstProjecti
                 role: format!("{:?}", edge.role),
             })
             .collect(),
-        holdings,
-        shared_places,
-        authority_required_nodes,
+        lock_decls,
+        events,
         direct_footprints: direct
             .into_iter()
             .map(|(function, effects)| {
@@ -664,15 +649,43 @@ pub fn lean_replay_source(ast: &CanonicalAstProjection, witness: &TraversalWitne
                 .join(", ")
         )
     }
-    fn nats(values: &[u32]) -> String {
-        format!(
-            "[{}]",
-            values
-                .iter()
-                .map(ToString::to_string)
-                .collect::<Vec<_>>()
-                .join(", ")
-        )
+    fn lock_decls(values: &[CanonicalLockDecl]) -> String {
+        values
+            .iter()
+            .map(|lock| {
+                let after = lock
+                    .after
+                    .as_ref()
+                    .map(|name| format!("some {}", string(name)))
+                    .unwrap_or_else(|| "none".to_string());
+                format!(
+                    "⟨{}, {}, {}, {}⟩",
+                    string(&lock.name),
+                    string(&lock.guarded_region),
+                    strings(&lock.guarded_segments),
+                    after
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+    fn events(values: &[CanonicalSemanticEvent]) -> String {
+        values
+            .iter()
+            .map(|event| {
+                format!(
+                    "⟨{}, {}, {}, {}, {}, {}, {}⟩",
+                    event.node,
+                    event.entering,
+                    string(&event.kind),
+                    string(&event.value),
+                    strings(&event.segments),
+                    string(&event.mode),
+                    event.eligible
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
     }
     fn holdings(values: &[WitnessHolding]) -> String {
         values
@@ -755,13 +768,13 @@ pub fn lean_replay_source(ast: &CanonicalAstProjection, witness: &TraversalWitne
         .map(|(f, cs)| format!("⟨{}, {}⟩", string(f), strings(cs)))
         .collect::<Vec<_>>()
         .join(", ");
+    let ast_lock_decls = lock_decls(&ast.lock_decls);
+    let ast_events = events(&ast.events);
     let witness_holdings = holdings(&witness.holdings);
     let witness_places = places(&witness.shared_places);
-    let ast_holdings = holdings(&ast.holdings);
-    let ast_places = places(&ast.shared_places);
     format!(
-        "import Thermite.CheckedTraversal\nopen Thermite.CheckedTraversal\nset_option maxRecDepth 100000\n\ndef ast : CanonicalAst := {{ digest := {}, nodeKinds := {}, nodeFacts := {}, edges := {}, holdings := [{}], sharedPlaces := [{}], authorityRequiredNodes := {}, directFootprints := [{}], calls := [{}] }}\ndef witness : Witness := ⟨{}, {}, {}, {}, {}, [{}], [{}], [{}], [{}], [{}]⟩\ntheorem rfc10_artifact_refines : producerRefines ast witness = true := by simp [producerRefines, produce, ast, witness, closure, closureFuel, closureStep, unionEffects, lookupEffects, listSetEq]\ntheorem rfc10_artifact_verified : verify ast witness = true := verify_complete (by simp [SupportedRFC10, footprintClosureSound, holdingCoverageSound, ast, witness, edgeWellFormed, footprintWellFormed, callsWellFormed, footprintsClosed, closure, closureFuel, closureStep, unionEffects, lookupEffects, listSetEq, holdingWellFormed, sharedPlaceWellFormed])\n#print axioms rfc10_artifact_refines\n#print axioms rfc10_artifact_verified\n#eval IO.println \"THERMITE_RFC10_REPLAY_ACCEPTED_V3\"\n",
-        string(&ast.digest), strings(&ast.node_kinds), strings(&ast.node_facts), edges(&ast.edges), ast_holdings, ast_places, nats(&ast.authority_required_nodes), ast_direct_footprints, ast_calls,
+        "import Thermite.CheckedTraversal\nopen Thermite.CheckedTraversal\nset_option maxRecDepth 100000\n\ndef ast : CanonicalAst := {{ digest := {}, nodeKinds := {}, nodeFacts := {}, edges := {}, lockDecls := [{}], events := [{}], directFootprints := [{}], calls := [{}] }}\ndef witness : Witness := ⟨{}, {}, {}, {}, {}, [{}], [{}], [{}], [{}], [{}]⟩\ntheorem rfc10_artifact_refines : producerRefines ast witness = true := by simp [producerRefines, produce, derivedHoldings, derivedSharedPlaces, derivedAuthorityRequiredNodes, deriveSemantics, deriveStep, closeAffected, addClose, updateHolding, orderValid, lockBefore, lookupLock, lockOfScope, regionsOverlap, isPrefix, ast, witness, closure, closureFuel, closureStep, unionEffects, lookupEffects, listSetEq]\ntheorem rfc10_artifact_verified : verify ast witness = true := verify_complete (by simp [SupportedRFC10, footprintClosureSound, holdingCoverageSound, derivedHoldings, derivedSharedPlaces, derivedAuthorityRequiredNodes, deriveSemantics, deriveStep, closeAffected, addClose, updateHolding, orderValid, lockBefore, lookupLock, lockOfScope, regionsOverlap, isPrefix, ast, witness, edgeWellFormed, footprintWellFormed, callsWellFormed, footprintsClosed, closure, closureFuel, closureStep, unionEffects, lookupEffects, listSetEq, holdingWellFormed, sharedPlaceWellFormed])\n#print axioms rfc10_artifact_refines\n#print axioms rfc10_artifact_verified\n#eval IO.println \"THERMITE_RFC10_REPLAY_ACCEPTED_V3\"\n",
+        string(&ast.digest), strings(&ast.node_kinds), strings(&ast.node_facts), edges(&ast.edges), ast_lock_decls, ast_events, ast_direct_footprints, ast_calls,
         witness.version, string(&witness.canonical_ast_sha256), strings(&witness.node_kinds), strings(&witness.node_facts), edges(&witness.edges), direct_footprints, calls, footprints, witness_holdings, witness_places,
     )
 }

@@ -1,7 +1,7 @@
 # Feature: RFC-10 checked traversal and proof-carrying interpretation
 
 <!--
-audited-content-sha256: f35bbdc682c58206f60cffe0b6ba1ee5d4a8aed6d6538fca611e63a303d8df52 (re-pinned 2026-08-15 after reviewing the additive exact-budget producer API and truncation/version/payload mutation tests; canonical witness fields and replay semantics are unchanged.)
+audited-content-sha256: 7509c474554b42e886213948a552794f1f59c1c0e4757eb44b90d926a3d273cf (re-pinned 2026-08-24 for issue #49 slice 1: the canonical projection now carries neutral lock declarations and semantic events, Lean independently derives holding/shared/authority/close evidence, and the former Rust expected-result payloads are removed. prior: f35bbdc682c58206f60cffe0b6ba1ee5d4a8aed6d6538fca611e63a303d8df52)
 -->
 
 ## Summary
@@ -232,6 +232,17 @@ an otherwise unsupported backend. Issues #48 and #55 through #57 remain outside
 this work: they own language-wide stage classification and assurance-policy
 expansion, not RFC-10 semantic replay.
 
+The first slice shipped on the issue branch: `CanonicalAst` now carries sorted
+lock declarations and neutral semantic enter/leave facts, while Lean's
+`deriveSemantics` computes guarded regions, held-lock stacks, direct order
+validity, shared-place authority, and fallthrough/return/break/continue close
+records. The Rust canonical projection no longer contains expected holdings,
+shared places, or authority-required nodes. `semantic_derivation_sound_of_verify`
+binds successful replay to the derived result and is included in the repository
+axiom probe. Neutral-fact mutations cover guarded regions, shared-place
+eligibility, lock-order edges, and all four close reasons. The broader mutation
+inventory and generated compatibility matrix remain open in slices 2 and 3.
+
 The following orthogonal completeness review found five further
 evidence-integrity defects, all closed in the implementation fix round: corpus
 expectations now distinguish the solver-equipped L4 result from the stable L3
@@ -454,13 +465,12 @@ impossibility evidence specified by REQ-3.
   replaces that boundary.
 - The production Rust analyzer constructs the witness, while a separate Rust
   canonical projection constructs the syntax-side node inventory, direct
-  footprints, free-function call graph, holding-node inventory, and
-  shared-place-node inventory. The direct-footprint and free-call legs are
-  genuinely different traversals; holding and shared-place payloads are
-  duplicated same-algorithm walks over the same semantic inventory and region
-  index. Lean checks their rendered agreement and recomputes transitive
-  footprints, but a common algorithmic error in those duplicated payload walks
-  remains trusted. GitHub issue #49 owns an independently derived replacement.
+  footprints, free-function call graph, sorted lock declarations, and neutral
+  semantic enter/leave facts. Lean independently derives holding, guarded-region,
+  held-stack, close, shared-place, and authority payloads and recomputes
+  transitive footprints. The Rust classification of neutral place events
+  (lexical shadowing, clause exclusion, and target/read mode) remains part of
+  the parser-to-canonical interpretation boundary.
 - `canonical_ast_sha256` currently hashes a versioned Rust `Debug`
   representation. The version tag prevents silent format reuse, but the
   structural fidelity and stability of that representation remain trusted.
@@ -477,9 +487,8 @@ impossibility evidence specified by REQ-3.
   replay invocation: control of either can forge the accepted output protocol.
 - Guarded-region identity, held-set/lock-transition contents, lock-order paths,
   close-edge normalization, shared-place path/mode, and authorizing-lock identity
-  are required to equal the canonical-projection payload exactly. This rejects
-  unilateral transport/serialization forgery; it does not reject a coordinated
-  same-algorithm error in the two Rust payload walks.
+  are required to equal Lean's derivation from canonical declarations and
+  events; the former duplicated Rust expected-result payloads no longer exist.
 - The Lean kernel, the repository's explicit axiom allowlist, and the witness
   checker's formal statement are trusted in the same sense as the existing
   proof spine.

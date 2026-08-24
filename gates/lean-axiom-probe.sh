@@ -120,6 +120,7 @@ THEOREMS=(
   "Thermite.CheckedTraversal.evidence_well_formed_of_verify"
   "Thermite.CheckedTraversal.footprint_closure_sound_of_verify"
   "Thermite.CheckedTraversal.holding_coverage_sound_of_verify"
+  "Thermite.CheckedTraversal.semantic_derivation_sound_of_verify"
   "Thermite.CheckedTraversal.resource_limit_not_certifying"
   "Thermite.CertificationMetatheory.refines_refl"
   "Thermite.CertificationMetatheory.refines_trans"
