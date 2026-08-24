@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 396435e3f6f0135d8d408d783c2bc3d071e779c0865e869bca6c3ea9ad019905 (Assurance V2 extension-tax closure, 2026-08-17: the reviewed RFC-3 content pin now names the exact V2-corrected source; producer-core, predecessor, and characterization markers remain non-operative and bidirectionally checked. prior: a961e0ce7858b516dd3583c02903e07d62333cdbf436196df7adcc4db0cf0736)
+audited-content-sha256: 10df0ec774f5ff6c9287f1533038ed71be65636d1b87dd07241226b94f7e5c63 (Roadmap/status reconciliation, 2026-08-23: CLAIM-REGISTRY-SHIPPED-EVIDENCE now pins the exact registry that marks the Assurance V2 proved-display requirement shipped and production display non-authority partial. The registry delta and cited Assurance V2 evidence were re-read; GAP-CLAIM-EVIDENCE-CLOSURE remains open and no semantic-closure claim is added. prior: 396435e3f6f0135d8d408d783c2bc3d071e779c0865e869bca6c3ea9ad019905)
 
 ## Summary
 
@@ -142,12 +142,12 @@ checker vocabulary as the language-wide ontology.
 - [x] AC-12: (REQ-12) The completeness-review backlog and gap inventory agree
   in both directions, and closing a fixture backlog item without adding its
   cited executable or formal evidence fails the track's consistency gate.
-- [ ] AC-13: (REQ-13) Lean defines the closed engineer-label vocabulary and
+- [x] AC-13: (REQ-13) Lean defines the closed engineer-label vocabulary and
   projection relation, proves projection totality on every coherent formal
   position, and proves one meaning theorem per display label. Each theorem
   states the scope, refutation guarantee, residual-trust bound, boundary
   qualification, and fragment/frame premises that the label entails.
-- [ ] AC-14: (REQ-13) For every pair of distinct formal positions mapped to one
+- [x] AC-14: (REQ-13) For every pair of distinct formal positions mapped to one
   engineer label, a kernel-checked collapse theorem states their common
   decision-relevant semantics and a generated disclosure table names every
   distinction lost by the projection. An undeclared many-to-one mapping fails
@@ -157,6 +157,23 @@ checker vocabulary as the language-wide ontology.
   tuple, frame, policy version, or display label either recompute consistently
   or reject. Repository search and structural tests demonstrate that gates and
   routing inspect formal data rather than display labels.
+
+### Implementation reconciliation — 2026-08-23
+
+AC-1 through AC-12 shipped in the language-completeness sequence. Assurance V2
+then closed the formal portion of the display projection in issue #54:
+`AssurancePolicyV2.lean` defines the six-family closed engineer vocabulary,
+proves total licensed meanings for realized certifications, characterizes the
+exact display fibers globally, and retains every collapsed distinction in a
+typed disclosure. The Rust replay independently separates the authority and
+presentation digest domains. Those results close AC-13 and AC-14.
+
+AC-15 deliberately remains open. The V2 Rust authority/display records are a
+replay model, not yet fields of the production `Certificate`; their own module
+states that issue #56 performs that atomic authority migration. Issue #56 owns
+stored-envelope round trips and the proof that every production decision has
+stopped consuming `Level` or engineer display. This document does not treat the
+formal projection as production migration evidence.
 
 ## Architecture
 

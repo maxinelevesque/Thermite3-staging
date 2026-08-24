@@ -13,6 +13,7 @@ introduces:
 | | |
 |---|---|
 | **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
+| **Fork implementation** | **Not started; independent and unscheduled.** It is not on the RFC-10 → RFC-11 → RFC-12 → RFC-13 critical path. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | independent, unscheduled of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md) |
