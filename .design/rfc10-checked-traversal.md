@@ -111,16 +111,16 @@ review provenance for this amendment.
 - [x] AC-6: (REQ-6) Witness artifacts are deterministic under repeated runs,
   bind the canonical serialized AST, enumerate every semantic node and edge,
   and change when any binding, effect, call, holding, order, or close fact changes.
-- [ ] AC-7: (deferred expansion; REQ-7, REQ-8) Lean replay accepts witnesses for valid nested and
+- [x] AC-7: (REQ-7, REQ-8) Lean replay accepts witnesses for valid nested and
   expression-position holding programs and rejects independently mutated
   witnesses that omit or forge a condition child, match guard, direct effect,
   call edge, transitive owner, lock-order edge, capability, or close edge; the
   axiom probe remains within the repository allowlist.
-- [ ] AC-8: (deferred expansion; REQ-8) Lean proves termination and soundness of the witness checker
+- [x] AC-8: (REQ-8) Lean proves termination and soundness of the witness checker
   over finite ASTs, finite region/lock/call graphs, and finite effect lattices,
   and states separately that operational work-budget exhaustion is not a source
   typing or semantic judgment.
-- [ ] AC-9: (deferred expansion; REQ-9) The generated cross-product suite covers every compatible
+- [x] AC-9: (REQ-9) The generated cross-product suite covers every compatible
   payload/position pair and asserts phase agreement; deleting any canonical
   child edge produces at least one demonstrated failure, and the suite preserves
   existing corpus certificate outcomes item by item.
@@ -132,12 +132,9 @@ review provenance for this amendment.
 
 ### Implementation-pass status
 
-Revision-2 slices 1 through 8 and the rung-4 extension are implemented. AC-1
-through AC-6 are closed. AC-7 through AC-9 remain deliberately unclaimed at
-their original, stronger wording and are scoped as post-RFC-10 expansion work;
-they are not premises of the evidence-completeness theorem or of the current L3
-route. GitHub issue #49 owns that bounded RFC-10 expansion; issue #48 owns the
-language-wide versioned-completeness discipline. Forge now renders separate
+Revision-2 slices 1 through 8, the rung-4 extension, and the bounded issue #49
+expansion are implemented. AC-1 through AC-10 are closed; issue #48 continues
+to own the language-wide versioned-completeness discipline. Forge now renders separate
 canonical-AST and production
 witness values into the finite Lean checker and requires the kernel to establish
 `verify ast witness = true`; producer-supplied direct effects and calls are
@@ -146,18 +143,20 @@ recomputes their fixed-point closure. Mutation pins cover structural identity,
 direct and transitive footprints, added and omitted call edges, holding and
 shared-place coverage, capabilities, close evidence, and authority evidence.
 
-AC-7 and AC-8 are deferred at their full wording: the canonical projection does
-not yet derive the exact expected lock/region/order/close and shared-place
-authority records for Lean to compare field-for-field, and the formal theorem
-therefore establishes the executable checker's present predicates rather than
-the full checked-IR semantics claimed by REQ-8. The generated matrix crosses
-ten expression positions with shared reads/writes, direct reentrancy, reverse
-ordering, transitive reentrancy, unauthorised access, and deep finite terms; the
-non-Copy move, escaping-borrow, and invariant-restoration payloads remain in
-focused tests rather than the generated cross-product, and the matrix does not
-yet invoke every L2 and Forge route. The corpus-preservation clause of AC-9 is
-complete through the frozen 18-file certification-level sweep, but that result
-does not discharge the missing generated cross-product. AC-10 is closed by the
+AC-7 and AC-8 now hold at their full wording. The canonical projection carries
+neutral lock declarations and semantic enter/leave events; Lean derives exact
+guarded regions, held stacks, ordering validity, close normalization, and
+shared-place authority, and `semantic_derivation_sound_of_verify` exposes the
+accepted result. Mutation controls cover every named structural, footprint,
+call, holding, capability, authority, reentrancy/order, and close family while
+the axiom probe remains unchanged. AC-9 is closed by the canonical-role-grounded
+ten-position matrix: compatible cells traverse parser, checked IR, replay, L1,
+L2, L3, and provider-free Forge; typed grammar/type/backend exclusions are
+asserted, invariant-breaking cells fail at every close, and the frozen 18-file
+certificate sweep remains item-for-item stable. The provider-free loop-test
+cell reaches Forge and records an explicit L0 postcondition proof failure rather
+than being erased or misclassified; this is phase agreement, not a claim that
+every valid source must certify at L3. AC-10 is closed by the
 final independent cold-review decision
 `bafyreick7fyhphabbxq7bb7eehdmehm4duvjmehkhic3cfwv5kxu57zihm` on kan subject
 `rfc10-impl` and the follow-up closure pass described below.
@@ -232,7 +231,7 @@ an otherwise unsupported backend. Issues #48 and #55 through #57 remain outside
 this work: they own language-wide stage classification and assurance-policy
 expansion, not RFC-10 semantic replay.
 
-The first slice shipped on the issue branch: `CanonicalAst` now carries sorted
+All three slices shipped on the issue branch. `CanonicalAst` now carries sorted
 lock declarations and neutral semantic enter/leave facts, while Lean's
 `deriveSemantics` computes guarded regions, held-lock stacks, direct order
 validity, shared-place authority, and fallthrough/return/break/continue close
@@ -240,8 +239,15 @@ records. The Rust canonical projection no longer contains expected holdings,
 shared places, or authority-required nodes. `semantic_derivation_sound_of_verify`
 binds successful replay to the derived result and is included in the repository
 axiom probe. Neutral-fact mutations cover guarded regions, shared-place
-eligibility, lock-order edges, and all four close reasons. The broader mutation
-inventory and generated compatibility matrix remain open in slices 2 and 3.
+eligibility, lock-order edges, and all four close reasons. Replay mutations now
+include condition and guard omissions, every canonical child edge,
+direct/transitive footprint ownership, direct reentrancy, ordering, authority,
+and each fallthrough/return/break/continue close. The generated matrix crosses
+all ten canonical positions with the requested positive, rejecting, affine,
+invariant, and finite-depth payloads; it invokes both lowerer and Forge L2
+exclusions and the real provider-free Forge route. In doing so it exposed and
+fixed an L3 emission defect: a value-producing `holding` followed by another
+statement or block tail must be terminated as a statement.
 
 The following orthogonal completeness review found five further
 evidence-integrity defects, all closed in the implementation fix round: corpus
@@ -454,7 +460,7 @@ impossibility evidence specified by REQ-3.
 | Provability | Frame consequences proved over assumed semantic fields | Source-bound witnesses establish completeness and lock/close facts before consequences | More proof artifacts and replay work; materially smaller trusted checker boundary |
 | Metatheory | Informal structural traversal and ad hoc implementation depth bound | Finite-tree, finite-graph, finite-lattice semantics with explicit termination arguments | Requires canonical node/child formalization |
 | Compatibility | Public lowering APIs accept parsed programs and may rediscover facts | Compatibility wrappers validate; internal lowerers require checked IR | Internal API migration, source language unchanged |
-| Backend completeness | L3 covered expression holding while L1 varied by position | L1 and L3 preserve holding in the generated expression-position matrix | Issue #49 must add the compatible L2 and provider-free Forge outcomes to the generated cross-product |
+| Backend completeness | L3 covered expression holding while L1 varied by position | L1 and L3 preserve holding in the generated expression-position matrix | Compatible L2 cells retain a typed RFC-10 `Unsupported` result at both lowerer and Forge boundaries; provider-free Forge outcomes are generated explicitly |
 | Resource behavior | Recursive passes may overflow or use inconsistent depth limits | Iterative traversal plus deterministic operational work limits | Possible resource rejection of very large valid programs, never certification |
 | Residual trust | Rust footprint and lowering correspondence largely nominal | Canonical decoding, replay invocation, kernel/axioms, and provider remain named | Future proof strengthening can shrink this without surface change |
 

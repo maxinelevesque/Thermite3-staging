@@ -9222,8 +9222,8 @@ mod tests {
             );
         }
 
-        let call_source = "fn leaf() -> u64 ! pure requires true ensures true { 1 }\n\
-            fn root() -> u64 ! pure requires true ensures true { leaf() }";
+        let call_source = "fn leaf() -> String ! alloc requires true ensures true { \"hello\" }\n\
+            fn root() -> String ! alloc requires true ensures true { leaf() }";
         let call_parsed = thermite_syntax::parse(call_source);
         assert!(call_parsed.is_clean(), "{:?}", call_parsed.errors);
         let call_checked = thermite_lower::check_program(&call_parsed.program).unwrap();
@@ -9231,6 +9231,16 @@ mod tests {
         let call_ast = thermite_lower::canonical_ast_projection(&call_parsed.program).unwrap();
         run_rfc10_lean_replay(&call_ast, &call_witness)
             .expect("faithful call graph kernel-replays");
+        let mut missing_transitive_owner = call_witness.clone();
+        missing_transitive_owner
+            .footprints
+            .get_mut("root")
+            .expect("root footprint")
+            .clear();
+        assert!(
+            run_rfc10_lean_replay(&call_ast, &missing_transitive_owner).is_err(),
+            "Lean must reject an omitted transitive footprint owner"
+        );
         call_witness.calls.get_mut("root").unwrap().clear();
         assert!(
             run_rfc10_lean_replay(&call_ast, &call_witness).is_err(),

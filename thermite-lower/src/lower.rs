@@ -9576,8 +9576,16 @@ fn lower_block_inner(
     span: Span,
 ) -> Result<String, LowerError> {
     let mut out = String::new();
-    for stmt in &block.stmts {
-        out.push_str(&lower_stmt(stmt, ctx, depth + 1)?);
+    for (index, stmt) in block.stmts.iter().enumerate() {
+        let mut rendered = lower_stmt(stmt, ctx, depth + 1)?;
+        if matches!(stmt, Stmt::Holding { .. })
+            && (block.tail.is_some() || index + 1 < block.stmts.len())
+            && rendered.ends_with("}\n")
+        {
+            rendered.truncate(rendered.len() - 2);
+            rendered.push_str("};\n");
+        }
+        out.push_str(&rendered);
     }
     if let Some(tail) = &block.tail {
         let t = lower_expr(tail, ctx, depth, span)?;

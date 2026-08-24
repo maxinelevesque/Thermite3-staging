@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: dba8b51609d3ae5d2acc76b8e0c694686a99761a3a5a7e94b150e8dc7541aa34 (RFC-10 semantic replay strengthening, 2026-08-24: witness interpretation moved from Rust-supplied expected holding/shared payloads to Lean derivation over neutral canonical facts; language-stage classifications and total-outcome policy are unchanged. prior: 396435e3f6f0135d8d408d783c2bc3d071e779c0865e869bca6c3ea9ad019905)
+audited-content-sha256: 3c4949a98be0ae20c84982f0274758bf5e3c6796ccf8780925058571860e87f9 (RFC-10 semantic replay strengthening, 2026-08-24: witness interpretation moved from Rust-supplied expected holding/shared payloads to Lean derivation over neutral canonical facts; language-stage classifications and total-outcome policy are unchanged. prior: 396435e3f6f0135d8d408d783c2bc3d071e779c0865e869bca6c3ea9ad019905)
 
 ## Summary
 

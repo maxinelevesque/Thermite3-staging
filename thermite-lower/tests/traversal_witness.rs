@@ -142,6 +142,16 @@ fn independently_mutated_evidence_is_rejected_by_named_field() {
             field: "shared_places"
         }
     );
+
+    for index in 0..original.edges.len() {
+        let mut missing_child = original.clone();
+        missing_child.edges.remove(index);
+        assert_eq!(
+            replay_witness(&parsed.program, &missing_child).unwrap_err(),
+            WitnessError::Mismatch { field: "edges" },
+            "canonical child edge {index} must be observed"
+        );
+    }
 }
 
 #[test]
@@ -194,6 +204,20 @@ fn lean_derives_lock_authority_order_and_all_close_edges_from_neutral_facts() {
     assert!(!lean_output(&missing_order, &ordered_witness)
         .status
         .success());
+    let mut direct_reentrancy = ordered_ast.clone();
+    direct_reentrancy
+        .events
+        .iter_mut()
+        .filter(|event| event.entering && event.kind == "Holding")
+        .nth(1)
+        .expect("inner holding event")
+        .value = "alpha".into();
+    assert!(
+        !lean_output(&direct_reentrancy, &ordered_witness)
+            .status
+            .success(),
+        "Lean must reject a neutral event stream forged into direct reentrancy"
+    );
 
     let control = parse(
         "struct State { n: u64 } keeps n < 10\n\
@@ -219,6 +243,48 @@ fn lean_derives_lock_authority_order_and_all_close_edges_from_neutral_facts() {
             .unwrap()
             .kind = "Other".into();
         assert!(!lean_output(&omitted, &control_witness).status.success());
+
+        let mut forged_witness = control_witness.clone();
+        forged_witness
+            .holdings
+            .iter_mut()
+            .flat_map(|holding| holding.close_edges.iter_mut())
+            .find(|edge| edge.reason == reason)
+            .unwrap_or_else(|| panic!("{reason} witness close"))
+            .inner_to_outer
+            .clear();
+        assert!(
+            !lean_output(&control_ast, &forged_witness).status.success(),
+            "Lean must reject forged {reason} witness close evidence"
+        );
+    }
+}
+
+#[test]
+fn lean_rejects_specific_condition_and_match_guard_child_omissions() {
+    let parsed = parse(
+        "fn probe(x: u64) -> u64 ! pure requires true ensures true {\n\
+         if x == 0 { }\n\
+         match x { n if n == 1 => n, _ => x }\n\
+         }",
+    );
+    assert!(parsed.is_clean(), "{:?}", parsed.errors);
+    let checked = check_program(&parsed.program).unwrap();
+    let witness = emit_witness(&checked);
+    let ast = canonical_ast_projection(&parsed.program).unwrap();
+    assert!(lean_output(&ast, &witness).status.success());
+    for role in ["Condition", "Guard"] {
+        let mut omitted = witness.clone();
+        let index = omitted
+            .edges
+            .iter()
+            .position(|edge| edge.role == role)
+            .unwrap_or_else(|| panic!("{role} edge"));
+        omitted.edges.remove(index);
+        assert!(
+            !lean_output(&ast, &omitted).status.success(),
+            "Lean must reject an omitted {role} child"
+        );
     }
 }
 
