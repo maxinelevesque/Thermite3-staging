@@ -111,16 +111,16 @@ review provenance for this amendment.
 - [x] AC-6: (REQ-6) Witness artifacts are deterministic under repeated runs,
   bind the canonical serialized AST, enumerate every semantic node and edge,
   and change when any binding, effect, call, holding, order, or close fact changes.
-- [ ] AC-7 (deferred expansion): (REQ-7, REQ-8) Lean replay accepts witnesses for valid nested and
+- [ ] AC-7: (deferred expansion; REQ-7, REQ-8) Lean replay accepts witnesses for valid nested and
   expression-position holding programs and rejects independently mutated
   witnesses that omit or forge a condition child, match guard, direct effect,
   call edge, transitive owner, lock-order edge, capability, or close edge; the
   axiom probe remains within the repository allowlist.
-- [ ] AC-8 (deferred expansion): (REQ-8) Lean proves termination and soundness of the witness checker
+- [ ] AC-8: (deferred expansion; REQ-8) Lean proves termination and soundness of the witness checker
   over finite ASTs, finite region/lock/call graphs, and finite effect lattices,
   and states separately that operational work-budget exhaustion is not a source
   typing or semantic judgment.
-- [ ] AC-9 (deferred expansion): (REQ-9) The generated cross-product suite covers every compatible
+- [ ] AC-9: (deferred expansion; REQ-9) The generated cross-product suite covers every compatible
   payload/position pair and asserts phase agreement; deleting any canonical
   child edge produces at least one demonstrated failure, and the suite preserves
   existing corpus certificate outcomes item by item.
@@ -174,6 +174,63 @@ named tool-unavailable downgrades. Lean also binds each holding node to the exac
 canonical lock name. Exact guarded-region, order, close normalization, and
 shared-place authority binding remain the honest AC-7/8 residual tracked by
 GitHub issue #49.
+
+### Issue #49 closure plan (2026-08-24)
+
+Issue #49 closes AC-7 through AC-9 without widening RFC-10 or changing its
+source syntax. The work is split into three independently reviewable slices;
+each slice must retain the preceding slice's negative controls before the next
+one begins.
+
+1. **Independent semantic derivation (AC-7, AC-8).** Replace the
+   `CanonicalAst.holdings` and `CanonicalAst.sharedPlaces` expected-result
+   payloads with neutral declaration and node facts sufficient for Lean to
+   derive them: lock-to-region declarations and `after` edges, holding nodes,
+   shared-place nodes and access modes, lexical-scope/parent edges, loop
+   boundaries, and return/break/continue/fallthrough exits. In
+   `lean/Thermite/CheckedTraversal.lean`, define the finite graph
+   interpretation that resolves guarded regions, computes held-lock stacks,
+   rejects direct/transitive reentrancy and reverse order, derives authorizing
+   locks, and normalizes each leaving edge to its exact inner-to-outer close
+   sequence. `verify` compares the production witness to these Lean-derived
+   records. The syntax-side projection in `thermite-lower/src/witness.rs` may
+   serialize neutral facts, but it must not call `CheckedProgram`, read its
+   holdings/shared-place records, or construct the expected semantic result
+   with `canonical_holdings`, `canonical_control_closes`, or
+   `canonical_shared_places`. Rust remains responsible for diagnostics and
+   witness production; it is no longer the oracle for the expected result.
+2. **Replay mutation closure (AC-7).** Extend the replay battery so every
+   independently derived field has both omission and forgery controls. The
+   minimum set is condition child, match guard, direct effect, added/omitted
+   call edge, transitive footprint owner, guarded region, lock-order edge,
+   direct and transitive reentrancy, capability node, shared-place path/mode,
+   authorizing lock, and each fallthrough/return/break/continue close edge.
+   Every mutation must fail `verify`; the unmodified nested and
+   expression-position witnesses must pass `verify`, `producerRefines`, the
+   artifact-token check, and the repository axiom probe with no new allowed
+   axiom.
+3. **Generated compatibility matrix (AC-9).** Replace the hand-selected loops
+   in `thermite-lower/tests/rfc10_conformance_matrix.rs` with reviewed data for
+   payloads, positions, phases, and exclusions. Payloads include shared read and
+   write, direct and transitive reentrancy, reverse ordering, unauthorized
+   access, non-Copy move, escaping borrow, invariant-breaking mutation and
+   restoration, and deep finite terms. Positions are derived from the canonical
+   semantic-child inventory rather than maintained as an unrelated count.
+   Every compatible pair is observed at parse, `check_program`, witness replay,
+   L1, L2, L3, and provider-free Forge checking. An excluded cell must name a
+   grammar, type, or declared-backend reason; in particular, RFC-10 shared-state
+   L2 remains a typed `Unsupported` outcome until that backend exists and must
+   agree at both `lower_l2` and `forge check --level l2`. Preserve the frozen
+   18-file certificate result item by item and add a child-edge-deletion oracle
+   proving every canonical edge is observed by at least one generated cell.
+
+The implementation is complete only when all three slices pass together and
+AC-7, AC-8, and AC-9 can be checked without qualification. Stop and open a
+separate design change if closure would require new syntax, a language-level
+depth bound, a complete solver, a new production lock provider, or support for
+an otherwise unsupported backend. Issues #48 and #55 through #57 remain outside
+this work: they own language-wide stage classification and assurance-policy
+expansion, not RFC-10 semantic replay.
 
 The following orthogonal completeness review found five further
 evidence-integrity defects, all closed in the implementation fix round: corpus
@@ -265,9 +322,10 @@ edges close inner-to-outer; only then may the block yield its value to the
 enclosing expression.
 
 This preserves expression-oriented composition and refactoring stability. It
-also requires evaluation order to be preserved by checked-IR lowering. L1's
-  current inability to lower expression-position holding remains an implementation
-  gap to close, not a language restriction. The fallback requires an impossibility
+also requires evaluation order to be preserved by checked-IR lowering. L1 now
+lowers the supported expression-position matrix with an explicit provider; any
+future position-specific backend gap remains an implementation gap, not a
+language restriction. The fallback requires an impossibility
   proof for the uniform semantics under the stated language and backend
   assumptions—not backend inconvenience, proof complexity, a missing lemma, or
   failure to find a mechanization path—and an explicit RFC revision restricting
@@ -381,11 +439,11 @@ impossibility evidence specified by REQ-3.
 
 | Dimension | Before amendment | After amendment | Tradeoff |
 |---|---|---|---|
-| Expressiveness | Lexical holding intended broadly but backend coverage varied by position | Every ordinary executable block has uniform holding semantics | L1 must gain expression-aware normalization; no source narrowing |
+| Expressiveness | Lexical holding intended broadly but backend coverage varied by position | Every ordinary executable block has uniform holding semantics | L1 expression-aware normalization is shipped; no source narrowing |
 | Provability | Frame consequences proved over assumed semantic fields | Source-bound witnesses establish completeness and lock/close facts before consequences | More proof artifacts and replay work; materially smaller trusted checker boundary |
 | Metatheory | Informal structural traversal and ad hoc implementation depth bound | Finite-tree, finite-graph, finite-lattice semantics with explicit termination arguments | Requires canonical node/child formalization |
 | Compatibility | Public lowering APIs accept parsed programs and may rediscover facts | Compatibility wrappers validate; internal lowerers require checked IR | Internal API migration, source language unchanged |
-| Backend completeness | L3 covers expression holding; L1 fails closed outside statement positions | L1 and L3 preserve holding in the generated expression-position matrix | L2 and Forge agreement still rely on focused route tests rather than the full generated cross-product |
+| Backend completeness | L3 covered expression holding while L1 varied by position | L1 and L3 preserve holding in the generated expression-position matrix | Issue #49 must add the compatible L2 and provider-free Forge outcomes to the generated cross-product |
 | Resource behavior | Recursive passes may overflow or use inconsistent depth limits | Iterative traversal plus deterministic operational work limits | Possible resource rejection of very large valid programs, never certification |
 | Residual trust | Rust footprint and lowering correspondence largely nominal | Canonical decoding, replay invocation, kernel/axioms, and provider remain named | Future proof strengthening can shrink this without surface change |
 

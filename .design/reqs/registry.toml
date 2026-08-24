@@ -18082,6 +18082,42 @@ target = "thermite-syntax/tests/semantic_inventory.rs"
 note = "exact sufficient-budget boundary separates language support from resource availability"
 
 [[requirement]]
+id = "REQ-RFC10-SEMANTIC-REPLAY-INDEPENDENCE"
+title = "Lean independently derives RFC-10 semantic evidence"
+owner = ".design/rfc10-checked-traversal.md"
+status = "partial"
+scope = "verified"
+summary = "Lean replay derives exact guarded regions, held-lock order and reentrancy, normalized close sequences, and shared-place authority from neutral canonical graph and declaration facts."
+remaining_scope = "GitHub issue 49: replace Rust-supplied expected holding/shared payloads with Lean derivation and prove its finite-graph soundness and non-certifying resource boundary."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "file"
+target = "lean/Thermite/CheckedTraversal.lean"
+note = "current checker compares Rust-projected holding and shared-place payloads; issue 49 replaces this residual oracle"
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-lower/src/witness.rs"
+note = "current canonical_holdings/canonical_shared_places implementation names the duplicated same-algorithm boundary to remove"
+
+[[requirement]]
+id = "REQ-RFC10-REPLAY-MUTATION-CLOSURE"
+title = "Every derived RFC-10 field has replay mutation controls"
+owner = ".design/rfc10-checked-traversal.md"
+status = "partial"
+scope = "test"
+summary = "Valid nested and expression-position artifacts pass replay while omission and forgery of every independently derived structural, effect, call, lock, capability, authority, and close fact fail closed."
+remaining_scope = "GitHub issue 49: add omission and forgery controls for the Lean-derived region/order/reentrancy/authority/close fields and retain the axiom and artifact-token gates."
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "existing kernel replay mutation battery is the baseline to expand once semantic derivation moves into Lean"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/traversal_witness.rs"
+note = "existing Rust replay mutation and producer-refinement coverage"
+
+[[requirement]]
 id = "REQ-RFC10-CONFORMANCE-MATRIX"
 title = "Generated traversal and phase conformance matrix"
 owner = ".design/rfc10-checked-traversal.md"
