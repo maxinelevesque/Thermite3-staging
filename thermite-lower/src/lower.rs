@@ -989,8 +989,8 @@ fn lower_with_profile(
         .iter()
         .filter_map(|item| match item {
             Item::SpecFn(s)
-                if is_head_fold_sum(&s.body)
-                    || is_adt_fold_sum(&s.body)
+                if (declared_return_can_lower_to_nat(&s.ret)
+                    && (is_head_fold_sum(&s.body) || is_adt_fold_sum(&s.body)))
                     || is_fold_scheme_call_body(&s.body) =>
             {
                 Some(s.name.as_str())
@@ -4321,10 +4321,22 @@ fn spec_param_type(ty: &Type) -> Result<String, LowerError> {
 /// fold cannot overflow the spec relation (OQ-1). Detected by shape: a `Match`
 /// or `if/else` whose recursive arm adds a cast slice head to a recursive call.
 fn lower_spec_fn_ret(ret: &Type, body: &Block) -> String {
-    if is_head_fold_sum(body) || is_adt_fold_sum(body) {
+    if declared_return_can_lower_to_nat(ret) && (is_head_fold_sum(body) || is_adt_fold_sum(body)) {
         return "nat".to_string();
     }
     lower_type(ret).unwrap_or_else(|_| "bool".to_string())
+}
+
+/// Whether a declared surface return may use the overflow-free Verus `nat`
+/// representation reserved for numeric folds. Shape recognition is deliberately
+/// secondary to this type gate: an ADT match containing a call through `*box`
+/// can also be a predicate or a traversal, and its declared result must not be
+/// rewritten merely because it resembles a sum syntactically (issue #7).
+fn declared_return_can_lower_to_nat(ret: &Type) -> bool {
+    matches!(
+        ret,
+        Type::Prim(PrimType::U8 | PrimType::U16 | PrimType::U32 | PrimType::U64 | PrimType::Usize)
+    )
 }
 
 /// Detect the general ADT structural-fold shape (`.design/basis/01-adts.md`

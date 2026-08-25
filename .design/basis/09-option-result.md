@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 80388f117335a2fe69cc695e55cf038c9ce91b80edf320574d9e10a9fa4e4c78 (re-pinned 2026-08-25 for issue #5 nested-ADT and invariant lowering; Option/Result semantics are unchanged. prior: dae2761f87143b9dcb6de62d9e6a9223861f23be61ebde28c1900d2b688c6726)
+audited-content-sha256: f76dc338c28aed0d60b85a0beb1a0115d59622ff5976b5e94bd9736cafbdc49f (re-pinned 2026-08-25 for issue #7 declared-return gating; Option/Result semantics are unchanged. prior: 80388f117335a2fe69cc695e55cf038c9ce91b80edf320574d9e10a9fa4e4c78)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized
