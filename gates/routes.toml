@@ -259,8 +259,14 @@ conformance_ops = ["sum", "binary_search", "standalone_nested_adt_weaves_its_fie
 [[route]]
 crate_pattern = "forge/tests/divergence_multi_adt_subprogram.rs"
 design = ".design/forge/check.md"
-reference = ["conformance/nested_adt.th"]
-conformance_ops = ["standalone_nested_adt_weaves_its_field_type"]
+reference = ["conformance/nested_adt.th", "thermite-lower/tests/divergence_adt_fold_generality.rs"]
+conformance_ops = ["standalone_nested_adt_weaves_its_field_type", "adt_predicates_with_deref_calls_certify_at_their_declared_type"]
+
+[[route]]
+crate_pattern = "thermite-lower/tests/divergence_adt_fold_generality.rs"
+design = ".design/basis/01-adts.md"
+reference = ["thermite-lower/src/lower.rs"]
+conformance_ops = ["divergence_tree_fold_does_not_lower_and_verify", "adt_predicates_keep_their_declared_bool_return"]
 
 # #52 §9 boundary-composition: check.rs's `item_subprogram` ALSO weaves the
 # transitively-reachable in-file fns (boundary/slag as external_body sigs), the

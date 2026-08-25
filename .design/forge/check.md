@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 400346b98bef93b5dfd36ad2bc3930d12dcdf76b09c4f42e43ed938c1a6723cc (re-pinned 2026-08-25 for issue #5: standalone checked ADT roots include struct-typed and enum-typed field dependencies. prior: 883d5e453463e76ca2daf9f704b43115a7764f3aa0dc461ec06370b98eb8392d)
+audited-content-sha256: dc3f541496729913a125a3902e8f620cc9469fe83c3895871c88e31d3e6e7305 (re-pinned 2026-08-25 for issue #7 Forge certification of declared-type ADT predicates. prior: 400346b98bef93b5dfd36ad2bc3930d12dcdf76b09c4f42e43ed938c1a6723cc)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -480,6 +480,14 @@ the mutation floor and still claiming L3 would be a bypass — and AC-7(b) prove
 that path is unchanged (a non-diverge weak contract still rejects at L0). The
 exemption is keyed strictly on the `! diverge` DECLARATION (which the agent
 must write loudly, §4.1), so it cannot be silently applied to a normal fn.
+
+**Issue #7 declared-result regression.** Forge does not infer or rewrite a
+`spec fn` result; it certifies the Verus program produced by the lowerer. The
+end-to-end pin in `divergence_multi_adt_subprogram.rs` therefore requires the
+exact `Tree` program's `all_below(..) -> bool`, numeric `depth(..) -> u64`, and
+non-recursive `calls_it(..) -> bool` items to all reach L3. This proves that the
+lowerer's fixed-width-integer gate reaches the real certification boundary and
+that neither predicate is silently assessed under a fabricated `nat` signature.
 
 ## Verification
 

@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: c8ad36f2ff2d3e20b5cddf6db93030a571acdadf9c0467a489f33fc931fbdef9 (re-pinned 2026-08-25 for issue #5: both L3 and L1 bind struct fields through variant tests, pinned by the nested-ADT conformance witness. prior: ddba4506e53de2b99b6cdf065b725a052926947c8b07b6c35733e01a5b9dd795)
+audited-content-sha256: 3fa9fe24df7d1f7b16ab18d9f7eac5e4d4479702445a783dad007a71cc5534e4 (re-pinned 2026-08-25 for issue #7 declared-return gating; invariant receiver behavior is unchanged. prior: c8ad36f2ff2d3e20b5cddf6db93030a571acdadf9c0467a489f33fc931fbdef9)
 decision: qualify invariant field paths in the canonical invariant lowerer
 issue: github:dollspace-gay/Thermite#110
 governs:

@@ -5835,9 +5835,9 @@ title = "Recursive ADT and structural decreases lowering"
 owner = "thermite-lower/src/lower.rs"
 status = "shipped"
 scope = "lower"
-summary = "Recursive ADTs lower with boxed recursive occurrences and structurally decreasing spec functions over the datatype value."
+summary = "Recursive ADTs lower with boxed recursive occurrences and structurally decreasing spec functions over the datatype value. Numeric fold shapes may use Verus nat only when the declared return is a fixed-width integer; predicates and traversals retain their declared type."
 aliases = ["thermite-lower/src/lower.rs REQ-10 (recursive type → Verus recursive enum; `Box`; structural `decreases`)"]
-contributors = [".design/basis/01-adts.md", "thermite-lower/tests/adt_lower_conformance.rs"]
+contributors = [".design/basis/01-adts.md", "thermite-lower/tests/adt_lower_conformance.rs", "thermite-lower/tests/divergence_adt_fold_generality.rs", "forge/tests/divergence_multi_adt_subprogram.rs"]
 generated_to = ["status", "thermite-lower-adt-status"]
 
 [[requirement.evidence]]
@@ -5854,6 +5854,21 @@ note = "structural decreases renderer"
 kind = "test"
 target = "thermite-lower/tests/adt_lower_conformance.rs"
 note = "recursive list_sum conformance"
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "declared_return_can_lower_to_nat"
+note = "declared-result gate shared by return lowering and the nat-callee set"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/divergence_adt_fold_generality.rs::adt_predicates_keep_their_declared_bool_return"
+note = "real-Verus recursive and non-recursive predicate regression"
+
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/divergence_multi_adt_subprogram.rs::adt_predicates_with_deref_calls_certify_at_their_declared_type"
+note = "Forge L3 certification for the exact issue #7 program"
 
 [[requirement]]
 id = "REQ-LOWER-ADT-ERRORS"

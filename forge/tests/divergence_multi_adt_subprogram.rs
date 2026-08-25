@@ -171,6 +171,56 @@ fn g(x: u64) -> u64
 }
 ";
 
+/// Issue #7: two predicate shapes that contain a call through a `Box` deref.
+/// Neither is a numeric fold: `all_below` is recursive and `calls_it` only calls
+/// the numeric `depth` helper. Their declared `bool` result is authoritative.
+const ADT_PREDICATE_PROGRAM: &str = "\
+enum Tree { Leaf(u64), Node(Box<Tree>, Box<Tree>) }
+
+spec fn all_below(t: Tree, limit: u64) -> bool
+  measures t
+{
+  match t {
+    Leaf(v) => v < limit,
+    Node(l, r) => all_below(*l, limit) && all_below(*r, limit),
+  }
+}
+
+spec fn depth(t: Tree) -> u64
+  measures t
+{
+  match t {
+    Leaf(v) => 1,
+    Node(l, r) => 1 + depth(*l),
+  }
+}
+
+spec fn calls_it(t: Tree) -> bool
+  measures t
+{
+  match t {
+    Leaf(v) => true,
+    Node(l, r) => depth(*l) > 0,
+  }
+}
+";
+
+#[test]
+fn adt_predicates_with_deref_calls_certify_at_their_declared_type() {
+    if !verus_present() {
+        eprintln!("SKIP: verus not available — issue #7 ADT predicates not certified.");
+        return;
+    }
+    let certs = check_program("predicate-return", ADT_PREDICATE_PROGRAM);
+    for item in ["Tree", "all_below", "depth", "calls_it"] {
+        assert_eq!(
+            level_of(&certs, item),
+            "L3",
+            "the issue #7 program must certify `{item}` at L3"
+        );
+    }
+}
+
 #[test]
 fn spare_adt_decl_does_not_break_its_siblings() {
     if !verus_present() {

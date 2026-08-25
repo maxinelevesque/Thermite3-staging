@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: ee61fa338f7290a6b36a6f76bfef8a7e8d9f081d28afc37eaeb20012c8b8d4a6 (re-pinned 2026-08-25 for issue #5 nested-ADT and invariant lowering; mutual-recursion behavior is unchanged. prior: 2e4eddf0e93168ee3a41e46c796044ae69ddebfe9ba0c8fb8338b369af3916bc)
+audited-content-sha256: f0b485838293e2d52742fd700d545f5199bce56dab5578be568cd5a3d4a0d27a (re-pinned 2026-08-25 for issue #7 declared-return gating; mutual-recursion behavior is unchanged. prior: ee61fa338f7290a6b36a6f76bfef8a7e8d9f081d28afc37eaeb20012c8b8d4a6)
 governs: forge/src/check.rs
 governs: thermite-lower/src/lower.rs
 thesis-refs:

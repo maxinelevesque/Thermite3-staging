@@ -2534,6 +2534,12 @@ test = "thermite-lower::divergence_adt_fold_generality divergence_tree_fold_does
 
 [[assignment]]
 bucket = 4
+seconds = 0.400
+test = "thermite-lower::divergence_adt_fold_generality adt_predicates_keep_their_declared_bool_return"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
 seconds = 0.101
 test = "thermite-lower::divergence_l1 fresh_program_ens_violation_aborts"
 
@@ -3726,6 +3732,12 @@ test = "forge::divergence_kernel_time_boundary admitted_time_fx_boundary_is_refu
 bucket = 6
 seconds = 3.748
 test = "forge::divergence_multi_adt_subprogram standalone_nested_adt_weaves_its_field_type"
+
+[[assignment]]
+bucket = 6
+seconds = 3.000
+test = "forge::divergence_multi_adt_subprogram adt_predicates_with_deref_calls_certify_at_their_declared_type"
+timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 6
