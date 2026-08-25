@@ -146,7 +146,9 @@
 //! | ID | Status | Owner | Title | Follow-up |
 //! |---|---|---|---|---|
 //! | REQ-LOWER-MAP-ERRORS | shipped | `thermite-lower/src/lower.rs` | Map lowering error discipline |  |
+//! | REQ-LOWER-MAP-REMOVE | shipped | `thermite-lower/src/lower.rs` | Verified Map key removal |  |
 //! | REQ-LOWER-MAP-RIPPLE | shipped | `thermite-lower/src/lower.rs` | Type::Map exhaustive-match ripple |  |
+//! | REQ-LOWER-MAP-TRAVERSAL | shipped | `thermite-lower/src/lower.rs` | Bounded Map index traversal |  |
 //! | REQ-LOWER-MAP-WRAPPER | shipped | `thermite-lower/src/lower.rs` | Bounded Map wrapper lowering |  |
 //! <!-- /generated:reqs -->
 //!
@@ -5832,7 +5834,33 @@ fn emit_one_map_wrapper(key: &Type, val: &Type) -> Result<String, LowerError> {
         "        exists|j: int| 0 <= j < self.data.len() && #[trigger] self.data@[j].0 == k\n",
     );
     out.push_str("    }\n");
-    out.push_str("    pub open spec fn len(&self) -> nat { self.data.len() as nat }\n");
+    out.push_str("    pub open spec fn len(&self) -> u64 { self.data.len() as u64 }\n");
+    out.push_str("    pub fn count(&self) -> (result: u64)\n");
+    out.push_str("        requires self.well_formed(),\n");
+    out.push_str("        ensures result == self.len(),\n");
+    out.push_str("    { self.data.len() as u64 }\n");
+    writeln!(
+        out,
+        "    pub open spec fn spec_key_at(&self, i: int) -> {kty}"
+    )
+    .ok();
+    out.push_str("        recommends 0 <= i < self.data.len(),\n");
+    out.push_str("    { self.data@[i].0 }\n");
+    writeln!(
+        out,
+        "    pub open spec fn spec_value_at(&self, i: int) -> {vty}"
+    )
+    .ok();
+    out.push_str("        recommends 0 <= i < self.data.len(),\n");
+    out.push_str("    { self.data@[i].1 }\n");
+    writeln!(out, "    pub fn key_at(&self, i: u64) -> (result: {kty})").ok();
+    out.push_str("        requires i < self.data.len(),\n");
+    out.push_str("        ensures result == self.spec_key_at(i as int),\n");
+    out.push_str("    { self.data[i as usize].0 }\n");
+    writeln!(out, "    pub fn value_at(&self, i: u64) -> (result: {vty})").ok();
+    out.push_str("        requires i < self.data.len(),\n");
+    out.push_str("        ensures result == self.spec_value_at(i as int),\n");
+    out.push_str("    { self.data[i as usize].1 }\n");
     // The exec linear-scan `contains_key` (REQ-4): `req well_formed`, `ens result ==
     // spec_contains_key(k)`, the scan invariant + `decreases`. Pure.
     writeln!(
@@ -5937,6 +5965,78 @@ fn emit_one_map_wrapper(key: &Type, val: &Type) -> Result<String, LowerError> {
     out.push_str("                }\n");
     out.push_str("            }\n");
     out.push_str("        }\n");
+    out.push_str("    }\n");
+    writeln!(
+        out,
+        "    pub fn remove(&mut self, k: {kty}) -> (result: Option<{vty}>)"
+    )
+    .ok();
+    out.push_str("        requires old(self).well_formed(),\n");
+    out.push_str("        ensures\n");
+    out.push_str("            final(self).well_formed(),\n");
+    out.push_str("            match result {\n");
+    out.push_str("                Some(v) => old(self).spec_contains_key(k)\n");
+    out.push_str("                    && !final(self).spec_contains_key(k)\n");
+    out.push_str("                    && final(self).data.len() + 1 == old(self).data.len()\n");
+    out.push_str("                    && (exists|j: int| 0 <= j < old(self).data.len()\n");
+    out.push_str(
+        "                           && old(self).data@[j].0 == k && old(self).data@[j].1 == v),\n",
+    );
+    out.push_str("                None => !old(self).spec_contains_key(k)\n");
+    out.push_str("                    && final(self).data@ == old(self).data@,\n");
+    out.push_str("            },\n");
+    out.push_str("    {\n");
+    out.push_str("        let ghost before = self.data@;\n");
+    out.push_str("        assert(before == old(self).data@);\n");
+    out.push_str("        let mut i: usize = 0;\n");
+    out.push_str("        while i < self.data.len()\n");
+    out.push_str("            invariant\n");
+    out.push_str("                self.data@ == before,\n");
+    out.push_str("                before == old(self).data@,\n");
+    out.push_str("                self.well_formed(),\n");
+    out.push_str("                i <= self.data.len(),\n");
+    out.push_str("                forall|j: int| 0 <= j < i ==> self.data@[j].0 != k,\n");
+    out.push_str("            decreases self.data.len() - i,\n");
+    out.push_str("        {\n");
+    out.push_str("            if self.data[i].0 == k {\n");
+    writeln!(out, "                let v: {vty} = self.data[i].1;").ok();
+    out.push_str("                assert(self.spec_contains_key(k)) by {\n");
+    out.push_str("                    assert(exists|j: int| j == i as int\n");
+    out.push_str("                        && 0 <= j < self.data.len() && self.data@[j].0 == k);\n");
+    out.push_str("                }\n");
+    out.push_str("                assert(exists|j: int| j == i as int\n");
+    out.push_str("                    && 0 <= j < old(self).data.len()\n");
+    out.push_str(
+        "                    && old(self).data@[j].0 == k && old(self).data@[j].1 == v);\n",
+    );
+    out.push_str("                self.data.remove(i);\n");
+    out.push_str("                assert(!self.spec_contains_key(k)) by {\n");
+    out.push_str("                    assert forall|j: int| 0 <= j < self.data.len()\n");
+    out.push_str("                        implies self.data@[j].0 != k by {\n");
+    out.push_str("                        if j < i {\n");
+    out.push_str("                        } else {\n");
+    out.push_str("                            assert(self.data@[j] == before[j + 1]);\n");
+    out.push_str("                        }\n");
+    out.push_str("                    }\n");
+    out.push_str("                }\n");
+    out.push_str("                assert(self.well_formed()) by {\n");
+    out.push_str("                    assert forall|a: int, b: int|\n");
+    out.push_str(
+        "                        0 <= a < self.data.len() && 0 <= b < self.data.len() && a != b\n",
+    );
+    out.push_str("                        implies self.data@[a].0 != self.data@[b].0 by {\n");
+    out.push_str("                        let aa = if a < i { a } else { a + 1 };\n");
+    out.push_str("                        let bb = if b < i { b } else { b + 1 };\n");
+    out.push_str("                        assert(self.data@[a] == before[aa]);\n");
+    out.push_str("                        assert(self.data@[b] == before[bb]);\n");
+    out.push_str("                        assert(aa != bb);\n");
+    out.push_str("                    }\n");
+    out.push_str("                }\n");
+    out.push_str("                return Some(v);\n");
+    out.push_str("            }\n");
+    out.push_str("            i = i + 1;\n");
+    out.push_str("        }\n");
+    out.push_str("        None\n");
     out.push_str("    }\n");
     out.push_str("}\n");
     Ok(out)
@@ -8401,6 +8501,14 @@ fn lower_expr(expr: &Expr, ctx: Ctx, depth: usize, span: Span) -> Result<String,
             if ctx.is_spec() && name == "contains_key" && args.len() == 1 {
                 let arg = lower_expr(&args[0], ctx, d, span)?;
                 return Ok(format!("{r}.spec_contains_key({arg})"));
+            }
+            if ctx.is_spec() && name == "key_at" && args.len() == 1 {
+                let arg = lower_index_arg(&args[0], ctx, d, span)?;
+                return Ok(format!("{r}.spec_key_at({arg})"));
+            }
+            if ctx.is_spec() && name == "value_at" && args.len() == 1 {
+                let arg = lower_index_arg(&args[0], ctx, d, span)?;
+                return Ok(format!("{r}.spec_value_at({arg})"));
             }
             // Basis Stage 7 (`.design/basis/07-strings.md` REQ-4): in spec position
             // a `String` receiver's `.len()` / `.byte_at(i)` lowers to the wrapper's

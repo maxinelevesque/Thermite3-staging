@@ -6234,7 +6234,7 @@ title = "Bounded Map wrapper lowering"
 owner = "thermite-lower/src/lower.rs"
 status = "shipped"
 scope = "lower"
-summary = "`Map<K,V>` lowers to a bounded Vec-of-pairs `TMap` wrapper with spec views, get, contains_key, len, and insert contracts."
+summary = "`Map<K,V>` lowers to a bounded Vec-of-pairs `TMap` wrapper with spec views, get, contains_key, len, insert, remove, and bounded traversal contracts."
 aliases = ["thermite-lower/src/lower.rs REQ-4 (`Map<K,V>` → Vec-of-pairs `TMap` wrapper + spec view; `insert`/`get`/`contains_key`/`len`; `! alloc`)"]
 contributors = [".design/basis/13-map.md", "forge/tests/map_conformance.rs"]
 generated_to = ["status", "thermite-lower-map-status"]
@@ -6253,6 +6253,48 @@ note = "Map type to wrapper-name mapping"
 kind = "test"
 target = "forge/tests/map_conformance.rs"
 note = "bounded Map conformance"
+
+[[requirement]]
+id = "REQ-LOWER-MAP-REMOVE"
+title = "Verified Map key removal"
+owner = "thermite-lower/src/lower.rs"
+status = "shipped"
+scope = "lower"
+summary = "`Map::remove(k)` returns the prior value when present, is a no-op when absent, and preserves the bounded unique-key invariant."
+aliases = ["thermite-lower/src/lower.rs REQ-7 (`remove(k) -> Option<V>`)"]
+contributors = [".design/basis/13-map.md", "thermite-lower/src/l1.rs", "conformance/map_kv.th", "forge/tests/map_conformance.rs"]
+generated_to = ["status", "thermite-lower-map-status"]
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "emit_map_wrappers"
+note = "verified remove implementation"
+
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/map_conformance.rs"
+note = "real-Verus and runnable Map removal conformance"
+
+[[requirement]]
+id = "REQ-LOWER-MAP-TRAVERSAL"
+title = "Bounded Map index traversal"
+owner = "thermite-lower/src/lower.rs"
+status = "shipped"
+scope = "lower"
+summary = "Checked `key_at` and `value_at` accessors compose with existing bounded range loops without introducing an iterator protocol."
+aliases = ["thermite-lower/src/lower.rs REQ-8 (`key_at` / `value_at` bounded traversal)"]
+contributors = [".design/basis/13-map.md", "thermite-spec/src/validator.rs", "thermite-lower/src/l1.rs", "conformance/map_kv.th", "forge/tests/map_conformance.rs"]
+generated_to = ["status", "thermite-lower-map-status"]
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "emit_map_wrappers"
+note = "verified index accessors and spec views"
+
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/map_conformance.rs"
+note = "spec rewrite, real-Verus, and runtime traversal conformance"
 
 [[requirement]]
 id = "REQ-LOWER-MAP-RIPPLE"
@@ -8641,7 +8683,7 @@ title = "Map contract cage admission"
 owner = "thermite-spec/src/validator.rs"
 status = "shipped"
 scope = "spec"
-summary = "`contains_key`, `get`, and `len` Map contracts validate through the flat method cage while mutating `insert` remains exec-only."
+summary = "`contains_key`, `get`, `len`, `key_at`, and `value_at` Map contracts validate through the flat method cage while mutating operations remain exec-only."
 aliases = ["thermite-spec/src/validator.rs REQ-3 (`contains_key` cage admission; capacity/op contracts in §4.2)"]
 contributors = [".design/basis/13-map.md", "forge/tests/map_conformance.rs"]
 generated_to = ["status", "thermite-spec-validator-map-status"]
@@ -8649,7 +8691,7 @@ generated_to = ["status", "thermite-spec-validator-map-status"]
 [[requirement.evidence]]
 kind = "symbol"
 target = "BUILTIN_METHODS"
-note = "contains_key contract-method allowlist"
+note = "contains_key and bounded traversal contract-method allowlist"
 
 [[requirement.evidence]]
 kind = "test"

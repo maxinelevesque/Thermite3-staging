@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: f6b569c01eb47c54f54405766fbb235106b342d8ab375e7e54fc4f5310dca435 (re-pinned 2026-08-25 for issue #9 invariant combinator lowering; rich composition behavior is unchanged. prior: ac76354e641e7a4302db25b906f7da66bea19255eecdf85a6c85784ae41bf466)
+audited-content-sha256: 3f7fae9892a6c3618aa9f8ace796cef6f3685b9bf7e12a909f4cf1916070bc20 (re-pinned 2026-08-25 for issue #6 final Map iteration form. prior: 4cc2a547d130ffc158dcdd2538784e97cdbc8730509c789285d127c1c2ea8ce6)
 decision: one canonical Verus crate with crate-visible rich Thermite roots and public shell exports
 issue: github:dollspace-gay/Thermite#104
 governs:

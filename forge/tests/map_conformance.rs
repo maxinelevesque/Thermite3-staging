@@ -364,6 +364,21 @@ fn ac1_map_kv_corpus_lowering_verifies_under_real_verus() {
         return;
     }
     let src = std::fs::read_to_string(corpus("map_kv.th")).expect("read map_kv.th");
+    let parsed = thermite_syntax::parse(&src);
+    assert!(parsed.is_clean(), "parse map_kv.th: {:?}", parsed.errors);
+    let emitted = thermite_lower::lower(&parsed.program).expect("lower map_kv.th");
+    for needle in [
+        "pub fn remove(&mut self, k: u64) -> (result: Option<u64>)",
+        "pub fn count(&self) -> (result: u64)",
+        "pub fn key_at(&self, i: u64) -> (result: u64)",
+        "pub fn value_at(&self, i: u64) -> (result: u64)",
+        "result == m.spec_value_at(0 as int)",
+    ] {
+        assert!(
+            emitted.contains(needle),
+            "missing issue #6 lowering: {needle}"
+        );
+    }
     let (ok, output) = verus_on_lowered("mapkv", &src);
     assert!(
         ok && output.contains("0 errors"),
@@ -454,8 +469,8 @@ fn ac1_map_kv_builds_and_runs_insert_get_yields_value() {
     let run_out = String::from_utf8_lossy(&run.stdout);
     assert!(
         run.status.success() && run_out.contains("42"),
-        "DESIGN 13-map.md AC-1: the built `demo` must RUN the insert(7,42)+get(7) \
-         round-trip and yield 42 (insert + get → the value).\nstatus:{:?}\nstdout:{run_out}\nstderr:{}",
+        "DESIGN 13-map.md issue #6: the built `demo` must RUN two inserts, remove(8), \
+         and indexed value traversal, yielding the surviving value 42.\nstatus:{:?}\nstdout:{run_out}\nstderr:{}",
         run.status,
         String::from_utf8_lossy(&run.stderr)
     );

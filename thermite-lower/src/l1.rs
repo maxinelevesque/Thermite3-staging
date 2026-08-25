@@ -3214,6 +3214,15 @@ fn emit_map_runtime_l1(program: &Program) -> Result<String, LowerError> {
         )
         .ok();
         out.push_str("    fn len(&self) -> u64 { self.data.len() as u64 }\n");
+        out.push_str("    fn count(&self) -> u64 { self.data.len() as u64 }\n");
+        writeln!(out, "    fn key_at(&self, i: u64) -> {kty} {{").ok();
+        out.push_str("        thermite_check!(\"req\", \"i < self.len()\", i < self.len());\n");
+        out.push_str("        self.data[i as usize].0\n");
+        out.push_str("    }\n");
+        writeln!(out, "    fn value_at(&self, i: u64) -> {vty} {{").ok();
+        out.push_str("        thermite_check!(\"req\", \"i < self.len()\", i < self.len());\n");
+        out.push_str("        self.data[i as usize].1\n");
+        out.push_str("    }\n");
         // `contains_key`: a linear scan over the key column (`pair.0 == k`).
         writeln!(out, "    fn contains_key(&self, k: {kty}) -> bool {{").ok();
         out.push_str("        let mut i: usize = 0;\n");
@@ -3247,6 +3256,20 @@ fn emit_map_runtime_l1(program: &Program) -> Result<String, LowerError> {
             "        thermite_check!(\"req\", \"!self.contains_key(k)\", !self.contains_key(k));\n",
         );
         out.push_str("        self.data.push((k, v));\n");
+        out.push_str("    }\n");
+        writeln!(
+            out,
+            "    fn remove(&mut self, k: {kty}) -> Option<{vty}> {{"
+        )
+        .ok();
+        out.push_str("        let mut i: usize = 0;\n");
+        out.push_str("        while i < self.data.len() {\n");
+        out.push_str("            if self.data[i].0 == k {\n");
+        out.push_str("                return Some(self.data.remove(i).1);\n");
+        out.push_str("            }\n");
+        out.push_str("            i += 1;\n");
+        out.push_str("        }\n");
+        out.push_str("        None\n");
         out.push_str("    }\n");
         out.push_str("}\n");
     }

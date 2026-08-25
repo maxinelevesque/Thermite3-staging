@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: a85352c037dd8511a333001658b310611f83a005bf6a64fc936edd3e8b0e304d (re-pinned 2026-08-25 for issue #9 invariant combinator lowering; other ergonomics behavior is unchanged. prior: 7d4609264f2925da0ca2373f90e66a10d71ebaf5ec8d5cb3d8753353934acc34)
+audited-content-sha256: 783f0c53f7a8390f42be3d41f18d633628e3b7207bf5f3144ecc1bf423e28a12 (re-pinned 2026-08-25 for issue #6 final bounded range traversal. prior: 37951784f6e75a06a1beceb34db3eaeb933161176a06b86fd58149dee5e41587)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized
