@@ -1,7 +1,7 @@
 # Feature: RFC-10 checked traversal and proof-carrying interpretation
 
 <!--
-audited-content-sha256: 7509c474554b42e886213948a552794f1f59c1c0e4757eb44b90d926a3d273cf (re-pinned 2026-08-24 for issue #49 slice 1: the canonical projection now carries neutral lock declarations and semantic events, Lean independently derives holding/shared/authority/close evidence, and the former Rust expected-result payloads are removed. prior: f35bbdc682c58206f60cffe0b6ba1ee5d4a8aed6d6538fca611e63a303d8df52)
+audited-content-sha256: 683cb07363a1dc89ad4fbd1d525e404951d69555a57bcfb423afcad11e78bc94 (re-pinned 2026-08-24 after closing the cold-review follow-ups: canonical AST matches explicitly destructure every field, six new tests have reviewed CI duration assignments, and environment-dependent workspace failures are no longer stated as one fixed count/cause. prior: 7509c474554b42e886213948a552794f1f59c1c0e4757eb44b90d926a3d273cf)
 -->
 
 ## Summary
@@ -85,8 +85,9 @@ review provenance for this amendment.
   every current executable AST variant and explicitly pin `Stmt::If.cond`,
   `LoopKind::While`, `MatchArm.guard`, closure parameters/body, patterns, and
   expression-owned blocks. Adding a new AST variant fails the exhaustive
-  semantic match; adding a field to an existing variant still requires review
-  of the explicit inventory fixtures and is not claimed to fail compilation.
+  semantic match; the canonical fact, child, and pattern-binding matches name
+  every field without `..`, so adding a field to an existing variant also fails
+  compilation until its semantic disposition is explicit.
 - [x] AC-2: (REQ-2, REQ-8) Parsed finite fixtures with deep binary chains, deep
   references, deep match guards, and deep expression-owned blocks complete via
   iterative traversal or return `ResourceLimit`; no analysis, holding detection,
@@ -249,6 +250,18 @@ exclusions and the real provider-free Forge route. In doing so it exposed and
 fixed an L3 emission defect: a value-producing `holding` followed by another
 statement or block tail must be terminated as a statement.
 
+The 2026-08-24 independent Claude Opus 4.8 closure review returned **APPROVE
+WITH FOLLOW-UPS** after reproducing the build, focused and workspace tests,
+clippy, formatting, Lean axiom probe, mutation battery, ten-position Forge
+matrix, and frozen corpus. Its in-scope follow-ups are closed here: canonical
+AST matches now destructure every variant field explicitly so field additions
+fail compilation until classified; environment-dependent workspace failures
+are no longer documented as one fixed count/cause; and all six new RFC-10 tests
+have reviewed duration assignments, with the CI partition check and simulation
+passing below the declared noise bound. The provider-free loop-test L0 remains
+an explicit fail-closed proof-completeness outcome. Missing-CaDiCaL behavior in
+pre-existing EPR/BV workspace tests remains outside issue #49 and this PR.
+
 The following orthogonal completeness review found five further
 evidence-integrity defects, all closed in the implementation fix round: corpus
 expectations now distinguish the solver-equipped L4 result from the stable L3
@@ -275,11 +288,12 @@ trust statements below, and by narrowing AC-1/AC-5 to the enforcement evidence
 that exists. The requirements gate already returned nonzero on missing
 `tomllib`; an oracle test now pins that behavior. Focused RFC-10 suites, the Lean
 axiom probe, the frozen corpus, all 527 Forge unit tests, clippy, formatting, and
-the 553-requirement/124-view registry pass. The complete workspace run has only
-the twelve previously identified issue-#44 failures across four build-attestation
-test binaries on macOS arm64, all caused by the Rust component manifest lacking
-a standalone `libLLVM`; the independent review established that failure is
-downstream of and unrelated to RFC-10.
+the 553-requirement/124-view registry pass. Complete-workspace failures outside
+those focused surfaces are environment-dependent solver/toolchain availability
+outcomes rather than a fixed count or cause: one review environment reported
+missing standalone `libLLVM` build attestations, while the 2026-08-24 closure
+review reported ten missing-CaDiCaL EPR failures. Both are downstream of and
+unrelated to RFC-10, but neither is generalized into a stable workspace result.
 
 ## Architecture
 
