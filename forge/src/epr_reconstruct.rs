@@ -39,7 +39,7 @@ const COUNTERMODEL_SEEDS: usize = 1 << 16;
 const COUNTERMODEL_QFREE_MASKS: usize = 1 << 8;
 static SCRATCH_COUNTER: AtomicU64 = AtomicU64::new(0);
 static RECONSTRUCTION_LOCK: Mutex<()> = Mutex::new(());
-static LEAN_MODULE_BUILD: OnceLock<Result<(), String>> = OnceLock::new();
+static LEAN_MODULE_BUILD: OnceLock<Result<(), LeanToolFailure>> = OnceLock::new();
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GroundAtomValue {
@@ -103,15 +103,80 @@ struct QfreeGroupRealization {
 
 enum CountermodelAttemptFailure {
     Retry(String),
-    Fatal(String),
+    Fatal(EprAttemptFailure),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EprOutcome {
     Proved(Box<ReconstructionEvidence>),
     Counterexample(FiniteCountermodel),
-    Timeout(String),
-    Failed(String),
+    Timeout(EprAttemptFailure),
+    Failed(EprAttemptFailure),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EprAttemptFailure {
+    pub detail: String,
+    pub progress: crate::outcome_matrix::SolverProgressClass,
+    pub solver_query_sha256: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum LeanToolFailure {
+    Unavailable(String),
+    Rejected(String),
+}
+
+impl LeanToolFailure {
+    fn detail(&self) -> &str {
+        match self {
+            Self::Unavailable(detail) | Self::Rejected(detail) => detail,
+        }
+    }
+
+    fn progress(&self) -> crate::outcome_matrix::SolverProgressClass {
+        match self {
+            Self::Unavailable(_) => crate::outcome_matrix::SolverProgressClass::ToolUnavailable,
+            Self::Rejected(_) => crate::outcome_matrix::SolverProgressClass::ProofFailure,
+        }
+    }
+}
+
+impl std::fmt::Display for LeanToolFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.detail())
+    }
+}
+
+impl EprAttemptFailure {
+    fn proof(detail: impl Into<String>) -> Self {
+        Self {
+            detail: detail.into(),
+            progress: crate::outcome_matrix::SolverProgressClass::ProofFailure,
+            solver_query_sha256: None,
+        }
+    }
+
+    fn unavailable(detail: impl Into<String>) -> Self {
+        Self {
+            detail: detail.into(),
+            progress: crate::outcome_matrix::SolverProgressClass::ToolUnavailable,
+            solver_query_sha256: None,
+        }
+    }
+
+    fn timeout(detail: impl Into<String>, solver_query_sha256: Option<String>) -> Self {
+        Self {
+            detail: detail.into(),
+            progress: crate::outcome_matrix::SolverProgressClass::Timeout,
+            solver_query_sha256,
+        }
+    }
+
+    fn with_query(mut self, query: &str) -> Self {
+        self.solver_query_sha256 = Some(sha256_hex(query.as_bytes()));
+        self
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -150,6 +215,27 @@ struct Scratch {
 struct SolverToolchain {
     cadical: PathBuf,
     drat_trim: PathBuf,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ToolchainFailure {
+    Unavailable(String),
+    Incompatible(String),
+}
+
+impl ToolchainFailure {
+    fn detail(&self) -> &str {
+        match self {
+            Self::Unavailable(detail) | Self::Incompatible(detail) => detail,
+        }
+    }
+
+    fn progress(&self) -> crate::outcome_matrix::SolverProgressClass {
+        match self {
+            Self::Unavailable(_) => crate::outcome_matrix::SolverProgressClass::ToolUnavailable,
+            Self::Incompatible(_) => crate::outcome_matrix::SolverProgressClass::ToolIncompatible,
+        }
+    }
 }
 
 impl Scratch {
@@ -217,34 +303,48 @@ pub fn reconstruct(
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     let started = Instant::now();
     if !matches!(classifier::classify(&recon.formula), Verdict::Admitted) {
-        return EprOutcome::Failed(
+        return EprOutcome::Failed(EprAttemptFailure::proof(
             "EprClassifierRejected: production reconstruction was called for a \
              non-admitted S₂.0 formula"
                 .to_string(),
-        );
+        ));
     }
     let (premise, conclusion) = match obligation_parts(&recon.formula) {
         Some(parts) => parts,
         None => {
-            return EprOutcome::Failed(
+            return EprOutcome::Failed(EprAttemptFailure::proof(
                 "EprBridgePolarity: canonical obligation is not `req ∧ ¬clause`".to_string(),
-            )
+            ))
         }
     };
     let toolchain = match verify_solver_toolchain() {
         Ok(toolchain) => toolchain,
-        Err(reason) => return EprOutcome::Failed(reason),
+        Err(reason) => {
+            return EprOutcome::Failed(EprAttemptFailure {
+                detail: reason.detail().to_string(),
+                progress: reason.progress(),
+                solver_query_sha256: None,
+            })
+        }
     };
     if let Err(reason) = ensure_lean_reconstruction_modules() {
-        return EprOutcome::Failed(format!("EprLeanBuild: {reason}"));
+        return EprOutcome::Failed(EprAttemptFailure {
+            detail: format!("EprLeanBuild: {}", reason.detail()),
+            progress: reason.progress(),
+            solver_query_sha256: None,
+        });
     }
     let premise = match render_frm(premise, recon, item) {
         Ok(rendered) => rendered,
-        Err(reason) => return EprOutcome::Failed(format!("EprLeanExport: {reason}")),
+        Err(reason) => {
+            return EprOutcome::Failed(EprAttemptFailure::proof(format!("EprLeanExport: {reason}")))
+        }
     };
     let conclusion = match render_frm(conclusion, recon, item) {
         Ok(rendered) => rendered,
-        Err(reason) => return EprOutcome::Failed(format!("EprLeanExport: {reason}")),
+        Err(reason) => {
+            return EprOutcome::Failed(EprAttemptFailure::proof(format!("EprLeanExport: {reason}")))
+        }
     };
 
     let canonical = recon.canonical_wire();
@@ -261,7 +361,11 @@ pub fn reconstruct(
     let cache_input = cache_input_key(&canonical, &source_clause, &premise, &conclusion).ok();
     let scratch = match Scratch::new(&canonical) {
         Ok(scratch) => scratch,
-        Err(reason) => return EprOutcome::Failed(format!("EprScratch: {reason}")),
+        Err(reason) => {
+            return EprOutcome::Failed(EprAttemptFailure::unavailable(format!(
+                "EprScratch: {reason}"
+            )))
+        }
     };
     if let Some(input_key) = cache_input.as_deref() {
         match try_cached_unsat(
@@ -282,15 +386,27 @@ pub fn reconstruct(
     let driver_source = ground_driver_source(&premise, &conclusion);
     let driver_path = scratch.path.join("ground.lean");
     if let Err(error) = fs::write(&driver_path, driver_source) {
-        return EprOutcome::Failed(format!("EprScratch: could not write Lean driver: {error}"));
+        return EprOutcome::Failed(EprAttemptFailure::unavailable(format!(
+            "EprScratch: could not write Lean driver: {error}"
+        )));
     }
     let ground_output = match run_lean(&driver_path, true) {
         Ok(output) => output,
-        Err(reason) => return EprOutcome::Failed(format!("EprGrounding: {reason}")),
+        Err(reason) => {
+            return EprOutcome::Failed(EprAttemptFailure {
+                detail: format!("EprGrounding: {}", reason.detail()),
+                progress: reason.progress(),
+                solver_query_sha256: None,
+            })
+        }
     };
     let ground = match parse_ground_output(&ground_output) {
         Ok(metadata) => metadata,
-        Err(reason) => return EprOutcome::Failed(format!("EprGroundingOutput: {reason}")),
+        Err(reason) => {
+            return EprOutcome::Failed(EprAttemptFailure::proof(format!(
+                "EprGroundingOutput: {reason}"
+            )))
+        }
     };
 
     let cnf_path = scratch.path.join("problem.cnf");
@@ -298,45 +414,72 @@ pub fn reconstruct(
     let model_path = scratch.path.join("model.txt");
     let mut blocked_qfree_masks = Vec::new();
     let mut last_rejected_mask = None;
+    let mut final_solver_query_sha256: Option<String>;
     loop {
         let active_dimacs = match dimacs_with_blocking_clauses(&ground.dimacs, &blocked_qfree_masks)
         {
             Ok(dimacs) => dimacs,
-            Err(reason) => return EprOutcome::Failed(format!("EprCountermodelBlocking: {reason}")),
+            Err(reason) => {
+                return EprOutcome::Failed(EprAttemptFailure::proof(format!(
+                    "EprCountermodelBlocking: {reason}"
+                )))
+            }
         };
+        final_solver_query_sha256 = Some(sha256_hex(active_dimacs.as_bytes()));
         if let Err(error) = fs::write(&cnf_path, active_dimacs.as_bytes()) {
-            return EprOutcome::Failed(format!("EprScratch: could not write DIMACS: {error}"));
+            return EprOutcome::Failed(
+                EprAttemptFailure::unavailable(format!(
+                    "EprScratch: could not write DIMACS: {error}"
+                ))
+                .with_query(&active_dimacs),
+            );
         }
         let solver = match run_cadical(&toolchain.cadical, &cnf_path, &proof_path, &model_path) {
             Ok(output) => output,
-            Err(reason) => return EprOutcome::Failed(reason),
+            Err(reason) => {
+                return EprOutcome::Failed(
+                    EprAttemptFailure::unavailable(reason).with_query(&active_dimacs),
+                )
+            }
         };
         match solver.status.code() {
             Some(10) => {
                 let model_text = match fs::read_to_string(&model_path) {
                     Ok(text) => text,
                     Err(error) => {
-                        return EprOutcome::Failed(format!(
-                            "EprCountermodelMissing: CaDiCaL reported SAT but its model \
+                        return EprOutcome::Failed(
+                            EprAttemptFailure::unavailable(format!(
+                                "EprCountermodelMissing: CaDiCaL reported SAT but its model \
                          could not be read: {error}"
-                        ))
+                            ))
+                            .with_query(&active_dimacs),
+                        )
                     }
                 };
                 let assignment = match parse_sat_assignment(&model_text) {
                     Ok(assignment) => assignment,
                     Err(reason) => {
-                        return EprOutcome::Failed(format!("EprCountermodelMalformed: {reason}"))
+                        return EprOutcome::Failed(
+                            EprAttemptFailure::proof(format!("EprCountermodelMalformed: {reason}"))
+                                .with_query(&active_dimacs),
+                        )
                     }
                 };
                 if let Err(reason) = validate_dimacs_assignment(&active_dimacs, &assignment) {
-                    return EprOutcome::Failed(format!("EprCountermodelInvalid: {reason}"));
+                    return EprOutcome::Failed(
+                        EprAttemptFailure::proof(format!("EprCountermodelInvalid: {reason}"))
+                            .with_query(&active_dimacs),
+                    );
                 }
                 let qfree_values = match qfree_values_from_assignment(recon, &ground, &assignment) {
                     Ok(values) => values,
                     Err(reason) => {
-                        return EprOutcome::Failed(format!(
-                            "EprCountermodelQFreeAssignment: {reason}"
-                        ))
+                        return EprOutcome::Failed(
+                            EprAttemptFailure::proof(format!(
+                                "EprCountermodelQFreeAssignment: {reason}"
+                            ))
+                            .with_query(&active_dimacs),
+                        )
                     }
                 };
                 match checked_counterexample(
@@ -349,6 +492,7 @@ pub fn reconstruct(
                     qfree_values,
                 ) {
                     Ok(mut counterexample) => {
+                        counterexample.cnf_sha256 = sha256_hex(active_dimacs.as_bytes());
                         if !blocked_qfree_masks.is_empty() {
                             counterexample.model.push_str(&format!(
                                 ", after rejecting {} unrealized QFree mask(s)",
@@ -358,14 +502,17 @@ pub fn reconstruct(
                         return EprOutcome::Counterexample(counterexample);
                     }
                     Err(CountermodelAttemptFailure::Fatal(reason)) => {
-                        return EprOutcome::Failed(reason)
+                        return EprOutcome::Failed(reason.with_query(&active_dimacs))
                     }
                     Err(CountermodelAttemptFailure::Retry(reason)) => {
                         if blocked_qfree_masks.len() + 1 >= COUNTERMODEL_QFREE_MASKS {
-                            return EprOutcome::Timeout(format!(
-                                "EprCountermodelMaskBudget: checked {} distinct QFree masks; \
-                             last rejection: {reason}",
-                                COUNTERMODEL_QFREE_MASKS
+                            return EprOutcome::Timeout(EprAttemptFailure::timeout(
+                                format!(
+                                    "EprCountermodelMaskBudget: checked {} distinct QFree masks; \
+                                     last rejection: {reason}",
+                                    COUNTERMODEL_QFREE_MASKS
+                                ),
+                                final_solver_query_sha256.clone(),
                             ));
                         }
                         let blocking = match qfree_blocking_clause(
@@ -375,17 +522,23 @@ pub fn reconstruct(
                         ) {
                             Ok(clause) => clause,
                             Err(blocking_reason) => {
-                                return EprOutcome::Failed(format!(
-                                    "EprCountermodelBlocking: {blocking_reason}; \
+                                return EprOutcome::Failed(
+                                    EprAttemptFailure::proof(format!(
+                                        "EprCountermodelBlocking: {blocking_reason}; \
                                      rejected mask: {reason}"
-                                ))
+                                    ))
+                                    .with_query(&active_dimacs),
+                                )
                             }
                         };
                         if blocked_qfree_masks.contains(&blocking) {
-                            return EprOutcome::Failed(format!(
-                                "EprCountermodelBlocking: CaDiCaL repeated an already-blocked \
+                            return EprOutcome::Failed(
+                                EprAttemptFailure::proof(format!(
+                                    "EprCountermodelBlocking: CaDiCaL repeated an already-blocked \
                              QFree mask; rejected mask: {reason}"
-                            ));
+                                ))
+                                .with_query(&active_dimacs),
+                            );
                         }
                         blocked_qfree_masks.push(blocking);
                         last_rejected_mask = Some(reason);
@@ -394,25 +547,34 @@ pub fn reconstruct(
             }
             Some(20) if blocked_qfree_masks.is_empty() => break,
             Some(20) => {
-                return EprOutcome::Failed(format!(
-                    "EprCountermodelMasksExhausted: the Boolean problem has no untried \
+                return EprOutcome::Failed(
+                    EprAttemptFailure::proof(format!(
+                        "EprCountermodelMasksExhausted: the Boolean problem has no untried \
                      QFree assignment after {} checked rejection(s); last rejection: {}",
-                    blocked_qfree_masks.len(),
-                    last_rejected_mask.as_deref().unwrap_or("none")
-                ))
+                        blocked_qfree_masks.len(),
+                        last_rejected_mask.as_deref().unwrap_or("none")
+                    ))
+                    .with_query(&active_dimacs),
+                )
             }
             _ => {
                 let detail = output_head(&solver);
                 if detail.contains("time limit") || detail.contains("UNKNOWN") {
-                    return EprOutcome::Timeout(format!(
-                        "EprSolverTimeout: CaDiCaL did not decide the finite problem within \
-                         {SOLVER_SECONDS}s: {detail}"
+                    return EprOutcome::Timeout(EprAttemptFailure::timeout(
+                        format!(
+                            "EprSolverTimeout: CaDiCaL did not decide the finite problem within \
+                             {SOLVER_SECONDS}s: {detail}"
+                        ),
+                        final_solver_query_sha256.clone(),
                     ));
                 }
-                return EprOutcome::Failed(format!(
-                    "EprSolverFailure: CaDiCaL exited {:?}: {detail}",
-                    solver.status.code()
-                ));
+                return EprOutcome::Failed(
+                    EprAttemptFailure::proof(format!(
+                        "EprSolverFailure: CaDiCaL exited {:?}: {detail}",
+                        solver.status.code()
+                    ))
+                    .with_query(&active_dimacs),
+                );
             }
         }
     }
@@ -420,48 +582,77 @@ pub fn reconstruct(
     let lrat_path = scratch.path.join("problem.lrat");
     let trim = match run_drat_trim(&toolchain.drat_trim, &cnf_path, &proof_path, &lrat_path) {
         Ok(output) => output,
-        Err(reason) => return EprOutcome::Failed(reason),
+        Err(reason) => {
+            return EprOutcome::Failed(EprAttemptFailure {
+                detail: reason,
+                progress: crate::outcome_matrix::SolverProgressClass::ToolUnavailable,
+                solver_query_sha256: final_solver_query_sha256.clone(),
+            })
+        }
     };
     if !trim.status.success() {
-        return EprOutcome::Failed(format!(
-            "EprLratConversion: drat-trim rejected the proof: {}",
-            output_head(&trim)
-        ));
+        return EprOutcome::Failed(EprAttemptFailure {
+            detail: format!(
+                "EprLratConversion: drat-trim rejected the proof: {}",
+                output_head(&trim)
+            ),
+            progress: crate::outcome_matrix::SolverProgressClass::ProofFailure,
+            solver_query_sha256: final_solver_query_sha256.clone(),
+        });
     }
     let lrat = match fs::read_to_string(&lrat_path) {
         Ok(text) if !text.trim().is_empty() => strip_lrat_deletions(&text),
         Ok(_) => {
-            return EprOutcome::Failed(
-                "EprLratMissing: drat-trim produced an empty certificate".to_string(),
-            )
+            return EprOutcome::Failed(EprAttemptFailure {
+                detail: "EprLratMissing: drat-trim produced an empty certificate".to_string(),
+                progress: crate::outcome_matrix::SolverProgressClass::ProofFailure,
+                solver_query_sha256: final_solver_query_sha256.clone(),
+            })
         }
         Err(error) => {
-            return EprOutcome::Failed(format!(
-                "EprLratMissing: could not read drat-trim output: {error}"
-            ))
+            return EprOutcome::Failed(EprAttemptFailure {
+                detail: format!("EprLratMissing: could not read drat-trim output: {error}"),
+                progress: crate::outcome_matrix::SolverProgressClass::ToolUnavailable,
+                solver_query_sha256: final_solver_query_sha256.clone(),
+            })
         }
     };
     let final_source = replay_source(&theorem, &premise, &conclusion, &lrat, &ground);
     let replay_path = scratch.path.join("replay.lean");
     if let Err(error) = fs::write(&replay_path, final_source.as_bytes()) {
-        return EprOutcome::Failed(format!(
-            "EprScratch: could not write replay theorem: {error}"
-        ));
+        return EprOutcome::Failed(EprAttemptFailure {
+            detail: format!("EprScratch: could not write replay theorem: {error}"),
+            progress: crate::outcome_matrix::SolverProgressClass::ToolUnavailable,
+            solver_query_sha256: final_solver_query_sha256.clone(),
+        });
     }
     let replay_output = match run_lean(&replay_path, false) {
         Ok(output) => output,
-        Err(reason) if is_kernel_budget(&reason) => {
-            return EprOutcome::Timeout(format!("EprKernelBudget: {reason}"))
+        Err(reason) if is_kernel_budget(reason.detail()) => {
+            return EprOutcome::Timeout(EprAttemptFailure::timeout(
+                format!("EprKernelBudget: {}", reason.detail()),
+                final_solver_query_sha256.clone(),
+            ))
         }
-        Err(reason) => return EprOutcome::Failed(format!("EprKernelReplay: {reason}")),
+        Err(reason) => {
+            return EprOutcome::Failed(EprAttemptFailure {
+                detail: format!("EprKernelReplay: {}", reason.detail()),
+                progress: reason.progress(),
+                solver_query_sha256: final_solver_query_sha256.clone(),
+            })
+        }
     };
     let axioms = match parse_axioms(&replay_output, &theorem) {
         Ok(axioms) => axioms,
         Err(reason) => {
-            return EprOutcome::Failed(format!(
-                "EprAxiomReport: {reason}; replay output: {}",
-                replay_output.chars().take(1200).collect::<String>()
-            ))
+            return EprOutcome::Failed(EprAttemptFailure {
+                detail: format!(
+                    "EprAxiomReport: {reason}; replay output: {}",
+                    replay_output.chars().take(1200).collect::<String>()
+                ),
+                progress: crate::outcome_matrix::SolverProgressClass::SoundnessAlarm,
+                solver_query_sha256: final_solver_query_sha256.clone(),
+            })
         }
     };
     let evidence = build_evidence(
@@ -1138,22 +1329,13 @@ fn checked_counterexample(
         if reason.starts_with("EprQFreeUnrealizable:") {
             CountermodelAttemptFailure::Retry(reason)
         } else {
-            CountermodelAttemptFailure::Fatal(format!("EprCountermodelQFreeRealization: {reason}"))
+            CountermodelAttemptFailure::Fatal(EprAttemptFailure::proof(format!(
+                "EprCountermodelQFreeRealization: {reason}"
+            )))
         }
     })?;
     let (seed, atoms, mut axioms) =
-        check_bool_countermodel(scratch, premise, conclusion, ground, &qfree.values).map_err(
-            |reason| {
-                if reason.starts_with("no source countermodel was found") {
-                    CountermodelAttemptFailure::Retry(reason)
-                } else {
-                    CountermodelAttemptFailure::Fatal(format!(
-                        "EprCountermodelRealization: the propositional problem is SAT, \
-                         but no checked typed model was produced: {reason}"
-                    ))
-                }
-            },
-        )?;
+        check_bool_countermodel(scratch, premise, conclusion, ground, &qfree.values)?;
     for axiom in qfree
         .checks
         .iter()
@@ -1263,44 +1445,75 @@ fn check_bool_countermodel(
     conclusion: &str,
     ground: &GroundMetadata,
     qfree_values: &[bool],
-) -> Result<(usize, Vec<GroundAtomValue>, Vec<String>), String> {
+) -> Result<(usize, Vec<GroundAtomValue>, Vec<String>), CountermodelAttemptFailure> {
     let search_source = countermodel_search_source(premise, conclusion, qfree_values);
     let search_path = scratch.join("countermodel-search.lean");
-    fs::write(&search_path, search_source.as_bytes())
-        .map_err(|error| format!("could not write countermodel search driver: {error}"))?;
-    let search_output = run_lean(&search_path, true)?;
+    fs::write(&search_path, search_source.as_bytes()).map_err(|error| {
+        CountermodelAttemptFailure::Fatal(EprAttemptFailure::unavailable(format!(
+            "could not write countermodel search driver: {error}"
+        )))
+    })?;
+    let search_output = run_lean(&search_path, true).map_err(|reason| {
+        CountermodelAttemptFailure::Fatal(EprAttemptFailure {
+            detail: format!("EprCountermodelSearch: {}", reason.detail()),
+            progress: reason.progress(),
+            solver_query_sha256: None,
+        })
+    })?;
     let seed = search_output
         .lines()
         .find_map(|line| line.strip_prefix("THERMITE-COUNTERMODEL-SEED="))
-        .ok_or("countermodel search did not report a result")?;
+        .ok_or_else(|| {
+            CountermodelAttemptFailure::Fatal(EprAttemptFailure::proof(
+                "countermodel search did not report a result",
+            ))
+        })?;
     if seed == "none" {
-        return Err(format!(
+        return Err(CountermodelAttemptFailure::Retry(format!(
             "no source countermodel was found in the {COUNTERMODEL_SEEDS}-member \
              checked finite-model family"
-        ));
+        )));
     }
-    let seed = seed
-        .parse::<usize>()
-        .map_err(|error| format!("countermodel search returned invalid seed `{seed}`: {error}"))?;
+    let seed = seed.parse::<usize>().map_err(|error| {
+        CountermodelAttemptFailure::Fatal(EprAttemptFailure::proof(format!(
+            "countermodel search returned invalid seed `{seed}`: {error}"
+        )))
+    })?;
 
     let replay_source = countermodel_replay_source(premise, conclusion, seed, qfree_values);
     let replay_path = scratch.join("countermodel-replay.lean");
-    fs::write(&replay_path, replay_source.as_bytes())
-        .map_err(|error| format!("could not write countermodel driver: {error}"))?;
-    let output = run_lean(&replay_path, true)?;
-    let axioms = parse_axioms(&output, "thermiteEprCountermodel")?;
+    fs::write(&replay_path, replay_source.as_bytes()).map_err(|error| {
+        CountermodelAttemptFailure::Fatal(EprAttemptFailure::unavailable(format!(
+            "could not write countermodel driver: {error}"
+        )))
+    })?;
+    let output = run_lean(&replay_path, true).map_err(|reason| {
+        CountermodelAttemptFailure::Fatal(EprAttemptFailure {
+            detail: format!("EprCountermodelReplay: {}", reason.detail()),
+            progress: reason.progress(),
+            solver_query_sha256: None,
+        })
+    })?;
+    let axioms = parse_axioms(&output, "thermiteEprCountermodel")
+        .map_err(|reason| CountermodelAttemptFailure::Fatal(EprAttemptFailure::proof(reason)))?;
     let mut atoms = Vec::new();
     for line in output.lines() {
         let Some(value) = line.strip_prefix("THERMITE-MODEL-ATOM=") else {
             continue;
         };
-        let (value, atom) = value
-            .split_once('|')
-            .ok_or_else(|| format!("malformed model atom output `{line}`"))?;
+        let (value, atom) = value.split_once('|').ok_or_else(|| {
+            CountermodelAttemptFailure::Fatal(EprAttemptFailure::proof(format!(
+                "malformed model atom output `{line}`"
+            )))
+        })?;
         let value = match value {
             "true" => true,
             "false" => false,
-            other => return Err(format!("invalid model truth value `{other}`")),
+            other => {
+                return Err(CountermodelAttemptFailure::Fatal(EprAttemptFailure::proof(
+                    format!("invalid model truth value `{other}`"),
+                )))
+            }
         };
         atoms.push(GroundAtomValue {
             atom: atom.to_string(),
@@ -1308,16 +1521,18 @@ fn check_bool_countermodel(
         });
     }
     if atoms.len() != ground.atoms.len() {
-        return Err(format!(
-            "Lean evaluated {} atoms, but the recomputed problem contains {}",
-            atoms.len(),
-            ground.atoms.len()
-        ));
+        return Err(CountermodelAttemptFailure::Fatal(EprAttemptFailure::proof(
+            format!(
+                "Lean evaluated {} atoms, but the recomputed problem contains {}",
+                atoms.len(),
+                ground.atoms.len()
+            ),
+        )));
     }
     Ok((seed, atoms, axioms))
 }
 
-fn ensure_lean_reconstruction_modules() -> Result<(), String> {
+fn ensure_lean_reconstruction_modules() -> Result<(), LeanToolFailure> {
     LEAN_MODULE_BUILD
         .get_or_init(|| {
             let lake = lake_binary();
@@ -1330,25 +1545,25 @@ fn ensure_lean_reconstruction_modules() -> Result<(), String> {
                 .stderr(Stdio::piped())
                 .output()
                 .map_err(|error| {
-                    format!(
+                    LeanToolFailure::Unavailable(format!(
                         "could not invoke `{}` to build reconstruction modules: {error}",
                         lake.display()
-                    )
+                    ))
                 })?;
             if output.status.success() {
                 Ok(())
             } else {
-                Err(format!(
+                Err(LeanToolFailure::Rejected(format!(
                     "`lake build` exited {:?}: {}",
                     output.status.code(),
                     output_head(&output)
-                ))
+                )))
             }
         })
         .clone()
 }
 
-fn run_lean(source: &Path, run_main: bool) -> Result<String, String> {
+fn run_lean(source: &Path, run_main: bool) -> Result<String, LeanToolFailure> {
     let lake = lake_binary();
     let mut command = Command::new(&lake);
     command
@@ -1367,7 +1582,9 @@ fn run_lean(source: &Path, run_main: bool) -> Result<String, String> {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .map_err(|error| format!("could not invoke `{}`: {error}", lake.display()))?;
+        .map_err(|error| {
+            LeanToolFailure::Unavailable(format!("could not invoke `{}`: {error}", lake.display()))
+        })?;
     let combined = format!(
         "{}{}",
         String::from_utf8_lossy(&output.stdout),
@@ -1376,64 +1593,64 @@ fn run_lean(source: &Path, run_main: bool) -> Result<String, String> {
     if output.status.success() {
         Ok(combined)
     } else {
-        Err(format!(
+        Err(LeanToolFailure::Rejected(format!(
             "Lean exited {:?}: {}",
             output.status.code(),
             combined.chars().take(1200).collect::<String>()
-        ))
+        )))
     }
 }
 
-fn verify_solver_toolchain() -> Result<SolverToolchain, String> {
+fn verify_solver_toolchain() -> Result<SolverToolchain, ToolchainFailure> {
     let cadical = solver_binary("THERMITE_EPR_CADICAL", "cadical");
     let drat_trim = solver_binary("THERMITE_EPR_DRAT_TRIM", "drat-trim");
     verify_solver_toolchain_at(&cadical, &drat_trim)?;
     Ok(SolverToolchain { cadical, drat_trim })
 }
 
-fn verify_solver_toolchain_at(cadical: &Path, drat_trim: &Path) -> Result<(), String> {
+fn verify_solver_toolchain_at(cadical: &Path, drat_trim: &Path) -> Result<(), ToolchainFailure> {
     let cadical_version = Command::new(cadical)
         .arg("--version")
         .output()
         .map_err(|error| {
-            format!(
+            ToolchainFailure::Unavailable(format!(
                 "EprSolverUnavailable: could not invoke pinned `{}`: {error}",
                 cadical.display()
-            )
+            ))
         })?;
     if !cadical_version.status.success() {
-        return Err(format!(
+        return Err(ToolchainFailure::Incompatible(format!(
             "EprSolverVersion: `{}` could not report its pinned version: {}",
             cadical.display(),
             output_head(&cadical_version)
-        ));
+        )));
     }
     let actual_cadical = String::from_utf8_lossy(&cadical_version.stdout);
     if actual_cadical.trim() != CADICAL_VERSION {
-        return Err(format!(
+        return Err(ToolchainFailure::Incompatible(format!(
             "EprSolverVersion: expected CaDiCaL {CADICAL_VERSION} \
              ({CADICAL_REVISION}), found `{}`",
             actual_cadical.trim()
-        ));
+        )));
     }
 
     let drat_version = Command::new(drat_trim)
         .arg("--thermite-version")
         .output()
         .map_err(|error| {
-            format!(
+            ToolchainFailure::Unavailable(format!(
                 "EprLratToolUnavailable: could not invoke pinned `{}`: {error}",
                 drat_trim.display()
-            )
+            ))
         })?;
     let expected_drat = format!("drat-trim {DRAT_TRIM_REVISION}");
     if !drat_version.status.success()
         || String::from_utf8_lossy(&drat_version.stdout).trim() != expected_drat
     {
-        return Err(format!(
+        return Err(ToolchainFailure::Incompatible(format!(
             "EprLratToolVersion: expected `{expected_drat}`, found {}",
             output_head(&drat_version)
-        ));
+        )));
     }
     Ok(())
 }
@@ -1861,7 +2078,7 @@ fn try_cached_unsat(
     conclusion: &str,
     scratch: &Path,
     started: Instant,
-) -> Result<Option<ReconstructionEvidence>, String> {
+) -> Result<Option<ReconstructionEvidence>, EprAttemptFailure> {
     if std::env::var_os("THERMITE_EPR_CACHE_DISABLE").is_some() {
         return Ok(None);
     }
@@ -1893,7 +2110,7 @@ fn try_cached_unsat_at(
     conclusion: &str,
     scratch: &Path,
     started: Instant,
-) -> Result<Option<ReconstructionEvidence>, String> {
+) -> Result<Option<ReconstructionEvidence>, EprAttemptFailure> {
     let index_path = cache.join("index").join(input_key);
     let verdict_key_sha256 = match fs::read_to_string(&index_path) {
         Ok(value) => value.trim().to_string(),
@@ -1944,15 +2161,33 @@ fn try_cached_unsat_at(
     // evidence. The cache skips SAT search and LRAT conversion, never the Lean
     // bindings that make those artifacts meaningful.
     let driver_path = scratch.join("cached-ground.lean");
-    fs::write(&driver_path, ground_driver_source(premise, conclusion))
-        .map_err(|error| format!("EprCacheScratch: could not write ground driver: {error}"))?;
-    let recomputed_ground =
-        match run_lean(&driver_path, true).and_then(|output| parse_ground_output(&output)) {
-            Ok(ground) => ground,
-            Err(reason) => {
-                return cache_failure(strict, format!("cached grounding replay failed: {reason}"))
-            }
-        };
+    if let Err(error) = fs::write(&driver_path, ground_driver_source(premise, conclusion)) {
+        return cache_typed_failure(
+            strict,
+            EprAttemptFailure::unavailable(format!(
+                "EprCacheScratch: could not write ground driver: {error}"
+            )),
+        );
+    }
+    let ground_output = match run_lean(&driver_path, true) {
+        Ok(output) => output,
+        Err(reason) => {
+            return cache_typed_failure(
+                strict,
+                EprAttemptFailure {
+                    detail: format!("cached grounding replay failed: {}", reason.detail()),
+                    progress: reason.progress(),
+                    solver_query_sha256: None,
+                },
+            )
+        }
+    };
+    let recomputed_ground = match parse_ground_output(&ground_output) {
+        Ok(ground) => ground,
+        Err(reason) => {
+            return cache_failure(strict, format!("cached grounding replay failed: {reason}"))
+        }
+    };
     if recomputed_ground != entry.ground {
         return cache_failure(
             strict,
@@ -1967,12 +2202,25 @@ fn try_cached_unsat_at(
         );
     }
     let replay_path = scratch.join("cached-replay.lean");
-    fs::write(&replay_path, entry.final_source.as_bytes())
-        .map_err(|error| format!("EprCacheScratch: could not write replay source: {error}"))?;
+    if let Err(error) = fs::write(&replay_path, entry.final_source.as_bytes()) {
+        return cache_typed_failure(
+            strict,
+            EprAttemptFailure::unavailable(format!(
+                "EprCacheScratch: could not write replay source: {error}"
+            )),
+        );
+    }
     let replay_output = match run_lean(&replay_path, false) {
         Ok(output) => output,
         Err(reason) => {
-            return cache_failure(strict, format!("cached kernel replay failed: {reason}"))
+            return cache_typed_failure(
+                strict,
+                EprAttemptFailure {
+                    detail: format!("cached kernel replay failed: {}", reason.detail()),
+                    progress: reason.progress(),
+                    solver_query_sha256: None,
+                },
+            )
         }
     };
     let axioms = match parse_axioms(&replay_output, theorem) {
@@ -2001,9 +2249,17 @@ fn try_cached_unsat_at(
     Ok(Some(evidence))
 }
 
-fn cache_failure<T>(strict: bool, reason: String) -> Result<Option<T>, String> {
+fn cache_failure<T>(strict: bool, reason: String) -> Result<Option<T>, EprAttemptFailure> {
+    cache_typed_failure(strict, EprAttemptFailure::proof(reason))
+}
+
+fn cache_typed_failure<T>(
+    strict: bool,
+    mut failure: EprAttemptFailure,
+) -> Result<Option<T>, EprAttemptFailure> {
     if strict {
-        Err(format!("EprCacheTampered: {reason}"))
+        failure.detail = format!("EprCacheTampered: {}", failure.detail);
+        Err(failure)
     } else {
         Ok(None)
     }
@@ -2195,6 +2451,37 @@ fn lake_binary() -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn lean_tool_failures_preserve_invocation_vs_rejection() {
+        assert_eq!(
+            LeanToolFailure::Unavailable("lake absent".into()).progress(),
+            crate::outcome_matrix::SolverProgressClass::ToolUnavailable
+        );
+
+        let unavailable = cache_typed_failure::<()>(
+            true,
+            EprAttemptFailure::unavailable("cached Lean spawn failed"),
+        )
+        .expect_err("strict cache replay preserves unavailable failure");
+        assert_eq!(
+            unavailable.progress,
+            crate::outcome_matrix::SolverProgressClass::ToolUnavailable
+        );
+        let rejected = cache_typed_failure::<()>(
+            true,
+            EprAttemptFailure::proof("cached Lean rejected replay"),
+        )
+        .expect_err("strict cache replay preserves proof rejection");
+        assert_eq!(
+            rejected.progress,
+            crate::outcome_matrix::SolverProgressClass::ProofFailure
+        );
+        assert_eq!(
+            LeanToolFailure::Rejected("Lean exited 1".into()).progress(),
+            crate::outcome_matrix::SolverProgressClass::ProofFailure
+        );
+    }
     use thermite_syntax::{parse, Item};
 
     #[cfg(unix)]
@@ -2215,7 +2502,7 @@ mod tests {
 
     #[test]
     fn source_toolchain_pins_match_the_runtime_checks() {
-        let pins = include_str!("../../scripts/g4-toolchain.env");
+        let pins = include_str!("../../dev/g4-toolchain.env");
         assert!(pins.contains(&format!("CADICAL_VERSION={CADICAL_VERSION}\n")));
         assert!(pins.contains(&format!("CADICAL_REV={CADICAL_REVISION}\n")));
         assert!(pins.contains(&format!("DRAT_TRIM_REV={DRAT_TRIM_REVISION}\n")));
@@ -2228,7 +2515,8 @@ mod tests {
         let missing = scratch.path.join("missing");
         let error =
             verify_solver_toolchain_at(&missing, &missing).expect_err("a missing solver must fail");
-        assert!(error.starts_with("EprSolverUnavailable:"), "{error}");
+        assert!(matches!(error, ToolchainFailure::Unavailable(_)));
+        assert!(error.detail().starts_with("EprSolverUnavailable:"));
 
         let cadical = scratch.path.join("cadical");
         let drat_trim = scratch.path.join("drat-trim");
@@ -2236,13 +2524,15 @@ mod tests {
         write_test_tool(&drat_trim, &format!("drat-trim {DRAT_TRIM_REVISION}"), 0);
         let error = verify_solver_toolchain_at(&cadical, &drat_trim)
             .expect_err("a mismatched SAT solver must fail");
-        assert!(error.starts_with("EprSolverVersion:"), "{error}");
+        assert!(matches!(error, ToolchainFailure::Incompatible(_)));
+        assert!(error.detail().starts_with("EprSolverVersion:"));
 
         write_test_tool(&cadical, CADICAL_VERSION, 0);
         write_test_tool(&drat_trim, "drat-trim wrong-revision", 0);
         let error = verify_solver_toolchain_at(&cadical, &drat_trim)
             .expect_err("a mismatched LRAT converter must fail");
-        assert!(error.starts_with("EprLratToolVersion:"), "{error}");
+        assert!(matches!(error, ToolchainFailure::Incompatible(_)));
+        assert!(error.detail().starts_with("EprLratToolVersion:"));
 
         write_test_tool(&drat_trim, &format!("drat-trim {DRAT_TRIM_REVISION}"), 0);
         verify_solver_toolchain_at(&cadical, &drat_trim)
@@ -2344,9 +2634,10 @@ mod tests {
     fn production_reconstructs_an_admitted_array_clause() {
         let parsed = parse(
             "fn epr(xs: Vec<u64>) -> u64\n\
-             req true\n\
-             ens forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+             ! pure
+requires true\n\
+             ensures forall (i : usize) in xs. xs[i] == xs[i]\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2355,8 +2646,8 @@ mod tests {
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2364,7 +2655,12 @@ mod tests {
         )
         .expect("canonical S₂.0 bridge");
         assert!(needs_reconstruction(&recon.formula));
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Proved(evidence) => {
                 assert_eq!(evidence.fragment, EPR_FRAGMENT);
                 assert_eq!(evidence.budget_outcome.as_deref(), Some("within-budget"));
@@ -2377,10 +2673,11 @@ mod tests {
     fn production_reconstructs_sequence_extensionality() {
         let parsed = parse(
             "fn epr_ext(xs: Vec<u64>, ys: Vec<u64>) -> u64\n\
-             req xs.len() == ys.len() && \
+             ! pure
+requires xs.len() == ys.len() && \
                forall (i : usize) in xs. xs[i] == ys[i]\n\
-             ens xs == ys\n\
-             fx pure { 0 }",
+             ensures xs == ys\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2389,8 +2686,8 @@ mod tests {
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2398,7 +2695,12 @@ mod tests {
         )
         .expect("canonical S₂.0 bridge");
         assert!(needs_reconstruction(&recon.formula));
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Proved(evidence) => {
                 assert_eq!(evidence.fragment, EPR_FRAGMENT);
                 assert!(
@@ -2414,10 +2716,11 @@ mod tests {
     fn production_returns_a_countermodel_with_checked_lia_leaves() {
         let parsed = parse(
             "fn epr_qfree(xs: Vec<u64>, x: u64) -> u64\n\
-             req x + x == 2\n\
-             ens (x + x == 4) && \
+             ! pure
+requires x + x == 2\n\
+             ensures (x + x == 4) && \
                forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2426,8 +2729,8 @@ mod tests {
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2435,7 +2738,12 @@ mod tests {
         )
         .expect("canonical S₂.0 bridge");
         assert_eq!(recon.qfree_atoms.len(), 2);
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Counterexample(model) => {
                 assert!(
                     model
@@ -2458,10 +2766,11 @@ mod tests {
     fn production_checks_mixed_lia_and_bv_countermodel_leaves() {
         let parsed = parse(
             "fn epr_mixed_qfree(xs: Vec<u64>, x: u64) -> u64\n\
-             req x + x == 2\n\
-             ens@bv8 x + x == 4 && \
+             ! pure
+requires x + x == 2\n\
+             ensures@bv8 x + x == 4 && \
                forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2470,8 +2779,8 @@ mod tests {
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2486,7 +2795,12 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![QFreeFragment::Lia, QFreeFragment::Bv(BvWidth::W8)]
         );
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Counterexample(model) => {
                 assert!(model
                     .qfree_checks
@@ -2505,9 +2819,10 @@ mod tests {
     fn production_retries_a_boolean_qfree_mask_that_lia_cannot_realize() {
         let parsed = parse(
             "fn epr_qfree_retry(xs: Vec<u64>, ys: Vec<u64>, x: u64) -> u64\n\
-             req x + x == x + x || xs.len() == xs.len()\n\
-             ens xs == ys\n\
-             fx pure { 0 }",
+             ! pure
+requires x + x == x + x || xs.len() == xs.len()\n\
+             ensures xs == ys\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2516,8 +2831,8 @@ mod tests {
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
@@ -2525,7 +2840,12 @@ mod tests {
         )
         .expect("canonical S₂.0 bridge");
         assert_eq!(recon.qfree_atoms.len(), 1);
-        match reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0]) {
+        match reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) {
             EprOutcome::Counterexample(model) => {
                 assert!(
                     model
@@ -2547,9 +2867,10 @@ mod tests {
     fn cache_replays_warm_entries_and_rejects_every_tampered_boundary() {
         let parsed = parse(
             "fn epr_cache(xs: Vec<u64>) -> u64\n\
-             req true\n\
-             ens forall (i : usize) in xs. xs[i] == xs[i]\n\
-             fx pure { 0 }",
+             ! pure
+requires true\n\
+             ensures forall (i : usize) in xs. xs[i] == xs[i]\n\
+              { 0 }",
         );
         assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
         let Item::Fn(item) = &parsed.program.items[0] else {
@@ -2558,17 +2879,20 @@ mod tests {
         let recon = thermite_spec::s2_recon_from_obligation(
             &parsed.program,
             item,
-            &item.contract.req,
-            &item.contract.ens[0],
+            &item.contract.requires,
+            &item.contract.ensures[0],
             thermite_spec::SourceAddress {
                 item: item.name.clone(),
                 clause: "ens#0".to_string(),
             },
         )
         .expect("canonical S₂.0 bridge");
-        let EprOutcome::Proved(_) =
-            reconstruct(&recon, item, &item.contract.req, &item.contract.ens[0])
-        else {
+        let EprOutcome::Proved(_) = reconstruct(
+            &recon,
+            item,
+            &item.contract.requires,
+            &item.contract.ensures[0],
+        ) else {
             panic!("fixture must first produce a checked proof");
         };
 
@@ -2579,8 +2903,8 @@ mod tests {
         let canonical = recon.canonical_wire();
         let source_clause = format!(
             "{}\n{}",
-            thermite_spec::canonical_source_expr(&item.contract.req.expr),
-            thermite_spec::canonical_source_expr(&item.contract.ens[0].expr)
+            thermite_spec::canonical_source_expr(&item.contract.requires.expr),
+            thermite_spec::canonical_source_expr(&item.contract.ensures[0].expr)
         );
         let theorem = "thermite_epr_epr_cache_ens_0";
         let input_key = cache_input_key(&canonical, &source_clause, &premise, &conclusion)
@@ -2648,8 +2972,8 @@ mod tests {
             )
             .expect_err("strict cache replay must reject tampering");
             assert!(
-                error.starts_with("EprCacheTampered:"),
-                "{boundary} produced the wrong failure: {error}"
+                error.detail.starts_with("EprCacheTampered:"),
+                "{boundary} produced the wrong failure: {error:?}"
             );
         };
 

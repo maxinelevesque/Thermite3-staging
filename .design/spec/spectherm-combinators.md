@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 9479f91e0c7f70981aceb3a7ab6a17f55851d057094254a658faafe35e7e8634
+audited-content-sha256: 523d8e491a42d931a2e46bbe5677f10dfe516209f875ca78e36feedf77f5e220 (re-pinned 2026-08-25 for issue #41 proof-target binding; combinator semantics are unchanged. prior: 1a9691f78dbc7adaeb6916423ec197962552079329d978dab6332b691e9b188e)
 governs: thermite-spec/src/combinators.rs, thermite-spec/src/validator.rs
 thesis-refs:
   - thermite-design.md §4.1
@@ -18,7 +18,7 @@ thesis-refs:
 `thermite-spec` ships the **SpecTherm combinator registry** — the frozen, closed
 set of bounded combinators (§4.2) with their name / arity / argument-kinds /
 result type — and the **SpecTherm validator**, the boundary API that walks a
-parsed `thermite-syntax` AST's contract positions (`req`/`ens`/`inv`/`dec` and
+parsed `thermite-syntax` AST's contract positions (`requires`/`ensures`/`keeps`/`measures` and
 `spec fn` bodies) and enforces §4.2's "locked cage": a contract may use ONLY
 registered combinators (correct name + arity + arg-kinds), declared `spec fn`
 calls, and the built-in operators / literals / paths the grammar already allows
@@ -159,8 +159,8 @@ the #4 fields are not REQs of #2 at all.
   final identifier; this doc pins the REJECT outcome + the cause being a
   combinator-nested-in-closure rejection, distinct from `UnknownCombinator` and
   `ForbiddenCall`). Genuine nested quantification is expressed by extracting a
-  NAMED `spec fn` (which carries its own `dec` measure and is auditable, §4.2
-  "No spec-level recursion without a `dec` measure") and calling it — composition
+  NAMED `spec fn` (which carries its own `measures` measure and is auditable, §4.2
+  "No spec-level recursion without a `measures` measure") and calling it — composition
   is **named, never anonymous**.
 
   **Rationale (from #40):** a combinator lowers to a bounded quantifier with a
@@ -177,7 +177,7 @@ the #4 fields are not REQs of #2 at all.
   in SpecTherm is a bounded combinator with a frozen trigger; composition happens
   only through named `spec fn`s, never anonymous nested quantifiers.** Honest
   caveat: a flat closure MAY still call a named `spec fn` that internally
-  quantifies — depth is **named + bounded** (each named layer is `dec`-measured
+  quantifies — depth is **named + bounded** (each named layer is `measures`-measured
   and auditable), NOT zero; what REQ-6 forbids is anonymous arbitrary nesting,
   the unpredictable part. Derived from §4.2 + §6 + issue #40's `--kind decision`
   analysis.
@@ -206,7 +206,7 @@ the #4 fields are not REQs of #2 at all.
   expected `SpecError` variant: an unknown combinator (`frobnicate(haystack)`) →
   `UnknownCombinator`; `forall_in(haystack)` (1 arg) → `WrongArity`;
   `forall_in(haystack, needle)` (non-closure in the `Pred` slot) →
-  `WrongArgKind`; an arbitrary free call in `ens` whose callee is neither a
+  `WrongArgKind`; an arbitrary free call in `ensures` whose callee is neither a
   combinator nor a declared spec fn → the forbidden-call rejection. Each
   fixture's expected variant + offending name/position is hand-derived
   (R-CHAR-3). (REQ-3, REQ-4)
@@ -238,7 +238,7 @@ the #4 fields are not REQs of #2 at all.
   program whose combinator predicate-closure body calls a NAMED `spec fn` —
   canonically `forall_in(xs, |x| is_even(x))` where `is_even` is a declared
   `spec fn` in the same program — returns `Ok(())`. Named composition is allowed
-  (the honest-caveat case of REQ-6: a flat body may call a `dec`-measured named
+  (the honest-caveat case of REQ-6: a flat body may call a `measures`-measured named
   spec fn). This is a NEW accept case in `tests/golden/combinators/accept.json`
   (orchestrator adds it). (REQ-6, REQ-3(b))
 
@@ -267,12 +267,12 @@ expr), `Pred` (predicate closure `|x| bool`), `Value` (scalar expr).
 
 | Combinator | Arity | Arg-kinds | Result | Source |
 |---|---|---|---|---|
-| `forall_in` | 2 | `Slice, Pred` | `bool` | §4.2 named list; corpus `binary_search` `ens` (`forall_in(haystack, |x| x != needle)`). |
+| `forall_in` | 2 | `Slice, Pred` | `bool` | §4.2 named list; corpus `binary_search` `ensures` (`forall_in(haystack, |x| x != needle)`). |
 | `exists_in` | 2 | `Slice, Pred` | `bool` | §4.2 named list ("`exists_in`"). The dual of `forall_in`; same shape. |
-| `forall_below` | 3 | `Slice, Index, Pred` | `bool` | corpus `binary_search` `inv` (`forall_below(haystack, lo, |x| x < needle)`). Bounded `forall` over the prefix `[..lo]`. |
-| `forall_from` | 3 | `Slice, Index, Pred` | `bool` | **corpus-required, NOT in §4.2's named list** — see note below; corpus `binary_search` `inv` (`forall_from(haystack, hi, |x| x > needle)`). Bounded `forall` over the suffix `[hi..]`. |
+| `forall_below` | 3 | `Slice, Index, Pred` | `bool` | corpus `binary_search` `keeps` (`forall_below(haystack, lo, |x| x < needle)`). Bounded `forall` over the prefix `[..lo]`. |
+| `forall_from` | 3 | `Slice, Index, Pred` | `bool` | **corpus-required, NOT in §4.2's named list** — see note below; corpus `binary_search` `keeps` (`forall_from(haystack, hi, |x| x > needle)`). Bounded `forall` over the suffix `[hi..]`. |
 | `count_where` | 2 | `Slice, Pred` | `usize` | §4.2 named list ("`count_where`"). The one v0.1 combinator whose result is `usize`, not `bool` (motivates the `result kind` field, REQ-2). |
-| `sorted` | 1 | `Slice` | `bool` | §4.2 named list; corpus `binary_search` `req` (`sorted(haystack)`). |
+| `sorted` | 1 | `Slice` | `bool` | §4.2 named list; corpus `binary_search` `requires` (`sorted(haystack)`). |
 | `permutation_of` | 2 | `Slice, Slice` | `bool` | §4.2 named list ("`permutation_of`"). |
 | `disjoint` | 2 | `Slice, Slice` | `bool` | §4.2 named list ("`disjoint`"). |
 
@@ -342,7 +342,7 @@ REQ-4 plus `ExpressionTooDeep`. No `unwrap`/`expect`/`panic!` in production
 
 REQ-6 distinguishes TWO walk contexts for a contract expression:
 
-1. **General contract position** (a `req`/`ens`/`inv`/`dec` clause expression, or
+1. **General contract position** (a `requires`/`ensures`/`keeps`/`measures` clause expression, or
    a `spec fn` body): a combinator call IS allowed here — this is where a
    quantifier is introduced. (REQ-3's accept rule, as today: `walk_expr` →
    `walk_call`.)
@@ -385,7 +385,7 @@ later consumer.
 ## Verification
 
 `cargo test -p thermite-spec` over the oracle at `tests/golden/combinators/`
-(declared as this route's `reference` in `tooling/spec-routes.toml`):
+(declared as this route's `reference` in `gates/routes.toml`):
 
 - **AC-1:** assert the registry table equals the hand-authored
   `tests/golden/combinators/registry.{json,txt}` (every name/arity/arg-kinds/
@@ -407,7 +407,7 @@ later consumer.
   #40: the case is in the committed oracle and green
   (`tests/combinators_conformance.rs`).
 - **AC-7:** the NEW `accept.json` case `named_spec_fn_in_closure` —
-  `spec fn is_even(x: u32) -> bool dec 0 { x % 2 == 0 } fn f(xs: &[u32]) -> u32 req true ens forall_in(xs, |x| is_even(x)) fx pure { 0 }`
+  `spec fn is_even(x: u32) -> bool measures 0 { x % 2 == 0 } fn f(xs: &[u32]) -> u32 requires true ensures forall_in(xs, |x| is_even(x)) ! pure { 0 }`
   — asserts `Ok(())` (named composition allowed).
 - **AC-8:** every pre-existing `accept.json` case (the flat corpus closures)
   continues to assert `Ok(())` after REQ-6 — the corpus is unaffected.
@@ -422,13 +422,13 @@ outcome):**
 - ADD to `tests/golden/combinators/reject.json`:
   ```json
   { "name": "nested_combinator", "expected": "NestedCombinator",
-    "program": "fn f(xs: &[u32], ys: &[u32]) -> u32 req true ens forall_in(xs, |x| exists_in(ys, |y| y == x)) fx pure { 0 }",
+    "program": "fn f(xs: &[u32], ys: &[u32]) -> u32 requires true ensures forall_in(xs, |x| exists_in(ys, |y| y == x)) ! pure { 0 }",
     "why": "a combinator's predicate-closure body must be a FLAT predicate (REQ-6); a nested combinator call (exists_in) inside the |x| body composes an anonymous nested quantifier, reintroducing the §4.2 instantiation unpredictability the cage forbids. Named composition via a `spec fn` is the sanctioned alternative." }
   ```
 - ADD to `tests/golden/combinators/accept.json`:
   ```json
   { "name": "named_spec_fn_in_closure", "combinator": "forall_in (named-spec-fn body)",
-    "program": "spec fn is_even(x: u32) -> bool dec 0 { x % 2 == 0 } fn f(xs: &[u32]) -> u32 req true ens forall_in(xs, |x| is_even(x)) fx pure { 0 }" }
+    "program": "spec fn is_even(x: u32) -> bool measures 0 { x % 2 == 0 } fn f(xs: &[u32]) -> u32 requires true ensures forall_in(xs, |x| is_even(x)) ! pure { 0 }" }
   ```
 
 ## REQ status
@@ -437,7 +437,7 @@ outcome):**
 |---|---|---|
 | REQ-1 (frozen combinator set) | SHIPPED | registry table in `thermite-spec/src/combinators.rs` (const `CombinatorSig` set); consumed by `validate` via `combinators::lookup` in `validator.rs`. Verification: `tests/golden/combinators/registry.{json}` asserted by `cargo test -p thermite-spec`. |
 | REQ-2 (registry data shape — structural facet) | SHIPPED | `CombinatorSig { name, arity, arg_kinds, result }` + `enum ArgKind` (`Slice`/`Index`/`Pred`/`Value`) in `combinators.rs`; lookup consumed by `validate`. Lowering facet (trigger/Verus/L1) remains #4 scope, not a #2 REQ. |
-| REQ-3 (validator accept rule) | SHIPPED | `pub fn validate` in `validator.rs` collects `spec fn` names, walks `Contract.req`/`ens`, `LoopNode.invs`/`dec`, `SpecFnItem.body`; accepts registered combinators (`combinators::lookup`), declared spec-fn calls, grammar built-ins. Verification: every `accept.json` case validates clean. |
+| REQ-3 (validator accept rule) | SHIPPED | `pub fn validate` in `validator.rs` collects `spec fn` names, walks `Contract.req`/`ensures`, `LoopNode.invs`/`measures`, `SpecFnItem.body`; accepts registered combinators (`combinators::lookup`), declared spec-fn calls, grammar built-ins. Verification: every `accept.json` case validates clean. |
 | REQ-4 (reject cases, structured `SpecError`) | SHIPPED | `enum SpecError` (`UnknownCombinator`/`WrongArity`/`WrongArgKind`/`ForbiddenCall`/`ExpressionTooDeep`) in `validator.rs`; `validate` returns `Result<(), Vec<SpecError>>`, never panics. Verification: every `reject.json` case yields the expected cause. |
 | REQ-5 (bounded recursion — no overflow) | SHIPPED | `MAX_RECURSION_DEPTH` + `descend` guard wraps every recursive descent in `validator.rs`; deep input yields `ExpressionTooDeep`. Verification: `validate_never_panics`. |
 | REQ-6 (flat-closure-fragment rule — no anonymous nested quantifiers) | SHIPPED | #40 (`4d46f8a4`, post-pin; verified at the #262 re-audit). `check_arg_kind`'s `Pred` arm sets `Validator::in_combinator_closure` for the whole closure-body descent (`validator.rs`); while set, `walk_call` rejects any callee resolving via `combinators::lookup` with the dedicated span-bearing `SpecError::NestedCombinator { name, span }`, while a declared spec-fn callee stays accepted (named composition — AC-7). Non-test consumer: `pub fn validate in validator.rs` (the walk forge runs before lowering). Verification: `tests/golden/combinators/reject.json` case `nested_combinator_in_closure` → `NestedCombinator` + `accept.json` case `named_spec_fn_in_closure` → `Ok` (`thermite-spec/tests/combinators_conformance.rs`); the flat corpus closures stay `Ok` (AC-8); edge coverage in `thermite-spec/tests/divergence_nesting.rs` (nested-in-loop-inv / under-three-arg-outer / in-spec-fn-body all reject). |
@@ -458,11 +458,11 @@ flagged:
    forbids anonymous nested combinators inside closure bodies.
 2. **"No general quantifiers" reads as "zero quantifier composition",** but the
    honest invariant is narrower and TRUE: *named* `spec fn`s CAN quantify,
-   boundedly — a flat closure may call a `dec`-measured named spec fn that
+   boundedly — a flat closure may call a `measures`-measured named spec fn that
    internally quantifies. Depth is named + bounded + auditable, not zero. The
    precise, honest restatement of §4.2 is: **"every quantifier in SpecTherm is a
    bounded combinator with a frozen trigger; composition happens only through
-   named `spec fn`s (each `dec`-measured and auditable), never anonymous nested
+   named `spec fn`s (each `measures`-measured and auditable), never anonymous nested
    quantifiers."**
 
 Recommended §4.2 amendment (for the user/orchestrator to apply to

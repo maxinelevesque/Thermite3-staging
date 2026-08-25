@@ -185,19 +185,27 @@ fn isqrt_class_certifies_l3_with_l4_l4_l3_clauses_and_four_evidence_blocks() {
         "covenant evidence == golden"
     );
 
-    // (3b) The axiom-gate record (the engine attribution): the L3 Lean discharge is
-    // recorded with its named trust base.
+    // (3b) A heterogeneous NLSAT/Lean item has no invented singular attribution.
+    // The axiom-gate record and trust base remain bound to ens#2's atomic block.
     let attr = &cert["engine_attribution"];
     assert!(
-        attr.is_object(),
-        "engine_attribution present (the axiom-gate record)"
+        attr.is_null(),
+        "heterogeneous portfolio omits singular authority"
     );
+    let portfolio_clauses: Vec<_> = obls
+        .iter()
+        .map(|obligation| &obligation["clause_certification"])
+        .collect();
+    assert!(portfolio_clauses.iter().all(|clause| clause.is_object()));
+    assert_eq!(portfolio_clauses[0]["procedure"]["kind"], "nlsat");
+    assert_eq!(portfolio_clauses[1]["procedure"]["kind"], "nlsat");
+    assert_eq!(portfolio_clauses[2]["procedure"]["kind"], "author_lean");
     assert!(
-        !attr["trust_profile"]
+        !obls[2]["trust"]
             .as_array()
             .map(Vec::is_empty)
             .unwrap_or(true),
-        "the trust profile names the trusted base"
+        "the addressed Lean clause names its trusted base"
     );
 
     // (3c) The re-elaboration mutation score (anti-Goodhart) — a real, populated ratio
@@ -213,6 +221,15 @@ fn isqrt_class_certifies_l3_with_l4_l4_l3_clauses_and_four_evidence_blocks() {
         cert["contract_quality"]["mutants_killed"], golden["contract_quality"]["mutants_killed"],
         "mutation score == golden"
     );
+    let replays = cert["contract_quality"]["clause_mutation_replays"]
+        .as_array()
+        .expect("addressed mutation replay vector");
+    assert!(replays
+        .iter()
+        .any(|replay| { replay["address"]["index"] == 0 && replay["outcome"] == "inapplicable" }));
+    assert!(replays
+        .iter()
+        .any(|replay| { replay["address"]["index"] == 2 && replay["outcome"] != "inapplicable" }));
 
     // (3d) The burn receipt (the L3 clause's proof tokens + cited frozen simp-lemmas).
     let burn = &cert["burn"];

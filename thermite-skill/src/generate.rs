@@ -64,7 +64,7 @@
 use thermite_spec::schemes::{SchemeResult, SchemeSig, StepShape};
 use thermite_spec::{ArgKind, CombinatorSig, ResultKind};
 use thermite_syntax::ast::{
-    BinOp, Effect, Expr, IndexArg, Item, Pattern, PlatformDomain, PrimType, SlicePat, Type, UnaryOp,
+    BinOp, Effect, Expr, IndexArg, Item, Pattern, PrimType, SlicePat, Type, UnaryOp,
 };
 use thermite_syntax::lexer::Span;
 
@@ -298,7 +298,7 @@ This generated file matches the toolchain that produced it. Do not edit it by
 hand; refresh it with `forge skill --write THERMITE.skill.md`. The canonical
 file stays below the 6,000-token CI budget.
 
-Start with a contract-first `fn`: write `req`, `ens`, and `fx`, then its body.
+Start with a contract-first `fn`: write the effect row `!`, `requires`, and `ensures`, then its body.
 Run `forge check <file>`. Fix any concrete counterexample, or leave a `?0` hole
 and use `forge goal` and `forge fill`. A function with a hole never certifies.
 
@@ -327,7 +327,7 @@ impl SkillFragment {
     /// row of the REQ-10 inventory): the grammar fragment + description, then a tiny
     /// example. Used (via [`render_inventory_complete_examples`]) for the `Type` arms
     /// whose example is a complete, copy-pasteable item — chiefly the `fn log() -> ()
-    /// req true ens true fx pure { }` that the §10 parse-clean pin guards. Every other
+    /// requires true ensures true ! pure { }` that the §10 parse-clean pin guards. Every other
     /// inventory (items, expressions, primitive scalars, operators, patterns, effects)
     /// renders via [`to_bullet_terse`](SkillFragment::to_bullet_terse) to stay under
     /// the §2.2 token budget.
@@ -374,7 +374,7 @@ fn render_type_arm(ty: &Type) -> SkillFragment {
         Type::Unit => SkillFragment {
             fragment: "()",
             description: "the unit type, written explicitly in a return position",
-            example: "fn log() -> () req true ens true fx pure { }",
+            example: "fn log() -> () ! pure requires true ensures true { }",
         },
         Type::Ref { .. } => SkillFragment {
             fragment: "&T | &mut T",
@@ -397,8 +397,8 @@ fn render_type_arm(ty: &Type) -> SkillFragment {
         // construct + payload-in-contract surface an agent reads.
         Type::Option(_) => SkillFragment {
             fragment: "Option<T>",
-            description: "the built-in optional (Some(v)/None; match/is; payload-in-contract via match-in-ens)",
-            example: "-> Option<u64> ens match result { Some(v) => v == 5, None => true }",
+            description: "the built-in optional (Some(v)/None; match/is; payload-in-contract via match-in-ensures)",
+            example: "-> Option<u64> ensures match result { Some(v) => v == 5, None => true }",
         },
         Type::Result(_, _) => SkillFragment {
             fragment: "Result<T, E>",
@@ -408,10 +408,10 @@ fn render_type_arm(ty: &Type) -> SkillFragment {
         // Cluster C12 (`.design/basis/13-map.md` REQ-1/REQ-5): the bounded verified
         // key-value primitive `Map<K, V>` — the second two-type-arg node. insert/get/
         // contains_key/len; get returns Option<V> (absent key -> None, not a wrong
-        // value); insert carries fx alloc. Renders its own surface fragment.
+        // value); insert carries ! alloc. Renders its own surface fragment.
         Type::Map(_, _) => SkillFragment {
             fragment: "Map<K, V>",
-            description: "a bounded verified key-value map (insert/get/contains_key/len; get -> Option<V>, absent -> None; fx alloc)",
+            description: "a bounded verified key-value map (insert/get/contains_key/len; get -> Option<V>, absent -> None; ! alloc)",
             example: "let mut m: Map<u64, u64> = Map::new(); m.insert(k, v); m.get(k)",
         },
         Type::Named(_) => SkillFragment {
@@ -421,17 +421,17 @@ fn render_type_arm(ty: &Type) -> SkillFragment {
         },
         Type::Box(_) => SkillFragment {
             fragment: "Box<T>",
-            description: "heap indirection for a recursive enum (carries fx alloc)",
+            description: "heap indirection for a recursive enum (carries ! alloc)",
             example: "Cons(u64, Box<List>)",
         },
         Type::Vec(_) => SkillFragment {
             fragment: "Vec<T>",
-            description: "a bounded growable collection over verified vstd (fx alloc)",
+            description: "a bounded growable collection over verified vstd (! alloc)",
             example: "let v: Vec<u64> = Vec::new();",
         },
         Type::String => SkillFragment {
             fragment: "String",
-            description: "a bounded owned run of u8 bytes (fx alloc)",
+            description: "a bounded owned run of u8 bytes (! alloc)",
             example: "let s: String = \"hi\";",
         },
         // Cluster C9-B (`.design/basis/10-recursion-tuples.md` REQ-5/REQ-7): the
@@ -440,7 +440,7 @@ fn render_type_arm(ty: &Type) -> SkillFragment {
         Type::Tuple(_) => SkillFragment {
             fragment: "(T, U, ..)",
             description: "an n-tuple (arity >= 2) for multiple returns; access via .0/.1",
-            example: "fn swap(a: u64, b: u64) -> (u64, u64) req true ens result.0 == b && result.1 == a fx pure { (b, a) }",
+            example: "fn swap(a: u64, b: u64) -> (u64, u64) ! pure requires true ensures result.0 == b && result.1 == a { (b, a) }",
         },
     }
 }
@@ -488,19 +488,19 @@ fn render_prim_arm(prim: PrimType) -> SkillFragment {
 fn render_item_arm(item: &Item) -> SkillFragment {
     match item {
         Item::Fn(_) => SkillFragment {
-            fragment: "fn NAME(..) -> T req .. ens .. fx .. { .. }",
-            description: "a contract-first function (mandatory req/ens/fx, in order)",
-            example: "fn sum(xs: &[u32]) -> u64 req .. ens .. fx pure { .. }",
+            fragment: "fn NAME(..) -> T ! .. requires .. ensures .. { .. }",
+            description: "a contract-first function (mandatory requires/ensures/!, in order)",
+            example: "fn sum(xs: &[u32]) -> u64 ! pure requires .. ensures .. { .. }",
         },
         Item::SpecFn(_) => SkillFragment {
-            fragment: "spec fn NAME(..) -> T dec .. { .. }",
-            description: "a total terminating spec function (one dec measure, no req/ens/fx)",
-            example: "spec fn spec_sum(xs: &[u32]) -> nat dec xs.len() { .. }",
+            fragment: "spec fn NAME(..) -> T measures .. { .. }",
+            description: "a total terminating spec function (one measures clause, no requires/ensures/effect row)",
+            example: "spec fn spec_sum(xs: &[u32]) -> nat measures xs.len() { .. }",
         },
         Item::Struct(_) => SkillFragment {
-            fragment: "struct NAME { field: T, .. } [inv EXPR]",
-            description: "a product type with an optional type-invariant inv clause",
-            example: "struct Account { balance: u64 } inv balance <= cap",
+            fragment: "struct NAME { field: T, .. } [keeps EXPR]",
+            description: "a product type with an optional type-invariant keeps clause",
+            example: "struct Account { balance: u64 } keeps balance <= cap",
         },
         Item::Enum(_) => SkillFragment {
             fragment: "enum NAME { Unit, Tuple(T, ..), Struct { f: T } }",
@@ -511,9 +511,29 @@ fn render_item_arm(item: &Item) -> SkillFragment {
         // increment; emit a descriptive fragment mirroring the ADT-decl arms (no
         // inert/None option exists in this render match).
         Item::Forge(_) => SkillFragment {
-            fragment: "prop fn NAME(..) -> bool { .. } | lemma NAME(..) req .. ens .. { .. } | proof for NAME { .. } | witness NAME { .. }",
+            fragment: "prop fn NAME(..) -> bool { .. } | lemma NAME(..) requires .. ensures .. { .. } | proof for NAME { .. } | witness NAME { .. }",
             description: "a forge-tier surface item (prop fn / lemma / proof for / witness)",
             example: "prop fn nonneg(x: i64) -> bool { x >= 0 }",
+        },
+        Item::EffectDecl(_) => SkillFragment {
+            fragment: "effect NAME(param) = primitive + ..",
+            description: "an effect label declared as a combination of algebraic-basis primitives",
+            example: "effect platform(d) = state(d) + io(d)",
+        },
+        Item::SharedDecl(_) => SkillFragment {
+            fragment: "shared NAME: TYPE",
+            description: "a typed root in the shared-region containment forest",
+            example: "shared WORLD: World",
+        },
+        Item::Concurrent(_) => SkillFragment {
+            fragment: "concurrent NAME { ROOT, .. }",
+            description: "a named set of shared roots whose effect footprints must commute",
+            example: "concurrent workers { LEFT, RIGHT }",
+        },
+        Item::LockDecl(_) => SkillFragment {
+            fragment: "lock NAME guards REGION [after LOCK]",
+            description: "a symbolic lock guarding an RFC-9 shared region",
+            example: "lock scheduler_lock guards scheduler",
         },
     }
 }
@@ -526,12 +546,12 @@ fn render_expr_arm(expr: &Expr) -> SkillFragment {
         Expr::IntLit { .. } => SkillFragment {
             fragment: "1_000_000",
             description: "an integer literal (verbatim `_` separators preserved)",
-            example: "req xs.len() <= 1_000_000",
+            example: "requires xs.len() <= 1_000_000",
         },
         Expr::BoolLit(_) => SkillFragment {
             fragment: "true | false",
             description: "a boolean literal",
-            example: "req true",
+            example: "requires true",
         },
         Expr::Path(_) => SkillFragment {
             fragment: "name | Mod::ITEM",
@@ -611,7 +631,7 @@ fn render_expr_arm(expr: &Expr) -> SkillFragment {
         },
         Expr::StrLit(_) => SkillFragment {
             fragment: "\"text\"",
-            description: "a string literal (an owned String; carries fx alloc)",
+            description: "a string literal (an owned String; carries ! alloc)",
             example: "let s: String = \"hello\";",
         },
         // Cluster C9-B (`.design/basis/10-recursion-tuples.md` REQ-5/REQ-8): the
@@ -625,8 +645,8 @@ fn render_expr_arm(expr: &Expr) -> SkillFragment {
         },
         Expr::TupleProj { .. } => SkillFragment {
             fragment: "e.0 | e.1 | ..",
-            description: "a tuple projection (the one tuple access; reads in exec and ens)",
-            example: "ens result.0 == b && result.1 == a",
+            description: "a tuple projection (the one tuple access; reads in exec and ensures)",
+            example: "ensures result.0 == b && result.1 == a",
         },
         // Stage-2 (`.design/stage2-stratified-cage.md` REQ-0): the raw quantifier
         // binder over a named sorted carrier. Distinct from the `forall_in`/`sorted`
@@ -667,17 +687,17 @@ fn render_binop_arm(op: BinOp) -> SkillFragment {
         },
         BinOp::Rem => SkillFragment {
             fragment: "a % b",
-            description: "remainder (div-by-zero is a proof obligation: req b != 0)",
+            description: "remainder (div-by-zero is a proof obligation: requires b != 0)",
             example: "n % 2",
         },
         BinOp::Shl => SkillFragment {
             fragment: "a << k",
-            description: "left shift (the shift amount must be bounded: req k < 64)",
+            description: "left shift (the shift amount must be bounded: requires k < 64)",
             example: "1 << k",
         },
         BinOp::Shr => SkillFragment {
             fragment: "a >> k",
-            description: "right shift (the shift amount must be bounded: req k < 64)",
+            description: "right shift (the shift amount must be bounded: requires k < 64)",
             example: "x >> k",
         },
         BinOp::BitAnd => SkillFragment {
@@ -811,70 +831,53 @@ fn render_effect_arm(effect: &Effect) -> SkillFragment {
         Effect::Read(_) => SkillFragment {
             fragment: "read(path)",
             description: "reads from a filesystem path",
-            example: "fx read(\"/etc/hosts\")",
+            example: "! read(\"/etc/hosts\")",
         },
         Effect::Write(_) => SkillFragment {
             fragment: "write(path)",
             description: "writes to a filesystem path",
-            example: "fx write(\"/tmp/out\")",
+            example: "! write(\"/tmp/out\")",
         },
         Effect::Net(_) => SkillFragment {
             fragment: "net(domain)",
             description: "performs network I/O to a domain",
-            example: "fx net(\"api.example.com\")",
+            example: "! net(\"api.example.com\")",
+        },
+        Effect::Owns(_) => SkillFragment {
+            fragment: "owns(lock)",
+            description: "takes a declared lock through a lexical holding block",
+            example: "! owns(scheduler_lock)",
         },
         Effect::Alloc => SkillFragment {
             fragment: "alloc",
             description: "allocates on the heap (Box/Vec/String construction)",
-            example: "fx alloc",
+            example: "! alloc",
         },
         Effect::Time => SkillFragment {
             fragment: "time",
             description: "reads the wall clock",
-            example: "fx time",
+            example: "! time",
         },
         Effect::Rand => SkillFragment {
             fragment: "rand",
             description: "draws randomness",
-            example: "fx rand",
+            example: "! rand",
         },
         Effect::Panic => SkillFragment {
             fragment: "panic",
             description: "may panic / abort",
-            example: "fx panic",
+            example: "! panic",
         },
         Effect::Diverge => SkillFragment {
             fragment: "diverge",
             description: "may not terminate (waives the default termination proof)",
-            example: "fx diverge",
+            example: "! diverge",
         },
         Effect::Term => SkillFragment {
             fragment: "term",
             description: "controls the terminal (raw mode via the `ioctl` syscall)",
-            example: "fx term",
+            example: "! term",
         },
-        Effect::Platform(domain) => match domain {
-            PlatformDomain::Boot => platform_fragment("platform(boot)"),
-            PlatformDomain::Memory => platform_fragment("platform(memory)"),
-            PlatformDomain::Mmio => platform_fragment("platform(mmio)"),
-            PlatformDomain::Pio => platform_fragment("platform(pio)"),
-            PlatformDomain::Irq => platform_fragment("platform(irq)"),
-            PlatformDomain::Cpu => platform_fragment("platform(cpu)"),
-            PlatformDomain::Atomic => platform_fragment("platform(atomic)"),
-            PlatformDomain::Smp => platform_fragment("platform(smp)"),
-            PlatformDomain::Dma => platform_fragment("platform(dma)"),
-            PlatformDomain::Clock => platform_fragment("platform(clock)"),
-            PlatformDomain::Entropy => platform_fragment("platform(entropy)"),
-            PlatformDomain::Power => platform_fragment("platform(power)"),
-        },
-    }
-}
-
-fn platform_fragment(fragment: &'static str) -> SkillFragment {
-    SkillFragment {
-        fragment,
-        description: "uses one frozen kernel platform authority domain",
-        example: "fx platform(memory)",
     }
 }
 
@@ -957,14 +960,14 @@ fn item_inventory() -> Vec<Item> {
             params: Vec::new(),
             ret: Type::Unit,
             contract: Contract {
-                req: clause(),
-                ens: vec![clause()],
-                fx: EffectRow::Pure,
+                requires: clause(),
+                ensures: vec![clause()],
+                effects: EffectRow::Pure,
             },
             // C9-A (`.design/basis/10-recursion-tuples.md` REQ-1): the optional
-            // `dec` termination clause of a recursive exec `fn`. `None` for this
+            // `measures` termination clause of a recursive exec `fn`. `None` for this
             // representative non-recursive item (the additive-field ripple).
-            dec: None,
+            measures: None,
             body: Some(empty_block()),
             // #193 (`.design/forge/goal-repl.md` REQ-4): the open body holes. empty
             // for this representative complete skill-inventory item (the additive
@@ -977,14 +980,14 @@ fn item_inventory() -> Vec<Item> {
             name: String::new(),
             params: Vec::new(),
             ret: Type::Unit,
-            dec: clause(),
+            measures: clause(),
             body: empty_block(),
             span,
         }),
         Item::Struct(StructItem {
             name: String::new(),
             fields: Vec::new(),
-            inv: None,
+            keeps: None,
             sealed: false,
             span,
         }),
@@ -1129,27 +1132,15 @@ fn pattern_inventory() -> Vec<Pattern> {
 /// One representative value per `Effect` atom (REQ-10). See [`type_inventory`].
 fn effect_inventory() -> Vec<Effect> {
     vec![
-        Effect::Read(String::new()),
-        Effect::Write(String::new()),
-        Effect::Net(String::new()),
+        Effect::Read(String::new().into()),
+        Effect::Write(String::new().into()),
+        Effect::Net(String::new().into()),
         Effect::Alloc,
         Effect::Time,
         Effect::Rand,
         Effect::Panic,
         Effect::Diverge,
         Effect::Term,
-        Effect::Platform(PlatformDomain::Boot),
-        Effect::Platform(PlatformDomain::Memory),
-        Effect::Platform(PlatformDomain::Mmio),
-        Effect::Platform(PlatformDomain::Pio),
-        Effect::Platform(PlatformDomain::Irq),
-        Effect::Platform(PlatformDomain::Cpu),
-        Effect::Platform(PlatformDomain::Atomic),
-        Effect::Platform(PlatformDomain::Smp),
-        Effect::Platform(PlatformDomain::Dma),
-        Effect::Platform(PlatformDomain::Clock),
-        Effect::Platform(PlatformDomain::Entropy),
-        Effect::Platform(PlatformDomain::Power),
     ]
 }
 
@@ -1171,7 +1162,7 @@ fn render_inventory_terse(label: &str, fragments: &[SkillFragment]) -> String {
 /// example is a complete, standalone item — a `fn`/`spec fn` with a body and no `..`
 /// placeholder ([`is_complete_example`]) — and renders every other (snippet) example
 /// terse. This is the budget-aware middle ground for the `Type` inventory: it keeps
-/// the copy-pasteable, parse-clean `fn log() -> () req true ens true fx pure { }`
+/// the copy-pasteable, parse-clean `fn log() -> () requires true ensures true fx pure { }`
 /// (the Type::Unit example the §10 parse-clean pin guards) while dropping the
 /// low-value type-snippet examples (`let n: u64 = 0;`, `-> Wrapper<usize>`, …). The
 /// `example` field is therefore still rendered for the complete arms, so it is not
@@ -1199,7 +1190,7 @@ fn is_complete_example(example: &str) -> bool {
 }
 
 /// Section (1) — the surface grammar. The narrative SCAFFOLDING (the
-/// contract-first framing, the mandatory clause order, the loop `inv`/`dec`
+/// contract-first framing, the mandatory clause order, the loop `keeps`/`measures`
 /// rule, the one-call-syntax rule, the "removed from Rust" motivation) is curated
 /// prose (REQ-11, sourced from `thermite-design.md` §4/§4.2/§4.4). The CONSTRUCT
 /// INVENTORY — the type / item / expression / operator / pattern / effect forms —
@@ -1221,30 +1212,30 @@ attributes) — and no others (no `impl`/`trait`/`use`/`mod`/macros).
 A `fn` signature is followed by mandatory clauses in this exact order (absence of any
 is a parse error, never an implicit default):
 
-- `req EXPR` — precondition (write `req true` if none).
-- `ens EXPR` — postcondition, one-or-more; must mention `result` unless the return
+- `requires EXPR` — precondition (write `requires true` if none).
+- `ensures EXPR` — postcondition, one-or-more; must mention `result` unless the return
   type is `()`.
-- `fx EFFECTROW` — effect row, exactly one.
+- `! EFFECTROW` — effect row, exactly one, on the arrow before the clauses.
 
-A `spec fn` carries exactly one `dec EXPR` (a decreases-measure), not `req`/`ens`/`fx`;
+A `spec fn` carries exactly one `measures EXPR` (a decreases-measure), not `!`/`requires`/`ensures`;
 spec functions are total, terminating, executable.
 
 ```thermite
 fn binary_search(haystack: &[u32], needle: u32) -> Option<usize>
-  req sorted(haystack)
-  ens match result {
+  ! pure
+  requires sorted(haystack)
+  ensures match result {
         Some(i) => i < haystack.len() && haystack[i] == needle,
         None    => forall_in(haystack, |x| x != needle),
       }
-  fx  pure
 {
   let mut lo: usize = 0;
   let mut hi: usize = haystack.len();
   loop
-    inv lo <= hi && hi <= haystack.len()
-    inv forall_below(haystack, lo, |x| x < needle)
-    inv forall_from(haystack, hi, |x| x > needle)
-    dec hi - lo
+    keeps lo <= hi && hi <= haystack.len()
+    keeps forall_below(haystack, lo, |x| x < needle)
+    keeps forall_from(haystack, hi, |x| x > needle)
+    measures hi - lo
   {
     if lo == hi { return None; }
     let mid = lo + (hi - lo) / 2;
@@ -1254,12 +1245,12 @@ fn binary_search(haystack: &[u32], needle: u32) -> Option<usize>
 }
 ```
 
-Loops: both `loop { }` and `while EXPR { }` carry one-or-more `inv EXPR` then
-exactly one `dec EXPR`, then the body (missing `inv`/`dec` is a parse error).
-Termination is proved by default; `fx diverge` waives it. `break ;` exits,
-`continue ;` restarts; each `inv` must hold at both, and in a terminating loop a
-`continue` must decrease `dec` (an `fx diverge` loop makes no termination claim, so
-neither is `dec`-bound).
+Loops: both `loop { }` and `while EXPR { }` carry one-or-more `keeps EXPR` then
+exactly one `measures EXPR`, then the body (missing `keeps`/`measures` is a parse error).
+Termination is proved by default; `! diverge` waives it. `break ;` exits,
+`continue ;` restarts; each `keeps` must hold at both, and in a terminating loop a
+`continue` must decrease `measures` (an `! diverge` loop makes no termination claim, so
+neither is `measures`-bound).
 
 Statements: `let mut? NAME : TYPE = EXPR ;`, assignment `LVALUE = EXPR ;`, `return
 EXPR? ;`, the `if`/`else` statement, the loop-control `break ;` / `continue ;`
@@ -1279,15 +1270,15 @@ desugaring each):
 
 - `let (x, y) = e;` — tuple destructuring by projection (`let x = e.0; …`); `_`
   drops an element; sub-patterns are flat names only.
-- `for i in lo..hi inv EXPR { B }` — a bounded exclusive-range loop (step +1); you
-  write the `inv` (mandatory, like `while`), the `dec` is AUTOMATIC (`hi - i`).
+- `for i in lo..hi keeps EXPR { B }` — a bounded exclusive-range loop (step +1); you
+  write the `keeps` (mandatory, like `while`), the `measures` is AUTOMATIC (`hi - i`).
 - Match guards `Pat if COND => EXPR` do NOT complete a match — a guarded-only arm
   leaves its variant uncovered, so a `_`/full-variant arm is still required.
 - Or-patterns `p0 | p1 => EXPR` match any alternative and cover their UNION
   (`Some(_) | None` is exhaustive over `Option`); v0.1 alternatives are payload-free.
 - `if let Pat = e { T } else { E }` desugars to `match e { Pat => T, _ => E }` (the
-  `else` is required). `while let V(_) = e inv .. dec .. { B }` desugars to
-  `while (e is V) inv .. dec .. { B }`.
+  `else` is required). `while let V(_) = e keeps .. measures .. { B }` desugars to
+  `while (e is V) keeps .. measures .. { B }`.
 
 The CONSTRUCT INVENTORY below is GENERATED by an exhaustive match over the
 toolchain's `Item`/`Type`/`Expr`/`BinOp`/`Pattern`/`Effect` enums, so it never falls
@@ -1336,7 +1327,7 @@ behind the language.
     let effects = effect_inventory();
     let effect_frags: Vec<SkillFragment> = effects.iter().map(render_effect_arm).collect();
     s.push_str(&render_inventory_terse(
-        "Effect atoms (a caller's fx row subsumes every callee's)",
+        "Effect atoms (a caller's `!` row subsumes every callee's)",
         &effect_frags,
     ));
 
@@ -1384,15 +1375,15 @@ fn render_result_kind(kind: ResultKind) -> &'static str {
 /// marker (AC-2), making the gap visible without an abort.
 fn example_for(name: &str) -> &'static str {
     match name {
-        "sorted" => "req sorted(haystack)",
-        "forall_in" => "ens forall_in(haystack, |x| x != needle)",
-        "exists_in" => "ens exists_in(haystack, |x| x == needle)",
-        "count_where" => "ens count_where(xs, |x| x == 0) <= xs.len()",
-        "permutation_of" => "ens permutation_of(result, input)",
-        "disjoint" => "req disjoint(lefts, rights)",
-        "forall_below" => "inv forall_below(haystack, lo, |x| x < needle)",
-        "forall_from" => "inv forall_from(haystack, hi, |x| x > needle)",
-        _ => "ens forall_in(xs, |x| true)",
+        "sorted" => "requires sorted(haystack)",
+        "forall_in" => "ensures forall_in(haystack, |x| x != needle)",
+        "exists_in" => "ensures exists_in(haystack, |x| x == needle)",
+        "count_where" => "ensures count_where(xs, |x| x == 0) <= xs.len()",
+        "permutation_of" => "ensures permutation_of(result, input)",
+        "disjoint" => "requires disjoint(lefts, rights)",
+        "forall_below" => "keeps forall_below(haystack, lo, |x| x < needle)",
+        "forall_from" => "keeps forall_from(haystack, hi, |x| x > needle)",
+        _ => "ensures forall_in(xs, |x| true)",
     }
 }
 
@@ -1409,14 +1400,14 @@ fn render_combinators() -> String {
 ## 2. SpecTherm combinator library
 
 Use these to QUANTIFY in a contract. You may NOT write a raw `forall`/`exists` in a
-`req`/`ens`/`inv` — quantification is ONLY through this fixed, closed library of
+`requires`/`ensures`/`keeps` — quantification is ONLY through this fixed, closed library of
 bounded combinators (SpecTherm, a deliberately weak total language), each with a
 frozen SMT trigger. A combinator joins only via a slow budget-gated RFC.
 
 Flat-closure rule: a combinator's predicate closure (`|x| ...`) is FLAT —
 comparisons, arithmetic, boolean ops, field/index access, calls to NAMED `spec fn`s
 — but may NOT contain another combinator (genuine nesting is a named `spec fn` with
-its own `dec`).
+its own `measures`).
 
 The combinators (signature, then one example each):
 
@@ -1554,7 +1545,7 @@ through checked reconstruction.
     }
     out.push_str(
         "\nItems and blocks have stable semantic addresses such as \
-`binary_search.loop#1.inv#2`; holes use `<fn>.?N` or `<fn>.?pN`.\n\n",
+`binary_search.loop#1.keeps#2`; holes use `<fn>.?N` or `<fn>.?pN`.\n\n",
     );
     out
 }
@@ -1589,7 +1580,7 @@ kernel-checked Lean spine). `make audit` re-derives the L3 claim on a skeptic's 
 
 L0 / slag: the level rates the BODY only. A `#[slag]` fn's CONTRACT is still
 mandatory and L1-checked at the call site, so its cert is L1 with `slag: true`. Slag
-exempts PROVING, never STATING and CHECKING. The `fx` row is enforced independent of
+exempts PROVING, never STATING and CHECKING. The `!` row is enforced independent of
 level: caller/callee subsumption at compile time, plus — in a `forge build` binary —
 a seccomp sandbox that kills code exceeding its declared effects at the syscall
 boundary.
@@ -1614,9 +1605,9 @@ thermite burn) — the replacement for `unsafe`: harder to write, louder to read
        owner  = \"agent:forge-7/session-2026-06-04\",
        review = \"required\")]
 fn simd_sum(xs: &[u32]) -> u64
-  req xs.len() <= u32::MAX as usize
-  ens result == spec_sum(xs)          // contract still mandatory — L1-enforced
-  fx  pure
+  requires xs.len() <= u32::MAX as usize
+  ensures result == spec_sum(xs)          // contract still mandatory — L1-enforced
+  !  pure
 { ... }
 ```
 
@@ -1660,7 +1651,7 @@ Every clause receives one final verdict:
 - **Proved** — holds at the stated level.
 - **Counterexample** — concrete failing inputs; fix code or contract.
 - **RealWitness** — false over the reals but possibly true over integers; add the
-  missing integrality `req`.
+  missing integrality `requires`.
 - **CovenantRefuted** — `falsify` found a contract violation.
 - **Stuck** — Lean left a residual `⊢ goal`; add the named bridge.
 - **KernelBudget** — Lean exhausted its budget; split or shrink the proof.
@@ -1685,7 +1676,7 @@ auto|nlsat|verus|lean|forge|bv` selects a diagnostic override.
 ### 6.3 Covenant authoring
 
 `witness { inhabit (args); falsify N; }` follows the function it covenants.
-At least one well-typed `inhabit` tuple must satisfy `req`. `falsify N` checks a
+At least one well-typed `inhabit` tuple must satisfy `requires`. `falsify N` checks a
 deterministic sample; any violation yields **CovenantRefuted** and blocks proof.
 
 ### 6.4 Forge-tier verbs + the burn receipt
@@ -1837,7 +1828,9 @@ mod tests {
                 "skill is missing slag field `{field}`"
             );
         }
-        for kw in ["req", "ens", "fx", "inv", "dec", "spec fn", "#[slag]"] {
+        for kw in [
+            "requires", "ensures", "!", "keeps", "measures", "spec fn", "#[slag]",
+        ] {
             assert!(skill.contains(kw), "skill is missing grammar marker `{kw}`");
         }
     }

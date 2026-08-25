@@ -30,7 +30,7 @@ const EXTERNAL_BODY: &str = "#[verifier::external_body]";
 
 /// Build the surface source for a fn over the `(has_boundary, has_slag)` axis,
 /// with at most one surface attribute (the parser accepts one). The contract is
-/// held fixed (`req x < 100 ens result == x fx pure`) so the only varying input is
+/// held fixed (`! pure requires x < 100 ensures result == x`) so the only varying input is
 /// the gate's flags (the proved predicate's 2-bool domain). The `(true,
 /// true)` case is built by parsing the boundary form and injecting the slag flag
 /// onto the AST (the parser does not stack two attributes, but a `FnItem` can
@@ -48,7 +48,7 @@ fn fn_source(has_boundary: bool, has_slag: bool) -> String {
             "#[slag(reason = \"vendored\", owner = \"agent:forge-7\", review = \"required\")] ",
         );
     }
-    let sig = "fn f(x: u32) -> u32 req x < 100 ens result == x fx pure";
+    let sig = "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x";
     if has_boundary {
         // A boundary fn has a foreign body (`body: None`), terminated with `;`.
         format!("{attrs}{sig} ;")

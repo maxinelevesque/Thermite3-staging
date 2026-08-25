@@ -1,0 +1,21 @@
+{
+  "__provenance": {"kind":"post-fix-round freeze","date":"2026-08-13","note":"New RFC-10-wide future-regression floor; committed pre-existing goldens remain the same-round historical oracle."},
+  "bank_account.th": {"Account":"L3","deposit":"L3"},
+  "binary_search.th": {"binary_search":"L3"},
+  "bytes_eq_demo.th": {"slice_id":"L3","insert_str":"L3","Buf":"L3","buf_prefix_pin":"L3"},
+  "compose_demo.th": {"step_inc":"L3","step_double":"L3","pipeline":"L3","read_small":{"level":"L1","cause":null},"read_then_inc":{"level":"L0","cause":"WeakContract"}},
+  "effect_demo.th": {"read_small":{"level":"L1","cause":null},"now":{"level":"L1","cause":null},"read_doubled":{"level":"L0","cause":"WeakContract"}},
+  "effect_link_demo.th": {"now":{"level":"L1","cause":null},"elapsed_ok":{"level":"L0","cause":"WeakContract"}},
+  "list_fold.th": {"List":"L3","len_list":"L3","sum_list":"L3","all_positive":"L3"},
+  "list_sum.th": {"List":"L3","sum_list":"L3"},
+  "map_kv.th": {"build_one":{"level":"L0","cause":"WeakContract"},"has_key":"L3","demo":{"level":"L0","cause":"EnsIsTrivial"},"lookup_absent":{"level":"L0","cause":"WeakContract"}},
+  "multi_adt.th": {"Role":"L3","Action":"L3","may_ban":"L3","is_ban":"L3","authorize":"L3"},
+  "option_result.th": {"ParseErr":"L3","make_some":"L3","small":"L3","ok_seven":"L3","checked":"L3"},
+  "parse_u64.th": {"parse_valid":"L3"},
+  "provenance_demo.th": {"Tainted":"L3","Sql":"L3","parameterize":{"level":"L1","cause":null},"query":{"level":"L1","cause":null},"safe_query":"L3","careless_query":{"level":"L0","cause":null},"Secret":"L3","Public":"L3","declassify":{"level":"L1","cause":null},"emit":{"level":"L1","cause":null},"safe_emit":"L3","leak":{"level":"L0","cause":null},"User":"L3","Authorized":"L3","authorize":{"level":"L1","cause":null},"delete":{"level":"L1","cause":null},"safe_delete":"L3","unauth_delete":{"level":"L0","cause":null}},
+  "shape.th": {"Shape":"L3","is_circle":"L3"},
+  "shared_state_rfc10.th": {"State":"L3","read_state":"L3"},
+  "string_demo.th": {"greeting_len":{"level":"L4","fallback_level":"L3"},"first_byte":"L3","join":"L3","literal_len":"L3"},
+  "sum.th": {"spec_sum":"L3","sum":"L3"},
+  "vec_demo.th": {"checked_get":"L3","push_one":"L3"}
+}

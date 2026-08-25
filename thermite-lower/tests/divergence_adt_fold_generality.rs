@@ -73,7 +73,7 @@ fn divergence_tree_fold_does_not_lower_and_verify() {
     // (`.design/basis/01-adts.md` REQ-10 + the recorded structural-recursion
     // finding — "a `tree_sum` fold was also confirmed to verify".)
     let src = "enum Tree {\n  Leaf(u64),\n  Node(Box<Tree>, Box<Tree>),\n}\n\n\
-               spec fn tree_sum(t: Tree) -> u64\n  dec t\n{\n  match t {\n    \
+               spec fn tree_sum(t: Tree) -> u64\n  measures t\n{\n  match t {\n    \
                Leaf(v)    => v as u64,\n    Node(l, r) => tree_sum(*l) + tree_sum(*r),\n  }\n}\n";
 
     let parsed = thermite_syntax::parse(src);
@@ -105,5 +105,51 @@ fn divergence_tree_fold_does_not_lower_and_verify() {
          the ADT-fold lowering is GENERAL (R-DEFER-9, not fitted to the \
          literal-`0`-base `sum_list` corpus shape). exit_success={ok}\n\
          --- verus output ---\n{output}\n--- emitted ---\n{emitted}"
+    );
+}
+
+/// Issue #7: a call through a boxed ADT field is not sufficient evidence that
+/// the enclosing spec fn is a numeric fold. Both the recursive predicate and
+/// the non-recursive predicate calling a numeric fold must retain their declared
+/// `bool` result, while the numeric helper may still lower to `nat`.
+#[test]
+fn adt_predicates_keep_their_declared_bool_return() {
+    let src = "enum Tree {\n  Leaf(u64),\n  Node(Box<Tree>, Box<Tree>),\n}\n\n\
+               spec fn all_below(t: Tree, limit: u64) -> bool\n  measures t\n{\n  match t {\n    \
+               Leaf(v) => v < limit,\n    Node(l, r) => all_below(*l, limit) && all_below(*r, limit),\n  }\n}\n\n\
+               spec fn depth(t: Tree) -> u64\n  measures t\n{\n  match t {\n    Leaf(v) => 1,\n    \
+               Node(l, r) => 1 + depth(*l),\n  }\n}\n\n\
+               spec fn calls_it(t: Tree) -> bool\n  measures t\n{\n  match t {\n    Leaf(v) => true,\n    \
+               Node(l, r) => depth(*l) > 0,\n  }\n}\n";
+
+    let parsed = thermite_syntax::parse(src);
+    assert!(
+        parsed.errors.is_empty(),
+        "the issue #7 predicates must parse cleanly: {:?}",
+        parsed.errors
+    );
+    let emitted = thermite_lower::lower(&parsed.program)
+        .unwrap_or_else(|e| panic!("lowering the issue #7 predicates failed: {e:?}"));
+    assert!(
+        emitted.contains("pub open spec fn all_below(t: Tree, limit: u64) -> bool")
+            && emitted.contains("pub open spec fn calls_it(t: Tree) -> bool"),
+        "ADT predicates must preserve their declared bool return:\n{emitted}"
+    );
+    assert!(
+        emitted.contains("pub open spec fn depth(t: Tree) -> nat"),
+        "the numeric ADT fold must retain its overflow-free nat lowering:\n{emitted}"
+    );
+
+    if verus_bin().is_none() {
+        eprintln!("SKIP: verus absent — issue #7 predicates not verified end-to-end.");
+        return;
+    }
+    let tmp = std::env::temp_dir().join("adt_predicate_declared_return.rs");
+    std::fs::write(&tmp, &emitted).expect("write temp");
+    let (ok, output) = run_verus(&tmp).expect("verus present (checked above)");
+    assert!(
+        ok && output.contains("verified, 0 errors"),
+        "the issue #7 recursive and non-recursive predicates must verify. \
+         exit_success={ok}\n--- verus output ---\n{output}\n--- emitted ---\n{emitted}"
     );
 }

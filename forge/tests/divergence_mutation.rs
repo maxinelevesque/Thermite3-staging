@@ -142,9 +142,9 @@ fn divergence_weak_contract_escapes_floor_via_zero_scored_mutants() {
     // A non-zero-valued return type (&[u32]) + a body with no mutation site +
     // a weak `ens` that does not pin the result.
     let program = "fn pick(xs: &[u32]) -> &[u32]\n  \
-                   req xs.len() <= 10\n  \
-                   ens result.len() <= 10\n  \
-                   fx pure\n{\n  xs\n}\n";
+                   ! pure
+  requires xs.len() <= 10\n  \
+                   ensures result.len() <= 10\n{\n  xs\n}\n";
     let path = write_temp("weak_unscored", program);
     let cache_dir = unique_cache_dir();
     let _ = std::fs::remove_dir_all(&cache_dir);
@@ -213,9 +213,9 @@ fn divergence_stale_same_version_cache_entry_bypasses_mutation_gate() {
     // The AC-2 weak-but-non-vacuous contract: a cold check gates it `WeakContract`
     // (kill ratio 1/2 < 0.60), with the early-return-0 mutant surviving.
     let program = "fn f(a: u32, b: u32) -> u32\n  \
-                   req a <= 10 && b <= 10\n  \
-                   ens result <= 1000000\n  \
-                   fx pure\n{\n  a + b\n}\n";
+                   ! pure
+  requires a <= 10 && b <= 10\n  \
+                   ensures result <= 1000000\n{\n  a + b\n}\n";
     let path = write_temp("cache_bypass", program);
     let cache_dir = unique_cache_dir();
     let _ = std::fs::remove_dir_all(&cache_dir);
@@ -246,15 +246,23 @@ fn divergence_stale_same_version_cache_entry_bypasses_mutation_gate() {
             continue;
         }
         let mut d: Value = serde_json::from_str(&std::fs::read_to_string(&p).unwrap()).unwrap();
-        let is_main_weak = d
+        let certificate = d.get("certificate").unwrap_or(&d);
+        let is_main_weak = certificate
             .get("reject")
             .and_then(|r| r.get("cause"))
             .and_then(|c| c.as_str())
             == Some("WeakContract");
         if is_main_weak {
-            d["level"] = Value::String("L3".to_string());
-            d["reject"] = Value::Null;
-            if let Some(q) = d
+            // Cache entries are schema/digest envelopes now. Mutate the nested
+            // certificate while deliberately retaining the original digest:
+            // either the envelope integrity check or the stale-verdict shape
+            // check must turn this planted pre-gate row into a miss.
+            let certificate = d
+                .get_mut("certificate")
+                .expect("current cache entries carry an enveloped certificate");
+            certificate["level"] = Value::String("L3".to_string());
+            certificate["reject"] = Value::Null;
+            if let Some(q) = certificate
                 .get_mut("contract_quality")
                 .and_then(|q| q.as_object_mut())
             {

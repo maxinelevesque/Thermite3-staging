@@ -6,7 +6,7 @@ certificate a third party can re-derive.
 
 - [Overview](overview.md) — the problem Thermite addresses and how the
   assurance ladder works.
-- [Language](language.md) — the three contract promises (`req`/`ens`/`fx`), the
+- [Language](language.md) — the three contract promises (`!`/`requires`/`ensures`), the
   surface syntax, and how an agent writes a function.
 - [Verification](verification.md) — the proof ladder, translation validation,
   and the two proof engines.

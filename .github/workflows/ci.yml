@@ -2,18 +2,19 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
 
 # Cancel a PR's superseded in-flight run when a new commit is pushed (the
-# kickoff-agent loop waits on this CI, so stale runs are pure latency). Main
-# pushes are NOT cancelled: those runs are the verification record of record.
+# kickoff-agent loop waits on this CI, so stale runs are pure latency). Pushes to
+# main and staging are NOT cancelled: those runs are the verification record of
+# record.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Two jobs, run in parallel (REQ-5 — the full gauntlet still runs; a non-zero
-# exit in any step fails CI, R-DEFER-6):
+# The full gauntlet still runs (REQ-5; a non-zero exit in any step fails CI,
+# R-DEFER-6), but proof-backed jobs fan out after one shared Lean preparation:
 #
 #   checks — the compile-light gates: fmt, clippy, the python doc-drift gate,
 #            the skill-budget gate, and doctests. Run once.
@@ -24,7 +25,7 @@ concurrency:
 #            time, so it is sharded across N runners with cargo-nextest's
 #            partitioning; wall-clock drops ~linearly with the shard count.
 #
-# Both jobs install the pinned Rust toolchain (rust-toolchain.toml channel,
+# Rust consumers install the pinned toolchain (rust-toolchain.toml channel,
 # 1.95.0) and restore the shared Rust build cache + pinned Verus distribution.
 # The test shards also build the Lean modules and install the pinned
 # CaDiCaL/drat-trim pair used by live reconstruction tests; a missing proof
@@ -34,6 +35,65 @@ concurrency:
 # The skill-budget gate fails CI if the generated THERMITE.skill.md exceeds its
 # 6,000-token budget (design §2.2 / §10).
 jobs:
+  # Which jobs need to run for this change.
+  #
+  # A documentation-only pull request does not need the Verus, Lean or SAT
+  # gates: doc-drift pins digest governed SOURCE, and no source moves when a
+  # design document changes. The `checks` job is NEVER filtered — it carries
+  # doc-drift, rfc-check, req-status, reqs and control-plane-check, which are
+  # exactly the gates a documentation change can trip.
+  #
+  # Two rules keep this from becoming a gate that fails open:
+  #
+  #   1. A PUSH to main or staging always runs everything. Those runs are the
+  #      verification record of record for the trunk (see `concurrency` above),
+  #      and a trunk whose last full verification predates its tip is not
+  #      verified. Only pull_request is filtered.
+  #   2. The decision and its reason are PRINTED. A skipped job reports
+  #      "skipped" rather than "success", but a summary that says 12/12 does not
+  #      distinguish them, so the reason is in the log rather than inferred.
+  #
+  # Anything not matching the docs allowlist counts as code, so the default on
+  # an unrecognised path is to run everything.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.decide.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Decide whether code-dependent jobs must run
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "event=$EVENT — a trunk push always runs the full gauntlet."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "Changed files:"
+          echo "$changed" | sed 's/^/  /'
+          # Docs allowlist. Everything else is code.
+          noncode='^(\.design/|docs/|\.claims/|[^/]*\.md$)'
+          if code_files="$(echo "$changed" | grep -Ev "$noncode")" && [ -n "$code_files" ]; then
+            echo "Code-dependent files changed:"
+            echo "$code_files" | sed 's/^/  /'
+            echo "-> running the full gauntlet."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "-> documentation only. The Verus, Lean and SAT jobs are SKIPPED,"
+            echo '   not passed. The checks job still runs and carries every gate a'
+            echo '   documentation change can trip.'
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   checks:
     runs-on: ubuntu-latest
     steps:
@@ -52,22 +112,57 @@ jobs:
           components: rustfmt, clippy
 
       # Fail-fast: the cheap, no-compile gates first.
+      - name: Install uv (pins the Python the gates run under)
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version-file: .python-version
+
+      - name: Install cargo-nextest for partition coverage
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
       - name: cargo fmt
         run: cargo fmt --all --check
 
-      - name: tooling gate tests (tooling/tests)
-        run: python3 -m unittest discover -s tooling/tests
+      - name: tooling gate tests (gates/tests)
+        run: uv run python -m unittest discover -s gates/tests
+      - name: duration-partition coverage (complete and disjoint)
+        run: uv run python gates/ci-test-partitions.py check
       - name: doc-drift tripwire (design-doc freshness)
-        run: python3 tooling/doc-drift.py
+        run: uv run python gates/doc-drift.py
       # The gate that guards the gates (crosslink #93): asserts the two
       # agent-facing hooks are still WIRED in the tracked settings.json, which
       # `crosslink init` regenerates and 5581b65f silently clobbered.
       - name: control-plane gate (hook wiring)
-        run: python3 tooling/control-plane-check.py
+        run: uv run python gates/control-plane-check.py
       - name: req-status lint (source-comment status consistency)
-        run: python3 tooling/req-status.py
+        run: uv run python gates/req-status.py
       - name: req-registry gate (canonical status inventory)
-        run: tooling/reqs check
+        run: uv run gates/reqs check
+      - name: rfc gate (front matter, numbering, registry link)
+        run: uv run python gates/rfc-check.py
+      # The two RFC-18 §4 coverage gates: a route that resolves to nothing
+      # and a referenced path that no longer exists both shipped through a
+      # green local suite during the layout move.
+      - name: route-coverage gate (routes.toml <-> tracked tree)
+        run: uv run python gates/route-coverage.py
+      - name: paths-exist gate (referenced repo paths resolve)
+        run: uv run python gates/paths-exist.py
+      - name: RFC-9 effect-region migration inventory
+        run: uv run gates/rfc9-effect-inventory.py --check
+      - name: language completeness inventory
+        run: uv run python gates/language-completeness-inventory.py
+      - name: language stage/outcome matrix
+        run: uv run python gates/language-outcome-matrix.py
+      - name: RFC-3 Rust/Lean certification replay
+        run: uv run python gates/rfc3-certification-replay.py
+      - name: Assurance V2 symbolic Rust/Lean replay
+        run: uv run python gates/assurance-v2-replay.py
+      - name: language RFC fragment-evolution discipline
+        run: uv run python gates/language-rfc-evolution.py
+      - name: completeness-review backlog consistency
+        run: uv run python gates/completeness-review.py
 
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
@@ -123,13 +218,63 @@ jobs:
       - name: skill budget gate (issue #7, design §2.2 / §10)
         run: cargo run -p thermite-skill -- --check-budget
 
+  # Build the Lean modules shared by every live-replay consumer once, then fan
+  # out. The artifact is keyed by this workflow run and contains only generated
+  # oleans for the checked-out SHA; dependency packages still come from the
+  # content-addressed Mathlib/Lake cache in each consumer.
+  lean-prepare:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install elan
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          bash /tmp/elan-init.sh -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Cache Lean dependencies
+        uses: actions/cache@v4
+        with:
+          path: lean/.lake/packages
+          key: lean-packages-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
+          restore-keys: lean-packages-
+      - name: Fetch prebuilt Mathlib cache
+        working-directory: lean
+        run: lake exe cache get
+      - name: Build shared live-replay modules
+        working-directory: lean
+        run: >-
+          lake build
+          Thermite.Stabilize
+          Thermite.Exec.Stmt
+          Thermite.Exec.WhileBody
+          Thermite.Strat.Cls.Wire
+          Thermite.Strat.EprReplay
+          Thermite.Strat.TestModel
+          Thermite.Reconstruct
+      - name: Publish prepared Lean build
+        uses: actions/upload-artifact@v4
+        with:
+          name: lean-build-${{ github.sha }}
+          path: lean/.lake/build
+          include-hidden-files: true
+          compression-level: 0
+          retention-days: 1
+
   test:
+    needs: [changes, lean-prepare]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       # Surface every shard's failures, not just the first.
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        bucket: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -144,19 +289,22 @@ jobs:
           bash /tmp/elan-init.sh -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-      - name: Cache Lean build (.lake)
+      - name: Cache Lean dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            lean/.lake/packages
-            lean/.lake/build
-          key: lean-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
-          restore-keys: |
-            lean-
+          path: lean/.lake/packages
+          key: lean-packages-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
+          restore-keys: lean-packages-
 
       - name: Fetch prebuilt Mathlib cache (oleans)
         working-directory: lean
         run: lake exe cache get
+
+      - name: Restore prepared Lean build
+        uses: actions/download-artifact@v4
+        with:
+          name: lean-build-${{ github.sha }}
+          path: lean/.lake/build
 
       - name: Build modules used by live Lean tests
         working-directory: lean
@@ -214,44 +362,52 @@ jobs:
         uses: actions/cache@v4
         with:
           path: target/g4-tools
-          key: g4-tools-${{ hashFiles('scripts/g4-toolchain.env', 'scripts/g4-tools/drat-trim') }}
+          key: g4-tools-${{ hashFiles('dev/g4-toolchain.env', 'dev/g4-tools/drat-trim') }}
 
       - name: Install pinned CaDiCaL and drat-trim
         run: |
-          bash scripts/install-g4-tools.sh
+          bash dev/install-g4-tools.sh
           echo "THERMITE_EPR_CADICAL=$PWD/target/g4-tools/bin/cadical" >> "$GITHUB_ENV"
           echo "THERMITE_EPR_DRAT_TRIM=$PWD/target/g4-tools/bin/drat-trim" >> "$GITHUB_ENV"
 
-      # Shard the suite across the matrix: nextest assigns each test to one
-      # partition deterministically, so the union of shards is the full suite.
-      - name: cargo nextest run (shard ${{ matrix.shard }}/4)
-        run: cargo nextest run --workspace --partition count:${{ matrix.shard }}/4
+      # Twelve reviewed duration-balanced buckets target the measured longest
+      # indivisible test. Bucket 13 is the fail-safe catch-all; the checks job
+      # rejects any unreviewed member before these runners begin.
+      - name: cargo nextest run (duration bucket ${{ matrix.bucket }}/13)
+        run: >-
+          python3 gates/ci-test-partitions.py run ${{ matrix.bucket }} --
+          --profile ci
+
+      # nextest does not create JUnit for a successful zero-test selection.
+      # The reviewed state normally leaves the fail-safe catch-all empty.
+      - name: Materialize an empty catch-all timing report
+        if: matrix.bucket == 13
+        run: |
+          if [ ! -f target/nextest/ci/junit.xml ]; then
+            mkdir -p target/nextest/ci
+            printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?><testsuites tests="0" failures="0" errors="0" time="0" />' > target/nextest/ci/junit.xml
+          fi
+
+      - name: Publish nextest timing report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextest-junit-bucket-${{ matrix.bucket }}
+          path: target/nextest/ci/junit.xml
+          if-no-files-found: error
+          retention-days: 14
 
   # The Lean spine + axiom probe (trust-audit finding F4: until now `lake build` and the
   # `#print axioms` gate ran only in a local `make audit`, so a commit breaking the Lean
   # build or a relax-spine lemma acquiring a disallowed axiom would go unseen in CI).
-  # SPLIT into two parallel jobs (#340, CI speedup options 2+3 — zero coverage loss):
-  #   lean-probe       — `lake build` the spine subset + the `#print axioms` gate
-  #                      (scripts/lean-axiom-probe.sh, the same check [1] `make audit`
-  #                      runs, so local and CI cannot drift).
-  #   lean-spine-forge — an independent run of the spine-gated forge tests.
-  #                      The ordinary test matrix also provisions Lean so a missing
-  #                      dependency cannot turn a live replay into an accidental skip.
-  #                      This dedicated matrix keeps the Lean-backed gate visible and
-  #                      shards the slow Verus discharges four ways.
-  # Each job restores the shared lean-${{ hashFiles(...) }} `.lake` cache independently
-  # (no `needs:` between them → they run concurrently; on a warm cache the per-job
-  # `lake build` is incremental). lean-smt is SHA-pinned; Mathlib oleans come from the
-  # cloud cache (`lake exe cache get`).
-  #
-  # OPTION 1 (future, deliberately NOT done here): trim lean-spine-forge to ONLY the
-  # spine-gated tests (dropping the redundancy with the `test` shards on non-spine forge
-  # tests). Deferred because a name-PATTERN filter risks SILENT coverage drift — a
-  # spine-gated test the pattern misses would run in NEITHER place (skipped in `test`,
-  # excluded here). Doing it safely needs the spine-gated tests TAGGED as a stable nextest
-  # test-group (a test-code change) so the selector can't drift. Until then we run the
-  # full `-p forge` (sharded) — redundant on non-spine tests, but provably complete.
+  # `lean-prepare` owns the shared module build. The consumers below restore that
+  # same-run artifact, then fan out: the workspace shards are the sole owner of
+  # the complete Forge test suite, lean-probe owns the axiom boundary, and G2 owns
+  # its two whole-corpus commands. This removes the former second four-way run of
+  # every Forge test without selecting tests by a drift-prone name pattern.
   lean-probe:
+    needs: [changes, lean-prepare]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -267,18 +423,12 @@ jobs:
           bash /tmp/elan-init.sh -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-      - name: Cache Lean build (.lake)
+      - name: Cache Lean dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            lean/.lake/packages
-            lean/.lake/build
-          # Keyed on the dep lockfile + toolchain pin: a lean-smt/Mathlib bump or a
-          # toolchain change busts the cache; spine edits reuse it (lake rebuilds only the
-          # changed modules).
-          key: lean-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
-          restore-keys: |
-            lean-
+          path: lean/.lake/packages
+          key: lean-packages-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
+          restore-keys: lean-packages-
 
       - name: Fetch prebuilt Mathlib cache (oleans)
         working-directory: lean
@@ -286,21 +436,21 @@ jobs:
         # large slice of Mathlib from source (hours). The cache makes it olean loads.
         run: lake exe cache get
 
-      - name: Lean spine build + axiom probe (lake build + #print axioms gate)
-        run: bash scripts/lean-axiom-probe.sh
+      - name: Restore prepared Lean build
+        uses: actions/download-artifact@v4
+        with:
+          name: lean-build-${{ github.sha }}
+          path: lean/.lake/build
 
-  # The independent spine-GATED forge tests (Audit F4 / #309). Lean + Verus are
-  # mandatory here and in the ordinary test matrix; missing dependencies fail rather
-  # than silently reducing coverage. Sharded 4 ways so the slow Verus discharges run in
-  # parallel; the union is the whole `-p forge` suite. Restores the same `.lake` cache
-  # as lean-probe; no `needs:` so it runs concurrently.
-  lean-spine-forge:
+      - name: Lean spine build + axiom probe (lake build + #print axioms gate)
+        run: bash gates/lean-axiom-probe.sh
+
+  # G2's two whole-corpus commands need Lean + Verus but are not test shards.
+  # The ordinary `test` matrix already owns every Forge test exactly once.
+  g2:
+    needs: [changes, lean-prepare]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      # Surface every shard's failures, not just the first.
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -315,20 +465,22 @@ jobs:
           bash /tmp/elan-init.sh -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-      - name: Cache Lean build (.lake)
+      - name: Cache Lean dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            lean/.lake/packages
-            lean/.lake/build
-          # Same key as lean-probe — both restore the shared spine build.
-          key: lean-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
-          restore-keys: |
-            lean-
+          path: lean/.lake/packages
+          key: lean-packages-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
+          restore-keys: lean-packages-
 
       - name: Fetch prebuilt Mathlib cache (oleans)
         working-directory: lean
         run: lake exe cache get
+
+      - name: Restore prepared Lean build
+        uses: actions/download-artifact@v4
+        with:
+          name: lean-build-${{ github.sha }}
+          path: lean/.lake/build
 
       - name: Build the spine modules forge's live Lean drivers need
         working-directory: lean
@@ -354,20 +506,10 @@ jobs:
       - name: Install Rust toolchain (pinned)
         uses: dtolnay/rust-toolchain@1.95.0
 
-      # REQ-L3BUILD-14 proves that the host selection cannot silently replace
-      # the Rust 1.95 toolchain selected by the pinned Verus distribution.
-      - name: Install incompatible Rust ABI probe toolchain
-        run: rustup toolchain install 1.96.0 --profile minimal
-
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
         with:
           key: lean-spine-tests
-
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2
-        with:
-          tool: nextest
 
       - name: Cache Verus
         uses: actions/cache@v4
@@ -391,24 +533,6 @@ jobs:
           echo "$(dirname "$VERUS_BIN_PATH")" >> "$GITHUB_PATH"
           "$VERUS_BIN_PATH" --version
 
-      - name: Cache Stage 4 proof tools
-        uses: actions/cache@v4
-        with:
-          path: target/g4-tools
-          key: g4-tools-${{ hashFiles('scripts/g4-toolchain.env', 'scripts/g4-tools/drat-trim') }}
-
-      - name: Install pinned CaDiCaL and drat-trim
-        run: |
-          bash scripts/install-g4-tools.sh
-          echo "THERMITE_EPR_CADICAL=$PWD/target/g4-tools/bin/cadical" >> "$GITHUB_ENV"
-          echo "THERMITE_EPR_DRAT_TRIM=$PWD/target/g4-tools/bin/drat-trim" >> "$GITHUB_ENV"
-
-      # Shard the forge suite WITH the spine present: nextest assigns each test to one
-      # partition deterministically, so shards 1..4 union to the full `-p forge` suite —
-      # the spine-gated live tests are distributed across shards and every one runs.
-      - name: forge tests WITH the spine, shard ${{ matrix.shard }}/4 (lake-gated live tests run here)
-        run: cargo nextest run -p forge --partition count:${{ matrix.shard }}/4
-
       - name: Stage-2 G2 gate — fixed-seed differential + two-phase sweep ([8] / [9])
         # The reproducible per-PR half of REQ-9 checks [8]/[9] (`.design/stage2-stratified-cage.md`
         # REQ-9 / AC-9): the classifier differential battery (Rust classifier ≡ Lean
@@ -419,18 +543,20 @@ jobs:
         # is a verification-failure exit and fails the job. lake is on PATH here, so
         # `strat-tv` takes its RUN branch (not the honest lake-absent SKIP).
         #
-        # This is a single whole-corpus gate, NOT a partitioned test, so run it ONCE
-        # (shard 1) — its env (lake + the spine incl Strat.Cls.Wire + Rust + Verus) is
-        # present in every lean-spine-forge shard; gating on shard 1 avoids running it 4×.
-        if: ${{ matrix.shard == 1 }}
         run: |
           set -euo pipefail
           cargo run -q -p forge -- strat-tv
           cargo run -q -p forge -- strat-faithful-tv
 
-  # Keep the parser lock, fixed-width checks, and Lean replay in one gate.
-  g3:
+  # G3's two independent serial paths share the prepared Lean artifact.
+  g3_children:
+    needs: [changes, lean-prepare]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        segment: [parser-lowering, checked-replay]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -447,19 +573,22 @@ jobs:
           bash /tmp/elan-init.sh -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-      - name: Cache Lean build
+      - name: Cache Lean dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            lean/.lake/packages
-            lean/.lake/build
-          key: lean-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
-          restore-keys: |
-            lean-
+          path: lean/.lake/packages
+          key: lean-packages-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
+          restore-keys: lean-packages-
 
       - name: Fetch Mathlib cache
         working-directory: lean
         run: lake exe cache get
+
+      - name: Restore prepared Lean build
+        uses: actions/download-artifact@v4
+        with:
+          name: lean-build-${{ github.sha }}
+          path: lean/.lake/build
 
       - name: Cache Verus
         uses: actions/cache@v4
@@ -487,15 +616,48 @@ jobs:
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
         with:
-          key: g3
+          key: g3-${{ matrix.segment }}
 
-      - name: Gate G3
-        run: bash scripts/g3-gate.sh
+      - name: Gate G3 / ${{ matrix.segment }}
+        run: >-
+          python3 gates/time-command.py
+          --out g3-${{ matrix.segment }}-timing.json
+          --label g3-${{ matrix.segment }} --
+          bash gates/g3.sh ${{ matrix.segment }}
 
-  # Stage 4 closes the admitted S₂.0 relation/array residual. Keep its pinned
-  # SAT/LRAT tools and complete replay matrix visible as one fail-fast check.
-  g4:
+      - name: Publish G3 segment timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g3-${{ matrix.segment }}-timing
+          path: g3-${{ matrix.segment }}-timing.json
+          if-no-files-found: error
+          retention-days: 14
+
+  # Stable branch-protection name. This job runs even when a child fails and
+  # succeeds only when the complete G3 matrix succeeded.
+  g3:
+    needs: [changes, g3_children]
+    if: always() && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Require every G3 child
+        env:
+          CHILD_RESULT: ${{ needs.g3_children.result }}
+        run: python3 gates/ci-aggregate.py G3 "$CHILD_RESULT"
+
+  # Stage 4 closes the admitted S₂.0 relation/array residual through four
+  # independently visible serial paths.
+  g4_children:
+    needs: [changes, lean-prepare]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        segment: [bridge-lean, lrat-cache, release-routing, hygiene]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -512,19 +674,22 @@ jobs:
           bash /tmp/elan-init.sh -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-      - name: Cache Lean build
+      - name: Cache Lean dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            lean/.lake/packages
-            lean/.lake/build
-          key: lean-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
-          restore-keys: |
-            lean-
+          path: lean/.lake/packages
+          key: lean-packages-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
+          restore-keys: lean-packages-
 
       - name: Fetch Mathlib cache
         working-directory: lean
         run: lake exe cache get
+
+      - name: Restore prepared Lean build
+        uses: actions/download-artifact@v4
+        with:
+          name: lean-build-${{ github.sha }}
+          path: lean/.lake/build
 
       - name: Install Z3 witness solver
         run: |
@@ -539,81 +704,49 @@ jobs:
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
         with:
-          key: g4
+          key: g4-${{ matrix.segment }}
 
       - name: Cache Stage 4 proof tools
         uses: actions/cache@v4
         with:
           path: target/g4-tools
-          key: g4-tools-${{ hashFiles('scripts/g4-toolchain.env', 'scripts/g4-tools/drat-trim') }}
+          key: g4-tools-${{ hashFiles('dev/g4-toolchain.env', 'dev/g4-tools/drat-trim') }}
 
       - name: Install pinned CaDiCaL and drat-trim
-        run: bash scripts/install-g4-tools.sh
+        run: bash dev/install-g4-tools.sh
 
-      - name: Gate G4
-        run: bash scripts/g4-gate.sh
+      # G4's [6/6] placeholder scan runs under the pinned interpreter, and the
+      # gate's required-tool list now names `uv` rather than a system python3.
+      - name: Install uv (pins the Python the gate runs under)
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version-file: .python-version
 
-  # The release-shaped kernel gate proves that the frozen proof/implementation
-  # closure builds reproducibly and that the same disk image boots the complete
-  # 1/2/4/8 CPU matrix plus AP-failure and reboot scenarios under QEMU/OVMF.
-  kernel-image:
+      - name: Gate G4 / ${{ matrix.segment }}
+        run: >-
+          python3 gates/time-command.py
+          --out g4-${{ matrix.segment }}-timing.json
+          --label g4-${{ matrix.segment }} --
+          bash gates/g4.sh ${{ matrix.segment }}
+
+      - name: Publish G4 segment timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g4-${{ matrix.segment }}-timing
+          path: g4-${{ matrix.segment }}-timing.json
+          if-no-files-found: error
+          retention-days: 14
+
+  # Stable branch-protection name; all four Stage-4 children are mandatory.
+  g4:
+    needs: [changes, g4_children]
+    if: always() && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install Rust toolchain and UEFI target
-        uses: dtolnay/rust-toolchain@1.95.0
-        with:
-          targets: x86_64-unknown-uefi
-
-      - name: Install QEMU, OVMF, FAT, and LLVM image tools
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install --yes qemu-system-x86 ovmf dosfstools mtools llvm
-          qemu-system-x86_64 --version
-          llvm-pdbutil --version
-
-      - name: Cache Verus
-        uses: actions/cache@v4
-        with:
-          path: ~/verus-dist
-          key: verus-0.2026.05.24.ecee80a-x86-linux
-
-      - name: Install Verus
-        run: |
-          set -euo pipefail
-          VERUS_VER="0.2026.05.24.ecee80a"
-          if ! find "$HOME/verus-dist" -type f -name verus 2>/dev/null | grep -q .; then
-            curl -fsSL -o /tmp/verus.zip \
-              "https://github.com/verus-lang/verus/releases/download/release/${VERUS_VER}/verus-${VERUS_VER}-x86-linux.zip"
-            mkdir -p "$HOME/verus-dist"
-            unzip -q /tmp/verus.zip -d "$HOME/verus-dist"
-          fi
-          VERUS_BIN_PATH="$(find "$HOME/verus-dist" -type f -name verus | head -1)"
-          test -n "$VERUS_BIN_PATH"
-          echo "VERUS_BIN=$VERUS_BIN_PATH" >> "$GITHUB_ENV"
-          echo "$(dirname "$VERUS_BIN_PATH")" >> "$GITHUB_PATH"
-          "$VERUS_BIN_PATH" --version
-
-      - name: Rust build cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: kernel-image
-
-      - name: Build, boot, and bind the kernel image
-        run: >-
-          cargo run -q -p forge -- build conformance/bootable_kernel.th
-          --level l3
-          --target kernel-image
-          --platform x86_64-pc-uefi-smp-v1
-          --compose-export kernel_step
-          --compose-shell platform/x86_64-pc-uefi-smp-v1/kernel_shell.rs
-          --out dist/ci-kernel.img
-
-      - name: Verify the published closure
-        run: cargo run -q -p forge -- verify-build dist/ci-kernel.img --json
+      - name: Require every G4 child
+        env:
+          CHILD_RESULT: ${{ needs.g4_children.result }}
+        run: python3 gates/ci-aggregate.py G4 "$CHILD_RESULT"

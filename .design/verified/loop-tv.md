@@ -61,7 +61,7 @@ is **DROPPED for v1**: it is sound only up to its bound (a bounded-model-check /
 `thermite-semantics.md` field map), so it would NOT discharge the after-loop refinement for the
 arbitrary-iteration-count corpus loops (`binary_search`'s `while`/`loop` runs an input-dependent number
 of iterations). What (b) WOULD add — a Kani-style L2 fallback for invariant-FREE loops — is recorded as
-the honest degraded path: a loop WITHOUT a usable `inv`/`dec` is `Skipped` in v1 (it cannot enter the
+the honest degraded path: a loop WITHOUT a usable `keeps`/`measures` is `Skipped` in v1 (it cannot enter the
 (a) rule), and bounded unrolling is the future v0.2 L2 mechanism for those (a separate blocker, not v1).
 The case for (a) is exactly Leroy's verified-validator economy: reuse the SHIPPED, PROVEN single-step
 validator and lean on the EXISTING Verus-checked invariant rather than re-deriving the loop's fixpoint.
@@ -81,7 +81,7 @@ pub enum Stmt {
 
 pub struct LoopNode {
     pub kind: LoopKind,        // Loop | While(Box<Expr>)
-    pub invs: Vec<Clause>,     // non-empty (structurally encoding §4.1 "inv is mandatory")
+    pub invs: Vec<Clause>,     // non-empty (structurally encoding §4.1 "keeps is mandatory")
     pub dec: Clause,           // a single clause (the `decreases` measure)
     pub body: Block,
     pub span: Span,
@@ -90,10 +90,10 @@ pub struct LoopNode {
 pub enum LoopKind { Loop, While(Box<Expr>) }
 ```
 
-`LoopNode` STRUCTURALLY guarantees what v1 needs: `invs` is non-empty and `dec` is present (the parser
-enforces §4.1's mandatory `inv`/`dec`). The production lowerer emits the Verus-native form (`lower_loop
-in lower.rs`): a `while <cond>` (or `loop`) header, then `invariant <inv>,` per `inv` clause (plus
-lifted immutable preconditions), then `decreases <dec>,` (suppressed ONLY for `fx diverge`, where the
+`LoopNode` STRUCTURALLY guarantees what v1 needs: `invs` is non-empty and `measures` is present (the parser
+enforces §4.1's mandatory `keeps`/`measures`). The production lowerer emits the Verus-native form (`lower_loop
+in lower.rs`): a `while <cond>` (or `loop`) header, then `invariant <inv>,` per `keeps` clause (plus
+lifted immutable preconditions), then `decreases <dec>,` (suppressed ONLY for `! diverge`, where the
 loop is non-terminating by design and the fn carries `#[verifier::exec_allows_no_decreases_clause]`),
 then the body. The `decreases` is REAL (no proof cheat, R-DEFER-9): a non-decreasing measure → Verus L0.
 
@@ -104,10 +104,10 @@ from what the corpus actually uses):
   let mut lo: usize = 0;
   let mut hi: usize = haystack.len();
   loop
-    inv lo <= hi && hi <= haystack.len()
-    inv forall_below(haystack, lo, |x| x < needle)
-    inv forall_from(haystack, hi, |x| x > needle)
-    dec hi - lo
+    keeps lo <= hi && hi <= haystack.len()
+    keeps forall_below(haystack, lo, |x| x < needle)
+    keeps forall_from(haystack, hi, |x| x > needle)
+    measures hi - lo
   {
     if lo == hi { return None; }
     let mid = lo + (hi - lo) / 2;
@@ -125,10 +125,10 @@ full corpus loop, derived from `exec-stmt-tv.md` REQ-1 + the `LoopNode` surface)
 
 | Construct | AST | v1 role |
 |---|---|---|
-| a single `while <cond>` with declared `inv`+`dec` | `Stmt::Loop(LoopNode { kind: While(c), invs, dec, .. })` | the after-loop state is characterized by `inv ∧ ¬c` |
+| a single `while <cond>` with declared `keeps`+`measures` | `Stmt::Loop(LoopNode { kind: While(c), invs, dec, .. })` | the after-loop state is characterized by `inv ∧ ¬c` |
 | a STRAIGHT-LINE loop body | `LoopNode.body` is the `exec-stmt-tv.md` REQ-1 IN set (let/assign/if/seq, scalar cells) | the per-iteration step reuses the SHIPPED `body_ref_state` |
 | scalar mutable loop variables | `usize`/`u64`/`u32` cells the body mutates (`lo`/`hi`) | the per-iteration `(state, cond) → state'` transformer |
-| the loop `inv` clauses + the `dec` measure | `LoopNode.invs` (non-empty) + `LoopNode.dec` | the per-run obligations + the (Verus-checked) termination premise |
+| the loop `keeps` clauses + the `measures` measure | `LoopNode.invs` (non-empty) + `LoopNode.dec` | the per-run obligations + the (Verus-checked) termination premise |
 
 **OUT (explicitly NOT in v1 — honest boundary, each → `Skipped`):**
 
@@ -141,8 +141,8 @@ full corpus loop, derived from `exec-stmt-tv.md` REQ-1 + the `LoopNode` surface)
   state is itself a fixpoint inside the outer body-step; `Skipped`).
 - **Non-scalar loop state** (Vec/Map/String mutation in the body) — inherited OUT from `exec-stmt-tv.md`
   REQ-1 (the v1 state is bounded scalar cells); `Skipped`.
-- **A loop without a usable `inv`/`dec`.** Structurally `LoopNode` always carries them, but a TRIVIALLY
-  weak invariant (e.g. `inv true`) cannot enter the (a) rule (the after-loop characterization `true ∧ ¬c`
+- **A loop without a usable `keeps`/`measures`.** Structurally `LoopNode` always carries them, but a TRIVIALLY
+  weak invariant (e.g. `keeps true`) cannot enter the (a) rule (the after-loop characterization `true ∧ ¬c`
   is vacuous); such a loop is `Skipped` HONESTLY (R-HONEST-3) — never silently `Faithful`. (This is the
   invariant-free case where bounded unrolling (b) is the future v0.2 L2 fallback.)
 
@@ -172,7 +172,7 @@ emitting the three Verus units below; the per-RHS / condition / inv VALUE encodi
    block, so its state step is `body_ref_state(loop.body)` — the ALREADY-SHIPPED, ALREADY-PROVEN
    transformer. The obligation wraps that step as `fn tv_loop_step(<state-cells>) requires <inv> && <cond>,
    ensures <inv-at-the-stepped-state>, { <production loop-body lowering> }` — a Z3 check that the
-   reference single-step state transformer carries `inv ∧ cond` to `inv`. VERIFIED ⟺ one faithful
+   reference single-step state transformer carries `inv ∧ cond` to `keeps`. VERIFIED ⟺ one faithful
    iteration preserves the invariant; a `postcondition not satisfied` ⟺ a per-iteration state-lowering
    infidelity (the SAME teeth `body_ref_sound`'s `wrong_var_assign` / `sequencing_order` /
    `mutation_not_applied` negative lemmas bite — a dropped/reordered/wrong-cell body mutation that breaks
@@ -206,7 +206,7 @@ discharge is the increment's last slice).
   a per-iteration infidelity or a wrong after-loop claim).
 - **Unverifiable** — a Verus/Z3 timeout on an obligation (the ladder degrades, R-CODE-4; never a silent pass).
 - **Skipped** — a loop OUTSIDE the v1 frozen subset (a `loop`-kind, `break`/`continue`, a mid-body
-  `return`, a nested loop, non-scalar state, or a trivially-weak `inv`) → `RefEncodeError::Unsupported`
+  `return`, a nested loop, non-scalar state, or a trivially-weak `keeps`) → `RefEncodeError::Unsupported`
   surfaced as `Skipped` with a reason. NEVER `Faithful` (the honest 2.2.2 boundary in the certificate).
 
 ## REQ-3 — the Lean extension (the iteration semantics + the WHILE-RULE)
@@ -339,7 +339,7 @@ proof, then the forge seam). Three increments, each a future blocker under #163:
 
 ## Acceptance criteria
 
-- **AC-1 (faithful `while` loop → VERIFIED)** — a v1-subset `while c inv I dec d { straight-line body }`
+- **AC-1 (faithful `while` loop → VERIFIED)** — a v1-subset `while c inv I measures d { straight-line body }`
   whose entry / preservation / exit obligations are faithful discharges all three as `verified: 1,
   errors: 0`.
 - **AC-2 (broken-invariant mutant → CAUGHT)** — a loop whose body breaks preservation (a dropped/wrong-
@@ -348,7 +348,7 @@ proof, then the forge seam). Three increments, each a future blocker under #163:
 - **AC-3 (wrong-after-loop-state mutant → CAUGHT)** — a loop whose after-loop characterization over-claims
   (stronger than `inv ∧ ¬c`) fails the exit obligation with a counterexample.
 - **AC-4 (loop-without-usable-inv → Skipped honestly)** — a `loop`-kind, a `break`/`continue` body, a
-  mid-body `return`, a nested loop, a non-scalar-state loop, or a trivially-weak `inv` reaches
+  mid-body `return`, a nested loop, a non-scalar-state loop, or a trivially-weak `keeps` reaches
   `forge::body_tv` as `Skipped` (with a reason), NEVER `Faithful` (R-HONEST-3).
 - **AC-5 (the single-iteration step REUSES the SHIPPED transformer)** — the preservation obligation's
   per-iteration body is encoded by `body_ref_state` (no new body machinery); a per-iteration RHS value
@@ -400,8 +400,8 @@ correctness shape; obligation (3) termination stays Verus's per-run `decreases` 
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (loop surface + v1 frozen loop subset) | SHIPPED (increment 2.2.2-i) | the v1 SUBSET is now PINNED IN CODE: `thermite_tv::exec_stmt_encode::loop_ref_obligations` (+ `recognize_v1_loop`/`reject_out_of_subset_body`/`collect_assigned_cells`/`invariant_is_vacuous`) ADMITS exactly a single `while <cond>` with non-empty `invs` + `dec` + a straight-line scalar body as the LAST statement before the tail, and HONESTLY REJECTS (an `Unsupported` `Err`) the `loop`-kind, `break`/`continue`, a mid-body `return`, a NESTED loop, a non-scalar assignment target, and a trivially-weak `inv true`. The loop AST is SHIPPED (`struct LoopNode`/`enum LoopKind`/`Stmt::Loop` in `thermite-syntax/src/ast.rs`; lowered by `lower_loop in lower.rs`). Non-test consumer `thermite_tv::obligation::{loop_entry_obligation, loop_preservation_obligation, loop_exit_obligation}`; verified by `thermite-tv/tests/loop_teeth.rs` L0 (the hand-derived reference pieces) + L1 (faithful in-subset VERIFIES) + L4 (five OUT forms each Skipped). |
-| REQ-2 (Rust loop TV — the three per-run obligations) | SHIPPED (increment 2.2.2-i) | `pub fn loop_ref_obligations` (returns `struct LoopObligations`) in `thermite-tv/src/exec_stmt_encode.rs` builds the three per-run reference pieces (`entry_pred` = `inv[cells:=entry]`; `cond` + `inv` for the preservation `requires`; `step_cells` = the SHIPPED `body_ref_state` single-iteration step + `inv_at_step` for the preservation `ensures`); the three Verus-unit emitters are `pub fn loop_entry_obligation`/`loop_preservation_obligation`/`loop_exit_obligation` + `pub struct LoopObligationFrame`/`LoopParamDecl` in `thermite-tv/src/obligation.rs` (siblings to `body_equivalence_obligation`). ENTRY = `proof fn { assert(inv[cells:=entry]); }`; PRESERVATION = `fn tv_loop_step(cells, inputs) requires inv && cond, ensures result.i == <step_i>, <inv_at_step> { <p_production> }` (REUSES `body_ref_state` for the step — AC-5); EXIT = `proof fn tv_loop_exit(cells, inputs) requires inv && (!cond) { assert(<claimed_after_loop>); }` (the opaque-but-invariant-constrained after-loop cells). The cond/inv VALUE encoding REUSES `exec_ref_value` (independence preserved — `thermite-tv` keeps NO `thermite-lower` dep, AC-7). Non-test consumer `thermite_tv::lib` re-export → `tests/loop_teeth.rs` L1–L4 discharge through real verus (`Verus 0.2026.05.24`): L1 all three obligations `1 verified, 0 errors`; L2 broken-preservation `postcondition not satisfied`; L3 wrong-after-loop `assertion failed`; L4 OUT-of-v1 Skipped. The Lean WHILE-RULE (increment 2.2.2-ii, REQ-3) + the forge `body_tv` loop wiring (increment 2.2.2-iii, REQ-5) are SEPARATE future increments. |
-| REQ-3 (Lean iteration semantics + WHILE-RULE) | SHIPPED (increment 2.2.2-ii) | `lean/Thermite/Exec/Loop.lean` (namespace `Thermite.Exec`, imports `Thermite.Exec.Stmt`) mechanizes the v1 `while` form as a SEPARATE `structure WhileLoop { cond : ExecExpr, body : Block, inv : State → Prop }` AROUND the SHIPPED `blockThread` (the Rust-faithful separate-form treatment — `Exec/Stmt.lean` UNCHANGED, no new `Stmt` arm); `def loopDenote (cond) (body) : Nat → State → Option State` is the GENUINE fuel-indexed iteration of `blockThread` (`0,_ => none` = fuel exhausted; `fuel+1 => if ¬cond then some st else loopDenote .. (blockThread body st)`, the obligation-`none` propagating). `theorem while_rule (cond body I) (h_pres : ∀ st, I st → condBool cond st = some true → ∀ st', blockThread body st = some st' → I st') (fuel) : ∀ st stf, I st → loopDenote cond body fuel st = some stf → I stf ∧ condBool cond stf = some false` — PROVED by induction on `fuel` (the exit branch gives `¬cond` directly; the continue branch re-establishes `I` via `h_pres` over the SHIPPED step + the IH), NO `sorry`. `theorem tv_meta_loop (L : WhileLoop) (h_pres) (fuel st stf) (h_entry : L.inv st) (h_run : loopDenote L.cond L.body fuel st = some stf) : L.inv stf ∧ condBool L.cond stf = some false` — the capstone composition (the three per-run Z3 premises + `while_rule`), the loop sibling of `tv_meta_body`. The premises MATCH the REQ-2 obligations: `h_entry`↔ENTRY (`inv[cells:=entry]`), `h_pres`↔PRESERVATION (one `blockThread` step keeps `inv` under `inv ∧ cond` — the havoc+frame shape), the conclusion `inv ∧ ¬cond`↔EXIT. NEGATIVE lemmas (the teeth): `l2_non_preserved_invariant_admits_bad_step` + `l2_no_preservation_premise_for_buggy_body` (the `lo + 2` body — preservation FAILS at `lo=2,n=3 → lo=4>n`, so `h_pres` is genuinely load-bearing; the L2 mirror) and `l3_exit_overclaim_refuted` (from `inv ∧ ¬cond` only `lo == n` follows — the over-claim `lo > n` is refuted at the genuine exit; the L3 mirror). Non-vacuity: `b_loop_iterates` (the L1 fixture `while lo < n inv lo ≤ n { lo := lo + 1 }` at `n=3` GENUINELY iterates `lo ↦ 1 ↦ 2 ↦ 3` to exit, fuel consumed, decide-backed) + `l1_entry_holds`/`l1_preservation`/`l1_while_rule_certifies_exit` (the rule FIRES, certifying `lo ≤ 3 ∧ ¬(lo < 3)` hence `lo = 3` = the L1 `lo == n` claim). `lake build` GREEN (full project incl. the spine + SmtDemo); `#print axioms while_rule`/`tv_meta_loop`/`loopDenote`/the negatives = `[propext, Quot.sound]` (STANDARD only, NO `sorryAx`/custom axiom/`Classical.choice`). CORE Lean only (the `2^64` `usize` bound facts via `Int.pow_pos` + a `decide`-computed `two_pow_64_val`; NO Mathlib, NO Lean-SMT, NO `native_decide`). `Thermite.lean` imports the new module. |
+| REQ-1 (loop surface + v1 frozen loop subset) | SHIPPED (increment 2.2.2-i) | the v1 SUBSET is now PINNED IN CODE: `thermite_tv::exec_stmt_encode::loop_ref_obligations` (+ `recognize_v1_loop`/`reject_out_of_subset_body`/`collect_assigned_cells`/`invariant_is_vacuous`) ADMITS exactly a single `while <cond>` with non-empty `invs` + `measures` + a straight-line scalar body as the LAST statement before the tail, and HONESTLY REJECTS (an `Unsupported` `Err`) the `loop`-kind, `break`/`continue`, a mid-body `return`, a NESTED loop, a non-scalar assignment target, and a trivially-weak `keeps true`. The loop AST is SHIPPED (`struct LoopNode`/`enum LoopKind`/`Stmt::Loop` in `thermite-syntax/src/ast.rs`; lowered by `lower_loop in lower.rs`). Non-test consumer `thermite_tv::obligation::{loop_entry_obligation, loop_preservation_obligation, loop_exit_obligation}`; verified by `thermite-tv/tests/loop_teeth.rs` L0 (the hand-derived reference pieces) + L1 (faithful in-subset VERIFIES) + L4 (five OUT forms each Skipped). |
+| REQ-2 (Rust loop TV — the three per-run obligations) | SHIPPED (increment 2.2.2-i) | `pub fn loop_ref_obligations` (returns `struct LoopObligations`) in `thermite-tv/src/exec_stmt_encode.rs` builds the three per-run reference pieces (`entry_pred` = `inv[cells:=entry]`; `cond` + `keeps` for the preservation `requires`; `step_cells` = the SHIPPED `body_ref_state` single-iteration step + `inv_at_step` for the preservation `ensures`); the three Verus-unit emitters are `pub fn loop_entry_obligation`/`loop_preservation_obligation`/`loop_exit_obligation` + `pub struct LoopObligationFrame`/`LoopParamDecl` in `thermite-tv/src/obligation.rs` (siblings to `body_equivalence_obligation`). ENTRY = `proof fn { assert(inv[cells:=entry]); }`; PRESERVATION = `fn tv_loop_step(cells, inputs) requires keeps && cond, ensures result.i == <step_i>, <inv_at_step> { <p_production> }` (REUSES `body_ref_state` for the step — AC-5); EXIT = `proof fn tv_loop_exit(cells, inputs) requires keeps && (!cond) { assert(<claimed_after_loop>); }` (the opaque-but-invariant-constrained after-loop cells). The cond/inv VALUE encoding REUSES `exec_ref_value` (independence preserved — `thermite-tv` keeps NO `thermite-lower` dep, AC-7). Non-test consumer `thermite_tv::lib` re-export → `tests/loop_teeth.rs` L1–L4 discharge through real verus (`Verus 0.2026.05.24`): L1 all three obligations `1 verified, 0 errors`; L2 broken-preservation `postcondition not satisfied`; L3 wrong-after-loop `assertion failed`; L4 OUT-of-v1 Skipped. The Lean WHILE-RULE (increment 2.2.2-ii, REQ-3) + the forge `body_tv` loop wiring (increment 2.2.2-iii, REQ-5) are SEPARATE future increments. |
+| REQ-3 (Lean iteration semantics + WHILE-RULE) | SHIPPED (increment 2.2.2-ii) | `lean/Thermite/Exec/Loop.lean` (namespace `Thermite.Exec`, imports `Thermite.Exec.Stmt`) mechanizes the v1 `while` form as a SEPARATE `structure WhileLoop { cond : ExecExpr, body : Block, inv : State → Prop }` AROUND the SHIPPED `blockThread` (the Rust-faithful separate-form treatment — `Exec/Stmt.lean` UNCHANGED, no new `Stmt` arm); `def loopDenote (cond) (body) : Nat → State → Option State` is the GENUINE fuel-indexed iteration of `blockThread` (`0,_ => none` = fuel exhausted; `fuel+1 => if ¬cond then some st else loopDenote .. (blockThread body st)`, the obligation-`none` propagating). `theorem while_rule (cond body I) (h_pres : ∀ st, I st → condBool cond st = some true → ∀ st', blockThread body st = some st' → I st') (fuel) : ∀ st stf, I st → loopDenote cond body fuel st = some stf → I stf ∧ condBool cond stf = some false` — PROVED by induction on `fuel` (the exit branch gives `¬cond` directly; the continue branch re-establishes `I` via `h_pres` over the SHIPPED step + the IH), NO `sorry`. `theorem tv_meta_loop (L : WhileLoop) (h_pres) (fuel st stf) (h_entry : L.keeps st) (h_run : loopDenote L.cond L.body fuel st = some stf) : L.keeps stf ∧ condBool L.cond stf = some false` — the capstone composition (the three per-run Z3 premises + `while_rule`), the loop sibling of `tv_meta_body`. The premises MATCH the REQ-2 obligations: `h_entry`↔ENTRY (`inv[cells:=entry]`), `h_pres`↔PRESERVATION (one `blockThread` step keeps `keeps` under `inv ∧ cond` — the havoc+frame shape), the conclusion `inv ∧ ¬cond`↔EXIT. NEGATIVE lemmas (the teeth): `l2_non_preserved_invariant_admits_bad_step` + `l2_no_preservation_premise_for_buggy_body` (the `lo + 2` body — preservation FAILS at `lo=2,n=3 → lo=4>n`, so `h_pres` is genuinely load-bearing; the L2 mirror) and `l3_exit_overclaim_refuted` (from `inv ∧ ¬cond` only `lo == n` follows — the over-claim `lo > n` is refuted at the genuine exit; the L3 mirror). Non-vacuity: `b_loop_iterates` (the L1 fixture `while lo < n keeps lo ≤ n { lo := lo + 1 }` at `n=3` GENUINELY iterates `lo ↦ 1 ↦ 2 ↦ 3` to exit, fuel consumed, decide-backed) + `l1_entry_holds`/`l1_preservation`/`l1_while_rule_certifies_exit` (the rule FIRES, certifying `lo ≤ 3 ∧ ¬(lo < 3)` hence `lo = 3` = the L1 `lo == n` claim). `lake build` GREEN (full project incl. the spine + SmtDemo); `#print axioms while_rule`/`tv_meta_loop`/`loopDenote`/the negatives = `[propext, Quot.sound]` (STANDARD only, NO `sorryAx`/custom axiom/`Classical.choice`). CORE Lean only (the `2^64` `usize` bound facts via `Int.pow_pos` + a `decide`-computed `two_pow_64_val`; NO Mathlib, NO Lean-SMT, NO `native_decide`). `Thermite.lean` imports the new module. |
 | REQ-4 (trust accounting — partial correctness, termination residual) | SHIPPED (increment 2.2.2-ii) | The DECISION is RECORDED above (partial correctness for v1; termination stays the per-run Verus `decreases` discharge, `lower_loop`'s SHIPPED `decreases <dec>` emission) AND now MECHANIZED: `while_rule`/`tv_meta_loop` (`Exec/Loop.lean`) carry the `h_run : loopDenote .. fuel st = some stf` hypothesis as the "the loop EXITS at this fuel" premise — the Verus `decreases` residual, deliberately NOT a Lean premise-to-prove (the module doc states the correspondence explicitly: `loopDenote`'s fuel-`0` `none` is NOT a fixpoint claim and `while_rule` is ∀-fuel, so termination is the named per-run residual, never machine-closed in v1). A reader must NOT read v1 loop-TV as TOTAL correctness (the honest boundary in the certificate). |
-| REQ-5 (increment plan + forge `body_tv` loop wiring) | SHIPPED (increment 2.2.2-iii) | the forge seam (blocker #162) is BUILT: `forge::body_tv` (`forge/src/body_tv.rs`) recognizes a v1 frozen-subset `while` loop as the body's LAST statement (`loop_body_tv` / `build_loop_frame`) and discharges the THREE per-run obligations via `thermite_tv::{loop_entry_obligation, loop_preservation_obligation, loop_exit_obligation}` (`discharge_loop`): the single-iteration production step is `thermite_lower::lower_exec_body` of the loop body shaped to return the stepped cells (`loop_step_production`, REUSING the SHIPPED `body_ref_state` step on the reference side, AC-5); the EXIT claim is the reference's own `inv` over the opaque cells (`loop_after_loop_claim`, implied by `inv ∧ ¬cond`). COMBINED four-way verdict: all-three-VERIFY → `Faithful`; ANY counterexample → `Divergent` (loud, nonzero exit); a verus-absent / no-results obligation → `Unverifiable`; an OUT-of-v1 loop (`loop`-kind / `break`/`continue` / mid-body `return` / nested / non-scalar / trivially-weak `inv`) → an honest `loop_ref_obligations` `Unsupported` → `Skipped`-with-reason (NEVER `Faithful`, R-HONEST-3 / AC-4). Verified by `forge/tests/body_tv.rs` against real verus: a faithful v1 `while lo < n inv lo <= n dec n - lo { lo = lo + 1 }` → `faithful` (all three obligations); `binary_search.th`'s `loop`-kind multi-exit body → `Skipped`-with-reason (the honest expected corpus result). The Lean WHILE-RULE (increment 2.2.2-ii, REQ-3) is the SHIPPED universal piece; this is the forge discharge seam. |
+| REQ-5 (increment plan + forge `body_tv` loop wiring) | SHIPPED (increment 2.2.2-iii) | the forge seam (blocker #162) is BUILT: `forge::body_tv` (`forge/src/body_tv.rs`) recognizes a v1 frozen-subset `while` loop as the body's LAST statement (`loop_body_tv` / `build_loop_frame`) and discharges the THREE per-run obligations via `thermite_tv::{loop_entry_obligation, loop_preservation_obligation, loop_exit_obligation}` (`discharge_loop`): the single-iteration production step is `thermite_lower::lower_exec_body` of the loop body shaped to return the stepped cells (`loop_step_production`, REUSING the SHIPPED `body_ref_state` step on the reference side, AC-5); the EXIT claim is the reference's own `keeps` over the opaque cells (`loop_after_loop_claim`, implied by `inv ∧ ¬cond`). COMBINED four-way verdict: all-three-VERIFY → `Faithful`; ANY counterexample → `Divergent` (loud, nonzero exit); a verus-absent / no-results obligation → `Unverifiable`; an OUT-of-v1 loop (`loop`-kind / `break`/`continue` / mid-body `return` / nested / non-scalar / trivially-weak `keeps`) → an honest `loop_ref_obligations` `Unsupported` → `Skipped`-with-reason (NEVER `Faithful`, R-HONEST-3 / AC-4). Verified by `forge/tests/body_tv.rs` against real verus: a faithful v1 `while lo < n keeps lo <= n measures n - lo { lo = lo + 1 }` → `faithful` (all three obligations); `binary_search.th`'s `loop`-kind multi-exit body → `Skipped`-with-reason (the honest expected corpus result). The Lean WHILE-RULE (increment 2.2.2-ii, REQ-3) is the SHIPPED universal piece; this is the forge discharge seam. |

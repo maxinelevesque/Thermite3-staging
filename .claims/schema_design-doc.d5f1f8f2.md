@@ -1,0 +1,114 @@
+---
+{
+  "v": 2,
+  "cid": "bafyreibfb644abrmll3yisptmkwhbkknzwiljgy6b2cljay6rgihr7vfvq",
+  "sig": "7f62eb1fcc677dccee50811ccaeaf7a3e528b9913a7ccbe53b64e6ea742bb45430bb5a878afb5a2b0a39d7c87634067b06447795ba131513ddcc4b4d02dfd22b",
+  "author": "did:key:zDnaekvyhdCRM1T1yw1BQgsoyEvmoyW27an3a8rygZPqbge2V",
+  "subject": "Local(\"schema/design-doc\")",
+  "kind": "Observation",
+  "cites": [],
+  "rev": "223mshj3qsbhg",
+  "seq": 0,
+  "of": 4,
+  "text_len": 423,
+  "content": "a764626f6479a16b4f62736572766174696f6ea16474657874606563697465738066617574686f72a26364696478396469643a6b65793a7a446e61656b7679686443524d315431797731425167736f7945766d6f79573237616e3361387279675a50716267653256656167656e74f6677375626a656374a1654c6f63616c71736368656d612f64657369676e2d646f636961727469666163747381a166436f6d6d697478283834643237366537366564303235303965613538383132656663313538363164353835383061343269776f726b7370616365a169576f726b73706163657840323231666338316537643461376464326536633934303931323961393438623464633565326263393262626365383634663833623734353734316135346539366b7265636f726465645f61741b0006586bc36c1d2d"
+}
+---
+
+Design-doc schema for this project.
+
+```day-schema
+{
+  "sections": [
+    "Summary",
+    "Requirements",
+    "Acceptance Criteria",
+    "Architecture"
+  ],
+  "requirement_prefix": "REQ-",
+  "criterion_prefix": "AC-",
+  "min_requirements": 2,
+  "min_criteria": 2,
+  "placeholders": [
+    "TODO",
+    "TBD"
+  ],
+  "paths_section": "Architecture",
+  "resolved_section": "Resolved Questions",
+  "resolution_prefix": "RQ-"
+}
+```
+
+---8<---
+---
+{
+  "v": 2,
+  "cid": "bafyreicauim3b6cm77swsye5vznr5e6wynguwgcgl7ziwgy5wp7vqozrom",
+  "sig": "1638414b89fbda0f82b69abd44de1e365917e46c89f1c5cf684d5b3423dda6cf2f25c5b604ac71ec58780d715e37870f02f02769714d496921dbe4eb050d41e1",
+  "author": "did:key:zDnaekvyhdCRM1T1yw1BQgsoyEvmoyW27an3a8rygZPqbge2V",
+  "subject": "Local(\"schema/design-doc\")",
+  "kind": "Observation",
+  "cites": [],
+  "rev": "223mshjcqsg62",
+  "seq": 1,
+  "of": 4,
+  "text_len": 1203,
+  "content": "a764626f6479a16b4f62736572766174696f6ea16474657874606563697465738066617574686f72a26364696478396469643a6b65793a7a446e61656b7679686443524d315431797731425167736f7945766d6f79573237616e3361387279675a50716267653256656167656e74f6677375626a656374a1654c6f63616c71736368656d612f64657369676e2d646f636961727469666163747381a166436f6d6d697478283834643237366537366564303235303965613538383132656663313538363164353835383061343269776f726b7370616365a169576f726b73706163657840323231666338316537643461376464326536633934303931323961393438623464633565326263393262626365383634663833623734353734316135346539366b7265636f726465645f61741b0006586bd16c3003"
+}
+---
+
+Design-doc schema for this project, taken from the shape Thermite's own stage documents use rather than invented. stage1-forge-tier.md and stage2-stratified-cage.md carry Summary / Requirements / Acceptance Criteria / Architecture / Open Questions / Out of Scope; stage3 and stage4 keep Requirements and Acceptance criteria and add a limits section - 'Residual trust and limits', 'Residual trust after G4' - which is the discipline worth carrying forward, so it is required here.
+
+```day-schema
+{
+  "sections": [
+    "Summary",
+    "Requirements",
+    "Acceptance Criteria",
+    "Architecture",
+    "Residual trust"
+  ],
+  "requirement_prefix": "REQ-",
+  "criterion_prefix": "AC-",
+  "min_requirements": 2,
+  "min_criteria": 2,
+  "placeholders": ["TODO", "TBD", "???"],
+  "paths_section": "Architecture",
+  "resolved_section": "Open Questions",
+  "resolution_prefix": "Q-"
+}
+```
+
+An AC cites the REQ it discharges and names the artifact that must exist plus what it must contain, so someone who did not write it can check it. Thermite's AC-8 is the model: the gate is 'encoded as a checklist in the stage-1 milestone', with the certificate, axiom gate, mutation score and burn receipt fields each named.
+---8<---
+---
+{
+  "v": 2,
+  "cid": "bafyreiddxccwehi2loy3aaz5xol2a4posmpvbm2dbtes7rpmikz6rxfnae",
+  "sig": "22aa4e60050f44987c28de3bc3282ccdf5cd5a1a44316a7fae5b30c1e95168da38fa74e1ea1db68eced42ee24f14fcacee344b785aeed1c3dcd68f1e53ea14b6",
+  "author": "did:key:zDnaekvyhdCRM1T1yw1BQgsoyEvmoyW27an3a8rygZPqbge2V",
+  "subject": "Local(\"schema/design-doc\")",
+  "kind": "Publication",
+  "cites": [],
+  "rev": "223mshjd5ysic",
+  "seq": 2,
+  "of": 4,
+  "content": "a764626f6479a16b5075626c69636174696f6ea1656c6179657267476974547265656563697465738066617574686f72a26364696478396469643a6b65793a7a446e61656b7679686443524d315431797731425167736f7945766d6f79573237616e3361387279675a50716267653256656167656e74f6677375626a656374a1654c6f63616c71736368656d612f64657369676e2d646f636961727469666163747381a166436f6d6d697478283834643237366537366564303235303965613538383132656663313538363164353835383061343269776f726b7370616365a169576f726b73706163657840323231666338316537643461376464326536633934303931323961393438623464633565326263393262626365383634663833623734353734316135346539366b7265636f726465645f61741b0006586bd23f6151"
+}
+---
+---8<---
+---
+{
+  "v": 2,
+  "cid": "bafyreig5da3qvte5nnraitjkljwbjiiwvic2eo7rnu7jq6pa7rya6mwaqm",
+  "sig": "8395c4c275e76b1f20e53063032e101063c0cc33cc5f0fb4d29934232cbc99ea65109c036fe6ffb5a8f1d5106a1f7309efeaf59732288cf7925b145c8c45fd46",
+  "author": "did:key:zDnaekvyhdCRM1T1yw1BQgsoyEvmoyW27an3a8rygZPqbge2V",
+  "subject": "Local(\"schema/design-doc\")",
+  "kind": "Publication",
+  "cites": [],
+  "rev": "223mshjdvmjgc",
+  "seq": 3,
+  "of": 4,
+  "content": "a764626f6479a16b5075626c69636174696f6ea1656c6179657267476974547265656563697465738066617574686f72a26364696478396469643a6b65793a7a446e61656b7679686443524d315431797731425167736f7945766d6f79573237616e3361387279675a50716267653256656167656e74f6677375626a656374a1654c6f63616c71736368656d612f64657369676e2d646f636961727469666163747381a166436f6d6d697478283834643237366537366564303235303965613538383132656663313538363164353835383061343269776f726b7370616365a169576f726b73706163657840323231666338316537643461376464326536633934303931323961393438623464633565326263393262626365383634663833623734353734316135346539366b7265636f726465645f61741b0006586bd3b93d12"
+}
+---

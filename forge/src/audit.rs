@@ -13,7 +13,12 @@
 //! [`AssuranceManifest`] aggregate (`manifest.rs`, #10/#17), and the toolchain
 //! identity (verus version + thermite version). It computes no verdict: it never
 //! re-runs verus, re-scores mutants, or re-classifies a closure (REQ-4). It
-//! reports the §9 enumerable trusted computing base ([`Tcb`]): exactly
+//! For migrated L1 rows it first replays deterministic checked lowering against
+//! the supplied program to validate persisted provenance; it still derives no
+//! new verdict and runs no external verifier; the same pass also recomputes the
+//! deterministic syntactic closure scope so serialized boundary data is not
+//! self-authenticating. It reports the §9 enumerable
+//! trusted computing base ([`Tcb`]): exactly
 //! (every `#[slag]` block ∪ every `#[boundary]` contract ∪ the toolchain itself).
 //! `grep slag` over a codebase and this TCB section are the same complete
 //! inventory of fiat-trusted code (§8); nothing fiat-trusted is omitted
@@ -46,8 +51,8 @@ use thermite_syntax::{Contract, EffectRow, Item, Program};
 use crate::cli::ForgeError;
 use crate::lean_export::{self, ExportRefusal};
 use crate::manifest::{
-    effects_of, AssuranceManifest, AssuranceScope, Certificate, ContractQuality, Level,
-    ProjectAssurance, ProjectScope,
+    effects_of, AssuranceManifest, AssuranceScope, Certificate, CertificationPosition,
+    ClassificationCertificate, ContractQuality, Level, ProjectAssurance, ProjectScope,
 };
 
 /// The stable format tag for the v1 audit manifest schema (REQ-1, R-SPEC-2). A
@@ -266,11 +271,28 @@ pub struct FunctionRow {
     pub name: String,
     /// The achieved assurance level (`L0..L3`).
     pub level: Level,
+    /// RFC-3 formal certification coordinates, copied verbatim from the
+    /// certificate. This is the authoritative assurance surface during the
+    /// beta-line removal of the historical scalar.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub certification: Option<CertificationPosition>,
+    /// The classifier prognosis copied before discharge; a routing reason is
+    /// retained even when the eventual proof succeeds or fails differently.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub classification: Option<ClassificationCertificate>,
+    /// The validated per-clause authority surface for mixed producers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clause_portfolio: Option<crate::manifest::ClausePortfolio>,
     /// The §9 assurance scope (end-to-end vs to-the-boundary), from
     /// `Certificate::assurance_scope`. `None` reads as end-to-end (the golden
     /// default; mirrors the cert field), `#[serde(skip_serializing_if)]`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub assurance_scope: Option<AssuranceScope>,
+    /// The discharging engine and its enumerated trusted base, copied independently
+    /// from the assurance result. Two functions at the same historical `Level` remain
+    /// distinguishable when one was kernel-checked and another trusts a solver.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub engine_attribution: Option<crate::engine::EngineAttribution>,
     /// The §7 contract-quality battery block (presence/shape asserted by the
     /// oracle; the version-sensitive `mutants_killed`/`survivor` ratio is not —
     /// OQ-2). A copy of `Certificate::contract_quality`.
@@ -287,11 +309,62 @@ pub struct FunctionRow {
 
 impl FunctionRow {
     /// Project one [`Certificate`] to its audit row (REQ-1, REQ-4) — a copy.
-    fn from_certificate(cert: &Certificate) -> Self {
+    fn from_certificate(
+        cert: &Certificate,
+        program: &Program,
+        expected_scope: Option<&AssuranceScope>,
+    ) -> Self {
+        assert!(
+            cert.is_audit_admitted(),
+            "audit projects only live producer output or a validated proof-cache hit"
+        );
+        cert.rfc3_coordinates()
+            .expect("audit rejects a classification without a certification position");
+        let final_accepted = matches!(
+            cert.live_disposition(),
+            Some(crate::manifest::LiveResultDisposition::Accepted)
+        );
+        let clause_portfolio = cert
+            .clause_portfolio(final_accepted)
+            .expect("audit rejects malformed clause portfolios");
+        if let Some(portfolio) = &clause_portfolio {
+            let function = program
+                .items
+                .iter()
+                .find_map(|item| match item {
+                    thermite_syntax::Item::Fn(function) if function.name == cert.item => {
+                        Some(function)
+                    }
+                    _ => None,
+                })
+                .expect("audit requires the source function for a clause portfolio");
+            let expected_artifact = crate::check::mixed_artifact_sha(program, function);
+            assert!(
+                portfolio
+                    .clauses
+                    .iter()
+                    .all(|clause| clause.artifact_sha256 == expected_artifact),
+                "audit rejects clause evidence not bound to the current program"
+            );
+        }
+        if cert.requires_l1_artifact_validation() {
+            let artifact = thermite_lower::lower_l1_artifact(program, &cert.item)
+                .expect("audit requires checked lowering for every current L1 producer");
+            cert.validate_l1_artifact(&artifact, expected_scope)
+                .expect("audit rejects persisted L1 provenance substitution");
+        }
+        if cert.requires_verus_artifact_validation() {
+            cert.validate_verus_artifact_authority()
+                .expect("audit rejects persisted Verus provenance substitution");
+        }
         FunctionRow {
             name: cert.item.clone(),
             level: cert.level,
+            certification: cert.certification.clone(),
+            classification: cert.classification.clone(),
+            clause_portfolio,
             assurance_scope: cert.assurance_scope.clone(),
+            engine_attribution: cert.engine_attribution.clone(),
             contract_quality: cert.contract_quality.clone(),
             slag: cert.slag,
             boundary: cert.boundary,
@@ -391,14 +464,14 @@ impl Tcb {
                 boundary_contracts.push(BoundaryContract {
                     name: cert.item.clone(),
                     target,
-                    req: contract.as_ref().map(|c| c.req.text.clone()),
-                    ens: contract
+                    requires: contract.as_ref().map(|c| c.requires.text.clone()),
+                    ensures: contract
                         .as_ref()
-                        .map(|c| c.ens.iter().map(|cl| cl.text.clone()).collect())
+                        .map(|c| c.ensures.iter().map(|cl| cl.text.clone()).collect())
                         .unwrap_or_default(),
-                    fx: contract
+                    effects: contract
                         .as_ref()
-                        .map(|c| effects_of(&c.fx))
+                        .map(|c| effects_of(&c.effects))
                         .unwrap_or_else(|| effects_of(&EffectRow::Pure)),
                 });
             }
@@ -437,12 +510,15 @@ pub struct BoundaryContract {
     pub target: String,
     /// The enforced precondition text (`req`), when resolvable from the program.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub req: Option<String>,
+    #[serde(rename = "req")]
+    pub requires: Option<String>,
     /// The enforced postcondition clauses (`ens`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub ens: Vec<String>,
+    #[serde(rename = "ens")]
+    pub ensures: Vec<String>,
     /// The declared effect row (`fx`) as tokens (e.g. `["pure"]`).
-    pub fx: Vec<String>,
+    #[serde(rename = "fx")]
+    pub effects: Vec<String>,
 }
 
 /// The toolchain identity — the irreducible §9 TCB residue (REQ-3). Every
@@ -700,17 +776,25 @@ impl AuditManifest {
     /// - `tcb` — the §9 enumerable TCB (REQ-3): every slag ∪ every boundary ∪ the
     ///   `toolchain`.
     ///
-    /// It re-runs no verus, re-scores no mutants, re-classifies no closure: every
-    /// field traces to a cert field, the assurance aggregate, the program's
-    /// boundary contracts, or the two version strings (REQ-4, REQ-6). `program`
-    /// supplies the boundary contracts' `req`/`ens`/`fx` text (the cert carries
-    /// only the target).
+    /// It re-runs no verus and re-scores no mutants. Migrated L1 rows replay
+    /// deterministic checked lowering and syntactic closure classification against
+    /// `program` solely to validate stored wrapper/route/boundary provenance before copying it.
+    /// Every output field still traces to a cert field, the assurance aggregate,
+    /// the program's boundary contracts, or the two version strings (REQ-4,
+    /// REQ-6). `program` supplies the boundary contracts' `req`/`ens`/`fx` text
+    /// (the cert carries only the target).
     pub fn from_certificates(
         certs: &[Certificate],
         program: &Program,
         toolchain: Toolchain,
     ) -> Self {
-        let functions = certs.iter().map(FunctionRow::from_certificate).collect();
+        let closure_scopes = crate::closure::classify(program);
+        let functions = certs
+            .iter()
+            .map(|cert| {
+                FunctionRow::from_certificate(cert, program, closure_scopes.get(&cert.item))
+            })
+            .collect();
         let assurance = AssuranceManifest::aggregate(certs);
         let project_assurance = ProjectAssuranceSection::from_assurance(&assurance);
         let tcb = Tcb::from_certificates(certs, program, toolchain);
@@ -755,6 +839,7 @@ fn lookup_contract<'a>(program: &'a Program, name: &str) -> Option<&'a Contract>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::kani::{assemble_l2_certificate, L2Result};
     use crate::manifest::{Certificate, SlagMeta};
 
     fn empty_program() -> Program {
@@ -763,6 +848,13 @@ mod tests {
 
     fn toolchain() -> Toolchain {
         Toolchain::new("verus-test-0.0")
+    }
+
+    fn settle_l1_scope(cert: Certificate, program: &Program, item: &str) -> Certificate {
+        let scope = crate::closure::classify(program)
+            .remove(item)
+            .expect("fixture closure scope");
+        cert.with_assurance_scope(scope)
     }
 
     // REQ-1/REQ-4: a pure-Thermite cert collection projects to all-L3 rows + an
@@ -793,17 +885,25 @@ mod tests {
     // REQ-3: a valid slag cert enumerates a SlagBlock carrying reason/owner/review.
     #[test]
     fn slag_cert_enumerated_in_tcb() {
+        let parsed = thermite_syntax::parse(
+            "#[slag(reason = \"hand-tuned\", owner = \"agent:x\", review = \"required\")] \
+             fn vendored(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        assert!(parsed.is_clean());
         let meta = SlagMeta {
             reason: "hand-tuned".to_string(),
             owner: "agent:x".to_string(),
             review: "required".to_string(),
         };
-        let certs = vec![Certificate::slag_l1(
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "vendored").unwrap();
+        let certs = vec![settle_l1_scope(
+            Certificate::slag_l1("vendored", vec!["pure".to_string()], meta)
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
             "vendored",
-            vec!["pure".to_string()],
-            meta,
         )];
-        let m = AuditManifest::from_certificates(&certs, &empty_program(), toolchain());
+        let m = AuditManifest::from_certificates(&certs, &parsed.program, toolchain());
         assert_eq!(m.tcb.slag_blocks.len(), 1);
         let block = &m.tcb.slag_blocks[0];
         assert_eq!(block.name, "vendored");
@@ -815,12 +915,20 @@ mod tests {
     // REQ-3: a boundary cert enumerates a BoundaryContract carrying the target.
     #[test]
     fn boundary_cert_enumerated_in_tcb() {
-        let certs = vec![Certificate::boundary_l1(
+        let parsed = thermite_syntax::parse(
+            "#[boundary(\"ext::ext_f\")] \
+             fn ext_f(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+        );
+        assert!(parsed.is_clean());
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "ext_f").unwrap();
+        let certs = vec![settle_l1_scope(
+            Certificate::boundary_l1("ext_f", vec!["pure".to_string()], "ext::ext_f".to_string())
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
             "ext_f",
-            vec!["pure".to_string()],
-            "ext::ext_f".to_string(),
         )];
-        let m = AuditManifest::from_certificates(&certs, &empty_program(), toolchain());
+        let m = AuditManifest::from_certificates(&certs, &parsed.program, toolchain());
         assert_eq!(m.tcb.boundary_contracts.len(), 1);
         let bc = &m.tcb.boundary_contracts[0];
         assert_eq!(bc.name, "ext_f");
@@ -879,8 +987,9 @@ mod tests {
     // definition (R-CHAR-3), not forge stdout.
     #[test]
     fn probe_pure_int_tail_is_auto() {
-        let program =
-            parse_program("fn count(n: u32) -> u32 req n < 100 ens result == n fx pure { n }");
+        let program = parse_program(
+            "fn count(n: u32) -> u32 ! pure requires n < 100 ensures result == n { n }",
+        );
         let row = LeanFragmentRow::probe("count", &program);
         assert!(
             row.exportable,
@@ -899,7 +1008,7 @@ mod tests {
     #[test]
     fn probe_boundary_is_not_pure_contract() {
         let program = parse_program(
-            "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 req x < 100 ens result == x fx pure ;",
+            "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
         );
         let row = LeanFragmentRow::probe("bnd", &program);
         assert!(!row.exportable);
@@ -927,11 +1036,11 @@ mod tests {
         for (name, src) in [
             (
                 "count",
-                "fn count(n: u32) -> u32 req n < 100 ens result == n fx pure { n }",
+                "fn count(n: u32) -> u32 ! pure requires n < 100 ensures result == n { n }",
             ),
             (
                 "bnd",
-                "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 req x < 100 ens result == x fx pure ;",
+                "#[boundary(\"ext::e\")] fn bnd(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
             ),
         ] {
             let program = parse_program(src);
@@ -1121,5 +1230,332 @@ mod tests {
             m.residual_trust.is_none(),
             "no bv shadow ⇒ no residual-trust statement (v1 byte-identical)"
         );
+    }
+
+    // Issue #48 AC-8: assurance and trust are independent certificate/audit data.
+    // Both functions occupy the same historical L3 assurance result and the same
+    // end-to-end boundary, yet their trusted bases remain visibly distinct.
+    #[test]
+    fn same_assurance_different_trust_bases_survive_audit_projection() {
+        let lean = Certificate::new("lean_fn", Level::L3, vec!["pure".into()], 0, vec![])
+            .with_assurance_scope(AssuranceScope::EndToEnd)
+            .with_engine_attribution(crate::engine::EngineAttribution {
+                engine: "lean-auto".into(),
+                trust_profile: vec!["Lean kernel".into(), "propext".into()],
+            });
+        let verus = Certificate::new("verus_fn", Level::L3, vec!["pure".into()], 0, vec![])
+            .with_assurance_scope(AssuranceScope::EndToEnd)
+            .with_engine_attribution(crate::engine::EngineAttribution {
+                engine: "verus".into(),
+                trust_profile: vec!["Z3".into(), "Verus VC generation".into()],
+            });
+
+        let cert_json = serde_json::to_value([&lean, &verus]).expect("certificate JSON");
+        assert_eq!(cert_json[0]["level"], cert_json[1]["level"]);
+        assert_ne!(
+            cert_json[0]["engine_attribution"], cert_json[1]["engine_attribution"],
+            "certificate trust bases must remain independently inspectable"
+        );
+
+        let audit = AuditManifest::from_certificates(&[lean, verus], &empty_program(), toolchain());
+        assert_eq!(audit.functions[0].level, audit.functions[1].level);
+        assert_eq!(
+            audit.functions[0].assurance_scope,
+            audit.functions[1].assurance_scope
+        );
+        assert_ne!(
+            audit.functions[0].engine_attribution, audit.functions[1].engine_attribution,
+            "audit must not collapse equal-assurance routes with different trust"
+        );
+        assert_ne!(
+            audit.functions[0].certification, audit.functions[1].certification,
+            "the RFC-3 tuple must separate empirical Lean from incomplete solver refutation"
+        );
+        let audit_json = serde_json::to_value(audit).expect("audit JSON");
+        assert_eq!(
+            audit_json["functions"][0]["engine_attribution"]["engine"],
+            "lean-auto"
+        );
+        assert_eq!(
+            audit_json["functions"][1]["engine_attribution"]["engine"],
+            "verus"
+        );
+    }
+
+    #[test]
+    fn kani_rfc3_pair_survives_audit_projection_verbatim() {
+        let result = L2Result {
+            level: Level::L2,
+            bound: "slice <= 4, unwind 5".to_string(),
+            classification: ClassificationCertificate {
+                fragment: "thermite-kani-v1".to_string(),
+                verdict: crate::manifest::ClassificationVerdict::Admitted,
+            },
+            obligations: vec![crate::manifest::ObligationResult::discharged(
+                "bounded model check passed (slice <= 4, unwind 5)",
+            )],
+            solver_time_ms: 0,
+        };
+        let cert = assemble_l2_certificate("sum", vec!["pure".to_string()], &result);
+        let expected_position = cert.certification.clone();
+        let expected_classification = cert.classification.clone();
+        let audit = AuditManifest::from_certificates(&[cert], &empty_program(), toolchain());
+        assert_eq!(audit.functions[0].certification, expected_position);
+        assert_eq!(audit.functions[0].classification, expected_classification);
+    }
+
+    #[test]
+    fn migrated_l1_pair_survives_audit_projection_verbatim() {
+        let parsed = thermite_syntax::parse(
+            "#[boundary(\"ext::read\")] \
+             fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+        );
+        assert!(parsed.is_clean());
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f")
+            .expect("checked boundary wrapper");
+        let cert = settle_l1_scope(
+            Certificate::boundary_l1("f", vec!["pure".into()], "ext::read".into())
+                .with_l1_artifact(&artifact)
+                .expect("atomic L1 pair"),
+            &parsed.program,
+            "f",
+        );
+        let expected_position = cert.certification.clone();
+        let expected_classification = cert.classification.clone();
+        let audit = AuditManifest::from_certificates(&[cert], &parsed.program, toolchain());
+        assert_eq!(audit.functions[0].certification, expected_position);
+        assert_eq!(audit.functions[0].classification, expected_classification);
+        assert!(audit.functions[0].boundary);
+        assert_eq!(
+            audit.functions[0].boundary_target.as_deref(),
+            Some("ext::read")
+        );
+    }
+
+    fn assert_audit_rejects(cert: Certificate, program: &Program) {
+        let rejected = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            AuditManifest::from_certificates(&[cert], program, toolchain())
+        }));
+        assert!(rejected.is_err(), "hostile certificate row reached audit");
+    }
+
+    fn assert_l1_audit_rejects(cert: Certificate, program: &Program) {
+        assert_audit_rejects(cert, program);
+    }
+
+    #[test]
+    fn migrated_l1_cannot_strip_pair_and_launder_as_historical_at_audit() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = settle_l1_scope(
+            Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
+            "f",
+        );
+        let mut hostile = serde_json::to_value(cert).unwrap();
+        hostile["certification"]["discharged_trust"] = serde_json::json!([]);
+        hostile.as_object_mut().unwrap().remove("classification");
+        let hostile: Certificate = serde_json::from_value(hostile).unwrap();
+        assert!(
+            hostile.rfc3_coordinates().is_ok(),
+            "standalone historical compatibility remains readable"
+        );
+        assert_l1_audit_rejects(hostile, &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_audit_rejects_item_effect_and_route_substitution() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = settle_l1_scope(
+            Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
+            "f",
+        );
+
+        let mut renamed = serde_json::to_value(&cert).unwrap();
+        renamed["item"] = serde_json::json!("renamed");
+        assert_l1_audit_rejects(serde_json::from_value(renamed).unwrap(), &parsed.program);
+
+        let mut effects = serde_json::to_value(&cert).unwrap();
+        effects["effects"] = serde_json::json!(["time"]);
+        assert_l1_audit_rejects(serde_json::from_value(effects).unwrap(), &parsed.program);
+
+        let mut slag = serde_json::to_value(cert).unwrap();
+        slag["slag"] = serde_json::json!(true);
+        slag["slag_meta"] = serde_json::json!({
+            "reason": "substituted",
+            "owner": "agent:hostile",
+            "review": "none"
+        });
+        slag["classification"]["fragment"] = serde_json::json!("thermite-l1-slag-v1");
+        assert_l1_audit_rejects(serde_json::from_value(slag).unwrap(), &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_audit_rejects_ffi_target_and_classifier_substitution() {
+        let parsed = thermite_syntax::parse(
+            "#[boundary(\"ext::read\")] \
+             fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = settle_l1_scope(
+            Certificate::boundary_l1("f", vec!["pure".into()], "ext::read".into())
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
+            "f",
+        );
+
+        let mut target = serde_json::to_value(&cert).unwrap();
+        target["boundary_target"] = serde_json::json!("ext::write");
+        assert_l1_audit_rejects(serde_json::from_value(target).unwrap(), &parsed.program);
+
+        let mut classifier = serde_json::to_value(cert).unwrap();
+        classifier["classification"]["fragment"] = serde_json::json!("thermite-l1-runtime-v1");
+        assert_l1_audit_rejects(serde_json::from_value(classifier).unwrap(), &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_audit_rejects_slag_metadata_substitution() {
+        let parsed = thermite_syntax::parse(
+            "#[slag(reason = \"vendored\", owner = \"agent:forge\", review = \"required\")] \
+             fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = settle_l1_scope(
+            Certificate::slag_l1(
+                "f",
+                vec!["pure".into()],
+                SlagMeta {
+                    reason: "vendored".into(),
+                    owner: "agent:forge".into(),
+                    review: "required".into(),
+                },
+            )
+            .with_l1_artifact(&artifact)
+            .unwrap(),
+            &parsed.program,
+            "f",
+        );
+        let mut hostile = serde_json::to_value(cert).unwrap();
+        hostile["slag_meta"] = serde_json::json!({
+            "reason": "invented",
+            "owner": "agent:attacker",
+            "review": "waived"
+        });
+        assert_l1_audit_rejects(serde_json::from_value(hostile).unwrap(), &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_audit_rejects_fabricated_closure_boundary() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = settle_l1_scope(
+            Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
+            "f",
+        );
+        let mut hostile = serde_json::to_value(cert).unwrap();
+        hostile["assurance_scope"] = serde_json::json!({"kind": "to_boundary", "via": "ghost"});
+        hostile["certification"]["boundary"] =
+            serde_json::json!({"kind": "to_boundary", "via": "ghost"});
+        assert_l1_audit_rejects(serde_json::from_value(hostile).unwrap(), &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_audit_rejects_legacy_level_substitution() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = settle_l1_scope(
+            Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
+            "f",
+        );
+        let mut hostile = serde_json::to_value(cert).unwrap();
+        hostile["level"] = serde_json::json!("L3");
+        let hostile: Certificate = serde_json::from_value(hostile).unwrap();
+        assert!(
+            hostile.rfc3_coordinates().is_err(),
+            "migrated L1 evidence cannot be relabeled as another legacy level"
+        );
+        assert_l1_audit_rejects(hostile, &parsed.program);
+    }
+
+    #[test]
+    fn migrated_l1_cannot_strip_all_evidence_and_upgrade_legacy_level() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+        let cert = settle_l1_scope(
+            Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .unwrap(),
+            &parsed.program,
+            "f",
+        );
+        let mut hostile = serde_json::to_value(cert).unwrap();
+        hostile["level"] = serde_json::json!("L3");
+        hostile.as_object_mut().unwrap().remove("certification");
+        hostile.as_object_mut().unwrap().remove("classification");
+        let hostile: Certificate = serde_json::from_value(hostile).unwrap();
+        assert!(
+            hostile.rfc3_coordinates().is_ok(),
+            "the stripped shape remains compatibility-readable as data"
+        );
+        assert_l1_audit_rejects(hostile, &parsed.program);
+    }
+
+    #[test]
+    fn migrated_verus_pair_survives_projection_and_rejects_live_substitution() {
+        let parsed = thermite_syntax::parse(
+            "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+        );
+        let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+        let cert = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+            .with_verus_artifact(&artifact, true)
+            .unwrap()
+            .with_assurance_scope(AssuranceScope::EndToEnd);
+        let audit = AuditManifest::from_certificates(
+            std::slice::from_ref(&cert),
+            &parsed.program,
+            toolchain(),
+        );
+        assert_eq!(audit.functions[0].certification, cert.certification);
+        assert_eq!(audit.functions[0].classification, cert.classification);
+
+        let mut level = cert.clone();
+        level.level = Level::L4;
+        assert_audit_rejects(level, &parsed.program);
+
+        let mut item = cert.clone();
+        item.item = "renamed".into();
+        assert_audit_rejects(item, &parsed.program);
+
+        let mut query = cert.clone();
+        query.certification.as_mut().unwrap().discharged_trust =
+            vec!["thermite-verus-query-v1:f:sha256:invented".into()];
+        assert_audit_rejects(query, &parsed.program);
+
+        let mut classification = cert;
+        classification.classification.as_mut().unwrap().fragment = "thermite-kani-v1".into();
+        assert_audit_rejects(classification, &parsed.program);
     }
 }

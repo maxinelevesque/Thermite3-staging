@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: f74cf2ac36dde4b3b4b3cc74261293ce2736b26c2950bf72425a59c85a8ce3c9 (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: 41b599102234729cb51e5d313f48d84f875b6267d2a7a6e6ded65f96b17ee63f (re-pinned 2026-08-25 for issue #41 certificate-path characterization; backend semantics are unchanged. prior: fb4e94889d1a19869a27e0af86baff6cf936f50ce74077ad4018b6dde51099dd)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and
@@ -104,7 +104,7 @@ build-blockers:
     loop-class STRUCTURED refusal (§4.1.7). Option/Result-typed RESULTS stay OUT of (iv) v1
     (blocker #254: `ExecVal` is `int (BVal) | bool (Bool)` — no Option/Result variant to bridge).
     v1 while + spec-fns-in-exec remain the future (iv) residuals after #253. The iv-b audit's
-    TWO auto-battery COVERAGE residuals (a `req`-bounded `_overflow` conjunct; a nested-`ifElse`
+    TWO auto-battery COVERAGE residuals (a `requires`-bounded `_overflow` conjunct; a nested-`ifElse`
     body's `restoreScope` denotation) DEGRADE to Unknown (fail-to-certify, SOUND) — recorded at
     REQ-10's Known-limitations note, NOT blockers.
     SPINE PREREQUISITE — SHIPPED (#253 part iv-a, ref #203), kernel-green with the standard axiom
@@ -124,7 +124,7 @@ build-blockers:
     lake tests in `forge/src/engine.rs`. See REQ-10's SPINE-PREREQUISITE sub-rows.
   - increment (v): FILED — crosslink #264 (the WHILE-BODY widening BUILD; the DESIGN is §4.2 of
     THIS amendment). Scope: widen the exporter past STRAIGHT-LINE bodies (iv) to the v1 WHILE
-    shape — a straight-line prefix + a single `while <cond>` with non-empty `invs` + `dec` and a
+    shape — a straight-line prefix + a single `while <cond>` with non-empty `invs` + `measures` and a
     straight-line SCALAR loop body, as the LAST statement before a REQUIRED tail, EXACTLY the set
     `thermite-tv`'s `recognize_v1_loop` already admits for loop-TV; everything else (the
     `loop`-kind, `break`/`continue`, mid-body `return`, nested loops, a loop in non-last/inside-if
@@ -133,7 +133,7 @@ build-blockers:
     denotation `whileBodyDenote` (prefix `blockThread` → the SHIPPED `loopDenote` → tail
     `execDenote`) + the ∃-fuel `whileBodyConverges` (the result bound THROUGH the relation — the
     #214 discipline; uniqueness via `loopDenote_fuel_mono`/`whileBodyConverges_unique`), the
-    loop-exit-to-ens composition lemma `while_compose` (the SHIPPED partial-correctness
+    loop-exit-to-ensures composition lemma `while_compose` (the SHIPPED partial-correctness
     `while_rule` lifted through the prefix/tail segments), and the TERMINATION bridge
     `loopDenote_exits_of_dec` (dec-validity + progress ⟹ the exit witness — the REQ-1.2 mirror).
     §4.2.3 DECIDES termination honesty: a conjoined `_converges` theorem JOINTLY discharges the
@@ -156,7 +156,7 @@ build-blockers:
     contract `OptResVal`; `ExecVal` UNCHANGED) and the `Inv_item` COMBINATOR-INVARIANT widening
     (the (v) §4.2.1 residual's named vehicle). The practical target is
     `conformance/binary_search.th`, which trips ALL THREE body-side exclusions plus the
-    combinator-inv residual — (vi) makes it EXPORTABLE; auto-L3 is NOT claimed (§4.3.4 honesty
+    combinator-keeps residual — (vi) makes it EXPORTABLE; auto-L3 is NOT claimed (§4.3.4 honesty
     bar: the expected landing is the REQ-7 INTERACTIVE path). COST CLASS, declared LOUDLY
     (§4.3.3(a)): unlike (v) — a pure composition AROUND the shipped loop bricks — (vi) MINTS A
     NEW DENOTATION LAYER (`rblockThread : GBlock → State → Option (State ⊕ RetVal)` +
@@ -183,6 +183,32 @@ build-blockers:
 > A result-bearing clause enters EPR only when its body-substituted obligation is
 > in S₂.0. An out-of-fragment body leaves the ordinary backend result intact.
 
+> **Typed combination amendment (2026-08-16).** Verus, automatic/selected Lean,
+> EPR, solver-vacuity, and mutation results now enter
+> `forge/src/result_arbiter.rs` as typed dispositions or candidates. The arbiter
+> is the single precedence authority: explicit timeout/degrade is eligible for
+> fallback, policy rejection is settled, partial/unavailable evidence preserves
+> the base, and proof/refutation conflict alarms in either order. The public
+> certificate schema is unchanged; replacement carries assurance boundary and
+> accepted policy, covenant, and meaning-audit context through a positive
+> allowlist while route-specific obligations, attribution, and coordinates
+> come from the selected proof. Refutation candidates carry their actual
+> counterexample obligations through the same typed path, including the rendered
+> EPR disagreement certificate. A private non-serialized disposition stamp keeps
+> fresh Verus/degrade/policy outcomes typed across pipeline stages, but cannot by
+> itself mint authority: live reconstruction requires an opaque capability, raw
+> base-outcome constructors are private, and the persisted structural adapter
+> requires a distinct post-envelope/post-artifact capability. Post-proof
+> policy rendering uses the same proof-independent context merge. Candidate
+> variants are private and reached only through an opaque authority token minted
+> by the orchestration module in the actual Lean/EPR verdict branch; arbitrary
+> public certificate fields cannot mint the token. Defense-in-depth validation
+> still requires matching engine and trust attribution,
+> non-empty discharged clause receipts, coherent RFC-3 coordinates, and (for
+> EPR) checked reconstruction evidence. An evidence-free L3 rendering is invalid
+> evidence, never proof authority. Policy decisions use a sibling opaque token;
+> accepted qualification can decorate an accepted proof but cannot create one.
+
 ## Summary
 
 Thermite should be defined by its SEMANTICS (`S`, mechanized in `lean/Thermite/`) with provers as
@@ -205,13 +231,13 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
   semantics (`S`), INDEPENDENT of any prover's input language. `class` ∈ the obligation classes the
   pipeline already discharges (CONTRACT-equivalence, EXEC-value, BODY-state,
   LOOP-{entry,preservation,exit}, plus the auxiliary classes Verus discharges inside an item:
-  overflow/bounds via the bounded `S_E`, termination via `dec`), PLUS the **REGISTRY-TERMINATION**
+  overflow/bounds via the bounded `S_E`, termination via `measures`), PLUS the **REGISTRY-TERMINATION**
   class (REQ-1.2, the #215 fix): for an item with `calledSpecFns(item) ≠ ∅` (the #226 condition —
   the SAME reachability set the §4 hard gate uses: the FULL-EXPRESSION-POSITION closure of every
   spec-fn reachable from `req ∪ ens ∪ body ∪ dec(item)`, where the closure step walks each reached
   spec-fn's `body ∪ dec` — i.e. EVERY expression the export denotes against `R_item`, INCLUDING the
   termination measures, contributes its spec-calls, transitively), EVERY spec-fn in
-  `R_item` carries a per-spec-fn obligation that its `dec` measure is VALID (well-founded descent),
+  `R_item` carries a per-spec-fn obligation that its `measures` measure is VALID (well-founded descent),
   conjoined item-wide by the conjunction rule. `role` is the polarity/intent discriminator
   (CERTIFICATION vs the meta/battery queries of §0.1) that REQ-3 keys its discipline on. Today these
   bits exist only MATERIALIZED as Verus text (`obligation.rs`); REQ-1 is the reification of the same
@@ -268,7 +294,7 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
   source, replayed in CI; staleness = the EVIDENCE KEY changes (§2(d): obligation hash + engine +
   engine-toolchain version + the targeted spine content hash) → the proof is INVALIDATED, never
   silently reused. The ∃N∀fuel stabilization forms remain ONLY for this INTERACTIVE path (recursive
-  registries). TERMINATION: the Lean engine's obligation set must include the item's `dec` measure or
+  registries). TERMINATION: the Lean engine's obligation set must include the item's `measures` measure or
   the certificate honestly says PARTIAL-CORRECTNESS-only (tied to `while_rule`'s `h_run` premise),
   AND — per REQ-1.2 / the #215 fix — the REGISTRY-TERMINATION class for every spec-fn in `R_item`.
   Derived from `z3-demotion.md` (the reachable fragment) + `thermite-semantics.md` (the
@@ -299,7 +325,7 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
   gate, NOT a silent L3). DENOMINATOR HONESTY: the #101 `equivalence_proves_equal` exclusion is a §0.1
   verus meta-query OUTSIDE the Engine interface in v1 (F3/OQ-5) and is NOT threaded on the Lean-only
   path, so the Lean-path denominator = `attempted` with NO equivalence exclusion available (the gate
-  SAYS SO in the reject detail + the `qualifier`); a `spec fn` (no `ens`) has no mutation obligation and
+  SAYS SO in the reject detail + the `qualifier`); a `spec fn` (no `ensures`) has no mutation obligation and
   certifies on the kernel proof alone (nothing to mutate, no gate). Derived from §7 + R-DEFER-9.
   **Increment (iii), SHIPPED (the Lean-path battery + the floor GATE, #247/#248).**
 - **REQ-10 (the exec-body bridge — STRAIGHT-LINE-BODY items; increment (iv))** — extend the Lean
@@ -390,8 +416,8 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
       (the iv-b audit).** The exec-body EXPORTABLE surface is WIDER than the auto-DISCHARGEABLE
       surface: the shipped auto tactic batteries (`exec_body_tactic_battery` /
       `exec_overflow_tactic_battery`, `forge/src/lean_export.rs`) do NOT yet close (a) a
-      bounded-overflow `_overflow` conjunct that needs the `req` premise to bound the
-      arithmetic (e.g. `req a <= 100`, body `a + a` — in `u64` range ONLY because of `req`;
+      bounded-overflow `_overflow` conjunct that needs the `requires` premise to bound the
+      arithmetic (e.g. `requires a <= 100`, body `a + a` — in `u64` range ONLY because of `requires`;
       the OVERFLOW battery's unfold set does not reduce the `hreq` denotation, so its `omega`
       never sees the bound), nor (b) a nested-`ifElse` body's `restoreScope` denotation (the
       nested branch needs a case split the battery lacks). BOTH currently DEGRADE to
@@ -399,9 +425,9 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
       conservative INCOMPLETENESS, not unsoundness (the REQ-3 discipline — a tactic failure is
       `Unknown`, NEVER `Refuted`; and an undischarged OVERFLOW conjunct never certifies, per
       the §4.1.5 conjunction rule). The future close is a STRONGER auto battery (thread the
-      `req` denotation through the OVERFLOW unfold; a `split` step for the nested branch) or
+      `requires` denotation through the OVERFLOW unfold; a `split` step for the nested branch) or
       the REQ-7 INTERACTIVE path — increment (v)'s loop battery (§4.2.4, blocker #264) MUST
-      thread the `req` denotation through its unfold sets (the loop obligations consume `hreq`),
+      thread the `requires` denotation through its unfold sets (the loop obligations consume `hreq`),
       making (v) the named vehicle for residual (a); residual (b) rides the same battery work.
       Recorded as a COVERAGE RESIDUAL of the SHIPPED REQ-10, NOT an open blocker.
 
@@ -417,7 +443,7 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
   `whileBodyConverges` with the result bound THROUGH it (no export-time fuel exists — the
   iteration count is env-dependent, the #213 lesson; the #214 binding discipline) +
   `loopDenote_fuel_mono`/`whileBodyConverges_unique` (the `stabilizes_unique` mirror) — SPINE
-  PREREQUISITE, lands FIRST (the iv-a precedent); **REQ-11.2** the loop-exit-to-ens composition
+  PREREQUISITE, lands FIRST (the iv-a precedent); **REQ-11.2** the loop-exit-to-ensures composition
   lemma `while_compose` (the SHIPPED `while_rule` lifted through the prefix/tail segments: any
   converged whole-body result is the tail's value at an exit state satisfying `I ∧ ¬cond`) — SPINE
   PREREQUISITE; **REQ-11.3** the TERMINATION bridge `loopDenote_exits_of_dec` (dec-validity —
@@ -426,7 +452,7 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
   `converges_imp_stabilizes` mirror) — SPINE PREREQUISITE; **REQ-11.4** the exporter: the (v)
   recognizer pinned arm-by-arm to `recognize_v1_loop` (EXP), the generator-emitted `Inv_item`
   (FOUR conjunct families — user invs denoted shallowly over cells; per-cell sort/width/range;
-  param FRAME equalities to `stateOf v`; scope facts) + `mu_item` (the loop `dec` denoted over
+  param FRAME equalities to `stateOf v`; scope facts) + `mu_item` (the loop `measures` denoted over
   cells), FIVE per-item obligation theorems (`_entry`/`_pres`/`_exit`/`_progress`/`_dec` —
   realizing the LOOP-{ENTRY,PRESERVATION,EXIT} + OVERFLOW + TERMINATION classes) + TWO composed
   theorems with GENERATOR-FIXED proofs (the HYPOTHESIZE CONTRACT theorem via `while_compose`; the
@@ -434,7 +460,7 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
   (§4.2.4 — `hreq` threaded through the unfold sets); **REQ-11.5** the refusal inventory stays
   LOUD (§4.2.5: the `loop`-kind, nested loops, a while inside an `if` or not in last-statement
   position, `Stmt::Break`/`Stmt::Continue`, mid-body `Stmt::Return(_)`, non-scalar mutation, empty
-  `invs`/weak `inv true`, a tail-less body, spec-calling/combinator invariants (a (v) residual),
+  `invs`/weak `keeps true`, a tail-less body, spec-calling/combinator invariants (a (v) residual),
   Option/Result results #254 — each a STRUCTURED refusal, never silent); **REQ-11.6** the two
   bridge divergence pins (`PinWhileVacuity` — the termination-vacuity conjunction oracle;
   `PinWhileComposition` — the skipped/mis-ordered composition); **REQ-11.7** the REQ-9 accounting
@@ -498,7 +524,7 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
       not re-derive it. Axioms `[propext, Quot.sound]`.
     - **REQ-11.6 SHIPPED** — the TWO bridge-divergence pins, each kernel-checked with the
       standard axiom set: `PinWhileVacuity.lean` (the termination-vacuity conjunction oracle —
-      a `while true` no-op body's `whileBodyConverges` is FALSE at every fuel, so a FALSE-`ens`
+      a `while true` no-op body's `whileBodyConverges` is FALSE at every fuel, so a FALSE-`ensures`
       CONTRACT obligation discharges VACUOUSLY, AND the conjoined CONVERGENCE obligation `∃ r,
       whileBodyConverges …` is REFUTED at the same env; the `PinExecOverflowVacuity` shape one
       vacuity position over — fuel-exhaustion `none` instead of overflow `none`),
@@ -514,7 +540,7 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
       PARAM SORT+RANGE (the missing-param-range fix the v-a/#265 critic anticipated — the
       step's no-overflow guard `lo+1 < 2^w` needs each read param's width bound `n < 2^w`,
       established at `_entry` from `InRangeParams` and preserved trivially) + other-param frame
-      + per-cell scope) and `mu_item` (the `dec` over cells), the FIVE per-item obligations in
+      + per-cell scope) and `mu_item` (the `measures` over cells), the FIVE per-item obligations in
       the §4.2.4 DESIGN shapes — `_entry` the prefix-progress-AND-entry `∃ st₁, blockThread
       prefix_block (stateOf v) = some st₁ ∧ Inv_item v st₁`; `_pres`; `_progress`; `_dec` (the
       #265 PRE-state `0 ≤ μ st` bound); `_exit` the `∃ r, execDenote tail_expr st.env = some r
@@ -533,9 +559,9 @@ project-min aggregate, the mechanized `S`) are SHIPPED and quoted below.
       and is ATTEMPTED (not `UntestedAgainstLean`), the floor gate genuinely gates while items
       on the Lean path (NO `check.rs` edit — the accounting flows through the fragment
       widening). VERIFICATION: `forge/tests/lean_while.rs` — `count_certifies_l3_via_lean_auto`
-      (the L1 linear `while lo < n inv lo ≤ n dec n - lo { lo = lo + 1 }` certifies L3 via
+      (the L1 linear `while lo < n keeps lo ≤ n measures n - lo { lo = lo + 1 }` certifies L3 via
       lean-auto, all 5+2 kernel-accept with `{propext, Classical.choice, Quot.sound}`),
-      `sum_does_not_certify_l3_via_lean_recursive_residual` (the corpus `sum`'s `ens result ==
+      `sum_does_not_certify_l3_via_lean_recursive_residual` (the corpus `sum`'s `ensures result ==
       spec_sum(xs)` is the recursive-registry §4 interactive residual — it does NOT certify
       L3-via-lean, the HONEST landing), `refusal_matrix_no_lean_certification` (the §4.2.5
       matrix never certifies L3-via-lean), `while_true_no_op_is_not_proven_l3_via_lean` (the
@@ -605,7 +631,7 @@ section.)
   obligation the SHIPPED `obligation.rs` family materializes has a backend-neutral `class`: CONTRACT
   (`equivalence_obligation`), EXEC (`exec_equivalence_obligation`), BODY (`body_equivalence_
   obligation`), LOOP-ENTRY/PRESERVATION/EXIT (`loop_{entry,preservation,exit}_obligation`), plus the
-  in-item Verus-discharged auxiliaries (overflow/bounds, termination/`dec`), PLUS the
+  in-item Verus-discharged auxiliaries (overflow/bounds, termination/`measures`), PLUS the
   REGISTRY-TERMINATION class (REQ-1.2) for an item with `calledSpecFns(item) ≠ ∅` (§4's reachability
   set: `req ∪ ens ∪ body ∪ dec(item)`, transitively, closure-step over `body ∪ dec` — the
   full-expression-position #226 condition completing #224). The THREE additional
@@ -819,7 +845,7 @@ The three meta/battery classes, and why each is scoped OUT of the Engine interfa
 - **(B) `equivalence_proves_equal` (#101).** A survivor-equivalence query: discharges
   "the mutated survivor is semantically EQUAL to the original" via `run_verus` + the #8 cache. It is
   a battery sub-query (a meta question about a mutant), not the item's own correctness obligation.
-- **(C) `strengthen::probe` (#14).** Verifies CANDIDATE `ens` against the real body via the threaded
+- **(C) `strengthen::probe` (#14).** Verifies CANDIDATE `ensures` against the real body via the threaded
   `run_verus` closure (a `Proved` candidate HOLDS, a non-`Proved` is DISCARDED) and surfaces
   advisory `Suggestion`s — it never gates the cert (`Certificate::with_strengthening` is additive,
   `level`/`reject`/oracle untouched). It is a meta query about how to TIGHTEN a contract.
@@ -842,7 +868,7 @@ this one-sided statement is pinned in §4 (the stabilized form — `stabilizes`,
 RESULT value bound THROUGH `stabilizes`, #214), NOT left free. Plus the auxiliary
 classes the pipeline discharges INSIDE an item: overflow/bounds (via the bounded `S_E` — `execDenote
 = none` exactly at overflow), loop entry/preservation/exit (via `loopDenote` + `while_rule`),
-termination (via the source `dec` measure → the well-founded fixpoint of the fuel-indexed denotation),
+termination (via the source `measures` measure → the well-founded fixpoint of the fuel-indexed denotation),
 AND the REGISTRY-TERMINATION class (REQ-1.2 below — the spec-fn registry's own well-foundedness).
 
 #### 1.2 The REGISTRY-TERMINATION obligation class (REQ-1.2, the #215 fix)
@@ -878,7 +904,7 @@ of every reachable spec-call: that the per-item registry `R_item` makes `Stabili
 none-propagating denotation reach a GENUINE value — `RegistryTerminating env e := ∃ v, Converges e
 env v`, where `Converges e env v := ∃N∀fuel≥N, intValNB fuel e env = some v` (NOT the cycle-4 identity
 `∃ v, stabilizes`, which a divergent registry satisfied at the Int-bottom 0 — Pin E, now resolved).
-DEC-VALIDITY is the discharge METHOD, not the semantic content: a valid well-founded `dec` measure
+DEC-VALIDITY is the discharge METHOD, not the semantic content: a valid well-founded `measures` measure
 bounds each spec-call's unfolding to a finite per-env depth, which is exactly what makes `intValNB`
 reach `some` (the convergence), and the agreement lemma `converges_imp_stabilizes` then carries that
 to genuine `stabilizes` (the §4 obligation's currency).
@@ -886,19 +912,19 @@ to genuine `stabilizes` (the §4 obligation's currency).
 **Discharge (two admitted paths).** (a) THE COMMON PATH (the Verus dec-check engine): Verus's existing
 dec-check, which certifies the spec-fns when Verus discharges the item — a Verus-discharged item's
 spec-fns have ALREADY passed Verus's recursion/decreases check, so the class is discharged by the
-Verus engine; the CONVERGENCE connection is the bridge stated for this path (a valid Verus `dec`
+Verus engine; the CONVERGENCE connection is the bridge stated for this path (a valid Verus `measures`
 means the spec-fn terminates, hence the denotation converges). (b) THE ENGINE-#2 PATH: a Lean
-well-foundedness proof of the `dec` measure (a `termination_by`/`decreasing_by`-shaped obligation over
+well-foundedness proof of the `measures` measure (a `termination_by`/`decreasing_by`-shaped obligation over
 the encoded `R_item`, in the AUTO battery where the measure is scalar/linear, otherwise INTERACTIVE),
 which on the Lean path proves `Converges` via the unfolding bound the valid measure supplies. Either
 path discharges REGISTRY-TERMINATION; the conjunction rule requires ONE of them per spec-fn.
 
 **Why the measure-position closure is load-bearing (the #226 fix — Pin C, `PinDecMeasure.lean`).**
-The class is ABOUT the `dec` measures, and a `dec` measure is a FULL `Expr` (`SpecFnItem.dec : Clause`
-wraps an `Expr`, `thermite-syntax/src/ast.rs`) that MAY itself call spec-fns (`dec spec_size(t)` is a
+The class is ABOUT the `measures` measures, and a `measures` measure is a FULL `Expr` (`SpecFnItem.dec : Clause`
+wraps an `Expr`, `thermite-syntax/src/ast.rs`) that MAY itself call spec-fns (`measures spec_size(t)` is a
 natural tree measure). The Lean discharge path (b) states a `decreasing_by`-shaped descent obligation
 over the encoded `R_item` (REQ-1.2(b)) — so the measure is DENOTED against `R_item`. If the closure
-seed/step omitted the `dec`-position spec-calls (the cycle-5 `req ∪ ens ∪ body` body-only scope), a
+seed/step omitted the `measures`-position spec-calls (the cycle-5 `req ∪ ens ∪ body` body-only scope), a
 spec-fn called ONLY from a measure would be ABSENT from `R_item`, its `specCall` would bottom to the
 `intVal` Int-bottom `0` at every fuel, and the measure as DENOTED would differ from the SOURCE measure
 — affirming a strict descent the source measure lacks. The critic's kernel-checked pin
@@ -909,7 +935,7 @@ REGISTRY-TERMINATION exists to reject, `true_measure_never_descends`), but denot
 `x → x-1` (`closure_measure_strictly_descends`) — so a non-well-founded measure FAKES descent and the
 class falsely discharges, one position to the left of #224, re-opening Pin B's divergent-contract path.
 The #226 fix CLOSES it by extending the closure to the measure positions: `dec(item)` is in the SEED and
-each reached spec-fn's `dec` is walked by the STEP, so a measure-called spec-fn (`t`) is now in
+each reached spec-fn's `measures` is walked by the STEP, so a measure-called spec-fn (`t`) is now in
 `calledSpecFns(item)` ⊆ `dom(R_item)`, the measure denotes against the COMPLETE `R_item`, and a
 non-well-founded source measure no longer denotes to a fake-descending one. Pin C is the kernel-checked
 regression oracle: its `closure_measure_strictly_descends` (the poisoned affirmation) vs
@@ -1096,7 +1122,7 @@ output today, so the remap is INERT.** Per the grounded verus-output study (`sol
 "The reliable signal is Z3's `:reason-unknown`"; the `--output-json` summary CANNOT tell a fast SMT
 `unknown` from a counterexample), a genuine fast SMT-`unknown` prints `error: postcondition not
 satisfied` VERBATIM WITH a span — the SAME spanned string a witnessed countermodel prints (live repro:
-a VALID Cauchy-Schwarz contract `(a²+…+e²)*5 ≥ (a+…+e)²` under `req a<10…` has NO countermodel yet
+a VALID Cauchy-Schwarz contract `(a²+…+e²)*5 ≥ (a+…+e)²` under `requires a<10…` has NO countermodel yet
 forge gives an L0 hard-fail in ~214ms with a spanned `postcondition not satisfied`, NO degrade). So the
 span-less + `unknown`-substring positive signal never fires on real stderr.
 
@@ -1116,7 +1142,7 @@ the corpus contains witnessed failures + E0308 frontend rejections (both stay `R
 but no genuine SMT-`unknown` matching the narrow signature, so every `conformance/*.cert.json` is
 unchanged.
 
-**A note on a failed registry-termination proof (REQ-1.2 interaction).** A spec-fn whose `dec`
+**A note on a failed registry-termination proof (REQ-1.2 interaction).** A spec-fn whose `measures`
 fails Verus's decreases-check produces a witness-less Verus failure → `Unknown` → degrade → Lean
 attempts. Per REQ-1.2 this does NOT let a divergent registry sneak through: the Lean rung must still
 discharge the REGISTRY-TERMINATION class (a Lean well-foundedness proof), which a divergent spec-fn
@@ -1144,7 +1170,7 @@ EXISTING spine encodings — the `Expr`/`Block` inductives + `denote`/`bodyDenot
 exporter does NOT define a new semantics — it targets the already-kernel-proven `S`, so its
 faithfulness is the SAME correspondence class as the Rust↔Lean encoder correspondence: **arm-by-arm
 inspection** (each Thermite AST construct ↦ its `Expr` constructor, quoting both sides) **+ the
-deep-audit drift tripwire** (`scripts/audit.sh` check [4], the SHA-pinning discipline
+deep-audit drift tripwire** (`gates/audit.sh` check [4], the SHA-pinning discipline
 `rust-lean-correspondence.md` uses — any change to the exporter or the targeted spine arms
 invalidates the audit row and forces re-inspection). This is named here as a NEW trust item of that
 exact discipline: **(EXP) — the exporter emits Lean source that, arm-by-arm, instantiates the
@@ -1181,7 +1207,7 @@ exporter HINT to seed the auto-tactics' unfolding budget — see "fuel₀ as a h
 the obligation statement).
 
 **Why the result must be bound through stabilization (the #214 ground truth, Pin A).** The cycle-3
-form displayed `stabilizesProp ens (Env.bindInt env "result" rbody)` with `rbody` bound by NOTHING —
+form displayed `stabilizesProp ensures (Env.bindInt env "result" rbody)` with `rbody` bound by NOTHING —
 no quantifier, only the prose "binds via `Env.bindInt` after stabilization" and the fuel₀ hint as the
 only computational story. For an ENV-DEPENDENT body there is NO concrete value computable at export
 time, so the prose cannot be implemented as a value — and the only computational rendering §4 offered
@@ -1242,29 +1268,29 @@ theorem item_xyz :
     let env := { v with specs := R_item }                 -- registry HELD FIXED
     ∀ (r : Int),                                          -- the result value, quantified
     stabilizes body_expr env r →                          -- ... and BOUND through stabilization
-    stabilizesProp req env →                               -- reqStable(env): req stabilizes to True
-    stabilizesProp ens (Env.bindInt env "result" r)        -- ensStable: ens stabilizes to True at r
+    stabilizesProp requires env →                               -- reqStable(env): requires stabilizes to True
+    stabilizesProp ensures (Env.bindInt env "result" r)        -- ensStable: ensures stabilizes to True at r
 ```
 
 (`{ v with specs := R_item }` is the Lean env-composition: `v` provides the `ints`/`seqs`/`optres`
-valuation, `R_item` OVERRIDES `specs`. `req`/`ens`/`body_expr` are the encoded contract / body
+valuation, `R_item` OVERRIDES `specs`. `requires`/`ensures`/`body_expr` are the encoded contract / body
 `Expr`s; `r` is the PURE-CONTRACT item's result value, bound THROUGH `stabilizes body_expr env r` —
 see §4.1 for why this is an `Int` denoting via `intVal` ONLY for the pure-contract class scoped here,
 and why the general exec-body bridge is increment (iv)'s own work. The prose names
-`reqStable`/`ensStable` are `stabilizesProp req env` / `stabilizesProp ens …`. The `∀ r, stabilizes
+`reqStable`/`ensStable` are `stabilizesProp requires env` / `stabilizesProp ens …`. The `∀ r, stabilizes
 body_expr env r →` premise is the #214 result-binding fix — the exporter emits NO concrete `rbody`
 value; uniqueness of stabilization makes `r` the body's true stabilized value.)
 
 **Soundness argument (one paragraph — crediting the critic's #213/#214 pins).** The
-obligation says: at every env, for the (unique) value `r` the body STABILIZES to, IF `req` stabilizes
-to True THEN `ens` stabilizes to True at `result = r`. This is
+obligation says: at every env, for the (unique) value `r` the body STABILIZES to, IF `requires` stabilizes
+to True THEN `ensures` stabilizes to True at `result = r`. This is
 sound for a DEC-VALID (terminating) registry by the supporting lemma `stabilization_exists_for_dec_
 bounded` (SHIPPED with genuine content, #241: under `RegistryTerminating := ∃ v, Converges`, the
 agreement lemma `converges_imp_stabilizes` yields genuine `stabilizes` — a divergent registry, having
-no `Converges` witness, no longer discharges it): because the source `dec` measure makes every
+no `Converges` witness, no longer discharges it): because the source `measures` measure makes every
 spec-fn's recursion well-founded — a property the REGISTRY-TERMINATION class (REQ-1.2) DISCHARGES
 rather than assumes — each
-`specCall` reachable from `req`/`ens`/the body/the dec measures — the FULL `calledSpecFns(item)`
+`specCall` reachable from `requires`/`ensures`/the body/the measures measures — the FULL `calledSpecFns(item)`
 full-expression-position transitive closure the
 hard gate populates `R_item` with (#226) — has a FINITE unfolding depth PER ENV, so
 `intVal`/`denote` reach a fixed value at some finite per-env `N` and STAY there — the stabilized value
@@ -1276,7 +1302,7 @@ recorded (an env with |xs| > any fixed fuel) is no longer a falsifier — that e
 `N`. The Int-bottom (`intVal`'s `0` arm) and the Prop-bottom (`denote`'s `True` arm) live ONLY at
 fuels BELOW `N` — below the per-env stabilization threshold — and the stabilized value is by
 definition the value at fuels `≥ N`, so the bottom arms NEVER touch the stabilized value the
-obligation quantifies over (for `req`/`ens` OR for the body's `r`). (Contrast:
+obligation quantifies over (for `requires`/`ensures` OR for the body's `r`). (Contrast:
 the retired ∀-fuel form quantified over fuels BELOW `N` too, which is exactly where the `0`/`True`
 bottoms made a correct item's conjunct false — the bug `PinIntBottom.lean` disproves; and the cycle-3
 unbound-`rbody` form rendered the body at the hint fuel, where the body's `0`-bottom certified a wrong
@@ -1345,7 +1371,7 @@ shape the z3-demotion PoC discharges. This is the bridge §6 tier (a) builds on.
 **BUILD-BLOCKER NOTE (the #204-chain amendment, NOT a new issue — #213/#214/#215/#216/#226 fixes).**
 The full-expression-position closure (`calledSpecFns(item)` seeded by `req ∪ ens ∪ body ∪ dec(item)`,
 stepped over each reached spec-fn's `body ∪ dec`) and the `specCallFree` predicate ranging over the
-SAME positions (the dec clauses included where the termination tier applies, §6.1(a)) are the #226
+SAME positions (the measures clauses included where the termination tier applies, §6.1(a)) are the #226
 correction — owned by the SAME #204 chain (the forge-closure mirror is recorded as a named
 increment-(i) work item in the header build-blockers block; the spine-side prerequisites below stay
 increment (ii)). The
@@ -1412,13 +1438,13 @@ mechanisms, belt-and-suspenders:
    refuses to write the Lean file — if `calledSpecFns(item) ⊄ dom(R_item)`. This is a mechanical
    check at export time. **`calledSpecFns(item)` is defined (the #226 fix, completing #224) by the
    FULL EXPRESSION-POSITION PRINCIPLE: EVERY expression the export denotes against `R_item` — the
-   clauses (`req`, `ens`), the body, AND all termination measures (the item's `dec` and each reached
-   spec-fn's `dec`) — contributes its spec-calls, transitively. Concretely the SEED is
+   clauses (`requires`, `ensures`), the body, AND all termination measures (the item's `measures` and each reached
+   spec-fn's `measures`) — contributes its spec-calls, transitively. Concretely the SEED is
    `req ∪ ens ∪ body ∪ dec(item)` and the closure STEP walks each reachable spec-fn's `body ∪ dec`;
-   the set is closed under "a reachable spec-fn's OWN body or OWN dec measure may call further
+   the set is closed under "a reachable spec-fn's OWN body or OWN measures measure may call further
    spec-fns," so it is the transitive closure of the call relation seeded by that union** (not
    `req ∪ ens` only — the cycle-2 scope; nor `req ∪ ens ∪ body` only — the cycle-5 body-only scope,
-   which the #226 finding made unsound: a `dec`-VALIDITY obligation DENOTES the measure against
+   which the #226 finding made unsound: a `measures`-VALIDITY obligation DENOTES the measure against
    `R_item`, and an omitted measure-called spec-fn bottoms to the `intVal` Int-bottom `0`, so a
    non-well-founded source measure denotes to a fake-descending one and REGISTRY-TERMINATION falsely
    discharges — `lean/Thermite/PinDecMeasure.lean`'s `closure_measure_strictly_descends` vs
@@ -1426,7 +1452,7 @@ mechanisms, belt-and-suspenders:
    body-called spec-fn opened — it STABILIZES to the Int-bottom `0`, uniqueness forces `r = 0`, and a
    wrong contract `ens: result == 0` certifies kernel-clean,
    `lean/Thermite/PinBodyRegistry.lean`'s `wrong_contract_certifies_under_body_omission`). Including
-   the body AND every `dec` measure — transitively — in the reachability set is what closes both
+   the body AND every `measures` measure — transitively — in the reachability set is what closes both
    holes: the body-called or measure-called spec-fn is now in `calledSpecFns(item)`, so an omission
    FAILS this gate. Because the theorem holds `specs := R_item` fixed and carries NO resolution
    premise, an omission cannot self-certify a vacuous obligation: an unbuildable export is a hard
@@ -1448,7 +1474,7 @@ mechanisms, belt-and-suspenders:
 `lean/Thermite/PinBodyRegistry.lean` (the #224 oracle) is the kernel-checked regression oracle for the
 BODY reach of the `req ∪ ens ∪ body ∪ dec(item)` reachability definition, and
 `lean/Thermite/PinDecMeasure.lean` (the #226 oracle, see §1.2) is the kernel-checked regression oracle
-for the MEASURE-POSITION reach (the `dec` clauses), both against the
+for the MEASURE-POSITION reach (the `measures` clauses), both against the
 shipped spine (their `stabilizes`/`stabilizesProp` are copied VERBATIM from the §4 definition block):
 - **the omitted-registry form must be UNREACHABLE through the gate.** The pin's
   `wrong_contract_certifies_under_body_omission` discharges `ens: result == 0` for an item whose body
@@ -1469,7 +1495,7 @@ shipped spine (their `stabilizes`/`stabilizesProp` are copied VERBATIM from the 
   gate's old `req ∪ ens`-only scope, exactly what the #224 redefinition closes. (The pin is the
   critic's audit artifact and is NOT touched by this doc.)
 - **the dec-MEASURE-position omission must be UNREACHABLE through the gate (the #226 direction).**
-  `PinDecMeasure.lean`'s measure `x - t(x)` calls `t` from a `dec` position ONLY. Under the cycle-5
+  `PinDecMeasure.lean`'s measure `x - t(x)` calls `t` from a `measures` position ONLY. Under the cycle-5
   `req ∪ ens ∪ body` body-only `calledSpecFns`, `t ∉ R_item`, the dec-position `t(x)` bottoms to `0`,
   and the measure denotes `x` — STRICTLY DESCENDING (`closure_measure_strictly_descends`) while the
   SOURCE measure `x - x = 0` is constant and never descends (`true_measure_never_descends`), so a
@@ -1500,11 +1526,11 @@ REGISTRY-TERMINATION guarantees TERMINATION (REQ-1.2); EXP inspection guarantees
 **§4 SCOPE — this sketch covers increment (ii)'s PURE-CONTRACT items ONLY (the #212 fix).** The
 stabilized form above types and is sound for exactly ONE class: PURE-CONTRACT items — defined
 precisely as items whose body is a PURE EXPRESSION denoting in `intVal` (the `S_C` domain), so the
-result `r` is an `Int` that binds via `Env.bindInt` after stabilization. For these items, `req`,
-`ens`, and the body all live in `S_C`, the `Env` is the right structure, and `stabilizesProp` /
+result `r` is an `Int` that binds via `Env.bindInt` after stabilization. For these items, `requires`,
+`ensures`, and the body all live in `S_C`, the `Env` is the right structure, and `stabilizesProp` /
 `stabilizes` are the right relations. The FULL exec-body bridge — binding a body that denotes in the
 BOUNDED `S_E`/`S_B` domain (`bodyDenote : Block → State → Option ExecVal`, `Exec/Stmt.lean`) into a
-contract `ens` over `Env` — is NOT part of this increment-(ii) class. It is increment (iv)'s
+contract `ensures` over `Env` — is NOT part of this increment-(ii) class. It is increment (iv)'s
 OWN design obligation, DESIGNED in §4.1 (build blocker #253). The doc STOPS presenting a unified
 S_C×S_E sketch it cannot type — §4.1 is the TYPED bridge.
 
@@ -1531,7 +1557,7 @@ sort is an exec int (`u8/u16/u32/u64/usize` → the §4.1.1 `BVal.value` bridge)
 §4.1.2 `bindBool` bridge). LOOPS are OUT (§4.1.7 — `Exec/Stmt.lean` has NO loop `Stmt` form,
 "LOOPS are EXPLICITLY OUT (increment 2c, #163)"; `Exec/Loop.lean`'s `loopDenote`/`while_rule` is a
 SEPARATE artifact NOT composed into `bodyDenote`). Option/Result-typed RESULTS are OUT (§4.1.3,
-blocker #254). The contract side is UNCHANGED: `req`/`ens` keep the §4 stabilized/fuel-free forms
+blocker #254). The contract side is UNCHANGED: `requires`/`ensures` keep the §4 stabilized/fuel-free forms
 over `R_item` (the hard gate, the §6.1 tiers, REGISTRY-TERMINATION all apply VERBATIM — a
 straight-line body's `ExecExpr`s CANNOT contain spec-calls, so the body contributes ∅ to the #226
 `calledSpecFns` seed and the gate/tier reconciliation is unperturbed). The SHIPPED pure-contract
@@ -1544,7 +1570,7 @@ form; the bridge form below applies to bodies WITH statements (or with an exec-b
 the load-bearing exec fidelity the spine already proves — "THE VALUE IS THE MATHEMATICAL RESULT
 GIVEN NO OVERFLOW — never a wrap, never a nat-coercion" (`evalArith`, `Exec.lean`). So for an
 int-sorted result the bridge is the IDENTITY on the mathematical value: the antecedent binds
-`r : BVal` and the consequent denotes `ens` at `Env.bindInt env "result" r.value`. NOTHING ELSE:
+`r : BVal` and the consequent denotes `ensures` at `Env.bindInt env "result" r.value`. NOTHING ELSE:
 no `Int.toNat` clamp (the `nat_coercion_underflow_breaks_soundness` bug class, already a proven
 negative lemma in `Exec.lean`), no `% bound` re-wrap (the identity on in-range values, but a
 NARROWER-width wrap TRUNCATES — pinned, §4.1.6), no two's-complement reinterpretation (the exec
@@ -1569,7 +1595,7 @@ pieces —
   2. `def Env.bindBool (env : Env) (name : String) (b : Bool) : Env := { env with bools := fun s
      => if s = name then b else env.bools s }` — the `Env.bindInt` mirror.
   3. A new contract-AST leaf `Expr.boolVar (name : String)` — the bool-sorted free-name read the
-     `ens` needs to mention a bool `result`. Its arms, enumerated (a new `Expr` constructor
+     `ensures` needs to mention a bool `result`. Its arms, enumerated (a new `Expr` constructor
      touches the WHOLE mutual family — this is the honest blast radius, mechanical because the
      leaf is fuel-free and subterm-free): `denote`: `| _, Expr.boolVar x, env => (env.bools x =
      true)` (the `boolLit` arm's shape); `intVal`: NO new arm — the existing bool-sorted catch-all
@@ -1584,7 +1610,7 @@ pieces —
      (ii)'s `Stabilize.lean` layer (#240): the build lands it FIRST, kernel-green with the
      standard axiom set and every existing pin still compiling, BEFORE the exporter targets it.
   4. The exporter then NARROWS `NonIntResult`: a `-> bool` straight-line item exports with the
-     `.bool` antecedent (§4.1.5) and `ens` denoted at `env.bindBool "result" b`, reading `result`
+     `.bool` antecedent (§4.1.5) and `ensures` denoted at `env.bindBool "result" b`, reading `result`
      as `Expr.boolVar "result"`.
 
 **(§4.1.3) The optres binding — recorded OUT of (iv) v1 (blocker #254), with the target form
@@ -1679,13 +1705,13 @@ theorem item_xyz :
     InRangeParams v →                                        -- the typed-input premise (§4.1.4)
     ∀ (r : Thermite.Exec.BVal),
     bodyConverges body_block (stateOf v) (.int r) →          -- the HYPOTHESIZE antecedent
-    stabilizesProp req env →                                 -- reqStable (§4, unchanged)
-    stabilizesProp ens (Env.bindInt env "result" r.value)    -- ensStable at the BVal.value bridge
+    stabilizesProp requires env →                                 -- reqStable (§4, unchanged)
+    stabilizesProp ensures (Env.bindInt env "result" r.value)    -- ensStable at the BVal.value bridge
 ```
 
 (bool-result: `∀ (b : Bool), bodyConverges body_block (stateOf v) (.bool b) → … → stabilizesProp
-ens (env.bindBool "result" b)`.) The clause positions keep the §4/§6.1 tier machinery VERBATIM —
-a specCall-free `req`/`ens` exports the fuel-free `denote 0` shape (tier (a)); a recursive
+ensures (env.bindBool "result" b)`.) The clause positions keep the §4/§6.1 tier machinery VERBATIM —
+a specCall-free `requires`/`ensures` exports the fuel-free `denote 0` shape (tier (a)); a recursive
 registry marks the clause side interactive (tier (c)); the BODY antecedent is ALWAYS fuel-free.
 The parallelism with §4's pure-contract form is exact: there the result is bound THROUGH
 `stabilizes body_expr env r` (uniqueness of stabilization forces the true value, #214); here it is
@@ -1721,7 +1747,7 @@ witness), kept compiling as the regression oracle. The four the build MUST pin:
     binding the SIGNED reinterpretation (`if r.value ≥ 2^63 then r.value − 2^64 else r.value`) or
     a NARROWER-width re-wrap (`r.value % 2^32`) in place of `BVal.value` lets a WRONG contract
     certify at a witness (a body converging to `.int ⟨.u64, 2^64 − 1⟩`: the signed mis-read binds
-    `−1` and `ens result < 0` discharges; the faithful bridge binds `2^64 − 1` and REFUTES it).
+    `−1` and `ensures result < 0` discharges; the faithful bridge binds `2^64 − 1` and REFUTES it).
     Both directions pinned: the poisoned discharge AND the faithful refutation.
   - **`PinExecBoolBind.lean` (the bool-result mis-bind).** A mis-bind that DROPS the bind (the
     consequent reads the DEFAULTED `Env.bools` `false` regardless of the body's `.bool true`
@@ -1731,8 +1757,8 @@ witness), kept compiling as the regression oracle. The four the build MUST pin:
     bind must be genuine".)
   - **`PinExecOverflowVacuity.lean` (the overflow-vacuity escape).** A body that ALWAYS overflows
     under the precondition (the `body_overflow_rhs_has_no_result` shape — `let a = m + m` with a
-    `req` forcing `m` at the `u64` rim) makes the CONTRACT obligation vacuously kernel-accept WITH
-    A FALSE `ens` — AND the pin proves the conjoined OVERFLOW obligation REFUTED at the same env.
+    `requires` forcing `m` at the `u64` rim) makes the CONTRACT obligation vacuously kernel-accept WITH
+    A FALSE `ensures` — AND the pin proves the conjoined OVERFLOW obligation REFUTED at the same env.
     This is the certificate-level conjunction's regression oracle (the Pin B shape): the vacuous
     CONTRACT discharge must stay UNREACHABLE as a certificate, blocked by the failing OVERFLOW
     class.
@@ -1787,8 +1813,8 @@ stabilization (Pin B's `divergent_contract_certifies`) can never reach a certifi
 **Resolution of #212(b) — the Option position takes the HYPOTHESIZE form.** `bodyDenote` is `none`
 exactly when an exec obligation fails (overflow / div-by-zero / out-of-bounds). The exec-body
 obligation (increment (iv)) takes the HYPOTHESIZE position — `bodyStabilizes v = some r → ensStable(r)`
-(i.e. IF the body produces a result `r`, THEN `ens` stabilizes to True at `r`). The vacuous-on-overflow
-case (an always-overflowing body satisfies `ens` vacuously because `bodyDenote = none` makes the
+(i.e. IF the body produces a result `r`, THEN `ensures` stabilizes to True at `r`). The vacuous-on-overflow
+case (an always-overflowing body satisfies `ensures` vacuously because `bodyDenote = none` makes the
 antecedent false) is SOUND precisely because the OVERFLOW class is MANDATORILY conjoined per the
 conjunction rule above: an always-overflowing body FAILS its OVERFLOW class, so the item does not
 certify regardless of the vacuously-satisfied CONTRACT class. The HYPOTHESIZE form is therefore safe —
@@ -1896,7 +1922,7 @@ abbrev whileBodyConverges (prefix : Block) (cond : ExecExpr) (lbody : Block)
    r₁ = r₂` (the `stabilizes_unique` mirror: overlap-at-max via fuel-mono, then the functional
    `blockThread`/`execDenote` + `Option.some.injEq`). Binding `r` through the ∃-fuel relation is
    thereby well-defined — the exporter computes NO value; the relation forces the true one.
-5. **`while_compose`** — the loop-exit-to-ens composition lemma (the bridge wrapping the
+5. **`while_compose`** — the loop-exit-to-ensures composition lemma (the bridge wrapping the
    straight-line prefix/tail segments AROUND `while_rule`):
 
 ```
@@ -1968,20 +1994,20 @@ pin position.
 **(§4.2.3) TERMINATION HONESTY — the DECISION (the REQ-1.2 mirror; resolves REQ-7's two-branch
 policy for the export path).** The forcing ground: `loopDenote` is `none` at exhausted fuel, so
 for a NON-EXITING loop (a `while true`-shaped body) `whileBodyConverges` is FALSE at every `r` —
-the HYPOTHESIZE CONTRACT obligation is then VACUOUSLY provable with a FALSE `ens` (the
+the HYPOTHESIZE CONTRACT obligation is then VACUOUSLY provable with a FALSE `ensures` (the
 termination twin of the §4.1.5 overflow vacuity). Something conjoined MUST fail for that item, or
 the Lean-only path silently certifies a non-terminating body. **THE DECISION:** increment (v)
 exports a conjoined CONVERGENCE theorem (`<thm>_converges`, §4.2.4) — under `InRangeParams` +
-`req`, the whole body CONVERGES (`∃ r, whileBodyConverges …`). This single obligation JOINTLY
+`requires`, the whole body CONVERGES (`∃ r, whileBodyConverges …`). This single obligation JOINTLY
 discharges the item's OVERFLOW and TERMINATION classes (REQ-1's enum): `whileBodyDenote = some` at
 some fuel means NO failure anywhere on the executed path (prefix, every iteration, tail — every 2a
 obligation) AND the loop exits. It is discharged via `loopDenote_exits_of_dec` from the per-item
 `_pres`/`_progress`/`_dec` obligations — dec-validity DISCHARGED, never assumed: the REQ-1.2
 two-path discipline with path (b), the engine-#2 discharge, as the ONLY admitted path on the Lean
-route. TWO alternatives are REJECTED, with grounds: (1) "the `dec` residual stays
+route. TWO alternatives are REJECTED, with grounds: (1) "the `measures` residual stays
 Verus-discharged" — on `--engine lean` Verus NEVER runs, and on `auto` a Verus attempt that
 reached Lean returned ONE item-level `Unknown` (`classify_verus_outcome` is item-granular — there
-is NO per-class dec evidence to credit); attributing the TERMINATION class to an engine that
+is NO per-class measures evidence to credit); attributing the TERMINATION class to an engine that
 produced no evidence would falsify the REQ-4 trust profile. (2) a PARTIAL-CORRECTNESS-marked L3
 (the alternative REQ-7 sketched) — REJECTED for the export path: the partial claim is VACUOUSLY
 satisfiable by exactly the non-terminating item it would be stamped on, §6's `Level` has no
@@ -2001,14 +2027,14 @@ REUSED for `prefix_block`/`loop_cond`/`loop_block`/`tail_expr` — plus TWO NEW 
 
 - **`Inv_item : Thermite.Env → State → Prop`** — the invariant denotation, FOUR conjunct families
   (the `l1Inv` precedent, which already states the why: "the type-range fact the Verus obligation
-  gets for free must be stated"): (1) the USER `inv` clauses denoted SHALLOWLY over cells
+  gets for free must be stated"): (1) the USER `keeps` clauses denoted SHALLOWLY over cells
   (`execIntValue (st.env.vars "lo") ≤ …` — the Lean mirror of loop-TV's `encode_inv_clauses`);
   (2) per-cell SORT/WIDTH/RANGE facts for every scalar cell the cond/body/invs read (what
   `h_cond_total`/`h_progress` need to decode `asInt`); (3) FRAME conjuncts — each param and
   un-assigned cell equals its `stateOf v` value (what ties the exit state's param reads back to
-  the `ens`'s `v.ints x` reads; the loop-TV havoc-cells+frame shape, denoted); (4) SCOPE facts —
+  the `ensures`'s `v.ints x` reads; the loop-TV havoc-cells+frame shape, denoted); (4) SCOPE facts —
   each loop-assigned cell is in scope (what `Stmt.assign`'s scope guard needs for progress).
-- **`mu_item : State → Int`** — the loop `dec` clause denoted over cells by the same shallow
+- **`mu_item : State → Int`** — the loop `measures` clause denoted over cells by the same shallow
   cell-read encoder (faithfulness is the EXP row argued at §4.2.2 — a completeness concern, not a
   soundness seam).
 
@@ -2017,7 +2043,7 @@ by the (v) loop battery: **`<thm>_entry`** (LOOP-ENTRY: under `InRangeParams` + 
 `∃ st₁, blockThread prefix_block (stateOf v) = some st₁ ∧ Inv_item v st₁` — prefix progress AND
 invariant entry); **`<thm>_pres`** (LOOP-PRESERVATION: `while_rule`'s `h_pres`, verbatim, over
 `Inv_item v`); **`<thm>_exit`** (LOOP-EXIT→ens: `∀ st, Inv_item v st → condBool loop_cond st =
-some false → ∃ r, execDenote tail_expr st.env = some r ∧ Thermite.denote 0 ens (bindResult … r)`
+some false → ∃ r, execDenote tail_expr st.env = some r ∧ Thermite.denote 0 ensures (bindResult … r)`
 — the loop-TV EXIT obligation's opaque-but-invariant-constrained shape, the tail's own 2a
 obligation riding in the `∃ r`); **`<thm>_progress`** (cond-totality + per-iteration body
 progress under `Inv ∧ cond`); **`<thm>_dec`** (TERMINATION: strict bounded-below descent of
@@ -2031,7 +2057,7 @@ theorem <thm> (v : Thermite.Env) :                        -- the HYPOTHESIZE CON
   Thermite.Exec.whileBodyConverges prefix_block loop_cond loop_block tail_expr
       (stateOf v) (.int r) →
   Thermite.denote 0 req { v with specs := R_item } →
-  Thermite.denote 0 ens (Thermite.Exec.bindResult { v with specs := R_item } (.int r))
+  Thermite.denote 0 ensures (Thermite.Exec.bindResult { v with specs := R_item } (.int r))
   -- proof: while_compose (_entry, _pres) + _exit + the functional execDenote (r forced);
   -- a bool result is ∀ (b : Bool), … (.bool b) → … — the §4.1.2 bindBool bridge
 
@@ -2048,11 +2074,11 @@ TIER + BATTERY: the contract clause side keeps the §6.1 tiers (a)/(b) — a rec
 clause refuses to the interactive residual exactly as (iv)'s `export_straight_line_body` does
 today. The FIVE loop obligations are attempted by a NEW loop battery (the
 `exec_body_tactic_battery` sibling): intro the premises; unfold `Inv_item`/`mu_item`/`condBool`/
-`blockThread`/`stmtDenote`/`execDenote`/`State.setVar`/`evalArith` AND the `req` denotation
+`blockThread`/`stmtDenote`/`execDenote`/`State.setVar`/`evalArith` AND the `requires` denotation
 (`hreq` joins the unfold set — the mechanism the iv-b residual (a) lacks, which makes (v) its
 named vehicle); close by `first | decide | omega | simp_all | (simp_all; omega)`. EXPECTED
 COVERAGE, stated honestly (the iv-b exportable-wider-than-dischargeable precedent): the LINEAR
-corpus shapes (the L1 family `while lo < n inv lo <= n dec n - lo { lo = lo + 1 }` — `omega`
+corpus shapes (the L1 family `while lo < n keeps lo <= n measures n - lo { lo = lo + 1 }` — `omega`
 closes all five after unfolding) auto-discharge; nonlinear invariants/measures and bodies needing
 deeper case splits DEGRADE to `Verdict::Unknown` (fail-to-certify, SOUND — the REQ-3 discipline;
 the REQ-7 interactive path is the close). The composed theorems carry no such risk (fixed proofs).
@@ -2067,29 +2093,29 @@ anywhere in `lbody` or the prefix, including under a `Stmt::If` branch (the loop
 one loop; `Stmt::Break` / `Stmt::Continue` ("a loop-control statement; S_B has no loops");
 `Stmt::Return(_)` mid-body ("S_B has no early return — the body's result is its tail"); a
 non-scalar assign target ("S_B mutates only a bare scalar cell; `xs[i]=e` / `m.field=e` is OUT");
-empty `invs` / the trivially-weak `inv true` (the loop-TV reject) / a tail-less body; a
-spec-calling or combinator `inv`/`dec` clause (the §4.2.1 v1 residual); an Option/Result result
+empty `invs` / the trivially-weak `keeps true` (the loop-TV reject) / a tail-less body; a
+spec-calling or combinator `keeps`/`measures` clause (the §4.2.1 v1 residual); an Option/Result result
 (`ExportRefusal::OptResResult`, #254). Whether the build mints sibling `ExportRefusal` variants
 or richer `LoopBody` detail strings is a build detail; the REQUIREMENT is structured + named,
 reported via the `LeanUnverifiable` path — never silent, never an attempt to denote what the
 spine does not model. NEXT-INCREMENT POINTER: increment (vi) (§4.3/REQ-12, blocker #272,
 NOT-STARTED) is DESIGNED to narrow this inventory's three heaviest entries — the
 `loop`-kind-with-guard-returns, the top-level guard `Stmt::Return`, and the int-payload
-Option/Result result — plus the combinator-`inv` residual; until it ships every entry above keeps
+Option/Result result — plus the combinator-`keeps` residual; until it ships every entry above keeps
 refusing exactly as enumerated here (`break`/`continue` and the rest stay OUT even after (vi)).
 
 **(§4.2.6) The kernel pins (named per divergence position; the build/critic authors them — the
 §4.1.6 precedent; per R-CHAR-3 this design names WHAT each must cover, never its content).**
 - **`PinWhileVacuity.lean` (the termination-vacuity escape — the conjunction oracle).** A
   non-exiting loop (`condBool` constantly `some true`) makes `whileBodyConverges` FALSE at every
-  `r`, so a FALSE-`ens` CONTRACT obligation discharges VACUOUSLY — and the pin proves the
+  `r`, so a FALSE-`ensures` CONTRACT obligation discharges VACUOUSLY — and the pin proves the
   conjoined CONVERGENCE obligation REFUTED (`¬ ∃ r, …`) at the same env. The
   `PinExecOverflowVacuity` shape one vacuity position over (fuel-exhaustion `none` instead of
   overflow `none`); the certificate-level conjunction must keep the vacuous discharge
   UNREACHABLE.
 - **`PinWhileComposition.lean` (the composition mis-map).** A `whileBodyDenote` variant that
   SKIPS the loop segment (prefix → tail directly) or iterates the WRONG block certifies a wrong
-  `ens` true only at the ENTRY value, where the faithful composition refutes it at the genuine
+  `ensures` true only at the ENTRY value, where the faithful composition refutes it at the genuine
   EXIT value (the L1 fixture's `lo = 0` entry vs `lo = 3` exit is the natural witness shape).
   Both directions pinned: the poisoned discharge AND the faithful refutation.
 The rule-level teeth already EXIST on the spine and are NOT re-pinned: `h_pres` is load-bearing
@@ -2111,7 +2137,7 @@ spine layer + the two pins land FIRST and ALONE: the §4.2.2 kernel bar (standar
 `sorryAx`, every existing theorem + pin green; `Thermite.lean` imports the new module). ONLY THEN
 (v-b) the exporter: `cargo test -p forge` + clippy/fmt green; the LIVE lake expectations are
 enumerated in the Verification section (the faithful L1-shaped item proves BOTH composed
-theorems; wrong-`ens` / non-preserved-`inv` / non-exiting-loop items do NOT certify; every §4.2.5
+theorems; wrong-`ensures` / non-preserved-`keeps` / non-exiting-loop items do NOT certify; every §4.2.5
 shape still refuses; the (iv) live tests unperturbed). Fixtures are hand-authored against that
 enumeration (R-CHAR-3), never regenerated from the exporter.
 
@@ -2175,13 +2201,13 @@ enumeration (R-CHAR-3), never regenerated from the exporter.
   **NOT-STARTED — increment (iii).**
 
 **TERMINATION (REQ-7).** The Lean engine's obligation set for a looping/recursive item MUST include
-the item's `dec` measure (the termination obligation class) — OR the certificate honestly records
+the item's `measures` measure (the termination obligation class) — OR the certificate honestly records
 PARTIAL-CORRECTNESS-ONLY for that item. This ties directly to `while_rule`'s `h_run` premise: the
 SHIPPED `while_rule` is partial correctness ("after-loop holds IF the loop EXITS"); termination is
-the per-run residual (the source `dec`). A Lean engine that proves preservation+exit but NOT
+the per-run residual (the source `measures`). A Lean engine that proves preservation+exit but NOT
 termination certifies partial correctness, and the certificate must SAY so (it cannot silently claim
 L3-total). **And, distinctly, the REGISTRY-TERMINATION class (REQ-1.2):** the item's spec-fn registry
-`R_item` carries a per-spec-fn well-foundedness obligation that the `dec` measure VALIDLY descends —
+`R_item` carries a per-spec-fn well-foundedness obligation that the `measures` measure VALIDLY descends —
 discharged by Verus's dec-check (the common path) or a Lean well-foundedness proof (the engine-#2
 path), conjoined item-wide. This is the registry analogue of the item's own `while_rule` termination,
 and is what keeps the stabilized form sound (a divergent registry fails it; §1.2). **NOT-STARTED —
@@ -2217,20 +2243,20 @@ for a value to escape mid-block. The motivating program, quoted in full
 
 ```
 fn binary_search(haystack: &[u32], needle: u32) -> Option<usize>
-  req sorted(haystack)
-  ens match result {
+  requires sorted(haystack)
+  ensures match result {
         Some(i) => i < haystack.len() && haystack[i] == needle,
         None    => forall_in(haystack, |x| x != needle),
       }
-  fx  pure
+  !  pure
 {
   let mut lo: usize = 0;
   let mut hi: usize = haystack.len();
   loop
-    inv lo <= hi && hi <= haystack.len()
-    inv forall_below(haystack, lo, |x| x < needle)
-    inv forall_from(haystack, hi, |x| x > needle)
-    dec hi - lo
+    keeps lo <= hi && hi <= haystack.len()
+    keeps forall_below(haystack, lo, |x| x < needle)
+    keeps forall_from(haystack, hi, |x| x > needle)
+    measures hi - lo
   {
     if lo == hi { return None; }
     let mid = lo + (hi - lo) / 2;
@@ -2244,17 +2270,17 @@ ITS ACTUAL SHAPE, read off the source: BOTH early returns are INSIDE the loop bo
 top-level GUARD form (`if g { return re; }` — a then-block containing exactly the return, no
 `else`); there is NO prefix return and NO tail (the body's last statement is the loop; the
 function never falls through it); the loop is the `loop`-KIND (`LoopKind::Loop`, not
-`While(cond)`) with non-empty `invs` + `dec`; the result is `Option<usize>`. So `binary_search`
+`While(cond)`) with non-empty `invs` + `measures`; the result is `Option<usize>`. So `binary_search`
 trips THREE stacked body-side exclusions, not one: (1) the `loop`-kind refusal (whose recorded
 reason IS the multi-exit CPS shape — `recognize_v1_loop`: "the corpus `binary_search` uses `loop {
 if .. { return .. } }`"), (2) the mid-body `Stmt::Return(_)` refusal, and (3) the Option-typed
 result (`ExportRefusal::OptResResult`, #254) — PLUS the (v) §4.2.1 combinator-invariant residual
 (invs 2 and 3 are `forall_below`/`forall_from`, which `encode_cell_prop` refuses). The review's
 "brings `binary_search` into the fragment" framing is therefore CORRECTED here: increment (vi) is
-DESIGNED to remove all three body-side exclusions AND the combinator-inv residual TOGETHER (they
+DESIGNED to remove all three body-side exclusions AND the combinator-keeps residual TOGETHER (they
 are one mechanism deep — see below), which makes `binary_search` EXPORTABLE; AUTO-L3 is NOT
 claimed (§4.3.4, the honesty bar). Meanwhile its CONTRACT side is ALREADY fully in the shipped
-`S_C` fragment: `sorted`/`forall_in` are frozen combinators, and the `ens match result { Some(i)
+`S_C` fragment: `sorted`/`forall_in` are frozen combinators, and the `ensures match result { Some(i)
 => …, None => … }` denotes via the #180 fragment (`Expr.optResVar`/`Expr.match_`/`OptResVal`,
 `Env.optres` — `lean/Thermite/{Ast,Denote}.lean`; the forge encoder's `encode_match` already
 emits it). EVERY missing piece is body-side — which is exactly why this one widening carries the
@@ -2282,12 +2308,12 @@ result  := int | bool | Option/Result WITH int-sorted payload (non-int payloads 
 inv     := the (v) scalar shallow fragment, WIDENED: a specCall-FREE combinator/quantifier
            clause (cmp/arith/logic/comb over cells + params + slice params) denotes via the
            SHIPPED contract `denote 0` over the generator-emitted `envOfCells` (§4.3.4); a
-           spec-CALLING inv/dec still refuses (Inv_item stays fuel-free)
+           spec-CALLING inv/measures still refuses (Inv_item stays fuel-free)
 dec     := the (v) scalar shallow fragment (unchanged)
 ```
 
 `binary_search` against this grammar, statement by statement: prefix = two scalar `let`s (IN,
-(iv) subset); `loopR` = the Loop-kind with 3 invs + `dec hi - lo` (IN — inv 1 scalar-shallow,
+(iv) subset); `loopR` = the Loop-kind with 3 invs + `measures hi - lo` (IN — keeps 1 scalar-shallow,
 invs 2/3 specCall-free combinators via the widening); `gbody` = guard(`lo == hi`, `None`) ·
 plain-let(`mid`) · guard(`haystack[mid] == needle`, `Some(mid)`) · plain-ifElse(scalar assigns)
 (IN — both returns top-level guards); tail absent + ≥1 guard (IN for Loop-kind); result
@@ -2416,7 +2442,7 @@ def Env.bindOptRes (env : Env) (x : String) (o : OptResVal) : Env :=    -- Denot
 def bindResultR (env : Thermite.Env) (rv : RetVal) : Thermite.Env :=    -- the new module
   | .plain v  => bindResult env v          -- the SHIPPED (iv) bridge, reused VERBATIM
   | .optres o => Thermite.Env.bindOptRes env "result" o
-  -- the ens reads `result` as Expr.optResVar "result" via the SHIPPED #180 match_/is_ arms;
+  -- the ensures reads `result` as Expr.optResVar "result" via the SHIPPED #180 match_/is_ arms;
   -- the payload binder (`Some(i) => …`) binds via the SHIPPED Env.bindInt in denoteArms
 ```
 
@@ -2480,7 +2506,7 @@ at RECOGNITION (no exit path — never exported-to-fail, the refusal is structur
 untouched.** #254's recorded blocker is "`ExecVal` is `int (BVal) | bool (Bool)` — no
 Option/Result variant to bridge". (vi) does NOT add one: the option shape lives in the RETURN
 layer's `RetVal.optres` over the SHIPPED contract `OptResVal` (`Denote.lean`, #180) — the value
-crosses to the contract side via `Env.bindOptRes env "result" o`, and the `ens`'s `match
+crosses to the contract side via `Env.bindOptRes env "result" o`, and the `ensures`'s `match
 result`/`is` arms denote via the SHIPPED `denoteArms` machinery with the payload bound through
 the SHIPPED `Env.bindInt`. The payload crosses on the §4.1.1 identity bridge (`BVal.value` — no
 clamp, no wrap, no signed reinterpretation; `PinOptResultBind` pins the mis-bridge). RESIDUE,
@@ -2490,7 +2516,7 @@ PARAMS/locals stay OUT behind #254 (`ExportRefusal::OptResResult`, narrowed in d
 
 **(d) Where the multi-exit obligation weight lands — one `_ret_k` PER RETURN SITE.** The CONTRACT
 theorem now has TWO exit path FAMILIES (fall-through-to-tail; return-at-guard-k), and EVERY
-return site must imply `ens`. The design refuses to fold the return sites into one obligation
+return site must imply `ensures`. The design refuses to fold the return sites into one obligation
 (a disjunctive premise would make the auto battery's failure diagnostics useless and the
 interactive proofs monolithic): the generator emits ONE `_ret_k` obligation per guard, each
 stated over the guard's OWN reach condition (§4.3.4) — so a wrong `return Some(mid)` fails
@@ -2505,7 +2531,7 @@ gate — a (vi) loop still contributes ∅ new spec-calls, the #226 closure unto
 statements/conds/tails; `mu_item` unchanged), PLUS:
 
 - **`Inv_item` — the COMBINATOR-INVARIANT widening (the (v) §4.2.1 residual's named vehicle).**
-  Conjunct family (1) gains a second form: a specCall-FREE combinator/quantifier inv clause
+  Conjunct family (1) gains a second form: a specCall-FREE combinator/quantifier keeps clause
   denotes as `Thermite.denote 0 <enc(inv)> (envOfCells v st)` — the SHIPPED `S_C` comb arms do
   the quantifier work; soundness of the fuel-0 form is the shipped tier-(a) fuel-irrelevance
   argument (specCall-free). `envOfCells : Thermite.Env → State → Thermite.Env` is
@@ -2531,11 +2557,11 @@ theorem <thm>_ret_k (v : Thermite.Env) : InRangeParams v → reqStable →
     rblockThread gprefix_k st = some (.inl st') →     -- reached guard k: prior stmts threaded,
     condBool g_k st' = some true →                    --   prior guards FALSE; guard k FIRES
     ∃ rv, retDenote re_k st'.env = some rv
-        ∧ Thermite.denote 0 ens (bindResultR { v with specs := R_item } rv)
+        ∧ Thermite.denote 0 ensures (bindResultR { v with specs := R_item } rv)
   -- the LOOP-EXIT class at the k-th exit; the return expr's own 2a obligation rides in the
-  -- ∃ rv (the `_exit` precedent). For binary_search: _ret_1 (lo == hi ⟹ ens at None — the
-  -- needle-absent case, discharged FROM invs 2+3 + inv 1 + sorted), _ret_2 (haystack[mid] ==
-  -- needle ⟹ ens at Some(mid) — the found case).
+  -- ∃ rv (the `_exit` precedent). For binary_search: _ret_1 (lo == hi ⟹ ensures at None — the
+  -- needle-absent case, discharged FROM invs 2+3 + keeps 1 + sorted), _ret_2 (haystack[mid] ==
+  -- needle ⟹ ensures at Some(mid) — the found case).
 ```
 
 - **The TWO composed theorems**, generator-FIXED as in §4.2.4: the HYPOTHESIZE CONTRACT theorem
@@ -2568,7 +2594,7 @@ named); a `Loop`-kind with ZERO guards (no exit path); a tail PRESENT on a `Loop
 non-int-payload return expr (#254 residue); `Stmt::Break`/`Stmt::Continue` (unchanged — `break`
 carries no value and exits only the LOOP, a different continuation than `return`'s; NOT
 subsumed by (vi)); nested loops; more than one loop; a loop in non-last position; non-scalar
-mutation; empty `invs`/`inv true`; a spec-CALLING inv/dec; optres params/locals. Each keeps the
+mutation; empty `invs`/`keeps true`; a spec-CALLING inv/dec; optres params/locals. Each keeps the
 structured `ExportRefusal` path (`LoopBody`/`OutOfFragment`/`OptResResult` detail strings — a
 build detail; the REQUIREMENT is structured + named, never silent).
 
@@ -2576,17 +2602,17 @@ build detail; the REQUIREMENT is structured + named, never silent).
 never its content).**
 - **`PinReturnShortCircuit.lean` (the threading mis-map — drop AND order).** A `rblockThread`
   variant that CONTINUES past a fired guard (models a return-dropping encoder) reaches the wrong
-  exit and certifies a wrong `ens`; a variant that evaluates guards in the WRONG ORDER (the
+  exit and certifies a wrong `ensures`; a variant that evaluates guards in the WRONG ORDER (the
   second guard's value where the source fires the first) certifies a wrong value. The faithful
   thread refutes both; both directions pinned (the `PinWhileComposition` shape at the new layer).
 - **`PinReturnVacuity.lean` (the never-returning escape — the conjunction oracle, third
   position).** A never-firing guard (`if false { return 0 }`) under a literal-true cond makes
-  `bodyConvergesR` FALSE at every `rv`, so a FALSE-`ens` CONTRACT obligation discharges
+  `bodyConvergesR` FALSE at every `rv`, so a FALSE-`ensures` CONTRACT obligation discharges
   VACUOUSLY — and the conjoined `_converges` is REFUTED at the same env (the
   `PinExecOverflowVacuity`/`PinWhileVacuity` lineage, fuel-exhaustion-by-no-exit).
 - **`PinOptResultBind.lean` (the optres mis-bridge).** A `bindResultR` variant that collapses the
-  variant (binds `None` as `some 0`, or drops the bind so the `ens` `match` reads the env's
-  default `OptResVal`) certifies a wrong `match`-shaped `ens`; the faithful bridge refutes (the
+  variant (binds `None` as `some 0`, or drops the bind so the `ensures` `match` reads the env's
+  default `OptResVal`) certifies a wrong `match`-shaped `ensures`; the faithful bridge refutes (the
   `PinExecValueBridge`/`PinExportBoolResult` lineage at the THIRD result sort).
 The rule-level teeth that already exist are NOT re-pinned (`l2_no_preservation_premise_for_buggy_
 body`, `l3_exit_overclaim_refuted`, the §4.2.6 pair); the degeneracy AGREEMENT lemmas (§4.3.2)
@@ -2667,10 +2693,10 @@ INTERACTIVE tier carries the `∃N∀fuel` form.
 
 - **(a) FUEL-FREE export for specCall-free obligations (AUTO).** When the obligation's `Expr`s are
   `specCallFree` (the common scalar-contract case — no spec-fn appears in any expression the export
-  denotes against `R_item`: `req`/`ens`/body AND every `dec` measure carried as a REGISTRY-TERMINATION
+  denotes against `R_item`: `requires`/`ensures`/body AND every `measures` measure carried as a REGISTRY-TERMINATION
   obligation for the item — i.e. `calledSpecFns(item) = ∅` under the #226 `req ∪ ens ∪ body ∪ dec(item)`
   full-expression-position definition; the `specCallFree` predicate the exporter computes must
-  therefore range over the SAME positions the closure does, the dec clauses INCLUDED where the
+  therefore range over the SAME positions the closure does, the measures clauses INCLUDED where the
   termination tier applies, so the gate and this tier stay reconciled — `calledSpecFns = ∅ ⟺
   specCallFree over {req, ens, body, dec}`), the
   exporter emits the FUEL-FREE statement `denote 0 e env` / `intVal 0 e env = …` rather than the
@@ -2795,7 +2821,7 @@ SHIPPED, #264 (the §4.2 while-body widening, increment (v)) — the v1 single-e
 5+2 obligation set; the post-v1 loop shapes stay OUT via the STRUCTURED `ExportRefusal::LoopBody`;
 Option/Result-typed RESULTS stay OUT behind #254 via `ExportRefusal::OptResResult`) and EXP
 registry-body faithfulness. The exec-body AUTO battery carries two COVERAGE residuals
-(`req`-bounded overflow; nested-`ifElse` `restoreScope` — both DEGRADE to Unknown, SOUND): see
+(`requires`-bounded overflow; nested-`ifElse` `restoreScope` — both DEGRADE to Unknown, SOUND): see
 REQ-10's Known-limitations note. For
 AUTO discharge specifically, the IN set NARROWS to the z3-demotion-reachable scalar/QF-linear core
 exported FUEL-FREE (§6 tiers (a)/(b): specCall-free goals via fuel-irrelevance, or non-recursive
@@ -2814,12 +2840,12 @@ exec-body export path (`ExportRefusal::OptResResult` — #254, `ExecVal` has no 
 recorded scope boundary of the loop-residual lineage, refused STRUCTURALLY, never silently); — of
 these OUT entries, the GUARD-RETURN multi-exit subset (the `loop`-kind WITH top-level `if g {
 return re; }` guards / guard returns inside a v1 while body / int-payload Option-Result RESULTS)
-plus the combinator-`inv` residual is now DESIGNED as increment (vi) (§4.3/REQ-12, NOT-STARTED
+plus the combinator-`keeps` residual is now DESIGNED as increment (vi) (§4.3/REQ-12, NOT-STARTED
 behind blocker #272; until it ships each keeps its structured refusal, and `break`/`continue`/
 nested-loops/non-scalar-mutation/non-int-payloads stay OUT even after it);
 open body holes (`?N` —
 short-circuited L0 before any engine); slag bodies (fiat-trusted, no engine); boundary items
-(foreign body, L1, no engine); divergent spec-fns (a non-well-founded `dec` — REJECTED by the
+(foreign body, L1, no engine); divergent spec-fns (a non-well-founded `measures` — REJECTED by the
 REGISTRY-TERMINATION class before any contract obligation is reached, §1.2). These remain OUT exactly
 as they are OUT of `S` today. The three §0.1
 meta/battery query classes (vacuity / equivalence / strengthen) are OUT of the Engine interface in v1
@@ -2914,7 +2940,7 @@ Per increment (this doc's own ACs are statement-completeness, discharged by revi
   transitive `calledSpecFns` puts the body-only spec-fn in `R_item`, so the gate refuses the
   omitted-registry form; `wrong_contract_fails_with_full_registry` shows the complete-registry
   obligation correctly REFUSES the wrong contract), AND `lean/Thermite/PinDecMeasure.lean` (the #226
-  measure-position oracle: a `dec`-position spec-call must put its callee in `calledSpecFns(item)` so
+  measure-position oracle: a `measures`-position spec-call must put its callee in `calledSpecFns(item)` so
   the descent obligation denotes the measure against the COMPLETE `R_item` —
   `closure_measure_strictly_descends` is the fake-descent a `t`-omitting `R_item` produces and must
   NOT be EXPORTABLE; `true_measure_never_descends` is the real source measure the extended closure
@@ -2922,13 +2948,13 @@ Per increment (this doc's own ACs are statement-completeness, discharged by revi
   pass). **A DIVERGENT spec-fn registry FAILS the REGISTRY-TERMINATION class** (#215/#226, REQ-1.2): a
   test
   asserts `f(x)=f(x)` is REJECTED before any contract obligation certifies AND that a spec-fn called
-  ONLY from a `dec` measure is in `R_item` so its measure is validity-checked against the real
+  ONLY from a `measures` measure is in `R_item` so its measure is validity-checked against the real
   registry (the regression oracles are
   `lean/Thermite/PinStabilization.lean` Pin B (`divergent_contract_certifies`) — that bottom-poisoned
   discharge must NOT reach a certificate, blocked by the conjunction rule — AND
   `lean/Thermite/PinDecMeasure.lean` Pin C (`closure_measure_strictly_descends` vs
   `true_measure_never_descends`) — the measure-position fake descent must NOT be exportable once the
-  closure ranges over the dec clauses).
+  closure ranges over the measures clauses).
 - **(iii):** an injected Proven⊕Refuted disagreement HALTS (a test asserting the alarm fires, not a
   favorable pick); a Verus fast-unknown + Lean Proven does NOT halt (REQ-3.1 guard); a mutant outside
   every engine's fragment is reported "untested," never counted as killed, and an item with
@@ -2939,13 +2965,13 @@ Per increment (this doc's own ACs are statement-completeness, discharged by revi
   with the standard axiom set (NO `sorryAx`), every existing pin still compiling. A straight-line
   item (the `Exec/Stmt.lean` B1/B2/B3 shapes — let-chain, ordered mutation, taken branch) exports
   and kernel-accepts BOTH the CONTRACT (HYPOTHESIZE) and the OVERFLOW theorems; the SAME body with
-  a WRONG `ens` is refuted/unprovable. The four §4.1.6 pins are authored kernel-checked: the
+  a WRONG `ensures` is refuted/unprovable. The four §4.1.6 pins are authored kernel-checked: the
   signed/truncating value mis-bridge, the dropped bool bind, the overflow-vacuity escape (its
   vacuous CONTRACT discharge UNREACHABLE as a certificate — the conjunction gate), and the
   env→State mis-map each diverge from the faithful form at a witness. The per-param `rfl`
   correspondence lemmas compile (a mis-map fails the build). A loop body refuses with the
   STRUCTURED loop refusal (never silent, never denoted); an Option/Result-result item refuses
-  behind #254. The iv-b audit's two auto-battery residuals (a `req`-bounded OVERFLOW conjunct; a
+  behind #254. The iv-b audit's two auto-battery residuals (a `requires`-bounded OVERFLOW conjunct; a
   nested-`ifElse` `restoreScope` denotation) DEGRADE to Unknown — fail-to-certify, never a false
   Proven (REQ-10's Known-limitations note). The Lean-only path certifies a straight-line item
   ONLY with BOTH theorems
@@ -2953,11 +2979,11 @@ Per increment (this doc's own ACs are statement-completeness, discharged by revi
   fragment-coverage tests over the full frozen subset, with the OUT set honestly Skipped.
 - **(v), #264 (the while-body widening):** the (v-a) spine layer lands FIRST and kernel-checks
   with the standard axiom set (NO `sorryAx`), every existing theorem + pin still compiling (the
-  iv-a gauntlet). Then (v-b): an L1-shaped faithful while item (`while lo < n inv lo <= n dec
+  iv-a gauntlet). Then (v-b): an L1-shaped faithful while item (`while lo < n keeps lo <= n dec
   n - lo { lo = lo + 1 }` behind a straight-line prefix + tail) exports and kernel-accepts BOTH
   composed theorems (CONTRACT + `_converges`) with all FIVE per-item obligations auto-discharged;
-  the SAME item with a WRONG `ens` is NOT Proven; a NON-PRESERVED invariant fails `_pres` (or
-  `_entry`) → Unknown, never Refuted; a `while true`-shaped non-exiting body with a FALSE `ens`
+  the SAME item with a WRONG `ensures` is NOT Proven; a NON-PRESERVED invariant fails `_pres` (or
+  `_entry`) → Unknown, never Refuted; a `while true`-shaped non-exiting body with a FALSE `ensures`
   does NOT certify — its vacuous CONTRACT theorem may kernel-accept but `_converges` FAILS (the
   `PinWhileVacuity` Rust mirror, the conjunction gate); every §4.2.5 refusal shape STILL refuses
   structurally (the `loop`-kind, nested, `break`/`continue`, mid-`return`, non-last-position,
@@ -2972,8 +2998,8 @@ Per increment (this doc's own ACs are statement-completeness, discharged by revi
   (vi-b): a LINEAR guard-return fixture of EACH kind exports and kernel-accepts BOTH composed
   theorems with every per-item obligation auto-discharged (a While-kind body with one scalar
   guard; a Loop-kind countdown `loop { if n == 0 { return acc; } … }` shape); the SAME items with
-  a WRONG `ens` — or a WRONG return value (`Some(e)` where the source returns `None`) — are NOT
-  Proven; a never-firing-guard literal-true-cond body with a FALSE `ens` does NOT certify (its
+  a WRONG `ensures` — or a WRONG return value (`Some(e)` where the source returns `None`) — are NOT
+  Proven; a never-firing-guard literal-true-cond body with a FALSE `ensures` does NOT certify (its
   vacuous CONTRACT theorem may kernel-accept but `_converges` FAILS — the `PinReturnVacuity`
   Rust mirror, the §4.2.3 conjunction gate); `conformance/binary_search.th` RECOGNIZES
   (refusal-free) and EXPORTS — its composed theorems kernel-accept GIVEN REQ-7 INTERACTIVE
@@ -2989,17 +3015,17 @@ Per increment (this doc's own ACs are statement-completeness, discharged by revi
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (the Obligation artifact) | SHIPPED (increment (i), #204) | The prover-NEUTRAL artifact is built: `pub struct Obligation { item, class, role, ast_slice, env }` + `pub enum ObligationClass` (the FULL AC-1 union — CONTRACT/EXEC/BODY/LOOP-{entry,preservation,exit}/OVERFLOW/TERMINATION/REGISTRY-TERMINATION) + `pub enum ObligationRole` (CERTIFICATION; the §0.1 meta queries are NOT minted, OQ-5 seam) + `pub struct ObligationEnv`/`ObligationParam` carrying AST nodes + Thermite `Type`s + coercion flags (NO Verus strings), in `forge/src/obligation.rs`. Non-test consumer: `check::mint_item_obligations` mints the per-item set on the live L3 path; `engine::VerusEngine` consumes `&Obligation`. The artifact is a prover-neutral `Clone + Eq` VALUE (the `thermite-syntax` AST does not derive serde in production — adding it is outside the #204 manifest; wire serialization is increment (ii) when the Lean exporter serializes a Lean theorem string, not the raw AST). **REQ-1.2 (REGISTRY-TERMINATION) — SHIPPED (class assignment + the CORRECTED full-expression-position closure):** `ObligationClass::RegistryTermination` is minted (`Obligation::registry_termination`) for an item whose `check::reachable_spec_fn_names_full` (seed `req ∪ ens ∪ body ∪ dec(item)`, closure-step over each reached spec-fn's `body ∪ dec` — the #226 fix; `reachable_spec_fn_names_full_spec` is the spec-fn analogue) is non-empty; the forge-side closure mirror NOW walks the dec measures (the body-only omission of `reachable_spec_fn_deps` is corrected for the obligation closure). The Verus-path discharge is REQ-1.2(a) (Verus's dec-check on the woven sub-program); the Lean-path well-foundedness discharge + the per-item CONJUNCTION at the certificate level (REQ-1.1) + the exec-body bridge (§4.1) remain NOT-STARTED (increment (ii)/(iii)/(iv)). For history, the pre-#204 gap was: the content was SHIPPED only as transient Verus text: `pub fn equivalence_obligation` / `exec_equivalence_obligation` / `body_equivalence_obligation` / `loop_{entry,preservation,exit}_obligation` in `thermite-tv/src/obligation.rs` ("`thermite-tv` does NOT run verus itself: it emits the obligation TEXT") + `pub struct ObligationFrame` (the env/typing ctx). The prover-NEUTRAL artifact (AST slice + Thermite types + coercion flags + the `role` discriminator, pre-rendering) is unbuilt — that is the gap. The three §0.1 meta queries are scoped OUT (OQ-5). REQ-1.1 (the per-item CLASS-CONJUNCTION RULE — an item certifies only when EVERY class REQ-1 assigns it is discharged; the degrade ladder applies item-wide; #212(b)) + REQ-1.2 (the REGISTRY-TERMINATION class — for `calledSpecFns(item) ≠ ∅` (the #226 condition completing #224: the FULL-EXPRESSION-POSITION closure — seed `req ∪ ens ∪ body ∪ dec(item)`, step over each reached spec-fn's `body ∪ dec`, i.e. every expression the export denotes against `R_item` INCLUDING the termination measures, transitively — the SAME set the §4 hard gate populates `R_item` with), every spec-fn in `R_item` carries a dec-VALIDITY/well-foundedness obligation, conjoined item-wide; discharged by Verus's dec-check or a Lean well-foundedness proof; closes the #215 divergent-registry bottom-poisoning per Pin B AND the #226 measure-position bottom-poisoning per Pin C `lean/Thermite/PinDecMeasure.lean` — a `dec`-position spec-call omitted from `R_item` bottoms to `0` so a non-well-founded source measure denotes to a fake-descending one (`closure_measure_strictly_descends` vs `true_measure_never_descends`); the extended closure puts the measure-called spec-fn in `R_item` so the descent obligation denotes against the complete registry. The shipped forge closure `reachable_spec_fn_deps`/`collect_block_spec_fn_calls` (`forge/src/check.rs`) has the SAME body-only omission — recorded as a named increment-(i) work item (header build-blockers), load-bearing only for the NEW Lean exporter (the shipped Verus pipeline fails CLOSED on a missing dep)) + the exec-body bridge scoping (§4.1) are stated NORMATIVELY in §1.2/§4/§4.1 but likewise unbuilt — increment (iv) for the bridge, increment (i)/(iii) for the per-item conjunction at the certificate level, increment (ii) for the Lean-path registry-termination discharge. |
+| REQ-1 (the Obligation artifact) | SHIPPED (increment (i), #204) | The prover-NEUTRAL artifact is built: `pub struct Obligation { item, class, role, ast_slice, env }` + `pub enum ObligationClass` (the FULL AC-1 union — CONTRACT/EXEC/BODY/LOOP-{entry,preservation,exit}/OVERFLOW/TERMINATION/REGISTRY-TERMINATION) + `pub enum ObligationRole` (CERTIFICATION; the §0.1 meta queries are NOT minted, OQ-5 seam) + `pub struct ObligationEnv`/`ObligationParam` carrying AST nodes + Thermite `Type`s + coercion flags (NO Verus strings), in `forge/src/obligation.rs`. Non-test consumer: `check::mint_item_obligations` mints the per-item set on the live L3 path; `engine::VerusEngine` consumes `&Obligation`. The artifact is a prover-neutral `Clone + Eq` VALUE (the `thermite-syntax` AST does not derive serde in production — adding it is outside the #204 manifest; wire serialization is increment (ii) when the Lean exporter serializes a Lean theorem string, not the raw AST). **REQ-1.2 (REGISTRY-TERMINATION) — SHIPPED (class assignment + the CORRECTED full-expression-position closure):** `ObligationClass::RegistryTermination` is minted (`Obligation::registry_termination`) for an item whose `check::reachable_spec_fn_names_full` (seed `req ∪ ens ∪ body ∪ dec(item)`, closure-step over each reached spec-fn's `body ∪ dec` — the #226 fix; `reachable_spec_fn_names_full_spec` is the spec-fn analogue) is non-empty; the forge-side closure mirror NOW walks the measures measures (the body-only omission of `reachable_spec_fn_deps` is corrected for the obligation closure). The Verus-path discharge is REQ-1.2(a) (Verus's dec-check on the woven sub-program); the Lean-path well-foundedness discharge + the per-item CONJUNCTION at the certificate level (REQ-1.1) + the exec-body bridge (§4.1) remain NOT-STARTED (increment (ii)/(iii)/(iv)). For history, the pre-#204 gap was: the content was SHIPPED only as transient Verus text: `pub fn equivalence_obligation` / `exec_equivalence_obligation` / `body_equivalence_obligation` / `loop_{entry,preservation,exit}_obligation` in `thermite-tv/src/obligation.rs` ("`thermite-tv` does NOT run verus itself: it emits the obligation TEXT") + `pub struct ObligationFrame` (the env/typing ctx). The prover-NEUTRAL artifact (AST slice + Thermite types + coercion flags + the `role` discriminator, pre-rendering) is unbuilt — that is the gap. The three §0.1 meta queries are scoped OUT (OQ-5). REQ-1.1 (the per-item CLASS-CONJUNCTION RULE — an item certifies only when EVERY class REQ-1 assigns it is discharged; the degrade ladder applies item-wide; #212(b)) + REQ-1.2 (the REGISTRY-TERMINATION class — for `calledSpecFns(item) ≠ ∅` (the #226 condition completing #224: the FULL-EXPRESSION-POSITION closure — seed `req ∪ ens ∪ body ∪ dec(item)`, step over each reached spec-fn's `body ∪ dec`, i.e. every expression the export denotes against `R_item` INCLUDING the termination measures, transitively — the SAME set the §4 hard gate populates `R_item` with), every spec-fn in `R_item` carries a dec-VALIDITY/well-foundedness obligation, conjoined item-wide; discharged by Verus's dec-check or a Lean well-foundedness proof; closes the #215 divergent-registry bottom-poisoning per Pin B AND the #226 measure-position bottom-poisoning per Pin C `lean/Thermite/PinDecMeasure.lean` — a `measures`-position spec-call omitted from `R_item` bottoms to `0` so a non-well-founded source measure denotes to a fake-descending one (`closure_measure_strictly_descends` vs `true_measure_never_descends`); the extended closure puts the measure-called spec-fn in `R_item` so the descent obligation denotes against the complete registry. The shipped forge closure `reachable_spec_fn_deps`/`collect_block_spec_fn_calls` (`forge/src/check.rs`) has the SAME body-only omission — recorded as a named increment-(i) work item (header build-blockers), load-bearing only for the NEW Lean exporter (the shipped Verus pipeline fails CLOSED on a missing dep)) + the exec-body bridge scoping (§4.1) are stated NORMATIVELY in §1.2/§4/§4.1 but likewise unbuilt — increment (iv) for the bridge, increment (i)/(iii) for the per-item conjunction at the certificate level, increment (ii) for the Lean-path registry-termination discharge. |
 | REQ-2 (the Engine interface) | SHIPPED (Verus instance; increment (i), #204) | `pub trait Engine { name, fragment, discharge, trust_profile, evidence_key }` + `pub enum Verdict { Proven(Evidence) \| Refuted(Counterexample) \| Unknown(Reason) }` + `pub struct TrustProfile`/`Fragment`/`CacheKey` + `pub enum EngineName` in `forge/src/engine.rs`. `pub struct VerusEngine` fills all four slots (AC-2): FRAGMENT = the whole frozen subset (`admits_all_classes`, incl. RegistryTermination); DISCHARGE = `VerusEngine::verdict_of` lifting `classify_verus_outcome`'s three-way map to `Verdict` WITH the REQ-3.1 remap; TRUST PROFILE = {Z3, Verus VC-gen, TV/lowering theorem}; EVIDENCE = `engine_cache_key` composing the SHIPPED `cache::cache_key` hex with the engine discriminator (§2(d)). Non-test consumer: `check::ladder_for_timeout` routes the per-item L3 CERTIFICATION discharge through `VerusEngine` (selected via `default_engines`, gated via `fragment().admits`). The Lean engine (`LeanAuto`/`LeanInteractive`) is increment (ii), NOT-STARTED (forward-declared in the cache discriminator). |
 | REQ-3 (Unknown degrades / Refuted hard-fails, engine-generic) | SHIPPED (increment (i), #204) | `pub fn engine::verdict_ladder_action` maps an engine `Verdict` (for `role = Certification`) to the SHIPPED `degrade::L3Verdict`: `Proven` → `Proved` (CertifyL3); `Unknown` → `Timeout` (degrade via `run_ladder` → L2/L1); `Refuted` → `Counterexample` (HardFail, never degrades — generalizing `degrade::ladder_action_l3` off the word "verus"). The failure-WITHOUT-witness rule is `engine::counterexample_is_incompleteness_unknown` (the NARROW SMT-`unknown` signature). **REQ-3.1 (the fast-unknown remap) — SHIPPED:** `VerusEngine::verdict_of` splits `VerusOutcome::Counterexample` — ONLY a span-less failure carrying the SMT-`unknown` signal (no frontend `error[E`) → `Unknown(IncompleteUnknown)` (degrade, the SOLE behavioral delta — was a hard fail); a WITNESSED countermodel AND a FRONTEND type error (E0308 — e.g. the provenance `careless_query` un-typeable IFC path) stay `Refuted` (hard-fail → L0, unchanged). The remap is INERT on the conformance corpus: it contains witnessed failures + E0308 type-error rejections (which stay hard-fail) but NOT genuine SMT-`unknown`s, so every `conformance/*.cert.json` is byte-identical. Tests: `engine.rs` (`incompleteness_discriminator_is_narrow`, `type_error_counterexample_stays_refuted`, `witnessed_counterexample_stays_refuted`, `verdict_ladder_action_follows_req3`) + the cert-oracle identity (`forge/tests/engine_interface.rs`, incl. provenance L0). The Lean-re-attempt interaction with a failed spec-fn termination proof (REQ-1.2 Lean discharge) is increment (ii). |
 | REQ-4 (certificate attribution — per-obligation engine + trust profile) | SHIPPED (increment (iii), #247) | The per-obligation `{engine, trust_profile}` pair is `engine::EngineAttribution { engine, trust_profile }`, built by `engine::attribution_for(&dyn Engine)`; `manifest::Certificate::engine_attribution: Option<EngineAttribution>` is the ADDITIVE serde field (`#[serde(default, skip_serializing_if = "Option::is_none")]` — the `boundary`/`slag`/`assurance_scope` precedent), set by `Certificate::with_engine_attribution`. Populated ONLY when a NON-DEFAULT engine (Lean) discharges (the default Verus path leaves it `None`), so the cert oracle is BYTE-IDENTICAL: `serde(default)` keeps the goldens green because a corpus Verus cert never gains the field (the conformance oracle test `engine_attribution.rs::engine_verus_flag_is_byte_identical_oracle` asserts `sum`'s golden subset + the OMITTED field). Honest-min aggregation UNCHANGED (`AssuranceManifest::aggregate` untouched — the attribution is per-obligation metadata ORTHOGONAL to `Level`). DECISION (OQ-2): oracle-EXCLUDED (diagnostic-only) so the golden stays byte-identical. Non-test consumer: `check::lean_proven_cert` / `lean_interactive_proven_cert` attach it on the `--engine lean`/`auto` path (`cli::run_check`). The "smaller base" claim is along the named axes (no Z3, no Verus VC-gen — verified by the attribution test); the ordering formalization stays OQ-3. Live-verified: a `forge check --engine lean` of a scalar item emits a cert with `engine_attribution.engine == "lean-auto"` + the `{Lean kernel, propext, Classical.choice, Quot.sound, EXP}` base (`engine_attribution.rs::engine_lean_attaches_smaller_trust_base_live`). |
 | REQ-5 (engine disagreement = soundness alarm) | SHIPPED (increment (iii), #247) | `engine::check_disagreement(item, engine_a, verdict_a, engine_b, verdict_b)` is the multi-engine dispatch guard: a `Proven ⊕ witnessed-Refuted` pairing on the SAME obligation returns `Err(engine::Disagreement { proven_engine, refuted_engine, item, counterexample })` — a structured HARD halt naming BOTH engines + the obligation, NEVER resolved by preference. `Proven ⊕ Unknown` (and `Unknown ⊕ anything`, `Refuted ⊕ Refuted`) is benign (`Ok`). Per REQ-3.1 a Verus witness-less fast-`unknown` is `Unknown`, so it can NEVER spuriously fire the alarm against a Lean kernel `Proven` (only a WITNESSED Verus countermodel can). Surfaced as `ForgeError::SoundnessAlarm` (`cli.rs`); the dispatch point is `check::lean_engine_cert`'s `auto` arm (Verus + Lean on the same obligation). Teeth-tested with SYNTHETIC verdicts (`engine.rs::proven_refuted_disagreement_halts` — the alarm fires both orders, naming the right engine per role + carrying the witness; `proven_unknown_is_benign` — `Proven ⊕ Unknown` and `Refuted ⊕ Refuted` do NOT halt). The anti-cheat ANCESTOR (`ladder_action_l3` → `HardFail`) stays SHIPPED. |
-| REQ-6 (the Lean exporter) | SHIPPED (the PURE-CONTRACT class, tiers (a)/(b)/(c); increment (ii-b), #240) | The Thermite→Lean obligation EXPORTER is BUILT: `pub fn export_item` (`forge/src/lean_export.rs`) serializes a checked PURE-CONTRACT item into a self-contained Lean file INSTANTIATING the SHIPPED spine (`import Thermite.Stabilize` + the `Ast.lean`/`Denote.lean` encodings). `encode_expr` maps each frozen-subset `Expr` ARM-BY-ARM to its `Ast.lean` constructor (the EXP arms table is `.design/verified/rust-lean-correspondence.md` Table 4 — the drift tripwire); an OUT-of-spine construct (Field/TupleProj/StructLit/Deref/StrLit/Tuple/If/bare-closure/user-ADT-match/non-pure body/open hole) → a structured `ExportRefusal` (an honest skip, NEVER a silent omission). `R_item` is populated by the `req ∪ ens ∪ body ∪ dec` full-expression-position closure (REUSING the `Obligation.env.spec_defs` — the ONE closure, #192) with THE HARD GATE: `build_registry` REFUSES (`ExportRefusal::IncompleteRegistry`) when `calledSpecFns ⊄ dom(R_item)`, AND `export_item` independently RE-CHECKS that every spec-call appearing in the exprs is covered (catching a buggy/omitting closure — the Pin B/C/E/F bottom-poisoning), AND emits the per-name `example : R_item "f" ≠ none := by decide` resolution lemmas (§4 mechanisms 1+2). EXP body-faithfulness: each `R_item` entry binds the spec-fn's REAL `Denote`-encoded body (arm-by-arm). The §4 STABILIZED form (#213) + the result-binding form (#214) are emitted for tier (c) (`stabilizes`/`stabilizesProp`, result bound THROUGH `stabilizes`, `specs := R_item` held fixed); tiers (a)/(b) emit the fuel-free equivalent (§6.1). Non-test consumer: `engine::LeanEngine::{discharge,fragment,evidence_key}` (`forge/src/engine.rs`). LIVE-verified: a CORRECT scalar contract + a tier-(b) item kernel-ACCEPT (`lake env lean`, standard axioms only); a WRONG contract / an omitted registry / an out-of-fragment item are SKIPPED/Unknown (`forge/src/engine.rs` `live_*` tests + `forge/tests/lean_engine.rs`). The exec-body bridge (§4.1, increment (iv)) + the interactive tier-(c) discharge (increment (iii)) remain NOT-STARTED. For history, the pre-#240 status was: FUTURE (increment (ii)/(iv)). The TARGET is SHIPPED: `lean/Thermite/` mechanizes `S` (`denote`/`refDenote`/`Denote.lean`, `execDenote`/`Exec.lean`, `bodyDenote`/`Exec/Stmt.lean`, `loopDenote`+`while_rule`/`Exec/Loop.lean`) over the `Expr`/`Block` inductives, kernel-checked (axioms `{propext, Classical.choice, Quot.sound}`). Critically (#213, the critic's kernel-checked pin `lean/Thermite/PinIntBottom.lean`): `intVal` bottoms an INT-position `specCall` to `0` (`| none => 0` + fuel-0 catch-all `| _, _, _ => 0`), NOT to `True` — so the cycle-2 `∀ fuel ≥ fuel₀` form is FALSE for correct items (the pin's `obligation_form_is_false`) and is RETIRED. §4 RESTATES the obligation against a STABILIZATION relation (`stabilizes : Expr → Env → Int → Prop := ∃ N, ∀ fuel ≥ N, intVal fuel e env = v`, + the Prop analogue for `denote`): `∀ r, stabilizes body_expr env r → reqStable(env) → ensStable(env at r)`, per-env ∃-N (no global `fuel₀`, fixing the value-dependent-depth counterexample), with the RESULT value BOUND THROUGH stabilization (the #214 fix — Pin A's `wrong_contract_certifies_with_underfuelled_rbody` is now UNPROVABLE because uniqueness of stabilization forces `r` to the body's true value, `wrong_contract_fails_at_true_value`), `specs := R_item` held fixed + the export-time HARD GATE (refuse-to-emit + per-name `decide` lemmas) when `calledSpecFns(item) ⊄ dom(R_item)`, where `calledSpecFns(item)` is (the #226 fix completing #224) the FULL-EXPRESSION-POSITION closure — every spec-fn reachable from `req ∪ ens ∪ body ∪ dec(item)` TRANSITIVELY, closure-step over each reached spec-fn's `body ∪ dec` (NOT `req ∪ ens` only — the cycle-2 scope; nor `req ∪ ens ∪ body` only — the cycle-5 body-only scope: a `dec`-VALIDITY obligation denotes the measure against `R_item`, and an omitted measure-called spec-fn bottoms to the Int-bottom `0` so a non-well-founded source measure denotes to a fake-descending one — the critic's pin `lean/Thermite/PinDecMeasure.lean`'s `closure_measure_strictly_descends` vs `true_measure_never_descends`; likewise an omitted body-called spec-fn stabilizes to `0`, uniqueness forces `r = 0`, and `ens: result == 0` certifies kernel-clean — `lean/Thermite/PinBodyRegistry.lean`'s `wrong_contract_certifies_under_body_omission`, REFUTED with the full registry by `wrong_contract_fails_with_full_registry`) — no resolution PREMISE. SCOPED to the PURE-CONTRACT class (§4.1: the exec-body S_C×S_E/S_B bridge — value bridge, bool sort, optres, env→State — is increment (iv)'s own design obligation). The SPINE PREREQUISITES are SHIPPED (`lean/Thermite/Stabilize.lean`, #240/#241): `stabilizes` + uniqueness-of-stabilization (#214) + the FUEL-IRRELEVANCE lemma (#216) + `stabilization_exists_for_dec_bounded` with GENUINE content (#241: `RegistryTerminating := ∃ v, Converges` over the bottom-distinguishing `intValNB`/`denoteNB`, the AGREEMENT LEMMA `converges_imp_stabilizes`, the divergent registry FAILING the hypothesis per the re-pinned Pin E), all kernel-checked `{propext, Classical.choice, Quot.sound}`. STILL NOT-STARTED (the REQ-6 exporter itself): the Rust→Lean exporter that emits source instantiating those (with EXP = arm-by-arm + drift-tripwire + registry-body faithfulness), and the REGISTRY-TERMINATION Lean-path well-foundedness discharge that PROVES a dec-valid `R_item` supplies a `Converges` witness (REQ-1.2(b), #215) — the z3-demotion doc names the exporter "the #185-adjacent correspondence-bridge work … NOT built." |
-| REQ-7 (Lean discharge modes + termination) | SHIPPED (AUTO tiers (a)/(b); tier (c) interactive-marked; increment (ii-b), #240) — interactive DISCHARGE + termination wiring NOT-STARTED | The THREE-tier export story (§6.1, #216) is BUILT: `lean_export::tier_of` classifies an obligation by registry shape — `ExportTier::FuelFreeAuto` (all of `req`/`ens`/body/dec specCall-free → the fuel-free `denote 0`/`intVal 0` form, sound via `stabilizes_iff_intVal_zero`/`stabilizesProp_iff_denote_zero`), `ExportTier::StaticUnfoldAuto` (a NON-recursive registry → `unfold_spec_calls` STATICALLY UNFOLDS every spec-call to its finite DAG depth into a specCall-free `Expr`, then the fuel-free form — `registry_is_recursive` is the DFS cycle check), and `ExportTier::RecursiveInteractive` (a recursive registry → the `∃N∀fuel` stabilized form, marked INTERACTIVE). The AUTO discharge is the LIVE `LeanEngine::discharge`: export → write scratch → `lake env lean` (cwd `lean/`, lake located via PATH/`~/.elan/bin`) → kernel accept = `Verdict::Proven`, tactic failure/timeout/lake-absent = `Verdict::Unknown` NEVER `Refuted` (a Lean tactic failure is not a witnessed countermodel — REQ-3 anti-cheat); the auto tactic battery is `first | decide | omega | simp_all | …` (the z3-demotion-grounded shallow-QF shape). Tier (c) returns `Unknown("interactive-only")` WITHOUT invoking lake (the file IS still emitted for increment-(iii) use, marked). LIVE-verified kernel-clean: the tier-(a)/(b) Proven obligations carry `#print axioms = {propext, Classical.choice, Quot.sound}` (the z3-demotion bar). What remains NOT-STARTED for REQ-7: the Lean-path REGISTRY-TERMINATION well-foundedness DISCHARGE (REQ-1.2(b), #215) — that piece is increment (ii)/(iv). **The INTERACTIVE proof-artifact mode is SHIPPED (increment (iii), #247):** `engine::interactive_proof_path(source_file, item)` is the deterministic `<file>.lean-proofs/<item>.lean` artifact path; `engine::LeanEngine::replay_interactive(source_file, &Obligation)` EMITS the skeleton (the exporter's source + the `-- evidence_key: <hex>` header, `engine::INTERACTIVE_EVIDENCE_KEY_MARKER`) when ABSENT, and REPLAYS a PRESENT proof via `lake env lean` with the obligation-hash STALENESS gate (the header's evidence key must match the current `evidence_key`; a mismatch → `Unknown("stale proof — re-derive")`, NEVER silently reused) + EXPLICIT sorry detection (`engine::proof_has_sorry` scans the SOURCE token AND a `#print axioms` `sorryAx` — lake exits 0 on a `sorry`, so a `sorry` is NEVER `Proven`); a kernel-accepted, sorry-FREE replay → `Proven` with the INTERACTIVE trust profile (`engine::trust_profile_interactive` — adds the reviewed proof author, OQ-4). **TWO further replay gates are SHIPPED (the #248 fix, R-DEFER-9):** (1) the TRUST-BASE AXIOM ALLOWLIST — after a clean lake exit, `engine::nonstandard_axiom` STRICTLY parses the `#print axioms thermite_obligation_<item>` REPORT line ("depends on axioms: [...]", anchored on the marker so a lake `simp only [...]` warning bracket can NEVER be mistaken for the axiom list) and REJECTS any axiom outside `{propext, Classical.choice, Quot.sound}` → `Unknown("non-standard axiom: <name>")`, NEVER `Proven` (a smuggled `axiom thermite_cheat : ∀ p, p` makes the enumerable trusted base a LIE — REQ-4/§1); (2) STATEMENT BINDING — `engine::canonical_theorem_statement` regenerates the obligation's theorem STATEMENT from the exporter's `exported.source` (the author fills ONLY the proof term after `:=`/`by`) and requires the present file's `theorem thermite_obligation_<item> : <statement> :=` span to match EXACTLY modulo whitespace (`engine::statements_match`); a file proving a DIFFERENT statement (e.g. `: True`) → `Unknown("statement mismatch")`, NEVER `Proven` (REQ-6 — the proof must PROVE THE OBLIGATION). **#252 ARCHITECTURAL FIX — THE HELPER-SURFACE ELIMINATION (ending a 5-bypass whack-a-mole #248..#252):** `engine::reconstruct_replay` no longer splices any author HELPERS section. The reconstructed replay file is EXACTLY the canonical exporter preamble + `R_item` + the canonical `theorem thermite_obligation_<item> : <statement> := <author PROOF TERM>` + the anchored `#print axioms`; the ONLY author-controlled text is the PROOF TERM (after the obligation theorem's first `:=`), and any author file content OUTSIDE it is DROPPED (it has nowhere to live, so it can never share the obligation's elaboration scope). The earlier blocklist sanitizer (`engine::disallowed_helper_command` + `engine::author_helpers`) — unsoundable on a Turing-complete elaborator: #251 closed column-0 commands, #252 escaped via INDENTATION (Lean is whitespace-insensitive at the top level, so an indented `notation:max "Thermite.stabilizesProp" => (fun _ _ => True)` re-elaborated the byte-identical canonical statement to `True`) — is DELETED. Auxiliary lemmas inline as `have`/`let`/`suffices` INSIDE the proof term (no expressivity loss for a single-obligation proof; the soundness rationale: the statement is generator-emitted + elaborated left of `:=`, the kernel type-checks the proof term against that fixed goal, so a proof term cannot vacate it; `sorry`/`admit`→`sorryAx`, `native_decide`→`ofReduceBool` caught by the axiom allowlist). A cheap BELT (`engine::proof_term_command_token`) REJECTS (→ Unknown) a proof term carrying a top-level command keyword (`notation`/`macro`/`macro_rules`/`syntax`/`elab`/`set_option`/`attribute`/`instance`/`open`/`export`/`import`/`namespace`/`initialize`/`#…`) in ANY position (exact-token, whitespace-independent — catches an `… in`-style command form). The #250 duplicate-declaration reject + the #249/#250 axiom-report anchor + `statements_match` + the kernel type-check all STAY. Non-test consumer: `check::lean_engine_cert`'s `--engine lean` non-auto path (`lean_interactive_proven_cert` attaches the interactive attribution). Tested: the #248 divergence PIN (`forge/tests/divergence_axiom_smuggling.rs::divergence_interactive_replay_accepts_nonstandard_axiom` — the cheat-axiom proof is NOT L3, LIVE) + the statement-mismatch reject (`engine.rs::interactive_statement_mismatch_is_unknown_never_proven`) + the strict allowlist parser (`nonstandard_axiom_parses_the_report_line_strictly`) + the canonical-statement extractor (`canonical_statement_extraction_and_whitespace_match`); the legit-path NON-regression (`interactive_filled_valid_proof_replays_proven` — a genuine kernel-accepted, allowlist-clean, statement-bound proof STILL replays Proven). The #252 helper-surface elimination is verified by: the author HELPER section is DROPPED (the #251 column-0 + the #252 INDENTED `notation` poison both vanish) and the BELT rejects an `open … in` proof term (`engine.rs::reconstruct_drops_author_helper_section`); the belt scan is position-independent (`engine.rs::proof_term_command_token_scans_position_independently`); a clean INLINE-have proof replays Proven LIVE + a `sorry`-bearing inline proof → Unknown (`engine.rs::interactive_inline_have_clean_proven_sorry_unknown`); the #252 pin `forge/tests/divergence_252_indented_command_escape.rs` (the indented-`notation` poison does NOT certify L3, LIVE). Also: skeleton emitted (`engine.rs::interactive_skeleton_emitted_when_absent`); a fresh-key sorry-free kernel-accepted proof REPLAYS Proven LIVE (`interactive_filled_valid_proof_replays_proven`); a stale hash → Unknown (`interactive_stale_hash_is_unknown_never_reused`); a sorry-carrying file → Unknown LIVE (`interactive_sorry_file_is_unknown_never_proven`); the sorry detector + the path (`sorry_detected_in_source_or_axioms`, `interactive_proof_path_is_beside_source`). The evidence-key cache STORE/LOAD round-trip (a hit-skips-replay optimization, distinct from the staleness REPLAY which IS shipped) and the Lean-path REGISTRY-TERMINATION discharge remain future. For history, the pre-#240 status was: FUTURE (increment (ii)/(iii)). The AUTO fragment is PROVEN-REACHABLE: `z3-demotion.md` shows `tv_obligation_arith_cmp`/`tv_obligation_or_le` (scalar/QF-linear contract clauses) discharged by Lean-SMT's `smt` tactic, kernel-clean (`#print axioms` = standard set only; no `sorryAx`/cvc5 oracle) — and these are SHALLOW QF goals with NO `denote`/`stabilizesProp` wrapper. §6.1 reconciles the deep-embedded §4 form to that grounding via the THREE-TIER export story (#216): (a) FUEL-FREE export for specCall-free obligations via the `intVal_fuel_irrelevant`/`denote_fuel_irrelevant` lemma (`stabilizesProp e env ↔ denote 0 e env` for specCall-free `e`) — the auto fragment's actual fuel-free shallow shape, matching the PoC; (b) STATIC UNFOLDING of non-recursive registries to finite depth, again yielding fuel-free goals; (c) the `∃N∀fuel` stabilization form reserved for RECURSIVE registries on the INTERACTIVE path only (the per-env `∃N` witness needs induction). The interactive/proof-artifact mode (staleness = the §2(d) EVIDENCE KEY changing: obligation + engine + engine-toolchain version + targeted-spine content hash) + the `dec`/partial-correctness termination policy (tied to the SHIPPED `while_rule` `h_run` premise) are unbuilt. The REGISTRY-TERMINATION termination tier's SEMANTIC currency is SHIPPED on the spine (#241: `RegistryTerminating := ∃ v, Converges` + the AGREEMENT LEMMA + the divergent registry FAILING it, `lean/Thermite/Stabilize.lean`); what remains unbuilt for REQ-7 is the engine wiring — the Lean-path well-foundedness DISCHARGE that proves a dec-valid `R_item` supplies the `Converges` witness (REQ-1.2(b), #215) and the auto/interactive battery that consumes it. |
+| REQ-6 (the Lean exporter) | SHIPPED (the PURE-CONTRACT class, tiers (a)/(b)/(c); increment (ii-b), #240) | The Thermite→Lean obligation EXPORTER is BUILT: `pub fn export_item` (`forge/src/lean_export.rs`) serializes a checked PURE-CONTRACT item into a self-contained Lean file INSTANTIATING the SHIPPED spine (`import Thermite.Stabilize` + the `Ast.lean`/`Denote.lean` encodings). `encode_expr` maps each frozen-subset `Expr` ARM-BY-ARM to its `Ast.lean` constructor (the EXP arms table is `.design/verified/rust-lean-correspondence.md` Table 4 — the drift tripwire); an OUT-of-spine construct (Field/TupleProj/StructLit/Deref/StrLit/Tuple/If/bare-closure/user-ADT-match/non-pure body/open hole) → a structured `ExportRefusal` (an honest skip, NEVER a silent omission). `R_item` is populated by the `req ∪ ens ∪ body ∪ dec` full-expression-position closure (REUSING the `Obligation.env.spec_defs` — the ONE closure, #192) with THE HARD GATE: `build_registry` REFUSES (`ExportRefusal::IncompleteRegistry`) when `calledSpecFns ⊄ dom(R_item)`, AND `export_item` independently RE-CHECKS that every spec-call appearing in the exprs is covered (catching a buggy/omitting closure — the Pin B/C/E/F bottom-poisoning), AND emits the per-name `example : R_item "f" ≠ none := by decide` resolution lemmas (§4 mechanisms 1+2). EXP body-faithfulness: each `R_item` entry binds the spec-fn's REAL `Denote`-encoded body (arm-by-arm). The §4 STABILIZED form (#213) + the result-binding form (#214) are emitted for tier (c) (`stabilizes`/`stabilizesProp`, result bound THROUGH `stabilizes`, `specs := R_item` held fixed); tiers (a)/(b) emit the fuel-free equivalent (§6.1). Non-test consumer: `engine::LeanEngine::{discharge,fragment,evidence_key}` (`forge/src/engine.rs`). LIVE-verified: a CORRECT scalar contract + a tier-(b) item kernel-ACCEPT (`lake env lean`, standard axioms only); a WRONG contract / an omitted registry / an out-of-fragment item are SKIPPED/Unknown (`forge/src/engine.rs` `live_*` tests + `forge/tests/lean_engine.rs`). The exec-body bridge (§4.1, increment (iv)) + the interactive tier-(c) discharge (increment (iii)) remain NOT-STARTED. For history, the pre-#240 status was: FUTURE (increment (ii)/(iv)). The TARGET is SHIPPED: `lean/Thermite/` mechanizes `S` (`denote`/`refDenote`/`Denote.lean`, `execDenote`/`Exec.lean`, `bodyDenote`/`Exec/Stmt.lean`, `loopDenote`+`while_rule`/`Exec/Loop.lean`) over the `Expr`/`Block` inductives, kernel-checked (axioms `{propext, Classical.choice, Quot.sound}`). Critically (#213, the critic's kernel-checked pin `lean/Thermite/PinIntBottom.lean`): `intVal` bottoms an INT-position `specCall` to `0` (`| none => 0` + fuel-0 catch-all `| _, _, _ => 0`), NOT to `True` — so the cycle-2 `∀ fuel ≥ fuel₀` form is FALSE for correct items (the pin's `obligation_form_is_false`) and is RETIRED. §4 RESTATES the obligation against a STABILIZATION relation (`stabilizes : Expr → Env → Int → Prop := ∃ N, ∀ fuel ≥ N, intVal fuel e env = v`, + the Prop analogue for `denote`): `∀ r, stabilizes body_expr env r → reqStable(env) → ensStable(env at r)`, per-env ∃-N (no global `fuel₀`, fixing the value-dependent-depth counterexample), with the RESULT value BOUND THROUGH stabilization (the #214 fix — Pin A's `wrong_contract_certifies_with_underfuelled_rbody` is now UNPROVABLE because uniqueness of stabilization forces `r` to the body's true value, `wrong_contract_fails_at_true_value`), `specs := R_item` held fixed + the export-time HARD GATE (refuse-to-emit + per-name `decide` lemmas) when `calledSpecFns(item) ⊄ dom(R_item)`, where `calledSpecFns(item)` is (the #226 fix completing #224) the FULL-EXPRESSION-POSITION closure — every spec-fn reachable from `req ∪ ens ∪ body ∪ dec(item)` TRANSITIVELY, closure-step over each reached spec-fn's `body ∪ dec` (NOT `req ∪ ens` only — the cycle-2 scope; nor `req ∪ ens ∪ body` only — the cycle-5 body-only scope: a `measures`-VALIDITY obligation denotes the measure against `R_item`, and an omitted measure-called spec-fn bottoms to the Int-bottom `0` so a non-well-founded source measure denotes to a fake-descending one — the critic's pin `lean/Thermite/PinDecMeasure.lean`'s `closure_measure_strictly_descends` vs `true_measure_never_descends`; likewise an omitted body-called spec-fn stabilizes to `0`, uniqueness forces `r = 0`, and `ens: result == 0` certifies kernel-clean — `lean/Thermite/PinBodyRegistry.lean`'s `wrong_contract_certifies_under_body_omission`, REFUTED with the full registry by `wrong_contract_fails_with_full_registry`) — no resolution PREMISE. SCOPED to the PURE-CONTRACT class (§4.1: the exec-body S_C×S_E/S_B bridge — value bridge, bool sort, optres, env→State — is increment (iv)'s own design obligation). The SPINE PREREQUISITES are SHIPPED (`lean/Thermite/Stabilize.lean`, #240/#241): `stabilizes` + uniqueness-of-stabilization (#214) + the FUEL-IRRELEVANCE lemma (#216) + `stabilization_exists_for_dec_bounded` with GENUINE content (#241: `RegistryTerminating := ∃ v, Converges` over the bottom-distinguishing `intValNB`/`denoteNB`, the AGREEMENT LEMMA `converges_imp_stabilizes`, the divergent registry FAILING the hypothesis per the re-pinned Pin E), all kernel-checked `{propext, Classical.choice, Quot.sound}`. STILL NOT-STARTED (the REQ-6 exporter itself): the Rust→Lean exporter that emits source instantiating those (with EXP = arm-by-arm + drift-tripwire + registry-body faithfulness), and the REGISTRY-TERMINATION Lean-path well-foundedness discharge that PROVES a dec-valid `R_item` supplies a `Converges` witness (REQ-1.2(b), #215) — the z3-demotion doc names the exporter "the #185-adjacent correspondence-bridge work … NOT built." |
+| REQ-7 (Lean discharge modes + termination) | SHIPPED (AUTO tiers (a)/(b); tier (c) interactive-marked; increment (ii-b), #240) — interactive DISCHARGE + termination wiring NOT-STARTED | The THREE-tier export story (§6.1, #216) is BUILT: `lean_export::tier_of` classifies an obligation by registry shape — `ExportTier::FuelFreeAuto` (all of `requires`/`ensures`/body/measures specCall-free → the fuel-free `denote 0`/`intVal 0` form, sound via `stabilizes_iff_intVal_zero`/`stabilizesProp_iff_denote_zero`), `ExportTier::StaticUnfoldAuto` (a NON-recursive registry → `unfold_spec_calls` STATICALLY UNFOLDS every spec-call to its finite DAG depth into a specCall-free `Expr`, then the fuel-free form — `registry_is_recursive` is the DFS cycle check), and `ExportTier::RecursiveInteractive` (a recursive registry → the `∃N∀fuel` stabilized form, marked INTERACTIVE). The AUTO discharge is the LIVE `LeanEngine::discharge`: export → write scratch → `lake env lean` (cwd `lean/`, lake located via PATH/`~/.elan/bin`) → kernel accept = `Verdict::Proven`, tactic failure/timeout/lake-absent = `Verdict::Unknown` NEVER `Refuted` (a Lean tactic failure is not a witnessed countermodel — REQ-3 anti-cheat); the auto tactic battery is `first | decide | omega | simp_all | …` (the z3-demotion-grounded shallow-QF shape). Tier (c) returns `Unknown("interactive-only")` WITHOUT invoking lake (the file IS still emitted for increment-(iii) use, marked). LIVE-verified kernel-clean: the tier-(a)/(b) Proven obligations carry `#print axioms = {propext, Classical.choice, Quot.sound}` (the z3-demotion bar). What remains NOT-STARTED for REQ-7: the Lean-path REGISTRY-TERMINATION well-foundedness DISCHARGE (REQ-1.2(b), #215) — that piece is increment (ii)/(iv). **The INTERACTIVE proof-artifact mode is SHIPPED (increment (iii), #247):** `engine::interactive_proof_path(source_file, item)` is the deterministic `<file>.lean-proofs/<item>.lean` artifact path; `engine::LeanEngine::replay_interactive(source_file, &Obligation)` EMITS the skeleton (the exporter's source + the `-- evidence_key: <hex>` header, `engine::INTERACTIVE_EVIDENCE_KEY_MARKER`) when ABSENT, and REPLAYS a PRESENT proof via `lake env lean` with the obligation-hash STALENESS gate (the header's evidence key must match the current `evidence_key`; a mismatch → `Unknown("stale proof — re-derive")`, NEVER silently reused) + EXPLICIT sorry detection (`engine::proof_has_sorry` scans the SOURCE token AND a `#print axioms` `sorryAx` — lake exits 0 on a `sorry`, so a `sorry` is NEVER `Proven`); a kernel-accepted, sorry-FREE replay → `Proven` with the INTERACTIVE trust profile (`engine::trust_profile_interactive` — adds the reviewed proof author, OQ-4). **TWO further replay gates are SHIPPED (the #248 fix, R-DEFER-9):** (1) the TRUST-BASE AXIOM ALLOWLIST — after a clean lake exit, `engine::nonstandard_axiom` STRICTLY parses the `#print axioms thermite_obligation_<item>` REPORT line ("depends on axioms: [...]", anchored on the marker so a lake `simp only [...]` warning bracket can NEVER be mistaken for the axiom list) and REJECTS any axiom outside `{propext, Classical.choice, Quot.sound}` → `Unknown("non-standard axiom: <name>")`, NEVER `Proven` (a smuggled `axiom thermite_cheat : ∀ p, p` makes the enumerable trusted base a LIE — REQ-4/§1); (2) STATEMENT BINDING — `engine::canonical_theorem_statement` regenerates the obligation's theorem STATEMENT from the exporter's `exported.source` (the author fills ONLY the proof term after `:=`/`by`) and requires the present file's `theorem thermite_obligation_<item> : <statement> :=` span to match EXACTLY modulo whitespace (`engine::statements_match`); a file proving a DIFFERENT statement (e.g. `: True`) → `Unknown("statement mismatch")`, NEVER `Proven` (REQ-6 — the proof must PROVE THE OBLIGATION). **#252 ARCHITECTURAL FIX — THE HELPER-SURFACE ELIMINATION (ending a 5-bypass whack-a-mole #248..#252):** `engine::reconstruct_replay` no longer splices any author HELPERS section. The reconstructed replay file is EXACTLY the canonical exporter preamble + `R_item` + the canonical `theorem thermite_obligation_<item> : <statement> := <author PROOF TERM>` + the anchored `#print axioms`; the ONLY author-controlled text is the PROOF TERM (after the obligation theorem's first `:=`), and any author file content OUTSIDE it is DROPPED (it has nowhere to live, so it can never share the obligation's elaboration scope). The earlier blocklist sanitizer (`engine::disallowed_helper_command` + `engine::author_helpers`) — unsoundable on a Turing-complete elaborator: #251 closed column-0 commands, #252 escaped via INDENTATION (Lean is whitespace-insensitive at the top level, so an indented `notation:max "Thermite.stabilizesProp" => (fun _ _ => True)` re-elaborated the byte-identical canonical statement to `True`) — is DELETED. Auxiliary lemmas inline as `have`/`let`/`suffices` INSIDE the proof term (no expressivity loss for a single-obligation proof; the soundness rationale: the statement is generator-emitted + elaborated left of `:=`, the kernel type-checks the proof term against that fixed goal, so a proof term cannot vacate it; `sorry`/`admit`→`sorryAx`, `native_decide`→`ofReduceBool` caught by the axiom allowlist). A cheap BELT (`engine::proof_term_command_token`) REJECTS (→ Unknown) a proof term carrying a top-level command keyword (`notation`/`macro`/`macro_rules`/`syntax`/`elab`/`set_option`/`attribute`/`instance`/`open`/`export`/`import`/`namespace`/`initialize`/`#…`) in ANY position (exact-token, whitespace-independent — catches an `… in`-style command form). The #250 duplicate-declaration reject + the #249/#250 axiom-report anchor + `statements_match` + the kernel type-check all STAY. Non-test consumer: `check::lean_engine_cert`'s `--engine lean` non-auto path (`lean_interactive_proven_cert` attaches the interactive attribution). Tested: the #248 divergence PIN (`forge/tests/divergence_axiom_smuggling.rs::divergence_interactive_replay_accepts_nonstandard_axiom` — the cheat-axiom proof is NOT L3, LIVE) + the statement-mismatch reject (`engine.rs::interactive_statement_mismatch_is_unknown_never_proven`) + the strict allowlist parser (`nonstandard_axiom_parses_the_report_line_strictly`) + the canonical-statement extractor (`canonical_statement_extraction_and_whitespace_match`); the legit-path NON-regression (`interactive_filled_valid_proof_replays_proven` — a genuine kernel-accepted, allowlist-clean, statement-bound proof STILL replays Proven). The #252 helper-surface elimination is verified by: the author HELPER section is DROPPED (the #251 column-0 + the #252 INDENTED `notation` poison both vanish) and the BELT rejects an `open … in` proof term (`engine.rs::reconstruct_drops_author_helper_section`); the belt scan is position-independent (`engine.rs::proof_term_command_token_scans_position_independently`); a clean INLINE-have proof replays Proven LIVE + a `sorry`-bearing inline proof → Unknown (`engine.rs::interactive_inline_have_clean_proven_sorry_unknown`); the #252 pin `forge/tests/divergence_252_indented_command_escape.rs` (the indented-`notation` poison does NOT certify L3, LIVE). Also: skeleton emitted (`engine.rs::interactive_skeleton_emitted_when_absent`); a fresh-key sorry-free kernel-accepted proof REPLAYS Proven LIVE (`interactive_filled_valid_proof_replays_proven`); a stale hash → Unknown (`interactive_stale_hash_is_unknown_never_reused`); a sorry-carrying file → Unknown LIVE (`interactive_sorry_file_is_unknown_never_proven`); the sorry detector + the path (`sorry_detected_in_source_or_axioms`, `interactive_proof_path_is_beside_source`). The evidence-key cache STORE/LOAD round-trip (a hit-skips-replay optimization, distinct from the staleness REPLAY which IS shipped) and the Lean-path REGISTRY-TERMINATION discharge remain future. For history, the pre-#240 status was: FUTURE (increment (ii)/(iii)). The AUTO fragment is PROVEN-REACHABLE: `z3-demotion.md` shows `tv_obligation_arith_cmp`/`tv_obligation_or_le` (scalar/QF-linear contract clauses) discharged by Lean-SMT's `smt` tactic, kernel-clean (`#print axioms` = standard set only; no `sorryAx`/cvc5 oracle) — and these are SHALLOW QF goals with NO `denote`/`stabilizesProp` wrapper. §6.1 reconciles the deep-embedded §4 form to that grounding via the THREE-TIER export story (#216): (a) FUEL-FREE export for specCall-free obligations via the `intVal_fuel_irrelevant`/`denote_fuel_irrelevant` lemma (`stabilizesProp e env ↔ denote 0 e env` for specCall-free `e`) — the auto fragment's actual fuel-free shallow shape, matching the PoC; (b) STATIC UNFOLDING of non-recursive registries to finite depth, again yielding fuel-free goals; (c) the `∃N∀fuel` stabilization form reserved for RECURSIVE registries on the INTERACTIVE path only (the per-env `∃N` witness needs induction). The interactive/proof-artifact mode (staleness = the §2(d) EVIDENCE KEY changing: obligation + engine + engine-toolchain version + targeted-spine content hash) + the `measures`/partial-correctness termination policy (tied to the SHIPPED `while_rule` `h_run` premise) are unbuilt. The REGISTRY-TERMINATION termination tier's SEMANTIC currency is SHIPPED on the spine (#241: `RegistryTerminating := ∃ v, Converges` + the AGREEMENT LEMMA + the divergent registry FAILING it, `lean/Thermite/Stabilize.lean`); what remains unbuilt for REQ-7 is the engine wiring — the Lean-path well-foundedness DISCHARGE that proves a dec-valid `R_item` supplies the `Converges` witness (REQ-1.2(b), #215) and the auto/interactive battery that consumes it. |
 | REQ-8 (engine ordering + ladder placement) | SHIPPED (Verus rung #204; the `--engine` surface + the Lean fallback ordering #247) | `pub fn engine::default_engines` returns the ordered engine list (Verus first); `check::ladder_for_timeout` reads the first rung (Verus) before the SHIPPED L2/L1 degrade. **The `--engine verus|lean|auto` SURFACE is SHIPPED (increment (iii), #247, OQ-1 DECISION):** `check::EngineSelection { Verus, Lean, Auto }` + the `forge check --engine <e>` flag (`cli.rs`); `check::check_file_with_engine` runs the §6 ordering — `verus` (default, byte-identical), `lean` (LeanEngine ONLY: exportable items discharged by Lean with attribution; non-exportable → an honest `LeanUnverifiable` L0 skip via `lean_unverifiable_cert`), `auto` (Verus first; on a Verus inconclusive verdict TRY Lean, upgrading to L3-via-Lean on a Lean `Proven` — `lean_engine_cert`'s `Auto` arm). The OQ-1 DECISION is recorded in the OQ-1 entry below. The per-engine SKIP/Unknown accounting (the cert's `LeanUnverifiable` reject detail + the REQ-9 untested-against-lean qualifier) is reported. The `#[engine(lean)]` per-item annotation stays the OQ-1 deferred alternative (the `--engine` whole-file form is the v1 surface). The Lean-interactive rung is REQ-7's `replay_interactive` (on demand, not automatic). |
-| REQ-9 (engine-generic anti-Goodhart battery, honest v1) | SHIPPED (the Lean path; increment (iii), #247) | The Verus-path battery (`check::mutation_score`) is UNTOUCHED (the SHIPPED `Counterexample ∪ Timeout` = killed + the #101 `equivalence_proves_equal` exclusion). **The engine-generic LEAN PATH is SHIPPED:** `engine::lean_mutant_outcome(admitted, &Verdict)` classifies a Lean-engine mutant — an ADMITTED mutant Lean does not prove (`Refuted ∪ Unknown-after-attempt`) is `Killed` (= the shipped `Counterexample ∪ Timeout`), an admitted `Proven` mutant `Survived`, a mutant the Lean fragment does NOT admit (out-of-spine / tier-(c)) is `UntestedAgainstLean` (NEVER counted killed — never inflates the ratio, §7 / R-DEFER-9). `engine::LeanMutationTally` accumulates `killed / attempted` (= attempted MINUS proven-equivalent — the SHIPPED `scored` denominator) + `untested` (reported in the cert, OUTSIDE the ratio) + `equivalent` (the #101 exclusion drops a proven-equivalent survivor from BOTH the survivor set AND the denominator); `qualifier()` is the floor-guard-1 line ("K/A killed … N untested against lean"). The #101 equivalence probe is a §0.1 verus META-query OUTSIDE the Engine interface in v1 (F3/OQ-5 — not threaded on the Lean-only path, so the Lean tally reports the RAW survivor set honestly). Non-test consumer: `check::lean_mutation_score` builds a per-mutant LeanEngine over the swapped-in mutant program (`program_with_mutant`) — the LeanEngine resolves an obligation's item by NAME from its program, so a mutant must be swapped in, else every mutant would re-export the unchanged original (a false survivor); the tally is attached to the Lean-proven cert via `lean_proven_cert`. Live-verified: an `add`-shaped item's operator-flip mutant is KILLED and its non-pure-tail early-return mutant is UNTESTED-against-lean (`1/1 killed; 1 untested`). Tested: the kill semantics (`engine.rs::lean_mutant_outcome_follows_req9`) + the no-inflation tally (`lean_mutation_tally_does_not_inflate_on_untested`). The floor 0/0 backstop is `kill_ratio() = 0.0` on an empty denominator. **The floor GATES the Lean path (the #248 fix), it does NOT merely report:** `LeanMutationTally::{meets_floor, mutants_killed_string, survivor_detail}` + `check::lean_proven_cert` REJECT the item `WeakContract`-style (via `Certificate::rejected_weak_contract`) when the kill-ratio is below the threaded `mutation_floor` OR the `0/0` backstop fires (mutants generated, all untested-against-lean) — mirroring the Verus path's `mutation_score → meets_floor` gate, never a silent L3. The Lean denominator = `attempted` with NO #101 equivalence exclusion (a §0.1 verus meta-query OUTSIDE the Lean-only path, F3/OQ-5) — stated honestly in the reject detail. A `spec fn` (no `ens`) skips the gate (nothing to mutate). Tested: `engine.rs::lean_tally_floor_gate` (the 1/1 pass, the 0/0 backstop, the 1/3 below-floor reject). |
-| REQ-10 (the exec-body bridge — straight-line bodies, §4.1) | SHIPPED (increment (iv), #253 — iv-a the spine, iv-b the exporter; ref #203) | **REQ-10.2 SHIPPED (iv-a)** — the `bindBool` spine layer: the DEFAULTED `Env.bools : String → Bool := fun _ => false` field + `Env.bindBool` (`lean/Thermite/Denote.lean`) + the `Expr.boolVar` leaf (`lean/Thermite/Ast.lean`) with its arms across `denote`/`refDenote`/`intVal`/`seqVal` (`Denote.lean`/`RefEncode.lean`), `ref_sound`/`refVal_eq` (`Soundness.lean`), and `specCallFree`/`intVal_fuel_irrelevant`/`seqVal_fuel_irrelevant`/`denote_fuel_irrelevant`/`denoteNB` (the EXPLICIT `some (env.bools x = true)` arm)/the `*_agrees`/`*_specCallFree` arms (`Stabilize.lean`); non-test consumers: `bindResult` + the four bridge pins + the exporter's bool-result path. **REQ-10.1/REQ-10.4 SHIPPED** — spine: `abbrev bodyConverges (b : Block) (st : State) (r : ExecVal) : Prop := bodyDenote b st = some r` (over the FUEL-FREE, genuine-`Option` `bodyDenote` — NO new NB layer, the §4.1.5 decision) + the value bridge `def bindResult` (int → `Env.bindInt env "result" r.value`, the IDENTITY on `BVal.value`; bool → `Env.bindBool`) in `lean/Thermite/Exec/Stmt.lean`; exporter: `emit_body_theorems` (`forge/src/lean_export.rs`) emits BOTH the HYPOTHESIZE CONTRACT theorem (the result bound THROUGH `bodyConverges`) AND the conjoined OVERFLOW theorem (`(bodyDenote body_block (stateOf v)).isSome`) in ONE file — the §4.1.5 conjunction rule. **REQ-10.3 SHIPPED (iv-b)** — `emit_state_of` (int param → `.int ⟨uW, v.ints x⟩`, bool → `.bool (v.bools p)`, slice → `(v.seqs xs).map (⟨uW, ·⟩)`; `scope := fun _ => false`) + the `InRangeParams` typed-input premise + the per-param `rfl` correspondence lemmas (the §4.1.4 compile-time tripwire). The `scope := false` EXP row is VERIFIED faithful against `thermite-tv::exec_stmt_encode::body_ref_state` (its initial `Env` is EMPTY — a param is a free input, a body `assign` to a param is `Err`/`none` on BOTH sides). **REQ-10.5 SHIPPED (iv-a)** — the four bridge divergence pins `PinExecValueBridge.lean`/`PinExecBoolBind.lean`/`PinExecOverflowVacuity.lean`/`PinExecStateMisMap.lean` (`lean/Thermite/`), each kernel-checked with `{propext, Classical.choice, Quot.sound}` (NO `sorryAx`), each pinning BOTH the poisoned discharge AND the faithful refutation. **REQ-10.6 SHIPPED (iv-b)** — `encode_exec_stmt` returns the STRUCTURED `ExportRefusal::LoopBody` for a `loop`/`while`/`break`/`continue`/mid-body-`return`/non-scalar-mutation body (§4.1.7, narrowed out of `NotPureContract`); an Option/Result-typed RESULT is `ExportRefusal::OptResResult` (#254 — `inductive ExecVal where | int (b : BVal) | bool (b : Bool)`, no optres variant to bridge); `LeanEngine::discharge` maps both to `Unknown` (an honest skip, never silent). Non-test consumer (the whole bridge): `engine::LeanEngine::discharge` → `export_item` → `export_straight_line_body` (`forge/src/lean_export.rs`) on the live `--engine lean` path. Verification: `lake build` green (381 jobs, the standard axiom set, every prior theorem + pin still compiling — the iv-a commit record); LIVE lake tests in `forge/src/engine.rs`: `live_straight_line_body_is_proven` (both theorems incl. the OVERFLOW conjunct), `live_bool_result_body_is_proven_via_bindbool`, `live_always_overflow_body_is_not_proven` (the `PinExecOverflowVacuity` Rust mirror — the vacuous CONTRACT never certifies), `while_body_item_refuses_export`, `optres_result_item_refuses_export`. **KNOWN LIMITATIONS (increment (iv) auto-discharge — coverage residuals, the iv-b audit; see the REQ-10 Known-limitations note):** the EXPORTABLE surface is WIDER than the auto-DISCHARGEABLE surface — (a) a `req`-bounded `_overflow` conjunct (e.g. `req a <= 100`, body `a + a`) and (b) a nested-`ifElse` body's `restoreScope` denotation both fail the shipped battery and DEGRADE to `Verdict::Unknown` (fail-to-certify — SOUND, conservative incompleteness, NEVER a false `Proven`); the close is a stronger auto battery or the REQ-7 INTERACTIVE path — a residual, NOT an open blocker (increment (v)'s loop battery, §4.2.4/#264, threads `hreq` through its unfold sets and is the named vehicle for residual (a)). RESIDUALS after #253 (recorded scope boundaries, the loop-residual lineage — refused STRUCTURALLY, never silently): Option/Result-typed results (#254), v1 while (the `loopDenote` composition — now DESIGNED as §4.2/REQ-11, increment (v), #264), spec-fns-in-exec. For history, the pre-#253 row recorded NO bridge code (every statement body `ExportRefusal::NotPureContract`, every non-int result `NonIntResult`, no `Env` bool sort) over the SHIPPED substrates (`bodyDenote`/`stmtDenote`/`blockThread`/`State`/`State.restoreScope` in `lean/Thermite/Exec/Stmt.lean`; `ExecVal`/`BVal`/`BVal.value`/`execDenote` in `lean/Thermite/Exec.lean`; the §4.1 conjunction rule + HYPOTHESIZE resolution) — superseded by this build. |
-| REQ-11 (the while-body widening — v1 `while` bodies, §4.2) | SHIPPED (increment (v) — v-a the spine #264/commit 99c7f304 + the #265 adaptation 92659eb7; v-b the exporter #264) | The WHILE-BODY COMPOSITION LAYER (v-a) is built and kernel-green AND the EXPORTER (v-b) is SHIPPED. Mirrors the same doc's Requirements-section REQ-11 entry (post-v-b). **REQ-11.1 SHIPPED (v-a)** — ALL in `lean/Thermite/Exec/WhileBody.lean` (composed AROUND the UNCHANGED `Exec/Stmt.lean` + `Exec/Loop.lean`): `def whileBodyDenote (prefixB cond lbody tail fuel st)` (the `Option`-monad composition prefix `blockThread` → the SHIPPED `loopDenote` → tail `execDenote`; `prefixB` is a Lean-keyword SYNTAX adaptation of the design's `prefix` binder, semantics unchanged) + `abbrev whileBodyConverges … : Prop := ∃ fuel, whileBodyDenote … = some r` (the ∃-fuel relation, result bound THROUGH it, the #214 discipline; NO NB layer — `none` is GENUINE fuel-exhaustion/failure) + `theorem loopDenote_fuel_mono` (surplus fuel after exit unconsumed, induction on fuel) + `theorem whileBodyConverges_unique` (overlap-at-max via fuel-mono + determinism — the `stabilizes_unique` mirror). Axioms `[propext, Quot.sound]`. **REQ-11.2 SHIPPED (v-a)** — `theorem while_compose (prefixB lbody cond tail I) (h_pres) : ∀ st₀ fuel r, whileBodyDenote … = some r → (∀ st₁, blockThread prefixB st₀ = some st₁ → I st₁) → ∃ stf, I stf ∧ condBool cond stf = some false ∧ execDenote tail stf.env = some r` — the SHIPPED partial-correctness `while_rule` lifted through the prefix/tail segments. Axioms `[propext, Quot.sound]`. **REQ-11.3 SHIPPED (v-a, with the #265 DECLARED ADAPTATION)** — `theorem loopDenote_exits_of_dec (cond lbody I μ) (h_pres) (h_cond_total) (h_progress) (h_dec) : ∀ st, I st → ∃ fuel stf, loopDenote cond lbody fuel st = some stf` — the TERMINATION bridge (dec-validity + progress ⟹ the exit witness `while_rule` HYPOTHESIZES, the REQ-1.2 `converges_imp_stabilizes` mirror). ONE DECLARED SEMANTIC ADAPTATION (#265, kernel-record `lean/Thermite/PinWhileDecShape.lean`, commit 92659eb7): the shipped `h_dec` bounds the PRE-state `0 ≤ μ st` (`h_dec : … → μ st' < μ st ∧ 0 ≤ μ st`) — strictly WEAKER hypothesis, so the shipped theorem is strictly MORE GENERAL than a post-state-bounded (`0 ≤ μ st'`) one (the two shapes are NON-equivalent per the pin's `shipped_hdec_is_not_the_pinned_shape`; the §4.2.2 sketch is now pinned to this PRE-state shape, and the pin's `loopDenote_exits_of_dec_design_shape` kernel-derives the post-state-bounded statement as a corollary — the adaptation strengthens, never weakens). Axioms `[propext, Quot.sound]`. **REQ-11.6 SHIPPED (v-a)** — the TWO bridge-divergence pins, each kernel-checked with the standard axiom set: `lean/Thermite/PinWhileVacuity.lean` (the termination-vacuity conjunction oracle — a `while true` no-op body's `whileBodyConverges` is FALSE at every fuel, so a FALSE-`ens` CONTRACT obligation discharges VACUOUSLY while the conjoined CONVERGENCE obligation `∃ r, whileBodyConverges …` is REFUTED at the same env), `lean/Thermite/PinWhileComposition.lean` (the composition mis-map — a loop-SKIPPING variant binds the ENTRY value `lo = 0` and CERTIFIES the wrong `ens: result == 0`, while the FAITHFUL composition runs the SHIPPED L1 loop to the EXIT value `lo = 3` and REFUTES it; both directions pinned). MECHANICAL CROSS-CHECK of the (v-a) ship: `lean/Thermite/PinWhileDecShape.lean` (the #265 critic pin, commit 92659eb7) `import Thermite.Exec.WhileBody` and APPLIES `loopDenote_exits_of_dec` — its kernel-checked compilation is itself the existence proof for the six declarations + the three pin files. KERNEL-BAR MECHANICS (#265): the default `lake build` (`defaultTargets = ["Thermite"]`) elaborates `Exec/WhileBody.lean` but NOT the `PinWhile*` modules, so each pin's `#print axioms` is asserted by EXPLICIT per-module elaboration (`lake env lean Thermite/PinWhileDecShape.lean`), within the standard set `{propext, Classical.choice, Quot.sound}` (NO `sorryAx`/new axiom); every existing theorem + prior pin still green. **REQ-11.4/11.5/11.7 SHIPPED (the exporter, v-b — #264).** `export_item` (`forge/src/lean_export.rs`) routes a v1 WHILE-shaped body (the last `Stmt::Loop(While)` before a REQUIRED tail) to `export_while_body`, the (v) recognizer `recognize_while_body` mirroring `recognize_v1_loop` arm-by-arm. **REQ-11.4** — `Inv_item` (user invs shallow over cells + per loop-CELL SORT+RANGE + per read scalar PARAM SORT+RANGE (the step's no-overflow guard `lo+1 < 2^w` needs each read param's bound `n < 2^w`, established at `_entry` from `InRangeParams`, preserved trivially) + other-param frame + per-cell scope) + `mu_item` (the `dec` over cells); the FIVE per-item obligations in the §4.2.4 DESIGN shapes — `_entry` the prefix-progress-AND-entry `∃ st₁, blockThread prefix_block (stateOf v) = some st₁ ∧ Inv_item v st₁`; `_pres`; `_progress`; `_dec` (the #265 PRE-state `0 ≤ μ st` bound); `_exit` the `∃ r, execDenote tail_expr st.env = some r ∧ <ens>` — with GENERATOR-FIXED proofs (the `WhileBattery` decode chains: `Bind.bindLeft`/sort/frame decode → the overflow `if` `split` → `omega`, `hreq`-aware); and the TWO GENERATOR-FIXED composed theorems (CONTRACT via `while_compose`, `_converges` via `loopDenote_exits_of_dec` — NO `first | … | skip` heuristics; the prefix/tail totality comes from `_entry`/`_exit`'s ∃-content). **REQ-11.5** — `recognize_while_body` / `reject_out_of_while_subset_stmt` / `encode_cell_*` keep the §4.2.5 inventory LOUD (loop-kind/nested/non-last/under-`if`/multi-loop/break/continue/mid-return/non-scalar/empty-or-weak-inv/tail-less → `ExportRefusal::LoopBody`; spec-calling inv/dec → `OutOfFragment`; optres → `OptResResult`). **REQ-11.7** — `check::lean_mutation_score` (UNCHANGED) routes each mutant through `LeanEngine::admits_auto` → `export_item`; an in-grammar while-body mutant now EXPORTS and is ATTEMPTED (not `UntestedAgainstLean`), the floor gate genuinely gates while items on the Lean path (the accounting flows through the fragment widening, no `check.rs` edit). The D-6 width seam is threaded (`cell_ctx` carries the prefix-`let` cell widths into the cond/body/tail/cell-read encodings, not hardcoded `u64`); the dead `cond_holds` emission (D-7) is dropped; `LeanEngine::run_lake` captures BOTH stdout and stderr (R-6a). VERIFICATION (`forge/tests/lean_while.rs`): `count_certifies_l3_via_lean_auto` (the L1 linear `while lo < n inv lo ≤ n dec n - lo { lo = lo + 1 }` certifies L3 via lean-auto — all 5+2 kernel-accept, `{propext, Classical.choice, Quot.sound}`); `sum_does_not_certify_l3_via_lean_recursive_residual` (the corpus `sum`'s recursive-registry `ens` is the §4 interactive residual — NOT L3-via-lean, the HONEST landing); `refusal_matrix_no_lean_certification`; `while_true_no_op_is_not_proven_l3_via_lean` (the §4.2.3 vacuity gate); `in_grammar_while_mutants_are_attempted_not_untested` (REQ-11.7); plus the in-process `engine::tests` (`live_while_body_item_is_honest` Proven, `while_body_item_refuses_export`, `while_refusal_inventory_is_structured`, `live_while_true_vacuity_is_not_proven`). KNOWN LIMITATION (the iv-b precedent — the auto-DISCHARGEABLE surface is narrower than the EXPORTABLE surface): nonlinear invariants/measures, multi-`let`-with-non-literal-init prefixes, and deeper-case-split bodies leave an unsolved goal → `Verdict::Unknown` (fail-to-certify, SOUND — never a false `Proven`; REQ-7 INTERACTIVE is the close); a coverage residual, NOT a blocker. Termination-honesty DECISION recorded at §4.2.3 (the conjoined `_converges`; the two rejected alternatives named with grounds). |
+| REQ-9 (engine-generic anti-Goodhart battery, honest v1) | SHIPPED (the Lean path; increment (iii), #247) | The Verus-path battery (`check::mutation_score`) is UNTOUCHED (the SHIPPED `Counterexample ∪ Timeout` = killed + the #101 `equivalence_proves_equal` exclusion). **The engine-generic LEAN PATH is SHIPPED:** `engine::lean_mutant_outcome(admitted, &Verdict)` classifies a Lean-engine mutant — an ADMITTED mutant Lean does not prove (`Refuted ∪ Unknown-after-attempt`) is `Killed` (= the shipped `Counterexample ∪ Timeout`), an admitted `Proven` mutant `Survived`, a mutant the Lean fragment does NOT admit (out-of-spine / tier-(c)) is `UntestedAgainstLean` (NEVER counted killed — never inflates the ratio, §7 / R-DEFER-9). `engine::LeanMutationTally` accumulates `killed / attempted` (= attempted MINUS proven-equivalent — the SHIPPED `scored` denominator) + `untested` (reported in the cert, OUTSIDE the ratio) + `equivalent` (the #101 exclusion drops a proven-equivalent survivor from BOTH the survivor set AND the denominator); `qualifier()` is the floor-guard-1 line ("K/A killed … N untested against lean"). The #101 equivalence probe is a §0.1 verus META-query OUTSIDE the Engine interface in v1 (F3/OQ-5 — not threaded on the Lean-only path, so the Lean tally reports the RAW survivor set honestly). Non-test consumer: `check::lean_mutation_score` builds a per-mutant LeanEngine over the swapped-in mutant program (`program_with_mutant`) — the LeanEngine resolves an obligation's item by NAME from its program, so a mutant must be swapped in, else every mutant would re-export the unchanged original (a false survivor); the tally is attached to the Lean-proven cert via `lean_proven_cert`. Live-verified: an `add`-shaped item's operator-flip mutant is KILLED and its non-pure-tail early-return mutant is UNTESTED-against-lean (`1/1 killed; 1 untested`). Tested: the kill semantics (`engine.rs::lean_mutant_outcome_follows_req9`) + the no-inflation tally (`lean_mutation_tally_does_not_inflate_on_untested`). The floor 0/0 backstop is `kill_ratio() = 0.0` on an empty denominator. **The floor GATES the Lean path (the #248 fix), it does NOT merely report:** `LeanMutationTally::{meets_floor, mutants_killed_string, survivor_detail}` + `check::lean_proven_cert` REJECT the item `WeakContract`-style (via `Certificate::rejected_weak_contract`) when the kill-ratio is below the threaded `mutation_floor` OR the `0/0` backstop fires (mutants generated, all untested-against-lean) — mirroring the Verus path's `mutation_score → meets_floor` gate, never a silent L3. The Lean denominator = `attempted` with NO #101 equivalence exclusion (a §0.1 verus meta-query OUTSIDE the Lean-only path, F3/OQ-5) — stated honestly in the reject detail. A `spec fn` (no `ensures`) skips the gate (nothing to mutate). Tested: `engine.rs::lean_tally_floor_gate` (the 1/1 pass, the 0/0 backstop, the 1/3 below-floor reject). |
+| REQ-10 (the exec-body bridge — straight-line bodies, §4.1) | SHIPPED (increment (iv), #253 — iv-a the spine, iv-b the exporter; ref #203) | **REQ-10.2 SHIPPED (iv-a)** — the `bindBool` spine layer: the DEFAULTED `Env.bools : String → Bool := fun _ => false` field + `Env.bindBool` (`lean/Thermite/Denote.lean`) + the `Expr.boolVar` leaf (`lean/Thermite/Ast.lean`) with its arms across `denote`/`refDenote`/`intVal`/`seqVal` (`Denote.lean`/`RefEncode.lean`), `ref_sound`/`refVal_eq` (`Soundness.lean`), and `specCallFree`/`intVal_fuel_irrelevant`/`seqVal_fuel_irrelevant`/`denote_fuel_irrelevant`/`denoteNB` (the EXPLICIT `some (env.bools x = true)` arm)/the `*_agrees`/`*_specCallFree` arms (`Stabilize.lean`); non-test consumers: `bindResult` + the four bridge pins + the exporter's bool-result path. **REQ-10.1/REQ-10.4 SHIPPED** — spine: `abbrev bodyConverges (b : Block) (st : State) (r : ExecVal) : Prop := bodyDenote b st = some r` (over the FUEL-FREE, genuine-`Option` `bodyDenote` — NO new NB layer, the §4.1.5 decision) + the value bridge `def bindResult` (int → `Env.bindInt env "result" r.value`, the IDENTITY on `BVal.value`; bool → `Env.bindBool`) in `lean/Thermite/Exec/Stmt.lean`; exporter: `emit_body_theorems` (`forge/src/lean_export.rs`) emits BOTH the HYPOTHESIZE CONTRACT theorem (the result bound THROUGH `bodyConverges`) AND the conjoined OVERFLOW theorem (`(bodyDenote body_block (stateOf v)).isSome`) in ONE file — the §4.1.5 conjunction rule. **REQ-10.3 SHIPPED (iv-b)** — `emit_state_of` (int param → `.int ⟨uW, v.ints x⟩`, bool → `.bool (v.bools p)`, slice → `(v.seqs xs).map (⟨uW, ·⟩)`; `scope := fun _ => false`) + the `InRangeParams` typed-input premise + the per-param `rfl` correspondence lemmas (the §4.1.4 compile-time tripwire). The `scope := false` EXP row is VERIFIED faithful against `thermite-tv::exec_stmt_encode::body_ref_state` (its initial `Env` is EMPTY — a param is a free input, a body `assign` to a param is `Err`/`none` on BOTH sides). **REQ-10.5 SHIPPED (iv-a)** — the four bridge divergence pins `PinExecValueBridge.lean`/`PinExecBoolBind.lean`/`PinExecOverflowVacuity.lean`/`PinExecStateMisMap.lean` (`lean/Thermite/`), each kernel-checked with `{propext, Classical.choice, Quot.sound}` (NO `sorryAx`), each pinning BOTH the poisoned discharge AND the faithful refutation. **REQ-10.6 SHIPPED (iv-b)** — `encode_exec_stmt` returns the STRUCTURED `ExportRefusal::LoopBody` for a `loop`/`while`/`break`/`continue`/mid-body-`return`/non-scalar-mutation body (§4.1.7, narrowed out of `NotPureContract`); an Option/Result-typed RESULT is `ExportRefusal::OptResResult` (#254 — `inductive ExecVal where | int (b : BVal) | bool (b : Bool)`, no optres variant to bridge); `LeanEngine::discharge` maps both to `Unknown` (an honest skip, never silent). Non-test consumer (the whole bridge): `engine::LeanEngine::discharge` → `export_item` → `export_straight_line_body` (`forge/src/lean_export.rs`) on the live `--engine lean` path. Verification: `lake build` green (381 jobs, the standard axiom set, every prior theorem + pin still compiling — the iv-a commit record); LIVE lake tests in `forge/src/engine.rs`: `live_straight_line_body_is_proven` (both theorems incl. the OVERFLOW conjunct), `live_bool_result_body_is_proven_via_bindbool`, `live_always_overflow_body_is_not_proven` (the `PinExecOverflowVacuity` Rust mirror — the vacuous CONTRACT never certifies), `while_body_item_refuses_export`, `optres_result_item_refuses_export`. **KNOWN LIMITATIONS (increment (iv) auto-discharge — coverage residuals, the iv-b audit; see the REQ-10 Known-limitations note):** the EXPORTABLE surface is WIDER than the auto-DISCHARGEABLE surface — (a) a `requires`-bounded `_overflow` conjunct (e.g. `requires a <= 100`, body `a + a`) and (b) a nested-`ifElse` body's `restoreScope` denotation both fail the shipped battery and DEGRADE to `Verdict::Unknown` (fail-to-certify — SOUND, conservative incompleteness, NEVER a false `Proven`); the close is a stronger auto battery or the REQ-7 INTERACTIVE path — a residual, NOT an open blocker (increment (v)'s loop battery, §4.2.4/#264, threads `hreq` through its unfold sets and is the named vehicle for residual (a)). RESIDUALS after #253 (recorded scope boundaries, the loop-residual lineage — refused STRUCTURALLY, never silently): Option/Result-typed results (#254), v1 while (the `loopDenote` composition — now DESIGNED as §4.2/REQ-11, increment (v), #264), spec-fns-in-exec. For history, the pre-#253 row recorded NO bridge code (every statement body `ExportRefusal::NotPureContract`, every non-int result `NonIntResult`, no `Env` bool sort) over the SHIPPED substrates (`bodyDenote`/`stmtDenote`/`blockThread`/`State`/`State.restoreScope` in `lean/Thermite/Exec/Stmt.lean`; `ExecVal`/`BVal`/`BVal.value`/`execDenote` in `lean/Thermite/Exec.lean`; the §4.1 conjunction rule + HYPOTHESIZE resolution) — superseded by this build. |
+| REQ-11 (the while-body widening — v1 `while` bodies, §4.2) | SHIPPED (increment (v) — v-a the spine #264/commit 99c7f304 + the #265 adaptation 92659eb7; v-b the exporter #264) | The WHILE-BODY COMPOSITION LAYER (v-a) is built and kernel-green AND the EXPORTER (v-b) is SHIPPED. Mirrors the same doc's Requirements-section REQ-11 entry (post-v-b). **REQ-11.1 SHIPPED (v-a)** — ALL in `lean/Thermite/Exec/WhileBody.lean` (composed AROUND the UNCHANGED `Exec/Stmt.lean` + `Exec/Loop.lean`): `def whileBodyDenote (prefixB cond lbody tail fuel st)` (the `Option`-monad composition prefix `blockThread` → the SHIPPED `loopDenote` → tail `execDenote`; `prefixB` is a Lean-keyword SYNTAX adaptation of the design's `prefix` binder, semantics unchanged) + `abbrev whileBodyConverges … : Prop := ∃ fuel, whileBodyDenote … = some r` (the ∃-fuel relation, result bound THROUGH it, the #214 discipline; NO NB layer — `none` is GENUINE fuel-exhaustion/failure) + `theorem loopDenote_fuel_mono` (surplus fuel after exit unconsumed, induction on fuel) + `theorem whileBodyConverges_unique` (overlap-at-max via fuel-mono + determinism — the `stabilizes_unique` mirror). Axioms `[propext, Quot.sound]`. **REQ-11.2 SHIPPED (v-a)** — `theorem while_compose (prefixB lbody cond tail I) (h_pres) : ∀ st₀ fuel r, whileBodyDenote … = some r → (∀ st₁, blockThread prefixB st₀ = some st₁ → I st₁) → ∃ stf, I stf ∧ condBool cond stf = some false ∧ execDenote tail stf.env = some r` — the SHIPPED partial-correctness `while_rule` lifted through the prefix/tail segments. Axioms `[propext, Quot.sound]`. **REQ-11.3 SHIPPED (v-a, with the #265 DECLARED ADAPTATION)** — `theorem loopDenote_exits_of_dec (cond lbody I μ) (h_pres) (h_cond_total) (h_progress) (h_dec) : ∀ st, I st → ∃ fuel stf, loopDenote cond lbody fuel st = some stf` — the TERMINATION bridge (dec-validity + progress ⟹ the exit witness `while_rule` HYPOTHESIZES, the REQ-1.2 `converges_imp_stabilizes` mirror). ONE DECLARED SEMANTIC ADAPTATION (#265, kernel-record `lean/Thermite/PinWhileDecShape.lean`, commit 92659eb7): the shipped `h_dec` bounds the PRE-state `0 ≤ μ st` (`h_dec : … → μ st' < μ st ∧ 0 ≤ μ st`) — strictly WEAKER hypothesis, so the shipped theorem is strictly MORE GENERAL than a post-state-bounded (`0 ≤ μ st'`) one (the two shapes are NON-equivalent per the pin's `shipped_hdec_is_not_the_pinned_shape`; the §4.2.2 sketch is now pinned to this PRE-state shape, and the pin's `loopDenote_exits_of_dec_design_shape` kernel-derives the post-state-bounded statement as a corollary — the adaptation strengthens, never weakens). Axioms `[propext, Quot.sound]`. **REQ-11.6 SHIPPED (v-a)** — the TWO bridge-divergence pins, each kernel-checked with the standard axiom set: `lean/Thermite/PinWhileVacuity.lean` (the termination-vacuity conjunction oracle — a `while true` no-op body's `whileBodyConverges` is FALSE at every fuel, so a FALSE-`ensures` CONTRACT obligation discharges VACUOUSLY while the conjoined CONVERGENCE obligation `∃ r, whileBodyConverges …` is REFUTED at the same env), `lean/Thermite/PinWhileComposition.lean` (the composition mis-map — a loop-SKIPPING variant binds the ENTRY value `lo = 0` and CERTIFIES the wrong `ens: result == 0`, while the FAITHFUL composition runs the SHIPPED L1 loop to the EXIT value `lo = 3` and REFUTES it; both directions pinned). MECHANICAL CROSS-CHECK of the (v-a) ship: `lean/Thermite/PinWhileDecShape.lean` (the #265 critic pin, commit 92659eb7) `import Thermite.Exec.WhileBody` and APPLIES `loopDenote_exits_of_dec` — its kernel-checked compilation is itself the existence proof for the six declarations + the three pin files. KERNEL-BAR MECHANICS (#265): the default `lake build` (`defaultTargets = ["Thermite"]`) elaborates `Exec/WhileBody.lean` but NOT the `PinWhile*` modules, so each pin's `#print axioms` is asserted by EXPLICIT per-module elaboration (`lake env lean Thermite/PinWhileDecShape.lean`), within the standard set `{propext, Classical.choice, Quot.sound}` (NO `sorryAx`/new axiom); every existing theorem + prior pin still green. **REQ-11.4/11.5/11.7 SHIPPED (the exporter, v-b — #264).** `export_item` (`forge/src/lean_export.rs`) routes a v1 WHILE-shaped body (the last `Stmt::Loop(While)` before a REQUIRED tail) to `export_while_body`, the (v) recognizer `recognize_while_body` mirroring `recognize_v1_loop` arm-by-arm. **REQ-11.4** — `Inv_item` (user invs shallow over cells + per loop-CELL SORT+RANGE + per read scalar PARAM SORT+RANGE (the step's no-overflow guard `lo+1 < 2^w` needs each read param's bound `n < 2^w`, established at `_entry` from `InRangeParams`, preserved trivially) + other-param frame + per-cell scope) + `mu_item` (the `measures` over cells); the FIVE per-item obligations in the §4.2.4 DESIGN shapes — `_entry` the prefix-progress-AND-entry `∃ st₁, blockThread prefix_block (stateOf v) = some st₁ ∧ Inv_item v st₁`; `_pres`; `_progress`; `_dec` (the #265 PRE-state `0 ≤ μ st` bound); `_exit` the `∃ r, execDenote tail_expr st.env = some r ∧ <ens>` — with GENERATOR-FIXED proofs (the `WhileBattery` decode chains: `Bind.bindLeft`/sort/frame decode → the overflow `if` `split` → `omega`, `hreq`-aware); and the TWO GENERATOR-FIXED composed theorems (CONTRACT via `while_compose`, `_converges` via `loopDenote_exits_of_dec` — NO `first | … | skip` heuristics; the prefix/tail totality comes from `_entry`/`_exit`'s ∃-content). **REQ-11.5** — `recognize_while_body` / `reject_out_of_while_subset_stmt` / `encode_cell_*` keep the §4.2.5 inventory LOUD (loop-kind/nested/non-last/under-`if`/multi-loop/break/continue/mid-return/non-scalar/empty-or-weak-inv/tail-less → `ExportRefusal::LoopBody`; spec-calling inv/dec → `OutOfFragment`; optres → `OptResResult`). **REQ-11.7** — `check::lean_mutation_score` (UNCHANGED) routes each mutant through `LeanEngine::admits_auto` → `export_item`; an in-grammar while-body mutant now EXPORTS and is ATTEMPTED (not `UntestedAgainstLean`), the floor gate genuinely gates while items on the Lean path (the accounting flows through the fragment widening, no `check.rs` edit). The D-6 width seam is threaded (`cell_ctx` carries the prefix-`let` cell widths into the cond/body/tail/cell-read encodings, not hardcoded `u64`); the dead `cond_holds` emission (D-7) is dropped; `LeanEngine::run_lake` captures BOTH stdout and stderr (R-6a). VERIFICATION (`forge/tests/lean_while.rs`): `count_certifies_l3_via_lean_auto` (the L1 linear `while lo < n keeps lo ≤ n measures n - lo { lo = lo + 1 }` certifies L3 via lean-auto — all 5+2 kernel-accept, `{propext, Classical.choice, Quot.sound}`); `sum_does_not_certify_l3_via_lean_recursive_residual` (the corpus `sum`'s recursive-registry `ensures` is the §4 interactive residual — NOT L3-via-lean, the HONEST landing); `refusal_matrix_no_lean_certification`; `while_true_no_op_is_not_proven_l3_via_lean` (the §4.2.3 vacuity gate); `in_grammar_while_mutants_are_attempted_not_untested` (REQ-11.7); plus the in-process `engine::tests` (`live_while_body_item_is_honest` Proven, `while_body_item_refuses_export`, `while_refusal_inventory_is_structured`, `live_while_true_vacuity_is_not_proven`). KNOWN LIMITATION (the iv-b precedent — the auto-DISCHARGEABLE surface is narrower than the EXPORTABLE surface): nonlinear invariants/measures, multi-`let`-with-non-literal-init prefixes, and deeper-case-split bodies leave an unsolved goal → `Verdict::Unknown` (fail-to-certify, SOUND — never a false `Proven`; REQ-7 INTERACTIVE is the close); a coverage residual, NOT a blocker. Termination-honesty DECISION recorded at §4.2.3 (the conjoined `_converges`; the two rejected alternatives named with grounds). |
 | REQ-12 (the early-return widening — v1 guard-return bodies, §4.3) | NOT-STARTED (increment (vi), open blocker #272) | DESIGNED ONLY (this amendment, review item 8) — no code exists on either side of the bridge. The SHIPPED exporter still REFUSES every (vi) shape, quoted: `encode_exec_stmt`'s arm `Stmt::Return(_) => Err(ExportRefusal::LoopBody("mid-body `return` (S_B has no early return — the body's result is its tail)"))` and `reject_out_of_while_subset_stmt`'s arm `Stmt::Return(_) => Err(ExportRefusal::LoopBody("mid-body `return` (the corpus `binary_search` uses `return None`/`return Some(mid)` — a multi-exit CPS form, OUT of v1)"))` (both `forge/src/lean_export.rs`); the `loop`-kind refuses via `recognize_while_body`'s While-only arm; an Option/Result result via `ExportRefusal::OptResResult` (#254). The Lean spine has NO return layer: `Stmt` (`lean/Thermite/Exec/Stmt.lean`) has no return constructor (the module's honest-absence note: "a mid-body early `return` (a multi-exit CPS form) is OUT of v1; the `ret` form here is the TAIL result only"), `blockThread : Block → State → Option State` has no value channel, and `Env` (`lean/Thermite/Denote.lean`) has no `bindOptRes`. The SUBSTRATES the design composes over ARE shipped and load-bearing: the #180 contract fragment (`OptResVal`/`Env.optres`/`Expr.match_`/`denoteArms`) already denotes `binary_search`'s entire CONTRACT side, and the forge `encode_match` already emits it — every missing piece is body-side (REQ-12.1–12.8, all NOT-STARTED). Diagnostic: `blockThread`/`loopDenote` have no return channel, so (vi) is a NEW-LAYER build (the §4.3.3(a) cost-class declaration), not a (v)-class composition — sequenced (vi-a) spine + THREE pins, then (vi-b) exporter, both under #272. |
 
 ## Open questions (for co-authorship)

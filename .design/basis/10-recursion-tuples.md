@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 1db26fff290ff1b75339f512102a5dae2c8a067c711c257e8d24afe0c0262148 (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: 4b7376c90d1e93d96de7d617503cd79c41d17dbe9feeeb2b49df59879f99695a (re-pinned 2026-08-25 for issue #8 Vec View lowering; recursion and tuple semantics are unchanged. prior: 06660e2af10dadf0f3017e53eb300568d23fad46e15fe82e87dffb7ffdb219df)
 governs: thermite-syntax/src/ast.rs
 governs: thermite-syntax/src/parser.rs
 governs: thermite-spec/src/validator.rs
@@ -19,8 +19,8 @@ thesis-refs:
 
 The two remaining "compose any program" primitives the kernel still lacks
 (crosslink #107): **(A) plain-`fn` recursion** — a regular exec `fn` carrying a
-`dec` measure so it can call itself (recursive-descent parsers, tree walks),
-with termination proved by the decreases exactly as a `loop`'s `dec` and a
+`measures` measure so it can call itself (recursive-descent parsers, tree walks),
+with termination proved by the decreases exactly as a `loop`'s `measures` and a
 `spec fn`'s `decreases` already are; and **(B) tuples** — `Type::Tuple` /
 `Expr::Tuple` with `.N` projection, for multiple returns and pairs. Both lower
 to native Verus (Verus has both recursive `fn` `decreases` and `(T, U)`
@@ -32,11 +32,11 @@ Verification) before this contract was pinned.
 ## Probe-confirmed gaps (the ground truth this doc adapts to)
 
 - **(A)** `SpecFnItem` already carries `dec: Clause` (`ast.rs`), but `FnItem`
-  has **no `dec` field** and `parse_contract` in `parser.rs` parses only
-  `req`/`ens*`/`fx` — no `dec` slot. A surface `fn` with a `dec` clause parses
-  as a contract error: `forge check` on `fn fac(n) … ens result>=1 dec n {…}`
+  has **no `measures` field** and `parse_contract` in `parser.rs` parses only
+  `requires`/`ens*`/`!` — no `measures` slot. A surface `fn` with a `measures` clause parses
+  as a contract error: `forge check` on `fn fac(n) … ensures result>=1 measures n {…}`
   yields `function "fac" is missing the mandatory "fx" clause` (the parser hits
-  `dec` where it expects `fx`). A self-call therefore cannot even be written,
+  `measures` where it expects `!`). A self-call therefore cannot even be written,
   and `lower_fn` in `lower.rs` emits **no `decreases`** on a plain `fn` (it emits
   the signature `requires`/`ensures` then the body; only `lower_loop` and
   `lower_spec_fn` emit `decreases`).
@@ -52,26 +52,26 @@ Verification) before this contract was pinned.
 
 ### (A) Plain-`fn` recursion
 
-- **REQ-1 (`fn` `dec` clause — AST + grammar):** `FnItem` gains an OPTIONAL
+- **REQ-1 (`fn` `measures` clause — AST + grammar):** `FnItem` gains an OPTIONAL
   `dec: Option<Clause>` field (mirroring `SpecFnItem.dec: Clause`, but optional —
-  a non-recursive `fn` has `dec = None`). The fn contract grammar gains a `dec`
-  slot AFTER `fx` (so the order is `req` → `ens+` → `fx` → optional `dec`; `dec`
-  last keeps the existing `req`/`ens`/`fx` parse byte-stable and matches the
-  loop clause order where `dec` follows the `inv`s). `parse_contract` (or
+  a non-recursive `fn` has `dec = None`). The fn contract grammar gains a `measures`
+  slot AFTER `!` (so the order is `requires` → `ens+` → `!` → optional `measures`; `measures`
+  last keeps the existing `!`/`requires`/`ensures` parse byte-stable and matches the
+  loop clause order where `measures` follows the `keeps`s). `parse_contract` (or
   `parse_fn`) parses an optional trailing `dec <expr>` clause into
-  `FnItem.dec`. Derived from §4.1 (the `inv`/`dec` model; "Termination is proved
-  by default") and Appendix A (`spec_sum`'s `dec xs.len()` — the same measure
+  `FnItem.dec`. Derived from §4.1 (the `keeps`/`measures` model; "Termination is proved
+  by default") and Appendix A (`spec_sum`'s `measures xs.len()` — the same measure
   shape on the spec side).
 
-- **REQ-2 (`dec` MANDATORY for a recursive `fn`; the self-call validator
+- **REQ-2 (`measures` MANDATORY for a recursive `fn`; the self-call validator
   rule):** A `fn` that calls itself (directly; mutual recursion is REQ-6) MUST
-  carry a `dec` clause UNLESS its effect row contains `diverge`. The validator
+  carry a `measures` clause UNLESS its effect row contains `diverge`. The validator
   (`thermite-spec/src/validator.rs`) detects a self-call in the fn body and, if
-  `dec` is absent AND the fn is not `fx diverge`, emits a span-bearing
+  `measures` is absent AND the fn is not `! diverge`, emits a span-bearing
   `SpecError` (a structured error, NOT a silent non-terminating accept). This is
   the surface-level mirror of the Verus rule `recursive function must have a
   decreases clause` (GROUNDED below) — Thermite reports it as its own diagnostic
-  so the user never reaches a raw Verus error. The `fx diverge` exemption is the
+  so the user never reaches a raw Verus error. The `! diverge` exemption is the
   SAME one #88 already wired for diverge loops: `lower_fn` emits
   `#[verifier::exec_allows_no_decreases_clause]` for a `fn_is_diverge` fn
   (existing code), which is exactly the attribute Verus's own help text names as
@@ -79,20 +79,20 @@ Verification) before this contract was pinned.
   diverge`") + #88 (the diverge → L1 cap, mutation-exempt).
 
 - **REQ-3 (`fn` `decreases` lowering):** `lower_fn` in `thermite-lower/src/
-  lower.rs` emits a `decreases <measure>` clause on a `fn` that carries `dec`,
+  lower.rs` emits a `decreases <measure>` clause on a `fn` that carries `measures`,
   placed after the `requires`/`ensures` block and before the body `{` — the SAME
   position and the SAME measure-lowering helper used for `spec fn` (`spec_dec`)
-  and the loop (`lower_loop`). A non-recursive `fn` (no `dec`) emits NO
+  and the loop (`lower_loop`). A non-recursive `fn` (no `measures`) emits NO
   `decreases` (byte-stable for the entire existing corpus — the goldens do not
   churn). The self-call inside the body lowers as an ordinary `Expr::Call` (no
   special node); Verus discharges termination from the emitted `decreases`.
   Derived from §4.1 + the existing `lower_spec_fn` `decreases` emission.
 
 - **REQ-4 (termination BITES — the decreases is not optional):** A recursive
-  `fn` whose `dec` measure does NOT decrease on the recursive call is **L0**
-  (Verus: `could not prove termination`). A recursive `fn` with NO `dec` and NO
-  `fx diverge` is a structured **validator error** (REQ-2), never reaching the
-  ladder. A `fx diverge` recursive `fn` is capped at **L1** by the #88 gate
+  `fn` whose `measures` measure does NOT decrease on the recursive call is **L0**
+  (Verus: `could not prove termination`). A recursive `fn` with NO `measures` and NO
+  `! diverge` is a structured **validator error** (REQ-2), never reaching the
+  ladder. A `! diverge` recursive `fn` is capped at **L1** by the #88 gate
   (partial correctness only; termination not claimed). This is the no-proof-cheat
   guarantee (`goal.md` R-DEFER-9): a non-terminating fn cannot be laundered to
   L3. Derived from §4.1 + §7 (the battery's teeth) + R-DEFER-9.
@@ -104,7 +104,7 @@ Verification) before this contract was pinned.
   `enum Expr` gains `Tuple(Vec<Expr>)` (the construction `(a, b)`) and a
   projection. PIN — **projection, not destructuring, is the v1 primitive**: a
   projection `e.0` / `e.1` is parsed in the existing postfix `.` ladder
-  (`parse_postfix`) and is the simpler, contract-friendly form (an `ens` reads
+  (`parse_postfix`) and is the simpler, contract-friendly form (an `ensures` reads
   `result.0`, which is exactly the GROUNDED Verus form `r.0 == b`).
 
   **Projection node decision (for the builder): REUSE `Expr::Field` with a
@@ -126,12 +126,12 @@ Verification) before this contract was pinned.
   into one self-recursive fn with a tag parameter in v1). This is a HONEST
   scope pin, not a silent gap: the validator's self-call rule (REQ-2) detects
   DIRECT self-calls; a mutually-recursive pair (neither calls itself directly,
-  but they call each other without a `dec` chain) reaches Verus and is rejected
+  but they call each other without a `measures` chain) reaches Verus and is rejected
   there. Tracked as a follow-up under #107; NOT a v1 REQ. Derived from §2.3 +
   the v0.1 "kernel first" scope (`goal.md`).
 
 - **REQ-7 (tuple arity — n-tuples, 2+):** v1 ships **n-tuples (arity ≥ 2)**,
-  not pairs-only. GROUNDED: a 3-tuple `(u64, u64, u64)` with `ens r.0==1 &&
+  not pairs-only. GROUNDED: a 3-tuple `(u64, u64, u64)` with `ensures r.0==1 &&
   r.1==2 && r.2==3` certifies L3 under real verus (Verification), so there is no
   reason to cap at pairs — `Type::Tuple(Vec<Type>)` / `Expr::Tuple(Vec<Expr>)`
   naturally carry any arity. Arity-1 `(T)` is NOT a tuple (it is a parenthesized
@@ -179,42 +179,42 @@ Verification) before this contract was pinned.
 
 ## Acceptance criteria
 
-- **AC-1 (recursive `fn` with `dec` certifies L3 — GROUNDED):** A recursive exec
-  `fn` carrying a `dec` measure and an `ens` tied to a recursive spec twin
+- **AC-1 (recursive `fn` with `measures` certifies L3 — GROUNDED):** A recursive exec
+  `fn` carrying a `measures` measure and an `ensures` tied to a recursive spec twin
   certifies L3 (Verus `verified, 0 errors`). GROUNDED form (Verification): a
   countdown `fn count_down(n)` over a recursive spec `zeros(n)`. (REQ-1, REQ-3)
-- **AC-2 (non-decreasing recursion → L0 — GROUNDED):** the SAME fn whose `dec`
+- **AC-2 (non-decreasing recursion → L0 — GROUNDED):** the SAME fn whose `measures`
   measure does not decrease on the recursive call (e.g. recurses on `n`, not
   `n-1`) is L0: Verus `could not prove termination`. (REQ-4)
-- **AC-3 (self-call without `dec` → structured error — GROUNDED):** a recursive
-  `fn` with NO `dec` and NO `fx diverge` is a validator `SpecError` (REQ-2),
+- **AC-3 (self-call without `measures` → structured error — GROUNDED):** a recursive
+  `fn` with NO `measures` and NO `! diverge` is a validator `SpecError` (REQ-2),
   mirroring the Verus diagnostic `recursive function must have a decreases
-  clause`; it never reaches an L3 cert. A `fx diverge` recursive fn is L1-capped
+  clause`; it never reaches an L3 cert. A `! diverge` recursive fn is L1-capped
   (#88), not L0. (REQ-2, REQ-4)
 - **AC-4 (tuple fn certifies L3 via projection — GROUNDED):** `fn swap(a, b:
-  u64) -> (u64, u64) ens result.0 == b && result.1 == a { (b, a) }` certifies L3
+  u64) -> (u64, u64) ensures result.0 == b && result.1 == a { (b, a) }` certifies L3
   (Verus `verified, 0 errors`). (REQ-5, REQ-7, REQ-8)
 - **AC-5 (wrong projection → L0 — GROUNDED):** the SAME `swap` with body `(a,
-  b)` is L0 (Verus `postcondition not satisfied` — the projection `ens` is
+  b)` is L0 (Verus `postcondition not satisfied` — the projection `ensures` is
   non-vacuous, the §7 vacuity gate respected). (REQ-8)
 - **AC-6 (n-tuple, arity ≥ 2 — GROUNDED):** a 3-tuple
-  `(u64, u64, u64)` with projection `ens` certifies L3 (Verification). Arity-0
+  `(u64, u64, u64)` with projection `ensures` certifies L3 (Verification). Arity-0
   `()` stays `Type::Unit`; arity-1 `(T)` is grouping, not a tuple. (REQ-7)
 - **AC-7 (no-tuple corpus is byte-stable):** programs with no tuple and no fn
-  `dec` lower IDENTICALLY (the `lower_fn` `decreases` is suppressed when `dec =
+  `measures` lower IDENTICALLY (the `lower_fn` `decreases` is suppressed when `dec =
   None`; the `Type::Unit` path is unchanged) — the existing `tests/golden/`
   files do not churn. (REQ-3, REQ-8)
 
 ## Architecture
 
-**The fn `dec` is the loop/spec-fn `dec`, lifted to the `fn`.** The decreases
+**The fn `measures` is the loop/spec-fn `measures`, lifted to the `fn`.** The decreases
 machinery already exists three times: `lower_loop` emits `decreases <dec>` on a
 `loop`/`while`; `lower_spec_fn` emits `decreases <spec_dec(s.dec)>` on a
 recursive `spec fn`; and the recursion-scheme machinery
 (`.design/basis/02-recursion-schemes.md`) generates `fold_<e>` with `decreases
 l`. REQ-3 is the FOURTH instance: `lower_fn` emits the SAME `decreases` from
 `FnItem.dec`, in the SAME signature position the spec-fn uses (after
-`requires`/`ensures`, before the body). The `fx diverge` exemption is ALREADY
+`requires`/`ensures`, before the body). The `! diverge` exemption is ALREADY
 wired — `lower_fn` emits `#[verifier::exec_allows_no_decreases_clause]` for a
 `fn_is_diverge` fn (the #88 mechanism), which is precisely Verus's named escape
 from the recursive-decreases check. So the recursion REQ is a SMALL, well-
@@ -239,7 +239,7 @@ reusing the existing `.`-ladder, with no new pattern node.
 **Mutual recursion is OUT of v1 (REQ-6).** Direct self-recursion covers
 recursive-descent parsers and tree walks; mutual recursion needs a Verus
 mutual-`decreases` group and a shared/lexicographic measure — deferred honestly,
-not silently. A mutually-recursive pair without a `dec` chain reaches Verus and
+not silently. A mutually-recursive pair without a `measures` chain reaches Verus and
 is rejected there (no false L3).
 
 ## Verification
@@ -267,31 +267,31 @@ GROUNDED with real `verus 0.2026.05.24.ecee80a` on the lowering each REQ targets
                                                                 — the fx-diverge exemption, #88)
 
 (B) tuples
-  fn swap(a,b: u64) -> (u64,u64) ens r.0==b, r.1==a { (b,a) } -> 2 verified, 0 errors  (L3)
+  fn swap(a,b: u64) -> (u64,u64) ensures r.0==b, r.1==a { (b,a) } -> 2 verified, 0 errors  (L3)
   SAME swap with body (a, b)                                  -> "postcondition not satisfied"  (L0)
-  fn triple() -> (u64,u64,u64) ens r.0==1, r.1==2, r.2==3     -> 3 verified, 0 errors  (L3, arity 3)
+  fn triple() -> (u64,u64,u64) ensures r.0==1, r.1==2, r.2==3     -> 3 verified, 0 errors  (L3, arity 3)
   let-destructuring `let (x,y) = p;` (DEFERRED, REQ-9)        -> 3 verified, 0 errors  (Verus supports it;
                                                                 proves projection is not the only option)
 ```
 
-The `ens` clauses are NON-VACUOUS (`r.0 == b`, `r as nat == zeros(n)`), so a
-wrong body/measure is rejected — the §7 vacuity gate (which rejects `ens true`)
+The `ensures` clauses are NON-VACUOUS (`r.0 == b`, `r as nat == zeros(n)`), so a
+wrong body/measure is rejected — the §7 vacuity gate (which rejects `ensures true`)
 is respected. The recursion grounding shows the decreases is the ONLY thing
 standing between the fn and L0 (remove it → structured error; weaken it →
-termination failure), and the tuple grounding shows the projection `ens` bites.
+termination failure), and the tuple grounding shows the projection `ensures` bites.
 
 ## REQ status
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (`fn` `dec` clause — AST + grammar) | SHIPPED | #108. `FnItem.dec: Option<Clause>` (`ast.rs`, mirroring `SpecFnItem.dec` but optional); `parse_fn` (`parser.rs`) parses an optional trailing `dec <expr>` AFTER `fx` (OQ-4 byte-stable slot) into `FnItem.dec`. Consumer: `thermite-lower::lower::lower_fn` (the `decreases` emission). Verified: `forge/tests/recursion_conformance.rs::recursive_fn_with_dec_certifies_l3` (real verus L3). |
-| REQ-2 (`dec` mandatory for recursive `fn`; self-call validator rule) | SHIPPED | #108. `validator.rs` `run`'s `Item::Fn` arm detects a direct self-call (`block_calls_name`) and emits `SpecError::MissingDecreases` when `dec.is_none() && !fn_is_diverge(f)`. The `fx diverge` exemption is honored (`fn_is_diverge`, mirroring `thermite-lower`'s) — a diverge fn recurses without `dec` and is L1-capped (#88). Consumer: `pub fn validate` → `forge::check`. Verified: `forge/tests/recursion_conformance.rs::self_call_without_dec_is_structured_error` (the MissingDecreases reject) + `diverge_recursion_without_dec_is_l1`. |
+| REQ-1 (`fn` `measures` clause — AST + grammar) | SHIPPED | #108. `FnItem.dec: Option<Clause>` (`ast.rs`, mirroring `SpecFnItem.dec` but optional); `parse_fn` (`parser.rs`) parses an optional trailing `dec <expr>` AFTER `!` (OQ-4 byte-stable slot) into `FnItem.dec`. Consumer: `thermite-lower::lower::lower_fn` (the `decreases` emission). Verified: `forge/tests/recursion_conformance.rs::recursive_fn_with_dec_certifies_l3` (real verus L3). |
+| REQ-2 (`measures` mandatory for recursive `fn`; self-call validator rule) | SHIPPED | #108. `validator.rs` `run`'s `Item::Fn` arm detects a direct self-call (`block_calls_name`) and emits `SpecError::MissingDecreases` when `dec.is_none() && !fn_is_diverge(f)`. The `! diverge` exemption is honored (`fn_is_diverge`, mirroring `thermite-lower`'s) — a diverge fn recurses without `measures` and is L1-capped (#88). Consumer: `pub fn validate` → `forge::check`. Verified: `forge/tests/recursion_conformance.rs::self_call_without_dec_is_structured_error` (the MissingDecreases reject) + `diverge_recursion_without_dec_is_l1`. |
 | REQ-3 (`fn` `decreases` lowering) | SHIPPED | #108. `lower_fn` (`lower.rs`) emits `decreases <spec_dec(f.dec)>` AFTER the `requires`/`ensures` block and BEFORE the body when `f.dec.is_some()` — the SAME `spec_dec` helper + position the recursive `spec fn` uses; a non-recursive fn (`dec = None`) emits NO `decreases` (byte-stable, AC-7). The self-call lowers as an ordinary `Expr::Call`. Consumer: `lower` (`Item::Fn`). Verified: `forge/tests/recursion_conformance.rs` (L3 + builds+runs); GROUNDED `decreases n` certifies L3. |
-| REQ-4 (termination bites) | SHIPPED | #108. GROUNDED with real verus end-to-end: non-decreasing (`dec n`, recurse on `n`) → `could not prove termination` (L0); no-`dec` → `MissingDecreases` (structured validator error, never reaching L3); `fx diverge` recursive fn → L1-capped (#88), NOT L0. The no-cheat guarantee (R-DEFER-9) holds — the decreases is the ONLY thing between the fn and L0. Consumer: `forge::check` ladder. Verified: `forge/tests/recursion_conformance.rs::nondecreasing_recursion_is_l0` + `self_call_without_dec_is_structured_error` + `diverge_recursion_without_dec_is_l1`. |
+| REQ-4 (termination bites) | SHIPPED | #108. GROUNDED with real verus end-to-end: non-decreasing (`measures n`, recurse on `n`) → `could not prove termination` (L0); no-`measures` → `MissingDecreases` (structured validator error, never reaching L3); `! diverge` recursive fn → L1-capped (#88), NOT L0. The no-cheat guarantee (R-DEFER-9) holds — the decreases is the ONLY thing between the fn and L0. Consumer: `forge::check` ladder. Verified: `forge/tests/recursion_conformance.rs::nondecreasing_recursion_is_l0` + `self_call_without_dec_is_structured_error` + `diverge_recursion_without_dec_is_l1`. |
 | REQ-5 (`Type::Tuple` + `Expr::Tuple` + projection — AST) | SHIPPED | #109. `enum Type` += `Tuple(Vec<Type>)`; `enum Expr` += `Tuple(Vec<Expr>)` + the DEDICATED projection node `TupleProj { receiver: Box<Expr>, index: usize }` (OQ-1 RESOLVED → dedicated node, NOT an overloaded `Field` with a string `"0"` name: a tuple index is a `usize`). `parse_type_inner`'s `LParen` arm now disambiguates by the comma (`()` → `Unit`, `(T)` → grouping, `(T, U, …)` → `Tuple`); `parse_primary`'s `(` arm builds `Expr::Tuple` on a comma (`(e)` → grouping); `parse_postfix`'s `.` arm builds `Expr::TupleProj` when the token after `.` is an `Int`. Consumer: `thermite-lower::lower::lower_type`/`lower_expr` (→ Verus tuples). Verified: `forge/tests/tuples_conformance.rs::tuple_type_disambiguation_unit_grouping_tuple` + `tuple_expr_and_projection_nodes` (the node shapes + `()`/`(e)`/`(a,b)` disambiguation). |
 | REQ-6 (mutual recursion — DEFERRED) | NOT-STARTED | follow-up under #107 (honest scope pin, not a v1 REQ). v1 ships direct self-recursion only; a mutually-recursive pair reaches Verus and is rejected there (no false L3). Recorded so the critic does not classify it as a silent gap. |
-| REQ-7 (tuple arity — n-tuples, ≥ 2) | SHIPPED | #109. `Type::Tuple(Vec<Type>)`/`Expr::Tuple(Vec<Expr>)` carry any arity ≥ 2; the parser distinguishes by the comma (`()` → `Unit`, `(T)` → grouping/the inner, `(T, U, …)` → `Tuple`). Verified: `forge/tests/tuples_conformance.rs::ac6_three_tuple_certifies_l3` — a 3-tuple `(u64, u64, u64)` with `ens result.0 == 1 && result.1 == 2 && result.2 == 3` certifies L3 under real verus; `tuple_type_disambiguation_unit_grouping_tuple` pins `()` = `Unit` and `(u64)` = grouping (the inner type). |
-| REQ-8 (tuple lowering + exhaustive-match ripple) | SHIPPED | #109. `lower_type` += a `Type::Tuple` arm (→ Verus `(<t0>, …)`); `lower_expr` += `Expr::Tuple` (→ `(<e0>, …)`) + `Expr::TupleProj` (→ `<recv>.<index>`) arms; the SAME in `l1.rs` (exec mirror) + the `l1`/`l2` `lower_type`/label arms. The NEW variants' workspace ripple is CLOSED with honest leaf arms (no `_`/panic): `parser.rs`, `lower.rs` (lower_type/lower_expr + every `Type`/`Expr` walk: combinator/scheme/deref-call/Vec-elem/String-reach/mention collectors), `l1.rs` (8 sites), `l2.rs` (label), `effects.rs` (effect-walk = element union; projection pure), `validator.rs` (scan/cage/self-call walks — projection a flat §4.2-cage built-in like `Field`), `check.rs` (3), `mutation.rs` (scan/apply + the early-return zero-tuple synth, below), `vacuity.rs` (`result`-mention through projection — the load-bearing tuple-vacuity case), `closure.rs`, `review.rs` (callee-walk + render_type), `strengthen.rs` (render_expr), `generate.rs` (skill arms + inventories). A tuple-returning fn with no body mutation site (the GROUNDED `swap` body `(b, a)`) gets a synthesized zero-tuple early-return mutant (`mutation::zero_value_for`/`early_return_value`, the #48/#74/#80 pattern extended to the tuple class) so it is mutation-scoreable, NOT spuriously gated `WeakContract`/L0. Verified: `forge/tests/tuples_conformance.rs::ac4_swap_tuple_projection_certifies_l3` (L3, 1/1 killed) + `ac5_wrong_body_under_projection_ens_is_rejected` (wrong `(a, b)` → NOT L3, the projection `ens` bites, R-DEFER-9) + `req8_tuple_let_and_exec_projection_certifies_l3` (a tuple `let` + an EXEC projection → L3). |
+| REQ-7 (tuple arity — n-tuples, ≥ 2) | SHIPPED | #109. `Type::Tuple(Vec<Type>)`/`Expr::Tuple(Vec<Expr>)` carry any arity ≥ 2; the parser distinguishes by the comma (`()` → `Unit`, `(T)` → grouping/the inner, `(T, U, …)` → `Tuple`). Verified: `forge/tests/tuples_conformance.rs::ac6_three_tuple_certifies_l3` — a 3-tuple `(u64, u64, u64)` with `ensures result.0 == 1 && result.1 == 2 && result.2 == 3` certifies L3 under real verus; `tuple_type_disambiguation_unit_grouping_tuple` pins `()` = `Unit` and `(u64)` = grouping (the inner type). |
+| REQ-8 (tuple lowering + exhaustive-match ripple) | SHIPPED | #109. `lower_type` += a `Type::Tuple` arm (→ Verus `(<t0>, …)`); `lower_expr` += `Expr::Tuple` (→ `(<e0>, …)`) + `Expr::TupleProj` (→ `<recv>.<index>`) arms; the SAME in `l1.rs` (exec mirror) + the `l1`/`l2` `lower_type`/label arms. The NEW variants' workspace ripple is CLOSED with honest leaf arms (no `_`/panic): `parser.rs`, `lower.rs` (lower_type/lower_expr + every `Type`/`Expr` walk: combinator/scheme/deref-call/Vec-elem/String-reach/mention collectors), `l1.rs` (8 sites), `l2.rs` (label), `effects.rs` (effect-walk = element union; projection pure), `validator.rs` (scan/cage/self-call walks — projection a flat §4.2-cage built-in like `Field`), `check.rs` (3), `mutation.rs` (scan/apply + the early-return zero-tuple synth, below), `vacuity.rs` (`result`-mention through projection — the load-bearing tuple-vacuity case), `closure.rs`, `review.rs` (callee-walk + render_type), `strengthen.rs` (render_expr), `generate.rs` (skill arms + inventories). A tuple-returning fn with no body mutation site (the GROUNDED `swap` body `(b, a)`) gets a synthesized zero-tuple early-return mutant (`mutation::zero_value_for`/`early_return_value`, the #48/#74/#80 pattern extended to the tuple class) so it is mutation-scoreable, NOT spuriously gated `WeakContract`/L0. Verified: `forge/tests/tuples_conformance.rs::ac4_swap_tuple_projection_certifies_l3` (L3, 1/1 killed) + `ac5_wrong_body_under_projection_ens_is_rejected` (wrong `(a, b)` → NOT L3, the projection `ensures` bites, R-DEFER-9) + `req8_tuple_let_and_exec_projection_certifies_l3` (a tuple `let` + an EXEC projection → L3). |
 
 ## Open questions (for the orchestrator)
 
@@ -309,8 +309,8 @@ termination failure), and the tuple grounding shows the projection `ens` bites.
   future mutual-recursion REQ needs a Verus mutual-`decreases` group + a
   shared/lexicographic measure + a multi-fn self-call validator rule. Tracked
   under #107; not a v1 concern. Not a blocker.
-- **OQ-4 (fn `dec` clause order — after `fx`):** REQ-1 pins `dec` LAST (after
-  `fx`), keeping `req`/`ens`/`fx` byte-stable and mirroring the loop order
-  (`inv`s then `dec`). An alternative (`dec` before `fx`) would churn the
-  contract parse; the after-`fx` slot is the minimal, byte-stable choice. Not a
+- **OQ-4 (fn `measures` clause order — after `!`):** REQ-1 pins `measures` LAST (after
+  `!`), keeping `!`/`requires`/`ensures` byte-stable and mirroring the loop order
+  (`keeps`s then `measures`). An alternative (`measures` before `!`) would churn the
+  contract parse; the after-`!` slot is the minimal, byte-stable choice. Not a
   blocker.

@@ -104,7 +104,8 @@ pub struct SpecFnDecl {
     pub signature: String,
     /// The `dec` decreases-measure clause text (verbatim `Clause.text`), e.g.
     /// `xs.len()`. The well-formedness measure, read from the declaration.
-    pub dec: String,
+    #[serde(rename = "dec")]
+    pub measures: String,
 }
 
 impl SpecFnDecl {
@@ -121,7 +122,7 @@ impl SpecFnDecl {
                 render_params(&s.params),
                 render_type(&s.ret),
             ),
-            dec: s.dec.text.clone(),
+            measures: s.measures.text.clone(),
         }
     }
 }
@@ -153,9 +154,9 @@ impl SpecLayer {
     /// `SpecFnItem.body`.
     fn extract(contract: &Contract, spec_fns: &[&thermite_syntax::SpecFnItem]) -> Self {
         SpecLayer {
-            req: contract.req.text.clone(),
-            ens: contract.ens.iter().map(|c| c.text.clone()).collect(),
-            fx: effects_of(&contract.fx),
+            req: contract.requires.text.clone(),
+            ens: contract.ensures.iter().map(|c| c.text.clone()).collect(),
+            fx: effects_of(&contract.effects),
             referenced_spec_fns: referenced_spec_fns(contract, spec_fns),
         }
     }
@@ -402,7 +403,11 @@ fn project_artifact(
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 review/projection
             // consumer yet (increments 2b-3); not a `spec fn` → contributes nothing
             // (neutral `None`), mirroring the inert ADT-decl arm.
-            Item::Forge(_) => None,
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => None,
         })
         .collect();
 
@@ -532,8 +537,8 @@ fn referenced_spec_fns(
     // BTreeSet → sorted + deduplicated (deterministic), and only names that resolve
     // to a top-level spec fn are kept (OQ-3 direct-only — no transitive closure).
     let mut names: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    collect_callee_names(&contract.req.expr, &mut names);
-    for clause in &contract.ens {
+    collect_callee_names(&contract.requires.expr, &mut names);
+    for clause in &contract.ensures {
         collect_callee_names(&clause.expr, &mut names);
     }
     names
@@ -692,13 +697,14 @@ fn collect_stmt_callee_names(
             for inv in &loop_node.invs {
                 collect_callee_names(&inv.expr, out);
             }
-            collect_callee_names(&loop_node.dec.expr, out);
+            collect_callee_names(&loop_node.measures.expr, out);
             collect_block_callee_names(&loop_node.body, out);
         }
         Stmt::Expr(e) => collect_callee_names(e, out),
         // break/continue carry no sub-expression and no callee (#93): no name
         // to collect (the layer-neutral leaf value).
         Stmt::Break | Stmt::Continue => {}
+        Stmt::Holding { .. } => {}
     }
 }
 
@@ -961,7 +967,7 @@ mod tests {
         let decl = &sum.spec_layer.referenced_spec_fns[0];
         assert_eq!(decl.name, "spec_sum");
         assert_eq!(decl.signature, "spec fn spec_sum(xs: &[u32]) -> u64");
-        assert_eq!(decl.dec, "xs.len()");
+        assert_eq!(decl.measures, "xs.len()");
 
         // No body tokens anywhere in the serialized artifact (R-DEFER-9 / the
         // "no bodies" rule): sum's accumulator loop + spec_sum's match arms.
@@ -978,7 +984,7 @@ mod tests {
     // battery_failing with its cause and is not surfaced for intent review.
     #[test]
     fn rejected_fn_flagged_not_surfaced() {
-        let program = parse_ok("fn f(x: u32) -> u32 req true ens true fx pure { x }");
+        let program = parse_ok("fn f(x: u32) -> u32 ! pure requires true ensures true { x }");
         let certs = vec![Certificate::rejected(
             "f",
             vec!["pure".to_string()],
@@ -1066,7 +1072,7 @@ mod tests {
     #[test]
     fn burned_lemma_surfaces_in_review() {
         let program = parse_ok(
-            "lemma melems_cons(n: u32) req n > 0 ens n >= 1 proof { simp [Thermite.denote]; omega }",
+            "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { simp [Thermite.denote]; omega }",
         );
         let burned = Certificate::new(
             "melems_cons",
@@ -1112,8 +1118,9 @@ mod tests {
     // a certified item does (the "like any certified item" rule).
     #[test]
     fn uncertified_lemma_does_not_surface_as_burned() {
-        let program =
-            parse_ok("lemma bad(n: u32) req n > 0 ens n >= 1 proof { simp [Thermite.denote] }");
+        let program = parse_ok(
+            "lemma bad(n: u32) requires n > 0 ensures n >= 1 proof { simp [Thermite.denote] }",
+        );
         let rejected = Certificate::rejected(
             "bad".to_string(),
             vec!["pure".to_string()],

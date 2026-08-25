@@ -14,7 +14,7 @@
   rather than a bridge in the reconstruction path.
 
   Mathlib-free / Smt-free: rests only on Lean-core `BitVec` lemmas, so it builds in the
-  core spine and is covered by `scripts/lean-axiom-probe.sh` (CI, no cvc5 needed) — a
+  core spine and is covered by `gates/lean-axiom-probe.sh` (CI, no cvc5 needed) — a
   small independent check beside the `Smt`-importing `Thermite.SmtExport`.
 
   The fragment covers wrapping `+`/`-`/`*`, unsigned comparisons, and boolean
@@ -191,7 +191,7 @@ theorem tv_equiv_faithful (ρ : Nat → BitVec w) (prod ref : Frm)
   The faithfulness theorems must rest only on the standard axiom set
   `{propext, Classical.choice, Quot.sound}` — no `sorryAx`, no custom axiom. This is
   an independent check of the bounded-integer reference model. Probed in-file and built
-  by `scripts/lean-axiom-probe.sh`; not added to the fixed universal-pillar theorem list. -/
+  by `gates/lean-axiom-probe.sh`; not added to the fixed universal-pillar theorem list. -/
 #print axioms tmInt_eq_toNat
 #print axioms frmInt_iff_frmBV
 #print axioms tv_equiv_faithful

@@ -56,7 +56,11 @@ use std::process::Command;
 use std::time::Instant;
 
 use crate::cli::ForgeError;
-use crate::manifest::{Certificate, Level, ObligationResult, ObligationStatus};
+use crate::manifest::{
+    Certificate, CertificationBoundary, CertificationPosition, CertificationScope,
+    ClassificationCertificate, ClassificationVerdict, Level, ObligationResult, ObligationStatus,
+    RefutationChannel, ResidualTrust,
+};
 
 /// The parsed result of one Kani run: the assurance level (L2 on success, L0 on a
 /// reported counterexample) plus the per-obligation results (REQ-5) and the
@@ -66,6 +70,12 @@ pub struct L2Result {
     /// `Level::L2` on `verification:- successful`; `Level::L0` on a reported
     /// counterexample (a non-L2 result, not a false pass, REQ-5/§6).
     pub level: Level,
+    /// Exact Kani exploration bound supplied to the run. This is formal input,
+    /// not reconstructed from the human-readable obligation message.
+    pub bound: String,
+    /// Pre-discharge classifier output fixed by successful checked lowering,
+    /// before Kani is invoked. Present identically on success and failure.
+    pub classification: ClassificationCertificate,
     /// The per-obligation witnesses: one discharged obligation recording the
     /// bound on success, or the failed `Failed Checks:` lines on a counterexample.
     pub obligations: Vec<ObligationResult>,
@@ -82,12 +92,29 @@ pub struct L2Result {
 /// [`L2Result`] at `Level::L0` carrying the counterexample (REQ-5). Only an
 /// environment / internal failure (kani absent, unparseable output) is an `Err`
 /// (R-CODE-4: a subprocess failure is surfaced, not swallowed into a false pass).
-pub fn run_kani(harness: &str, label: &str, bound: &str) -> Result<L2Result, ForgeError> {
+pub fn run_kani(
+    artifact: &thermite_lower::L2Artifact,
+    label: &str,
+) -> Result<L2Result, ForgeError> {
+    run_kani_source(
+        artifact.source(),
+        label,
+        artifact.bound(),
+        artifact.classifier_fragment(),
+    )
+}
+
+fn run_kani_source(
+    harness: &str,
+    label: &str,
+    bound: &str,
+    classifier_fragment: &str,
+) -> Result<L2Result, ForgeError> {
     let stem = crate_stem(label);
     let crate_dir = unique_crate_dir(&stem);
     write_kani_crate(&crate_dir, &stem, harness)?;
 
-    let result = invoke_kani(&crate_dir, bound);
+    let result = invoke_kani(&crate_dir, bound, classifier_fragment);
 
     // Best-effort cleanup of the whole temp crate; a cleanup failure does not mask
     // the real result (mirrors `run_verus`'s temp-file discipline).
@@ -101,7 +128,11 @@ pub fn run_kani(harness: &str, label: &str, bound: &str) -> Result<L2Result, For
 /// binary is `KANI_BIN` (the test seam — a non-existent path exercises the
 /// ENOENT/`KaniAbsent` branch) else `cargo-kani` (what `cargo kani` invokes; a
 /// missing plugin is the ENOENT signal for kani-absent, REQ-8).
-fn invoke_kani(crate_dir: &Path, bound: &str) -> Result<L2Result, ForgeError> {
+fn invoke_kani(
+    crate_dir: &Path,
+    bound: &str,
+    classifier_fragment: &str,
+) -> Result<L2Result, ForgeError> {
     let binary = std::env::var("KANI_BIN").unwrap_or_else(|_| "cargo-kani".to_string());
     let started = Instant::now();
     let output = Command::new(&binary)
@@ -122,7 +153,14 @@ fn invoke_kani(crate_dir: &Path, bound: &str) -> Result<L2Result, ForgeError> {
     let stderr = String::from_utf8_lossy(&output.stderr);
     let exit_code = output.status.code();
 
-    parse_kani_output(&stdout, &stderr, exit_code, bound, solver_time_ms)
+    parse_kani_output_with_fragment(
+        &stdout,
+        &stderr,
+        exit_code,
+        bound,
+        classifier_fragment,
+        solver_time_ms,
+    )
 }
 
 /// Compute a valid Rust crate stem from a label (REQ-4): every non-alphanumeric
@@ -193,11 +231,12 @@ fn write_kani_crate(crate_dir: &Path, stem: &str, harness: &str) -> Result<(), F
 /// `Failed Checks:` lines (+ the following `File: "<src>", line <n>`) become the
 /// per-obligation counterexample witnesses. No recognizable summary line → a
 /// `ForgeError::KaniOutput` (surfaced, not swallowed into a false pass, R-CODE-4).
-fn parse_kani_output(
+fn parse_kani_output_with_fragment(
     stdout: &str,
     stderr: &str,
     exit_code: Option<i32>,
     bound: &str,
+    classifier_fragment: &str,
     solver_time_ms: u64,
 ) -> Result<L2Result, ForgeError> {
     let combined = format!("{stdout}\n{stderr}");
@@ -232,6 +271,8 @@ fn parse_kani_output(
         // bound caveat (REQ-6 / AC-6).
         return Ok(L2Result {
             level: Level::L2,
+            bound: bound.to_string(),
+            classification: kani_classification(classifier_fragment),
             obligations: vec![ObligationResult::discharged(format!(
                 "bounded model check passed ({bound})"
             ))],
@@ -254,9 +295,36 @@ fn parse_kani_output(
     };
     Ok(L2Result {
         level: Level::L0,
+        bound: bound.to_string(),
+        classification: kani_classification(classifier_fragment),
         obligations,
         solver_time_ms,
     })
+}
+
+#[cfg(test)]
+fn parse_kani_output(
+    stdout: &str,
+    stderr: &str,
+    exit_code: Option<i32>,
+    bound: &str,
+    solver_time_ms: u64,
+) -> Result<L2Result, ForgeError> {
+    parse_kani_output_with_fragment(
+        stdout,
+        stderr,
+        exit_code,
+        bound,
+        "thermite-kani-v1",
+        solver_time_ms,
+    )
+}
+
+fn kani_classification(fragment: &str) -> ClassificationCertificate {
+    ClassificationCertificate {
+        fragment: fragment.to_string(),
+        verdict: ClassificationVerdict::Admitted,
+    }
 }
 
 /// Parse the `Failed Checks: <description>` lines (+ the following
@@ -409,14 +477,47 @@ fn is_under_bound_failure(description: &str) -> bool {
 /// Assemble the L2 [`Certificate`] for one item from its [`L2Result`]
 /// (REQ-6). `Level::L2` (programmatically distinct from L3, §12) with the bound
 /// recorded in the obligations. Consumer: `check::check_l2_file`.
+// ASSURANCE_V2_ISSUER bounded assemble_l2_certificate
 pub fn assemble_l2_certificate(item: &str, effects: Vec<String>, result: &L2Result) -> Certificate {
-    Certificate::new(
+    let cert = Certificate::new(
         item,
         result.level,
         effects,
         result.solver_time_ms,
         result.obligations.clone(),
+    );
+    if result.level != Level::L2 {
+        return cert
+            .with_rfc3_coordinates(
+                CertificationPosition {
+                    scope: CertificationScope::None,
+                    refutation: RefutationChannel::None,
+                    residual_trust: ResidualTrust::Fiat,
+                    discharged_trust: Vec::new(),
+                    boundary: CertificationBoundary::EndToEnd,
+                },
+                result.classification.clone(),
+            )
+            .expect("the Kani failure position and pre-discharge classification are coherent");
+    }
+    assert!(
+        !result.bound.trim().is_empty(),
+        "an L2 result must carry its exact non-empty Kani bound"
+    );
+    let bound = result.bound.clone();
+    cert.with_rfc3_coordinates(
+        CertificationPosition {
+            scope: CertificationScope::Bounded {
+                bound: bound.clone(),
+            },
+            refutation: RefutationChannel::Trace { bound },
+            residual_trust: ResidualTrust::Solver,
+            discharged_trust: Vec::new(),
+            boundary: CertificationBoundary::EndToEnd,
+        },
+        result.classification.clone(),
     )
+    .expect("the Kani bounded/trace position is coherent by construction")
 }
 
 #[cfg(test)]
@@ -513,10 +614,11 @@ mod tests {
             "KANI_BIN",
             "/nonexistent/forge-kani-absent-probe-binary-xyz",
         );
-        let r = run_kani(
+        let r = run_kani_source(
             "#[cfg(kani)]\n#[kani::proof]\nfn check_f() { assert!(true); }\n",
             "absent_probe",
             BOUND,
+            "thermite-kani-v1",
         );
         match prev {
             Some(v) => std::env::set_var("KANI_BIN", v),
@@ -559,6 +661,8 @@ mod tests {
     fn classify_l2_successful_is_verified() {
         let r = L2Result {
             level: Level::L2,
+            bound: "unwind 5".to_string(),
+            classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::discharged("bounded model check passed")],
             solver_time_ms: 5,
         };
@@ -572,6 +676,8 @@ mod tests {
     fn classify_l2_unwinding_assertion_is_under_bound() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 2".to_string(),
+            classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::failed(
                 "unwinding assertion loop 0",
                 None,
@@ -593,6 +699,8 @@ mod tests {
     fn classify_l2_real_assertion_is_counterexample() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 5".to_string(),
+            classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::failed(
                 "assertion failed: result == spec_sum(xs)",
                 Some("src/lib.rs:22".to_string()),
@@ -618,6 +726,8 @@ mod tests {
     fn classify_l2_assertion_with_unwind_substring_is_counterexample() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 5".to_string(),
+            classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::failed(
                 "assertion failed: result == unwind_count(n)",
                 Some("src/lib.rs:22".to_string()),
@@ -642,6 +752,8 @@ mod tests {
     fn classify_l2_mixed_failure_is_counterexample() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 5".to_string(),
+            classification: kani_classification("thermite-kani-v1"),
             obligations: vec![
                 ObligationResult::failed("assertion failed: result == spec_sum(xs)", None, None),
                 ObligationResult::failed("unwinding assertion loop 0", None, None),
@@ -658,6 +770,8 @@ mod tests {
     fn classify_l2_ambiguous_failure_is_counterexample() {
         let r = L2Result {
             level: Level::L0,
+            bound: "unwind 5".to_string(),
+            classification: kani_classification("thermite-kani-v1"),
             obligations: vec![],
             solver_time_ms: 0,
         };
@@ -666,10 +780,13 @@ mod tests {
 
     // REQ-6 / AC-6: assemble_l2_certificate yields an L2 cert distinct from L3,
     // carrying the bound on its obligation.
+    // ASSURANCE_V2_CHARACTERIZATION bounded forge/src/kani.rs assemble_l2_certificate
     #[test]
     fn bound_recorded_on_l2_cert() {
         let res = L2Result {
             level: Level::L2,
+            bound: BOUND.to_string(),
+            classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::discharged(format!(
                 "bounded model check passed ({BOUND})"
             ))],
@@ -679,5 +796,53 @@ mod tests {
         assert_eq!(cert.level, Level::L2);
         assert_ne!(cert.level, Level::L3);
         assert!(cert.obligations[0].name.contains("slice <= 4, unwind 5"));
+        let position = cert.certification.expect("L2 must carry RFC-3 coordinates");
+        assert_eq!(
+            position.scope,
+            CertificationScope::Bounded {
+                bound: BOUND.to_string()
+            }
+        );
+        assert_eq!(
+            position.refutation,
+            RefutationChannel::Trace {
+                bound: BOUND.to_string()
+            }
+        );
+        assert_eq!(
+            cert.classification,
+            Some(ClassificationCertificate {
+                fragment: "thermite-kani-v1".to_string(),
+                verdict: ClassificationVerdict::Admitted,
+            })
+        );
+    }
+
+    #[test]
+    fn pre_discharge_classification_is_identical_on_success_and_failure() {
+        let success = parse_kani_output("VERIFICATION:- SUCCESSFUL", "", Some(0), BOUND, 1)
+            .expect("success result");
+        let failure = parse_kani_output(
+            "VERIFICATION:- FAILED\nFailed Checks: assertion failed: false",
+            "",
+            Some(1),
+            BOUND,
+            1,
+        )
+        .expect("failure result");
+        assert_eq!(success.classification, failure.classification);
+        let failure_cert = assemble_l2_certificate("f", vec!["pure".to_string()], &failure);
+        assert_eq!(failure_cert.level, Level::L0);
+        assert_eq!(
+            failure_cert.classification,
+            Some(kani_classification("thermite-kani-v1"))
+        );
+        assert_eq!(
+            failure_cert
+                .certification
+                .expect("classified failure position")
+                .scope,
+            CertificationScope::None
+        );
     }
 }

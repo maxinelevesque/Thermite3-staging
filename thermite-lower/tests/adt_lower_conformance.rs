@@ -302,6 +302,27 @@ fn list_sum_lowers_recursive_box_and_verifies_l3() {
     assert_no_cheats(&emitted, "list_sum");
 }
 
+// Issue #5: a checked struct is itself a type-graph root. Its struct-typed and
+// enum-typed fields must be present in the standalone artifact, and a variant
+// test in its invariant must keep the implicit `self` receiver.
+#[test]
+fn nested_adt_fields_and_is_invariant_lower_and_verify_l3() {
+    let emitted = lower_and_verify("nested_adt");
+    assert!(
+        emitted.contains("pub enum Privilege {")
+            && emitted.contains("pub struct Regs {")
+            && emitted.contains("pub struct Frame {")
+            && emitted.contains("pub regs: Regs,")
+            && emitted.contains("pub privilege: Privilege,"),
+        "the Frame artifact must include both user-declared field types:\n{emitted}"
+    );
+    assert!(
+        emitted.contains("(self.privilege is User)"),
+        "an `is` invariant must bind its field through the struct receiver:\n{emitted}"
+    );
+    assert_no_cheats(&emitted, "nested_adt");
+}
+
 // ---- L1: deposit/is_circle compile, run, and the contract check fires ------
 
 fn compile_and_run(src: &str, crate_name: &str) -> (bool, bool, String) {
@@ -337,6 +358,27 @@ fn compile_and_run(src: &str, crate_name: &str) -> (bool, bool, String) {
 fn lower_l1(name: &str) -> String {
     thermite_lower::lower_l1(&parse_corpus(name))
         .unwrap_or_else(|e| panic!("L1 lowering {name}.th failed: {e}"))
+}
+
+#[test]
+fn nested_adt_fields_and_is_invariant_compile_and_run_l1() {
+    let emitted = lower_l1("nested_adt");
+    assert!(
+        emitted.contains("matches!(self.privilege, Privilege::User { .. })"),
+        "the L1 invariant must bind the field and qualify its variant:\n{emitted}"
+    );
+    let program = format!(
+        "{emitted}\nfn main() {{\n    let regs = Regs {{ ip: 0 }};\n    let user = Frame {{ regs: regs.clone(), privilege: Privilege::User, generation: 1 }};\n    let kernel = Frame {{ regs, privilege: Privilege::Kernel, generation: 2 }};\n    assert!(user.well_formed());\n    assert!(!kernel.well_formed());\n    println!(\"ok\");\n}}\n"
+    );
+    let (compiled, ran, out) = compile_and_run(&program, "nested_adt_l1");
+    assert!(
+        compiled,
+        "nested ADT L1 did not compile:\n{out}\n--- {program}"
+    );
+    assert!(
+        ran && out.contains("ok"),
+        "nested ADT L1 did not run clean:\n{out}"
+    );
 }
 
 // AC: deposit L1 compiles + runs; the positive case holds (hand-derived

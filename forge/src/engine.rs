@@ -185,6 +185,18 @@ pub fn lia_kernel_checked_trust_profile() -> TrustProfile {
     }
 }
 
+#[must_use]
+pub fn nlsat_trust_profile() -> TrustProfile {
+    TrustProfile {
+        items: vec![
+            "Z3 nlsat (QF_NRA real-arithmetic decision)".to_string(),
+            "spine-lemma r_relax_sound (real→integer relaxation soundness, kernel-checked)"
+                .to_string(),
+            "spine-lemma rencode_sound (real-encoding faithfulness, kernel-checked)".to_string(),
+        ],
+    }
+}
+
 /// The stable marker substring used by every kernel-checked or kernel-grounded per-clause trust
 /// item carries (`.design/stage3-bv-reconstruction.md` REQ-8 / AC-9). Both the bv
 /// reconstruction profile's faithfulness lemma ([`bv_kernel_checked_trust_profile`] —
@@ -224,6 +236,31 @@ pub enum Reason {
     /// timeout-class incompleteness event (the solver could not decide), so it
     /// degrades, never hard-fails. Carries the raw stderr head for diagnosis.
     IncompleteUnknown(String),
+    /// The named backend could not be started or its required execution surface was
+    /// unavailable. This is distinct from a mathematical `unknown` and from a proof
+    /// that ran and was rejected.
+    ToolUnavailable(String),
+    /// The backend ran, but the submitted proof did not elaborate or close. This is
+    /// still an engine `Unknown` (never a witnessed counterexample), while preserving
+    /// the closed attempt outcome for portfolio accounting.
+    ProofFailure(String),
+    /// The checker accepted the theorem but the certify-time trust/axiom gate refused
+    /// the evidence. Treating this as ordinary proof failure would hide a trust-base
+    /// contradiction.
+    SoundnessAlarm(String),
+}
+
+impl Reason {
+    #[must_use]
+    pub fn detail(&self) -> &str {
+        match self {
+            Self::VerusTimeout(detail)
+            | Self::IncompleteUnknown(detail)
+            | Self::ToolUnavailable(detail)
+            | Self::ProofFailure(detail)
+            | Self::SoundnessAlarm(detail) => detail,
+        }
+    }
 }
 
 /// A witnessed countermodel (`.design/verified/proof-backends.md`
@@ -663,7 +700,7 @@ impl LeanEngine {
                 let probe_out = String::from_utf8_lossy(&out.stdout);
                 match certify_lean_axioms(source, &probe_out, item) {
                     Ok(()) => Verdict::Proven(Evidence { verified, key }),
-                    Err(reason) => Verdict::Unknown(Reason::IncompleteUnknown(format!(
+                    Err(reason) => Verdict::Unknown(Reason::SoundnessAlarm(format!(
                         "lake kernel-accepted the obligation but the certify-time axiom \
                          gate REFUSED it (REQ-2/AC-5): {reason}"
                     ))),
@@ -687,7 +724,7 @@ impl LeanEngine {
                     format!("{stdout}\n{stderr}")
                 };
                 let head: String = detail.chars().take(400).collect();
-                Verdict::Unknown(Reason::IncompleteUnknown(format!(
+                Verdict::Unknown(Reason::ProofFailure(format!(
                     "lake/lean did not kernel-accept the exported obligation (tactic \
                      failure / elaboration error — NOT a countermodel, REQ-3): {head}"
                 )))
@@ -696,7 +733,7 @@ impl LeanEngine {
                 // lake absent / spawn failure: `Unknown` (the engine could not run),
                 // never `Refuted`. R-CODE-4: the subprocess failure is surfaced
                 // structured, not swallowed as success.
-                Verdict::Unknown(Reason::IncompleteUnknown(format!(
+                Verdict::Unknown(Reason::ToolUnavailable(format!(
                     "could not invoke `lake env lean` (lake absent or un-spawnable): {e}"
                 )))
             }
@@ -982,6 +1019,69 @@ impl LeanEngine {
         verdict
     }
 
+    /// Replay an already-exported, source-bound author proof against a mutated
+    /// theorem, preserving proof rejection separately from infrastructure failure.
+    pub(crate) fn replay_mutation_source(&self, source: &str, item: &str) -> MutationReplayOutcome {
+        let thm_name = format!("thermite_obligation_{}", proof_thm_sanitize(item));
+        let probed = format!("{source}\n\n#print axioms {thm_name}\n");
+        let pid = std::process::id();
+        let nonce = NEXT_REPLAY_NONCE.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let scratch =
+            std::env::temp_dir().join(format!("forge_mutation_replay_{pid}_{nonce}.lean"));
+        if std::fs::write(&scratch, &probed).is_err() {
+            return MutationReplayOutcome::Unavailable;
+        }
+        let mut child = match std::process::Command::new(Self::lake_binary())
+            .arg("env")
+            .arg("lean")
+            .arg(&scratch)
+            .current_dir(&self.lean_root)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+        {
+            Ok(child) => child,
+            Err(_) => {
+                let _ = std::fs::remove_file(&scratch);
+                return MutationReplayOutcome::Unavailable;
+            }
+        };
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        let output = loop {
+            match child.try_wait() {
+                Ok(Some(_)) => break child.wait_with_output().ok(),
+                Ok(None) if std::time::Instant::now() < deadline => {
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                }
+                Ok(None) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    let _ = std::fs::remove_file(&scratch);
+                    return MutationReplayOutcome::Unavailable;
+                }
+                Err(_) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    let _ = std::fs::remove_file(&scratch);
+                    return MutationReplayOutcome::Unavailable;
+                }
+            }
+        };
+        let _ = std::fs::remove_file(&scratch);
+        match output {
+            Some(out) if out.status.success() => {
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                if certify_lean_axioms(&probed, &stdout, item).is_ok() {
+                    MutationReplayOutcome::Discharged
+                } else {
+                    MutationReplayOutcome::Undecided
+                }
+            }
+            Some(out) => classify_mutation_replay_failure(&out, &scratch, &probed, &thm_name),
+            None => MutationReplayOutcome::Unavailable,
+        }
+    }
+
     /// Write the exported Lean source to a deterministic scratch file in the system
     /// temp dir (`.design/verified/proof-backends.md` REQ-7, "export → write to a
     /// scratch dir"). The file name is keyed on the item + the process id so
@@ -1091,17 +1191,11 @@ impl LeanEngine {
             // arbitrary-result goal) → the ens constrains the result → clean. An env /
             // spawn / axiom-gate condition is a skip (the check could not run), never a
             // claim of clean (R-CODE-4: an undetermined run is not read as a verdict).
-            Verdict::Unknown(Reason::IncompleteUnknown(detail))
-                if detail.contains("did not kernel-accept") =>
-            {
-                ArbitraryResultOutcome::Clean
-            }
+            Verdict::Unknown(Reason::ProofFailure(_)) => ArbitraryResultOutcome::Clean,
             Verdict::Unknown(reason) => ArbitraryResultOutcome::Skipped(format!(
                 "the arbitrary-result harness run was inconclusive (env/spawn/axiom-gate, \
                  not an elaboration failure): {}",
-                match reason {
-                    Reason::VerusTimeout(d) | Reason::IncompleteUnknown(d) => d,
-                }
+                reason.detail()
             )),
             // The Lean engine never produces a witnessed `Refuted` (a tactic failure is
             // Unknown, not a countermodel, REQ-3) — defensively a skip, never a reject.
@@ -1549,6 +1643,9 @@ pub fn verdict_ladder_action(
                             "verus returned an incompleteness-`unknown` (no witnessing \
                              input); degrading per the ladder (REQ-3.1): {d}"
                         ),
+                        Reason::ToolUnavailable(d)
+                        | Reason::ProofFailure(d)
+                        | Reason::SoundnessAlarm(d) => d.clone(),
                     },
                 },
             },
@@ -1637,6 +1734,112 @@ pub struct EngineAttribution {
     pub trust_profile: Vec<String>,
 }
 
+/// Mutation-only replay result. Unlike certification Verdict, a correctly bound
+/// proof rejection is useful contract-discrimination evidence but is not a
+/// semantic counterexample.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MutationReplayOutcome {
+    Discharged,
+    ProofRejected,
+    Counterexample,
+    Unavailable,
+    Undecided,
+    Inapplicable,
+}
+
+fn classify_mutation_replay_failure(
+    output: &std::process::Output,
+    scratch: &std::path::Path,
+    source: &str,
+    theorem: &str,
+) -> MutationReplayOutcome {
+    let theorem_line = source
+        .lines()
+        .position(|line| line.contains(theorem))
+        .map(|line| line + 1);
+    let probe_line = source
+        .lines()
+        .position(|line| line.trim_start().starts_with("#print axioms"))
+        .map(|line| line + 1);
+    let proof_position = theorem_line.and_then(|theorem_start| {
+        source
+            .lines()
+            .enumerate()
+            .skip(theorem_start - 1)
+            .take_while(|(index, _)| probe_line.is_none_or(|probe| index + 1 < probe))
+            .find_map(|(index, line)| line.find(":= by").map(|column| (index + 1, column)))
+    });
+    let mut detail = String::from_utf8_lossy(&output.stdout).into_owned();
+    detail.push('\n');
+    detail.push_str(&String::from_utf8_lossy(&output.stderr));
+    let path_markers = [
+        format!("{}:", scratch.display()),
+        scratch
+            .file_name()
+            .map_or_else(String::new, |name| format!("{}:", name.to_string_lossy())),
+    ];
+    let error_lines: Vec<_> = detail
+        .lines()
+        .filter(|line| line.contains(": error:"))
+        .collect();
+    let error_positions: Vec<(usize, usize)> = error_lines
+        .iter()
+        .filter_map(|line| {
+            path_markers.iter().find_map(|marker| {
+                let tail = line.split_once(marker)?.1;
+                let mut fields = tail.split(':');
+                Some((fields.next()?.parse().ok()?, fields.next()?.parse().ok()?))
+            })
+        })
+        .collect();
+    let proof_diagnostic = [
+        "omega could not prove",
+        "unsolved goals",
+        "tactic",
+        "no goals to be solved",
+        "application type mismatch",
+    ]
+    .iter()
+    .any(|needle| detail.contains(needle));
+    let lower_detail = detail.to_ascii_lowercase();
+    let resource_diagnostic = crate::tv_signal::is_kernel_budget_signal(&detail)
+        || [
+            "maximum heartbeats exceeded",
+            "heartbeat limit",
+            "resource limit",
+            "timed out",
+            "timeout",
+            "deterministic timeout",
+        ]
+        .iter()
+        .any(|needle| lower_detail.contains(needle));
+    if resource_diagnostic {
+        return MutationReplayOutcome::Unavailable;
+    }
+    match proof_position {
+        Some((start_line, start_column))
+            if proof_diagnostic
+                && !error_positions.is_empty()
+                && error_positions.len() == error_lines.len()
+                && error_positions.iter().all(|(line, column)| {
+                    let after_proof_start =
+                        *line > start_line || (*line == start_line && *column >= start_column);
+                    let before_probe = probe_line.is_none_or(|probe| *line < probe);
+                    after_proof_start && before_probe
+                }) =>
+        {
+            MutationReplayOutcome::ProofRejected
+        }
+        _ if theorem_line
+            .is_some_and(|start| error_positions.iter().any(|(line, _)| *line < start)) =>
+        {
+            MutationReplayOutcome::Unavailable
+        }
+        _ => MutationReplayOutcome::Undecided,
+    }
+}
+
 /// Build the [`EngineAttribution`] for an engine (`.design/verified/proof-backends.md`
 /// REQ-4): the `{engine tag, trust profile items}` pair. Called on the discharge path
 /// whenever a non-default engine (Lean) proves an obligation, so the cert records the
@@ -1706,6 +1909,10 @@ impl std::fmt::Display for Disagreement {
 /// witness-less fast-`unknown` is `Unknown`, so it cannot fire this alarm against a
 /// Lean `Proven`; only a witnessed countermodel can, which is the real unsoundness
 /// case. Determinism: a pure function of the two verdicts (R-CODE-5).
+#[allow(
+    dead_code,
+    reason = "the result arbiter now owns production disagreement transitions; this pure engine-level contract remains directly exercised by its conformance tests"
+)]
 pub fn check_disagreement(
     item: &str,
     engine_a: EngineName,
@@ -2252,6 +2459,9 @@ pub enum NlsatOutcome {
     /// failed to render — a skip (never a false `Proved`, never a
     /// `Counterexample`). Carries the reason.
     Unknown(String),
+    /// The nlsat process could not be started or communicated with. This is a closed
+    /// environment outcome rather than a mathematical `unknown`.
+    Unavailable(String),
 }
 
 /// The nlsat real-relaxation engine (`.design/stage1-forge-tier.md` REQ-8 / Q-NLSAT,
@@ -2350,7 +2560,7 @@ impl NlsatEngine {
         // query (`check-sat-using qfnra-nlsat`).
         let (result, model) = match Self::run_z3(&input) {
             Ok(pair) => pair,
-            Err(reason) => return NlsatOutcome::Unknown(reason),
+            Err(reason) => return NlsatOutcome::Unavailable(reason),
         };
         match result.as_str() {
             "unsat" => NlsatOutcome::Proved,
@@ -2633,6 +2843,7 @@ impl Engine for NlsatEngine {
                 )))
             }
             NlsatOutcome::Unknown(detail) => Verdict::Unknown(Reason::IncompleteUnknown(detail)),
+            NlsatOutcome::Unavailable(detail) => Verdict::Unknown(Reason::ToolUnavailable(detail)),
         }
     }
 
@@ -2644,15 +2855,7 @@ impl Engine for NlsatEngine {
         // Classical.choice, Quot.sound}). An auditor sees L4-via-nlsat rests on Z3's
         // nlsat soundness + the kernel lemma, distinct from L3-via-Verus's {Z3, Verus
         // VC-gen, lowering theorem}.
-        TrustProfile {
-            items: vec![
-                "Z3 nlsat (QF_NRA real-arithmetic decision)".to_string(),
-                "spine-lemma r_relax_sound (real→integer relaxation soundness, kernel-checked)"
-                    .to_string(),
-                "spine-lemma rencode_sound (real-encoding faithfulness, kernel-checked)"
-                    .to_string(),
-            ],
-        }
+        nlsat_trust_profile()
     }
 
     fn evidence_key(&self, o: &Obligation) -> CacheKey {
@@ -3253,8 +3456,9 @@ mod tests {
         }
         let program = parse_program(
             "fn isqrt_bound(n: u64, r: u64) -> u64\n  \
-             req r * r <= n && n < (r + 1) * (r + 1) && 1 <= r\n  \
-             ens r <= n\n  fx pure\n{ r }\n",
+             ! pure
+  requires r * r <= n && n < (r + 1) * (r + 1) && 1 <= r\n  \
+             ensures r <= n\n{ r }\n",
         );
         let engine = NlsatEngine::new(program.clone());
         assert!(
@@ -3278,8 +3482,10 @@ mod tests {
             eprintln!("SKIP: z3 not present — the live nlsat relax route is not run.");
             return;
         }
-        let program =
-            parse_program("fn sq(n: u64) -> u64\n  req true\n  ens n * n != 2\n  fx pure\n{ n }\n");
+        let program = parse_program(
+            "fn sq(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
+        );
         let engine = NlsatEngine::new(program.clone());
         match engine.discharge_relax(fn_of(&program, "sq")) {
             NlsatOutcome::RealWitness { point } => {
@@ -3309,8 +3515,10 @@ mod tests {
     // z3 being installed); the z3 end-to-end run is `live_nlsat_n_squared_ne_two_is_real_witness`.
     #[test]
     fn classify_sat_real_only_model_is_real_witness() {
-        let program =
-            parse_program("fn sq(n: u64) -> u64\n  req true\n  ens n * n != 2\n  fx pure\n{ n }\n");
+        let program = parse_program(
+            "fn sq(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n * n != 2\n{ n }\n",
+        );
         let f = fn_of(&program, "sq");
         // The real countermodel of `n*n ≠ 2` over ℝ: n = √2 (and `result` unconstrained).
         let mut model = BTreeMap::new();
@@ -3344,7 +3552,8 @@ mod tests {
             return;
         }
         let program = parse_program(
-            "fn bad(n: u64) -> u64\n  req true\n  ens n + 1 <= n\n  fx pure\n{ n }\n",
+            "fn bad(n: u64) -> u64\n  ! pure
+  requires true\n  ensures n + 1 <= n\n{ n }\n",
         );
         let engine = NlsatEngine::new(program.clone());
         match engine.discharge_relax(fn_of(&program, "bad")) {
@@ -3363,7 +3572,8 @@ mod tests {
     #[test]
     fn nlsat_div_clause_is_not_relaxable() {
         let program = parse_program(
-            "fn d(n: u64) -> u64\n  req true\n  ens result == n / 2\n  fx pure\n{ n }\n",
+            "fn d(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result == n / 2\n{ n }\n",
         );
         let engine = NlsatEngine::new(program.clone());
         assert!(
@@ -3421,8 +3631,8 @@ mod tests {
             eprintln!("SKIP: lake not present — live Lean Proven test not run.");
             return;
         }
-        let src = "fn add(a: u32, b: u32) -> u64 req true \
-                   ens result == a as u64 + b as u64 fx pure { a as u64 + b as u64 }";
+        let src = "fn add(a: u32, b: u32) -> u64 ! pure requires true \
+                   ensures result == a as u64 + b as u64 { a as u64 + b as u64 }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "add", vec![]);
         let engine = LeanEngine::new(p.clone(), lean_root());
@@ -3444,7 +3654,7 @@ mod tests {
             eprintln!("SKIP: lake not present — live arbitrary-result tautology test not run.");
             return;
         }
-        let src = "fn f(x: u32) -> u32 req x > 0 ens x > 0 fx pure { x }";
+        let src = "fn f(x: u32) -> u32 ! pure requires x > 0 ensures x > 0 { x }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "f", vec![]);
         let engine = LeanEngine::new(p, lean_root());
@@ -3467,7 +3677,7 @@ mod tests {
             eprintln!("SKIP: lake not present — live arbitrary-result clean test not run.");
             return;
         }
-        let src = "fn g(x: u32) -> u32 req x < 100 ens result == x + 1 fx pure { x + 1 }";
+        let src = "fn g(x: u32) -> u32 ! pure requires x < 100 ensures result == x + 1 { x + 1 }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "g", vec![]);
         let engine = LeanEngine::new(p, lean_root());
@@ -3491,9 +3701,8 @@ mod tests {
             eprintln!("SKIP: lake not present — live tier-(b) Proven test not run.");
             return;
         }
-        let src = "spec fn dbl(x: int) -> int dec x { x + x } \
-                   fn g(x: u32) -> u32 req x < 100 ens result as int == dbl(x as int) \
-                   fx pure { x + x }";
+        let src = "spec fn dbl(x: int) -> int measures x { x + x } \
+                   fn g(x: u32) -> u32 ! pure requires x < 100 ensures result as int == dbl(x as int) { x + x }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "g", vec!["dbl".to_string()]);
         let engine = LeanEngine::new(p.clone(), lean_root());
@@ -3525,7 +3734,7 @@ mod tests {
             eprintln!("SKIP: lake not present — live wrong-contract test not run.");
             return;
         }
-        let src = "fn wrong(a: u32, b: u32) -> u32 req true ens result == 0 fx pure { a }";
+        let src = "fn wrong(a: u32, b: u32) -> u32 ! pure requires true ensures result == 0 { a }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "wrong", vec![]);
         let engine = LeanEngine::new(p.clone(), lean_root());
@@ -3547,8 +3756,8 @@ mod tests {
     // (R-CHAR-3). No lake needed.
     #[test]
     fn omitted_registry_obligation_refuses_export() {
-        let src = "spec fn spec_sum(xs: &[u32]) -> u64 dec xs.len() { 0 } \
-                   fn f(xs: &[u32]) -> u64 req true ens result == spec_sum(xs) fx pure { 0 }";
+        let src = "spec fn spec_sum(xs: &[u32]) -> u64 measures xs.len() { 0 } \
+                   fn f(xs: &[u32]) -> u64 ! pure requires true ensures result == spec_sum(xs) { 0 }";
         let p = parse_program(src);
         // The obligation's closure omits `spec_sum` (the bug the gate must catch).
         let o = fn_obligation(&p, "f", vec![]);
@@ -3594,7 +3803,7 @@ mod tests {
             eprintln!("SKIP: lake not present — live straight-line-body test not run.");
             return;
         }
-        let src = "fn id2(x: u64) -> u64 req true ens result == x fx pure { let y = x; y }";
+        let src = "fn id2(x: u64) -> u64 ! pure requires true ensures result == x { let y = x; y }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "id2", vec![]);
         // Sanity: the export emits both the contract theorem and the conjoined overflow
@@ -3646,7 +3855,7 @@ mod tests {
             eprintln!("SKIP: lake not present — live bool-result test not run.");
             return;
         }
-        let src = "fn t(x: u32) -> bool req true ens result == true fx pure { true }";
+        let src = "fn t(x: u32) -> bool ! pure requires true ensures result == true { true }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "t", vec![]);
         if let Some(item) = crate::lean_export::find_item(&p, "t") {
@@ -3690,7 +3899,7 @@ mod tests {
             return;
         }
         // No req bounds `m`, so `m + m` can overflow `u64`; the overflow conjunct fails.
-        let src = "fn ovf(m: u64) -> u64 req true ens result < result fx pure { let a = m + m; a }";
+        let src = "fn ovf(m: u64) -> u64 ! pure requires true ensures result < result { let a = m + m; a }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "ovf", vec![]);
         let engine = LeanEngine::new(p.clone(), lean_root());
@@ -3717,8 +3926,8 @@ mod tests {
     #[test]
     fn while_body_item_refuses_export() {
         // The v1 while shape (the §4.2.1 grammar) now exports (the (v-b) widening).
-        let v1_src = "fn count(n: u64) -> u64 req true ens result == n fx pure \
-                      { let mut lo = 0; while lo < n inv lo <= n dec n - lo { lo = lo + 1; } lo }";
+        let v1_src = "fn count(n: u64) -> u64 ! pure requires true ensures result == n \
+                      { let mut lo = 0; while lo < n keeps lo <= n measures n - lo { lo = lo + 1; } lo }";
         let p1 = parse_program(v1_src);
         let o1 = fn_obligation(&p1, "count", vec![]);
         if let Some(item) = crate::lean_export::find_item(&p1, "count") {
@@ -3731,8 +3940,8 @@ mod tests {
 
         // A `loop`-kind loop (the multi-exit CPS form, §4.2.5) still refuses with the
         // named structured reason (the refusal inventory is explicit, REQ-11.5).
-        let loop_src = "fn lp(n: u64) -> u64 req true ens result == n fx pure \
-                        { let mut lo = 0; loop inv lo <= n dec n - lo { lo = lo + 1; } lo }";
+        let loop_src = "fn lp(n: u64) -> u64 ! pure requires true ensures result == n \
+                        { let mut lo = 0; loop keeps lo <= n measures n - lo { lo = lo + 1; } lo }";
         let p2 = parse_program(loop_src);
         let o2 = fn_obligation(&p2, "lp", vec![]);
         if let Some(item) = crate::lean_export::find_item(&p2, "lp") {
@@ -3755,7 +3964,8 @@ mod tests {
     // engine maps it to Unknown. Expected from §4.1.3 (R-CHAR-3). No lake needed.
     #[test]
     fn optres_result_item_refuses_export() {
-        let src = "fn maybe(x: u32) -> Option<u32> req true ens true fx pure { let y = x; y }";
+        let src =
+            "fn maybe(x: u32) -> Option<u32> ! pure requires true ensures true { let y = x; y }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "maybe", vec![]);
         if let Some(item) = crate::lean_export::find_item(&p, "maybe") {
@@ -3792,8 +4002,8 @@ mod tests {
     // the verdict is sound either way (never a false Proven, never a false Refuted).
     #[test]
     fn live_while_body_item_is_honest() {
-        let src = "fn count(n: u64) -> u64 req true ens result == n fx pure \
-                   { let mut lo = 0; while lo < n inv lo <= n dec n - lo { lo = lo + 1; } lo }";
+        let src = "fn count(n: u64) -> u64 ! pure requires true ensures result == n \
+                   { let mut lo = 0; while lo < n keeps lo <= n measures n - lo { lo = lo + 1; } lo }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "count", vec![]);
         // The recognizer accepts the v1 shape and emits the 5+2 obligation set.
@@ -3870,8 +4080,8 @@ mod tests {
     #[test]
     fn live_while_true_vacuity_is_not_proven() {
         // A non-exiting loop: `0 < 1` is constantly true, the measure `0` never descends.
-        let src = "fn spin(lo: u64) -> u64 req true ens result == lo fx pure \
-                   { let mut acc = lo; while 0 < 1 inv acc <= acc dec acc - acc { acc = acc; } acc }";
+        let src = "fn spin(lo: u64) -> u64 ! pure requires true ensures result == lo \
+                   { let mut acc = lo; while 0 < 1 keeps acc <= acc measures acc - acc { acc = acc; } acc }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "spin", vec![]);
         if !lake_present() {
@@ -3903,17 +4113,17 @@ mod tests {
     fn while_refusal_inventory_is_structured() {
         // Each case: (name, source, the refusal predicate). The shapes are the §4.2.5
         // enumeration; the expected refusal class is derived from the design, not the tool.
-        let nested = "fn f(n: u64) -> u64 req true ens result == n fx pure \
-            { let mut lo = 0; while lo < n inv lo <= n dec n - lo \
-              { while lo < n inv lo <= n dec n - lo { lo = lo + 1; } } lo }";
-        let brk = "fn f(n: u64) -> u64 req true ens result == n fx pure \
-            { let mut lo = 0; while lo < n inv lo <= n dec n - lo { break; } lo }";
-        let cont = "fn f(n: u64) -> u64 req true ens result == n fx pure \
-            { let mut lo = 0; while lo < n inv lo <= n dec n - lo { continue; } lo }";
-        let mid_return = "fn f(n: u64) -> u64 req true ens result == n fx pure \
-            { let mut lo = 0; while lo < n inv lo <= n dec n - lo { return lo; } lo }";
-        let weak_inv = "fn f(n: u64) -> u64 req true ens result == n fx pure \
-            { let mut lo = 0; while lo < n inv true dec n - lo { lo = lo + 1; } lo }";
+        let nested = "fn f(n: u64) -> u64 ! pure requires true ensures result == n \
+            { let mut lo = 0; while lo < n keeps lo <= n measures n - lo \
+              { while lo < n keeps lo <= n measures n - lo { lo = lo + 1; } } lo }";
+        let brk = "fn f(n: u64) -> u64 ! pure requires true ensures result == n \
+            { let mut lo = 0; while lo < n keeps lo <= n measures n - lo { break; } lo }";
+        let cont = "fn f(n: u64) -> u64 ! pure requires true ensures result == n \
+            { let mut lo = 0; while lo < n keeps lo <= n measures n - lo { continue; } lo }";
+        let mid_return = "fn f(n: u64) -> u64 ! pure requires true ensures result == n \
+            { let mut lo = 0; while lo < n keeps lo <= n measures n - lo { return lo; } lo }";
+        let weak_inv = "fn f(n: u64) -> u64 ! pure requires true ensures result == n \
+            { let mut lo = 0; while lo < n keeps true measures n - lo { lo = lo + 1; } lo }";
 
         for (name, src) in [
             ("nested-while", nested),
@@ -3942,8 +4152,8 @@ mod tests {
 
         // A non-scalar assign in the loop body (`xs[i] = e`) is out of v1 (§4.2.5). The
         // recognizer rejects it before encoding.
-        let non_scalar = "fn g(xs: &[u32], n: u64) -> u64 req true ens result == n fx pure \
-            { let mut lo = 0; while lo < n inv lo <= n dec n - lo { xs[lo] = lo; lo = lo + 1; } lo }";
+        let non_scalar = "fn g(xs: &[u32], n: u64) -> u64 ! pure requires true ensures result == n \
+            { let mut lo = 0; while lo < n keeps lo <= n measures n - lo { xs[lo] = lo; lo = lo + 1; } lo }";
         let p = parse_program(non_scalar);
         let o = fn_obligation(&p, "g", vec![]);
         if let Some(item) = crate::lean_export::find_item(&p, "g") {
@@ -3955,9 +4165,9 @@ mod tests {
         }
 
         // A spec-calling invariant, the (v) v1 residual (§4.2.1): out-of-shallow-fragment.
-        let spec_inv = "spec fn s(xs: &[u32]) -> u64 dec xs.len() { 0 } \
-            fn h(xs: &[u32], n: u64) -> u64 req true ens result == n fx pure \
-            { let mut lo = 0; while lo < n inv lo <= s(xs) dec n - lo { lo = lo + 1; } lo }";
+        let spec_inv = "spec fn s(xs: &[u32]) -> u64 measures xs.len() { 0 } \
+            fn h(xs: &[u32], n: u64) -> u64 ! pure requires true ensures result == n \
+            { let mut lo = 0; while lo < n keeps lo <= s(xs) measures n - lo { lo = lo + 1; } lo }";
         let p = parse_program(spec_inv);
         let o = fn_obligation(&p, "h", vec!["s".to_string()]);
         if let Some(item) = crate::lean_export::find_item(&p, "h") {
@@ -3977,8 +4187,8 @@ mod tests {
     #[test]
     fn out_of_fragment_item_is_skipped() {
         let src = "struct P { x: u32 } \
-                   fn pick(p: P) -> u32 req true \
-                   ens result == p.x fx pure { 0 }";
+                   fn pick(p: P) -> u32 ! pure requires true \
+                   ensures result == p.x { 0 }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "pick", vec![]);
         if let Some(item) = crate::lean_export::find_item(&p, "pick") {
@@ -4002,8 +4212,8 @@ mod tests {
     // interactive. Expected from §6.1(c) (R-CHAR-3).
     #[test]
     fn recursive_registry_is_interactive_unknown() {
-        let src = "spec fn r(x: int) -> int dec x { r(x) } \
-                   fn f(x: u32) -> u32 req true ens result as int == r(x as int) fx pure { x }";
+        let src = "spec fn r(x: int) -> int measures x { r(x) } \
+                   fn f(x: u32) -> u32 ! pure requires true ensures result as int == r(x as int) { x }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "f", vec!["r".to_string()]);
         if let Some(item) = crate::lean_export::find_item(&p, "f") {
@@ -4059,8 +4269,8 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("forge_it_emit_{}", std::process::id()));
         assert!(ensure_dir(&dir), "scratch dir creatable");
         let file = dir.join("add.th");
-        let src = "fn add(a: u32, b: u32) -> u64 req true \
-                   ens result == a as u64 + b as u64 fx pure { a as u64 + b as u64 }";
+        let src = "fn add(a: u32, b: u32) -> u64 ! pure requires true \
+                   ensures result == a as u64 + b as u64 { a as u64 + b as u64 }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "add", vec![]);
         let engine = LeanEngine::new(p, lean_root());
@@ -4092,8 +4302,8 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("forge_it_stale_{}", std::process::id()));
         assert!(ensure_dir(&dir), "scratch dir creatable");
         let file = dir.join("add.th");
-        let src = "fn add(a: u32, b: u32) -> u64 req true \
-                   ens result == a as u64 + b as u64 fx pure { a as u64 + b as u64 }";
+        let src = "fn add(a: u32, b: u32) -> u64 ! pure requires true \
+                   ensures result == a as u64 + b as u64 { a as u64 + b as u64 }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "add", vec![]);
         let engine = LeanEngine::new(p, lean_root());
@@ -4138,8 +4348,8 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("forge_it_sorry_{}", std::process::id()));
         assert!(ensure_dir(&dir), "scratch dir creatable");
         let file = dir.join("add.th");
-        let src = "fn add(a: u32, b: u32) -> u64 req true \
-                   ens result == a as u64 + b as u64 fx pure { a as u64 + b as u64 }";
+        let src = "fn add(a: u32, b: u32) -> u64 ! pure requires true \
+                   ensures result == a as u64 + b as u64 { a as u64 + b as u64 }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "add", vec![]);
         let engine = LeanEngine::new(p, lean_root());
@@ -4184,8 +4394,8 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("forge_it_valid_{}", std::process::id()));
         assert!(ensure_dir(&dir), "scratch dir creatable");
         let file = dir.join("add.th");
-        let src = "fn add(a: u32, b: u32) -> u64 req true \
-                   ens result == a as u64 + b as u64 fx pure { a as u64 + b as u64 }";
+        let src = "fn add(a: u32, b: u32) -> u64 ! pure requires true \
+                   ensures result == a as u64 + b as u64 { a as u64 + b as u64 }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "add", vec![]);
         let engine = LeanEngine::new(p, lean_root());
@@ -4224,8 +4434,8 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("forge_it_stmtmm_{}", std::process::id()));
         assert!(ensure_dir(&dir), "scratch dir creatable");
         let file = dir.join("add.th");
-        let src = "fn add(a: u32, b: u32) -> u64 req true \
-                   ens result == a as u64 + b as u64 fx pure { a as u64 + b as u64 }";
+        let src = "fn add(a: u32, b: u32) -> u64 ! pure requires true \
+                   ensures result == a as u64 + b as u64 { a as u64 + b as u64 }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "add", vec![]);
         let engine = LeanEngine::new(p, lean_root());
@@ -4313,7 +4523,7 @@ mod tests {
                          def R_item : Thermite.Registry := fun _ => none\n\n\
                          /-- doc -/\n\
                          theorem thermite_obligation_f (v : Thermite.Env) : True := by trivial\n";
-        let p = parse_program("fn f(x: u32) -> u32 req true ens result == x fx pure { x }");
+        let p = parse_program("fn f(x: u32) -> u32 ! pure requires true ensures result == x { x }");
         let engine = LeanEngine::new(p, lean_root());
         let dup_err = match engine.reconstruct_replay(canonical, decoy, "f") {
             Err(err) => err,
@@ -4441,7 +4651,7 @@ mod tests {
                          def R_item : Thermite.Registry := fun _ => none\n\n\
                          /-- doc -/\n\
                          theorem thermite_obligation_f (v : Thermite.Env) : True := by trivial\n";
-        let p = parse_program("fn f(x: u32) -> u32 req true ens result == x fx pure { x }");
+        let p = parse_program("fn f(x: u32) -> u32 ! pure requires true ensures result == x { x }");
         let engine = LeanEngine::new(p, lean_root());
 
         // The #251 macro-poison + the #252 indented-command poison: both live in the author
@@ -4545,8 +4755,8 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("forge_it_helper_{}", std::process::id()));
         assert!(ensure_dir(&dir), "scratch dir creatable");
         let file = dir.join("add.th");
-        let src = "fn add(a: u32, b: u32) -> u64 req true \
-                   ens result == a as u64 + b as u64 fx pure { a as u64 + b as u64 }";
+        let src = "fn add(a: u32, b: u32) -> u64 ! pure requires true \
+                   ensures result == a as u64 + b as u64 { a as u64 + b as u64 }";
         let p = parse_program(src);
         let o = fn_obligation(&p, "add", vec![]);
         let engine = LeanEngine::new(p, lean_root());
@@ -4805,7 +5015,8 @@ mod tests {
     // REQ-2(c)/§2(d) (R-CHAR-3).
     #[test]
     fn lean_engine_fills_trust_and_evidence_slots() {
-        let p = parse_program("fn id(x: u64) -> u64 req true ens result == x fx pure { x }");
+        let p =
+            parse_program("fn id(x: u64) -> u64 ! pure requires true ensures result == x { x }");
         let o = fn_obligation(&p, "id", vec![]);
         let engine = LeanEngine::new(p, lean_root());
         assert_eq!(engine.name(), EngineName::LeanAuto);
@@ -4831,10 +5042,12 @@ mod tests {
     // only delta is the ens RHS (`>= a` vs `>= b`); the content hash distinguishes them.
     #[test]
     fn evidence_key_differs_on_different_ens() {
-        let p1 =
-            parse_program("fn m(a: u32, b: u32) -> u32 req true ens result >= a fx pure { a }");
-        let p2 =
-            parse_program("fn m(a: u32, b: u32) -> u32 req true ens result >= b fx pure { a }");
+        let p1 = parse_program(
+            "fn m(a: u32, b: u32) -> u32 ! pure requires true ensures result >= a { a }",
+        );
+        let p2 = parse_program(
+            "fn m(a: u32, b: u32) -> u32 ! pure requires true ensures result >= b { a }",
+        );
         let o1 = fn_obligation(&p1, "m", vec![]);
         let o2 = fn_obligation(&p2, "m", vec![]);
         let e1 = LeanEngine::new(p1, lean_root());
@@ -4866,7 +5079,8 @@ mod tests {
         let nested_file = nested.join("x.lean");
         let _ = std::fs::write(&nested_file, "-- exec v1\n");
 
-        let p = parse_program("fn id(x: u64) -> u64 req true ens result == x fx pure { x }");
+        let p =
+            parse_program("fn id(x: u64) -> u64 ! pure requires true ensures result == x { x }");
         let o = fn_obligation(&p, "id", vec![]);
         let e_before = LeanEngine::new(p.clone(), tmp.clone());
         let k_before = e_before.evidence_key(&o);
@@ -5154,6 +5368,79 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn mutation_replay_failure_requires_an_addressed_proof_diagnostic() {
+        use std::os::unix::process::ExitStatusExt;
+
+        fn failed_output(stderr: &str) -> std::process::Output {
+            std::process::Output {
+                status: std::process::ExitStatus::from_raw(1 << 8),
+                stdout: Vec::new(),
+                stderr: stderr.as_bytes().to_vec(),
+            }
+        }
+
+        let scratch = std::path::Path::new("/tmp/forge_mutation_replay_fixture.lean");
+        let theorem = "thermite_obligation_hybrid";
+        let source = format!(
+            "import Thermite\n\ntheorem {theorem} : True := by\n  omega\n\n#print axioms {theorem}\n"
+        );
+        let proof_failure = failed_output(
+            "/tmp/forge_mutation_replay_fixture.lean:4:2: error: tactic 'omega' failed, unsolved goals",
+        );
+        assert_eq!(
+            classify_mutation_replay_failure(&proof_failure, scratch, &source, theorem),
+            MutationReplayOutcome::ProofRejected
+        );
+
+        for signal in [
+            "maximum number of heartbeats (200000) has been reached",
+            "maximum recursion depth has been reached",
+        ] {
+            let budget_failure = failed_output(&format!(
+                "/tmp/forge_mutation_replay_fixture.lean:4:2: error: tactic 'omega' failed: {signal}"
+            ));
+            assert_eq!(
+                classify_mutation_replay_failure(&budget_failure, scratch, &source, theorem),
+                MutationReplayOutcome::Unavailable,
+                "a proof-span resource failure cannot kill a mutant: {signal}"
+            );
+        }
+
+        let statement_failure = failed_output(
+            "/tmp/forge_mutation_replay_fixture.lean:3:10: error: application type mismatch",
+        );
+        assert_eq!(
+            classify_mutation_replay_failure(&statement_failure, scratch, &source, theorem),
+            MutationReplayOutcome::Undecided,
+            "an error before `:= by` is not proof-rejection authority"
+        );
+
+        let probe_failure = failed_output(
+            "/tmp/forge_mutation_replay_fixture.lean:6:0: error: unknown constant in #print axioms",
+        );
+        assert_eq!(
+            classify_mutation_replay_failure(&probe_failure, scratch, &source, theorem),
+            MutationReplayOutcome::Undecided,
+            "axiom-probe failure cannot kill a mutant"
+        );
+
+        let import_failure = failed_output(
+            "/tmp/forge_mutation_replay_fixture.lean:1:0: error: unknown module prefix 'Thermite'",
+        );
+        assert_eq!(
+            classify_mutation_replay_failure(&import_failure, scratch, &source, theorem),
+            MutationReplayOutcome::Unavailable
+        );
+
+        let unanchored = failed_output("lake: error: package configuration is malformed");
+        assert_eq!(
+            classify_mutation_replay_failure(&unanchored, scratch, &source, theorem),
+            MutationReplayOutcome::Undecided
+        );
+    }
+
     // REQ-7 (increment 2e): the forge-tier `lemma` discharge — `export_lemma` emits a
     // self-contained theorem (the pure `∀ params, req → ens` proposition over the
     // denotation spine) proved by the author's frozen-battery tactics; `discharge_source`
@@ -5166,7 +5453,7 @@ mod tests {
             eprintln!("SKIP: lake not present — live forge-lemma discharge test not run.");
             return;
         }
-        let src = "lemma merge_advance(i: u64, n: u64) req i < n ens i + 1 <= n \
+        let src = "lemma merge_advance(i: u64, n: u64) requires i < n ensures i + 1 <= n \
                    proof { simp [Thermite.denote, Thermite.Env.bindInt, Thermite.intVal, \
                    Thermite.arithDenote]; omega }";
         let p = parse_program(src);

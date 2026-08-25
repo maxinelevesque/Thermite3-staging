@@ -1,0 +1,414 @@
+{
+  "json_program_fields": [
+    {
+      "address": "$.reject[0].program",
+      "atoms": [
+        "read(stdin)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/effect-stdlib/cases.json"
+    },
+    {
+      "address": "$.reject[1].program",
+      "atoms": [
+        "read(stdin)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/effect-stdlib/cases.json"
+    },
+    {
+      "address": "$.probe_allowed_when_fx_widens[0].program",
+      "atoms": [
+        "read(src)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/sandbox/cases.json"
+    },
+    {
+      "address": "$.accept[1].program",
+      "atoms": [
+        "net(a)",
+        "read(a)",
+        "write(a)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/slag/slag.json"
+    },
+    {
+      "address": "$.reject[5].program",
+      "atoms": [
+        "net(a)",
+        "read(a)",
+        "write(a)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/vacuity/triage.json"
+    }
+  ],
+  "rust_mixed_sites": [
+    {
+      "atoms": [
+        "read(a)",
+        "write(b)",
+        "write(log)"
+      ],
+      "classification": "non-program cache-key token fixtures",
+      "path": "forge/src/cache.rs",
+      "sites": 5
+    },
+    {
+      "atoms": [
+        "read(state.n)"
+      ],
+      "classification": "RFC-10 shared-state invariant program fixtures",
+      "path": "forge/src/check.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
+        "write(db.child)"
+      ],
+      "classification": "structured diagnostic expected-output token",
+      "path": "forge/src/cli.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
+        "net(z)",
+        "read(x)",
+        "write(y)"
+      ],
+      "classification": "non-program manifest tokens and documentation",
+      "path": "forge/src/manifest.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(clock)"
+      ],
+      "classification": "non-program certificate effect-row fixture",
+      "path": "forge/src/result_arbiter.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
+        "net(_)",
+        "net(s)",
+        "net(sock)",
+        "read(_)",
+        "read(a)",
+        "read(anything)",
+        "read(foo)",
+        "read(input)",
+        "read(s)",
+        "read(src)",
+        "read(x)",
+        "write(_)",
+        "write(b)",
+        "write(dst)",
+        "write(o)",
+        "write(output)"
+      ],
+      "classification": "migrated program fixtures plus sandbox token fixtures and documentation",
+      "path": "forge/src/sandbox.rs",
+      "sites": 40
+    },
+    {
+      "atoms": [
+        "net(a)",
+        "read(a)",
+        "write(a)"
+      ],
+      "classification": "migrated maximal-row program fixtures",
+      "path": "forge/src/vacuity.rs",
+      "sites": 6
+    },
+    {
+      "atoms": [
+        "read(path)",
+        "read(source_path)"
+      ],
+      "classification": "Rust filesystem API calls; not Thermite syntax",
+      "path": "forge/src/verified_build.rs",
+      "sites": 3
+    },
+    {
+      "atoms": [
+        "read(path)"
+      ],
+      "classification": "Rust filesystem API calls; not Thermite syntax",
+      "path": "forge/src/verified_build/composition.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
+        "read(state.n)",
+        "write(state.n)"
+      ],
+      "classification": "RFC-10 shared-state invariant conformance fixtures",
+      "path": "forge/tests/check_conformance.rs",
+      "sites": 5
+    },
+    {
+      "atoms": [
+        "write(log)"
+      ],
+      "classification": "migrated programs plus expected-output tokens",
+      "path": "forge/tests/divergence_cache_effect_row.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(input)",
+        "write(output)"
+      ],
+      "classification": "migrated program fixtures",
+      "path": "forge/tests/divergence_effect_link_string_wrappers.rs",
+      "sites": 5
+    },
+    {
+      "atoms": [
+        "net(db)",
+        "write(db)",
+        "write(log)"
+      ],
+      "classification": "migrated program fixtures",
+      "path": "forge/tests/divergence_provenance.rs",
+      "sites": 6
+    },
+    {
+      "atoms": [
+        "read(input)",
+        "write(output)"
+      ],
+      "classification": "expected-output tokens for migrated editor program",
+      "path": "forge/tests/editor_runs.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(input)"
+      ],
+      "classification": "expected-output tokens for migrated conformance program",
+      "path": "forge/tests/effect_link_conformance.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
+        "net(socket)",
+        "read(stdin)",
+        "write(heap)",
+        "write(stdout)"
+      ],
+      "classification": "migrated programs plus expected diagnostics",
+      "path": "forge/tests/freestanding_target.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(_)",
+        "read(src)",
+        "write(out)"
+      ],
+      "classification": "migrated programs plus expected-output tokens",
+      "path": "forge/tests/sandbox_conformance.rs",
+      "sites": 7
+    },
+    {
+      "atoms": [
+        "read(path)"
+      ],
+      "classification": "Rust filesystem API call; not Thermite syntax",
+      "path": "forge/tests/verified_build.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
+        "read(counter.n)",
+        "read(right.n)"
+      ],
+      "classification": "RFC-10 checked-program fixtures",
+      "path": "thermite-lower/tests/checked_program.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
+        "net(d)",
+        "read(missing)",
+        "read(state.child)",
+        "read(x)",
+        "write(state)",
+        "write(y)"
+      ],
+      "classification": "migrated programs plus intentional undeclared-root rejection fixture",
+      "path": "thermite-lower/tests/effects.rs",
+      "sites": 9
+    },
+    {
+      "atoms": [
+        "read(state.n)"
+      ],
+      "classification": "RFC-10 equivalence-obligation fixtures",
+      "path": "thermite-lower/tests/equivalence_obligation.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
+        "read(state.n)",
+        "read(state.text)",
+        "write(state.n)"
+      ],
+      "classification": "RFC-10 phase cross-product fixtures",
+      "path": "thermite-lower/tests/rfc10_conformance_matrix.rs",
+      "sites": 6
+    },
+    {
+      "atoms": [
+        "read(state.free)",
+        "read(state.guarded)",
+        "read(state.missing)",
+        "read(state.n)",
+        "read(state.text)",
+        "write(state.free)",
+        "write(state.guarded)",
+        "write(state.inner)",
+        "write(state.n)",
+        "write(state.text)"
+      ],
+      "classification": "RFC-10 shared-state invariant lowering fixtures",
+      "path": "thermite-lower/tests/shared_state_invariants.rs",
+      "sites": 37
+    },
+    {
+      "atoms": [
+        "read(state.n)"
+      ],
+      "classification": "RFC-10 traversal-witness fixtures",
+      "path": "thermite-lower/tests/traversal_witness.rs",
+      "sites": 3
+    },
+    {
+      "atoms": [
+        "net(domain)",
+        "read(path)",
+        "write(path)"
+      ],
+      "classification": "generated language documentation tokens",
+      "path": "thermite-skill/src/generate.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "net(domain)",
+        "read(path)",
+        "write(path)"
+      ],
+      "classification": "generated language documentation expectations",
+      "path": "thermite-skill/tests/skill.rs",
+      "sites": 3
+    },
+    {
+      "atoms": [
+        "net(db)"
+      ],
+      "classification": "migrated program fixtures",
+      "path": "thermite-spec/tests/sealed_validate.rs",
+      "sites": 4
+    },
+    {
+      "atoms": [
+        "read(state.n)"
+      ],
+      "classification": "RFC-10 shared-contract validation fixtures",
+      "path": "thermite-spec/tests/shared_contract_validate.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
+        "read(missing.field)",
+        "read(scheduler.runqueue)",
+        "read(scheduler.runqueue.head)",
+        "write(scheduler)",
+        "write(scheduler.runqueue)",
+        "write(scheduler.timers)"
+      ],
+      "classification": "RFC-9 program fixtures and expected diagnostics",
+      "path": "thermite-spec/tests/verified_effect_rows.rs",
+      "sites": 7
+    },
+    {
+      "atoms": [
+        "read(rel)"
+      ],
+      "classification": "parser token fixtures; not complete programs",
+      "path": "thermite-syntax/tests/conformance.rs",
+      "sites": 3
+    },
+    {
+      "atoms": [
+        "write(counters.n)"
+      ],
+      "classification": "RFC-10 shared-state invariant parser fixtures",
+      "path": "thermite-syntax/tests/shared_state_invariants.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
+        "read(scheduler.runqueue.head)"
+      ],
+      "classification": "RFC-9 parser program fixtures and expected syntax",
+      "path": "thermite-syntax/tests/verified_effect_rows.rs",
+      "sites": 1
+    }
+  ],
+  "schema": 2,
+  "summary": {
+    "json_missing_shared": 0,
+    "json_program_fields_with_state_effects": 5,
+    "rust_files_reviewed": 32,
+    "rust_reviewed_sites": 185,
+    "th_missing_shared": 0,
+    "th_programs_with_state_effects": 5,
+    "tracked_th_files": 67
+  },
+  "thermite_programs": [
+    {
+      "atoms": [
+        "read(stdin)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/compose_demo.th"
+    },
+    {
+      "atoms": [
+        "read(stdin)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/effect_demo.th"
+    },
+    {
+      "atoms": [
+        "net(db)",
+        "write(db)",
+        "write(log)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/provenance_demo.th"
+    },
+    {
+      "atoms": [
+        "read(state.n)"
+      ],
+      "missing_shared": [],
+      "path": "conformance/shared_state_rfc10.th"
+    },
+    {
+      "atoms": [
+        "read(input)",
+        "write(output)"
+      ],
+      "missing_shared": [],
+      "path": "examples/editor/editor.th"
+    }
+  ]
+}

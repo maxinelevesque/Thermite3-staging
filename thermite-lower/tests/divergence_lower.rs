@@ -94,7 +94,7 @@ fn verify(tag: &str, emitted: &str) -> Option<(bool, String)> {
 // ---------------------------------------------------------------------------
 
 const TALLY: &str = r#"spec fn tally(vals: &[u32]) -> u64
-  dec vals.len()
+  measures vals.len()
 {
   match vals {
     []          => 0,
@@ -103,18 +103,18 @@ const TALLY: &str = r#"spec fn tally(vals: &[u32]) -> u64
 }
 
 fn accumulate(vals: &[u32]) -> u64
-  req vals.len() <= 1_000_000
-  ens result == tally(vals)
-  ens result <= vals.len() as u64 * u32::MAX as u64
-  fx  pure
+  ! pure
+  requires vals.len() <= 1_000_000
+  ensures result == tally(vals)
+  ensures result <= vals.len() as u64 * u32::MAX as u64
 {
   let mut total: u64 = 0;
   let mut j: usize = 0;
   while j < vals.len()
-    inv j <= vals.len()
-    inv total == tally(&vals[..j])
-    inv total <= j as u64 * u32::MAX as u64
-    dec vals.len() - j
+    keeps j <= vals.len()
+    keeps total == tally(&vals[..j])
+    keeps total <= j as u64 * u32::MAX as u64
+    measures vals.len() - j
   {
     total = total + vals[j] as u64;
     j = j + 1;
@@ -177,20 +177,20 @@ fn divergence_renamed_accumulator_fold_verifies() {
 // ---------------------------------------------------------------------------
 
 const SEARCH: &str = r#"fn locate(data: &[u32], key: u32) -> Option<usize>
-  req sorted(data)
-  ens match result {
+  ! pure
+  requires sorted(data)
+  ensures match result {
         Some(i) => i < data.len() && data[i] == key,
         None    => forall_in(data, |x| x != key),
       }
-  fx  pure
 {
   let mut left: usize = 0;
   let mut right: usize = data.len();
   loop
-    inv left <= right && right <= data.len()
-    inv forall_below(data, left, |x| x < key)
-    inv forall_from(data, right, |x| x > key)
-    dec right - left
+    keeps left <= right && right <= data.len()
+    keeps forall_below(data, left, |x| x < key)
+    keeps forall_from(data, right, |x| x > key)
+    measures right - left
   {
     if left == right { return None; }
     let mid = left + (right - left) / 2;
@@ -243,9 +243,9 @@ fn divergence_renamed_coverage_search_verifies() {
 // ---------------------------------------------------------------------------
 
 const PLAIN: &str = r#"fn identity(n: u32) -> u32
-  req true
-  ens result == n
-  fx  pure
+  ! pure
+  requires true
+  ensures result == n
 {
   n
 }
@@ -289,9 +289,9 @@ fn divergence_no_template_program_emits_no_aids() {
 // ---------------------------------------------------------------------------
 
 const REQ_COMBINATOR: &str = r#"fn first_nonzero(xs: &[u32]) -> bool
-  req forall_in(xs, |x| x > 0)
-  ens result == exists_in(xs, |x| x > 0)
-  fx  pure
+  ! pure
+  requires forall_in(xs, |x| x > 0)
+  ensures result == exists_in(xs, |x| x > 0)
 {
   true
 }

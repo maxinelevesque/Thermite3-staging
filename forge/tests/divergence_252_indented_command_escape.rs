@@ -65,9 +65,9 @@ fn lake_present() -> bool {
 // The recursive-int spec-fn item: `r : int -> int` (recursive) is called in `f`'s ens,
 // so `f`'s obligation is tier-(c) RecursiveInteractive; it routes through
 // `LeanEngine::replay_interactive` under `--engine lean`. Mirrors the #251 pin's source.
-const TH_SRC: &str = "spec fn r(x: int) -> int\n  dec x\n{\n  r(x)\n}\n\n\
-                      fn f(x: u32) -> u32\n  req true\n  ens result as int == r(x as int)\n  \
-                      fx pure\n{\n  x\n}\n";
+const TH_SRC: &str = "spec fn r(x: int) -> int\n  measures x\n{\n  r(x)\n}\n\n\
+                      fn f(x: u32) -> u32\n  ! pure
+  requires true\n  ensures result as int == r(x as int)\n{\n  x\n}\n";
 
 // Transform the emitted tier-(c) skeleton into the indented-command poison proof file:
 // preserve the evidence-key header + imports + `def R_item`, splice a clean-looking

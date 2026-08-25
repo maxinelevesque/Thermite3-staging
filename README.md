@@ -3,9 +3,9 @@
 Thermite is a programming language for code that must explain why it is
 correct. Functions state:
 
-- `req`: what callers must establish;
-- `ens`: what the function guarantees;
-- `fx`: what the function may affect.
+- `requires`: what callers must establish;
+- `ensures`: what the function guarantees;
+- `!`: what the function may affect.
 
 Forge checks those contracts, returns concrete counterexamples when they fail,
 and records the result in an assurance manifest. The long-term goal is simple:
@@ -20,15 +20,15 @@ seccomp-backed runtime path are Linux-oriented.
 
 ```thermite
 fn sum(xs: &[u32]) -> u64
-  req xs.len() <= 1_000_000
-  ens result == spec_sum(xs)
-  fx  pure
+  requires xs.len() <= 1_000_000
+  ensures result == spec_sum(xs)
+  !  pure
 {
   let mut acc: u64 = 0;
   let mut i: usize = 0;
   while i < xs.len()
-    inv acc == spec_sum(&xs[..i])
-    dec xs.len() - i
+    keeps acc == spec_sum(&xs[..i])
+    measures xs.len() - i
   {
     acc = acc + xs[i] as u64;
     i = i + 1;
@@ -39,7 +39,7 @@ fn sum(xs: &[u32]) -> u64
 
 `forge check` proves the contract or reports why it could not. `forge build`
 lowers the program to Rust with runtime contract checks; hosted executables are
-confined by an `fx`-derived seccomp filter unless the sandbox is explicitly
+confined by an `!`-derived seccomp filter unless the sandbox is explicitly
 disabled.
 
 ## Install
@@ -62,7 +62,7 @@ On Ubuntu or Debian:
 sudo apt-get update
 sudo apt-get install --yes \
   build-essential ca-certificates clang curl git \
-  libc++-dev libc++abi-dev python3 unzip util-linux z3
+  libc++-dev libc++abi-dev unzip util-linux z3
 ```
 
 What these provide:
@@ -71,14 +71,28 @@ What these provide:
 |---|---|
 | `git`, `curl`, `ca-certificates`, `unzip` | Fetching pinned Rust, Lean, Verus, CVC5, and solver artifacts |
 | `build-essential`, `clang`, `libc++-dev`, `libc++abi-dev` | Building the Stage 4 SAT tools and Lean's CVC5 bridge |
-| `python3` | Repository gates and proof-artifact checks |
 | `util-linux` | `prlimit`, used by the memory-bounded G4 gate |
 | `z3` | Normal reconstruction and G4 checks; Verus also ships its matching private Z3 |
 
 You do not need a system CVC5 package. Lean's pinned dependency downloads the
 matching CVC5 distribution and builds its bridge.
 
-### 2. Rust
+### 2. uv (the pinned Python interpreter)
+
+Every repository gate runs under the interpreter `uv` resolves from
+[`.python-version`](.python-version), never a system Python. The gates read
+`gates/routes.toml` through `tomllib`, which is 3.11+, so a system Python 3.9
+makes them exit on their own environment check rather than on the thing they
+gate.
+
+```sh
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Gates are then invoked as `uv run python gates/<gate>.py`, which is also how
+`make` and CI reach them.
+
+### 3. Rust
 
 Install rustup if necessary:
 
@@ -109,7 +123,7 @@ export PATH="$HOME/.local/bin:$PATH"
 Add that `PATH` export to your shell profile if `~/.local/bin` is not already
 present.
 
-### 3. Verus
+### 4. Verus
 
 Thermite's L3 path invokes `verus` from `PATH`. Install the exact CI release:
 
@@ -130,7 +144,7 @@ verus --version
 Keep the Verus directory intact: its binary expects the bundled Rust toolchain
 and Z3 beside it.
 
-### 4. Lean and the proof spine
+### 5. Lean and the proof spine
 
 Install elan, then let the repository select Lean 4.29.0:
 
@@ -150,15 +164,15 @@ cd ..
 `lake exe cache get` is important: without the prebuilt Mathlib cache, a first
 build can spend hours rebuilding dependencies.
 
-### 5. Checked BV and EPR reconstruction
+### 6. Checked BV and EPR reconstruction
 
 Normal release builds include fixed-width `@bvN` syntax and automatic routing.
 The finite relation/array reconstruction path additionally needs the exact
 CaDiCaL and `drat-trim` revisions pinned in
-[`scripts/g4-toolchain.env`](scripts/g4-toolchain.env):
+[`dev/g4-toolchain.env`](dev/g4-toolchain.env):
 
 ```sh
-bash scripts/install-g4-tools.sh
+bash dev/install-g4-tools.sh
 ```
 
 They are installed under `target/g4-tools`. Forge finds that directory
@@ -166,13 +180,13 @@ automatically when run from this checkout. The G4 gate also exports explicit
 paths before it runs:
 
 ```sh
-bash scripts/g4-gate.sh
+bash gates/g4.sh
 ```
 
 The gate applies a 6 GiB address-space ceiling and serializes the expensive
 work, so it is suitable for smaller development machines.
 
-### 6. Optional: Kani for explicit L2 checks
+### 7. Optional: Kani for explicit L2 checks
 
 Kani is only needed for `forge check --level l2` and the live Kani tests:
 
@@ -194,7 +208,7 @@ cargo --version
 verus --version
 lake --version
 z3 --version
-python3 --version
+uv run python --version
 
 cargo build --release -p forge
 forge check conformance/sum.th
@@ -284,8 +298,8 @@ cargo test -p thermite-skill
 cargo test -p forge
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all --check
-python3 tooling/doc-drift.py
-tooling/reqs check
+uv run python gates/doc-drift.py
+gates/reqs check
 ```
 
 Run the Rust/control-plane gauntlet with:
@@ -297,8 +311,8 @@ make gauntlet
 Proof-bearing gates:
 
 ```sh
-bash scripts/g3-gate.sh
-bash scripts/g4-gate.sh
+bash gates/g3.sh
+bash gates/g4.sh
 make audit-fast
 make audit
 ```

@@ -23,7 +23,7 @@ the EFFECT basis: each atom of the §4.1 effect lattice (`Effect::Read`/`Write`/
 contracted, seccomp-confined **`#[boundary]` effect primitive** — a
 verified-effect-primitive whose BODY is the real syscall (trusted by fiat, because
 you cannot prove the kernel), whose CONTRACT states the assumed behavior of that
-syscall, whose effect is TYPED (a `fx` row) and RUNTIME-SANDBOXED (the #57 seccomp
+syscall, whose effect is TYPED (a `!` row) and RUNTIME-SANDBOXED (the #57 seccomp
 filter confines the primitive to exactly the syscalls its effect implies). The pure
 logic that orchestrates these primitives is FULLY verified (L3); the trusted base
 is exactly this small, enumerated, contracted, confined set.
@@ -60,14 +60,14 @@ honest iff its outcome space is totally covered AND the caller resolves every ar
   reads `item.boundary` — a boundary is slag-adjacent, §9/OQ-4). **A boundary fn
   also short-circuits to `BoundaryL1` at `gate_fn` BEFORE the #13 SOLVER-vacuity
   gate and the #12 mutation gate ever run** (`check::gate_fn`'s
-  `GateOutcome::BoundaryL1`, `forge/src/check.rs`), so the boundary's assumed `ens`
+  `GateOutcome::BoundaryL1`, `forge/src/check.rs`), so the boundary's assumed `ensures`
   is NEVER mutation-scored or solver-vacuity-rejected — only structurally triaged.
-- **GROUNDED — a boundary with `ens true` is REJECTED (rule (a)), a boundary with a
-  CLOSED-outcome-set `ens` PASSES to L1.** The shipped `#16` boundary oracle already
+- **GROUNDED — a boundary with `ensures true` is REJECTED (rule (a)), a boundary with a
+  CLOSED-outcome-set `ensures` PASSES to L1.** The shipped `#16` boundary oracle already
   pins this (`conformance/boundary/cases.json` reject `boundary_vacuous_contract`:
-  `#[boundary("ext::g")] … ens true …` → `EnsIsTrivial`), and I reproduced it: an
-  `ens true` boundary → `EnsIsTrivial` reject; the SAME fn with
-  `ens match result { Some(v) => v < 256, None => true }` (the outcome set CLOSED via
+  `#[boundary("ext::g")] … ensures true …` → `EnsIsTrivial`), and I reproduced it: an
+  `ensures true` boundary → `EnsIsTrivial` reject; the SAME fn with
+  `ensures match result { Some(v) => v < 256, None => true }` (the outcome set CLOSED via
   a Stage-1 ADT return) → certifies **`L1`, `boundary: true`, `boundary_target`**.
 - **The caller's exhaustive `match` is the Stage-1b validator + verus.** A caller
   that drops an arm of the primitive's `Option`/`Result`/user-enum return is
@@ -75,13 +75,13 @@ honest iff its outcome space is totally covered AND the caller resolves every ar
   `thermite-spec`), for built-in `Option` at verus (`E0004: non-exhaustive
   patterns: None not covered`). Both are LOUD compile-time rejects (GROUNDED below).
 
-So outcome-coverage = (#16 boundary triage admits a closed-set `ens` but rejects a
+So outcome-coverage = (#16 boundary triage admits a closed-set `ensures` but rejects a
 trivial one) ∘ (Stage-1b exhaustive-match forces every arm handled) ∘ (#52
-verify-through proves the caller's own `ens` on EACH arm). **The one thing the
+verify-through proves the caller's own `ensures` on EACH arm). **The one thing the
 builder MUST do is the `conformance/effect-stdlib` test that PINS this composition**
 — not write a new "outcome-coverage validator." **NO new vacuity-exemption fix is
-needed:** the feared "a boundary's weak `ens` is wrongly vacuity-rejected" does NOT
-occur — a weak-but-closed `ens` (`match result { … }`, which mentions `result` and
+needed:** the feared "a boundary's weak `ensures` is wrongly vacuity-rejected" does NOT
+occur — a weak-but-closed `ensures` (`match result { … }`, which mentions `result` and
 is not `BoolLit(true)`) passes (a)/(b)/(c) cleanly, and the value-strength gates
 (#12 mutation, #13 solver) never reach a boundary fn (it L1-short-circuits first).
 The honest claim about a syscall is a TOTALLY-COVERED outcome SET, not a strong
@@ -108,11 +108,11 @@ they run + are confined" as OUT, x86_64-Linux only). So:
   L3 + `to_boundary`, the audit manifest enumerates the primitive in the TCB
   (all GROUNDED below).
 - **`forge build`'s SANDBOX-CONFINEMENT is demonstrated via the SHIPPED
-  `fx`-declaring-body pattern + `--sandbox-self-test`** (the `#57`
+  `!`-declaring-body pattern + `--sandbox-self-test`** (the `#57`
   `conformance/sandbox/cases.json` precedent), NOT a real `os::` call: a fn that
-  DECLARES `fx read(src)` (with a pure body) installs the `read`-widened seccomp
+  DECLARES `! read(src)` (with a pure body) installs the `read`-widened seccomp
   allowlist (GROUNDED: 27 syscalls incl. `openat`), and the `--sandbox-self-test`
-  probe confirms the confinement is `fx`-derived. The kill of an off-allowlist
+  probe confirms the confinement is `!`-derived. The kill of an off-allowlist
   syscall (`SIGSYS`, exit 159) is the shipped `#57` `pure_probe_killed` case. This
   proves the per-effect confinement WITHOUT the live foreign-body link.
 
@@ -128,11 +128,11 @@ CONFINEMENT-DERIVATION story, which is the §1/§9 honesty claim in its entirety
 - **`read_file` / `read_stdin` (`Read`)** — return a Stage-1 ADT `Option`/`Result`
   (the closed outcome set: a read can EOF/fail), the centerpiece of outcome-coverage.
 - **`write_file` / `print` (`Write`)** — return `Result<(), IoError>` (write can
-  fail); `ens` the bytes were handed to the OS, never durability.
-- **`now` (`Time`)** — the simplest primitive (`-> u64`, no failure arm, `fx time`),
+  fail); `ensures` the bytes were handed to the OS, never durability.
+- **`now` (`Time`)** — the simplest primitive (`-> u64`, no failure arm, `! time`),
   the minimal compose-through + sandbox-derivation case.
 
-`Net` (`net_connect`/`net_send`/`net_recv`, ties to the `fx diverge` server note),
+`Net` (`net_connect`/`net_send`/`net_recv`, ties to the `! diverge` server note),
 `Rand` (`random`), and `Alloc` (`Box<T>` construction — OQ-3) follow the IDENTICAL
 shape and are **v1.1** (each is one declaration + one `cases.json` entry on the same
 machinery). The `governs` routes are trimmed to the v1 three (read/write/time); the
@@ -144,7 +144,7 @@ orchestrator adds net/rand/alloc routes when v1.1 starts.
 |---|---|---|
 | **3a** | `thermite-stdlib` crate of the v1 `#[boundary("os::…")]` declarations (read/write/time) | `#16` boundary form (`parser.rs` `Semi`-body path; `ast.rs` `FnItem { boundary: Some, body: None }`) |
 | **3b** | `conformance/effect-stdlib/cases.json` pinning OUTCOME-COVERAGE: L1 boundary cert; compose-through to L3 + `to_boundary`; the missing-arm reject; the wrong-arm soundness reject; the TCB enumeration | `#16` `gate_fn` L1; `#52` `lower_external_body_fn` weave; Stage-1b exhaustive-match; `#17` `ToBoundary`; `#15` `AuditManifest.tcb` |
-| **3c** | the `forge build` sandbox-confinement DEMO (the `fx read(src)`-body + `--sandbox-self-test` pattern; exit 159 kill / allow-on-widen) | `#57` `sandbox::syscall_allowlist` over `transitive_fx` |
+| **3c** | the `forge build` sandbox-confinement DEMO (the `! read(src)`-body + `--sandbox-self-test` pattern; exit 159 kill / allow-on-widen) | `#57` `sandbox::syscall_allowlist` over `transitive_fx` |
 
 No layer adds production `.rs` to forge/thermite-lower/thermite-spec — Stage 3 is a
 stdlib + an oracle over the shipped pipeline.
@@ -166,15 +166,15 @@ The three escalating teeth all show up here:
   → `NonExhaustiveMatch { missing: ["…"] }`; a built-in `Option` missing arm →
   verus `E0004: non-exhaustive patterns`.
 - **Runtime scream.** Each primitive's contract is L1-enforced on EVERY crossing
-  (the `#16` `lower_boundary_fn_l1` wrapper: `req`-check → foreign call → `ens`-
+  (the `#16` `lower_boundary_fn_l1` wrapper: `requires`-check → foreign call → `ensures`-
   check, §6 L1): a primitive that violates its assumed contract is caught at the
-  boundary, exit 101, never a wrong value. And `fx panic` makes "I can scream here"
+  boundary, exit 101, never a wrong value. And `! panic` makes "I can scream here"
   FIRST-CLASS — a function that may abort declares `panic` in its effect row (§4.1),
   so the refusal is in the row and in the manifest, greppable.
 - **Kill scream.** The #57 seccomp sandbox confines each primitive to exactly its
   effect's syscalls (REQ-5): a `read_file` that tries to `write`/`connect` is
   `SIGSYS`-killed by the kernel — the trusted-by-fiat body cannot exceed its
-  declared `fx`.
+  declared `!`.
 
 The fiat/verified line is a KNOB (the load-bearing reframing OQ-1 resolves): the
 honest claim about a syscall is NOT a strong promise about the world, it is a
@@ -193,18 +193,18 @@ forge temp removed per #53). The centerpiece source (`effect_demo.th`):
 ```thermite
 #[boundary("os::read_small")]
 fn read_small() -> Option<u64>
-  req true
-  ens match result {
+  requires true
+  ensures match result {
         Some(v) => v < 256,        // closes the SET; constrains the Ok arm's SHAPE
         None    => true,           // the EOF/scream arm
       }
-  fx  read(input)
+  !  read(input)
 ;
 
 fn read_doubled() -> u64
-  req true
-  ens result < 512                 // holds on the Some arm (v<256 ⇒ v+v<512) AND the None arm
-  fx  read(input)
+  requires true
+  ensures result < 512                 // holds on the Some arm (v<256 ⇒ v+v<512) AND the None arm
+  !  read(input)
 {
   match read_small() {             // exhaustive: BOTH arms FORCED handled
     Some(v) => v + v,              // HANDLE: proven via the assumed ens
@@ -227,11 +227,11 @@ assurance_scope: to-the-boundary (via read_small)
 ```
 
 The primitive certifies **L1 + boundary + target** (`#16`); the pure caller composes
-THROUGH the assumed `ens` to **L3 + `to-the-boundary (via read_small)`** (`#52` +
+THROUGH the assumed `ensures` to **L3 + `to-the-boundary (via read_small)`** (`#52` +
 `#17`). This is verified-to-the-boundary, GROUNDED end-to-end on the shipped path.
 
 **Negative control (outcome-coverage is load-bearing).** Make the None/scream arm
-return a value violating the caller's `ens` (`None => 999` under `ens result < 512`):
+return a value violating the caller's `ensures` (`None => 999` under `ensures result < 512`):
 
 ```
 item: read_doubled
@@ -242,20 +242,20 @@ level: L0
 
 A COUNTEREXAMPLE — the mishandled scream arm does NOT verify (no false L3). The
 caller proves its postcondition on EVERY arm using ONLY the primitive's assumed
-outcome-set `ens`, or it fails.
+outcome-set `ensures`, or it fails.
 
-**`ens true` on a boundary is REJECTED (the vacuity-exemption question, settled).**
-`#[boundary("os::now")] fn now() -> u64 req true ens true fx time ;` →
+**`ensures true` on a boundary is REJECTED (the vacuity-exemption question, settled).**
+`#[boundary("os::now")] fn now() -> u64 requires true ensures true ! time ;` →
 
 ```
-reject: EnsIsTrivial — §7.1 (a): ens#0 is syntactically `true` (literal or identity)
+reject: EnsIsTrivial — §7.1 (a): ensures#0 is syntactically `true` (literal or identity)
 ```
 
-…while `… ens result < 4000000000 fx time ;` → **`L1`, `boundary: true`,
+…while `… ensures result < 4000000000 ! time ;` → **`L1`, `boundary: true`,
 `boundary_target: os::now`**. So the boundary is NOT exempt from honesty — a
-trivially-true `ens` is still rejected by §7.1 (a)/(b)/(c); only the value-STRENGTH
+trivially-true `ensures` is still rejected by §7.1 (a)/(b)/(c); only the value-STRENGTH
 gates (#12/#13) are bypassed (the boundary L1-short-circuits before them). **This is
-why no new vacuity-exemption fix is needed:** a closed-outcome-set `ens`
+why no new vacuity-exemption fix is needed:** a closed-outcome-set `ensures`
 (`match result { … }`, which mentions `result` and is not `BoolLit(true)`) passes
 the structural battery as-is.
 
@@ -268,35 +268,35 @@ tcb (trusted computing base):
   toolchain: verus=Verus  Version: 0.2026.05.24…
 ```
 
-**The sandbox confinement is `fx`-derived (the `#57` self-test pattern).**
+**The sandbox confinement is `!`-derived (the `#57` self-test pattern).**
 `forge build --entry rf --sandbox-self-test` over
-`fn rf(x: u32) -> u32 req x < 100 ens result == x fx read(src) { x }`:
+`fn rf(x: u32) -> u32 requires x < 100 ensures result == x ! read(src) { x }`:
 
 ```
 sandbox: seccomp installed (transitive fx=[read(src)]; 27 syscalls allowlisted)
 ```
 
-vs the pure `sum` (`fx pure`): **23 syscalls**, vs `fx time`: **25 syscalls**
+vs the pure `sum` (`! pure`): **23 syscalls**, vs `! time`: **25 syscalls**
 (baseline 23 + `clock_gettime` 228 + `clock_nanosleep`). The `read`-widened filter
 ALLOWS the `--sandbox-self-test` `openat` probe; under the pure filter the same
 probe is `SIGSYS`-KILLED (exit 159 = 128+31, the shipped `pure_probe_killed`). The
-allowlist is `fx`-DERIVED and per-effect, GROUNDED — no live `os::` link required.
+allowlist is `!`-DERIVED and per-effect, GROUNDED — no live `os::` link required.
 
-**Honest grounding caveat — the #12 mutation gate vs bound-style effect `ens`.** A
+**Honest grounding caveat — the #12 mutation gate vs bound-style effect `ensures`.** A
 pure caller whose RESULT flows from the uncertain read necessarily has a BOUND-style
 postcondition (`result < N`), and a `return 0`-at-head mutant SURVIVES `result < N`
 → the #12 mutation gate reports `WeakContract` at the DEFAULT floor (GROUNDED:
 `read_doubled` → `WeakContract` mutation kill ratio 0/3). This is intrinsic: a
-program reading the world cannot pin an EXACT result `ens` the way pure
+program reading the world cannot pin an EXACT result `ensures` the way pure
 `binary_search` does. The v1 corpus therefore certifies the bound-style effect
 caller with **`--mutation-floor 0`** (the documented `forge check` relaxation),
 exactly as a real effect-reading program would; the L3 + `to_boundary` claim is
 otherwise identical. The builder + critic MUST pin the corpus's `--mutation-floor 0`
 flag and NOT let it leak to the pure corpus (which stays at the default floor).
-(NOTE: the user-enum match-on-`result`-in-`ens` variant currently hits a verus
+(NOTE: the user-enum match-on-`result`-in-`ensures` variant currently hits a verus
 obligation failure on lowering even at floor 0 — the built-in `Option` return is the
 reliable L3 demo. If the builder needs a user-enum effect primitive, file a fresh
-`#` against the match-in-ens lowering; v1 uses `Option`/`Result`.)
+`#` against the match-in-ensures lowering; v1 uses `Option`/`Result`.)
 
 ## The verus mechanism (GROUNDED — `verus 0.2026.05.24`)
 
@@ -307,14 +307,14 @@ verifies THROUGH that assumed contract. Authoring harnesses (run against the rea
 `verus` binary; scratch removed):
 
 **(1) The effect primitive + the compose-through proof.** A `read_small ->
-Option<u64>` whose `ens` closes the outcome set, plus a pure caller that `match`es
+Option<u64>` whose `ensures` closes the outcome set, plus a pure caller that `match`es
 BOTH arms — `forge check … --mutation-floor 0`: `read_small` **L1 boundary**,
 `read_doubled` **L3 + to-the-boundary** (the §9 / `#52` verify-through-the-contract,
 GROUNDED above).
 
 **(2) Soundness — the caller cannot manufacture a guarantee the contract does not
-deliver.** A caller claiming an `ens` STRONGER than the primitive delivers (the
-`None => 999` negative under `ens result < 512`) FAILS with `postcondition not
+deliver.** A caller claiming an `ensures` STRONGER than the primitive delivers (the
+`None => 999` negative under `ensures result < 512`) FAILS with `postcondition not
 satisfied` (GROUNDED above) — a COUNTEREXAMPLE, not a false L3. The external_body
 assumes ONLY the primitive's `ensures`; the caller still proves its own
 postcondition. This is the `#52` soundness property instantiated for effect
@@ -337,12 +337,12 @@ a foreign function (`#52` honesty argument, pinned hard):
   `boundary: true` by the §16 path (`Certificate::boundary_l1` in `manifest.rs`).
   A regular Thermite fn is ALWAYS fully proved (`#52` REQ-1 / OQ-1 honesty gate).
 - The contract is L1-ENFORCED at runtime on every crossing (`#16` REQ-4, the
-  `lower_boundary_fn_l1` wrapper in `l1.rs`: `req`-check → foreign call → `ens`-
+  `lower_boundary_fn_l1` wrapper in `l1.rs`: `requires`-check → foreign call → `ensures`-
   check), so a primitive that violates its assumed contract is caught at the
   boundary — the assumed `ensures` is not an unchecked free pass.
 - The effect is RUNTIME-SANDBOXED (`#57`): the primitive is confined to exactly
   its effect's syscalls, so even the trusted-by-fiat body cannot exceed its
-  declared `fx`.
+  declared `!`.
 
 So `external_body iff a declared boundary/slag` is the `#52`/`#60` honesty gate,
 and the effect-primitive stdlib is the canonical *legitimate* use of it: the
@@ -357,27 +357,27 @@ ships (`.design/boundary/ffi-boundary.md`, "the surface form"), specialized to a
 syscall target rather than a crates.io target. Four parts, all on SHIPPED
 machinery:
 
-1. **The CONTRACT (`req`/`ens`)** — the *assumed* behavior of the syscall, stated
+1. **The CONTRACT (`requires`/`ensures`)** — the *assumed* behavior of the syscall, stated
    in SpecTherm. The honest claim is the MINIMAL true one (you cannot prove the
-   disk), and it CLOSES the outcome set: `read_file` ens the SHAPE of each arm of a
+   disk), and it CLOSES the outcome set: `read_file` ensures the SHAPE of each arm of a
    `Result<bytes, Error>` / `Option` (Stage 1 ADT) — never WHICH arm the world
-   produces; `write_file` ens "the bytes were handed to the OS" (a status `result`),
-   not durability. A trivially-`true` `ens` is REJECTED by §7.1 (a) (GROUNDED).
-2. **The effect (`fx`)** — the §4.1 effect atom this primitive carries
+   produces; `write_file` ensures "the bytes were handed to the OS" (a status `result`),
+   not durability. A trivially-`true` `ensures` is REJECTED by §7.1 (a) (GROUNDED).
+2. **The effect (`!`)** — the §4.1 effect atom this primitive carries
    (`Effect::Read(path)`/`Write(path)`/`Time`/…). This is the TYPED effect; the §4.1
    row-subsumption check (`.design/lower/effect-subsumption.md`, SHIPPED) makes every
    transitive caller declare it. (Grammar: `read`/`write`/`net` take a path arg —
-   `fx read(input)`; `time`/`rand`/`alloc` are bare — `parse_effect` in `parser.rs`.)
+   `! read(input)`; `time`/`rand`/`alloc` are bare — `parse_effect` in `parser.rs`.)
 3. **The lowering (`#[verifier::external_body]`)** — the primitive is woven into a
    caller's sub-program as an external_body signature (`#52` REQ-1,
    `lower_external_body_fn` in `lower.rs`): the assumed `requires`/`ensures` with
    NO checked body. Verus assumes the contract; the foreign body is never examined.
 4. **The sandbox confinement (`#57`)** — `forge build --entry <fn>` derives the
-   transitive `fx` row and installs a seccomp-bpf allowlist
+   transitive `!` row and installs a seccomp-bpf allowlist
    (`sandbox::syscall_allowlist` over `transitive_fx`, `.design/forge/runtime-sandbox.md`),
-   so a primitive declared `fx read(_)` is confined to the `read(_)` syscall set
+   so a primitive declared `! read(_)` is confined to the `read(_)` syscall set
    (`openat`/`read`/`close`/`statx`/…) — a `write`/`socket` attempt is killed by the
-   kernel (`SIGSYS`). In v1 the confinement is GROUNDED via the `fx`-declaring-body
+   kernel (`SIGSYS`). In v1 the confinement is GROUNDED via the `!`-declaring-body
    + `--sandbox-self-test` pattern (the live foreign-body call is v1.1, OQ-4).
 
 The body is trusted-by-fiat but effect-CONFINED and contract-STATED. That triple
@@ -391,14 +391,14 @@ Each family maps to an `Effect` atom and the §57 fx→syscall allowlist it impl
 does not redefine it). **v1 = Read/Write/Time (top three rows); Net/Alloc/Rand =
 v1.1 (same shape).**
 
-| Effect atom (`enum Effect`) | v1? | Primitive family | Sketch contract (assumed) | `fx` row | Sandbox allowlist (the #57 table) |
+| Effect atom (`enum Effect`) | v1? | Primitive family | Sketch contract (assumed) | `!` row | Sandbox allowlist (the #57 table) |
 |---|---|---|---|---|---|
-| `Read(path)` | **v1** | `read_file`, `read_stdin` | `ens` shape only: a closed `Option`/`Result` (Stage 1 ADT) — never WHICH bytes | `fx read(path)` | `openat`, `read`, `close`, `lseek`, `statx`, `newfstatat` |
-| `Write(path)` | **v1** | `write_file`, `print` | `ens` the bytes were handed to the OS (a `Result` status), not durability | `fx write(path)` | `openat`, `write`, `fsync`, `newfstatat` |
-| `Time` | **v1** | `now` | `ens` shape only: a `u64` timestamp — never a specific instant | `fx time` | `clock_gettime` (228), `clock_nanosleep` |
-| `Net(domain)` | v1.1 | `net_connect`, `net_send`, `net_recv` | `ens` shape of the connection/transfer; `recv` may short/EOF (`Option`/`Result`) | `fx net(domain)` | `socket`, `connect`, `sendto`, `recvfrom`, `setsockopt`, `getsockopt` |
-| `Alloc` | v1.1 (OQ-3) | `Box<T>` construction (a language construct, no `#[boundary]` fn) | `ens` a live, distinct allocation | `fx alloc` | baseline (`mmap`/`munmap`/`brk`/`mprotect`) |
-| `Rand` | v1.1 | `random` | `ens` shape only: a `u64` — explicitly NO distribution/unpredictability claim | `fx rand` | `getrandom` (318) |
+| `Read(path)` | **v1** | `read_file`, `read_stdin` | `ensures` shape only: a closed `Option`/`Result` (Stage 1 ADT) — never WHICH bytes | `! read(path)` | `openat`, `read`, `close`, `lseek`, `statx`, `newfstatat` |
+| `Write(path)` | **v1** | `write_file`, `print` | `ensures` the bytes were handed to the OS (a `Result` status), not durability | `! write(path)` | `openat`, `write`, `fsync`, `newfstatat` |
+| `Time` | **v1** | `now` | `ensures` shape only: a `u64` timestamp — never a specific instant | `! time` | `clock_gettime` (228), `clock_nanosleep` |
+| `Net(domain)` | v1.1 | `net_connect`, `net_send`, `net_recv` | `ensures` shape of the connection/transfer; `recv` may short/EOF (`Option`/`Result`) | `! net(domain)` | `socket`, `connect`, `sendto`, `recvfrom`, `setsockopt`, `getsockopt` |
+| `Alloc` | v1.1 (OQ-3) | `Box<T>` construction (a language construct, no `#[boundary]` fn) | `ensures` a live, distinct allocation | `! alloc` | baseline (`mmap`/`munmap`/`brk`/`mprotect`) |
+| `Rand` | v1.1 | `random` | `ensures` shape only: a `u64` — explicitly NO distribution/unpredictability claim | `! rand` | `getrandom` (318) |
 
 `Panic` and `Diverge` are effect atoms but NOT data-returning syscall primitives:
 `panic` rides the baseline (`write`+`exit_group`, the L1 contract-violation path),
@@ -434,13 +434,13 @@ This is the theoretical maximum the §1 thesis targets: you cannot prove the
 kernel, the disk, or the network, so you reduce your dependence on them to a small,
 enumerated, contract-stated, syscall-confined set, and verify EVERYTHING else.
 
-### Interactive / server programs (the `fx diverge` composition note — v1.1)
+### Interactive / server programs (the `! diverge` composition note — v1.1)
 
 A long-running server — `loop { let req = net_recv(); let resp = handle(req);
-net_send(resp); }` — composes the (v1.1) net primitives with `fx diverge` into a
+net_send(resp); }` — composes the (v1.1) net primitives with `! diverge` into a
 real program that is STILL verified: `handle` (the per-request pure logic) is
 L3-proved END-TO-END (`#17`); each crossing through `net_recv`/`net_send` is
-verified-to-the-boundary; the loop carries `fx diverge` (partial correctness — each
+verified-to-the-boundary; the loop carries `! diverge` (partial correctness — each
 request handled correctly, non-termination declared, not proved away). `forge build
 --entry` confines the binary to the `net(_)` ∪ `diverge` allowlist (`diverge` adds
 no syscall, `#57` table). This extends "verify anything" to a never-halting server;
@@ -467,16 +467,16 @@ it lands with the `Net` family in v1.1.
   EMERGENT, no new code):** a boundary/effect-primitive contract is HONEST by
   **closing its outcome SET and forcing the caller to handle every arm**, NOT by a
   strong world-claim and NOT by a blanket vacuity-exemption. The primitive's return
-  type is a Stage-1 ADT `Option`/`Result` (closed outcome set); its `ens` constrains
+  type is a Stage-1 ADT `Option`/`Result` (closed outcome set); its `ensures` constrains
   the SHAPE of each arm, never WHICH arm; the caller's exhaustive `match`
-  (`01-adts.md` REQ-5/REQ-12) FORCES every arm resolved with the caller's own `ens`
+  (`01-adts.md` REQ-5/REQ-12) FORCES every arm resolved with the caller's own `ensures`
   proven on EACH. **This is EMERGENT from shipped pieces** (v1-scope Resolution 1):
-  §7.1 (a)/(b)/(c) reject a trivially-`true` boundary `ens` but ADMIT a closed-set
-  `ens`; the boundary L1-short-circuits before #12/#13 (so its weak-but-honest `ens`
+  §7.1 (a)/(b)/(c) reject a trivially-`true` boundary `ensures` but ADMIT a closed-set
+  `ensures`; the boundary L1-short-circuits before #12/#13 (so its weak-but-honest `ensures`
   is never value-strength-rejected); Stage-1b exhaustive-match rejects a dropped arm;
-  #52 verifies the caller's `ens` on each arm. **No new validator rule and no
-  vacuity-exemption fix is required.** GROUNDED (`verus 0.2026.05.24`): `ens true`
-  boundary → `EnsIsTrivial`; closed-set `ens` → L1; both-arms-handled caller → L3 +
+  #52 verifies the caller's `ensures` on each arm. **No new validator rule and no
+  vacuity-exemption fix is required.** GROUNDED (`verus 0.2026.05.24`): `ensures true`
+  boundary → `EnsIsTrivial`; closed-set `ensures` → L1; both-arms-handled caller → L3 +
   `to_boundary`; the wrong-arm negative → `postcondition not satisfied`; the
   missing-arm → `NonExhaustiveMatch` / `E0004`. Derived from §9 + `goal.md`
   R-DEFER-9 + `01-adts.md` REQ-5/REQ-12 + the **#62/#72** resolution. The builder +
@@ -485,7 +485,7 @@ it lands with the `Net` family in v1.1.
   full §7 battery + #12/#13).
 
 - **REQ-4 (the effect is typed + the primitive lowers via `external_body`):** each
-  primitive's `fx` atom is the §4.1 typed effect, checked by the SHIPPED
+  primitive's `!` atom is the §4.1 typed effect, checked by the SHIPPED
   row-subsumption (`.design/lower/effect-subsumption.md`) so every transitive
   caller declares it; and the primitive lowers into a caller's sub-program as a
   `#[verifier::external_body]` signature (`#52` REQ-1, `lower_external_body_fn` in
@@ -494,10 +494,10 @@ it lands with the `Net` family in v1.1.
 
 - **REQ-5 (the effect is runtime-sandbox-DERIVED — confined to its syscalls):** a
   `forge build --entry` of a program declaring an effect atom installs the `#57`
-  seccomp allowlist for that `fx` (the [stdlib table](#the-stdlib-one-primitive-family-per-effect-atom) /
+  seccomp allowlist for that `!` (the [stdlib table](#the-stdlib-one-primitive-family-per-effect-atom) /
   the `#57` fx→syscall table), so the program is confined to EXACTLY its effect's
   syscalls — a syscall outside the allowlist is `SIGSYS`-killed (exit 159). In v1
-  the derivation + kill are GROUNDED via the `fx`-declaring-body +
+  the derivation + kill are GROUNDED via the `!`-declaring-body +
   `--sandbox-self-test` pattern (the live foreign-body call linking `os::…` is v1.1,
   OQ-4). Derived from §4.1 ("killed at the syscall boundary") + `#57` REQ-1/REQ-3.
 
@@ -541,18 +541,18 @@ Option<u64>`, computing, both arms handled:
   the pure logic appears as L3 + `to-the-boundary`; nothing fiat-trusted is omitted
   (R-DEFER-9).
 
-- **AC-3 (`forge build` sandbox-confinement is `fx`-DERIVED, GROUNDED):** `forge
-  build --entry <fn> --sandbox-self-test` over a fn declaring `fx read(src)` installs
+- **AC-3 (`forge build` sandbox-confinement is `!`-DERIVED, GROUNDED):** `forge
+  build --entry <fn> --sandbox-self-test` over a fn declaring `! read(src)` installs
   the `read`-widened allowlist (GROUNDED: 27 syscalls incl. `openat`) and the
-  `--sandbox-self-test` probe is ALLOWED; the same probe under a `fx pure` filter (23
+  `--sandbox-self-test` probe is ALLOWED; the same probe under a `! pure` filter (23
   syscalls) is `SIGSYS`-KILLED (exit 159 = 128+31, the `#57` `pure_probe_killed`
-  case). A `fx time` program installs 25 syscalls (baseline + `clock_gettime` 228).
-  This proves the confinement is `fx`-derived and per-effect WITHOUT a live `os::`
+  case). A `! time` program installs 25 syscalls (baseline + `clock_gettime` 228).
+  This proves the confinement is `!`-derived and per-effect WITHOUT a live `os::`
   link (v1; OQ-4).
 
 - **AC-4 (honest-contract / soundness — no manufactured guarantee, GROUNDED):** a
-  caller whose handled/scream arm asserts a value VIOLATING the caller's own `ens`
-  (the `None => 999` under `ens result < 512` negative) FAILS verification with
+  caller whose handled/scream arm asserts a value VIOLATING the caller's own `ensures`
+  (the `None => 999` under `ensures result < 512` negative) FAILS verification with
   `postcondition not satisfied` (`Level::L0`), NOT a false L3. The assumed `ensures`
   is a floor the caller cannot exceed. This is the anti-cheat AC (R-DEFER-9).
 
@@ -589,7 +589,7 @@ forge check <program using read_small> --mutation-floor 0
   ├─ for the pure logic `read_doubled` (ProceedToL3):
   │     item_subprogram weaves read_small as #[verifier::external_body]           [#52, SHIPPED]
   │        ▼
-  │     run_verus: `read_doubled` PROVES through the assumed ens on EVERY arm     [#52, GROUNDED]
+  │     run_verus: `read_doubled` PROVES through the assumed ensures on EVERY arm     [#52, GROUNDED]
   │        ▼
   │     closure::classify -> assurance_scope = ToBoundary { via: read_small }      [#17, GROUNDED]
   │
@@ -610,7 +610,7 @@ forge build --entry <fn> --sandbox-self-test
 - **The compose-through** is `#52`'s `lower_external_body_fn` (in `lower.rs`) woven
   by `check::item_subprogram`.
 - **The confinement** is `#57`'s `sandbox::syscall_allowlist` over
-  `sandbox::transitive_fx` (in `forge/src/sandbox.rs`), keyed on the `fx` atom via
+  `sandbox::transitive_fx` (in `forge/src/sandbox.rs`), keyed on the `!` atom via
   the `#57` fx→syscall table.
 - **The honesty surface** is `#17`'s `AssuranceScope::ToBoundary` (in `closure.rs` /
   `manifest.rs`) + `#15`'s `AuditManifest.tcb` (in `forge/src/audit.rs`).
@@ -637,7 +637,7 @@ assurance across exactly these boundaries.
   `#[verifier::external_body] fn read_small(...) requires …, ensures …, {
   unimplemented!() }` signature woven before the pure logic — which MUST itself pass
   the real `verus` with 0 errors.
-- **Soundness test (AC-4):** assert the `ens`-violating-arm caller emits a NON-L3
+- **Soundness test (AC-4):** assert the `ensures`-violating-arm caller emits a NON-L3
   cert with `postcondition not satisfied` (GROUNDED), never a false L3.
 - **Handled-or-loud test (AC-5):** assert the missing-arm caller is rejected
   (`NonExhaustiveMatch` for a user enum, `E0004` for `Option`).
@@ -655,11 +655,11 @@ assurance across exactly these boundaries.
   without being vacuous? **RESOLVED — a boundary contract is honest iff it TOTALLY
   COVERS its outcome space, and this is EMERGENT from shipped pieces (no new code)**:
   the uncertainty lives in the RETURN TYPE (a Stage-1 ADT `Option`/`Result`, a closed
-  outcome set); the `ens` constrains each arm's SHAPE; the caller's exhaustive
-  `match` forces every arm resolved with the caller's own `ens` proven on EACH. The
-  §7.1 structural battery already rejects a trivially-`true` boundary `ens` (a) and
-  admits a closed-set `ens`; the boundary L1-short-circuits before the
-  value-strength gates (#12/#13), so a weak-but-honest `ens` is never wrongly
+  outcome set); the `ensures` constrains each arm's SHAPE; the caller's exhaustive
+  `match` forces every arm resolved with the caller's own `ensures` proven on EACH. The
+  §7.1 structural battery already rejects a trivially-`true` boundary `ensures` (a) and
+  admits a closed-set `ensures`; the boundary L1-short-circuits before the
+  value-strength gates (#12/#13), so a weak-but-honest `ensures` is never wrongly
   value-rejected. **No new vacuity-exemption fix is needed** (the feared wrong-reject
   does not occur — GROUNDED). The builder + critic MUST pin that the value-strength
   bypass does NOT leak to regular fns. GROUNDED end-to-end (see [Grounding](#grounding-the-full-path-real-forge-output)).
@@ -672,7 +672,7 @@ assurance across exactly these boundaries.
   crate/route shape; this doc governs the contract regardless.
 
 - **OQ-3 (the `Alloc`/`box` primitive vs Stage 1 `Box` — v1.1):** Stage 1 ties
-  `Box<T>` construction to `fx alloc` + the baseline `mmap`/`brk` syscalls. LEANING:
+  `Box<T>` construction to `! alloc` + the baseline `mmap`/`brk` syscalls. LEANING:
   `Box<T>` construction IS the `Alloc` primitive (no `#[boundary]` syscall wrapper —
   the Rust allocator is the foreign body, confined by the baseline allowlist), so
   `Alloc` is the one atom whose "primitive" is a language construct. Confirm against
@@ -684,17 +684,17 @@ assurance across exactly these boundaries.
   (`os::now()`) and `rustc`-FAILS (`E0433: cannot find module or crate \`os\``) — no
   `os::` crate exists. v1 DELIVERS the verification + enumeration +
   confinement-derivation (all GROUNDED) and demonstrates confinement via the
-  `fx`-declaring-body + `--sandbox-self-test` pattern; the LIVE foreign-body run
+  `!`-declaring-body + `--sandbox-self-test` pattern; the LIVE foreign-body run
   (real syscall wrappers in `thermite-stdlib` + a `forge build` link path,
   x86_64-Linux only) is v1.1. The CONTRACT + the TYPED effect + the ENUMERATED TCB
   are fully specifiable + verifiable in v1 regardless.
 
 - **OQ-5 (user-enum match-on-`result` lowering — file a fresh `#` if needed):** the
   built-in `Option`/`Result` return is the reliable L3 demo; a USER-enum return whose
-  primitive `ens` is `match result { Good(v) => …, Bad => … }` currently hits a verus
+  primitive `ensures` is `match result { Good(v) => …, Bad => … }` currently hits a verus
   obligation failure on lowering even at `--mutation-floor 0` (GROUNDED). v1 uses
   `Option`/`Result`. If a user-enum effect primitive is needed, the builder files a
-  separate blocker against the match-in-ens lowering (NOT under #72, which owns the
+  separate blocker against the match-in-ensures lowering (NOT under #72, which owns the
   stdlib + composition).
 
 ## Routes to add (orchestrator) — v1 (read/write/time)
@@ -732,9 +732,9 @@ settles it.
 | REQ | Status | Evidence |
 |---|---|---|
 | REQ-1 (effect-primitive declaration form) | NOT-STARTED | epic #62 / issue #72, Stage 3 v1. No `thermite-stdlib` crate and no `#[boundary("os::…")]` syscall primitive exists in the tree. The SHIPPED prerequisite form (`#16` `FnItem { boundary: Some, body: None }` in `ast.rs`; `parse_attribute` + the `Semi`-body path in `parser.rs`) parses + certifies a `#[boundary("os::now")]` decl to L1 TODAY (GROUNDED: `forge check` → `L1, boundary: true, boundary_target: os::now`), but no syscall primitive is declared against it. |
-| REQ-2 (v1 primitive families — read/write/time) | NOT-STARTED | epic #62 / issue #72. The `enum Effect` atoms (`Read(path)`/`Write(path)`/`Time` in `ast.rs`) exist and parse (`fx read(input)`/`fx time`, `parse_effect` in `parser.rs`), and the §57 fx→syscall table maps each (GROUNDED: `read(src)` → 27 syscalls, `time` → 25 incl. `clock_gettime` 228), but no `read_file`/`write_file`/`now` primitive family is declared in a `thermite-stdlib` crate. |
-| REQ-3 (boundary honest iff TOTAL OUTCOME-COVERAGE — EMERGENT, no new code) | NOT-STARTED | epic #62 / issue #72. The RESOLUTION is EMERGENT + fully GROUNDED (`verus 0.2026.05.24`): a boundary `ens true` → `EnsIsTrivial` reject; a closed-set `ens match result { … }` → L1; a both-arms-handled caller → L3 + `to_boundary`; the wrong-arm negative → `postcondition not satisfied`; the missing-arm → `NonExhaustiveMatch`/`E0004`. NO new validator rule and NO vacuity-exemption fix is needed (the feared wrong-reject does not occur). But no primitive contract is declared and no `conformance/effect-stdlib` test PINS the composition yet. |
+| REQ-2 (v1 primitive families — read/write/time) | NOT-STARTED | epic #62 / issue #72. The `enum Effect` atoms (`Read(path)`/`Write(path)`/`Time` in `ast.rs`) exist and parse (`! read(input)`/`! time`, `parse_effect` in `parser.rs`), and the §57 fx→syscall table maps each (GROUNDED: `read(src)` → 27 syscalls, `time` → 25 incl. `clock_gettime` 228), but no `read_file`/`write_file`/`now` primitive family is declared in a `thermite-stdlib` crate. |
+| REQ-3 (boundary honest iff TOTAL OUTCOME-COVERAGE — EMERGENT, no new code) | NOT-STARTED | epic #62 / issue #72. The RESOLUTION is EMERGENT + fully GROUNDED (`verus 0.2026.05.24`): a boundary `ensures true` → `EnsIsTrivial` reject; a closed-set `ensures match result { … }` → L1; a both-arms-handled caller → L3 + `to_boundary`; the wrong-arm negative → `postcondition not satisfied`; the missing-arm → `NonExhaustiveMatch`/`E0004`. NO new validator rule and NO vacuity-exemption fix is needed (the feared wrong-reject does not occur). But no primitive contract is declared and no `conformance/effect-stdlib` test PINS the composition yet. |
 | REQ-4 (typed effect + `external_body` lowering) | NOT-STARTED | epic #62 / issue #72. The SHIPPED `#52` `lower_external_body_fn` (in `lower.rs`) + `check::item_subprogram` weave and the SHIPPED row-subsumption (`effect-subsumption.md`) compose a boundary into a caller's L3 proof TODAY (GROUNDED: `read_doubled` → `L3` + `to-the-boundary (via read_small)` at `--mutation-floor 0`), but no effect primitive is declared to be woven. |
-| REQ-5 (runtime-sandbox-DERIVED — confined to its syscalls) | NOT-STARTED | epic #62 / issue #72. The SHIPPED `#57` `sandbox::syscall_allowlist` over `transitive_fx` (in `forge/src/sandbox.rs`) + the fx→syscall table DERIVE + enforce the confinement TODAY (GROUNDED: `fx read(src)` → 27 syscalls incl. `openat`, the `--sandbox-self-test` probe allowed; `fx pure` → 23, probe `SIGSYS`-killed exit 159), but no effect primitive program exercises it via the oracle. The live `os::` foreign-body link is DEFERRED (OQ-4; `forge build` of a real boundary CALL `rustc`-fails `E0433`). |
+| REQ-5 (runtime-sandbox-DERIVED — confined to its syscalls) | NOT-STARTED | epic #62 / issue #72. The SHIPPED `#57` `sandbox::syscall_allowlist` over `transitive_fx` (in `forge/src/sandbox.rs`) + the fx→syscall table DERIVE + enforce the confinement TODAY (GROUNDED: `! read(src)` → 27 syscalls incl. `openat`, the `--sandbox-self-test` probe allowed; `! pure` → 23, probe `SIGSYS`-killed exit 159), but no effect primitive program exercises it via the oracle. The live `os::` foreign-body link is DEFERRED (OQ-4; `forge build` of a real boundary CALL `rustc`-fails `E0433`). |
 | REQ-6 (TCB / verified-to-the-boundary honesty story) | NOT-STARTED | epic #62 / issue #72. The SHIPPED `#17` `AssuranceScope::ToBoundary` (closure.rs/manifest.rs) + `#15` `AuditManifest.tcb` (forge/src/audit.rs) record + enumerate a reached boundary TODAY (GROUNDED: `forge audit` → `tcb … boundary: now -> os::now (req=… ens=… fx=[time])`; the pure caller carries `scope=to-the-boundary`), but no effect-primitive program is in the corpus to be enumerated. |
 | REQ-7 (legitimate-`external_body` distinction) | NOT-STARTED | epic #62 / issue #72. The distinction is pinned by the SHIPPED `#52`/`#60` honesty gate (`external_body iff a declared boundary/slag`; `external_body` verifies in default mode, `--no-cheating` errors `external_body/assume_specification not allowed`), but no effect primitive exercises it — there is no `#[boundary]` syscall primitive declared to lower. |

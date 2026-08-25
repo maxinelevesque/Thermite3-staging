@@ -566,7 +566,7 @@ fn sandbox_derives_fx_time_allowlist_and_kills_off_allowlist() {
     // fx-declaring-body + the foreign os:: link is v1.1, OQ-4).
     let fixture = write_temp_program(
         "tf",
-        "fn tf(x: u32) -> u32 req x < 100 ens result == x fx time { x }\n",
+        "fn tf(x: u32) -> u32 ! time requires x < 100 ensures result == x { x }\n",
     );
     let (ok, stdout, stderr) = run_forge_build(&[
         fixture.to_str().expect("fixture path"),

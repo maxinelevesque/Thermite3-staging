@@ -7,8 +7,8 @@
 //! only through a woven spec fn was therefore absent from the emitted sub-program
 //! and verus could not resolve it. Three surfaces, all live-confirmed:
 //!
-//!   1. a checked `struct`/`enum`: `collect_item_adt_refs` is inert on an ADT decl
-//!      (field types are followed by the type-graph fixed point instead), so
+//!   1. a checked `struct`/`enum`: `collect_item_adt_refs` was inert on an ADT decl
+//!      (field types were followed only after seeding the type-graph fixed point), so
 //!      `adt_deps` came out empty for every ADT item while the arm wove the file's
 //!      whole `spec_items` — a spec fn naming a second ADT dangled, the item landed
 //!      L0 on `E0425 cannot find type`, and `project assurance` was FAILED;
@@ -22,7 +22,7 @@
 //! One ADT masks all of it: the only ADT is the checked item, which the ADT arm
 //! pushes itself, so the decl is present by construction. This is the same
 //! under-approximated-closure class `.design/verified/proof-backends.md` records
-//! for `reachable_spec_fn_deps` walking `decl.body` without `decl.dec`.
+//! for `reachable_spec_fn_deps` walking `decl.body` without `decl.measures`.
 //!
 //! The authority (R-CHAR-3): expected level L3 is the design contract —
 //! `.design/forge/check.md` REQ-5 (L3 iff verus reports 0 errors) +
@@ -115,15 +115,15 @@ enum Role { Owner, Player }
 enum Unused { A, B }
 
 spec fn is_owner(r: Role) -> bool
-  dec r
+  measures r
 {
   match r { Role::Owner => true, Role::Player => false }
 }
 
 fn check(r: Role) -> bool
-  req true
-  ens result == is_owner(r)
-  fx  pure
+  ! pure
+  requires true
+  ensures result == is_owner(r)
 {
   match r { Role::Owner => true, Role::Player => false }
 }
@@ -135,15 +135,15 @@ const SINGLE_ADT_TWIN: &str = "\
 enum Role { Owner, Player }
 
 spec fn is_owner(r: Role) -> bool
-  dec r
+  measures r
 {
   match r { Role::Owner => true, Role::Player => false }
 }
 
 fn check(r: Role) -> bool
-  req true
-  ens result == is_owner(r)
-  fx  pure
+  ! pure
+  requires true
+  ensures result == is_owner(r)
 {
   match r { Role::Owner => true, Role::Player => false }
 }
@@ -157,19 +157,69 @@ const EXEC_FN_UNMENTIONED_ADT: &str = "\
 enum E { A, B }
 
 spec fn p(e: E) -> bool
-  dec e
+  measures e
 {
   match e { E::A => true, E::B => false }
 }
 
 fn g(x: u64) -> u64
-  req x < 10
-  ens result == x
-  fx  pure
+  ! pure
+  requires x < 10
+  ensures result == x
 {
   x
 }
 ";
+
+/// Issue #7: two predicate shapes that contain a call through a `Box` deref.
+/// Neither is a numeric fold: `all_below` is recursive and `calls_it` only calls
+/// the numeric `depth` helper. Their declared `bool` result is authoritative.
+const ADT_PREDICATE_PROGRAM: &str = "\
+enum Tree { Leaf(u64), Node(Box<Tree>, Box<Tree>) }
+
+spec fn all_below(t: Tree, limit: u64) -> bool
+  measures t
+{
+  match t {
+    Leaf(v) => v < limit,
+    Node(l, r) => all_below(*l, limit) && all_below(*r, limit),
+  }
+}
+
+spec fn depth(t: Tree) -> u64
+  measures t
+{
+  match t {
+    Leaf(v) => 1,
+    Node(l, r) => 1 + depth(*l),
+  }
+}
+
+spec fn calls_it(t: Tree) -> bool
+  measures t
+{
+  match t {
+    Leaf(v) => true,
+    Node(l, r) => depth(*l) > 0,
+  }
+}
+";
+
+#[test]
+fn adt_predicates_with_deref_calls_certify_at_their_declared_type() {
+    if !verus_present() {
+        eprintln!("SKIP: verus not available — issue #7 ADT predicates not certified.");
+        return;
+    }
+    let certs = check_program("predicate-return", ADT_PREDICATE_PROGRAM);
+    for item in ["Tree", "all_below", "depth", "calls_it"] {
+        assert_eq!(
+            level_of(&certs, item),
+            "L3",
+            "the issue #7 program must certify `{item}` at L3"
+        );
+    }
+}
 
 #[test]
 fn spare_adt_decl_does_not_break_its_siblings() {
@@ -271,4 +321,22 @@ fn multi_adt_corpus_program_certifies_end_to_end() {
             "every item of the multi-ADT corpus program must certify L3"
         );
     }
+}
+
+#[test]
+fn standalone_nested_adt_weaves_its_field_type() {
+    if !verus_present() {
+        eprintln!("SKIP: verus not available — nested ADT weave not run.");
+        return;
+    }
+    let certs = check_program(
+        "nested",
+        "enum Privilege { Kernel, User }\n\
+         struct Regs { ip: u64 }\n\
+         struct Frame { regs: Regs, privilege: Privilege, generation: u64 } \
+             keeps privilege is User",
+    );
+    assert_eq!(level_of(&certs, "Privilege"), "L3");
+    assert_eq!(level_of(&certs, "Regs"), "L3");
+    assert_eq!(level_of(&certs, "Frame"), "L3");
 }

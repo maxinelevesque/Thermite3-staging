@@ -10,18 +10,18 @@
 struct Buffer {
   text: String,
   cursor: u64,
-} inv cursor <= text.len() && text.len() <= 1_000_000
+} keeps cursor <= text.len() && text.len() <= 1_000_000
 
 // Insert text at the cursor. The three `bytes_eq` conditions preserve the
 // prefix, insert `ins`, and preserve the shifted suffix byte for byte (REQ-18).
 fn insert_str(b: Buffer, ins: String) -> Buffer
-  req b.text.len() + ins.len() <= 1_000_000
-  ens result.text.len() == b.text.len() + ins.len()
-  ens result.cursor == b.cursor + ins.len()
-  ens bytes_eq(result.text, b.text, 0, 0, b.cursor)
-  ens bytes_eq(result.text, ins, b.cursor, 0, ins.len())
-  ens bytes_eq(result.text, b.text, b.cursor + ins.len(), b.cursor, b.text.len() - b.cursor)
-  fx  alloc
+  ! alloc
+  requires b.text.len() + ins.len() <= 1_000_000
+  ensures result.text.len() == b.text.len() + ins.len()
+  ensures result.cursor == b.cursor + ins.len()
+  ensures bytes_eq(result.text, b.text, 0, 0, b.cursor)
+  ensures bytes_eq(result.text, ins, b.cursor, 0, ins.len())
+  ensures bytes_eq(result.text, b.text, b.cursor + ins.len(), b.cursor, b.text.len() - b.cursor)
 {
   let n: u64 = ins.len();
   let head: String = b.text.slice(0, b.cursor);
@@ -32,12 +32,12 @@ fn insert_str(b: Buffer, ins: String) -> Buffer
 // Delete the byte before the cursor. The `bytes_eq` conditions preserve the
 // surrounding content rather than checking only the new length.
 fn backspace(b: Buffer) -> Buffer
-  req b.cursor > 0
-  ens result.text.len() == b.text.len() - 1
-  ens result.cursor == b.cursor - 1
-  ens bytes_eq(result.text, b.text, 0, 0, b.cursor - 1)
-  ens bytes_eq(result.text, b.text, b.cursor - 1, b.cursor, b.text.len() - b.cursor)
-  fx  alloc
+  ! alloc
+  requires b.cursor > 0
+  ensures result.text.len() == b.text.len() - 1
+  ensures result.cursor == b.cursor - 1
+  ensures bytes_eq(result.text, b.text, 0, 0, b.cursor - 1)
+  ensures bytes_eq(result.text, b.text, b.cursor - 1, b.cursor, b.text.len() - b.cursor)
 {
   let lo: u64 = b.cursor - 1;
   let head: String = b.text.slice(0, lo);
@@ -47,20 +47,20 @@ fn backspace(b: Buffer) -> Buffer
 
 // Move the cursor one byte left without changing the text.
 fn move_left(b: Buffer) -> Buffer
-  req b.cursor > 0
-  ens result.cursor == b.cursor - 1
-  ens result.text.len() == b.text.len()
-  fx  alloc
+  ! alloc
+  requires b.cursor > 0
+  ensures result.cursor == b.cursor - 1
+  ensures result.text.len() == b.text.len()
 {
   Buffer { text: b.text, cursor: b.cursor - 1 }
 }
 
 // Move the cursor one byte right without changing the text.
 fn move_right(b: Buffer) -> Buffer
-  req b.cursor < b.text.len()
-  ens result.cursor == b.cursor + 1
-  ens result.text.len() == b.text.len()
-  fx  alloc
+  ! alloc
+  requires b.cursor < b.text.len()
+  ensures result.cursor == b.cursor + 1
+  ensures result.text.len() == b.text.len()
 {
   Buffer { text: b.text, cursor: b.cursor + 1 }
 }
@@ -69,12 +69,12 @@ fn move_right(b: Buffer) -> Buffer
 
 // Count newline bytes in `text[i..end]`.
 fn count_nl(text: &String, i: u64, end: u64) -> u64
-  req i <= end && end <= text.len()
-  ens result <= end - i
-  ens i == end || text.byte_at(i) != 10 || result >= 1
-  ens result == spec_count_nl(text, i, end)
-  fx  pure
-  dec end - i
+  ! pure
+  requires i <= end && end <= text.len()
+  ensures result <= end - i
+  ensures i == end || text.byte_at(i) != 10 || result >= 1
+  ensures result == spec_count_nl(text, i, end)
+  measures end - i
 {
   if i == end {
     0
@@ -90,7 +90,7 @@ fn count_nl(text: &String, i: u64, end: u64) -> u64
 
 // Specification counterpart to `count_nl`, used to state its exact result (#270).
 spec fn spec_count_nl(text: &String, i: u64, end: u64) -> u64
-  dec end - i
+  measures end - i
 {
   if i >= end {
     0
@@ -106,12 +106,12 @@ spec fn spec_count_nl(text: &String, i: u64, end: u64) -> u64
 // Find the start of the line containing `target`. `acc` is the position after
 // the most recent newline seen by the scan.
 fn line_start(text: &String, i: u64, target: u64, acc: u64) -> u64
-  req i <= target && target <= text.len() && acc <= i
-  ens result <= target
-  ens result >= acc
-  ens result == spec_line_start(text, i, target, acc)
-  fx  pure
-  dec target - i
+  ! pure
+  requires i <= target && target <= text.len() && acc <= i
+  ensures result <= target
+  ensures result >= acc
+  ensures result == spec_line_start(text, i, target, acc)
+  measures target - i
 {
   if i == target {
     acc
@@ -128,12 +128,12 @@ fn line_start(text: &String, i: u64, target: u64, acc: u64) -> u64
 // Find the next newline at or after `i`, or return `n` if there is none. Passing
 // `n` explicitly keeps the termination measure in specification mode.
 fn line_end(text: &String, i: u64, n: u64) -> u64
-  req i <= n && n == text.len()
-  ens result >= i
-  ens result <= n
-  ens result == spec_line_end(text, i, n)
-  fx  pure
-  dec n - i
+  ! pure
+  requires i <= n && n == text.len()
+  ensures result >= i
+  ensures result <= n
+  ensures result == spec_line_end(text, i, n)
+  measures n - i
 {
   if i == n {
     n
@@ -149,7 +149,7 @@ fn line_end(text: &String, i: u64, n: u64) -> u64
 
 // Specification counterpart to `line_end` (#270).
 spec fn spec_line_end(text: &String, i: u64, n: u64) -> u64
-  dec n - i
+  measures n - i
 {
   if i >= n {
     n
@@ -164,30 +164,30 @@ spec fn spec_line_end(text: &String, i: u64, n: u64) -> u64
 
 // Minimum used to clamp a requested column to the destination line.
 fn min2(a: u64, b: u64) -> u64
-  req true
-  ens result <= a
-  ens result <= b
-  ens result == a || result == b
-  ens result == spec_min2(a, b)
-  fx  pure
+  ! pure
+  requires true
+  ensures result <= a
+  ensures result <= b
+  ensures result == a || result == b
+  ensures result == spec_min2(a, b)
 {
   if a <= b { a } else { b }
 }
 
 // Specification counterpart to `min2` (#270).
 spec fn spec_min2(a: u64, b: u64) -> u64
-  dec a
+  measures a
 {
   if a <= b { a } else { b }
 }
 
 // Return the zero-based cursor row by counting preceding newlines.
 fn cursor_row(b: &Buffer) -> u64
-  req true
-  ens result <= b.cursor
-  ens b.cursor == 0 || b.text.byte_at(0) != 10 || result >= 1
-  ens result == spec_cursor_row(&b.text, b.cursor)
-  fx  pure
+  ! pure
+  requires true
+  ensures result <= b.cursor
+  ensures b.cursor == 0 || b.text.byte_at(0) != 10 || result >= 1
+  ensures result == spec_cursor_row(&b.text, b.cursor)
 {
   count_nl(&b.text, 0, b.cursor)
 }
@@ -195,14 +195,14 @@ fn cursor_row(b: &Buffer) -> u64
 // Specification counterpart to `cursor_row`; it takes text and cursor separately
 // to avoid a `Buffer` dependency in the specification-function pool.
 spec fn spec_cursor_row(text: &String, cursor: u64) -> u64
-  dec cursor
+  measures cursor
 {
   spec_count_nl(text, 0, cursor)
 }
 
 // Specification counterpart to `line_start` (#126).
 spec fn spec_line_start(text: &String, i: u64, target: u64, acc: u64) -> u64
-  dec target - i
+  measures target - i
 {
   if i >= target {
     acc
@@ -217,10 +217,10 @@ spec fn spec_line_start(text: &String, i: u64, target: u64, acc: u64) -> u64
 
 // Return the zero-based cursor column: the distance from the current line start.
 fn cursor_col(b: &Buffer) -> u64
-  req true
-  ens result == b.cursor - spec_line_start(&b.text, 0, b.cursor, 0)
-  ens result <= b.cursor
-  fx  pure
+  ! pure
+  requires true
+  ensures result == b.cursor - spec_line_start(&b.text, 0, b.cursor, 0)
+  ensures result <= b.cursor
 {
   let ls: u64 = line_start(&b.text, 0, b.cursor, 0);
   b.cursor - ls
@@ -230,7 +230,7 @@ fn cursor_col(b: &Buffer) -> u64
 // expression-only because the lowerer cannot cast-wrap a body headed by `let`.
 // `0 + cursor` keeps the two branches at the same integer type.
 spec fn spec_move_up_from(text: &String, cursor: u64, ls: u64) -> u64
-  dec cursor
+  measures cursor
 {
   if ls == 0 {
     0 + cursor
@@ -242,7 +242,7 @@ spec fn spec_move_up_from(text: &String, cursor: u64, ls: u64) -> u64
 
 // Exact target for upward navigation (#270).
 spec fn spec_move_up_target(text: &String, cursor: u64) -> u64
-  dec cursor
+  measures cursor
 {
   spec_move_up_from(text, cursor, spec_line_start(text, 0, cursor, 0))
 }
@@ -250,7 +250,7 @@ spec fn spec_move_up_target(text: &String, cursor: u64) -> u64
 // Compute the downward-navigation target from a known line end. It uses the same
 // expression-only form and integer-branch convention as `spec_move_up_from`.
 spec fn spec_move_down_from(text: &String, cursor: u64, n: u64, cur_end: u64) -> u64
-  dec cursor
+  measures cursor
 {
   if cur_end == n {
     0 + cursor
@@ -263,7 +263,7 @@ spec fn spec_move_down_from(text: &String, cursor: u64, n: u64, cur_end: u64) ->
 
 // Exact target for downward navigation (#270).
 spec fn spec_move_down_target(text: &String, cursor: u64) -> u64
-  dec cursor
+  measures cursor
 {
   spec_move_down_from(text, cursor, text.len(),
                       spec_line_end(text, cursor, text.len()))
@@ -272,11 +272,11 @@ spec fn spec_move_down_target(text: &String, cursor: u64) -> u64
 // Move to the previous line, preserving the column when possible and clamping it
 // to the previous line's length. The postcondition fixes the exact target (#270).
 fn move_up(b: Buffer) -> Buffer
-  req true
-  ens result.text.len() == b.text.len()
-  ens result.cursor <= b.cursor
-  ens result.cursor == spec_move_up_target(&b.text, b.cursor)
-  fx  alloc
+  ! alloc
+  requires true
+  ensures result.text.len() == b.text.len()
+  ensures result.cursor <= b.cursor
+  ensures result.cursor == spec_move_up_target(&b.text, b.cursor)
 {
   let ls: u64 = line_start(&b.text, 0, b.cursor, 0);
   if ls == 0 {
@@ -294,11 +294,11 @@ fn move_up(b: Buffer) -> Buffer
 // Move to the next line, preserving the column when possible and clamping it to
 // the next line's length. The postcondition fixes the exact target (#270).
 fn move_down(b: Buffer) -> Buffer
-  req true
-  ens result.text.len() == b.text.len()
-  ens result.cursor <= b.text.len()
-  ens result.cursor == spec_move_down_target(&b.text, b.cursor)
-  fx  alloc
+  ! alloc
+  requires true
+  ensures result.text.len() == b.text.len()
+  ensures result.cursor <= b.text.len()
+  ensures result.cursor == spec_move_down_target(&b.text, b.cursor)
 {
   let n: u64 = b.text.len();
   let ls: u64 = line_start(&b.text, 0, b.cursor, 0);
@@ -317,9 +317,9 @@ fn move_down(b: Buffer) -> Buffer
 
 // Convert a zero-based coordinate to ANSI's one-based coordinate system.
 fn to_1based(x: u64) -> u64
-  req x < 1_000_000
-  ens result == x + 1
-  fx  pure
+  ! pure
+  requires x < 1_000_000
+  ensures result == x + 1
 {
   x + 1
 }
@@ -329,10 +329,10 @@ fn to_1based(x: u64) -> u64
 // verifies the complete payload (REQ-18, AC-15). The variable-length coordinate
 // suffix is covered by its component contracts rather than a fixed byte window.
 fn render_frame(b: &Buffer) -> String
-  req b.text.len() <= 900_000
-  ens result.len() >= b.text.len()
-  ens bytes_eq(result, b.text, 7, 0, b.text.len())
-  fx  alloc
+  ! alloc
+  requires b.text.len() <= 900_000
+  ensures result.len() >= b.text.len()
+  ensures bytes_eq(result, b.text, 7, 0, b.text.len())
 {
   let clear: String = "\x1b[2J\x1b[H";
   let row: String = to_1based(cursor_row(b)).to_string();
@@ -346,19 +346,19 @@ fn render_frame(b: &Buffer) -> String
 // Ctrl-S/Ctrl-Q retain their values; arrows map to 1000–1003, Enter maps to
 // 1004, and unsupported input maps to zero.
 fn decode(b0: u64, b1: u64, b2: u64) -> u64
-  req true
-  ens b0 < 32 || b0 > 126 || b0 == 27 || result == b0
-  ens b0 != 127 || result == 127
-  ens b0 != 17 || result == 17
-  ens b0 != 19 || result == 19
-  ens b0 != 13 || result == 1004
-  ens b0 != 10 || result == 1004
-  ens b0 != 27 || b1 != 91 || b2 != 65 || result == 1000
-  ens b0 != 27 || b1 != 91 || b2 != 66 || result == 1001
-  ens b0 != 27 || b1 != 91 || b2 != 67 || result == 1002
-  ens b0 != 27 || b1 != 91 || b2 != 68 || result == 1003
-  ens result <= 1004
-  fx  pure
+  ! pure
+  requires true
+  ensures b0 < 32 || b0 > 126 || b0 == 27 || result == b0
+  ensures b0 != 127 || result == 127
+  ensures b0 != 17 || result == 17
+  ensures b0 != 19 || result == 19
+  ensures b0 != 13 || result == 1004
+  ensures b0 != 10 || result == 1004
+  ensures b0 != 27 || b1 != 91 || b2 != 65 || result == 1000
+  ensures b0 != 27 || b1 != 91 || b2 != 66 || result == 1001
+  ensures b0 != 27 || b1 != 91 || b2 != 67 || result == 1002
+  ensures b0 != 27 || b1 != 91 || b2 != 68 || result == 1003
+  ensures result <= 1004
 {
   if b0 == 27 {
     if b1 == 91 {
@@ -415,57 +415,57 @@ fn decode(b0: u64, b1: u64, b2: u64) -> u64
 // std). Status is zero for success or a non-TTY no-op and one for error. The
 // boundary is limited to the `term` effect and ioctl syscall (#57, REQ-7).
 #[boundary("os::raw_mode_on")] fn raw_mode_on() -> u64
-  req true
-  ens result <= 1
-  fx  term
+  ! term
+  requires true
+  ensures result <= 1
   ;
 
 // Restore the terminal's original mode.
 #[boundary("os::raw_mode_off")] fn raw_mode_off() -> u64
-  req true
-  ens result <= 1
-  fx  term
+  ! term
+  requires true
+  ensures result <= 1
   ;
 
 // Read one keystroke, returning the raw bytes packed into a u64 for `decode`: b0 in
 // bits 0..9, b1 in 9..18, b2 in 18..27. A plain key reads 1 byte; an ESC reads the
 // two-byte arrow tail. The packed maximum fits in 27 bits.
 #[boundary("os::read_key_raw")] fn read_key_raw() -> u64
-  req true
-  ens result <= 134_217_727
-  fx  read(input)
+  ! read(input)
+  requires true
+  ensures result <= 134_217_727
   ;
 
 // Write the rendered frame String to stdout (and flush). Returns a status u64 (0 =
 // ok, 1 = I/O error).
 #[boundary("os::write_frame")] fn write_frame(s: String) -> u64
-  req true
-  ens result <= 1
-  fx  write(output)
+  ! write(output)
+  requires true
+  ensures result <= 1
   ;
 
 // Load the initial buffer from `THERMITE_EDITOR_FILE`, or from
 // `/tmp/thermite_editor.txt` if the variable is unset. A missing file produces
 // an empty buffer.
 #[boundary("os::read_file")] fn read_file() -> String
-  req true
-  ens result.len() <= 1_000_000
-  fx  read(input)
+  ! read(input)
+  requires true
+  ensures result.len() <= 1_000_000
   ;
 
 // Save the buffer, including newline bytes, to the configured editor file.
 #[boundary("os::write_file")] fn write_file(content: String) -> u64
-  req true
-  ens result <= 1
-  fx  write(output)
+  ! write(output)
+  requires true
+  ensures result <= 1
   ;
 
 // Run the interactive loop until Ctrl-Q, saving on Ctrl-S. This function is L1
 // because it performs boundary I/O and carries the `diverge` effect.
 fn run() -> u64
-  req true
-  ens result <= 1
-  fx  read(input), write(output), alloc, diverge, term
+  ! read(input), write(output), alloc, diverge, term
+  requires true
+  ensures result <= 1
 {
   let entered: u64 = raw_mode_on();
   let loaded: String = read_file();
@@ -473,8 +473,8 @@ fn run() -> u64
   let first: String = render_frame(&b);
   let shown0: u64 = write_frame(first);
   while true
-    inv b.text.len() <= 900_000
-    dec 1
+    keeps b.text.len() <= 900_000
+    measures 1
   {
     let packed: u64 = read_key_raw();
     let b0: u64 = packed % 512;
@@ -517,3 +517,5 @@ fn run() -> u64
   let restored: u64 = raw_mode_off();
   0
 }
+shared input: u8
+shared output: u8

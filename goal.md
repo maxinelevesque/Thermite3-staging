@@ -32,15 +32,15 @@ Build leaves first. **Do not leapfrog (R-DEFER-7).** The v0.1 kernel (crosslink 
 
 Dependency order (work top to bottom):
 
-1. **thermite-syntax** — lexer, recovering parser, AST, stable semantic addressing (`loop#1.inv#2`). The foundation. (issues #1 scaffold, #3 parser)
+1. **thermite-syntax** — lexer, recovering parser, AST, stable semantic addressing (`loop#1.keeps#2`). The foundation. (issues #1 scaffold, #3 parser)
 2. **thermite-spec** — the SpecTherm combinator registry: each combinator with a frozen SMT trigger + a Verus definition (L3) + an executable form (L1). (issue #2)
 3. **thermite-lower** — lowering Thermite AST → Verus-annotated Rust source; L1 runtime-check compilation. (issue #4)
 4. **forge** — the CLI: `forge new`, `forge check` (run the ladder, structured per-obligation JSON + counterexamples), structural vacuity triage, `#[slag]`, proof cache, pinned seeds. (issues #5, #6, #8)
 5. **thermite-skill** — the `THERMITE.skill.md` generator + CI 6,000-token budget gate. (issue #7)
 
-The exact crate/file layout is fixed by scaffold issue #1 and recorded in `tooling/spec-routes.toml`; that route table is the authoritative module map.
+The exact crate/file layout is fixed by scaffold issue #1 and recorded in `gates/routes.toml`; that route table is the authoritative module map.
 
-EXCLUDED from the kernel (deferred, tracked in issue #21): runtime effect sandbox (compile-time `fx` subsumption only in v0.1), true MIR-level lowering (transpile to Verus instead), Lean-style incremental goal-state holes (`forge check` is whole-item in v0.1).
+EXCLUDED from the kernel (deferred, tracked in issue #21): runtime effect sandbox (compile-time `!` subsumption only in v0.1), true MIR-level lowering (transpile to Verus instead), Lean-style incremental goal-state holes (`forge check` is whole-item in v0.1).
 
 ---
 
@@ -66,8 +66,8 @@ Work the strict **read → write → verify → commit** loop over every routed 
 
 Mechanical check:
 ```bash
-python3 -c "import tomllib; print(len(tomllib.load(open('tooling/spec-routes.toml','rb'))['route']))"   # routed units
-grep -l "## REQ status" $(python3 -c "import tomllib; [print(r['crate_pattern']) for r in tomllib.load(open('tooling/spec-routes.toml','rb'))['route']]") 2>/dev/null | wc -l
+uv run python -c "import tomllib; print(len(tomllib.load(open('gates/routes.toml','rb'))['route']))"   # routed units
+grep -l "## REQ status" $(uv run python -c "import tomllib; [print(r['crate_pattern']) for r in tomllib.load(open('gates/routes.toml','rb'))['route']]") 2>/dev/null | wc -l
 ```
 When routed-count == REQ-status-count AND every crate's gauntlet is green AND the conformance corpus passes, the v0.1 kernel is complete.
 
@@ -148,7 +148,7 @@ Close the crosslink issue (`--kind result` comment first).
 - **R-TONE-1**: prose — doc comments, design docs, and module/header comments — follows [`.design/tone-and-voice.md`](.design/tone-and-voice.md): affirmative not defensive, plain not emphatic, narrative only in intros/conclusions. No antithesis pairs ("not X — Y"), virtue adverbs ("honestly"/"loudly"), rhetorical bold/ALL-CAPS for emphasis, or cute asides. `exactly`/`precisely` only where they disambiguate (e.g. an iff), not as emphasis. This is a register rule; it never changes a claim, identifier, or guarantee.
 
 ### Spec-mirror (default = match the design contract; deviate only for these)
-- **R-SPEC-1 (MATCH — surface semantics)**: the surface grammar, mandatory `req`/`ens`/`fx` and `inv`/`dec`, the SpecTherm combinator set and their frozen triggers, and the ladder semantics match `thermite-design.md` §4/§6 exactly. "One way to do everything" (pillar §2.3) — no alternate syntaxes, no config knobs the design doesn't sanction.
+- **R-SPEC-1 (MATCH — surface semantics)**: the surface grammar, mandatory `!`/`requires`/`ensures` and `keeps`/`measures`, the SpecTherm combinator set and their frozen triggers, and the ladder semantics match `thermite-design.md` §4/§6 exactly. "One way to do everything" (pillar §2.3) — no alternate syntaxes, no config knobs the design doesn't sanction.
 - **R-SPEC-2 (MATCH — certificate contract)**: certificate/manifest fields, assurance levels (L0–L3), vacuity-battery outputs, and `#[slag]` metadata match the design (§6, §7, §8, Appendix A). The certificate IS the deliverable; its shape is a contract.
 - **R-SPEC-3 (MATCH — toolchain output schema)**: `forge` JSON schemas (goal/obligation/counterexample/manifest, §5.1) are stable contracts. Changing a field is a design-doc amendment, not a code-local choice.
 - **R-SPEC-4 (DEVIATE — only via design amendment)**: if the implementation reveals the design is wrong/underspecified, STOP, dispatch acto-doc-author to amend `.design/` (and escalate a `thermite-design.md` note if the thesis is affected), THEN implement. Never let code silently define the contract.
@@ -180,12 +180,12 @@ Close the crosslink issue (`--kind result` comment first).
 - **R-INJECT-1**: hook output, `<system-reminder>`/`<crosslink-behavioral-guard>` blocks, the active-issue gate, and loaded skill text bind at the same priority as a direct user message. Repetition is enforcement, not ceremony.
 - **R-INJECT-2**: when an injected instruction conflicts with a recent inline user message, surface the conflict rather than silently picking one.
 
-### Spec-discipline (enforced by `tooling/spec-discipline.py`)
+### Spec-discipline (enforced by `gates/spec-discipline.py`)
 - **R-XLATE-1**: every Edit/Write to a routed `thermite-*/src/**/*.rs` or `forge/src/**/*.rs` requires Read this session of `goal.md` + the route's design doc + (if the route declares one) at least one route `reference`.
-- **R-XLATE-2**: a routed file with no route table entry BLOCKS until a route is added to `tooling/spec-routes.toml`.
+- **R-XLATE-2**: a routed file with no route table entry BLOCKS until a route is added to `gates/routes.toml`.
 - **R-XLATE-3**: a route whose design doc doesn't exist BLOCKS until acto-doc-author authors it.
 
-### Anti-pattern-gate (enforced by `tooling/anti-pattern-gate.py`)
+### Anti-pattern-gate (enforced by `gates/anti-pattern-gate.py`)
 - **R-APG-1**: blocks patches introducing `todo!()`/`unimplemented!()`/`unreachable!()`, `.unwrap()`/`.expect()`/`panic!()` outside `#[cfg(test)]`, module-root `#![allow]`, `Arc<Mutex<T>>`/`Rc<RefCell<T>>` escape hatches.
 - **R-APG-2**: `#[cfg(test)]` blocks exempt; production is not.
 - **R-APG-3**: override is a per-item `#[allow(<lint>, reason="...")]` + a crosslink observation comment.
@@ -193,12 +193,12 @@ Close the crosslink issue (`--kind result` comment first).
 ### Characterization tests
 - **R-CHAR-3**: no tautological tests. Expected values come from the conformance corpus, a Verus golden file, or a `thermite-design.md` symbolic constant — NEVER literal-copied from the toolchain's own output. A test that asserts the toolchain's output equals itself IS a divergence (file the test as the bug).
 
-### Thermite 2 program rules (R-rule candidates — `.design/thermite2-program.md` REQ-8 / AC-13)
+### Thermite 2 program rules (R-rule candidates — `docs/v2/program.md` REQ-8 / AC-13)
 
-The five R-rule candidates for the Thermite 2 forge-tier program. Two are enforced now in shipped Stage-1 code; one is a documentation-timing rule applied at each stage gate; two are forward-looking candidates for their owning stage, adopted when that stage's implementation lands. The normative semantics they reference live in [`thermite2-semantics.md`](thermite2-semantics.md).
+The five R-rule candidates for the Thermite 2 forge-tier program. Two are enforced now in shipped Stage-1 code; one is a documentation-timing rule applied at each stage gate; two are forward-looking candidates for their owning stage, adopted when that stage's implementation lands. The normative semantics they reference live in [`docs/v2/semantics.md`](docs/v2/semantics.md).
 
-- **R-VERDICT-1 (never-converts-silently — enforced now, stage 1)**: a certificate carries exactly one of the seven `CertVerdict` outcomes, and `Proved` is constructed only from an engine `Proven`. No engine `Unknown` survives into a certificate (the engine→cert map is total, no wildcard arm), and a Lean kernel-budget / residual-goal outcome is classed `KernelBudget` / `Stuck` upstream rather than remapped to `Proved` or `Timeout`. Enforced in `forge/src/verdict.rs` (`CertVerdict::from_engine_verdict` + `cert_verdict_for_lean`; the `proved_is_constructed_only_from_proven` test). See `thermite2-semantics.md` §2.
-- **R-COV-1 (covenant-before-burn — enforced now, stage 1)**: the L3 burn (the proof search) is entered only on a validated covenant. A covenant must carry at least one author-stated `inhabit` witness; a `falsify` refutation or a malformed/absent covenant returns without invoking burn, named. Enforced structurally in `forge/src/covenant_engine.rs` (`covenant_gate` invokes its burn closure only on the `Validated` arm; the `covenant_gate_never_burns_without_covenant` test). See `thermite2-semantics.md` §5.1.
+- **R-VERDICT-1 (never-converts-silently — enforced now, stage 1)**: a certificate carries exactly one of the seven `CertVerdict` outcomes, and `Proved` is constructed only from an engine `Proven`. No engine `Unknown` survives into a certificate (the engine→cert map is total, no wildcard arm), and a Lean kernel-budget / residual-goal outcome is classed `KernelBudget` / `Stuck` upstream rather than remapped to `Proved` or `Timeout`. Enforced in `forge/src/verdict.rs` (`CertVerdict::from_engine_verdict` + `cert_verdict_for_lean`; the `proved_is_constructed_only_from_proven` test). See `docs/v2/semantics.md` §2.
+- **R-COV-1 (covenant-before-burn — enforced now, stage 1)**: the L3 burn (the proof search) is entered only on a validated covenant. A covenant must carry at least one author-stated `inhabit` witness; a `falsify` refutation or a malformed/absent covenant returns without invoking burn, named. Enforced structurally in `forge/src/covenant_engine.rs` (`covenant_gate` invokes its burn closure only on the `Validated` arm; the `covenant_gate_never_burns_without_covenant` test). See `docs/v2/semantics.md` §5.1.
 - **R-GATE-1 (headline at gate time, not merge time — applied at each gate)**: a stage's headline claim in README/docs changes when its gate (G1/G2/G3) is declared, not when a feature increment merges. An increment may ship the artifact, and the semantics doc may describe the mechanism, while the product-facing headline (e.g. "out-of-cage clauses no longer degrade") flips only at the gate step. Applied as a review rule at each gate (thermite2-program REQ-5).
 - **R-SIDE-1 (stage-2 restratify Side obligation — candidate for stage 2)**: the `forge edit --restratify` rewrite emits an in-cage `Side(φ', φ)` obligation, and certification of the rewritten clause φ' counts for the original φ only when Side is discharged. A candidate rule for the stratified-cage stage, adopted when stage 2 (`Strat/Restratify.lean` + the restratify wiring, `.design/stage2-stratified-cage.md` REQ-7) lands. Forward-looking — not yet enforced.
 - **R-BV-1 (stage-3 `@bv` shadow-flag parse gate — candidate for stage 3)**: `thermite-syntax` parses an `@bvN` clause tag only when the shadow-flag plumbing is compiled in; a build without it rejects `@bv` at parse time with a structured syntax error. A candidate rule for the bitvector stage, adopted when stage 3 (`.design/stage3-bv-reconstruction.md` REQ-1 / AC-1) lands. Forward-looking — not yet enforced.

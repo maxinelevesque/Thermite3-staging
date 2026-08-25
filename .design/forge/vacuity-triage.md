@@ -4,7 +4,8 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 79022d928164cbe53fa1393a2b73f1ab45ee25bd9a63231679aadb2536140474
+audited-content-sha256: 9434114d7980d7aab5ce85e63b706f310786cf9a77ff17c1d5e56ae7b20a33fc (re-pinned 2026-08-10 for RFC-16 step 2: this doc's governed .rs files now pin through the code-normalized extractor (comments dropped, formatting collapsed outside string literals, trailing commas before closers dropped; string contents byte-for-byte), so the digest ALGORITHM changed while every governed file is byte-identical across this commit - no claim was re-audited because no governed content changed. This is the shape-(ii) fix: the 2026-08-07 fmt event (orphaned-comment deletion + export-list re-wrap) that drifted this doc would no longer fire, while a rename passing through a format string still does (the oracle is test_doc_drift_extract_code.py). prior: f780689f005e213a8e6da6486e247f73319c0b96482c427a8e9561c21f118dc9, previously (re-pinned 2026-08-09 for the trunk consolidation: rfc/full-words merged into staging, bringing the RFC-6 full-word surface and RFC-17's vocabulary onto the trunk beside the kernel removal. Where both branches had re-pinned the same doc for different reasons neither value described the MERGED tree, so every pin here is re-derived from merged content rather than taken from a side. prior: 7854c7f56a9d5f2feb3f82310e7ca6bec25a6c58dffe7281830e76937992a48a, previously (re-pinned 2026-08-07 for the comment that removal orphaned: dropping `Effect::Platform(_)` from `effect_row_is_maximal` left its two-line comment dangling before the closing brace, and rustfmt resolves that by reflowing it onto the preceding arm, where it then falsely describes `Effect::Term`; the comment is deleted, no behavior changed. prior: 9e08be813bc4f9406900c1fa06a90e71b6248e242b547fadaeb583ca3335d04d, itself re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 79022d928164cbe53fa1393a2b73f1ab45ee25bd9a63231679aadb2536140474)))
+pin-extract: forge/src/vacuity.rs=code-normalized
 governs: forge/src/vacuity.rs
 thesis-refs:
   - thermite-design.md §7
@@ -39,10 +40,10 @@ since the bootstrap pin changed (re-audited, #262).
 Twelve commits touched `vacuity.rs` after the bootstrap pin `838374d1`. The
 behavior-bearing arcs, verified against the current tree:
 
-- **#44 (`2164770c`) — rule (c) fires only when the WHOLE `ens` is
+- **#44 (`2164770c`) — rule (c) fires only when the WHOLE `ensures` is
   req-implied.** The implementation was aligned to REQ-3's documented
-  every-clause rule: `ens_implied_by_req` returns a cause only when EVERY `ens`
-  clause is `PartialEq`-equal to `req` whole or a conjunct — a contract with one
+  every-clause rule: `ens_implied_by_req` returns a cause only when EVERY `ensures`
+  clause is `PartialEq`-equal to `requires` whole or a conjunct — a contract with one
   redundant req-implied clause plus a genuinely-stronger clause carries a real
   obligation and is NOT (c)-rejected. The doc text below already states the
   every-clause reading; #44 made the code match it.
@@ -59,7 +60,7 @@ behavior-bearing arcs, verified against the current tree:
   fires only when NEITHER attribute is present (a foreign body's effects are
   trusted-by-fiat — ffi-boundary.md §9/OQ-4); rules (a)/(b)/(c) still run on a
   boundary fn, and `check::gate_fn` routes it to `Certificate::boundary_l1`
-  AFTER triage. The same gate now also routes a non-boundary `fx diverge` fn to
+  AFTER triage. The same gate now also routes a non-boundary `! diverge` fn to
   a capped L1 with (a)/(b)/(c) triage still applied (check.md REQ-8).
 - **Surface ripples** (#63 ADTs, #79 strings, #92 `!`, #93 break/continue,
   #108/#109 recursion + tuples, #112 C10, #193 holes): `expr_mentions_result`
@@ -73,40 +74,40 @@ behavior-bearing arcs, verified against the current tree:
 
 - **REQ-1 (ens-is-trivially-true reject — §7.1 (a)):** an item whose
   postcondition is *syntactically* `true` is rejected. Syntactic triviality is:
-  (i) **every** `ens` clause's `Clause.expr` is `Expr::BoolLit(true)`; or
-  (ii) an `ens` clause is a syntactically-trivial tautology — an
+  (i) **every** `ensures` clause's `Clause.expr` is `Expr::BoolLit(true)`; or
+  (ii) an `ensures` clause is a syntactically-trivial tautology — an
   `Expr::Binary { op: BinOp::Eq, lhs, rhs }` (or `BinOp::Ge`/`BinOp::Le`) whose
   `lhs` and `rhs` are structurally identical expressions (`lhs == rhs` under
   `PartialEq`, e.g. `x == x`). This is FREE and SYNTACTIC: NON-trivial
   tautologies (`a || !a`, `x + 0 == x`) are the SOLVER tautology check, issue
-  **#13** — explicitly NOT decided here. Because `ens` is a non-empty `Vec`
-  (`ast.rs` `Contract.ens`), "ens simplifies to true" means the *conjunction* is
+  **#13** — explicitly NOT decided here. Because `ensures` is a non-empty `Vec`
+  (`ast.rs` `Contract.ens`), "ensures simplifies to true" means the *conjunction* is
   trivially true; the conservative syntactic rule rejects only when the contract
   carries no non-trivial conjunct (case (i)) or contains a syntactically-trivial
   identity clause (case (ii)).
-  Source: `thermite-design.md` §7.1 ("`ens` simplifies to `true` → reject").
+  Source: `thermite-design.md` §7.1 ("`ensures` simplifies to `true` → reject").
 - **REQ-2 (ens-omits-result reject — §7.1 (b), §4.1):** an item whose return
-  type is NOT `()` (`ast.rs` `Type::Unit`) and whose `ens` never mentions
-  `result` is rejected. The check walks every `ens` `Clause.expr` for an
+  type is NOT `()` (`ast.rs` `Type::Unit`) and whose `ensures` never mentions
+  `result` is rejected. The check walks every `ensures` `Clause.expr` for an
   `Expr::Path` whose first segment is the identifier `"result"` (the parser
   builds `result` as `Expr::Path(["result"])` — grounded). The parser already
-  enforces `ens` *presence* but NOT "mentions result"; §4.1 states this is
+  enforces `ensures` *presence* but NOT "mentions result"; §4.1 states this is
   "structurally enforced — see §7", and THIS is that check. A `Type::Unit`
   return is EXEMPT (§4.1: "Must mention `result` unless the return type is
   `()`").
-  Source: `thermite-design.md` §4.1, §7.1 ("`ens` does not mention `result`
+  Source: `thermite-design.md` §4.1, §7.1 ("`ensures` does not mention `result`
   (non-unit return) → reject").
-- **REQ-3 (ens-syntactically-implied-by-req reject — §7.1 (c)):** an item is
-  rejected when its `ens` is *syntactically* implied by `req` alone, defined as:
-  every `ens` clause's `Clause.expr` is structurally identical (`PartialEq`) to
-  either (i) the whole `req` `Clause.expr`, or (ii) one of the conjuncts of
-  `req` when `req` is an `&&` chain. The `&&` chain is LEFT-ASSOCIATIVE (grounded:
+- **REQ-3 (ens-syntactically-implied-by-requires reject — §7.1 (c)):** an item is
+  rejected when its `ensures` is *syntactically* implied by `requires` alone, defined as:
+  every `ensures` clause's `Clause.expr` is structurally identical (`PartialEq`) to
+  either (i) the whole `requires` `Clause.expr`, or (ii) one of the conjuncts of
+  `requires` when `requires` is an `&&` chain. The `&&` chain is LEFT-ASSOCIATIVE (grounded:
   `a && b && c` parses to `Binary{And, Binary{And, a, b}, c}`), so the conjunct
   set is collected by recursively flattening `Expr::Binary { op: BinOp::And, .. }`
-  along both arms. This is FREE and SYNTACTIC: the SOLVER question "is `ens`
-  provable from `req` + types WITHOUT the body" (§7 step 2) is issue **#13** —
+  along both arms. This is FREE and SYNTACTIC: the SOLVER question "is `ensures`
+  provable from `requires` + types WITHOUT the body" (§7 step 2) is issue **#13** —
   NOT this check.
-  Source: `thermite-design.md` §7.1 ("`ens` is syntactically implied by `req`
+  Source: `thermite-design.md` §7.1 ("`ensures` is syntactically implied by `requires`
   alone → reject").
 - **REQ-4 (maximal-fx-without-slag reject — §7.1 (d)):** an item whose effect
   row is *maximal* and which is NOT `#[slag]` is rejected. There is NO `fx *`
@@ -118,7 +119,7 @@ behavior-bearing arcs, verified against the current tree:
   `Diverge` (all 8 kinds present). An `EffectRow::Pure` is never maximal; a
   partial `Set` is never maximal. A maximal row is admissible ONLY on a
   `#[slag]` item (`FnItem.slag.is_some()`): slag is the only thing that justifies
-  it (§8; the `slag.md` interaction). Maximal-`fx` with no slag → reject.
+  it (§8; the `slag.md` interaction). Maximal-`!` with no slag → reject.
   *(Amended #262: the `Effect` enum has since gained a NINTH variant —
   `Term` (#106), DELIBERATELY EXCLUDED from the maximal set, which remains the
   8 broad kinds; and a `#[boundary]` item (`FnItem.boundary.is_some()`) is
@@ -128,7 +129,7 @@ behavior-bearing arcs, verified against the current tree:
   `#[slag]` justification → reject"), §8.
 - **REQ-5 (`VacuityVerdict` + typed reject cause):** triage returns a structured
   verdict that names WHICH of (a)–(d) fired, with a clause-level diagnostic
-  (which `ens` index / the offending effect). A reject is a `forge check`
+  (which `ensures` index / the offending effect). A reject is a `forge check`
   contract-certification failure: the item does NOT proceed to `verus`. The
   reject is surfaced through a `ForgeError` variant (or a verdict consumed by
   `check.rs` and rendered as a non-L3 reported failure carrying the cause), never
@@ -143,7 +144,7 @@ behavior-bearing arcs, verified against the current tree:
   `Contract`, BEFORE that item is lowered/verified. A contract failing triage is
   rejected before `verus` runs. On a PASS, the structural-triage verdict fills
   the `Certificate.contract_quality.tautology` field (set `true` only on a
-  §7.1 (a) syntactic-`true`/identity ens reject — but since a reject does not
+  §7.1 (a) syntactic-`true`/identity ensures reject — but since a reject does not
   produce an L3 cert, the LIVE semantics are: a non-`#[slag]` item that passes
   triage carries `tautology = false` and `vacuous_precondition = false` as
   ASSERTED (#6-live) values, no longer forward-declared placeholders). The
@@ -157,7 +158,7 @@ behavior-bearing arcs, verified against the current tree:
   Source: `thermite-design.md` §7; `.design/forge/certificate-manifest.md`
   REQ-3 (the forward-declared `contract_quality.*`); `goal.md` R-SPEC-2.
 - **REQ-7 (slag exempts proving, never stating; triage still applies):** a
-  `#[slag]` item is exempt from REQ-4 (maximal `fx` is justified by slag) but is
+  `#[slag]` item is exempt from REQ-4 (maximal `!` is justified by slag) but is
   STILL subject to REQ-1/REQ-2/REQ-3 — a slag function with a vacuous,
   result-omitting, or req-implied contract is rejected exactly like any other.
   Slag exempts PROVING (the L3 obligation, `slag.md`), never STATING or checking
@@ -175,34 +176,34 @@ the grounded `thermite_syntax::parse` output).
 
 - **AC-1 (accept: the corpus is non-vacuous):** `conformance/sum.th`'s `sum` and
   `conformance/binary_search.th`'s `binary_search` both PASS triage (all four
-  checks). Grounded: `sum`'s `ens result == spec_sum(xs)` and
-  `ens result <= xs.len() as u64 * u32::MAX as u64` both mention `result`,
-  neither is `BoolLit(true)` nor an identity, `req xs.len() <= 1_000_000` does
-  not syntactically imply either `ens`, and `fx pure` is not maximal.
-  `binary_search`'s `ens match result { … }` mentions `result`. The `spec fn`
-  `spec_sum` has no `req`/`ens`/`fx` (`ast.rs` `SpecFnItem`) — it carries no
+  checks). Grounded: `sum`'s `ensures result == spec_sum(xs)` and
+  `ensures result <= xs.len() as u64 * u32::MAX as u64` both mention `result`,
+  neither is `BoolLit(true)` nor an identity, `requires xs.len() <= 1_000_000` does
+  not syntactically imply either `ensures`, and `! pure` is not maximal.
+  `binary_search`'s `ensures match result { … }` mentions `result`. The `spec fn`
+  `spec_sum` has no `!`/`requires`/`ensures` (`ast.rs` `SpecFnItem`) — it carries no
   contract, so triage does not apply to it.
-- **AC-2 (reject (a) — ens is true):** `conformance/vacuity/ens_true.th` — a
-  non-unit `fn` with `ens true` (sole clause `Expr::BoolLit(true)`) → rejected
-  with cause (a). Companion `ens_eq_self.th` — `ens x == x`
+- **AC-2 (reject (a) — ensures is true):** `conformance/vacuity/ens_true.th` — a
+  non-unit `fn` with `ensures true` (sole clause `Expr::BoolLit(true)`) → rejected
+  with cause (a). Companion `ens_eq_self.th` — `ensures x == x`
   (`Binary{Eq, Path(["x"]), Path(["x"])}`) → rejected with cause (a).
-- **AC-3 (reject (b) — ens omits result):** `conformance/vacuity/no_result.th` —
-  a `fn f(x: u32) -> u32` whose only `ens` is `x <= 100` (no `result` path) →
-  rejected with cause (b). A unit-return companion (`-> ()` with the same `ens`)
+- **AC-3 (reject (b) — ensures omits result):** `conformance/vacuity/no_result.th` —
+  a `fn f(x: u32) -> u32` whose only `ensures` is `x <= 100` (no `result` path) →
+  rejected with cause (b). A unit-return companion (`-> ()` with the same `ensures`)
   PASSES (b) (the `Type::Unit` exemption), demonstrating the boundary.
-- **AC-4 (reject (c) — ens implied by req):** `conformance/vacuity/ens_eq_req.th`
-  — `req x <= 10` / `ens x <= 10` (identical `Clause.expr`) → rejected with
-  cause (c). Companion `ens_conjunct_req.th` — `req x <= 10 && result == x` /
-  `ens x <= 10` (the `ens` is a flattened conjunct of `req`) → rejected with
+- **AC-4 (reject (c) — ensures implied by req):** `conformance/vacuity/ens_eq_req.th`
+  — `requires x <= 10` / `ensures x <= 10` (identical `Clause.expr`) → rejected with
+  cause (c). Companion `ens_conjunct_req.th` — `requires x <= 10 && result == x` /
+  `ensures x <= 10` (the `ensures` is a flattened conjunct of `requires`) → rejected with
   cause (c).
 - **AC-5 (reject (d) — maximal fx without slag):**
   `conformance/vacuity/maximal_fx.th` — a non-slag `fn` whose row is
-  `fx read(a), write(b), net(c), alloc, time, rand, panic, diverge`
+  `! read(a), write(b), net(c), alloc, time, rand, panic, diverge`
   (`EffectRow::Set` with all 8 variant kinds) → rejected with cause (d). The
   slag-justified counterpart (`conformance/slag/`’s maximal-row case) PASSES (d).
 - **AC-6 (verdict names the cause):** each reject AC asserts the structured
   verdict identifies the SPECIFIC §7.1 cause (a/b/c/d) and, for (a)/(b)/(c), the
-  offending `ens` clause index — a unit test against `vacuity.rs`'s public API,
+  offending `ensures` clause index — a unit test against `vacuity.rs`'s public API,
   not against `verus`.
 - **AC-7 (cert-quality field on a passing item):** a non-slag item that passes
   triage emits `contract_quality.tautology == false` and
@@ -217,19 +218,19 @@ the grounded `thermite_syntax::parse` output).
 in `forge/src/main.rs`/`lib.rs`, consumed by `check.rs`.
 
 The public entry is `pub fn triage(item: &FnItem) -> VacuityVerdict` (a
-`spec fn` carries no contract — `ast.rs` `SpecFnItem` has no `req`/`ens`/`fx` —
+`spec fn` carries no contract — `ast.rs` `SpecFnItem` has no `!`/`requires`/`ensures` —
 so triage applies only to `FnItem`s; `check.rs` skips `Item::SpecFn`). Each
 §7.1 rule is a private predicate over the `Contract`:
 
 1. **(a) `ens_is_trivially_true`** — `BoolLit(true)` over every clause, or a
    syntactically-identical `Eq`/`Le`/`Ge` operand pair in any clause (REQ-1).
-2. **(b) `ens_omits_result`** — `item.ret != Type::Unit` AND no `ens` clause's
+2. **(b) `ens_omits_result`** — `item.ret != Type::Unit` AND no `ensures` clause's
    `Expr` tree contains an `Expr::Path` whose first segment is `"result"`
    (REQ-2). A recursive `Expr` walker visits `Call`/`MethodCall`/`Field`/
    `Binary`/`Index`/`Cast`/`Ref`/`Match`/`If`/`Closure` children.
-3. **(c) `ens_implied_by_req`** — collect the conjunct set of `req` by flattening
-   the left-associative `&&` tree (`flatten_and`); reject if every `ens` clause
-   equals `req` whole or a member of that set (REQ-3).
+3. **(c) `ens_implied_by_req`** — collect the conjunct set of `requires` by flattening
+   the left-associative `&&` tree (`flatten_and`); reject if every `ensures` clause
+   equals `requires` whole or a member of that set (REQ-3).
 4. **(d) `fx_maximal_without_slag`** — `item.slag.is_none()` AND
    `item.boundary.is_none()` (amended #262) AND `effect_row_is_maximal(&fx)`
    where maximal = an `EffectRow::Set` covering the 8 BROAD `Effect` kinds
@@ -266,7 +267,7 @@ structural gate ONLY — it never issues a solver query.
 ## Verification
 
 - `cargo test -p forge` — unit tests over `triage`'s public API: one reject test
-  per §7.1 cause (a/b/c/d) and the `Type::Unit` / partial-`fx` / slag-justified
+  per §7.1 cause (a/b/c/d) and the `Type::Unit` / partial-`!` / slag-justified
   boundary cases (AC-2..AC-6). Expected verdicts trace to `thermite-design.md`
   §7.1 and the hand-authored `conformance/vacuity/` fixtures (R-CHAR-3), never
   to `forge`'s own output.
@@ -289,40 +290,40 @@ authors; the ACCEPT side is the existing `conformance/sum.th` /
 **`ens_true.th`** — reject (a):
 ```thermite
 fn f(x: u32) -> u32
-  req true
-  ens true
-  fx  pure
+  requires true
+  ensures true
+  !  pure
 { x }
 ```
-Grounded: `ens#0.expr = BoolLit(true)`.
+Grounded: `ensures#0.expr = BoolLit(true)`.
 
 **`ens_eq_self.th`** — reject (a), identity form:
 ```thermite
 fn f(x: u32) -> u32
-  req true
-  ens x == x
-  fx  pure
+  requires true
+  ensures x == x
+  !  pure
 { x }
 ```
-Grounded: `ens#0.expr = Binary { op: Eq, lhs: Path(["x"]), rhs: Path(["x"]) }`.
+Grounded: `ensures#0.expr = Binary { op: Eq, lhs: Path(["x"]), rhs: Path(["x"]) }`.
 
 **`no_result.th`** — reject (b):
 ```thermite
 fn f(x: u32) -> u32
-  req true
-  ens x <= 100
-  fx  pure
+  requires true
+  ensures x <= 100
+  !  pure
 { x }
 ```
-Grounded: `ret = Prim(U32)`, `ens#0.expr = Binary { op: Le, lhs: Path(["x"]),
+Grounded: `ret = Prim(U32)`, `ensures#0.expr = Binary { op: Le, lhs: Path(["x"]),
 rhs: IntLit(100) }` — no `result` path.
 
 **`unit_ok.th`** — ACCEPTS (b) (the `Type::Unit` exemption boundary):
 ```thermite
 fn f(x: u32) -> ()
-  req true
-  ens x <= 100
-  fx  pure
+  requires true
+  ensures x <= 100
+  !  pure
 { }
 ```
 Grounded: `ret = Unit` — exempt from (b). (Note: this fixture is rejected by (a)?
@@ -332,44 +333,44 @@ clean ACCEPT demonstrating the unit exemption.)
 **`ens_eq_req.th`** — reject (c), identical clause:
 ```thermite
 fn f(x: u32) -> u32
-  req x <= 10
-  ens x <= 10
-  fx  pure
+  requires x <= 10
+  ensures x <= 10
+  !  pure
 { x }
 ```
-Grounded: `req.expr == ens#0.expr == Binary { op: Le, lhs: Path(["x"]),
+Grounded: `req.expr == ensures#0.expr == Binary { op: Le, lhs: Path(["x"]),
 rhs: IntLit(10) }`. (Also omits `result`, so (b) would fire too — the reported
 cause is (b) under listing order; an alternate ens-with-result form that still
-mirrors a req conjunct isolates (c): see `ens_conjunct_req.th`.)
+mirrors a requires conjunct isolates (c): see `ens_conjunct_req.th`.)
 
-**`ens_conjunct_req.th`** — reject (c), conjunct form (isolates (c): `ens`
-mentions `result` via the req, so (b) does not fire on the req side, but the
-`ens` clause itself is a req conjunct):
+**`ens_conjunct_req.th`** — reject (c), conjunct form (isolates (c): `ensures`
+mentions `result` via the req, so (b) does not fire on the requires side, but the
+`ensures` clause itself is a requires conjunct):
 ```thermite
 fn f(x: u32) -> u32
-  req x <= 10 && result == x
-  ens x <= 10
-  fx  pure
+  requires x <= 10 && result == x
+  ensures x <= 10
+  !  pure
 { x }
 ```
 Grounded: `req.expr = Binary { op: And, lhs: Binary{Le, Path(["x"]),
-IntLit(10)}, rhs: Binary{Eq, Path(["result"]), Path(["x"])} }`; `ens#0.expr =
-Binary{Le, Path(["x"]), IntLit(10)}` — a flattened conjunct of `req`. (This
-`ens` still omits `result`, so to fully isolate (c) from (b) the orchestrator
-may prefer an `ens result == x` clause that duplicates the second req conjunct;
+IntLit(10)}, rhs: Binary{Eq, Path(["result"]), Path(["x"])} }`; `ensures#0.expr =
+Binary{Le, Path(["x"]), IntLit(10)}` — a flattened conjunct of `requires`. (This
+`ensures` still omits `result`, so to fully isolate (c) from (b) the orchestrator
+may prefer an `ensures result == x` clause that duplicates the second requires conjunct;
 both forms are valid (c) rejects — flagged OQ-3.)
 
 **`maximal_fx.th`** — reject (d):
 ```thermite
 fn f(x: u32) -> u32
-  req true
-  ens result == x
-  fx  read(a), write(b), net(c), alloc, time, rand, panic, diverge
+  requires true
+  ensures result == x
+  !  read(a), write(b), net(c), alloc, time, rand, panic, diverge
 { x }
 ```
 Grounded: `fx = Set([Read("a"), Write("b"), Net("c"), Alloc, Time, Rand, Panic,
 Diverge])` — all 8 variant kinds, `slag = None` → maximal without slag. (The
-`ens result == x` is chosen so ONLY (d) fires, isolating the rule.)
+`ensures result == x` is chosen so ONLY (d) fires, isolating the rule.)
 
 ## Open questions
 
@@ -391,13 +392,13 @@ Diverge])` — all 8 variant kinds, `slag = None` → maximal without slag. (The
   (no schema change); surface (ii) as the amendment if the critic wants the
   cause machine-readable in the cert.
 - **OQ-3 (isolating (c) from (b)):** the cleanest (c)-only fixture is one whose
-  `ens` mentions `result` AND duplicates a `req` conjunct (so (b) cannot fire);
+  `ensures` mentions `result` AND duplicates a `requires` conjunct (so (b) cannot fire);
   the orchestrator picks the exact fixture. Noted so the reject ACs are not
   conflated.
-- **OQ-4 (`ens` conjunction semantics for (a)):** the conservative rule rejects
+- **OQ-4 (`ensures` conjunction semantics for (a)):** the conservative rule rejects
   on (a) only when EVERY clause is trivially true (or any clause is a syntactic
-  identity). A contract `ens true` + `ens result == x` is NOT (a)-rejected (it
-  carries a real conjunct). Confirmed as the intended reading of "ens simplifies
+  identity). A contract `ensures true` + `ensures result == x` is NOT (a)-rejected (it
+  carries a real conjunct). Confirmed as the intended reading of "ensures simplifies
   to true"; flagged in case the critic reads §7.1 (a) as "any clause is true".
 
 ## REQ status
@@ -406,7 +407,7 @@ Diverge])` — all 8 variant kinds, `slag = None` → maximal without slag. (The
 |---|---|---|
 | REQ-1 (ens-is-true reject (a)) | SHIPPED | `ens_is_trivially_true` in `vacuity.rs` (`BoolLit(true)` over every clause, or any `identity_clause` `Eq`/`Le`/`Ge` with `PartialEq`-equal operands); consumer `triage` → `check::gate_fn`. Verified: `vacuity::tests::{ens_literal_true_rejected_a, ens_identity_rejected_a, identity_class_covers_le_ge_not_lt_ne}` + `tests/vacuity_slag_conformance.rs::triage_rejects_match_oracle_cause` (cause `EnsIsTrivial`). |
 | REQ-2 (ens-omits-result reject (b)) | SHIPPED | `ens_omits_result` + bounded `expr_mentions_result` (whole-`Expr`/`Stmt`/`Block` walk, `MAX_EXPR_DEPTH`) with the `Type::Unit` exemption; consumer `triage`. Verified: `vacuity::tests::{ens_omits_result_rejected_b, unit_return_exempt_from_b, nested_result_mention_passes_b}` + the conformance `EnsOmitsResult` reject + `unit_omits_result_ok` accept. |
-| REQ-3 (ens-implied-by-req reject (c)) | SHIPPED | `ens_implied_by_req` + `flatten_and` (left-associative `&&` flatten, bounded); consumer `triage`. Verified: `vacuity::tests::{ens_eq_req_rejected_c, ens_conjunct_req_rejected_c}` + conformance `EnsImpliedByReq` rejects. |
+| REQ-3 (ens-implied-by-requires reject (c)) | SHIPPED | `ens_implied_by_req` + `flatten_and` (left-associative `&&` flatten, bounded); consumer `triage`. Verified: `vacuity::tests::{ens_eq_req_rejected_c, ens_conjunct_req_rejected_c}` + conformance `EnsImpliedByReq` rejects. |
 | REQ-4 (maximal-fx-without-slag reject (d)) | SHIPPED | `fx_maximal_without_slag(fx, slag, boundary)` fires only when `slag.is_none() && boundary.is_none()` (a `#[boundary]` fn is slag-adjacent and exempt, ffi-boundary.md §9/OQ-4) AND `effect_row_is_maximal` (the 8 BROAD `Effect` kinds in a `Set`; the #106 `Term` 9th atom is deliberately excluded — it neither adds to nor is required for maximality); consumer `triage`. Verified: `vacuity::tests::{maximal_fx_no_slag_rejected_d, maximal_fx_with_slag_passes_d, partial_fx_is_not_maximal}` + conformance `MaximalFxWithoutSlag`. |
 | REQ-5 (`VacuityVerdict` + typed cause) | SHIPPED | `pub enum VacuityVerdict { Passed, Rejected { cause } }` + `pub enum VacuityCause` with `tag`/`detail`; mapped to `manifest::RejectReason` (verdict-in-cert, OQ-1 resolved — NOT a `ForgeError`). Consumed by `check::gate_fn`. |
 | REQ-6 (forge-check gate + `contract_quality` field) | SHIPPED | `check::gate_fn` runs `triage` BEFORE `lower`/`run_verus`; a reject short-circuits to `Certificate::rejected`; a pass calls `Certificate::graduate_triage_clean` so `contract_quality.{tautology,vacuous_precondition}` are #6-LIVE `false`. Verified: `corpus_sum_still_l3_and_matches_golden` asserts both bools == golden `false`. |

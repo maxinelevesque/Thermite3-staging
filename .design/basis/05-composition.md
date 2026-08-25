@@ -136,8 +136,8 @@ a stronger state than the per-part certs support (#60 verus-verified the min).
   (`requires`/`ensures`), never `f`'s body. For a pure callee this is verus's
   native modular reasoning (the woven real-body sub-program); for a
   boundary/slag callee it is the `#[verifier::external_body]` assumable signature.
-  The caller still discharges `f`'s `req` at the call site and proves its own
-  `ens` — composition is SOUND, not a free pass. Derived from §9 (the composition
+  The caller still discharges `f`'s `requires` at the call site and proves its own
+  `ensures` — composition is SOUND, not a free pass. Derived from §9 (the composition
   rule), §1 (trust relocation: code→contract), and `boundary-composition.md`
   REQ-1/REQ-2/REQ-4. SHIPPED via #52.
 
@@ -281,7 +281,7 @@ under `conformance/composition/`.
   demonstrates that a pipeline OVER-CLAIMING its `ensures` FAILS (postcondition
   not satisfied), and one that drops an intermediate step's `requires` FAILS
   (precondition not satisfied) — composition does not let the caller dodge a
-  callee's `req` or manufacture an `ens`. GROUNDED below (`3 verified, 1 errors`
+  callee's `requires` or manufacture an `ensures`. GROUNDED below (`3 verified, 1 errors`
   over-claim; `2 verified, 1 errors` req-violation). (REQ-1.)
 
 - **AC-4 (invariant conjunction over a nested structure):** a `Vec<Account>` (or
@@ -356,8 +356,8 @@ pipeline(x), x < 99 : ensures r == 2*(x+1) - 1
 ```
 
 `pipeline` discharges each step's `requires` from the PREVIOUS step's `ensures`
-alone — `f.req x<100` from `x<99`; `g.req 1<=a<=100` from `a==x+1, x<99`;
-`h.req b>=2` from `b==2*a, a>=1` — and proves its final goal `2*(x+1)-1` using
+alone — `f.requires x<100` from `x<99`; `g.requires 1<=a<=100` from `a==x+1, x<99`;
+`h.requires b>=2` from `b==2*a, a>=1` — and proves its final goal `2*(x+1)-1` using
 ONLY the contracts, never the body of `f`/`g`/`h`. A second-order consumer
 `use_pipeline()` proves `pipeline(0) == 1` through `pipeline`'s contract (locality
 one level up).
@@ -391,11 +391,11 @@ one level up).
    - a pipeline OVER-CLAIMING its `ensures` (dropping the `-1` that `h` applies)
      FAILS: `postcondition not satisfied`, `3 verified, 1 errors` (exit 1).
    - a caller VIOLATING an intermediate `requires` (widening its own pre to
-     `x < 200` so `f.req x<100` is no longer established) FAILS: `precondition
+     `x < 200` so `f.requires x<100` is no longer established) FAILS: `precondition
      not satisfied`, `2 verified, 1 errors` (exit 1).
 
    Both are COUNTEREXAMPLES, not false L3s. The caller must discharge each
-   callee's `req` and prove its own `ens` — locality is sound.
+   callee's `requires` and prove its own `ensures` — locality is sound.
 
 This grounds the capstone: a multi-step chain verifies END-TO-END using only each
 step's contract (no global re-proof), one step is an opaque effect primitive whose
@@ -405,7 +405,7 @@ assumed contract composes like any other, and the discharge is local + sound.
 
 - **Routes to add (orchestrator, not this doc):** the composition machinery lives
   in files that already carry governing routes; add `[[route]]` entries to
-  `tooling/spec-routes.toml` pointing the composition/aggregation files at THIS
+  `gates/routes.toml` pointing the composition/aggregation files at THIS
   doc (a file may carry multiple governing docs — the #52 `lower.rs` precedent):
 
   ```
@@ -439,7 +439,7 @@ assumed contract composes like any other, and the discharge is local + sound.
   RESOLVED-METHOD, #62 OQ-4).** #52's `reachable_fn_deps` already pulls in
   transitively-reachable in-file `fn`s and `spec fn`s; it is UNCLEAR whether it ALSO
   weaves the `struct`/`enum`/`spec fn` defs an ADT-VALUED contract REFERENCES but
-  does not CALL (e.g. `g`'s `ens` mentions `result.well_formed()` — is
+  does not CALL (e.g. `g`'s `ensures` mentions `result.well_formed()` — is
   `well_formed`'s def woven?). **RESOLVED-METHOD:** this is settled TEST-FIRST per
   the [resolution-method section](#resolution-method-for-the-extensions--test-first-against-52-resolved-62-oq-4)
   — write the ADT-valued-contract conformance probe against the existing #52
@@ -473,7 +473,7 @@ assumed contract composes like any other, and the discharge is local + sound.
   must subsume every callee's row," checked at compile time by `check_effects`
   (verified by #60's `subsumes` core). The composition law's effect-half is the
   effect-row SUBSUMPTION (a separate shipped mechanism), not the contract
-  discharge. The grounded chain uses `fx pure` throughout; the basis's effect
+  discharge. The grounded chain uses `! pure` throughout; the basis's effect
   composition (a pipeline whose row is the union of its Stage-3 primitives' rows)
   is the §4.1 subsumption check, already SHIPPED-and-verus-verified (#60) — this
   doc's REQ-7 aggregates the ASSURANCE, `check_effects` composes the EFFECTS. The
@@ -483,7 +483,7 @@ assumed contract composes like any other, and the discharge is local + sound.
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (CONTRACT composition — `g∘f` through the contract) | SHIPPED | `lower_external_body_fn in thermite-lower/src/lower.rs` emits a boundary/slag callee as a `#[verifier::external_body]` assumable signature (req→requires, ens→ensures, no checked body); `item_subprogram in forge/src/check.rs` weaves the transitively-reachable callees (via `reachable_fn_deps` → `closure::reachable_in_file_fns`) so verus resolves the call and the caller proves THROUGH the contract. Non-test consumer: `check::check_file_with_options` drives `item_subprogram` per fn. Soundness: a caller must discharge `f`'s `req` + prove its own `ens` (#52). GROUNDED `verus 0.2026.05.24`: the multi-step chain `h(g(f(x)))` verifies `4 verified, 0 errors` (default, `f` external_body) / `5 verified, 0 errors` (`--no-cheating`, `f` proved); over-claim → `3 verified, 1 errors`, req-violation → `2 verified, 1 errors`. Verified by `composition_conformance::direct_boundary_caller_verifies_through_the_contract` (#52). |
+| REQ-1 (CONTRACT composition — `g∘f` through the contract) | SHIPPED | `lower_external_body_fn in thermite-lower/src/lower.rs` emits a boundary/slag callee as a `#[verifier::external_body]` assumable signature (req→requires, ens→ensures, no checked body); `item_subprogram in forge/src/check.rs` weaves the transitively-reachable callees (via `reachable_fn_deps` → `closure::reachable_in_file_fns`) so verus resolves the call and the caller proves THROUGH the contract. Non-test consumer: `check::check_file_with_options` drives `item_subprogram` per fn. Soundness: a caller must discharge `f`'s `requires` + prove its own `ensures` (#52). GROUNDED `verus 0.2026.05.24`: the multi-step chain `h(g(f(x)))` verifies `4 verified, 0 errors` (default, `f` external_body) / `5 verified, 0 errors` (`--no-cheating`, `f` proved); over-claim → `3 verified, 1 errors`, req-violation → `2 verified, 1 errors`. Verified by `composition_conformance::direct_boundary_caller_verifies_through_the_contract` (#52). |
 | REQ-2 (ASSURANCE aggregation — project = min over parts; scope end_to_end iff all) | SHIPPED | `AssuranceManifest::aggregate in forge/src/manifest.rs` computes `ProjectAssurance` = MIN level over functions (else `Failed`) + `ProjectScope` = END-TO-END iff every part is, else TO-THE-BOUNDARY listing crossings. The min/subset core is verus-verified (#60: `thermite-verified`, `verus --no-cheating` `8 verified, 0 errors`; a broken impl → `7 verified, 1 errors`, non-vacuous). Non-test consumer: `audit::AuditManifest::from_certificates` (`forge/src/audit.rs`) embeds it; `cli::run_audit` emits it. Verified by `audit_conformance.rs::corpus_empty_tcb` (L3/end-to-end headline) + #60 `tests/verus_verify.rs`. |
 | REQ-3 (TCB aggregation — whole = ∪ parts' boundary/slag ∪ toolchain) | SHIPPED | `Tcb::from_certificates in forge/src/audit.rs` enumerates every `cert.slag` → `SlagBlock` (reason/owner/review) ∪ every `cert.boundary` → `BoundaryContract` (target + req/ens/fx) ∪ `Toolchain` (always present) — nothing fiat-trusted omitted (R-DEFER-9). Non-test consumer: `AuditManifest::from_certificates` → `cli::run_audit`. Verified by `audit_conformance.rs::slag_boundary_tcb` (both slag + boundary enumerated) + `corpus_empty_tcb` (empty-but-toolchain pure state) (#15). |
 | REQ-4 (compose ADT/collection invariants — contract composition reaches Stage 1–4) | NOT-STARTED | epic **#62** Stage 5. #52 composes SCALAR/boundary contracts; whether `reachable_fn_deps in check.rs` weaves the `struct`/`enum`/`spec fn` invariant defs an ADT-valued contract references (e.g. `result.well_formed()`) is unverified end-to-end and depends on Stage 1 (`01-adts.md`, NOT-STARTED). May partially reduce to a conformance test if #52 already weaves all `spec fn` defs (OQ-1, least confident). RESOLUTION-METHOD (#62 OQ-4): settled TEST-FIRST — a conformance probe against the existing #52 `reachable_fn_deps`/`closure.rs` machinery; pass → SHIPPED-via-existing-machinery (a conformance test, no new code), fail → build the minimal extension; not pre-judged code-vs-test. |

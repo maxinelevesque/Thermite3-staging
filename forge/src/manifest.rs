@@ -109,10 +109,646 @@
 //! <!-- /generated:reqs -->
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use thermite_syntax::{Effect, EffectRow};
 
 use crate::profile::SolverProfile;
 use crate::strengthen::Suggestion;
+
+/// RFC-3 certification scope: the population quantified over by the claim.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CertificationScope {
+    All,
+    Bounded { bound: String },
+    PerExecution,
+    None,
+}
+
+/// RFC-3 falsification channel. A false clause is not silently collapsed into
+/// an assurance level: the certificate states what kind of witness can exist.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum RefutationChannel {
+    Complete,
+    Incomplete,
+    Empirical,
+    Trace { bound: String },
+    Abort,
+    None,
+}
+
+/// Residual trust after discharged proof obligations have been removed. The
+/// relax route and an unreconstructed cage differ in discharged evidence but
+/// intentionally occupy the same residual-trust order position.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResidualTrust {
+    LeanChecked,
+    Solver,
+    Fiat,
+}
+
+/// RFC-3 boundary qualification: how far the certified claim closes.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CertificationBoundary {
+    EndToEnd,
+    ToBoundary { via: String },
+    ToPlatform { platform: String },
+}
+
+/// The authoritative RFC-3 formal certification position. `discharged_trust`
+/// records bridge/reconstruction facts without treating them as residual risk.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct CertificationPosition {
+    pub scope: CertificationScope,
+    pub refutation: RefutationChannel,
+    pub residual_trust: ResidualTrust,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub discharged_trust: Vec<String>,
+    pub boundary: CertificationBoundary,
+}
+
+/// Pre-discharge RFC-3 classification certificate. Classification determines
+/// which refutation fiber is available; discharge later fills the trust
+/// position without erasing the routing prognosis.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ClassificationCertificate {
+    /// Stable, versioned fragment/classifier identity.
+    pub fragment: String,
+    pub verdict: ClassificationVerdict,
+}
+
+/// Stable identity of a contract clause in certificate evidence.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ClauseAddress {
+    pub item: String,
+    pub family: ClauseFamily,
+    pub index: u32,
+}
+
+impl std::fmt::Display for ClauseAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.family {
+            ClauseFamily::Ensures => write!(f, "{}::ens#{}", self.item, self.index),
+        }
+    }
+}
+
+impl ClauseAddress {
+    pub fn from_selector(
+        proof_target: &str,
+        selector: &thermite_syntax::ClauseSelector,
+        expected_item: &str,
+        expected_count: usize,
+    ) -> Result<Self, ClausePortfolioError> {
+        if proof_target != expected_item {
+            return Err(ClausePortfolioError::new(
+                "proof target does not match certificate item",
+            ));
+        }
+        if selector.keyword != "ensures" {
+            return Err(ClausePortfolioError::new(
+                "only indexed ensures clauses are certifiable",
+            ));
+        }
+        let index = selector
+            .index
+            .ok_or_else(|| ClausePortfolioError::new("ensures selector requires an ordinal"))?;
+        if index as usize >= expected_count {
+            return Err(ClausePortfolioError::new(
+                "clause ordinal is outside the contract",
+            ));
+        }
+        Ok(Self {
+            item: expected_item.to_string(),
+            family: ClauseFamily::Ensures,
+            index,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ClauseFamily {
+    Ensures,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum ClauseProcedure {
+    BitVector { frame: String },
+    Epr { frame: String },
+    Nlsat { frame: String },
+    AuthorLean { frame: String },
+}
+
+impl ClauseProcedure {
+    fn expected_fragment(&self) -> &'static str {
+        match self {
+            Self::BitVector { .. } => "thermite-bv-clause-v1",
+            Self::Epr { .. } => "thermite-epr-clause-v1",
+            Self::Nlsat { .. } => "thermite-nlsat-clause-v1",
+            Self::AuthorLean { .. } => "thermite-author-lean-clause-v1",
+        }
+    }
+
+    fn expected_engine(&self) -> &'static str {
+        match self {
+            Self::BitVector { .. } => crate::engine::EngineName::BitVector.tag(),
+            Self::Epr { .. } => crate::engine::EngineName::Epr.tag(),
+            Self::Nlsat { .. } => crate::engine::EngineName::Nlsat.tag(),
+            Self::AuthorLean { .. } => crate::engine::EngineName::LeanInteractive.tag(),
+        }
+    }
+
+    fn has_governed_frame(&self) -> bool {
+        match self {
+            Self::BitVector { frame } => matches!(
+                frame.as_str(),
+                "qf-bv8-v1" | "qf-bv16-v1" | "qf-bv32-v1" | "qf-bv64-v1"
+            ),
+            Self::Epr { frame } => frame == "s2-epr-reconstruction-v1",
+            Self::Nlsat { frame } => frame == "real-relax-v1",
+            Self::AuthorLean { frame } => frame == "author-lean-body-grounded-v1",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum ClauseRouteEvidence {
+    BitVector {
+        query_sha256: String,
+        shadow: BvShadow,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+    },
+    Epr {
+        query_sha256: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness: Option<String>,
+    },
+    Nlsat {
+        query_sha256: String,
+        result: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+    },
+    AuthorLean {
+        query_sha256: String,
+        proof_sha256: String,
+        burn: crate::burn::BurnReceipt,
+        checker: String,
+        evidence_key_sha256: String,
+        axioms: Vec<String>,
+    },
+    BitVectorAttempted {
+        query_sha256: String,
+        outcome: crate::outcome_matrix::SolverProgressClass,
+        detail: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness_sha256: Option<String>,
+    },
+    EprAttempted {
+        query_sha256: String,
+        outcome: crate::outcome_matrix::SolverProgressClass,
+        detail: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness_sha256: Option<String>,
+    },
+    NlsatAttempted {
+        query_sha256: String,
+        outcome: crate::outcome_matrix::SolverProgressClass,
+        detail: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness_sha256: Option<String>,
+    },
+    AuthorLeanAttempted {
+        query_sha256: String,
+        outcome: crate::outcome_matrix::SolverProgressClass,
+        detail: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        witness_sha256: Option<String>,
+    },
+    NotAttempted,
+}
+
+impl ClauseRouteEvidence {
+    fn attempted_fields(
+        &self,
+    ) -> Option<(
+        &String,
+        &crate::outcome_matrix::SolverProgressClass,
+        &String,
+        &Option<String>,
+    )> {
+        match self {
+            Self::BitVectorAttempted {
+                query_sha256,
+                outcome,
+                detail,
+                witness_sha256,
+            }
+            | Self::EprAttempted {
+                query_sha256,
+                outcome,
+                detail,
+                witness_sha256,
+            }
+            | Self::NlsatAttempted {
+                query_sha256,
+                outcome,
+                detail,
+                witness_sha256,
+            }
+            | Self::AuthorLeanAttempted {
+                query_sha256,
+                outcome,
+                detail,
+                witness_sha256,
+            } => Some((query_sha256, outcome, detail, witness_sha256)),
+            _ => None,
+        }
+    }
+
+    fn is_attempt_for(&self, procedure: &ClauseProcedure) -> bool {
+        matches!(
+            (procedure, self),
+            (
+                ClauseProcedure::BitVector { .. },
+                Self::BitVectorAttempted { .. }
+            ) | (ClauseProcedure::Epr { .. }, Self::EprAttempted { .. })
+                | (ClauseProcedure::Nlsat { .. }, Self::NlsatAttempted { .. })
+                | (
+                    ClauseProcedure::AuthorLean { .. },
+                    Self::AuthorLeanAttempted { .. }
+                )
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum PortfolioStopCause {
+    ClauseTerminal {
+        address: ClauseAddress,
+        terminal: ClauseTerminalKind,
+    },
+    ItemGate {
+        gate: ItemGateKind,
+        class: crate::outcome_matrix::OutcomeClass,
+        detail: String,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ClauseTerminalKind {
+    Refuted,
+    Undecided,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ItemGateKind {
+    Covenant,
+    MeaningTower,
+    Vacuity,
+    Body,
+    Prerequisite,
+    MutationPolicy,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum ClauseTerminalState {
+    Discharged,
+    Refuted {
+        witness_sha256: String,
+    },
+    Undecided {
+        outcome: crate::outcome_matrix::SolverProgressClass,
+    },
+    NotAttempted {
+        cause: PortfolioStopCause,
+    },
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct ClauseAuthorityStamp(Option<String>);
+
+impl PartialEq for ClauseAuthorityStamp {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+impl Eq for ClauseAuthorityStamp {}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClauseCertification {
+    pub address: ClauseAddress,
+    pub artifact_sha256: String,
+    pub query_sha256: String,
+    pub expected_count: u32,
+    pub classification: ClassificationCertificate,
+    pub procedure: ClauseProcedure,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub position: Option<CertificationPosition>,
+    pub evidence: ClauseRouteEvidence,
+    pub terminal: ClauseTerminalState,
+    #[serde(skip)]
+    authority: ClauseAuthorityStamp,
+}
+
+impl ClauseCertification {
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn issued(
+        address: ClauseAddress,
+        artifact_sha256: String,
+        query_sha256: String,
+        expected_count: u32,
+        classification: ClassificationCertificate,
+        procedure: ClauseProcedure,
+        position: Option<CertificationPosition>,
+        evidence: ClauseRouteEvidence,
+        terminal: ClauseTerminalState,
+        authority: crate::check::ClauseAuthority,
+    ) -> Self {
+        Self {
+            address,
+            artifact_sha256,
+            query_sha256,
+            expected_count,
+            classification,
+            procedure,
+            position,
+            evidence,
+            terminal,
+            authority: ClauseAuthorityStamp(None),
+        }
+        .authoritative(authority)
+    }
+
+    pub(crate) fn authoritative(mut self, _authority: crate::check::ClauseAuthority) -> Self {
+        self.authority = ClauseAuthorityStamp(Some("pending-clause-seal-v1".into()));
+        self
+    }
+
+    fn authority_digest(&self, obligation: &ObligationResult) -> String {
+        let bytes = serde_json::to_vec(&(
+            (
+                &self.address,
+                &self.artifact_sha256,
+                &self.query_sha256,
+                self.expected_count,
+                &self.classification,
+                &self.procedure,
+                &self.position,
+                &self.evidence,
+                &self.terminal,
+            ),
+            (
+                &obligation.name,
+                &obligation.status,
+                &obligation.location,
+                &obligation.diagnostic,
+                &obligation.engine,
+                &obligation.trust,
+                &obligation.verdict,
+                &obligation.bv_shadow,
+                &obligation.reconstruction,
+            ),
+        ))
+        .expect("clause authority projection is serializable");
+        let mut hash = Sha256::new();
+        hash.update(b"thermite-live-clause-authority-v1");
+        hash.update(bytes);
+        hash.finalize()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+
+    fn seal_for(&mut self, obligation: &ObligationResult) {
+        assert_eq!(
+            self.authority.0.as_deref(),
+            Some("pending-clause-seal-v1"),
+            "only freshly issued clause evidence can acquire a content seal"
+        );
+        self.authority = ClauseAuthorityStamp(Some(self.authority_digest(obligation)));
+    }
+
+    fn has_valid_seal(&self, obligation: &ObligationResult) -> bool {
+        self.authority.0.as_deref() == Some(self.authority_digest(obligation).as_str())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ClausePortfolioKind {
+    AcceptedHomogeneous,
+    Heterogeneous,
+    Incomplete,
+    PolicyRejected,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClausePortfolio {
+    pub kind: ClausePortfolioKind,
+    pub clauses: Vec<ClauseCertification>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClauseOracleEntry {
+    pub certification: ClauseCertification,
+    pub status: ObligationStatus,
+    pub engine: Option<String>,
+    pub trust: Vec<String>,
+    pub verdict: Option<crate::verdict::CertVerdict>,
+    pub bv_shadow: Option<BvShadow>,
+    pub reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClauseOraclePortfolio {
+    pub clauses: Vec<ClauseOracleEntry>,
+    pub classification: Option<ClassificationCertificate>,
+    pub certification: Option<CertificationPosition>,
+    pub engine_attribution: Option<crate::engine::EngineAttribution>,
+    pub compatibility_burn: Option<crate::burn::BurnReceipt>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClausePortfolioError {
+    pub reason: String,
+}
+impl ClausePortfolioError {
+    fn new(reason: impl Into<String>) -> Self {
+        Self {
+            reason: reason.into(),
+        }
+    }
+}
+impl std::fmt::Display for ClausePortfolioError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid clause portfolio: {}", self.reason)
+    }
+}
+impl std::error::Error for ClausePortfolioError {}
+
+pub(crate) fn clause_terminal_witness_digest(
+    obligation: &ObligationResult,
+    reject: &Option<RejectReason>,
+) -> String {
+    let bytes = serde_json::to_vec(&(
+        &obligation.name,
+        &obligation.status,
+        &obligation.location,
+        &obligation.diagnostic,
+        &obligation.engine,
+        &obligation.trust,
+        &obligation.verdict,
+        &obligation.bv_shadow,
+        &obligation.reconstruction,
+        reject,
+    ))
+    .expect("terminal witness projection is serializable");
+    let mut hash = Sha256::new();
+    hash.update(b"thermite-clause-terminal-witness-v1");
+    hash.update(bytes);
+    hash.finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum ClassificationVerdict {
+    Admitted,
+    Rejected { reason: String },
+    Unknown { reason: String },
+}
+
+/// A schema-level failure: the coordinate tuple lands outside RFC-3's eight
+/// coherent cells.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IncoherentCertificationPosition {
+    pub reason: &'static str,
+}
+
+impl std::fmt::Display for IncoherentCertificationPosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "incoherent RFC-3 certification position: {}",
+            self.reason
+        )
+    }
+}
+
+impl std::error::Error for IncoherentCertificationPosition {}
+
+/// The seven order-elements in RFC-3 §3.2. Relax and unreconstructed cage
+/// routes are deliberately order-equivalent at `CompleteSolver`.
+// ASSURANCE_V2_PREDECESSOR forge::manifest::AssuranceElement compatibility_only
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum AssuranceElement {
+    NoClaim,
+    Runtime,
+    Bounded,
+    IncompleteSolver,
+    CompleteSolver,
+    EmpiricalLean,
+    CompleteLean,
+}
+
+impl CertificationPosition {
+    /// Reject every tuple outside RFC-3 §3.1's eight coherent cells.
+    pub fn validate(&self) -> Result<(), IncoherentCertificationPosition> {
+        // Self-dominance exercises the same comparison path used by declared
+        // floors; a newly-added cell cannot validate while being absent from
+        // the order relation.
+        let _ = self.dominates(self)?;
+        Ok(())
+    }
+
+    fn element(&self) -> Result<AssuranceElement, IncoherentCertificationPosition> {
+        use AssuranceElement::*;
+        use CertificationScope as S;
+        use RefutationChannel as R;
+        use ResidualTrust as T;
+
+        match (&self.scope, &self.refutation, self.residual_trust) {
+            (S::None, R::None, T::Fiat) => Ok(NoClaim),
+            (S::PerExecution, R::Abort, T::Fiat) => Ok(Runtime),
+            (S::Bounded { bound: a }, R::Trace { bound: b }, T::Solver) if a == b => Ok(Bounded),
+            (S::All, R::Incomplete, T::Solver) => Ok(IncompleteSolver),
+            (S::All, R::Complete, T::Solver) => Ok(CompleteSolver),
+            (S::All, R::Empirical, T::LeanChecked) => Ok(EmpiricalLean),
+            (S::All, R::Complete, T::LeanChecked) => Ok(CompleteLean),
+            (S::Bounded { .. }, R::Trace { .. }, T::Solver) => {
+                Err(IncoherentCertificationPosition {
+                    reason: "bounded scope and trace refutation must carry the same bound",
+                })
+            }
+            _ => Err(IncoherentCertificationPosition {
+                reason: "scope, refutation, and residual trust do not form an RFC-3 cell",
+            }),
+        }
+    }
+
+    /// Product-order comparison. `Some(Ordering)` means comparable; `None`
+    /// preserves RFC-3's intentionally incomparable solver/forge positions.
+    pub fn partial_cmp_assurance(
+        &self,
+        other: &Self,
+    ) -> Result<Option<std::cmp::Ordering>, IncoherentCertificationPosition> {
+        use std::cmp::Ordering;
+        use AssuranceElement::*;
+
+        let a = self.element()?;
+        let b = other.element()?;
+        if a == b {
+            return Ok(Some(Ordering::Equal));
+        }
+        let rank = |e| match e {
+            NoClaim => 0,
+            Runtime => 1,
+            Bounded => 2,
+            IncompleteSolver | EmpiricalLean => 3,
+            CompleteSolver => 4,
+            CompleteLean => 5,
+        };
+        let incomparable = matches!(
+            (a, b),
+            (EmpiricalLean, IncompleteSolver | CompleteSolver)
+                | (IncompleteSolver | CompleteSolver, EmpiricalLean)
+        );
+        if incomparable {
+            Ok(None)
+        } else {
+            Ok(Some(rank(a).cmp(&rank(b))))
+        }
+    }
+
+    /// True when this position meets a declared formal floor. Boundary values
+    /// must match exactly; platform/boundary assumptions are never silently
+    /// erased by the assurance order.
+    pub fn dominates(&self, floor: &Self) -> Result<bool, IncoherentCertificationPosition> {
+        if self.boundary != floor.boundary {
+            return Ok(false);
+        }
+        Ok(matches!(
+            self.partial_cmp_assurance(floor)?,
+            Some(std::cmp::Ordering::Equal | std::cmp::Ordering::Greater)
+        ))
+    }
+}
 
 /// The §9 assurance scope of a function (issue #17,
 /// `.design/forge/e2e-vs-boundary.md` REQ-2/REQ-3; `thermite-design.md` §9). The
@@ -219,6 +855,43 @@ pub enum Level {
     L4,
 }
 
+/// Temporary beta-line bridge for producers not yet converted to explicit
+/// classification certificates. L2 intentionally returns `None`: the scalar
+/// never stored its bound, so inventing one would repeat the lossy migration
+/// RFC-3 is removing.
+fn legacy_position(level: Level) -> Option<CertificationPosition> {
+    let (scope, refutation, residual_trust) = match level {
+        Level::L0 => (
+            CertificationScope::None,
+            RefutationChannel::None,
+            ResidualTrust::Fiat,
+        ),
+        Level::L1 => (
+            CertificationScope::PerExecution,
+            RefutationChannel::Abort,
+            ResidualTrust::Fiat,
+        ),
+        Level::L2 => return None,
+        Level::L3 => (
+            CertificationScope::All,
+            RefutationChannel::Incomplete,
+            ResidualTrust::Solver,
+        ),
+        Level::L4 => (
+            CertificationScope::All,
+            RefutationChannel::Complete,
+            ResidualTrust::Solver,
+        ),
+    };
+    Some(CertificationPosition {
+        scope,
+        refutation,
+        residual_trust,
+        discharged_trust: Vec::new(),
+        boundary: CertificationBoundary::EndToEnd,
+    })
+}
+
 /// The status of a single proof obligation (REQ-5). v0.1 records discharged or
 /// failed; the failure carries a source-located diagnostic (the §5.1
 /// "counterexamples, not adjectives" payload) rather than a bare boolean.
@@ -287,6 +960,9 @@ pub struct ObligationResult {
     /// its axiom report passed. Failed or unavailable replay leaves this absent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
+    /// Source-bound formal coordinates for migrated mixed-route clauses.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clause_certification: Option<ClauseCertification>,
 }
 
 /// Lock 1, the bv shadow FLAG (`.design/stage3-bv-reconstruction.md` REQ-3 / AC-4 — the
@@ -335,6 +1011,7 @@ impl ObligationResult {
             verdict: None,
             bv_shadow: None,
             reconstruction: None,
+            clause_certification: None,
         }
     }
 
@@ -355,7 +1032,14 @@ impl ObligationResult {
             verdict: None,
             bv_shadow: None,
             reconstruction: None,
+            clause_certification: None,
         }
+    }
+
+    pub(crate) fn with_clause_certification(mut self, mut clause: ClauseCertification) -> Self {
+        clause.seal_for(&self);
+        self.clause_certification = Some(clause);
+        self
     }
 
     /// Attach the schema-v2 per-clause attribution block (REQ-1/AC-4): the engine that
@@ -413,9 +1097,30 @@ pub struct ContractQuality {
     /// Mutation kill ratio `"killed/total"` (issue #12) — `"0/0"` (unscored) in
     /// #5; typed `String` to match the Appendix A `"17/18"` shape (OQ-1).
     pub mutants_killed: String,
+    /// Survivors removed from the denominator only after a proof of observable
+    /// equivalence. Omitted when zero to preserve pre-exclusion certificate JSON.
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub equivalent_mutants_excluded: usize,
     /// The surviving-mutant description (issue #12) — `None` (unscored) in #5.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub survivor: Option<String>,
+    /// Every addressed G1 mutation replay contribution used by the item policy.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub clause_mutation_replays: Vec<ClauseMutationReplay>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClauseMutationReplay {
+    pub mutant_sha256: String,
+    pub mutant: String,
+    pub address: ClauseAddress,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query_sha256: Option<String>,
+    pub outcome: crate::engine::MutationReplayOutcome,
+}
+
+fn is_zero_usize(value: &usize) -> bool {
+    *value == 0
 }
 
 impl ContractQuality {
@@ -427,7 +1132,9 @@ impl ContractQuality {
             tautology: false,
             vacuous_precondition: false,
             mutants_killed: "0/0".to_string(),
+            equivalent_mutants_excluded: 0,
             survivor: None,
+            clause_mutation_replays: Vec::new(),
         }
     }
 }
@@ -485,12 +1192,63 @@ pub struct RejectReason {
 /// (REQ-7) and mirrors Appendix A: `item`, `level`, `solver_time_ms`,
 /// `contract_quality`, `effects`, `slag`; the #5 additive schema surface
 /// (`obligations` — REQ-5; `suggested_move` — REQ-4) follows.
+#[derive(Debug, Clone, Default)]
+struct AuditAdmission {
+    live: bool,
+    verus: Option<VerusAuditAuthority>,
+    clause_policy_digest: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+struct VerusAuditAuthority {
+    item: String,
+    effects: Vec<String>,
+    query_identity: String,
+    succeeded: bool,
+}
+
+impl AuditAdmission {
+    fn live() -> Self {
+        Self {
+            live: true,
+            verus: None,
+            clause_policy_digest: None,
+        }
+    }
+}
+
+// Admission is deliberately outside the stable data contract. Equality of the
+// serialized certificate remains equality of its public evidence; the in-memory
+// capability only answers whether audit may treat that evidence as producer output.
+impl PartialEq for AuditAdmission {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for AuditAdmission {}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Certificate {
     /// The checked item's name.
     pub item: String,
     /// The assurance level (REQ-2: L3 iff verus reports 0 errors).
     pub level: Level,
+    /// RFC-3's authoritative certification tuple. During the beta migration the
+    /// historical `level` remains readable, but new producers persist this
+    /// independently inspectable surface and audit copies it verbatim.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) certification: Option<CertificationPosition>,
+    /// The pre-discharge fragment prognosis (RFC-3 R2-8). `None` only for
+    /// historical certificates and producers not yet migrated to the classifier
+    /// seam; never reconstructed from the post-discharge result.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) classification: Option<ClassificationCertificate>,
+    /// Non-serializable admission capability. Constructors mint it for live
+    /// producer output; deserialization defaults to unadmitted. Consequently a
+    /// persisted row is data to inspect, not authority that audit can project.
+    #[serde(skip)]
+    audit_admission: AuditAdmission,
     /// Wall-clock solver time in ms — non-deterministic, excluded from the
     /// oracle comparison (REQ-6; `conformance/README.md`). `#[serde(default)]`
     /// so the golden deterministic-subset cert (which omits this non-det field)
@@ -692,9 +1450,824 @@ pub struct Certificate {
     /// the `meaning_audit`/`covenant_evidence` additive precedents.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub burn: Option<crate::burn::BurnReceipt>,
+    /// Process-local typed result provenance. This is deliberately absent from
+    /// the public certificate wire format: live proof/policy producers stamp it
+    /// so later backend arbitration never has to rediscover authority from
+    /// display strings, while deserialized cache rows must pass the stricter
+    /// persisted adapter.
+    #[serde(skip)]
+    pub(crate) live_disposition: LiveDispositionStamp,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum LiveResultDisposition {
+    Accepted,
+    VerusTimeout,
+    TimeoutDegrade,
+    EngineUnknown,
+    Refuted,
+    WeakContract,
+    SemanticTautology,
+    VacuousPrecondition,
+    SettledOther(String),
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct LiveDispositionStamp(Option<LiveResultDisposition>);
+
+impl PartialEq for LiveDispositionStamp {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for LiveDispositionStamp {}
+
 impl Certificate {
+    /// Read the RFC-3 pair through one structural seam. A classification without
+    /// a position is rejected rather than projected as a partial claim. Legacy
+    /// position-only certificates remain readable during migration.
+    pub fn rfc3_coordinates(
+        &self,
+    ) -> Result<
+        Option<(&CertificationPosition, Option<&ClassificationCertificate>)>,
+        IncoherentCertificationPosition,
+    > {
+        match (&self.certification, &self.classification) {
+            (None, Some(_)) => Err(IncoherentCertificationPosition {
+                reason: "classification cannot exist without a certification position",
+            }),
+            (Some(_), None) if self.level == Level::L2 => Err(IncoherentCertificationPosition {
+                reason: "migrated L2 certification requires its classification pair",
+            }),
+            (Some(position), None)
+                if position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:")) =>
+            {
+                Err(IncoherentCertificationPosition {
+                    reason: "migrated L1 certification requires its classification pair",
+                })
+            }
+            (Some(position), None)
+                if position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-verus-query-v1:")) =>
+            {
+                Err(IncoherentCertificationPosition {
+                    reason: "migrated Verus certification requires its classification pair",
+                })
+            }
+            (Some(position), Some(classification))
+                if self.level != Level::L1
+                    && (position
+                        .discharged_trust
+                        .iter()
+                        .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:"))
+                        || classification.fragment.starts_with("thermite-l1-")) =>
+            {
+                Err(IncoherentCertificationPosition {
+                    reason: "migrated L1 evidence requires the legacy Level::L1 projection",
+                })
+            }
+            (Some(position), Some(classification))
+                if position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-verus-query-v1:"))
+                    != classification.fragment.starts_with("thermite-verus-") =>
+            {
+                Err(IncoherentCertificationPosition {
+                    reason: "migrated Verus query evidence and classification must remain paired",
+                })
+            }
+            (position, classification) => Ok(position
+                .as_ref()
+                .map(|position| (position, classification.as_ref()))),
+        }
+    }
+
+    /// Whether this row carries any structural sign of the migrated runtime-L1
+    /// producer. Audit uses this independently of the mutable legacy `level`, so
+    /// changing that projection cannot bypass checked-artifact validation.
+    pub(crate) fn requires_l1_artifact_validation(&self) -> bool {
+        self.level == Level::L1
+            || self
+                .classification
+                .as_ref()
+                .is_some_and(|classification| classification.fragment.starts_with("thermite-l1-"))
+            || self.certification.as_ref().is_some_and(|position| {
+                position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:"))
+                    || (position.scope == CertificationScope::PerExecution
+                        && position.refutation == RefutationChannel::Abort
+                        && position.residual_trust == ResidualTrust::Fiat)
+            })
+    }
+
+    /// Whether this value came from a live producer (or the separately validated
+    /// proof-cache boundary), rather than directly from attacker-mutable JSON.
+    pub(crate) fn is_audit_admitted(&self) -> bool {
+        self.audit_admission.live
+    }
+
+    fn clause_policy_digest(&self) -> String {
+        let clause_coordinates: Vec<_> = self
+            .obligations
+            .iter()
+            .filter_map(|obligation| {
+                obligation
+                    .clause_certification
+                    .as_ref()
+                    .map(|clause| (&clause.address, &clause.procedure, &clause.terminal))
+            })
+            .collect();
+        let bytes = serde_json::to_vec(&(
+            &self.item,
+            &self.contract_quality,
+            &self.burn,
+            &self.reject,
+            clause_coordinates,
+        ))
+        .expect("clause policy authority projection is serializable");
+        let mut hash = Sha256::new();
+        hash.update(b"thermite-live-clause-policy-authority-v1");
+        hash.update(bytes);
+        hash.finalize()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+
+    /// Validate and expose the authoritative mixed-route clause portfolio.
+    pub fn clause_portfolio(
+        &self,
+        final_accepted: bool,
+    ) -> Result<Option<ClausePortfolio>, ClausePortfolioError> {
+        let clauses: Vec<(&ObligationResult, &ClauseCertification)> = self
+            .obligations
+            .iter()
+            .filter_map(|obligation| {
+                obligation
+                    .clause_certification
+                    .as_ref()
+                    .map(|c| (obligation, c))
+            })
+            .collect();
+        if clauses.is_empty() {
+            return Ok(None);
+        }
+        if self.audit_admission.clause_policy_digest.as_deref()
+            != Some(self.clause_policy_digest().as_str())
+        {
+            return Err(ClausePortfolioError::new(
+                "clause mutation policy lacks an intact live producer content seal",
+            ));
+        }
+        if clauses
+            .iter()
+            .any(|(obligation, clause)| !clause.has_valid_seal(obligation))
+        {
+            return Err(ClausePortfolioError::new(
+                "clause data lacks an intact live producer content seal",
+            ));
+        }
+        let expected = clauses[0].1.expected_count as usize;
+        if expected == 0 || clauses.len() != expected {
+            return Err(ClausePortfolioError::new(
+                "clause inventory is not an exact non-empty range",
+            ));
+        }
+        let item = &clauses[0].1.address.item;
+        if item != &self.item {
+            return Err(ClausePortfolioError::new(
+                "clause portfolio item does not match its certificate",
+            ));
+        }
+        let artifact = &clauses[0].1.artifact_sha256;
+        let mut prior_terminal: std::collections::HashMap<ClauseAddress, ClauseTerminalKind> =
+            std::collections::HashMap::new();
+        for (ordinal, (obligation, clause)) in clauses.iter().enumerate() {
+            if clause.address.item != *item
+                || clause.address.family != ClauseFamily::Ensures
+                || clause.address.index as usize != ordinal
+                || clause.expected_count as usize != expected
+                || clause.artifact_sha256 != *artifact
+                || clause.artifact_sha256.is_empty()
+                || clause.query_sha256.is_empty()
+                || !clause.procedure.has_governed_frame()
+                || clause.classification.fragment != clause.procedure.expected_fragment()
+            {
+                return Err(ClausePortfolioError::new(
+                    "clause addresses or fingerprints do not form one exact portfolio",
+                ));
+            }
+            clause
+                .position
+                .as_ref()
+                .map(CertificationPosition::validate)
+                .transpose()
+                .map_err(|e| ClausePortfolioError::new(e.to_string()))?;
+            let route_coherent = match (&clause.procedure, &clause.evidence) {
+                (
+                    ClauseProcedure::BitVector { .. },
+                    ClauseRouteEvidence::BitVector {
+                        query_sha256,
+                        shadow,
+                        reconstruction,
+                    },
+                ) => {
+                    query_sha256 == &clause.query_sha256
+                        && obligation.bv_shadow.as_ref() == Some(shadow)
+                        && obligation.reconstruction.as_ref() == reconstruction.as_ref()
+                }
+                (
+                    ClauseProcedure::Epr { .. },
+                    ClauseRouteEvidence::Epr {
+                        query_sha256,
+                        reconstruction,
+                        ..
+                    },
+                ) => {
+                    query_sha256 == &clause.query_sha256
+                        && obligation.reconstruction.as_ref() == reconstruction.as_ref()
+                        && obligation.bv_shadow.is_none()
+                }
+                (
+                    ClauseProcedure::Nlsat { .. },
+                    ClauseRouteEvidence::Nlsat {
+                        query_sha256,
+                        result,
+                        reconstruction,
+                    },
+                ) => {
+                    query_sha256 == &clause.query_sha256
+                        && !result.trim().is_empty()
+                        && obligation.bv_shadow.is_none()
+                        && obligation.reconstruction.as_ref() == reconstruction.as_ref()
+                }
+                (
+                    ClauseProcedure::AuthorLean { .. },
+                    ClauseRouteEvidence::AuthorLean {
+                        query_sha256,
+                        proof_sha256,
+                        checker,
+                        evidence_key_sha256,
+                        axioms,
+                        ..
+                    },
+                ) => {
+                    query_sha256 == &clause.query_sha256
+                        && !proof_sha256.is_empty()
+                        && checker == "lean-interactive axiom-gated replay v1"
+                        && !evidence_key_sha256.is_empty()
+                        && axioms.iter().map(String::as_str).eq([
+                            "propext",
+                            "Classical.choice",
+                            "Quot.sound",
+                        ])
+                        && obligation.bv_shadow.is_none()
+                        && obligation.reconstruction.is_none()
+                }
+                (procedure, evidence) if evidence.is_attempt_for(procedure) => evidence
+                    .attempted_fields()
+                    .is_some_and(|(query, _, detail, _)| {
+                        query == &clause.query_sha256 && !detail.trim().is_empty()
+                    }),
+                (_, ClauseRouteEvidence::NotAttempted) => {
+                    matches!(clause.terminal, ClauseTerminalState::NotAttempted { .. })
+                }
+                _ => false,
+            };
+            if !route_coherent {
+                return Err(ClausePortfolioError::new(
+                    "clause route evidence contradicts its procedure or obligation evidence",
+                ));
+            }
+            match (&clause.terminal, &obligation.status) {
+                (ClauseTerminalState::Discharged, ObligationStatus::Discharged) => {
+                    let (fragment, expected_engine, expected_trust, expected_position) =
+                        match (&clause.procedure, &clause.evidence) {
+                            (
+                                ClauseProcedure::BitVector { .. },
+                                ClauseRouteEvidence::BitVector { reconstruction, .. },
+                            ) => {
+                                let reconstructed = reconstruction.is_some();
+                                (
+                                    "thermite-bv-clause-v1",
+                                    crate::engine::EngineName::BitVector.tag(),
+                                    if reconstructed {
+                                        crate::engine::bv_kernel_checked_trust_profile().items
+                                    } else {
+                                        crate::engine::bv_trust_profile().items
+                                    },
+                                    CertificationPosition {
+                                        scope: CertificationScope::All,
+                                        refutation: RefutationChannel::Complete,
+                                        residual_trust: if reconstructed {
+                                            ResidualTrust::LeanChecked
+                                        } else {
+                                            ResidualTrust::Solver
+                                        },
+                                        discharged_trust: Vec::new(),
+                                        boundary: CertificationBoundary::EndToEnd,
+                                    },
+                                )
+                            }
+                            (
+                                ClauseProcedure::Epr { .. },
+                                ClauseRouteEvidence::Epr {
+                                    reconstruction: Some(_),
+                                    ..
+                                },
+                            ) => (
+                                "thermite-epr-clause-v1",
+                                crate::engine::EngineName::Epr.tag(),
+                                crate::engine::epr_kernel_checked_trust_profile().items,
+                                CertificationPosition {
+                                    scope: CertificationScope::All,
+                                    refutation: RefutationChannel::Complete,
+                                    residual_trust: ResidualTrust::LeanChecked,
+                                    discharged_trust: Vec::new(),
+                                    boundary: CertificationBoundary::EndToEnd,
+                                },
+                            ),
+                            (
+                                ClauseProcedure::Nlsat { .. },
+                                ClauseRouteEvidence::Nlsat { reconstruction, .. },
+                            ) => {
+                                let reconstructed = reconstruction.is_some();
+                                (
+                                    "thermite-nlsat-clause-v1",
+                                    crate::engine::EngineName::Nlsat.tag(),
+                                    if reconstructed {
+                                        crate::engine::lia_kernel_checked_trust_profile().items
+                                    } else {
+                                        crate::engine::nlsat_trust_profile().items
+                                    },
+                                    CertificationPosition {
+                                        scope: CertificationScope::All,
+                                        refutation: RefutationChannel::Complete,
+                                        residual_trust: if reconstructed {
+                                            ResidualTrust::LeanChecked
+                                        } else {
+                                            ResidualTrust::Solver
+                                        },
+                                        discharged_trust: Vec::new(),
+                                        boundary: CertificationBoundary::EndToEnd,
+                                    },
+                                )
+                            }
+                            (
+                                ClauseProcedure::AuthorLean { .. },
+                                ClauseRouteEvidence::AuthorLean { .. },
+                            ) => (
+                                "thermite-author-lean-clause-v1",
+                                crate::engine::EngineName::LeanInteractive.tag(),
+                                crate::engine::trust_profile_interactive().items,
+                                CertificationPosition {
+                                    scope: CertificationScope::All,
+                                    refutation: RefutationChannel::Empirical,
+                                    residual_trust: ResidualTrust::LeanChecked,
+                                    discharged_trust: Vec::new(),
+                                    boundary: CertificationBoundary::EndToEnd,
+                                },
+                            ),
+                            _ => {
+                                return Err(ClausePortfolioError::new(
+                                    "discharged clause lacks procedure-specific evidence",
+                                ));
+                            }
+                        };
+                    if clause.position.is_none()
+                        || clause.classification.verdict != ClassificationVerdict::Admitted
+                        || clause.classification.fragment != fragment
+                        || clause.position.as_ref() != Some(&expected_position)
+                        || obligation.engine.as_deref() != Some(expected_engine)
+                        || obligation.trust != expected_trust
+                        || obligation.verdict != Some(crate::verdict::CertVerdict::Proved)
+                        || matches!(
+                            clause.evidence,
+                            ClauseRouteEvidence::BitVectorAttempted { .. }
+                                | ClauseRouteEvidence::EprAttempted { .. }
+                                | ClauseRouteEvidence::NlsatAttempted { .. }
+                                | ClauseRouteEvidence::AuthorLeanAttempted { .. }
+                                | ClauseRouteEvidence::NotAttempted
+                        )
+                    {
+                        return Err(ClausePortfolioError::new(
+                            "discharged clause lacks admitted coherent coordinates",
+                        ));
+                    }
+                }
+                (ClauseTerminalState::Refuted { witness_sha256 }, ObligationStatus::Failed)
+                    if !witness_sha256.is_empty()
+                        && witness_sha256
+                            == &clause_terminal_witness_digest(obligation, &self.reject)
+                        && clause.position.is_none()
+                        && clause.classification.verdict == ClassificationVerdict::Admitted
+                        && obligation.engine.as_deref()
+                            == Some(clause.procedure.expected_engine())
+                        && matches!(
+                            obligation.verdict,
+                            Some(crate::verdict::CertVerdict::Counterexample { .. })
+                        )
+                        && clause.evidence.attempted_fields().is_some_and(
+                            |(_, outcome, _, evidence_witness)| {
+                                *outcome
+                                    == crate::outcome_matrix::SolverProgressClass::Counterexample
+                                    && evidence_witness.as_ref() == Some(witness_sha256)
+                            },
+                        ) =>
+                {
+                    prior_terminal.insert(clause.address.clone(), ClauseTerminalKind::Refuted);
+                }
+                (ClauseTerminalState::Undecided { outcome }, ObligationStatus::Failed)
+                    if clause.position.is_none()
+                        && matches!(
+                            clause.classification.verdict,
+                            ClassificationVerdict::Unknown { .. }
+                        )
+                        && obligation
+                            .engine
+                            .as_deref()
+                            .is_none_or(|engine| engine == clause.procedure.expected_engine())
+                        && !matches!(
+                            obligation.verdict,
+                            Some(crate::verdict::CertVerdict::Proved)
+                                | Some(crate::verdict::CertVerdict::Counterexample { .. })
+                        )
+                        && clause.evidence.attempted_fields().is_some_and(
+                            |(_, evidence_outcome, _, witness)| {
+                                evidence_outcome == outcome && witness.is_none()
+                            },
+                        ) =>
+                {
+                    prior_terminal.insert(clause.address.clone(), ClauseTerminalKind::Undecided);
+                }
+                (ClauseTerminalState::NotAttempted { cause }, ObligationStatus::Failed) => {
+                    if clause.position.is_some()
+                        || !matches!(
+                            clause.classification.verdict,
+                            ClassificationVerdict::Unknown { .. }
+                        )
+                        || obligation.engine.is_some()
+                        || !obligation.trust.is_empty()
+                        || obligation.verdict.is_some()
+                        || obligation.bv_shadow.is_some()
+                        || obligation.reconstruction.is_some()
+                    {
+                        return Err(ClausePortfolioError::new(
+                            "not-attempted clause carries attempted-route authority",
+                        ));
+                    }
+                    match cause {
+                        PortfolioStopCause::ClauseTerminal { address, terminal } => {
+                            if address.index >= clause.address.index
+                                || prior_terminal.get(address) != Some(terminal)
+                            {
+                                return Err(ClausePortfolioError::new("not-attempted cause is not rooted in an earlier terminal clause"));
+                            }
+                        }
+                        PortfolioStopCause::ItemGate { detail, .. } if detail.trim().is_empty() => {
+                            return Err(ClausePortfolioError::new(
+                                "item-gate cause requires an outcome",
+                            ));
+                        }
+                        PortfolioStopCause::ItemGate { gate, class, .. } => {
+                            let cause = self.reject.as_ref().map(|reason| reason.cause.as_str());
+                            let (matches_gate, expected_class) = match gate {
+                                ItemGateKind::Covenant => (
+                                    cause.is_some_and(|c| c.starts_with("Covenant")),
+                                    if cause == Some("CovenantRefuted") {
+                                        crate::outcome_matrix::OutcomeClass::Counterexample
+                                    } else {
+                                        crate::outcome_matrix::OutcomeClass::InvalidSource
+                                    },
+                                ),
+                                ItemGateKind::MeaningTower => (
+                                    cause == Some("DefinitionTowerBudget"),
+                                    crate::outcome_matrix::OutcomeClass::ResourceExhausted,
+                                ),
+                                ItemGateKind::Vacuity => (
+                                    cause == Some("VacuousPrecondition"),
+                                    crate::outcome_matrix::OutcomeClass::UnsupportedPolicy,
+                                ),
+                                ItemGateKind::Body => (
+                                    cause == Some("ForgeGateNoBody"),
+                                    crate::outcome_matrix::OutcomeClass::UnsupportedLanguage,
+                                ),
+                                ItemGateKind::Prerequisite => (
+                                    cause.is_some_and(|c| {
+                                        matches!(c, "ForgeGateMissingProof" | "Prerequisite")
+                                    }),
+                                    crate::outcome_matrix::OutcomeClass::InvalidSource,
+                                ),
+                                ItemGateKind::MutationPolicy => (
+                                    cause.is_some_and(|c| {
+                                        matches!(c, "WeakContract" | "MutationPolicy")
+                                    }),
+                                    crate::outcome_matrix::OutcomeClass::UnsupportedPolicy,
+                                ),
+                            };
+                            if !matches_gate || *class != expected_class {
+                                return Err(ClausePortfolioError::new(
+                                    "item-gate stop cause contradicts certificate policy evidence",
+                                ));
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    return Err(ClausePortfolioError::new(
+                        "terminal state contradicts obligation status",
+                    ))
+                }
+            }
+        }
+        let author_burns: Vec<&crate::burn::BurnReceipt> = clauses
+            .iter()
+            .filter_map(|(_, clause)| match &clause.evidence {
+                ClauseRouteEvidence::AuthorLean { burn, .. } => Some(burn),
+                _ => None,
+            })
+            .collect();
+        let burn_compatible = match author_burns.as_slice() {
+            [only] => self.burn.as_ref() == Some(*only),
+            [] | [_, _, ..] => self.burn.is_none(),
+        };
+        if !burn_compatible {
+            return Err(ClausePortfolioError::new(
+                "certificate-level compatibility burn contradicts clause-local evidence",
+            ));
+        }
+        let all_discharged = clauses
+            .iter()
+            .all(|(_, c)| matches!(c.terminal, ClauseTerminalState::Discharged));
+        let author_addresses: std::collections::HashSet<_> = clauses
+            .iter()
+            .filter_map(|(_, clause)| {
+                matches!(clause.procedure, ClauseProcedure::AuthorLean { .. })
+                    .then_some(clause.address.clone())
+            })
+            .collect();
+        let replays = &self.contract_quality.clause_mutation_replays;
+        if all_discharged && !author_addresses.is_empty() && replays.is_empty() {
+            return Err(ClausePortfolioError::new(
+                "an author-Lean portfolio lacks its complete mutation replay matrix",
+            ));
+        }
+        if !replays.is_empty() {
+            let expected_addresses: std::collections::HashSet<_> = clauses
+                .iter()
+                .map(|(_, clause)| clause.address.clone())
+                .collect();
+            let procedures_by_address: std::collections::HashMap<_, _> = clauses
+                .iter()
+                .map(|(_, clause)| (clause.address.clone(), &clause.procedure))
+                .collect();
+            let mut by_mutant: std::collections::BTreeMap<&str, Vec<&ClauseMutationReplay>> =
+                std::collections::BTreeMap::new();
+            for replay in replays {
+                if replay.mutant_sha256.is_empty() || replay.mutant.trim().is_empty() {
+                    return Err(ClausePortfolioError::new(
+                        "mutation replay lacks a bound mutant identity",
+                    ));
+                }
+                by_mutant
+                    .entry(replay.mutant_sha256.as_str())
+                    .or_default()
+                    .push(replay);
+            }
+            let mut killed = 0usize;
+            let mut scored = 0usize;
+            let mut surviving_mutants = Vec::new();
+            for group in by_mutant.values() {
+                let seen: std::collections::HashSet<_> =
+                    group.iter().map(|replay| replay.address.clone()).collect();
+                if group.len() != expected_addresses.len() || seen != expected_addresses {
+                    return Err(ClausePortfolioError::new(
+                        "mutation replay does not contribute exactly once at every clause address",
+                    ));
+                }
+                if group.iter().any(|replay| replay.mutant != group[0].mutant) {
+                    return Err(ClausePortfolioError::new(
+                        "one mutant digest names contradictory mutation descriptions",
+                    ));
+                }
+                let mut applicable = false;
+                let mut all_applicable_discharged = true;
+                let mut mutant_killed = false;
+                for replay in group {
+                    let Some(procedure) = procedures_by_address.get(&replay.address) else {
+                        return Err(ClausePortfolioError::new(
+                            "mutation replay address is outside the clause portfolio",
+                        ));
+                    };
+                    if replay.query_sha256.as_ref().is_some_and(String::is_empty) {
+                        return Err(ClausePortfolioError::new(
+                            "mutation replay carries an empty query identity",
+                        ));
+                    }
+                    if matches!(
+                        replay.outcome,
+                        crate::engine::MutationReplayOutcome::ProofRejected
+                            | crate::engine::MutationReplayOutcome::Counterexample
+                            | crate::engine::MutationReplayOutcome::Discharged
+                    ) && replay.query_sha256.is_none()
+                    {
+                        return Err(ClausePortfolioError::new(
+                            "decisive mutation replay lacks its exact query identity",
+                        ));
+                    }
+                    match (procedure, &replay.outcome) {
+                        (
+                            ClauseProcedure::Nlsat { .. },
+                            crate::engine::MutationReplayOutcome::Inapplicable,
+                        ) => {}
+                        (
+                            ClauseProcedure::AuthorLean { .. },
+                            crate::engine::MutationReplayOutcome::Inapplicable,
+                        )
+                        | (
+                            ClauseProcedure::Nlsat { .. },
+                            crate::engine::MutationReplayOutcome::Discharged
+                            | crate::engine::MutationReplayOutcome::ProofRejected
+                            | crate::engine::MutationReplayOutcome::Counterexample
+                            | crate::engine::MutationReplayOutcome::Unavailable
+                            | crate::engine::MutationReplayOutcome::Undecided,
+                        ) => {
+                            return Err(ClausePortfolioError::new(
+                                "mutation replay outcome contradicts its clause procedure",
+                            ));
+                        }
+                        (_, crate::engine::MutationReplayOutcome::ProofRejected)
+                        | (_, crate::engine::MutationReplayOutcome::Counterexample) => {
+                            applicable = true;
+                            mutant_killed = true;
+                        }
+                        (_, crate::engine::MutationReplayOutcome::Discharged) => {
+                            applicable = true;
+                        }
+                        (_, crate::engine::MutationReplayOutcome::Unavailable)
+                        | (_, crate::engine::MutationReplayOutcome::Undecided) => {
+                            applicable = true;
+                            all_applicable_discharged = false;
+                        }
+                        (_, crate::engine::MutationReplayOutcome::Inapplicable) => {}
+                    }
+                }
+                if mutant_killed {
+                    killed += 1;
+                    scored += 1;
+                } else if applicable && all_applicable_discharged {
+                    scored += 1;
+                    surviving_mutants.push(group[0].mutant.as_str());
+                }
+            }
+            if self.contract_quality.mutants_killed != format!("{killed}/{scored}")
+                || self.contract_quality.equivalent_mutants_excluded != 0
+                || match (
+                    &self.contract_quality.survivor,
+                    surviving_mutants.as_slice(),
+                ) {
+                    (None, []) => false,
+                    (Some(recorded), survivors) => {
+                        !survivors.iter().any(|survivor| *survivor == recorded)
+                    }
+                    _ => true,
+                }
+            {
+                return Err(ClausePortfolioError::new(
+                    "published mutation score does not equal the addressed replay fold",
+                ));
+            }
+        }
+        let first = clauses[0];
+        let homogeneous = all_discharged
+            && clauses.iter().all(|(obligation, c)| {
+                c.classification == first.1.classification
+                    && c.position == first.1.position
+                    && c.procedure == first.1.procedure
+                    && obligation.engine == first.0.engine
+                    && obligation.trust == first.0.trust
+            });
+        let kind = if !all_discharged {
+            ClausePortfolioKind::Incomplete
+        } else if !final_accepted {
+            ClausePortfolioKind::PolicyRejected
+        } else if homogeneous {
+            ClausePortfolioKind::AcceptedHomogeneous
+        } else {
+            ClausePortfolioKind::Heterogeneous
+        };
+        if kind == ClausePortfolioKind::AcceptedHomogeneous {
+            let expected_attr =
+                first
+                    .0
+                    .engine
+                    .as_ref()
+                    .map(|engine| crate::engine::EngineAttribution {
+                        engine: engine.clone(),
+                        trust_profile: first.0.trust.clone(),
+                    });
+            if self.classification.as_ref() != Some(&first.1.classification)
+                || self.certification.as_ref() != first.1.position.as_ref()
+                || self.engine_attribution != expected_attr
+            {
+                return Err(ClausePortfolioError::new(
+                    "homogeneous portfolio disagrees with singular authority",
+                ));
+            }
+        } else if self.classification.is_some()
+            || self.certification.is_some()
+            || self.engine_attribution.is_some()
+        {
+            return Err(ClausePortfolioError::new(
+                "non-homogeneous or rejected portfolio carries singular authority",
+            ));
+        }
+        Ok(Some(ClausePortfolio {
+            kind,
+            clauses: clauses.into_iter().map(|(_, c)| c.clone()).collect(),
+        }))
+    }
+
+    pub(crate) fn with_clause_portfolio(
+        mut self,
+        obligations: Vec<ObligationResult>,
+        final_accepted: bool,
+    ) -> Result<Self, ClausePortfolioError> {
+        self.obligations = obligations;
+        self.certification = None;
+        self.classification = None;
+        self.engine_attribution = None;
+        let clauses: Vec<&ObligationResult> = self
+            .obligations
+            .iter()
+            .filter(|o| o.clause_certification.is_some())
+            .collect();
+        let all_discharged = !clauses.is_empty()
+            && clauses.iter().all(|o| {
+                matches!(
+                    o.clause_certification.as_ref().unwrap().terminal,
+                    ClauseTerminalState::Discharged
+                )
+            });
+        let homogeneous = all_discharged
+            && clauses.iter().skip(1).all(|o| {
+                let a = clauses[0];
+                let x = a.clause_certification.as_ref().unwrap();
+                let y = o.clause_certification.as_ref().unwrap();
+                x.classification == y.classification
+                    && x.position == y.position
+                    && x.procedure == y.procedure
+                    && a.engine == o.engine
+                    && a.trust == o.trust
+            });
+        if final_accepted && homogeneous {
+            let first = clauses[0];
+            let clause = first.clause_certification.as_ref().unwrap();
+            self.classification = Some(clause.classification.clone());
+            self.certification = clause.position.clone();
+            self.engine_attribution =
+                first
+                    .engine
+                    .as_ref()
+                    .map(|engine| crate::engine::EngineAttribution {
+                        engine: engine.clone(),
+                        trust_profile: first.trust.clone(),
+                    });
+        }
+        self.audit_admission.clause_policy_digest = Some(self.clause_policy_digest());
+        self.clause_portfolio(final_accepted)?;
+        if final_accepted {
+            // Mixed-route producers return early from the ordinary arbiter path,
+            // so this sealed assembler is the point at which their accepted live
+            // disposition becomes known. Audit must not reinterpret an unstamped,
+            // all-discharged portfolio as policy-rejected.
+            self.live_disposition = LiveDispositionStamp(Some(LiveResultDisposition::Accepted));
+        }
+        Ok(self)
+    }
+
+    pub(crate) fn requires_verus_artifact_validation(&self) -> bool {
+        self.audit_admission.verus.is_some()
+            || self.classification.as_ref().is_some_and(|classification| {
+                classification.fragment.starts_with("thermite-verus-")
+            })
+            || self.certification.as_ref().is_some_and(|position| {
+                position
+                    .discharged_trust
+                    .iter()
+                    .any(|fact| fact.starts_with("thermite-verus-query-v1:"))
+            })
+    }
+
     /// Assemble a #5 certificate from the pipeline data (REQ-2). `check.rs`
     /// derives `level`/`obligations` from verus and `effects` from the item's
     /// `fx` row; the forward-declared and reserved fields take their #5
@@ -709,6 +2282,9 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level,
+            certification: legacy_position(level),
+            classification: None,
+            audit_admission: AuditAdmission::live(),
             solver_time_ms,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -729,6 +2305,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
     }
 
@@ -758,6 +2335,9 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L0,
+            certification: legacy_position(Level::L0),
+            classification: None,
+            audit_admission: AuditAdmission::live(),
             solver_time_ms,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -778,6 +2358,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
     }
 
@@ -791,6 +2372,15 @@ impl Certificate {
     pub fn with_cached(mut self, cached: bool) -> Self {
         self.cached = cached;
         self
+    }
+
+    pub(crate) fn with_live_disposition(mut self, disposition: LiveResultDisposition) -> Self {
+        self.live_disposition = LiveDispositionStamp(Some(disposition));
+        self
+    }
+
+    pub(crate) fn live_disposition(&self) -> Option<&LiveResultDisposition> {
+        self.live_disposition.0.as_ref()
     }
 
     /// Graduate the two §7.1 structural-triage `contract_quality` bools to their
@@ -817,6 +2407,9 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L1,
+            certification: legacy_position(Level::L1),
+            classification: None,
+            audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -839,6 +2432,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
     }
@@ -859,6 +2453,9 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L1,
+            certification: legacy_position(Level::L1),
+            classification: None,
+            audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -881,6 +2478,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
     }
@@ -902,6 +2500,9 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L0,
+            certification: legacy_position(Level::L0),
+            classification: None,
+            audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -922,6 +2523,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
     }
 
@@ -975,6 +2577,25 @@ impl Certificate {
     pub fn with_mutation_score(mut self, mutants_killed: String, survivor: Option<String>) -> Self {
         self.contract_quality.mutants_killed = mutants_killed;
         self.contract_quality.survivor = survivor;
+        self
+    }
+
+    pub fn with_mutation_score_and_equivalents(
+        self,
+        mutants_killed: String,
+        survivor: Option<String>,
+        equivalent_mutants_excluded: usize,
+    ) -> Self {
+        let mut scored = self.with_mutation_score(mutants_killed, survivor);
+        scored.contract_quality.equivalent_mutants_excluded = equivalent_mutants_excluded;
+        scored
+    }
+
+    pub(crate) fn with_clause_mutation_replays(
+        mut self,
+        replays: Vec<ClauseMutationReplay>,
+    ) -> Self {
+        self.contract_quality.clause_mutation_replays = replays;
         self
     }
 
@@ -1056,8 +2677,405 @@ impl Certificate {
     /// L3 fn whose closure crosses a boundary stays `Level::L3` + `ToBoundary`).
     /// Set by `check::check_file_with_options` after `closure::classify`.
     pub fn with_assurance_scope(mut self, scope: AssuranceScope) -> Self {
+        if let Some(position) = &mut self.certification {
+            position.boundary = match &scope {
+                AssuranceScope::EndToEnd => CertificationBoundary::EndToEnd,
+                AssuranceScope::ToBoundary { via } => {
+                    CertificationBoundary::ToBoundary { via: via.clone() }
+                }
+            };
+        }
         self.assurance_scope = Some(scope);
         self
+    }
+
+    /// Atomically attach the RFC-3 post-classification position and the
+    /// pre-discharge classifier prognosis. This is the migration seam for new
+    /// producers: neither half is persisted when the position is incoherent or
+    /// the classifier identity is empty.
+    pub fn with_rfc3_coordinates(
+        mut self,
+        position: CertificationPosition,
+        classification: ClassificationCertificate,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        position.validate()?;
+        if classification.fragment.trim().is_empty() {
+            return Err(IncoherentCertificationPosition {
+                reason: "classification fragment identity must be non-empty",
+            });
+        }
+        self.certification = Some(position);
+        self.classification = Some(classification);
+        Ok(self)
+    }
+
+    /// Attach the runtime-enforced L1 RFC-3 pair from one opaque checked-lowering
+    /// artifact. The wrapper identity is retained as a discharged bridge fact,
+    /// which both binds the certificate to emitted code and marks migrated L1
+    /// documents for fail-closed partial-pair validation. Historical unmarked L1
+    /// position-only documents remain readable.
+    pub fn with_l1_artifact(
+        self,
+        artifact: &thermite_lower::L1Artifact,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        if self.level != Level::L1 {
+            return Err(IncoherentCertificationPosition {
+                reason: "an L1 artifact can only certify Level::L1",
+            });
+        }
+        if self.item != artifact.item() {
+            return Err(IncoherentCertificationPosition {
+                reason: "the L1 artifact item must match the certificate item",
+            });
+        }
+        if self.effects != effects_of(artifact.effect_row()) {
+            return Err(IncoherentCertificationPosition {
+                reason: "the L1 artifact effect row must match the certificate effect row",
+            });
+        }
+        let boundary = match artifact.route() {
+            thermite_lower::L1Route::Runtime | thermite_lower::L1Route::Diverge => {
+                if self.slag || self.boundary {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "runtime/diverge L1 artifacts cannot certify slag or FFI rows",
+                    });
+                }
+                CertificationBoundary::EndToEnd
+            }
+            thermite_lower::L1Route::Slag => {
+                if !self.slag || self.boundary {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "a slag L1 artifact requires a slag certificate row",
+                    });
+                }
+                CertificationBoundary::ToBoundary {
+                    via: artifact.item().to_string(),
+                }
+            }
+            thermite_lower::L1Route::Boundary { target } => {
+                if !self.boundary || self.slag || self.boundary_target.as_deref() != Some(target) {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "an FFI L1 artifact requires the same certificate boundary target",
+                    });
+                }
+                CertificationBoundary::ToBoundary {
+                    via: artifact.item().to_string(),
+                }
+            }
+        };
+        let attached = self.with_rfc3_coordinates(
+            CertificationPosition {
+                scope: CertificationScope::PerExecution,
+                refutation: RefutationChannel::Abort,
+                residual_trust: ResidualTrust::Fiat,
+                discharged_trust: vec![artifact.wrapper_identity().to_string()],
+                boundary,
+            },
+            ClassificationCertificate {
+                fragment: artifact.classifier_fragment().to_string(),
+                verdict: ClassificationVerdict::Admitted,
+            },
+        )?;
+        attached.validate_l1_artifact(artifact, None)?;
+        Ok(attached)
+    }
+
+    /// Attach the homogeneous general-Verus route from checked lowering. The
+    /// classifier and query identity exist before solver execution and therefore
+    /// remain identical on proof success and every non-success outcome.
+    pub fn with_verus_artifact(
+        self,
+        artifact: &thermite_lower::L3Artifact,
+        succeeded: bool,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        let expected_level = if succeeded { Level::L3 } else { Level::L0 };
+        if self.level != expected_level || self.item != artifact.item() {
+            return Err(IncoherentCertificationPosition {
+                reason: "the Verus artifact item/outcome must match the certificate",
+            });
+        }
+        let expected_effects = artifact
+            .effect_row()
+            .map_or_else(|| vec!["pure".to_string()], effects_of);
+        if self.effects != expected_effects {
+            return Err(IncoherentCertificationPosition {
+                reason: "the Verus artifact effect row must match the certificate",
+            });
+        }
+        let (scope, refutation, residual_trust) = if succeeded {
+            (
+                CertificationScope::All,
+                RefutationChannel::Incomplete,
+                ResidualTrust::Solver,
+            )
+        } else {
+            (
+                CertificationScope::None,
+                RefutationChannel::None,
+                ResidualTrust::Fiat,
+            )
+        };
+        let mut attached = self.with_rfc3_coordinates(
+            CertificationPosition {
+                scope,
+                refutation,
+                residual_trust,
+                discharged_trust: vec![artifact.query_identity().to_string()],
+                boundary: CertificationBoundary::EndToEnd,
+            },
+            ClassificationCertificate {
+                fragment: artifact.classifier_fragment().to_string(),
+                verdict: ClassificationVerdict::Admitted,
+            },
+        )?;
+        attached.audit_admission.verus = Some(VerusAuditAuthority {
+            item: artifact.item().to_string(),
+            effects: expected_effects,
+            query_identity: artifact.query_identity().to_string(),
+            succeeded,
+        });
+        attached.validate_verus_artifact_authority()?;
+        Ok(attached)
+    }
+
+    /// Revalidate the persisted general-Verus coordinates against the private
+    /// live-producer facts retained across certificate transformations.
+    pub(crate) fn validate_verus_artifact_authority(
+        &self,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        let authority =
+            self.audit_admission
+                .verus
+                .as_ref()
+                .ok_or(IncoherentCertificationPosition {
+                    reason: "migrated Verus evidence requires live artifact authority",
+                })?;
+        self.validate_verus_evidence_against(authority)
+    }
+
+    /// Validate a deserialized main-item cache candidate against the artifact
+    /// freshly constructed for this invocation. This deliberately does not mint
+    /// or restore audit authority; audit continues to reject serialized values.
+    pub(crate) fn persisted_verus_artifact_matches(
+        &self,
+        artifact: &thermite_lower::L3Artifact,
+    ) -> bool {
+        let succeeded = match self.level {
+            Level::L3 => true,
+            Level::L0 => false,
+            _ => return false,
+        };
+        let effects = artifact
+            .effect_row()
+            .map_or_else(|| vec!["pure".to_string()], effects_of);
+        let authority = VerusAuditAuthority {
+            item: artifact.item().to_string(),
+            effects,
+            query_identity: artifact.query_identity().to_string(),
+            succeeded,
+        };
+        self.validate_verus_evidence_against(&authority).is_ok()
+    }
+
+    fn validate_verus_evidence_against(
+        &self,
+        authority: &VerusAuditAuthority,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        let expected_level = if authority.succeeded {
+            Level::L3
+        } else {
+            Level::L0
+        };
+        if self.item != authority.item
+            || self.effects != authority.effects
+            || self.level != expected_level
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted Verus item/effects/outcome do not match live authority",
+            });
+        }
+        let classification =
+            self.classification
+                .as_ref()
+                .ok_or(IncoherentCertificationPosition {
+                    reason: "migrated Verus evidence requires its classification",
+                })?;
+        if classification.fragment != "thermite-verus-v1"
+            || classification.verdict != ClassificationVerdict::Admitted
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted Verus classification does not match live authority",
+            });
+        }
+        let position = self
+            .certification
+            .as_ref()
+            .ok_or(IncoherentCertificationPosition {
+                reason: "migrated Verus evidence requires its certification position",
+            })?;
+        let (scope, refutation, residual_trust) = if authority.succeeded {
+            (
+                CertificationScope::All,
+                RefutationChannel::Incomplete,
+                ResidualTrust::Solver,
+            )
+        } else {
+            (
+                CertificationScope::None,
+                RefutationChannel::None,
+                ResidualTrust::Fiat,
+            )
+        };
+        let boundary = match self.assurance_scope.as_ref() {
+            Some(AssuranceScope::ToBoundary { via }) => {
+                CertificationBoundary::ToBoundary { via: via.clone() }
+            }
+            None | Some(AssuranceScope::EndToEnd) => CertificationBoundary::EndToEnd,
+        };
+        if position.scope != scope
+            || position.refutation != refutation
+            || position.residual_trust != residual_trust
+            || position.discharged_trust != [authority.query_identity.as_str()]
+            || position.boundary != boundary
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted Verus coordinates do not match live artifact authority",
+            });
+        }
+        Ok(())
+    }
+
+    /// Revalidate a persisted migrated L1 row against checked lowering from the
+    /// source program. This is deliberately stronger than pair-shape validation:
+    /// it binds every mutable manifest field that determines route provenance to
+    /// the opaque pre-execution artifact before audit projection.
+    pub(crate) fn validate_l1_artifact(
+        &self,
+        artifact: &thermite_lower::L1Artifact,
+        expected_scope: Option<&AssuranceScope>,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        if self.level != Level::L1 || self.item != artifact.item() {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 item/level does not match its checked artifact",
+            });
+        }
+        if self.effects != effects_of(artifact.effect_row()) {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 effects do not match the checked artifact",
+            });
+        }
+        let expected_fragment = artifact.classifier_fragment();
+        let classification =
+            self.classification
+                .as_ref()
+                .ok_or(IncoherentCertificationPosition {
+                    reason: "a checked L1 artifact requires its classification pair",
+                })?;
+        if classification.fragment != expected_fragment
+            || classification.verdict != ClassificationVerdict::Admitted
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 classification does not match the checked route",
+            });
+        }
+        let position = self
+            .certification
+            .as_ref()
+            .ok_or(IncoherentCertificationPosition {
+                reason: "a checked L1 artifact requires its certification position",
+            })?;
+        if position.scope != CertificationScope::PerExecution
+            || position.refutation != RefutationChannel::Abort
+            || position.residual_trust != ResidualTrust::Fiat
+            || position.discharged_trust != [artifact.wrapper_identity()]
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 position does not match the checked wrapper",
+            });
+        }
+        let route_boundary = match artifact.route() {
+            thermite_lower::L1Route::Runtime | thermite_lower::L1Route::Diverge => {
+                if self.slag || self.boundary || self.boundary_target.is_some() {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "runtime/diverge L1 route flags contradict the checked artifact",
+                    });
+                }
+                CertificationBoundary::EndToEnd
+            }
+            thermite_lower::L1Route::Slag => {
+                let expected_meta =
+                    artifact
+                        .slag_metadata()
+                        .ok_or(IncoherentCertificationPosition {
+                            reason: "checked slag artifact is missing its source metadata",
+                        })?;
+                let actual_meta =
+                    self.slag_meta
+                        .as_ref()
+                        .ok_or(IncoherentCertificationPosition {
+                            reason: "persisted slag L1 row is missing its source metadata",
+                        })?;
+                if !self.slag
+                    || self.boundary
+                    || self.boundary_target.is_some()
+                    || (
+                        actual_meta.reason.as_str(),
+                        actual_meta.owner.as_str(),
+                        actual_meta.review.as_str(),
+                    ) != expected_meta
+                {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "slag L1 route fields contradict the checked artifact",
+                    });
+                }
+                CertificationBoundary::ToBoundary {
+                    via: artifact.item().to_string(),
+                }
+            }
+            thermite_lower::L1Route::Boundary { target } => {
+                if self.slag
+                    || self.slag_meta.is_some()
+                    || !self.boundary
+                    || self.boundary_target.as_deref() != Some(target)
+                {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "FFI L1 route fields contradict the checked artifact",
+                    });
+                }
+                CertificationBoundary::ToBoundary {
+                    via: artifact.item().to_string(),
+                }
+            }
+        };
+        let expected_boundary = match expected_scope {
+            Some(scope) => {
+                if self.assurance_scope.as_ref() != Some(scope) {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "persisted L1 assurance scope does not match program closure",
+                    });
+                }
+                match scope {
+                    AssuranceScope::EndToEnd => CertificationBoundary::EndToEnd,
+                    AssuranceScope::ToBoundary { via } => {
+                        CertificationBoundary::ToBoundary { via: via.clone() }
+                    }
+                }
+            }
+            None => {
+                if self.assurance_scope.is_some() {
+                    return Err(IncoherentCertificationPosition {
+                        reason: "pre-closure L1 artifact attachment cannot carry authored scope",
+                    });
+                }
+                route_boundary
+            }
+        };
+        if position.boundary != expected_boundary {
+            return Err(IncoherentCertificationPosition {
+                reason: "persisted L1 boundary does not match its route/closure classification",
+            });
+        }
+        Ok(())
     }
 
     /// Attach the per-obligation engine attribution (`.design/verified/
@@ -1074,6 +3092,12 @@ impl Certificate {
         mut self,
         attribution: crate::engine::EngineAttribution,
     ) -> Self {
+        if attribution.engine.starts_with("lean") {
+            if let Some(position) = &mut self.certification {
+                position.refutation = RefutationChannel::Empirical;
+                position.residual_trust = ResidualTrust::LeanChecked;
+            }
+        }
         self.engine_attribution = Some(attribution);
         self
     }
@@ -1178,6 +3202,9 @@ impl Certificate {
         Certificate {
             item,
             level: Level::L0,
+            certification: legacy_position(Level::L0),
+            classification: None,
+            audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
             contract_quality: ContractQuality::forward_declared(),
             effects,
@@ -1198,6 +3225,7 @@ impl Certificate {
             covenant_evidence: Some(evidence),
             meaning_audit: None,
             burn: None,
+            live_disposition: LiveDispositionStamp::default(),
         }
     }
 
@@ -1266,7 +3294,33 @@ impl Certificate {
         Option<crate::covenant_engine::CovenantEvidence>,
         Option<crate::meaning::MeaningAudit>,
         Vec<BvShadow>,
+        Option<ClauseOraclePortfolio>,
     ) {
+        let clause_entries: Vec<_> = self
+            .obligations
+            .iter()
+            .filter_map(|obligation| {
+                obligation
+                    .clause_certification
+                    .clone()
+                    .map(|certification| ClauseOracleEntry {
+                        certification,
+                        status: obligation.status.clone(),
+                        engine: obligation.engine.clone(),
+                        trust: obligation.trust.clone(),
+                        verdict: obligation.verdict.clone(),
+                        bv_shadow: obligation.bv_shadow.clone(),
+                        reconstruction: obligation.reconstruction.clone(),
+                    })
+            })
+            .collect();
+        let clause_portfolio = (!clause_entries.is_empty()).then(|| ClauseOraclePortfolio {
+            clauses: clause_entries,
+            classification: self.classification.clone(),
+            certification: self.certification.clone(),
+            engine_attribution: self.engine_attribution.clone(),
+            compatibility_burn: self.burn.clone(),
+        });
         (
             &self.item,
             self.level,
@@ -1280,6 +3334,7 @@ impl Certificate {
                 .iter()
                 .filter_map(|o| o.bv_shadow.clone())
                 .collect(),
+            clause_portfolio,
         )
     }
 }
@@ -1462,13 +3517,440 @@ fn effect_token(effect: &Effect) -> String {
         // The #106 terminal-control atom (`fx term` → the `ioctl` seccomp grant,
         // runtime-sandbox.md REQ-7). A bare atom like `alloc`/`time`.
         Effect::Term => "term".to_string(),
-        Effect::Platform(domain) => format!("platform({})", domain.surface()),
+        Effect::Owns(lock) => format!("owns({lock})"),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod rfc3_coordinates {
+        use super::*;
+
+        fn position(
+            scope: CertificationScope,
+            refutation: RefutationChannel,
+            residual_trust: ResidualTrust,
+        ) -> CertificationPosition {
+            CertificationPosition {
+                scope,
+                refutation,
+                residual_trust,
+                discharged_trust: Vec::new(),
+                boundary: CertificationBoundary::EndToEnd,
+            }
+        }
+
+        #[test]
+        fn coherent_cells_validate() {
+            let cells = [
+                position(
+                    CertificationScope::None,
+                    RefutationChannel::None,
+                    ResidualTrust::Fiat,
+                ),
+                position(
+                    CertificationScope::PerExecution,
+                    RefutationChannel::Abort,
+                    ResidualTrust::Fiat,
+                ),
+                position(
+                    CertificationScope::Bounded {
+                        bound: "8".to_string(),
+                    },
+                    RefutationChannel::Trace {
+                        bound: "8".to_string(),
+                    },
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Incomplete,
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Complete,
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Empirical,
+                    ResidualTrust::LeanChecked,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Complete,
+                    ResidualTrust::LeanChecked,
+                ),
+            ];
+            for cell in cells {
+                cell.validate().expect("an RFC-3 cell must validate");
+            }
+        }
+
+        #[test]
+        fn incoherent_cells_fail_closed() {
+            let cases = [
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Complete,
+                    ResidualTrust::Fiat,
+                ),
+                position(
+                    CertificationScope::None,
+                    RefutationChannel::Incomplete,
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::Bounded {
+                        bound: "8".to_string(),
+                    },
+                    RefutationChannel::Trace {
+                        bound: "7".to_string(),
+                    },
+                    ResidualTrust::Solver,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Incomplete,
+                    ResidualTrust::LeanChecked,
+                ),
+                position(
+                    CertificationScope::All,
+                    RefutationChannel::Empirical,
+                    ResidualTrust::Solver,
+                ),
+            ];
+            for case in cases {
+                assert!(
+                    case.validate().is_err(),
+                    "incoherent tuple accepted: {case:?}"
+                );
+            }
+        }
+
+        #[test]
+        fn product_order_preserves_solver_forge_incomparability() {
+            let bounded = position(
+                CertificationScope::Bounded {
+                    bound: "8".to_string(),
+                },
+                RefutationChannel::Trace {
+                    bound: "8".to_string(),
+                },
+                ResidualTrust::Solver,
+            );
+            let solver = position(
+                CertificationScope::All,
+                RefutationChannel::Incomplete,
+                ResidualTrust::Solver,
+            );
+            let forge = position(
+                CertificationScope::All,
+                RefutationChannel::Empirical,
+                ResidualTrust::LeanChecked,
+            );
+            let top = position(
+                CertificationScope::All,
+                RefutationChannel::Complete,
+                ResidualTrust::LeanChecked,
+            );
+
+            assert_eq!(solver.partial_cmp_assurance(&forge).unwrap(), None);
+            assert_eq!(forge.partial_cmp_assurance(&solver).unwrap(), None);
+            assert!(solver.dominates(&bounded).unwrap());
+            assert!(forge.dominates(&bounded).unwrap());
+            assert!(top.dominates(&solver).unwrap());
+            assert!(top.dominates(&forge).unwrap());
+        }
+
+        #[test]
+        fn explicit_position_is_validated_before_storage() {
+            let bad = position(
+                CertificationScope::PerExecution,
+                RefutationChannel::Complete,
+                ResidualTrust::Fiat,
+            );
+            assert!(Certificate::new("f", Level::L3, vec![], 0, vec![])
+                .with_rfc3_coordinates(
+                    bad,
+                    ClassificationCertificate {
+                        fragment: "thermite-test-v1".to_string(),
+                        verdict: ClassificationVerdict::Admitted,
+                    },
+                )
+                .is_err());
+        }
+
+        #[test]
+        fn empty_classifier_identity_fails_closed() {
+            let valid = position(
+                CertificationScope::All,
+                RefutationChannel::Incomplete,
+                ResidualTrust::Solver,
+            );
+            assert!(Certificate::new("f", Level::L3, vec![], 0, vec![])
+                .with_rfc3_coordinates(
+                    valid,
+                    ClassificationCertificate {
+                        fragment: "  ".to_string(),
+                        verdict: ClassificationVerdict::Admitted,
+                    },
+                )
+                .is_err());
+        }
+
+        #[test]
+        fn classification_without_position_is_rejected_by_public_reader() {
+            let mut cert = Certificate::new("f", Level::L2, vec![], 0, vec![]);
+            cert.classification = Some(ClassificationCertificate {
+                fragment: "thermite-kani-v1".to_string(),
+                verdict: ClassificationVerdict::Admitted,
+            });
+            assert!(cert.rfc3_coordinates().is_err());
+        }
+
+        #[test]
+        fn serialized_position_only_l2_is_rejected_by_public_reader() {
+            let mut source = Certificate::new("f", Level::L2, vec![], 0, vec![]);
+            source.certification = Some(position(
+                CertificationScope::Bounded {
+                    bound: "unwind 5".to_string(),
+                },
+                RefutationChannel::Trace {
+                    bound: "unwind 5".to_string(),
+                },
+                ResidualTrust::Solver,
+            ));
+            let json = serde_json::to_string(&source).expect("position-only JSON");
+            let decoded: Certificate = serde_json::from_str(&json).expect("compatibility parse");
+            assert!(decoded.rfc3_coordinates().is_err());
+        }
+
+        #[test]
+        fn migrated_l1_pair_is_bound_and_serialized_half_pair_fails_closed() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            assert!(parsed.is_clean());
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f")
+                .expect("checked runtime artifact");
+            let cert = Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .expect("atomic L1 coordinates");
+            let (position, classification) = cert
+                .rfc3_coordinates()
+                .expect("valid pair")
+                .expect("position exists");
+            assert_eq!(position.scope, CertificationScope::PerExecution);
+            assert_eq!(position.refutation, RefutationChannel::Abort);
+            assert_eq!(position.residual_trust, ResidualTrust::Fiat);
+            assert_eq!(
+                classification.expect("classification").fragment,
+                "thermite-l1-runtime-v1"
+            );
+            assert_eq!(
+                position.discharged_trust,
+                vec![artifact.wrapper_identity().to_string()]
+            );
+
+            let mut hostile = serde_json::to_value(&cert).expect("serialize");
+            hostile
+                .as_object_mut()
+                .expect("certificate object")
+                .remove("classification");
+            let decoded: Certificate = serde_json::from_value(hostile).expect("compat parse");
+            assert!(decoded.rfc3_coordinates().is_err());
+        }
+
+        #[test]
+        fn migrated_l1_pair_rejects_serialized_legacy_level_substitution() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+            let cert = Certificate::new("f", Level::L1, vec!["pure".into()], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .unwrap();
+            let mut hostile = serde_json::to_value(cert).unwrap();
+            hostile["level"] = serde_json::json!("L3");
+            let decoded: Certificate = serde_json::from_value(hostile).unwrap();
+            assert!(decoded.rfc3_coordinates().is_err());
+            assert!(decoded.requires_l1_artifact_validation());
+        }
+
+        #[test]
+        fn verus_artifact_preserves_classification_across_success_and_failure() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+            let success = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, true)
+                .unwrap();
+            let failure = Certificate::new("f", Level::L0, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, false)
+                .unwrap();
+            for cert in [&success, &failure] {
+                assert_eq!(
+                    cert.classification.as_ref().unwrap().fragment,
+                    "thermite-verus-v1"
+                );
+                assert_eq!(
+                    cert.certification.as_ref().unwrap().discharged_trust,
+                    [artifact.query_identity()]
+                );
+                cert.validate_verus_artifact_authority().unwrap();
+            }
+            assert_eq!(
+                success.certification.as_ref().unwrap().refutation,
+                RefutationChannel::Incomplete
+            );
+            assert_eq!(
+                failure.certification.as_ref().unwrap().scope,
+                CertificationScope::None
+            );
+        }
+
+        #[test]
+        fn verus_live_authority_rejects_provenance_and_outcome_substitution() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+            let cert = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, true)
+                .unwrap();
+
+            let mut level = cert.clone();
+            level.level = Level::L4;
+            assert!(level.validate_verus_artifact_authority().is_err());
+
+            let mut effects = cert.clone();
+            effects.effects = vec!["time".into()];
+            assert!(effects.validate_verus_artifact_authority().is_err());
+
+            let mut query = cert.clone();
+            query.certification.as_mut().unwrap().discharged_trust =
+                vec!["thermite-verus-query-v1:f:sha256:invented".into()];
+            assert!(query.validate_verus_artifact_authority().is_err());
+
+            let mut classifier = cert;
+            classifier.classification.as_mut().unwrap().fragment = "thermite-kani-v1".into();
+            assert!(classifier.validate_verus_artifact_authority().is_err());
+        }
+
+        #[test]
+        fn serialized_verus_half_pair_fails_the_public_reader() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+            let cert = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, true)
+                .unwrap();
+            let mut hostile = serde_json::to_value(cert).unwrap();
+            hostile.as_object_mut().unwrap().remove("classification");
+            let decoded: Certificate = serde_json::from_value(hostile).unwrap();
+            assert!(decoded.rfc3_coordinates().is_err());
+        }
+
+        #[test]
+        fn main_cache_replay_requires_the_fresh_artifact_without_restoring_authority() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "f").unwrap();
+            let cert = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
+                .with_verus_artifact(&artifact, true)
+                .unwrap();
+            let decoded: Certificate =
+                serde_json::from_value(serde_json::to_value(cert).unwrap()).unwrap();
+            assert!(decoded.persisted_verus_artifact_matches(&artifact));
+            assert!(!decoded.is_audit_admitted());
+
+            let bare: Certificate = serde_json::from_value(
+                serde_json::to_value(Certificate::new(
+                    "f",
+                    Level::L3,
+                    vec!["pure".into()],
+                    0,
+                    vec![],
+                ))
+                .unwrap(),
+            )
+            .unwrap();
+            assert!(!bare.persisted_verus_artifact_matches(&artifact));
+
+            let changed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 99 ensures result == x { x }",
+            );
+            let changed = thermite_lower::lower_l3_artifact(&changed.program, "f").unwrap();
+            assert!(!decoded.persisted_verus_artifact_matches(&changed));
+        }
+
+        #[test]
+        fn historical_unmarked_l1_position_remains_readable() {
+            let historical = Certificate::new("f", Level::L1, vec![], 0, vec![]);
+            let (_, classification) = historical
+                .rfc3_coordinates()
+                .expect("legacy L1 remains readable")
+                .expect("legacy position exists");
+            assert!(classification.is_none());
+        }
+
+        #[test]
+        fn deserialized_certificate_is_readable_but_not_audit_authority() {
+            let source = Certificate::new("f", Level::L1, vec![], 0, vec![]);
+            assert!(source.is_audit_admitted());
+            let json = serde_json::to_string(&source).unwrap();
+            let decoded: Certificate = serde_json::from_str(&json).unwrap();
+            assert!(decoded.rfc3_coordinates().is_ok());
+            assert!(!decoded.is_audit_admitted());
+            assert_eq!(source, decoded, "admission is outside document equality");
+        }
+
+        #[test]
+        fn l1_artifact_cannot_be_attached_to_another_item() {
+            let parsed = thermite_syntax::parse(
+                "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
+            );
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+            assert!(Certificate::new("g", Level::L1, vec![], 0, vec![])
+                .with_l1_artifact(&artifact)
+                .is_err());
+        }
+
+        #[test]
+        fn ffi_artifact_rejects_boundary_target_substitution() {
+            let parsed = thermite_syntax::parse(
+                "#[boundary(\"ext::read\")] \
+                 fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+            );
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "f").unwrap();
+            assert!(
+                Certificate::boundary_l1("f", vec!["pure".into()], "ext::write".into())
+                    .with_l1_artifact(&artifact)
+                    .is_err()
+            );
+        }
+
+        #[test]
+        fn diverge_artifact_rejects_runtime_effect_substitution() {
+            let parsed = thermite_syntax::parse(
+                "fn spin(n: u64) -> u64 ! diverge requires n <= 100 ensures result == 0 \
+                 { if n == 0 { 0 } else { spin(n - 1) } }",
+            );
+            let artifact = thermite_lower::lower_l1_artifact(&parsed.program, "spin").unwrap();
+            assert!(
+                Certificate::new("spin", Level::L1, vec!["pure".into()], 0, vec![])
+                    .with_l1_artifact(&artifact)
+                    .is_err()
+            );
+        }
+    }
 
     /// Test-local serializer (mirrors `cli::run_check`'s
     /// `serde_json::to_string_pretty`).
@@ -1952,11 +4434,21 @@ mod tests {
         let base = Certificate::new("sum", Level::L3, vec!["pure".to_string()], 0, vec![]);
         // Forward-declared default before scoring.
         assert_eq!(base.contract_quality.mutants_killed, "0/0");
+        assert_eq!(base.contract_quality.equivalent_mutants_excluded, 0);
         assert!(base.contract_quality.survivor.is_none());
 
         let scored = base.clone().with_mutation_score("17/18".to_string(), None);
         assert_eq!(scored.contract_quality.mutants_killed, "17/18");
         assert!(scored.contract_quality.survivor.is_none());
+        let narrowed =
+            base.clone()
+                .with_mutation_score_and_equivalents("17/17".to_string(), None, 2);
+        assert_eq!(narrowed.contract_quality.equivalent_mutants_excluded, 2);
+        assert_eq!(
+            serde_json::to_value(&narrowed).unwrap()["contract_quality"]
+                ["equivalent_mutants_excluded"],
+            2
+        );
         // The kill ratio is oracle-excluded: a graduated cert is oracle-equal to the
         // forward-declared one (OQ-1 — the ratio is verus-version-sensitive).
         assert!(oracle_eq(&base, &scored));
@@ -2222,9 +4714,9 @@ mod tests {
     fn effects_of_covers_every_variant() {
         assert_eq!(effects_of(&EffectRow::Pure), vec!["pure".to_string()]);
         let row = EffectRow::Set(vec![
-            Effect::Read("x".to_string()),
-            Effect::Write("y".to_string()),
-            Effect::Net("z".to_string()),
+            Effect::Read("x".to_string().into()),
+            Effect::Write("y".to_string().into()),
+            Effect::Net("z".to_string().into()),
             Effect::Alloc,
             Effect::Time,
             Effect::Rand,

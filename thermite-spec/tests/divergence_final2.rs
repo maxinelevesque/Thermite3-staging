@@ -62,14 +62,14 @@ fn rejects_frobnicate(errs: &[SpecError]) -> bool {
 fn bogus_inv_in_if_then_branch_is_rejected() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req sorted(xs)
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result <= xs.len()
 {
   if xs.len() > 0 {
     loop
-      inv frobnicate(xs)
-      dec xs.len()
+      keeps frobnicate(xs)
+      measures xs.len()
     { return 0; }
   }
   0
@@ -87,14 +87,14 @@ fn f(xs: &[u32]) -> usize
 fn bogus_inv_in_if_else_branch_is_rejected() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req sorted(xs)
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result <= xs.len()
 {
   if xs.len() > 0 { return 1; } else {
     loop
-      inv frobnicate(xs)
-      dec xs.len()
+      keeps frobnicate(xs)
+      measures xs.len()
     { return 0; }
   }
   0
@@ -114,17 +114,17 @@ fn f(xs: &[u32]) -> usize
 fn bogus_inner_loop_inv_nested_in_outer_loop_is_rejected() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req sorted(xs)
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result <= xs.len()
 {
   loop
-    inv sorted(xs)
-    dec xs.len()
+    keeps sorted(xs)
+    measures xs.len()
   {
     loop
-      inv frobnicate(xs)
-      dec xs.len()
+      keeps frobnicate(xs)
+      measures xs.len()
     { return 0; }
     return 1;
   }
@@ -146,14 +146,14 @@ fn f(xs: &[u32]) -> usize
 fn bogus_inv_in_if_expr_branch_is_rejected() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req sorted(xs)
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result <= xs.len()
 {
   let y: usize = if xs.len() > 0 {
     loop
-      inv frobnicate(xs)
-      dec xs.len()
+      keeps frobnicate(xs)
+      measures xs.len()
     { return 0; }
     1
   } else { 2 };
@@ -173,14 +173,14 @@ fn f(xs: &[u32]) -> usize
 fn bogus_dec_in_nested_loop_is_rejected() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req sorted(xs)
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result <= xs.len()
 {
   if xs.len() > 0 {
     loop
-      inv sorted(xs)
-      dec frobnicate(xs)
+      keeps sorted(xs)
+      measures frobnicate(xs)
     { return 0; }
   }
   0
@@ -203,14 +203,14 @@ fn f(xs: &[u32]) -> usize
 fn wellformed_nested_loop_validates_clean() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req sorted(xs)
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result <= xs.len()
 {
   if xs.len() > 0 {
     loop
-      inv sorted(xs)
-      dec xs.len()
+      keeps sorted(xs)
+      measures xs.len()
     { return 0; }
   }
   0
@@ -231,9 +231,9 @@ fn f(xs: &[u32]) -> usize
 fn surface_user_fn_call_in_if_branch_body_is_not_caged() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req sorted(xs)
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result <= xs.len()
 {
   if xs.len() > 0 {
     let z: usize = helper(xs);
@@ -255,9 +255,9 @@ fn f(xs: &[u32]) -> usize
 fn non_len_method_in_fn_body_is_not_caged() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req sorted(xs)
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result <= xs.len()
 {
   let z: u32 = xs.first();
   0
@@ -279,9 +279,9 @@ fn f(xs: &[u32]) -> usize
 fn len_method_in_contract_validates_clean() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req xs.len() <= 10
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires xs.len() <= 10
+  ensures result <= xs.len()
 { 0 }
 "#;
     assert_eq!(
@@ -297,9 +297,9 @@ fn f(xs: &[u32]) -> usize
 fn non_len_method_in_contract_is_forbidden() {
     let src = r#"
 fn f(xs: &[u32]) -> u32
-  req sorted(xs)
-  ens result == xs.first()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result == xs.first()
 { 0 }
 "#;
     let errs = validate(&parse_clean(src)).expect_err("non-allowlisted method in contract");
@@ -316,14 +316,14 @@ fn f(xs: &[u32]) -> u32
 fn non_len_method_in_nested_loop_inv_is_forbidden() {
     let src = r#"
 fn f(xs: &[u32]) -> usize
-  req sorted(xs)
-  ens result <= xs.len()
-  fx  pure
+  ! pure
+  requires sorted(xs)
+  ensures result <= xs.len()
 {
   if xs.len() > 0 {
     loop
-      inv xs.iter()
-      dec xs.len()
+      keeps xs.iter()
+      measures xs.len()
     { return 0; }
   }
   0

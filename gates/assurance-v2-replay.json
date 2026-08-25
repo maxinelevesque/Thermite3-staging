@@ -1,0 +1,301 @@
+{
+  "version": 2,
+  "families": [
+    "runtime",
+    "bounded",
+    "solver_incomplete",
+    "solver_complete",
+    "lean_empirical",
+    "lean_complete"
+  ],
+  "pair": [
+    {
+      "left": "runtime",
+      "right": "runtime",
+      "left_le_right": true,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "runtime"
+      ]
+    },
+    {
+      "left": "runtime",
+      "right": "bounded",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "runtime",
+      "right": "solver_incomplete",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "runtime",
+      "right": "solver_complete",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "runtime",
+      "right": "lean_empirical",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "runtime",
+      "right": "lean_complete",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "bounded",
+      "right": "runtime",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "bounded",
+      "right": "bounded",
+      "left_le_right": true,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "bounded"
+      ]
+    },
+    {
+      "left": "bounded",
+      "right": "solver_incomplete",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "bounded",
+      "right": "solver_complete",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "bounded",
+      "right": "lean_empirical",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "bounded",
+      "right": "lean_complete",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "solver_incomplete",
+      "right": "runtime",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "solver_incomplete",
+      "right": "bounded",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "solver_incomplete",
+      "right": "solver_incomplete",
+      "left_le_right": true,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "solver_incomplete"
+      ]
+    },
+    {
+      "left": "solver_incomplete",
+      "right": "solver_complete",
+      "left_le_right": true,
+      "right_le_left": false,
+      "lower_bound_frontier": [
+        "solver_incomplete"
+      ]
+    },
+    {
+      "left": "solver_incomplete",
+      "right": "lean_empirical",
+      "left_le_right": true,
+      "right_le_left": false,
+      "lower_bound_frontier": [
+        "solver_incomplete"
+      ]
+    },
+    {
+      "left": "solver_incomplete",
+      "right": "lean_complete",
+      "left_le_right": true,
+      "right_le_left": false,
+      "lower_bound_frontier": [
+        "solver_incomplete"
+      ]
+    },
+    {
+      "left": "solver_complete",
+      "right": "runtime",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "solver_complete",
+      "right": "bounded",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "solver_complete",
+      "right": "solver_incomplete",
+      "left_le_right": false,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "solver_incomplete"
+      ]
+    },
+    {
+      "left": "solver_complete",
+      "right": "solver_complete",
+      "left_le_right": true,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "solver_complete"
+      ]
+    },
+    {
+      "left": "solver_complete",
+      "right": "lean_empirical",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": [
+        "solver_incomplete"
+      ]
+    },
+    {
+      "left": "solver_complete",
+      "right": "lean_complete",
+      "left_le_right": true,
+      "right_le_left": false,
+      "lower_bound_frontier": [
+        "solver_complete"
+      ]
+    },
+    {
+      "left": "lean_empirical",
+      "right": "runtime",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "lean_empirical",
+      "right": "bounded",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "lean_empirical",
+      "right": "solver_incomplete",
+      "left_le_right": false,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "solver_incomplete"
+      ]
+    },
+    {
+      "left": "lean_empirical",
+      "right": "solver_complete",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": [
+        "solver_incomplete"
+      ]
+    },
+    {
+      "left": "lean_empirical",
+      "right": "lean_empirical",
+      "left_le_right": true,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "lean_empirical"
+      ]
+    },
+    {
+      "left": "lean_empirical",
+      "right": "lean_complete",
+      "left_le_right": true,
+      "right_le_left": false,
+      "lower_bound_frontier": [
+        "lean_empirical"
+      ]
+    },
+    {
+      "left": "lean_complete",
+      "right": "runtime",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "lean_complete",
+      "right": "bounded",
+      "left_le_right": false,
+      "right_le_left": false,
+      "lower_bound_frontier": []
+    },
+    {
+      "left": "lean_complete",
+      "right": "solver_incomplete",
+      "left_le_right": false,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "solver_incomplete"
+      ]
+    },
+    {
+      "left": "lean_complete",
+      "right": "solver_complete",
+      "left_le_right": false,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "solver_complete"
+      ]
+    },
+    {
+      "left": "lean_complete",
+      "right": "lean_empirical",
+      "left_le_right": false,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "lean_empirical"
+      ]
+    },
+    {
+      "left": "lean_complete",
+      "right": "lean_complete",
+      "left_le_right": true,
+      "right_le_left": true,
+      "lower_bound_frontier": [
+        "lean_complete"
+      ]
+    }
+  ]
+}

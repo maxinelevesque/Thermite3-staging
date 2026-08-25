@@ -10,19 +10,19 @@
   ],
   "reject": [
     { "name": "non_exhaustive_match", "expect_error": "NonExhaustiveMatch", "expect_missing": ["Rect"],
-      "program": "enum Shape { Circle(u64), Rect { w: u64, h: u64 } } fn f(s: Shape) -> u64 req true ens result == result fx pure { match s { Circle(r) => r, } }",
+      "program": "enum Shape { Circle(u64), Rect { w: u64, h: u64 } } fn f(s: Shape) -> u64 ! pure requires true ensures result == result { match s { Circle(r) => r, } }",
       "why": "the match covers Circle but NOT Rect and has no Wildcard -> NonExhaustiveMatch { missing: [Rect] }. REQ-5: every modeled variant handled or an explicit catch screams — enforced at validation." },
     { "name": "unreachable_redundant_arm", "expect_error": "UnreachableArm",
-      "program": "enum Shape { Circle(u64), Rect { w: u64, h: u64 } } fn f(s: Shape) -> u64 req true ens result == result fx pure { match s { Circle(r) => r, Rect { w, h } => w, Circle(r2) => r2, } }",
+      "program": "enum Shape { Circle(u64), Rect { w: u64, h: u64 } } fn f(s: Shape) -> u64 ! pure requires true ensures result == result { match s { Circle(r) => r, Rect { w, h } => w, Circle(r2) => r2, } }",
       "why": "Circle is matched twice -> the second Circle arm is unreachable -> UnreachableArm (REQ-5)." },
     { "name": "unknown_field", "expect_error": "UnknownField", "expect_name": "bogus",
-      "program": "struct Account { balance: u64 } inv balance <= 1_000_000 fn f(a: Account) -> u64 req true ens result == result fx pure { a.bogus }",
+      "program": "struct Account { balance: u64 } keeps balance <= 1_000_000 fn f(a: Account) -> u64 ! pure requires true ensures result == result { a.bogus }",
       "why": "Account declares only `balance`; `a.bogus` accesses an undeclared field -> UnknownField { name: bogus } (REQ-6)." },
     { "name": "unknown_variant_is", "expect_error": "UnknownVariant", "expect_name": "Triangle",
-      "program": "enum Shape { Circle(u64), Rect { w: u64, h: u64 } } fn f(s: Shape) -> bool req true ens result == (s is Triangle) fx pure { match s { Circle(r) => true, Rect { w, h } => false, } }",
+      "program": "enum Shape { Circle(u64), Rect { w: u64, h: u64 } } fn f(s: Shape) -> bool ! pure requires true ensures result == (s is Triangle) { match s { Circle(r) => true, Rect { w, h } => false, } }",
       "why": "`s is Triangle` names a variant Shape does not declare -> UnknownVariant { name: Triangle } (REQ-6). The match itself is exhaustive (Circle, Rect) — the error is the `is` in the ens." },
     { "name": "unknown_variant_pattern", "expect_error": "UnknownVariant", "expect_name": "Square",
-      "program": "enum Shape { Circle(u64), Rect { w: u64, h: u64 } } fn f(s: Shape) -> u64 req true ens result == result fx pure { match s { Circle(r) => r, Square(x) => x, } }",
+      "program": "enum Shape { Circle(u64), Rect { w: u64, h: u64 } } fn f(s: Shape) -> u64 ! pure requires true ensures result == result { match s { Circle(r) => r, Square(x) => x, } }",
       "why": "the match has an arm for `Square`, not a declared Shape variant -> UnknownVariant { name: Square } (REQ-6); the pattern names a non-existent variant." }
   ]
 }

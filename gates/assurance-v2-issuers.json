@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "family": [
+    {
+      "kind": "runtime",
+      "issuers": [
+        {
+          "path": "forge/src/check.rs",
+          "symbol": "certify_l1_artifact",
+          "test_path": "forge/src/check.rs",
+          "characterization_test": "production_l1_gate_preserves_runtime_route_classification"
+        }
+      ]
+    },
+    {
+      "kind": "bounded",
+      "issuers": [
+        {
+          "path": "forge/src/kani.rs",
+          "symbol": "assemble_l2_certificate",
+          "test_path": "forge/src/kani.rs",
+          "characterization_test": "bound_recorded_on_l2_cert"
+        }
+      ]
+    },
+    {
+      "kind": "solver_incomplete",
+      "issuers": [
+        {
+          "path": "forge/src/check.rs",
+          "symbol": "assemble_certificate",
+          "test_path": "forge/src/check.rs",
+          "characterization_test": "verus_assembly_uses_pre_discharge_artifact_on_success_and_failure"
+        }
+      ]
+    },
+    {
+      "kind": "solver_complete",
+      "issuers": [
+        {
+          "path": "forge/src/check.rs",
+          "symbol": "nlsat_l4_cert",
+          "test_path": "forge/src/check.rs",
+          "characterization_test": "req8_arithmetic_and_bitwise_clauses_migrate_to_kernel_checked"
+        },
+        {
+          "path": "forge/src/check.rs",
+          "symbol": "bv_fn_cert_with",
+          "test_path": "forge/src/check.rs",
+          "characterization_test": "ac5_real_mixed_producer_preserves_typed_failures_and_exact_prefix"
+        },
+        {
+          "path": "forge/src/check.rs",
+          "symbol": "forge_gate_item_cert_with",
+          "test_path": "forge/src/check.rs",
+          "characterization_test": "ac6_real_g1_producer_is_total_for_two_author_clauses_and_policy"
+        }
+      ]
+    },
+    {
+      "kind": "lean_empirical",
+      "issuers": [
+        {
+          "path": "forge/src/check.rs",
+          "symbol": "forge_gate_item_cert_with",
+          "test_path": "forge/src/check.rs",
+          "characterization_test": "ac6_real_g1_producer_is_total_for_two_author_clauses_and_policy"
+        },
+        {
+          "path": "forge/src/check.rs",
+          "symbol": "lean_engine_cert",
+          "test_path": "forge/tests/engine_attribution.rs",
+          "characterization_test": "engine_lean_attaches_smaller_trust_base_live"
+        }
+      ]
+    },
+    {
+      "kind": "lean_complete",
+      "issuers": [
+        {
+          "path": "forge/src/check.rs",
+          "symbol": "bv_fn_cert_with",
+          "test_path": "forge/src/check.rs",
+          "characterization_test": "ac5_real_mixed_producer_preserves_typed_failures_and_exact_prefix"
+        }
+      ]
+    }
+  ],
+  "legacy_relation": [
+    {
+      "carrier": "forge::manifest::AssuranceElement",
+      "classification": "compatibility_only"
+    },
+    {
+      "carrier": "Thermite.CertificationMetatheory.RepresentativePosition",
+      "classification": "realizable_counterexample_probe"
+    },
+    {
+      "carrier": "Thermite.CertificationMetatheory.PolicyPoint",
+      "classification": "legacy_self_floor_abstraction"
+    }
+  ]
+}

@@ -48,12 +48,11 @@ dependencies = [
 
 [[package]]
 name = "forge"
-version = "0.0.1"
+version = "3.0.0-alpha.5"
 dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "thermite-kernel",
  "thermite-lower",
  "thermite-skill",
  "thermite-spec",
@@ -174,16 +173,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "thermite-kernel"
-version = "0.0.1"
-dependencies = [
- "thermite-verified",
-]
-
-[[package]]
 name = "thermite-lower"
-version = "0.0.1"
+version = "3.0.0-alpha.5"
 dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
  "thermite-spec",
  "thermite-syntax",
  "thermite-verified",
@@ -191,7 +186,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-skill"
-version = "0.0.1"
+version = "3.0.0-alpha.5"
 dependencies = [
  "thermite-spec",
  "thermite-syntax",
@@ -199,7 +194,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-spec"
-version = "0.0.1"
+version = "3.0.0-alpha.5"
 dependencies = [
  "serde",
  "serde_json",
@@ -208,7 +203,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-syntax"
-version = "0.0.1"
+version = "3.0.0-alpha.5"
 dependencies = [
  "serde",
  "serde_json",
@@ -216,7 +211,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-tv"
-version = "0.0.1"
+version = "3.0.0-alpha.5"
 dependencies = [
  "thermite-spec",
  "thermite-syntax",
@@ -224,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-verified"
-version = "0.0.1"
+version = "3.0.0-alpha.5"
 
 [[package]]
 name = "typenum"

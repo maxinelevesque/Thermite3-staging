@@ -3,7 +3,12 @@
 tier: 3-component
 status: draft
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 (#349), the Rust→Lean obligation exporter: the change to this doc's governed lib roots is additive — `mod lean_smt_export;` in forge/src/main.rs (the SMT-tactic obligation exporter module); the workspace/crate structure is otherwise unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `pub mod classifier;` + `mod strat_tv;`; 2026-06-17 umbrella REQ-7 / AC-12 §6 metrics dashboard `mod metrics;`; stage-1 REQ-10/AC-14 G1 gate seven-verdict test module)
-audited-content-sha256: 6782fa1058396008cca3828433793cdf7e66ea3bf8521ba378d965537aca4a38 (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: d7364fab95622a7430db5cbdcf1b774033392f2a6406bcbfef1c15e56454a72d (re-pinned 2026-08-17 after adding the private Assurance V2 replay module; workspace topology and dependencies are unchanged. prior: 8003cabf600eb5de32fd3bb04dab75d40bacb6280244fae418e6953844d23fcf)
+pin-extract: thermite-syntax/src/lib.rs=code-normalized
+pin-extract: thermite-spec/src/lib.rs=code-normalized
+pin-extract: thermite-lower/src/lib.rs=code-normalized
+pin-extract: forge/src/main.rs=code-normalized
+pin-extract: thermite-skill/src/lib.rs=code-normalized
 governs:
   - Cargo.toml (virtual workspace manifest)
   - rust-toolchain.toml
@@ -22,7 +27,7 @@ thesis-refs:
 
 The scaffold is the empty-but-buildable Cargo workspace that every other v0.1
 kernel unit lands inside. It fixes the crate topology (the five member crates
-of `tooling/spec-routes.toml`), the internal dependency DAG (leaf-first per
+of `gates/routes.toml`), the internal dependency DAG (leaf-first per
 R-DEFER-7), the shared error / `Result` discipline (R-CODE-2), the pinned Rust
 edition + MSRV for determinism (R-CODE-5), and the CI gauntlet that is the
 acceptance gate. Nothing in this scaffold contains language logic — it is the
@@ -44,14 +49,14 @@ five-crate REQ texts below are the SCAFFOLD-TIME contract; the growth is
 recorded here and in the evidence rows.
 
 Gate G4 adds a dedicated CI job that installs the pinned SAT/LRAT tools and Z3,
-then runs `scripts/g4-gate.sh` under its 6 GiB process limit. This is additive:
+then runs `gates/g4.sh` under its 6 GiB process limit. This is additive:
 the workspace members and dependency graph are unchanged.
 
 ## Requirements
 
 - **REQ-1 (workspace topology):** A virtual Cargo workspace (root `Cargo.toml`
   with `[workspace]`, no root `[package]`) whose members are exactly the five
-  crates implied by `tooling/spec-routes.toml`: `thermite-syntax`,
+  crates implied by `gates/routes.toml`: `thermite-syntax`,
   `thermite-spec`, `thermite-lower`, `forge`, `thermite-skill`. `forge` is the
   sole binary crate (the CLI); the other four are libraries. No crate is
   invented that the routes / `goal.md` do not imply. Derived from
@@ -196,7 +201,7 @@ not itself a publishable crate. This is the conventional layout for a
 multi-crate toolchain and keeps each component independently testable
 (`cargo test -p <crate>`), which the per-crate gauntlet in `goal.md` requires.
 
-The crate set and file layout are fixed by `tooling/spec-routes.toml` — the
+The crate set and file layout are fixed by `gates/routes.toml` — the
 authoritative module map (`goal.md` "Scope": *"the route table is the
 authoritative module map"*). The scaffold materializes the five crates it
 names:
@@ -215,7 +220,7 @@ thermite-skill/    (lib)   dep: thermite-spec, thermite-syntax; route: generate.
 (Current-tree growth, #262 re-audit: `thermite-verified` (leaf, #60) and
 `thermite-tv` (deps syntax+spec, #144) are members six and seven;
 `thermite-skill` also ships a `src/main.rs` bin (#7); `forge/src/main.rs` now
-registers ~27 modules — `tooling/spec-routes.toml` remains the authoritative
+registers ~27 modules — `gates/routes.toml` remains the authoritative
 module map.)
 
 The dependency DAG (REQ-2) reflects the data flow of the toolchain in
@@ -258,7 +263,7 @@ ships `thermite-skill` as an empty member only.
 Discharge is entirely mechanical and runs on the empty workspace once the
 builder lands it:
 
-- **AC-1/AC-2:** `cargo metadata --no-deps --format-version 1 | python3 -c "..."`
+- **AC-1/AC-2:** `cargo metadata --no-deps --format-version 1 | uv run python -c "..."`
   to assert the five member names, the single `bin` target, and per-crate
   path-dep sets; `cargo build --workspace` to confirm acyclicity.
 - **AC-3:** `cargo build --workspace` (re-exports resolve) +
@@ -296,7 +301,7 @@ scaffold contains no language behavior. The corpus (`conformance/sum.th`,
 ## Open questions (for the orchestrator before the builder runs)
 
 - **OQ-1 (thermite-spec membership vs issue #1 comment):** The `goal.md` Scope
-  and `tooling/spec-routes.toml` both list `thermite-spec` as a distinct crate
+  and `gates/routes.toml` both list `thermite-spec` as a distinct crate
   (`thermite-spec/src/{combinators,grammar}.rs`), but the issue #1 `[decision]`
   comment enumerates only `thermite-syntax`, `thermite-lower`, `forge`,
   `thermite-skill` (it omits `thermite-spec`). This doc follows the route table

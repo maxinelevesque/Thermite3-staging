@@ -180,7 +180,11 @@ pub fn body_tv_file(path: &Path, seed: u64, rlimit: f64) -> Result<BodyTvReport,
             Item::SpecFn(_) | Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 body-TV consumer
             // yet (increments 2b-3); inert here, mirroring the spec/ADT no-op arm.
-            Item::Forge(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     Ok(report)
@@ -268,7 +272,13 @@ pub(crate) fn body_tv_support(
         .filter(|item| match item {
             Item::Fn(dep) => support_names.contains(&dep.name),
             Item::SpecFn(dep) => support_names.contains(&dep.name),
-            Item::Struct(_) | Item::Enum(_) | Item::Forge(_) => false,
+            Item::Struct(_)
+            | Item::Enum(_)
+            | Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => false,
         })
         .collect();
     let adt_names: BTreeSet<String> = crate::check::reachable_adt_deps(program, &referrers)
@@ -284,7 +294,11 @@ pub(crate) fn body_tv_support(
                 Item::SpecFn(dep) => support_names.contains(&dep.name),
                 Item::Struct(dep) => adt_names.contains(&dep.name),
                 Item::Enum(dep) => adt_names.contains(&dep.name),
-                Item::Forge(_) => false,
+                Item::Forge(_)
+                | Item::EffectDecl(_)
+                | Item::SharedDecl(_)
+                | Item::Concurrent(_)
+                | Item::LockDecl(_) => false,
             })
             .cloned()
             .collect(),
@@ -759,7 +773,7 @@ fn cell_decl_type(body: &Block, cell: &str) -> Option<String> {
 /// empty frame). The `req` is emitted verbatim (the obligation's own precondition,
 /// authored from the source, not lowered here — `exec-stmt-tv.md` REQ-3).
 fn corpus_req(f: &FnItem) -> Option<String> {
-    let text = f.contract.req.text.trim();
+    let text = f.contract.requires.text.trim();
     if text.is_empty() || text == "true" {
         None
     } else {
@@ -1009,7 +1023,7 @@ fn loop_after_loop_claim(block: &Block, frame: &LoopObligationFrame) -> Result<S
     let obs = loop_ref_obligations(block, &ctx).map_err(|e| {
         format!("the loop is OUTSIDE the v1 frozen subset (after-loop claim refused): {e}")
     })?;
-    Ok(obs.inv)
+    Ok(obs.keeps)
 }
 
 /// The discharge outcome of one obligation program (the four verus signals the

@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: ebfb68b57a588a0d3bb0c8914697e9c68c4d423fc27c5cac729347aa1ca990b6
+audited-content-sha256: f2c5991b896e32de30cedf2418cef35b92824f82b39d9ced8c83a9ed8c15c1f4 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 720534874339cbb49ca733101457613310dcd2de3d6d54cea25f44bfdd926ffe.)
 governs: thermite-syntax/src/parser.rs
 thesis-refs:
   - thermite-design.md §4.1
@@ -23,7 +23,7 @@ stream (`lexer.md`) producing the AST (`ast.md`). It is the executable form of
 `surface-grammar.md`. Two design-mandated properties dominate its contract:
 (a) **per-item error recovery** — a syntax error inside one item must NOT cascade
 into the next (§4.3, pillar 5 locality); and (b) **mandatory-clause enforcement**
-— a `fn` missing `req`/`ens`/`fx`, or a `loop`/`while` missing `inv`/`dec`, is a
+— a `fn` missing `!`/`requires`/`ensures`, or a `loop`/`while` missing `keeps`/`measures`, is a
 parse error, never an implicit default (§4.1). It is **REGISTRY-FREE**: it parses
 combinator calls (`forall_in`, `sorted`) as generic call expressions.
 
@@ -35,8 +35,8 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/parser.rs`, issue #3 + the
 > `parser.rs`'s module-doc REQ tables — not re-owned here): the dedicated
 > `Option`/`Vec`/`Box`/`String` type arms + the two-arg type parses
 > `Result<T, E>` / `Map<K, V>` (09-option-result / 13-map / 04-collections /
-> 07-strings); the optional exec-fn `dec` clause after `fx` (`parse_fn`,
-> 10-recursion-tuples C9-A); tuples (`parse_type_inner`'s `(`-arm
+> 07-strings); the optional exec-fn `measures` clause, last in the contract
+> (`parse_fn`, 10-recursion-tuples C9-A); tuples (`parse_type_inner`'s `(`-arm
 > disambiguation, `Expr::Tuple`/`TupleProj` in `parse_primary`/`parse_postfix` —
 > C9-B); the C10 ergonomics desugars (`parse_let` tuple destructuring,
 > `parse_for`, `parse_if_let`/`parse_while_let`, match guards, or-patterns —
@@ -68,8 +68,8 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/parser.rs`, issue #3 + the
   > precedence pinned in `surface-grammar.md` REQ-10.
 
 - **REQ-2 (mandatory-clause enforcement is a parse error):** Parsing a `fn`
-  emits a `SyntaxError` if any of `req`, `ens` (≥1), or `fx` is absent or
-  out-of-order; parsing a `loop`/`while` errors if `inv` (≥1) or `dec` (exactly
+  emits a `SyntaxError` if any of `requires`, `ensures` (≥1), or `!` is absent or
+  out-of-order; parsing a `loop`/`while` errors if `keeps` (≥1) or `measures` (exactly
   one) is absent. The parser enforces PRESENCE, ORDER, and CARDINALITY only.
   Derived from §4.1 + the scope boundary in `surface-grammar.md`.
 
@@ -152,9 +152,9 @@ This doc's REQs are SHIPPED (`thermite-syntax/src/parser.rs`, issue #3 + the
 
 - **AC-1 (corpus round-trips):** parsing `sum.th`/`binary_search.th` yields the
   `ast.md` shapes with zero diagnostics, including
-  `binary_search.loop#1.inv#2 → forall_from(...)`. (REQ-1, REQ-5, REQ-6, REQ-7)
-- **AC-2 (missing clause = diagnostic):** removing `req`/`ens`/`fx`/`inv`/`dec`
-  or reordering `req`/`ens`/`fx` each produces a `SyntaxError`. (REQ-2)
+  `binary_search.loop#1.keeps#2 → forall_from(...)`. (REQ-1, REQ-5, REQ-6, REQ-7)
+- **AC-2 (missing clause = diagnostic):** removing `!`/`requires`/`ensures`/`keeps`/`measures`
+  or reordering `!`/`requires`/`ensures` each produces a `SyntaxError`. (REQ-2)
 - **AC-3 (per-item recovery, no cascade):** the `recover_per_item` fixture: a
   malformed first item + a well-formed second; ≥1 diagnostic for item one, item
   two parses to its correct node. (REQ-3)
@@ -224,7 +224,7 @@ Result discipline (REQ-4), addressing substrate (REQ-7)** — unchanged.
 **Partiality (REQ-9).** The parser builds `Binary { op: Div/Rem/Shl/Shr, .. }`
 with no obligation check; the lowering (`ast.md` REQ-11) emits the bare Verus
 operator and Verus raises the divide-by-zero / shift-bound obligation. The
-parser MUST NOT inject `req` clauses or guards — that would silently alter the
+parser MUST NOT inject `requires` clauses or guards — that would silently alter the
 contract.
 
 ## Verification
@@ -257,9 +257,9 @@ interaction, break-exit, diverge-loop) are owned + GROUNDED in
 | REQ-4 (Result / no panic) | SHIPPED | `pub fn parse → ParseResult { program, errors }`; `enum SyntaxError`; test `negative_inputs_never_panic`. |
 | REQ-5 (round-trip fidelity) | SHIPPED | `tests/conformance.rs` asserts both corpus programs with 0 diagnostics. |
 | REQ-6 (one call syntax) | SHIPPED | `parse_postfix` + `parse_path_expr`. |
-| REQ-7 (addressing substrate) | SHIPPED | loops/`inv`s kept in source order; `address.rs` numbers them. |
+| REQ-7 (addressing substrate) | SHIPPED | loops/`keeps`s kept in source order; `address.rs` numbers them. |
 | REQ-8 (operator tiers `% << >> & \| ^ !`, #92) | SHIPPED | `parse_mul` adds the `Percent`→`Rem` arm; `parse_shift`/`parse_bitand`/`parse_bitxor`/`parse_bitor` are the new left-folding tiers (threaded `parse_is`→`parse_bitor`→…→`parse_add`); `parse_unary` builds the prefix `!`→`Unary { Not }`. Binary `&`/`\|` vs prefix ref `&`/closure `\|` disambiguated by position (tests `each_new_operator_parses_to_its_binop_node`, `binary_pipe_distinct_from_closure_pipe`). GROUNDED L3 for all forms (`forge/tests/operators_conformance.rs`). |
-| REQ-9 (partiality not a parse concern, #92) | SHIPPED | `parse_mul`/`parse_shift` build the `Binary { op: Rem/Shl/Shr, .. }` node UNCONDITIONALLY — no `req` injection, no obligation check. The div-by-zero / shift-bound obligation is a §7 proof obligation raised by the bare Verus operator the lowering emits (`ast.md` REQ-11). GROUNDED: `%` without `req b != 0` is L0, `<<` unbounded is L0 (`forge/tests/operators_conformance.rs::rem_without_nonzero_req_is_l0` / `shift_without_bound_is_l0`). |
+| REQ-9 (partiality not a parse concern, #92) | SHIPPED | `parse_mul`/`parse_shift` build the `Binary { op: Rem/Shl/Shr, .. }` node UNCONDITIONALLY — no `requires` injection, no obligation check. The div-by-zero / shift-bound obligation is a §7 proof obligation raised by the bare Verus operator the lowering emits (`ast.md` REQ-11). GROUNDED: `%` without `requires b != 0` is L0, `<<` unbounded is L0 (`forge/tests/operators_conformance.rs::rem_without_nonzero_req_is_l0` / `shift_without_bound_is_l0`). |
 | REQ-10 (`break`/`continue` parse + in-loop rule, #93) | SHIPPED | `parse_block`'s statement dispatch (`parser.rs`) gains `TokKind::Break`/`Continue` arms calling `parse_break_continue`, which consumes the keyword + mandatory trailing `;` and builds `Stmt::Break`/`Continue`. The in-loop structural rule is the `Parser.loop_depth` counter, incremented around the body parse in `parse_loop_inner` (symmetric decrement on every exit path); a `break;`/`continue;` at depth 0 is a `SyntaxError::BreakContinueOutsideLoop` (a new span-bearing variant, `Display`-able, no panic). A nested-in-`if` break inside a loop is depth > 0 → accepted. Tests (`forge/tests/break_continue_conformance.rs`): `break_or_continue_outside_a_loop_is_a_structured_error_not_a_panic` (top-level break/continue → structured error) + `break_and_continue_inside_a_loop_parse_cleanly_as_stmt_nodes` (loop-nested → `Stmt::Break`/`Continue`). |
 
 ## Open questions (for the orchestrator)

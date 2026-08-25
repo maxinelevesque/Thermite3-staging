@@ -83,10 +83,11 @@
 
 use std::fmt::Write as _;
 
+use sha2::{Digest, Sha256};
 use thermite_syntax::ast::{
-    BinOp, Block, EnumItem, Expr, FnItem, IndexArg, Item, LoopKind, LoopNode, MatchArm, Param,
-    Pattern, PrimType, Program, SlicePat, SpecFnItem, Stmt, StructItem, Type, UnaryOp,
-    VariantShape,
+    BinOp, Block, Effect, EffectRow, EnumItem, Expr, FnItem, IndexArg, Item, LoopKind, LoopNode,
+    MatchArm, Param, Pattern, PrimType, Program, SlicePat, SpecFnItem, Stmt, StructItem, Type,
+    UnaryOp, VariantShape,
 };
 use thermite_syntax::lexer::Span;
 
@@ -112,6 +113,164 @@ pub(crate) fn zero_span() -> Span {
     Span::new(0, 0)
 }
 
+/// The runtime route fixed by checked L1 lowering before a certificate is
+/// assembled. These variants remain distinct even though all four occupy the
+/// RFC-3 per-execution/abort/fiat cell.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum L1Route {
+    /// An ordinary in-language executable whose woven contract checks abort on
+    /// violation.
+    Runtime,
+    /// A proof-exempt in-language body whose contract is enforced at runtime.
+    Slag,
+    /// A foreign call wrapper. The target is part of the pre-execution artifact
+    /// so a certificate cannot substitute a different crossing afterward.
+    Boundary { target: String },
+    /// An in-language potentially non-terminating body: partial correctness only.
+    Diverge,
+}
+
+/// Opaque checked-lowering evidence for one runtime-enforced L1 producer.
+///
+/// The emitted source, routed item, wrapper digest, and classifier identity are
+/// constructed from one checked program. Downstream callers can inspect them but
+/// cannot independently author or mutate the tuple before certificate assembly.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct L1Artifact {
+    source: String,
+    item: String,
+    effect_row: EffectRow,
+    slag_metadata: Option<L1SlagMetadata>,
+    wrapper_identity: String,
+    classifier_fragment: &'static str,
+    route: L1Route,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct L1SlagMetadata {
+    reason: String,
+    owner: String,
+    review: String,
+}
+
+impl L1Artifact {
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+
+    pub fn item(&self) -> &str {
+        &self.item
+    }
+
+    pub fn effect_row(&self) -> &EffectRow {
+        &self.effect_row
+    }
+
+    pub fn slag_metadata(&self) -> Option<(&str, &str, &str)> {
+        self.slag_metadata.as_ref().map(|meta| {
+            (
+                meta.reason.as_str(),
+                meta.owner.as_str(),
+                meta.review.as_str(),
+            )
+        })
+    }
+
+    pub fn wrapper_identity(&self) -> &str {
+        &self.wrapper_identity
+    }
+
+    pub fn classifier_fragment(&self) -> &'static str {
+        self.classifier_fragment
+    }
+
+    pub fn route(&self) -> &L1Route {
+        &self.route
+    }
+}
+
+/// Produce runnable L1 source and its route/classifier evidence atomically from
+/// one checked program. The source digest plus item name is the executable
+/// wrapper identity persisted by the RFC-3 certificate producer.
+pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    let source_program = checked.source();
+    let function = source_program
+        .items
+        .iter()
+        .find_map(|candidate| match candidate {
+            Item::Fn(function) if function.name == item => Some(function),
+            _ => None,
+        })
+        .ok_or_else(|| LowerError::Unsupported {
+            what: format!("L1 artifact item `{item}` is not an executable function"),
+            span: zero_span(),
+        })?;
+    let slag_metadata = function
+        .slag
+        .as_ref()
+        .map(|slag| {
+            let field = |value: &Option<String>, name: &str| {
+                value
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_string)
+                    .ok_or_else(|| LowerError::Unsupported {
+                        what: format!("L1 slag artifact requires non-empty `{name}` metadata"),
+                        span: slag.span,
+                    })
+            };
+            Ok(L1SlagMetadata {
+                reason: field(&slag.reason, "reason")?,
+                owner: field(&slag.owner, "owner")?,
+                review: field(&slag.review, "review")?,
+            })
+        })
+        .transpose()?;
+    let (route, classifier_fragment) = if let Some(boundary) = &function.boundary {
+        (
+            L1Route::Boundary {
+                target: boundary.target.trim().to_string(),
+            },
+            "thermite-l1-boundary-v1",
+        )
+    } else if slag_metadata.is_some() {
+        (L1Route::Slag, "thermite-l1-slag-v1")
+    } else if matches!(
+        &function.contract.effects,
+        EffectRow::Set(effects) if effects.contains(&Effect::Diverge)
+    ) {
+        (L1Route::Diverge, "thermite-l1-diverge-v1")
+    } else {
+        (L1Route::Runtime, "thermite-l1-runtime-v1")
+    };
+    if matches!(&route, L1Route::Boundary { target } if target.is_empty()) {
+        return Err(LowerError::Unsupported {
+            what: "L1 boundary artifact requires a non-empty foreign target".to_string(),
+            span: function.span,
+        });
+    }
+    if crate::program_uses_holding(source_program) {
+        return Err(LowerError::Unsupported {
+            what: "executable `holding` requires an explicit target lock provider".to_string(),
+            span: zero_span(),
+        });
+    }
+    let source = lower_l1_inner(source_program, None)?;
+    let digest = format!("{:x}", Sha256::digest(source.as_bytes()));
+    let wrapper_identity = format!("thermite-l1-wrapper-v1:{item}:sha256:{digest}");
+    Ok(L1Artifact {
+        source,
+        item: item.to_string(),
+        effect_row: function.contract.effects.clone(),
+        slag_metadata,
+        wrapper_identity,
+        classifier_fragment,
+        route,
+    })
+}
+
 /// Lower a whole `Program` to a single self-contained, runnable L1 Rust source
 /// file (REQ-1). Emits, in deterministic source order: (1) the always-active
 /// `thermite_contract_violation` handler + `thermite_check!` macro (REQ-2),
@@ -120,8 +279,46 @@ pub(crate) fn zero_span() -> Span {
 /// `fn` with its `req`/`ens`/`inv` checks woven in (REQ-1). The output compiles
 /// and runs under `rustc` (REQ-6).
 pub fn lower_l1(program: &Program) -> Result<String, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    let program = checked.source();
+    if crate::program_uses_holding(program) {
+        return Err(LowerError::Unsupported {
+            what: "executable `holding` requires an explicit target lock provider".to_string(),
+            span: zero_span(),
+        });
+    }
+    lower_l1_inner(program, None)
+}
+
+pub fn lower_l1_with_lock_provider(
+    program: &Program,
+    provider: &crate::LockProvider,
+) -> Result<String, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    provider.validate()?;
+    lower_l1_inner(checked.source(), Some(provider))
+}
+
+fn lower_l1_inner(
+    program: &Program,
+    lock_provider: Option<&crate::LockProvider>,
+) -> Result<String, LowerError> {
+    let rewritten;
+    let program = if lock_provider.is_some() {
+        rewritten = crate::locks::rewrite_shared_places(program);
+        &rewritten
+    } else {
+        program
+    };
     let mut out = String::new();
+    if let Some(provider) = lock_provider {
+        out.push_str(&provider.rust_source);
+        out.push_str("\nstruct __ThermiteLockGuard { close: fn(), release: fn() }\nimpl Drop for __ThermiteLockGuard { fn drop(&mut self) { (self.close)(); (self.release)(); } }\n\n");
+    }
     out.push_str(&emit_check_macro());
+    if lock_provider.is_some() {
+        out.push_str(&emit_lock_close_l1(program)?);
+    }
 
     // (2) the L1 runnable forms of every combinator referenced anywhere in a
     // contract/spec position, deduped in source order (REQ-3).
@@ -184,21 +381,61 @@ pub fn lower_l1(program: &Program) -> Result<String, LowerError> {
             // `ens`-checks; the foreign body is not lowered or verified. An
             // in-language fn lowers with its body.
             Item::Fn(f) if f.boundary.is_some() => lower_boundary_fn_l1(f, &variants)?,
-            Item::Fn(f) => lower_fn_l1(f, &variants, &inv_structs)?,
+            Item::Fn(f) => lower_fn_l1(f, &variants, &inv_structs, lock_provider)?,
             // Basis Stage 1c (`.design/basis/01-adts.md` REQ-8/REQ-9): a `struct`
             // lowers to a plain Rust `struct` + a `well_formed` method (the
             // always-active invariant predicate); an `enum` to a plain Rust `enum`.
-            Item::Struct(s) => lower_struct_l1(s)?,
+            Item::Struct(s) => lower_struct_l1(s, &variants)?,
             Item::Enum(e) => lower_enum_l1(e)?,
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer
             // yet (increments 2b-3); emit nothing, mirroring the inert ADT-decl arms.
-            Item::Forge(_) => continue,
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => continue,
         };
         out.push('\n');
         out.push_str(&item_src);
         out.push('\n');
     }
 
+    Ok(out)
+}
+
+fn emit_lock_close_l1(program: &Program) -> Result<String, LowerError> {
+    let regions =
+        thermite_spec::RegionIndex::build(program).map_err(|errors| LowerError::Unsupported {
+            what: format!("cannot emit lock close obligations: {errors:?}"),
+            span: zero_span(),
+        })?;
+    let mut out = String::new();
+    for item in &program.items {
+        let Item::LockDecl(lock) = item else { continue };
+        let invariant =
+            regions
+                .invariant_region(&lock.guards)
+                .ok_or_else(|| LowerError::Unsupported {
+                    what: format!(
+                        "lock `{}` has no invariant-bearing guarded place",
+                        lock.name
+                    ),
+                    span: lock.span,
+                })?;
+        let Some(root) = invariant.segments.first() else {
+            return Err(LowerError::Unsupported {
+                what: format!("lock `{}` resolved to an empty invariant region", lock.name),
+                span: lock.span,
+            });
+        };
+        let mut place = format!("{}()", crate::LockProvider::shared_symbol(root));
+        for field in invariant.segments.iter().skip(1) {
+            place.push('.');
+            place.push_str(field);
+        }
+        let close = crate::LockProvider::close_symbol(&lock.name);
+        writeln!(out, "fn {close}() {{ thermite_check!(\"keeps\", \"{invariant}.well_formed()\", {place}.well_formed()); }}").ok();
+    }
     Ok(out)
 }
 
@@ -233,7 +470,7 @@ fn invariant_struct_names(program: &Program) -> Vec<&str> {
         .items
         .iter()
         .filter_map(|item| match item {
-            Item::Struct(s) if s.inv.is_some() => Some(s.name.as_str()),
+            Item::Struct(s) if s.keeps.is_some() => Some(s.name.as_str()),
             _ => None,
         })
         .collect()
@@ -265,7 +502,7 @@ fn qualify_variant_path_l1(path: &[String], variants: &[(&str, &str)]) -> String
 /// clause, a `well_formed(&self) -> bool` method (REQ-8): the always-active
 /// invariant predicate a producing fn checks at run time (handled-or-loud, §6 L1
 /// rung). The `inv` body rewrites bare field-name paths to `self.<field>`.
-fn lower_struct_l1(s: &StructItem) -> Result<String, LowerError> {
+fn lower_struct_l1(s: &StructItem, variants: &[(&str, &str)]) -> Result<String, LowerError> {
     let mut out = String::new();
     // `#[derive(Clone)]`: the L1 ens-check snapshots a non-Copy struct parameter
     // before the body consumes it (`lower_fn_l1`'s `<p>__pre` snapshot) so a field
@@ -282,9 +519,9 @@ fn lower_struct_l1(s: &StructItem) -> Result<String, LowerError> {
         writeln!(out, "    {}: {ty},", field.name).ok();
     }
     out.push_str("}\n");
-    if let Some(inv) = &s.inv {
+    if let Some(inv) = &s.keeps {
         let field_names: Vec<&str> = s.fields.iter().map(|f| f.name.as_str()).collect();
-        let body = lower_inv_expr_l1(&inv.expr, &field_names, 0, s.span)?;
+        let body = lower_inv_expr_l1(&inv.expr, &field_names, variants, 0, s.span)?;
         writeln!(out, "\nimpl {} {{", s.name).ok();
         writeln!(out, "    #[allow(dead_code)]").ok();
         writeln!(out, "    fn well_formed(&self) -> bool {{ {body} }}").ok();
@@ -299,6 +536,7 @@ fn lower_struct_l1(s: &StructItem) -> Result<String, LowerError> {
 fn lower_inv_expr_l1(
     expr: &Expr,
     field_names: &[&str],
+    variants: &[(&str, &str)],
     depth: usize,
     span: Span,
 ) -> Result<String, LowerError> {
@@ -318,13 +556,27 @@ fn lower_inv_expr_l1(
             }
         }
         Expr::Binary { op, lhs, rhs } => {
-            let l = lower_inv_expr_l1(lhs, field_names, d, span)?;
-            let r = lower_inv_expr_l1(rhs, field_names, d, span)?;
+            let l = lower_inv_expr_l1(lhs, field_names, variants, d, span)?;
+            let r = lower_inv_expr_l1(rhs, field_names, variants, d, span)?;
             Ok(format!("{l} {} {r}", binop(*op)))
         }
         Expr::Field { receiver, name } => {
-            let r = lower_inv_expr_l1(receiver, field_names, d, span)?;
+            let r = lower_inv_expr_l1(receiver, field_names, variants, d, span)?;
             Ok(format!("{r}.{name}"))
+        }
+        // The L1 mirror of the receiver-bound Verus `is` lowering. Recurse into
+        // the scrutinee so a bare invariant field becomes `self.<field>`, then
+        // resolve the variant to the Rust-qualified `Enum::Variant` pattern.
+        Expr::Is { scrutinee, variant } => {
+            let s = lower_inv_expr_l1(scrutinee, field_names, variants, d, span)?;
+            let v = variant.last().cloned().unwrap_or_default();
+            let qualified = qualify_variant_path_l1(variant, variants);
+            let pat_path = if qualified == v && variant.len() == 1 {
+                v
+            } else {
+                qualified
+            };
+            Ok(format!("matches!({s}, {pat_path} {{ .. }})"))
         }
         // A method-call receiver/args (`cursor <= text.len()`'s `text.len()`,
         // `b.text.slice(0, b.cursor)`) must have the field-path rewrite recurse
@@ -338,10 +590,10 @@ fn lower_inv_expr_l1(
             name,
             args,
         } => {
-            let r = lower_inv_expr_l1(receiver, field_names, d, span)?;
+            let r = lower_inv_expr_l1(receiver, field_names, variants, d, span)?;
             let mut parts = Vec::with_capacity(args.len());
             for a in args {
-                parts.push(lower_inv_expr_l1(a, field_names, d, span)?);
+                parts.push(lower_inv_expr_l1(a, field_names, variants, d, span)?);
             }
             Ok(format!("{r}.{name}({})", parts.join(", ")))
         }
@@ -350,10 +602,10 @@ fn lower_inv_expr_l1(
         // receiver above, so the whole call family is covered, not just the one
         // triggering site).
         Expr::Call { callee, args } => {
-            let c = lower_inv_expr_l1(callee, field_names, d, span)?;
+            let c = lower_inv_expr_l1(callee, field_names, variants, d, span)?;
             let mut parts = Vec::with_capacity(args.len());
             for a in args {
-                parts.push(lower_inv_expr_l1(a, field_names, d, span)?);
+                parts.push(lower_inv_expr_l1(a, field_names, variants, d, span)?);
             }
             Ok(format!("{c}({})", parts.join(", ")))
         }
@@ -452,8 +704,8 @@ pub(crate) fn emit_combinator_l1_defs(program: &Program) -> Result<String, Lower
     for item in &program.items {
         match item {
             Item::Fn(f) => {
-                collect_combinators_in_expr(&f.contract.req.expr, f.span, &mut names);
-                for ens in &f.contract.ens {
+                collect_combinators_in_expr(&f.contract.requires.expr, f.span, &mut names);
+                for ens in &f.contract.ensures {
                     collect_combinators_in_expr(&ens.expr, f.span, &mut names);
                 }
                 // A boundary fn (ffi-boundary.md REQ-2) has `body: None` — its
@@ -464,7 +716,7 @@ pub(crate) fn emit_combinator_l1_defs(program: &Program) -> Result<String, Lower
                 }
             }
             Item::SpecFn(s) => {
-                collect_combinators_in_expr(&s.dec.expr, s.span, &mut names);
+                collect_combinators_in_expr(&s.measures.expr, s.span, &mut names);
                 collect_combinators_in_block_specs(&s.body, s.span, &mut names);
             }
             // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum`
@@ -474,7 +726,11 @@ pub(crate) fn emit_combinator_l1_defs(program: &Program) -> Result<String, Lower
             Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 combinator-collection
             // consumer yet (increments 2b-3); inert here, mirroring the ADT-decl arm.
-            Item::Forge(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
 
@@ -601,7 +857,7 @@ fn collect_combinators_in_block_specs(block: &Block, span: Span, acc: &mut Vec<(
                 for inv in &l.invs {
                     collect_combinators_in_expr(&inv.expr, span, acc);
                 }
-                collect_combinators_in_expr(&l.dec.expr, span, acc);
+                collect_combinators_in_expr(&l.measures.expr, span, acc);
                 collect_combinators_in_block_specs(&l.body, span, acc);
             }
             Stmt::If { then, else_, .. } => {
@@ -759,6 +1015,7 @@ fn lower_fn_l1(
     f: &FnItem,
     variants: &[(&str, &str)],
     inv_structs: &[&str],
+    lock_provider: Option<&crate::LockProvider>,
 ) -> Result<String, LowerError> {
     let ret = lower_type(&f.ret)?;
     let mut out = String::new();
@@ -767,9 +1024,9 @@ fn lower_fn_l1(
     writeln!(out, ") -> {ret} {{").ok();
 
     // req on entry (REQ-1/REQ-2). Omit a literal-`true` req (the empty contract).
-    let req_cond = lower_expr_exec(&f.contract.req.expr, 0, f.span, variants)?;
+    let req_cond = lower_expr_exec(&f.contract.requires.expr, 0, f.span, variants)?;
     if req_cond != "true" {
-        out.push_str(&emit_check("req", &f.contract.req.text, &req_cond, 1));
+        out.push_str(&emit_check("req", &f.contract.requires.text, &req_cond, 1));
     }
     // REQ-8 (handled-or-loud): a parameter whose type is an
     // invariant-bearing `struct` gets its `well_formed()` check woven as an
@@ -805,7 +1062,7 @@ fn lower_fn_l1(
         .filter(|p| {
             type_is_non_copy_l1(&p.ty)
                 && f.contract
-                    .ens
+                    .ensures
                     .iter()
                     .any(|ens| expr_references_ident(&ens.expr, &p.name))
         })
@@ -838,13 +1095,13 @@ fn lower_fn_l1(
         span: f.span,
     })?;
     writeln!(out, "    let result = {{").ok();
-    out.push_str(&lower_fn_body_l1(body, f, variants, 2)?);
+    out.push_str(&lower_fn_body_l1(body, f, variants, 2, lock_provider)?);
     writeln!(out, "    }};").ok();
 
     // ens on exit, in source order, against the bound `result` (REQ-1/REQ-2). A
     // reference to a snapshot non-Copy param is rewritten to its `<p>__pre` clone
     // (#88 blocker 2) so the check does not borrow a value the body moved.
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let expr = rename_params_in_expr(&ens.expr, &rename);
         let cond = lower_expr_exec(&expr, 0, f.span, variants)?;
         out.push_str(&emit_check("ens", &ens.text, &cond, 1));
@@ -1112,6 +1369,7 @@ fn block_references_ident(block: &Block, ident: &str) -> bool {
         }
         Stmt::Expr(e) => expr_references_ident(e, ident),
         Stmt::Loop(l) => block_references_ident(&l.body, ident),
+        Stmt::Holding { body, .. } => block_references_ident(body, ident),
         // break/continue carry no sub-expression (#93): reference nothing.
         Stmt::Break | Stmt::Continue => false,
     });
@@ -1175,9 +1433,9 @@ fn lower_boundary_fn_l1(f: &FnItem, variants: &[(&str, &str)]) -> Result<String,
     writeln!(out, ") -> {ret} {{").ok();
 
     // (2) req-check on entry (REQ-4). Omit a literal-`true` req (empty contract).
-    let req_cond = lower_expr_exec(&f.contract.req.expr, 0, f.span, variants)?;
+    let req_cond = lower_expr_exec(&f.contract.requires.expr, 0, f.span, variants)?;
     if req_cond != "true" {
-        out.push_str(&emit_check("req", &f.contract.req.text, &req_cond, 1));
+        out.push_str(&emit_check("req", &f.contract.requires.text, &req_cond, 1));
     }
 
     // (3) the foreign call binding `result`, the unproven crossing (§9). The
@@ -1193,7 +1451,7 @@ fn lower_boundary_fn_l1(f: &FnItem, variants: &[(&str, &str)]) -> Result<String,
     writeln!(out, "    let result = {}({args});", boundary.target).ok();
 
     // (4) ens-check on exit against the bound `result` (REQ-4), in source order.
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let cond = lower_expr_exec(&ens.expr, 0, f.span, variants)?;
         out.push_str(&emit_check("ens", &ens.text, &cond, 1));
     }
@@ -1213,13 +1471,30 @@ fn lower_fn_body_l1(
     f: &FnItem,
     variants: &[(&str, &str)],
     indent: usize,
+    lock_provider: Option<&crate::LockProvider>,
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let mut out = String::new();
-    for stmt in &block.stmts {
+    for (index, stmt) in block.stmts.iter().enumerate() {
         match stmt {
-            Stmt::Loop(l) => out.push_str(&lower_loop_l1(l, variants, indent)?),
-            other => out.push_str(&lower_stmt_l1(other, indent, variants)?),
+            Stmt::Loop(l) => out.push_str(&lower_loop_l1_with_provider(
+                l,
+                variants,
+                indent,
+                lock_provider,
+            )?),
+            other => {
+                let mut rendered =
+                    lower_stmt_l1_with_provider(other, indent, variants, lock_provider)?;
+                if matches!(other, Stmt::Holding { .. })
+                    && (block.tail.is_some() || index + 1 < block.stmts.len())
+                    && rendered.ends_with("}\n")
+                {
+                    rendered.truncate(rendered.len() - 2);
+                    rendered.push_str("};\n");
+                }
+                out.push_str(&rendered);
+            }
         }
     }
     if let Some(tail) = &block.tail {
@@ -1235,10 +1510,11 @@ fn lower_fn_body_l1(
 /// emitted: termination is a proof-time (L3) / bounded (L2) obligation, out of
 /// L1's runtime scope (REQ-5, OQ-3). A runtime check cannot prove a
 /// still-running loop terminates.
-fn lower_loop_l1(
+fn lower_loop_l1_with_provider(
     l: &LoopNode,
     variants: &[(&str, &str)],
     indent: usize,
+    lock_provider: Option<&crate::LockProvider>,
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let ipad = "    ".repeat(indent + 1);
@@ -1258,8 +1534,18 @@ fn lower_loop_l1(
     // Loop body statements (a nested loop recurses through `lower_loop_l1`).
     for stmt in &l.body.stmts {
         match stmt {
-            Stmt::Loop(inner) => out.push_str(&lower_loop_l1(inner, variants, indent + 1)?),
-            other => out.push_str(&lower_stmt_l1(other, indent + 1, variants)?),
+            Stmt::Loop(inner) => out.push_str(&lower_loop_l1_with_provider(
+                inner,
+                variants,
+                indent + 1,
+                lock_provider,
+            )?),
+            other => out.push_str(&lower_stmt_l1_with_provider(
+                other,
+                indent + 1,
+                variants,
+                lock_provider,
+            )?),
         }
     }
     if let Some(tail) = &l.body.tail {
@@ -1327,12 +1613,38 @@ fn lower_block_inner(
     span: Span,
     variants: &[(&str, &str)],
 ) -> Result<String, LowerError> {
+    lower_block_inner_with_provider(block, indent, span, variants, None)
+}
+
+fn lower_block_inner_with_provider(
+    block: &Block,
+    indent: usize,
+    span: Span,
+    variants: &[(&str, &str)],
+    lock_provider: Option<&crate::LockProvider>,
+) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let mut out = String::new();
-    for stmt in &block.stmts {
+    for (index, stmt) in block.stmts.iter().enumerate() {
         match stmt {
-            Stmt::Loop(l) => out.push_str(&lower_loop_l1(l, variants, indent)?),
-            other => out.push_str(&lower_stmt_l1(other, indent, variants)?),
+            Stmt::Loop(l) => out.push_str(&lower_loop_l1_with_provider(
+                l,
+                variants,
+                indent,
+                lock_provider,
+            )?),
+            other => {
+                let mut rendered =
+                    lower_stmt_l1_with_provider(other, indent, variants, lock_provider)?;
+                if matches!(other, Stmt::Holding { .. })
+                    && (block.tail.is_some() || index + 1 < block.stmts.len())
+                    && rendered.ends_with("}\n")
+                {
+                    rendered.truncate(rendered.len() - 2);
+                    rendered.push_str("};\n");
+                }
+                out.push_str(&rendered);
+            }
         }
     }
     if let Some(tail) = &block.tail {
@@ -1349,6 +1661,15 @@ pub(crate) fn lower_stmt_l1(
     stmt: &Stmt,
     indent: usize,
     variants: &[(&str, &str)],
+) -> Result<String, LowerError> {
+    lower_stmt_l1_with_provider(stmt, indent, variants, None)
+}
+
+fn lower_stmt_l1_with_provider(
+    stmt: &Stmt,
+    indent: usize,
+    variants: &[(&str, &str)],
+    lock_provider: Option<&crate::LockProvider>,
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     match stmt {
@@ -1404,10 +1725,22 @@ pub(crate) fn lower_stmt_l1(
         },
         Stmt::If { cond, then, else_ } => {
             let c = lower_expr_exec(cond, 0, zero_span(), variants)?;
-            let t = lower_block_inner(then, indent + 1, zero_span(), variants)?;
+            let t = lower_block_inner_with_provider(
+                then,
+                indent + 1,
+                zero_span(),
+                variants,
+                lock_provider,
+            )?;
             let mut out = format!("{pad}if {c} {{\n{t}{pad}}}");
             if let Some(e) = else_ {
-                let es = lower_block_inner(e, indent + 1, zero_span(), variants)?;
+                let es = lower_block_inner_with_provider(
+                    e,
+                    indent + 1,
+                    zero_span(),
+                    variants,
+                    lock_provider,
+                )?;
                 write!(out, " else {{\n{es}{pad}}}").ok();
             }
             out.push('\n');
@@ -1427,6 +1760,24 @@ pub(crate) fn lower_stmt_l1(
                 .to_string(),
             span: zero_span(),
         }),
+        Stmt::Holding { lock, body, .. } => {
+            // The public whole-program entry rejects holding unless it was
+            // given a validated provider. Expression lowering historically
+            // lost that Option while descending through Expr::If/Match blocks;
+            // emission itself needs only the provider's canonical symbols, so
+            // nested blocks may lower uniformly once the entry gate passed.
+            let acquire = crate::LockProvider::acquire_symbol(lock);
+            let release = crate::LockProvider::release_symbol(lock);
+            let close = crate::LockProvider::close_symbol(lock);
+            let inner = lower_block_inner_with_provider(
+                body,
+                indent + 1,
+                zero_span(),
+                variants,
+                lock_provider,
+            )?;
+            Ok(format!("{pad}{{\n{pad}    {acquire}();\n{pad}    let __thermite_lock_guard = __ThermiteLockGuard {{ close: {close}, release: {release} }};\n{pad}    let __thermite_holding_result = {{\n{inner}{pad}    }};\n{pad}    drop(__thermite_lock_guard);\n{pad}    __thermite_holding_result\n{pad}}}\n"))
+        }
     }
 }
 
@@ -2142,7 +2493,11 @@ fn program_uses_string_l1(program: &Program) -> bool {
             }
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer
             // yet (increments 2b-3); skip, mirroring main's inert handling.
-            Item::Forge(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     false
@@ -2172,6 +2527,7 @@ fn stmt_has_str_lit_l1(stmt: &Stmt) -> bool {
                 || else_.as_ref().map(block_has_str_lit_l1).unwrap_or(false)
         }
         Stmt::Loop(l) => block_has_str_lit_l1(&l.body),
+        Stmt::Holding { body, .. } => block_has_str_lit_l1(body),
         Stmt::Expr(e) => expr_has_str_lit_l1(e),
         // break/continue carry no sub-expression (#93): no string literal.
         Stmt::Break | Stmt::Continue => false,
@@ -2874,7 +3230,11 @@ fn program_uses_numfmt_l1(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer yet
         // (increments 2b-3); contributes nothing, mirroring the inert ADT-decl arm.
-        Item::Forge(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
@@ -2902,6 +3262,7 @@ fn stmt_has_to_string(stmt: &Stmt) -> bool {
                 || else_.as_ref().map(block_has_to_string).unwrap_or(false)
         }
         Stmt::Loop(l) => block_has_to_string(&l.body),
+        Stmt::Holding { body, .. } => block_has_to_string(body),
         Stmt::Expr(e) => expr_has_to_string(e),
         Stmt::Break | Stmt::Continue => false,
     }

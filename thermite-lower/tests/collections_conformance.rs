@@ -173,6 +173,41 @@ fn vec_demo_lowers_wrapper_and_verifies_l3() {
     }
 }
 
+/// Issue #8: the bounded wrapper must present the same `Seq` view that spec
+/// indexing and the combinator registry expect. This pins both reported
+/// positions in one real-Verus unit.
+#[test]
+fn vec_view_supports_spec_indexing_and_combinators() {
+    let src = "fn indexed(xs: Vec<u64>) -> u64\n  ! alloc\n  requires xs.len() > 0\n  ensures result == xs[0]\n{\n  xs[0]\n}\n\n\
+               fn excludes(xs: Vec<u32>, n: u32) -> bool\n  ! alloc\n  requires forall_in(xs, |x| x != n)\n  ensures result == forall_in(xs, |x| x != n)\n{\n  true\n}\n";
+    let emitted = lower_l3(&parse_src(src, "vec_view"));
+    for (name, elem) in [("TVecU64", "u64"), ("TVecU32", "u32")] {
+        assert!(
+            emitted.contains(&format!("impl View for {name} {{"))
+                && emitted.contains(&format!("type V = Seq<{elem}>;"))
+                && emitted.contains(&format!(
+                    "open spec fn view(&self) -> Seq<{elem}> {{ self.data@ }}"
+                )),
+            "{name} must bridge to its backing sequence view:\n{emitted}"
+        );
+    }
+    assert!(
+        emitted.contains("result == xs@[0 as int]")
+            && emitted.contains("forall_in(xs@, |x: u32| x != n)"),
+        "spec indexing and combinators must consume the wrapper view:\n{emitted}"
+    );
+    assert_no_cheats(&emitted, "vec_view");
+
+    match verify("vec_view_collections", &emitted) {
+        Some((ok, output)) => assert!(
+            ok && output.contains("verified, 0 errors"),
+            "the issue #8 indexing and combinator reproductions must verify. \
+             exit_success={ok}\n--- verus output ---\n{output}\n--- emitted ---\n{emitted}"
+        ),
+        None => eprintln!("SKIP: verus not available — issue #8 Vec view not verified."),
+    }
+}
+
 // ---- AC-1 cert oracle: checked_get → L3/pure, push_one → L3/alloc -----------
 //
 // The oracle (`conformance/collections/cases.json`, R-CHAR-3 — never edited)
@@ -206,13 +241,13 @@ fn vec_demo_matches_cert_oracle() {
         if let Item::Fn(f) = item {
             match f.name.as_str() {
                 "checked_get" => assert!(
-                    matches!(f.contract.fx, EffectRow::Pure),
+                    matches!(f.contract.effects, EffectRow::Pure),
                     "checked_get must be fx pure (oracle)"
                 ),
                 "push_one" => assert!(
-                    matches!(&f.contract.fx, EffectRow::Set(es) if es == &vec![Effect::Alloc]),
+                    matches!(&f.contract.effects, EffectRow::Set(es) if es == &vec![Effect::Alloc]),
                     "push_one must be fx alloc (oracle); got {:?}",
-                    f.contract.fx
+                    f.contract.effects
                 ),
                 other => panic!("unexpected fn {other} in vec_demo"),
             }
@@ -238,7 +273,7 @@ fn vec_demo_matches_cert_oracle() {
 fn oob_get_without_req_fails_verus_l0() {
     // The oracle's reject program verbatim (cases.json `oob_get_no_req.program`).
     let src =
-        "fn bad(v: Vec<u64>, i: usize) -> u64 req true ens result == v.get(i) fx pure { v.get(i) }";
+        "fn bad(v: Vec<u64>, i: usize) -> u64 ! pure requires true ensures result == v.get(i) { v.get(i) }";
     let program = parse_src(src, "oob_get_no_req");
     let emitted = lower_l3(&program);
     // It still lowers (a well-formed program); the failure is at verus (L0), not a

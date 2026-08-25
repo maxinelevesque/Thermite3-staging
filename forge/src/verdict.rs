@@ -176,10 +176,7 @@ impl CertVerdict {
 /// before this map, by [`cert_verdict_for_lean`], so it never reaches here as a
 /// `Timeout`).
 fn reason_detail(reason: &Reason) -> String {
-    match reason {
-        Reason::VerusTimeout(detail) => detail.clone(),
-        Reason::IncompleteUnknown(detail) => detail.clone(),
-    }
+    reason.detail().to_string()
 }
 
 /// Produce the cert verdict for a Lean discharge (REQ-1b/REQ-5, the KernelBudget + Stuck

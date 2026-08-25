@@ -166,7 +166,11 @@ impl CallGraph {
                 // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 call-graph
                 // consumer yet (increments 2b-3); not a callable node — insert
                 // nothing, mirroring the inert ADT-decl arm.
-                Item::Forge(_) => {}
+                Item::Forge(_)
+                | Item::EffectDecl(_)
+                | Item::SharedDecl(_)
+                | Item::Concurrent(_)
+                | Item::LockDecl(_) => {}
             }
         }
         CallGraph { nodes }
@@ -367,7 +371,12 @@ pub fn verified_closure(
                     variants.insert(variant.name.clone());
                 }
             }
-            Item::Struct(_) | Item::Forge(_) => {}
+            Item::Struct(_)
+            | Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
 
@@ -485,11 +494,11 @@ fn collect_verified_calls(item: &Item) -> Vec<VerifiedCall> {
     let mut calls = Vec::new();
     match item {
         Item::Fn(f) => {
-            collect_verified_expr_calls(&f.contract.req.expr, &mut calls);
-            for ens in &f.contract.ens {
+            collect_verified_expr_calls(&f.contract.requires.expr, &mut calls);
+            for ens in &f.contract.ensures {
                 collect_verified_expr_calls(&ens.expr, &mut calls);
             }
-            if let Some(dec) = &f.dec {
+            if let Some(dec) = &f.measures {
                 collect_verified_expr_calls(&dec.expr, &mut calls);
             }
             if let Some(body) = &f.body {
@@ -497,15 +506,20 @@ fn collect_verified_calls(item: &Item) -> Vec<VerifiedCall> {
             }
         }
         Item::SpecFn(s) => {
-            collect_verified_expr_calls(&s.dec.expr, &mut calls);
+            collect_verified_expr_calls(&s.measures.expr, &mut calls);
             collect_verified_block_calls(&s.body, &mut calls);
         }
         Item::Struct(s) => {
-            if let Some(inv) = &s.inv {
+            if let Some(inv) = &s.keeps {
                 collect_verified_expr_calls(&inv.expr, &mut calls);
             }
         }
-        Item::Enum(_) | Item::Forge(_) => {}
+        Item::Enum(_)
+        | Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => {}
     }
     calls
 }
@@ -534,7 +548,7 @@ fn collect_verified_block_calls(block: &Block, calls: &mut Vec<VerifiedCall>) {
                 for inv in &node.invs {
                     collect_verified_expr_calls(&inv.expr, calls);
                 }
-                collect_verified_expr_calls(&node.dec.expr, calls);
+                collect_verified_expr_calls(&node.measures.expr, calls);
                 if let thermite_syntax::LoopKind::While(cond) = &node.kind {
                     collect_verified_expr_calls(cond, calls);
                 }
@@ -542,6 +556,7 @@ fn collect_verified_block_calls(block: &Block, calls: &mut Vec<VerifiedCall>) {
             }
             Stmt::Expr(expr) => collect_verified_expr_calls(expr, calls),
             Stmt::Break | Stmt::Continue => {}
+            Stmt::Holding { .. } => {}
         }
     }
     if let Some(tail) = &block.tail {
@@ -686,7 +701,7 @@ fn walk_stmt(stmt: &Stmt, in_file: &BTreeSet<&str>, out: &mut Vec<String>) {
             for inv in &node.invs {
                 walk_expr(&inv.expr, in_file, out);
             }
-            walk_expr(&node.dec.expr, in_file, out);
+            walk_expr(&node.measures.expr, in_file, out);
             if let thermite_syntax::LoopKind::While(cond) = &node.kind {
                 walk_expr(cond, in_file, out);
             }
@@ -696,6 +711,7 @@ fn walk_stmt(stmt: &Stmt, in_file: &BTreeSet<&str>, out: &mut Vec<String>) {
         // break/continue carry no sub-expression and no callee (#93): no
         // call-graph edge (the layer-neutral leaf value).
         Stmt::Break | Stmt::Continue => {}
+        Stmt::Holding { .. } => {}
     }
 }
 
@@ -836,8 +852,8 @@ mod tests {
     #[test]
     fn pure_caller_of_spec_fn_is_end_to_end() {
         let src = "\
-spec fn spec_id(x: u32) -> u32 dec 0 { x }
-fn f(x: u32) -> u32 req x < 100 ens result == x fx pure { spec_id(x) }";
+spec fn spec_id(x: u32) -> u32 measures 0 { x }
+fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { spec_id(x) }";
         let scopes = classify(&parse(src));
         assert_eq!(scopes.get("f"), Some(&AssuranceScope::EndToEnd));
         assert_eq!(scopes.get("spec_id"), Some(&AssuranceScope::EndToEnd));
@@ -848,8 +864,8 @@ fn f(x: u32) -> u32 req x < 100 ens result == x fx pure { spec_id(x) }";
     #[test]
     fn direct_boundary_caller_is_to_boundary() {
         let src = "\
-#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ;
-fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }";
+#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;
+fn caller(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) }";
         let scopes = classify(&parse(src));
         assert_eq!(
             scopes.get("caller"),
@@ -870,9 +886,9 @@ fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }";
     #[test]
     fn transitive_boundary_chain_is_to_boundary() {
         let src = "\
-#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ;
-fn g(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }
-fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
+#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;
+fn g(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) }
+fn h(x: u32) -> u32 ! pure requires x < 100 ensures result == x { g(x) }";
         let scopes = classify(&parse(src));
         assert_eq!(
             scopes.get("h"),
@@ -893,8 +909,8 @@ fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
     #[test]
     fn slag_in_closure_is_to_boundary() {
         let src = "\
-#[slag(reason = \"x\", owner = \"a\", review = \"required\")] fn vendored(x: u32) -> u32 req x < 100 ens result == x fx pure { x }
-fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { vendored(x) }";
+#[slag(reason = \"x\", owner = \"a\", review = \"required\")] fn vendored(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }
+fn caller(x: u32) -> u32 ! pure requires x < 100 ensures result == x { vendored(x) }";
         let scopes = classify(&parse(src));
         assert_eq!(
             scopes.get("caller"),
@@ -909,7 +925,7 @@ fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { vendored(x) }";
     #[test]
     fn self_recursive_pure_fn_is_end_to_end_and_terminates() {
         let src = "\
-spec fn spec_sum(xs: &[u32]) -> u64 dec xs.len() { match xs { [] => 0, [head, ..t] => head as u64 + spec_sum(t), } }";
+spec fn spec_sum(xs: &[u32]) -> u64 measures xs.len() { match xs { [] => 0, [head, ..t] => head as u64 + spec_sum(t), } }";
         let scopes = classify(&parse(src));
         assert_eq!(scopes.get("spec_sum"), Some(&AssuranceScope::EndToEnd));
     }
@@ -919,8 +935,8 @@ spec fn spec_sum(xs: &[u32]) -> u64 dec xs.len() { match xs { [] => 0, [head, ..
     #[test]
     fn mutual_recursion_terminates_and_is_end_to_end() {
         let src = "\
-fn a(x: u32) -> u32 req x < 100 ens result == x fx pure { b(x) }
-fn b(x: u32) -> u32 req x < 100 ens result == x fx pure { a(x) }";
+fn a(x: u32) -> u32 ! pure requires x < 100 ensures result == x { b(x) }
+fn b(x: u32) -> u32 ! pure requires x < 100 ensures result == x { a(x) }";
         let scopes = classify(&parse(src));
         assert_eq!(scopes.get("a"), Some(&AssuranceScope::EndToEnd));
         assert_eq!(scopes.get("b"), Some(&AssuranceScope::EndToEnd));
@@ -931,9 +947,9 @@ fn b(x: u32) -> u32 req x < 100 ens result == x fx pure { a(x) }";
     #[test]
     fn classification_is_deterministic() {
         let src = "\
-#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ;
-fn g(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }
-fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
+#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;
+fn g(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) }
+fn h(x: u32) -> u32 ! pure requires x < 100 ensures result == x { g(x) }";
         let a = classify(&parse(src));
         let b = classify(&parse(src));
         assert_eq!(a, b);
@@ -942,7 +958,7 @@ fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
     // OQ-1: an unresolved (cross-file) callee is pure and ignored, not a crossing.
     #[test]
     fn unresolved_cross_file_callee_is_pure() {
-        let src = "fn f(x: u32) -> u32 req x < 100 ens result == x fx pure { external_helper(x) }";
+        let src = "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { external_helper(x) }";
         let scopes = classify(&parse(src));
         assert_eq!(scopes.get("f"), Some(&AssuranceScope::EndToEnd));
     }
@@ -952,8 +968,8 @@ fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
     #[test]
     fn reachable_fns_includes_a_directly_called_boundary_fn() {
         let src = "\
-#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ;
-fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }";
+#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;
+fn caller(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) }";
         let deps = reachable_in_file_fns(&parse(src), "caller");
         assert!(
             deps.contains("ext_id"),
@@ -970,9 +986,9 @@ fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }";
     #[test]
     fn reachable_fns_is_transitive_through_an_intermediary() {
         let src = "\
-#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ;
-fn g(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }
-fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
+#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;
+fn g(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) }
+fn h(x: u32) -> u32 ! pure requires x < 100 ensures result == x { g(x) }";
         let deps = reachable_in_file_fns(&parse(src), "h");
         assert!(deps.contains("g"), "h transitively references g: {deps:?}");
         assert!(
@@ -988,8 +1004,8 @@ fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
     #[test]
     fn reachable_fns_excludes_spec_fns_and_is_empty_for_a_pure_caller() {
         let src = "\
-spec fn spec_id(x: u32) -> u32 dec 0 { x }
-fn f(x: u32) -> u32 req x < 100 ens result == x fx pure { spec_id(x) }";
+spec fn spec_id(x: u32) -> u32 measures 0 { x }
+fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { spec_id(x) }";
         let deps = reachable_in_file_fns(&parse(src), "f");
         assert!(
             deps.is_empty(),
@@ -1002,8 +1018,8 @@ fn f(x: u32) -> u32 req x < 100 ens result == x fx pure { spec_id(x) }";
     #[test]
     fn reachable_fns_omits_an_unreferenced_sibling() {
         let src = "\
-fn a(x: u32) -> u32 req x < 100 ens result == x fx pure { x }
-fn b(x: u32) -> u32 req x < 100 ens result == x fx pure { x }";
+fn a(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }
+fn b(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }";
         let deps = reachable_in_file_fns(&parse(src), "a");
         assert!(
             !deps.contains("b"),
@@ -1015,9 +1031,9 @@ fn b(x: u32) -> u32 req x < 100 ens result == x fx pure { x }";
     #[test]
     fn reachable_fns_is_deterministic() {
         let src = "\
-#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ;
-fn g(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }
-fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
+#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;
+fn g(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) }
+fn h(x: u32) -> u32 ! pure requires x < 100 ensures result == x { g(x) }";
         let prog = parse(src);
         assert_eq!(
             reachable_in_file_fns(&prog, "h"),
@@ -1028,9 +1044,9 @@ fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
     #[test]
     fn verified_closure_is_exact_sorted_and_omits_unreachable_siblings() {
         let program = parse(
-            "fn helper(x: u64) -> u64 req true ens result == x fx pure { x } \
-             fn root(x: u64) -> u64 req true ens result == x fx pure { helper(x) } \
-             fn unrelated(x: u64) -> u64 req true ens result == x fx pure { x }",
+            "fn helper(x: u64) -> u64 ! pure requires true ensures result == x { x } \
+             fn root(x: u64) -> u64 ! pure requires true ensures result == x { helper(x) } \
+             fn unrelated(x: u64) -> u64 ! pure requires true ensures result == x { x }",
         );
         let closure = verified_closure(&program, &["root".to_string()]).unwrap();
         assert_eq!(closure.roots, vec!["root"]);
@@ -1048,14 +1064,14 @@ fn h(x: u32) -> u32 req x < 100 ens result == x fx pure { g(x) }";
     #[test]
     fn verified_closure_fails_closed_on_unknown_and_indirect_calls() {
         let unresolved =
-            parse("fn root(x: u64) -> u64 req true ens result == x fx pure { missing(x) }");
+            parse("fn root(x: u64) -> u64 ! pure requires true ensures result == x { missing(x) }");
         assert!(matches!(
             verified_closure(&unresolved, &["root".to_string()]),
             Err(VerifiedClosureError::UnresolvedCall { callee, .. }) if callee == "missing"
         ));
 
         let indirect =
-            parse("fn root(x: u64) -> u64 req true ens result == x fx pure { (|y| y)(x) }");
+            parse("fn root(x: u64) -> u64 ! pure requires true ensures result == x { (|y| y)(x) }");
         assert!(matches!(
             verified_closure(&indirect, &["root".to_string()]),
             Err(VerifiedClosureError::IndirectCall { .. })

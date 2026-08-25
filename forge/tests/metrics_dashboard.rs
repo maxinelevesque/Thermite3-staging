@@ -1,4 +1,4 @@
-//! AC-12 (umbrella `.design/thermite2-program.md` REQ-7): the §6 metrics dashboard.
+//! AC-12 (umbrella `docs/v2/program.md` REQ-7): the §6 metrics dashboard.
 //! Drives the built `forge` binary with `audit --metrics` and asserts that forge emits
 //! the routing-reason + verdict + TV-phase telemetry and the audit prints the dashboard
 //! — and, critically, that the dashboard gates nothing (#274,
@@ -296,7 +296,8 @@ fn audit_metrics_gates_nothing_on_failing_project() {
     // project does not certify and the audit exits non-zero.
     let file = write_temp_program(
         "failing",
-        "fn bad(n: u64) -> u64\n  req true\n  ens result > n\n  fx pure\n{ n }\n",
+        "fn bad(n: u64) -> u64\n  ! pure
+  requires true\n  ensures result > n\n{ n }\n",
     );
 
     let (bare_code, _bs, _be) = run_audit(&file, &[]);

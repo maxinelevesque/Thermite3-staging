@@ -73,7 +73,7 @@ pub enum ClauseVerdict {
 /// verdict (REQ-5).
 #[derive(Debug, Clone)]
 pub struct ClauseResult {
-    /// A human label for the clause (`sum.req`, `sum.ens#1`, `sum.loop#1.inv#2`, …).
+    /// A human label for the clause (`sum.requires`, `sum.ensures#1`, `sum.loop#1.keeps#2`, …).
     pub label: String,
     /// The verdict.
     pub verdict: ClauseVerdict,
@@ -171,7 +171,11 @@ pub fn tv_file(path: &Path, seed: u64, rlimit: f64) -> Result<TvReport, ForgeErr
             Item::SpecFn(_) | Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 contract-TV consumer
             // yet (increments 2b-3); inert here, mirroring the spec/ADT no-op arm.
-            Item::Forge(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     Ok(report)
@@ -223,8 +227,8 @@ fn tv_fn(
 
     // req
     tv_clause(
-        &f.contract.req,
-        &format!("{}.req", f.name),
+        &f.contract.requires,
+        &format!("{}.requires", f.name),
         f,
         &nat_fns,
         &base_frame,
@@ -234,10 +238,10 @@ fn tv_fn(
         report,
     );
     // ens (in source order)
-    for (i, ens) in f.contract.ens.iter().enumerate() {
+    for (i, ens) in f.contract.ensures.iter().enumerate() {
         tv_clause(
             ens,
-            &format!("{}.ens#{}", f.name, i + 1),
+            &format!("{}.ensures#{}", f.name, i + 1),
             f,
             &nat_fns,
             &base_frame,
@@ -354,7 +358,7 @@ fn tv_block_loops(
                 for (i, inv) in node.invs.iter().enumerate() {
                     tv_clause(
                         inv,
-                        &format!("{}.loop#{}.inv#{}", f.name, this, i + 1),
+                        &format!("{}.loop#{}.keeps#{}", f.name, this, i + 1),
                         f,
                         nat_fns,
                         base_frame,
@@ -365,8 +369,8 @@ fn tv_block_loops(
                     );
                 }
                 tv_clause(
-                    &node.dec,
-                    &format!("{}.loop#{}.dec", f.name, this),
+                    &node.measures,
+                    &format!("{}.loop#{}.measures", f.name, this),
                     f,
                     nat_fns,
                     base_frame,
@@ -624,7 +628,7 @@ fn generated_frame(preamble: &[String]) -> ObligationFrame {
 /// source of truth). The spec_sum shape mirrors `conformance/sum.th` (the golden).
 const GENERATED_PREAMBLE_SRC: &str = "\
 spec fn spec_sum(xs: &[u32]) -> u64
-  dec xs.len()
+  measures xs.len()
 {
   match xs {
     []          => 0,
@@ -633,16 +637,16 @@ spec fn spec_sum(xs: &[u32]) -> u64
 }
 
 fn touch(xs: &[u32], ys: &[u32], n: usize) -> bool
-  req true
-  ens result == sorted(xs)
-  ens forall_in(xs, |x| x < 1)
-  ens exists_in(xs, |x| x < 1)
-  ens count_where(xs, |x| x < 1) == 0
-  ens permutation_of(xs, ys)
-  ens disjoint(xs, ys)
-  ens forall_below(xs, n, |x| x < 1)
-  ens forall_from(xs, n, |x| x < 1)
-  fx  pure
+  ! pure
+  requires true
+  ensures result == sorted(xs)
+  ensures forall_in(xs, |x| x < 1)
+  ensures exists_in(xs, |x| x < 1)
+  ensures count_where(xs, |x| x < 1) == 0
+  ensures permutation_of(xs, ys)
+  ensures disjoint(xs, ys)
+  ensures forall_below(xs, n, |x| x < 1)
+  ensures forall_from(xs, n, |x| x < 1)
 {
   true
 }
@@ -652,9 +656,9 @@ fn touch(xs: &[u32], ys: &[u32], n: usize) -> bool
 // the off-corpus String byte-view obligation binds `t: &TString` and dispatches
 // `t.byte_at(i)`/`t.len()` to those spec fns on both columns.
 fn touch_string(t: String) -> u64
-  req t.len() > 0
-  ens result == t.byte_at(0)
-  fx  pure
+  ! pure
+  requires t.len() > 0
+  ensures result == t.byte_at(0)
 {
   t.byte_at(0)
 }

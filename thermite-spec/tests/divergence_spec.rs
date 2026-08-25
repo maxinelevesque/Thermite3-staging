@@ -41,7 +41,7 @@ fn parse_clean(src: &str) -> thermite_syntax::Program {
 // that the cage rejects as an unknown combinator.
 //
 // Root cause / design contradiction: REQ-3 enumerates the contract positions as
-// `Contract.req`/`ens`, `LoopNode.invs`/`dec`, and `SpecFnItem.body` — a `fn`
+// `Contract.requires`/`ens`, `LoopNode.invs`/`dec`, and `SpecFnItem.body` — a `fn`
 // body is not a contract position (only the loops *within* it are, for their
 // inv/dec). The validator's own `walk_block` doc-comment states "a `fn` body is
 // not itself a contract position — we only descend to surface nested loop
@@ -68,7 +68,8 @@ fn divergence_enum_ctor_in_fn_body_is_not_a_contract_position() {
     // not a contract position (REQ-3 enumerates the positions; a fn body is not
     // among them — only its nested loop inv/dec are). `return Some(0);` in a
     // body must not be subjected to the combinator cage.
-    let src = "fn f(xs: &[u32]) -> u32 req true ens result == 0 fx pure { return Some(0); 0 }";
+    let src =
+        "fn f(xs: &[u32]) -> u32 ! pure requires true ensures result == 0 { return Some(0); 0 }";
     let program = parse_clean(src);
     let result = validate(&program);
     assert!(
@@ -99,7 +100,7 @@ fn divergence_enum_ctor_in_fn_body_is_not_a_contract_position() {
 fn divergence_unknown_method_call_in_contract_is_rejected() {
     // REQ-3(c)/REQ-4(iv): `xs.frobnicate()` is not a grammar built-in method;
     // the cage must reject it (expected: a ForbiddenCall, the REQ-4(iv) variant).
-    let src = "fn f(xs: &[u32]) -> u32 req xs.frobnicate() ens result == 0 fx pure { 0 }";
+    let src = "fn f(xs: &[u32]) -> u32 ! pure requires xs.frobnicate() ensures result == 0 { 0 }";
     let program = parse_clean(src);
     let result = validate(&program);
     let errors = match result {

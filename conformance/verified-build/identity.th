@@ -1,15 +1,15 @@
 fn identity(x: u64) -> u64
-  req true
-  ens result == x
-  fx pure
+  ! pure
+  requires true
+  ensures result == x
 {
   x
 }
 
 fn hidden_identity(x: u64) -> u64
-  req true
-  ens result == x
-  fx pure
+  ! pure
+  requires true
+  ensures result == x
 {
   x
 }

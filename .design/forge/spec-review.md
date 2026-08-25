@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (review.rs) is the additive REQ-9 burned_lemmas partition + BurnedLemma projection (a certified lemma surfaces like any certified item); the v1 intent-reviewable / battery-failing partitions are unchanged (REQ-S1-9). prior: 92396428567edc6940a9e2845217f5ff4c2ea3c6)
-audited-content-sha256: 5582496cdbe72fdb714b7bd9a1edd185272a0725ccc53d7a06fa757e092441ef
+audited-content-sha256: e39c9dcb76dd2b8217d2ef926ce27c8de7d50aa9ca19190225a5317ce536cce4 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 5fe06ffac3c4d4a1ac46f7a9ff6c924adf24383eb62632f083af621ee7240beb.)
 governs: forge/src/review.rs
 thesis-refs:
   - thermite-design.md §7
@@ -17,7 +17,7 @@ prereq-blocker: #19
 ## Summary
 
 `forge review [item]` extracts the **pre-screened spec layer** — the declarative
-contract surface (`req`/`ens`/`fx` plus any referenced `spec fn` declarations,
+contract surface (`!`/`requires`/`ensures` plus any referenced `spec fn` declarations,
 **with no bodies**) for each function that **passed the battery** — and pairs each
 contract with an "is this what you meant?" intent-review prompt. It emits this as a
 machine artifact (`--json`, for a critic model) and a human form, and it defines the
@@ -37,13 +37,13 @@ line 298.
 ## Requirements
 
 - **REQ-1 (spec-layer extraction):** for each `fn`, `forge review` extracts the
-  DECLARATIVE spec layer — the verbatim `req` clause, every `ens` clause, the `fx`
-  effect row, and the **declaration** (name, params, return type, `dec` measure) of
+  DECLARATIVE spec layer — the verbatim `requires` clause, every `ensures` clause, the `!`
+  effect row, and the **declaration** (name, params, return type, `measures` measure) of
   every `spec fn` the contract references — with **no fn bodies and no spec-fn
   bodies**. This is the §7 "few percent of total line count" surface the reviewer
   reads. Derived from thermite-design.md §7 line 227 ("the certificate includes the
-  full spec layer ... pre-screened") and §4.1/§4.2 (the contract surface: `req`/`ens`/
-  `fx`, named `spec fn`s).
+  full spec layer ... pre-screened") and §4.1/§4.2 (the contract surface: `requires`/`ensures`/
+  `!`, named `spec fn`s).
 
 - **REQ-2 (pre-screening — only battery-passing contracts are intent-reviewable):**
   a contract is surfaced for INTENT review only if it PASSED the mechanical battery
@@ -100,10 +100,10 @@ R-DOC-1, no code/oracle/route changes).
 
 - **AC-1 (spec layer for `sum`):** `forge review conformance/sum.th --json` (or for
   the `sum` item) emits, for `sum`, EXACTLY its declarative spec layer:
-  - `req`: `xs.len() <= 1_000_000`
-  - `ens`: `[ "result == spec_sum(xs)", "result <= xs.len() as u64 * u32::MAX as u64" ]`
-  - `fx`: `pure`
-  - referenced spec fns: the **declaration** of `spec_sum` — `spec fn spec_sum(xs: &[u32]) -> u64` with `dec xs.len()` — and **NO body** (the `match xs { ... }` block of `conformance/sum.th` lines 4–7 is EXCLUDED).
+  - `requires`: `xs.len() <= 1_000_000`
+  - `ensures`: `[ "result == spec_sum(xs)", "result <= xs.len() as u64 * u32::MAX as u64" ]`
+  - `!`: `pure`
+  - referenced spec fns: the **declaration** of `spec_sum` — `spec fn spec_sum(xs: &[u32]) -> u64` with `measures xs.len()` — and **NO body** (the `match xs { ... }` block of `conformance/sum.th` lines 4–7 is EXCLUDED).
   - `sum`'s own body (`conformance/sum.th` lines 15–28, the `let`/`while`/`acc`) is
     EXCLUDED.
   Each clause text is the verbatim `Clause.text` (ast.rs `struct Clause`), not a
@@ -119,7 +119,7 @@ R-DOC-1, no code/oracle/route changes).
 
 - **AC-3 (battery-failing fn flagged, NOT intent-reviewable):** a fixture
   `conformance/review/vacuous.th` whose fn carries a contract the battery REJECTS
-  (e.g. `ens true`, structurally rejected per §7 step 1 — its `forge check` cert is a
+  (e.g. `ensures true`, structurally rejected per §7 step 1 — its `forge check` cert is a
   `reject` / `Level::L0` cert) appears in the artifact FLAGGED as `battery_failing`
   (with the cert's `reject.cause`) and is **NOT** surfaced with an intent-review
   prompt or a verdict slot. The reviewer is never asked "is this what you meant?"
@@ -180,7 +180,7 @@ choice).
    emitted.
 
 **Exclusion is structural, not heuristic.** The extraction reads `contract`, `name`,
-`params`, `ret`, and `dec` and never touches `body` — so "no bodies" is enforced by
+`params`, `ret`, and `measures` and never touches `body` — so "no bodies" is enforced by
 which fields the projection reads, paralleling how `audit::FunctionRow::from_certificate`
 projects only the verdict-and-trust fields.
 
@@ -237,7 +237,7 @@ intent-reviewable.
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (spec-layer extraction, no bodies) | SHIPPED | `pub fn review_file` in `review.rs` → `ReviewArtifact`; `SpecLayer::extract` projects `FnItem.contract` (verbatim `Clause.text` for `req`/`ens`/`fx`) + `referenced_spec_fns` (the directly-referenced `SpecFnItem` declarations: name/params/ret/`dec`); `FnItem.body`/`SpecFnItem.body` are NEVER read (structural exclusion). Consumer: `cli::run_review`. Verified: `corpus_sum_intent_reviewable_no_bodies` (no body tokens). |
+| REQ-1 (spec-layer extraction, no bodies) | SHIPPED | `pub fn review_file` in `review.rs` → `ReviewArtifact`; `SpecLayer::extract` projects `FnItem.contract` (verbatim `Clause.text` for `!`/`requires`/`ensures`) + `referenced_spec_fns` (the directly-referenced `SpecFnItem` declarations: name/params/ret/`measures`); `FnItem.body`/`SpecFnItem.body` are NEVER read (structural exclusion). Consumer: `cli::run_review`. Verified: `corpus_sum_intent_reviewable_no_bodies` (no body tokens). |
 | REQ-2 (pre-screening — only battery-passing) | SHIPPED | `is_intent_reviewable` (= `manifest::cert_certifies`: reject-free + certified rung) partitions certs in `project_artifact`; a `reject.is_some()` cert becomes a `BatteryFailing` flag carrying `reject.cause`, NOT surfaced. Consumer: `review_file`. Verified: `vacuous_flagged_not_surfaced` (`EnsIsTrivial`, not surfaced). |
 | REQ-3 (per-contract intent prompt) | SHIPPED | `IntentReview::prompt` names the item + frames the only-open-question as spec-intent alignment; built in `IntentReview::new`. Consumer: `cli::render_review`. Verified: the `prompt` assertion in `corpus_sum_intent_reviewable_no_bodies`. |
 | REQ-4 (pluggable verdict slot — separate record) | SHIPPED | `struct ReviewVerdict { item, aligned, note }` + `struct ReviewRecord` (the separate `*.review.json` document); `attach_verdicts` builds it, `cli::run_review` writes `<file>.review.json`. NEVER a `Certificate` field — the cert's `oracle_subset` is untouched. Verified: `reviewer_shellout_attaches_verdict`. |

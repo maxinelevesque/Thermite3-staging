@@ -1,0 +1,9 @@
+version = 1
+
+[[item]]
+id = "CR-001"
+gap = "GAP-CLAIM-EVIDENCE-CLOSURE"
+issue = "https://github.com/maxinelevesque/Thermite3-staging/issues/48"
+status = "open"
+summary = "Establish semantic, not merely structural, closure between shipped requirement claims and their cited evidence."
+closure_evidence = []

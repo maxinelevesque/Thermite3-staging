@@ -55,9 +55,8 @@ fn has_nested(errs: &[SpecError]) -> bool {
 fn two_level_nesting_in_ens_rejects() {
     let p = parse(
         "fn f(xs: &[u32], ys: &[u32], zs: &[u32]) -> u32 \
-         req true \
-         ens forall_in(xs, |x| forall_in(ys, |y| exists_in(zs, |z| z == x))) \
-         fx pure { 0 }",
+         ! pure requires true \
+         ensures forall_in(xs, |x| forall_in(ys, |y| exists_in(zs, |z| z == x))) { 0 }",
     );
     let errs = validate(&p).expect_err("REQ-6: a 2-level nested combinator must reject");
     assert!(
@@ -73,9 +72,9 @@ fn two_level_nesting_in_ens_rejects() {
 fn nested_combinator_in_loop_inv_rejects() {
     let p = parse(
         "fn f(xs: &[u32], ys: &[u32]) -> u32 \
-         req true ens true fx pure { \
+         ! pure requires true ensures true { \
             let mut i: u32 = 0; \
-            loop inv forall_in(xs, |x| exists_in(ys, |y| y == x)) dec 0 { return 0; } \
+            loop keeps forall_in(xs, |x| exists_in(ys, |y| y == x)) measures 0 { return 0; } \
          }",
     );
     let errs = validate(&p).expect_err("REQ-6: nested combinator in an `inv` closure must reject");
@@ -92,9 +91,8 @@ fn nested_combinator_in_loop_inv_rejects() {
 fn nested_combinator_under_three_arg_outer_rejects() {
     let p = parse(
         "fn f(xs: &[u32], ys: &[u32]) -> u32 \
-         req true \
-         ens forall_below(xs, 1, |x| forall_in(ys, |y| y > x)) \
-         fx pure { 0 }",
+         ! pure requires true \
+         ensures forall_below(xs, 1, |x| forall_in(ys, |y| y > x)) { 0 }",
     );
     let errs = validate(&p).expect_err("REQ-6: nested combinator under a 3-arg outer must reject");
     assert!(
@@ -110,9 +108,9 @@ fn nested_combinator_under_three_arg_outer_rejects() {
 #[test]
 fn nested_combinator_in_spec_fn_body_rejects() {
     let p = parse(
-        "spec fn bad(xs: &[u32], ys: &[u32]) -> bool dec 0 \
+        "spec fn bad(xs: &[u32], ys: &[u32]) -> bool measures 0 \
             { forall_in(xs, |x| exists_in(ys, |y| y == x)) } \
-         fn f(xs: &[u32]) -> u32 req true ens true fx pure { 0 }",
+         fn f(xs: &[u32]) -> u32 ! pure requires true ensures true { 0 }",
     );
     let errs = validate(&p)
         .expect_err("REQ-6: nested combinator inside a spec-fn body closure must reject");
@@ -137,10 +135,9 @@ fn nested_combinator_in_spec_fn_body_rejects() {
 fn top_level_combinator_after_closure_combinator_accepts() {
     let p = parse(
         "fn f(xs: &[u32], ys: &[u32]) -> u32 \
-         req true \
-         ens forall_in(xs, |x| x > 0) \
-         ens sorted(ys) \
-         fx pure { 0 }",
+         ! pure requires true \
+         ensures forall_in(xs, |x| x > 0) \
+         ensures sorted(ys) { 0 }",
     );
     validate(&p).expect("REQ-6: a top-level combinator after a closure-combinator must stay Ok");
 }
@@ -152,10 +149,9 @@ fn top_level_combinator_after_closure_combinator_accepts() {
 fn two_sibling_closure_combinators_accept() {
     let p = parse(
         "fn f(xs: &[u32], ys: &[u32]) -> u32 \
-         req true \
-         ens forall_in(xs, |x| x > 0) \
-         ens forall_in(ys, |y| y < 0) \
-         fx pure { 0 }",
+         ! pure requires true \
+         ensures forall_in(xs, |x| x > 0) \
+         ensures forall_in(ys, |y| y < 0) { 0 }",
     );
     validate(&p).expect("REQ-6: two sibling closure-combinators must both stay Ok");
 }
@@ -167,8 +163,8 @@ fn two_sibling_closure_combinators_accept() {
 #[test]
 fn spec_fn_body_calling_a_combinator_accepts() {
     let p = parse(
-        "spec fn all_pos(xs: &[u32]) -> bool dec 0 { forall_in(xs, |x| x > 0) } \
-         fn f(xs: &[u32]) -> u32 req true ens all_pos(xs) fx pure { 0 }",
+        "spec fn all_pos(xs: &[u32]) -> bool measures 0 { forall_in(xs, |x| x > 0) } \
+         fn f(xs: &[u32]) -> u32 ! pure requires true ensures all_pos(xs) { 0 }",
     );
     validate(&p).expect("REQ-6 named caveat: a spec-fn body may itself call a combinator (Ok)");
 }
@@ -181,8 +177,8 @@ fn spec_fn_body_calling_a_combinator_accepts() {
 #[test]
 fn named_spec_fn_quantifier_called_from_closure_accepts() {
     let p = parse(
-        "spec fn all_pos(ys: &[u32]) -> bool dec 0 { forall_in(ys, |x| x > 0) } \
-         fn f(ys: &[u32]) -> u32 req true ens forall_in(ys, |s| all_pos(ys)) fx pure { 0 }",
+        "spec fn all_pos(ys: &[u32]) -> bool measures 0 { forall_in(ys, |x| x > 0) } \
+         fn f(ys: &[u32]) -> u32 ! pure requires true ensures forall_in(ys, |s| all_pos(ys)) { 0 }",
     );
     validate(&p)
         .expect("REQ-6: a closure body MAY call a named spec fn that internally quantifies (Ok)");
@@ -192,8 +188,8 @@ fn named_spec_fn_quantifier_called_from_closure_accepts() {
 #[test]
 fn named_spec_fn_call_in_closure_accepts() {
     let p = parse(
-        "spec fn is_even(x: u32) -> bool dec 0 { x > 0 } \
-         fn f(xs: &[u32]) -> u32 req true ens forall_in(xs, |x| is_even(x)) fx pure { 0 }",
+        "spec fn is_even(x: u32) -> bool measures 0 { x > 0 } \
+         fn f(xs: &[u32]) -> u32 ! pure requires true ensures forall_in(xs, |x| is_even(x)) { 0 }",
     );
     validate(&p).expect("AC-7: a named spec-fn call in a closure body must stay Ok");
 }
@@ -213,8 +209,8 @@ fn named_spec_fn_call_in_closure_accepts() {
 #[test]
 fn nested_combinator_reject_verdict_holds() {
     let p = parse(
-        "fn f(xs: &[u32], ys: &[u32]) -> u32 req true \
-         ens forall_in(xs, |x| exists_in(ys, |y| y == x)) fx pure { 0 }",
+        "fn f(xs: &[u32], ys: &[u32]) -> u32 ! pure requires true \
+         ensures forall_in(xs, |x| exists_in(ys, |y| y == x)) { 0 }",
     );
     let errs = validate(&p).expect_err("AC-6: the canonical nested combinator must reject");
     assert!(

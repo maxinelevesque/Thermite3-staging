@@ -1,7 +1,7 @@
 # Thermite — convenience targets. The build/test system is Cargo; these are
 # thin entry points. `make audit` is the headline: a FULL TRUST-CHAIN
-# re-derivation a skeptic runs on their own machine (see scripts/audit.sh).
-.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test
+# re-derivation a skeptic runs on their own machine (see gates/audit.sh).
+.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test rfc9-effect-inventory language-completeness-inventory language-outcome-matrix rfc3-certification-replay assurance-v2-replay language-rfc-evolution completeness-review
 
 DOC_DRIFT_CI_BASE ?= origin/main
 DOC_DRIFT_CI_HEAD ?= HEAD
@@ -19,13 +19,13 @@ DOC_DRIFT_CI_HEAD ?= HEAD
 # is absent, and a SKIP degrades the verdict. Requires elan/lake (check 1) and the
 # Verus/Z3 prover (checks 2/3/5: set VERUS_BIN, put `verus` on PATH, or ~/.local/bin/verus).
 audit:
-	@bash scripts/audit.sh
+	@bash gates/audit.sh
 
 # The fast existence demo (the legacy A/B/D shape on one program): faithful program
 # certifies L3, the SAME program with an injected bug is REFUSED, and the emitted
 # proof re-verifies under third-party Verus with forge excluded. Requires Verus/Z3.
 audit-fast:
-	@bash scripts/audit.sh --fast
+	@bash gates/audit.sh --fast
 
 # The full local gauntlet (mirrors CI).
 gauntlet:
@@ -33,8 +33,13 @@ gauntlet:
 	cargo test --workspace
 	cargo clippy --workspace --all-targets -- -D warnings
 	cargo fmt --all --check
-	python3 tooling/req-status.py
-	tooling/reqs check
+	uv run python gates/req-status.py
+	uv run gates/reqs check
+	uv run gates/rfc9-effect-inventory.py --check
+	uv run python gates/language-completeness-inventory.py
+	uv run python gates/language-outcome-matrix.py
+	uv run python gates/rfc3-certification-replay.py
+	uv run python gates/assurance-v2-replay.py
 
 check:
 	cargo build --workspace
@@ -59,7 +64,7 @@ clippy:
 # commit (`DOC_DRIFT_CI_BASE`, default origin/main, merged with
 # `DOC_DRIFT_CI_HEAD`, default HEAD) in a temporary worktree. Deliberately NOT
 # part of `make audit` — doc freshness is a development-discipline invariant,
-# not a link in the proof-trust chain (decision 5); scripts/audit.sh stays
+# not a link in the proof-trust chain (decision 5); gates/audit.sh stays
 # byte-identical.
 doc-drift: doc-drift-ci
 
@@ -83,31 +88,31 @@ doc-drift-ci:
 	cleanup() { git worktree remove -f "$$tmp_dir" >/dev/null 2>&1 || rm -rf "$$tmp_dir"; }; \
 	trap cleanup EXIT HUP INT TERM; \
 	git worktree add --detach --quiet "$$tmp_dir" "$$merge_sha"; \
-	python3 "$$tmp_dir/tooling/doc-drift.py" --root "$$tmp_dir"
+	uv run python "$$tmp_dir/gates/doc-drift.py" --root "$$tmp_dir"
 
 doc-drift-worktree:
-	@python3 tooling/doc-drift.py
+	@uv run python gates/doc-drift.py
 
 # The gate's own oracle fixture suite (hand-authored expected values, R-CHAR-3).
 doc-drift-test:
-	@python3 -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s gates/tests -v
 
 # Source-comment REQ-status inventory/contradiction lint. Complements
 # doc-drift's audited-sha freshness check by catching semantic contradictions in
 # `//! | REQ | SHIPPED/NOT-STARTED | evidence |` rows.
 req-status:
-	@python3 tooling/req-status.py
+	@uv run python gates/req-status.py
 
 req-status-test:
-	@python3 -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s gates/tests -v
 
 # Canonical REQ registry + generated status views. `--check` validates the
 # machine-readable registry and fails if checked-in generated views are stale.
 req-registry:
-	@tooling/reqs check
+	@uv run gates/reqs check
 
 req-registry-test:
-	@python3 -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s gates/tests -v
 
 # The gate that guards the gates (crosslink #93). doc-drift pins the CONTENT of
 # what the routes govern; this asserts the two agent-facing hooks are actually
@@ -116,7 +121,52 @@ req-registry-test:
 # Not part of `make audit`: hook wiring is a development-discipline invariant,
 # not a link in the proof-trust chain (the doc-drift decision-5 precedent).
 control-plane:
-	@python3 tooling/control-plane-check.py
+	@uv run python gates/control-plane-check.py
 
 control-plane-test:
-	@python3 -m unittest discover -s tooling/tests -v
+	@uv run python -m unittest discover -s gates/tests
+
+# The two RFC-18 §4 coverage gates. route-coverage: every route in
+# gates/routes.toml resolves against the tracked tree (no dead routes, no
+# stale `unbuilt` flags) and every spec-discipline-gated file is routed —
+# the static sweep of the rule the edit hook enforces per-edit. paths-exist:
+# every repo-relative path referenced by CI, the Makefile, the justfile, the
+# shell gates, the Python gates and Rust source resolves; would have caught
+# all three CI breaks the layout move shipped through a green local suite.
+route-coverage:
+	@uv run python gates/route-coverage.py
+
+route-coverage-test:
+	@uv run python -m unittest discover -s gates/tests
+
+paths-exist:
+	@uv run python gates/paths-exist.py
+
+paths-exist-test:
+	@uv run python -m unittest discover -s gates/tests -v
+
+# RFC-9 migration inventory: all standalone .th and JSON program fields have
+# declared shared roots; Rust's mixed code/prose population is explicitly
+# enumerated for reviewed burn-down.
+rfc9-effect-inventory:
+	@uv run gates/rfc9-effect-inventory.py --check
+
+# Issue #48: fail closed when the public AST, documented claim anchors, gap
+# dispositions, or RFC-3 increment ledger changes without review.
+language-completeness-inventory:
+	@uv run python gates/language-completeness-inventory.py
+
+language-outcome-matrix:
+	@uv run python gates/language-outcome-matrix.py
+
+rfc3-certification-replay:
+	@uv run python gates/rfc3-certification-replay.py
+
+assurance-v2-replay:
+	@uv run python gates/assurance-v2-replay.py
+
+language-rfc-evolution:
+	@uv run python gates/language-rfc-evolution.py
+
+completeness-review:
+	@uv run python gates/completeness-review.py

@@ -97,7 +97,7 @@ fn malformed_literals_are_structured_diagnostics_not_panic() {
 /// without a standalone expression entry point.
 fn ens_rhs(expr_src: &str) -> Expr {
     let src = format!(
-        "fn f(a: u64, b: u64, c: u64) -> u64 req true ens result == {expr_src} fx pure {{ a }}"
+        "fn f(a: u64, b: u64, c: u64) -> u64 ! pure requires true ensures result == {expr_src} {{ a }}"
     );
     let r = parse(&src);
     assert!(
@@ -108,7 +108,7 @@ fn ens_rhs(expr_src: &str) -> Expr {
     let Item::Fn(f) = &r.program.items[0] else {
         panic!("expected a fn item");
     };
-    let ens = &f.contract.ens[0].expr;
+    let ens = &f.contract.ensures[0].expr;
     match ens {
         Expr::Binary {
             op: BinOp::Eq, rhs, ..

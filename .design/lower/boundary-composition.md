@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: b695da1b202c0b04c467c1553aaefece94978a3ab23709445ffbf68d7198ed6a (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: 7ae57f24e2406efe54405ab2ccf1ac9b7b87b4786874556a48ae1fa4394d4e8b (re-pinned 2026-08-25 for issue #8 Vec View lowering; boundary composition is unchanged. prior: 9bd9c6ffa7571eb30ae7fe07cdf6c45de88225634d7dd0b1bfaf757e1aea4367)
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9
@@ -64,7 +64,7 @@ fn caller(x: u32) -> (r: u32) requires x < 100, ensures r == x, { ext_id(x) }
 `caller` PROVES at L3 using `ext_id`'s ASSUMED ensures, with no `--no-cheating`
 or any cheat flag — verus's default mode. The body of `ext_id` is never examined.
 
-**(2) Soundness — the caller must still honor `f`'s `req`.** A caller with
+**(2) Soundness — the caller must still honor `f`'s `requires`.** A caller with
 `requires true` (NOT establishing `x < 100`) calling `ext_id(x)`:
 
 ```
@@ -77,7 +77,7 @@ verification results:: 0 verified, 1 errors      (exit 1)
 A COUNTEREXAMPLE, not a false L3. The external_body assumes `f`'s ensures, but
 the caller is still obliged to ESTABLISH `f`'s requires at the call site.
 
-**(3) Soundness — the caller must still prove its OWN `ens`.** A caller claiming
+**(3) Soundness — the caller must still prove its OWN `ensures`.** A caller claiming
 `ensures r == x + 1` (stronger than what `ext_id`'s `ensures r == x` delivers):
 
 ```
@@ -113,14 +113,14 @@ a foreign function — not a proof cheat — because:
 1. It is emitted **only** for a fn ALREADY classified `#[boundary]`/`#[slag]` and
    ALREADY certified `Level::L1` (the §16/§8 path); NEVER for a regular Thermite
    fn (which must be FULLY proved — harness (3)'s contrast).
-2. The caller still proves its OWN body and discharges `f`'s `req` (harnesses 2,
+2. The caller still proves its OWN body and discharges `f`'s `requires` (harnesses 2,
    3) — composition is SOUND, not a free pass.
 3. The crossing is L1-enforced at runtime: if `f` violates its contract, the L1
    wrapper detects it at the boundary (§6/§9). The L3 proof is honestly scoped
    `to_boundary` (#17): "verified, GIVEN `f` honors its contract."
 
 **emitted-verus vs our-Rust-src distinction (load-bearing).** The anti-pattern
-gate (`tooling/anti-pattern-gate.py`, R-DEFER-9) forbids `#[verifier::external]`
+gate (`gates/anti-pattern-gate.py`, R-DEFER-9) forbids `#[verifier::external]`
 (note: `external`, not `external_body`) appearing in OUR toolchain's `.rs`
 production source — that would dodge a proof of code we wrote. #52 emits
 `#[verifier::external_body]` (a different attribute) INTO the lowered verus
@@ -158,7 +158,7 @@ the two files #52 touched:
   in place of a real body. The `requires`/`ensures` lowering is UNCHANGED (same
   spec-context machinery, REQ-5 of verus-lowering.md); only the attribute + the
   body-suppression is new. This is the SECONDARY change site (the emission shape
-  is the lowerer's job). (Route shape RESOLVED at #52: `tooling/spec-routes.toml` carries
+  is the lowerer's job). (Route shape RESOLVED at #52: `gates/routes.toml` carries
   boundary-composition.md routes for BOTH `lower.rs` and `check.rs`, alongside
   their other governing docs — see OQ-3.)
 
@@ -184,7 +184,7 @@ is never itself lowered to a real verus body.
   model, NOT a proof cheat).
 - **REQ-2 (boundary-caller reaches L3 + scope `to_boundary`):** a pure-Thermite
   fn `g` whose body calls a `#[boundary]`/`#[slag]` fn `f`, and which honors `f`'s
-  `req` at the call site + proves its own `ens`, certifies at `Level::L3` (its own
+  `requires` at the call site + proves its own `ensures`, certifies at `Level::L3` (its own
   body SMT-proves against `f`'s contract) AND records `assurance_scope =
   ToBoundary { via: f }` (#17, already shipped). Scope ⊥ level: L3 and
   to-the-boundary coexist. Derived from §9 (composition independence) + §6 (the
@@ -197,7 +197,7 @@ is never itself lowered to a real verus body.
   and it never changes `f`'s own certificate. Derived from §8/§6 (the L0/L1 +
   flag certificate) + ffi-boundary.md REQ-5.
 - **REQ-4 (soundness — violation is a counterexample, not a false L3):** a caller
-  that does NOT establish `f`'s `req` at the call site, or that asserts an `ens`
+  that does NOT establish `f`'s `requires` at the call site, or that asserts an `ensures`
   stronger than `f`'s contract delivers, FAILS verification (a verus
   counterexample → a non-L3 cert with a witness, the existing #5 failure path) —
   NOT a false L3. The external_body assumes ONLY `f`'s `ensures`; the caller's
@@ -217,8 +217,8 @@ their LEVEL (which today is L0 and #52 makes L3). The exact fixtures:
 
 - **AC-1 (direct boundary caller → L3 + to_boundary):** the #17
   `direct_boundary_caller` program — `#[boundary("ext::ext_id")] fn ext_id(x:
-  u32) -> u32 req x < 100 ens result == x fx pure ;` + `fn caller(x: u32) -> u32
-  req x < 100 ens result == x fx pure { ext_id(x) }` — under `forge check`: the
+  u32) -> u32 requires x < 100 ensures result == x ! pure ;` + `fn caller(x: u32) -> u32
+  requires x < 100 ensures result == x ! pure { ext_id(x) }` — under `forge check`: the
   `caller` cert is `level == "L3"` (pre-#52: `L0`, verus errored on undefined
   `ext_id`) AND `assurance_scope == ToBoundary { via: "ext_id" }`. `ext_id`'s own
   cert is UNCHANGED: `level == "L1"`, `boundary == true`,
@@ -226,18 +226,18 @@ their LEVEL (which today is L0 and #52 makes L3). The exact fixtures:
   cases entry; the #16 `boundary.cert.json` precedent for `ext_id`'s L1 cert.)
 - **AC-2 (transitive caller → L3 + to_boundary):** the #17
   `transitive_boundary_caller` program — `ext_id` (boundary) ← `g` ← `h`, each
-  `req x < 100 ens result == x fx pure` — under `forge check`: BOTH `g` and `h`
+  `requires x < 100 ensures result == x ! pure` — under `forge check`: BOTH `g` and `h`
   certify `level == "L3"` (pre-#52: L0) AND `assurance_scope == ToBoundary { via:
   "ext_id" }` (the transitive crossing). The sub-program for `h` weaves in `g`
   (proved, real body) AND `ext_id` (external_body signature).
 - **AC-3 (req-violating caller → counterexample, NOT L3):** a fixture with the
-  SAME `ext_id` boundary but a caller whose `req` is `true` (does not establish
-  `x < 100`): `fn bad(x: u32) -> u32 req true ens result == x fx pure { ext_id(x)
+  SAME `ext_id` boundary but a caller whose `requires` is `true` (does not establish
+  `x < 100`): `fn bad(x: u32) -> u32 requires true ensures result == x ! pure { ext_id(x)
   }` → `bad`'s cert is NOT `L3`; it is the failure path with a `precondition not
   satisfied`-class witness (the grounded harness 2). A caller asserting `ens
   result == x + 1` likewise fails (`postcondition not satisfied`, harness 3).
-  This is the anti-cheat AC: composition does not let a caller dodge `f`'s req or
-  manufacture an `ens`.
+  This is the anti-cheat AC: composition does not let a caller dodge `f`'s requires or
+  manufacture an `ensures`.
 - **AC-4 (corpus unaffected → L3 unchanged):** the existing pure corpus (`sum`,
   `binary_search` — no `#[boundary]`/`#[slag]` reference anywhere in their
   closures, #17 `end_to_end`) certifies `level == "L3"` with an IDENTICAL cert
@@ -294,7 +294,7 @@ forge check <file>
 ## Verification
 
 - **Route (orchestrator, not this doc):** add/extend `[[route]]` entries in
-  `tooling/spec-routes.toml` so `forge/src/check.rs` and `thermite-lower/src/lower.rs`
+  `gates/routes.toml` so `forge/src/check.rs` and `thermite-lower/src/lower.rs`
   map to this doc (in ADDITION to their existing `check.md` / `verus-lowering.md`
   routes — a file may carry multiple governing docs), with `reference =
   ["conformance/composition"]`. The spec-discipline hook (R-XLATE-2/R-XLATE-3)
@@ -357,12 +357,12 @@ forge check <file>
   fixture (AC-1) cannot go green without both (R-DEFER-6).
 - **OQ-4 (effect-row crossing through the boundary):** `check_effects` (whole-
   program, §4.1) already runs BEFORE the per-item split and validates that the
-  caller's `fx` row subsumes the boundary fn's stated row (the boundary fn's `fx`
+  caller's `!` row subsumes the boundary fn's stated row (the boundary fn's `!`
   is its STATED row, ffi-boundary.md OQ-4 — the foreign body's actual effects are
   trusted-by-fiat). #52 changes nothing here: the external_body signature carries
-  no `fx` annotation (verus `fn` is pure by default; the Thermite-level `fx`
+  no `!` annotation (verus `fn` is pure by default; the Thermite-level `!`
   subsumption is the existing compile-time check). Confirm the composition
-  fixtures all use `fx pure` so no effect interaction is exercised in v0.1.
+  fixtures all use `! pure` so no effect interaction is exercised in v0.1.
 
 ## REQ status
 
@@ -371,4 +371,4 @@ forge check <file>
 | REQ-1 (assumable-signature emission, boundary/slag only) | SHIPPED | `lower_fn in thermite-lower/src/lower.rs` dispatches a `f.boundary.is_some() \|\| f.slag.is_some()` fn to `lower_external_body_fn` (since epic #60 the 2-bool dispatch is DELEGATED to the Verus-verified `thermite_verified::should_emit_external_body`, anchored by the observable-dispatch test `thermite-lower/tests/boundary_gate_verified.rs`), which emits `#[verifier::external_body]` + the SHARED `lower_fn_signature` (unweakened `requires`/`ensures`) + a synthetic `{ unimplemented!() }` body verus never checks. THE HONESTY GATE: external_body iff the syntactic `#[boundary]`/`#[slag]` flag — a regular fn ALWAYS takes the fully-proved-body arm. Consumer: `check::item_subprogram` weaves a boundary/slag dep through this arm. Grounded `verus 0.2026.05.24`: the emitted `#[verifier::external_body] fn ext_id(..) requires x<100, ensures result==x { unimplemented!() }` + caller verifies `success: true, verified: 1, errors: 0`. Verified by `forge`'s `composition_conformance::direct_boundary_caller_verifies_through_the_contract` + `lying_regular_fn_is_caught_never_laundered_to_l3`. |
 | REQ-2 (boundary-caller reaches L3 + scope `to_boundary`) | SHIPPED | `check::item_subprogram(item, spec_items, fn_deps, adt_deps)` (the 4th arg is the #68 ADT-decl weave, governed by its own doc) weaves the transitively-reachable in-file fns (`check::reachable_fn_deps` → `closure::reachable_in_file_fns`, the reused #17 walk) into a caller's §5.3 sub-program — regular fns with their real body, boundary/slag fns via the `lower` external_body arm — so `verus` resolves the callee and the caller proves THROUGH its contract. `direct_boundary_caller`'s `caller` and `transitive_boundary_caller`'s `h` certify `Level::L3` (was `L0`) AND `assurance_scope = ToBoundary { via: ext_id }` (#17, unchanged). Verified by `composition_conformance::{direct_boundary_caller_verifies_through_the_contract, transitive_boundary_caller_weaves_real_and_external_body_deps}`. |
 | REQ-3 (boundary/slag fn itself unchanged — L1 + flag) | SHIPPED | #52 left the §16/§8 path UNTOUCHED: `gate_fn in check.rs` still short-circuits a `f.boundary.is_some()` item to `GateOutcome::BoundaryL1` (`Certificate::boundary_l1`, `Level::L1`, `boundary: true`, no verus) before the L3 path; the external_body signature is woven only into a CALLER's sub-program, never `f`'s own cert. Verified: `composition_conformance::direct_boundary_caller_verifies_through_the_contract` asserts `ext_id`'s cert stays `level == "L1"`, `boundary == true`. |
-| REQ-4 (soundness — violation is a counterexample, not a false L3) | SHIPPED | The external_body assumes ONLY `f`'s `ensures`; the caller must still establish `f`'s `req`. The `req_violating_caller`'s `bad` (req `true`, not establishing `ext_id`'s `x < 100`) certifies NON-L3 with a failed-obligation witness (`precondition not satisfied`), NOT a false L3. Grounded `verus 0.2026.05.24`: a regular fn with a lying body (`ens result == x + 1` body `x`) FAILS `postcondition not satisfied` (the external_body exemption is boundary/slag-only). Verified by `composition_conformance::{req_violating_caller_is_a_counterexample_not_a_false_l3, lying_regular_fn_is_caught_never_laundered_to_l3}`. |
+| REQ-4 (soundness — violation is a counterexample, not a false L3) | SHIPPED | The external_body assumes ONLY `f`'s `ensures`; the caller must still establish `f`'s `requires`. The `req_violating_caller`'s `bad` (req `true`, not establishing `ext_id`'s `x < 100`) certifies NON-L3 with a failed-obligation witness (`precondition not satisfied`), NOT a false L3. Grounded `verus 0.2026.05.24`: a regular fn with a lying body (`ensures result == x + 1` body `x`) FAILS `postcondition not satisfied` (the external_body exemption is boundary/slag-only). Verified by `composition_conformance::{req_violating_caller_is_a_counterexample_not_a_false_l3, lying_regular_fn_is_caught_never_laundered_to_l3}`. |

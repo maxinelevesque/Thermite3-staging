@@ -3,13 +3,15 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: e2910830dad12dd9dea025ee1bd16766ea03aeae27d830c52c7a27eae2209def
+audited-content-sha256: 91e68a13058f712d3d1e876d8f4c7ec05fff50119871b5ac81fb38f20d0b41f7 (re-pinned 2026-08-25 for issue #8 Vec View lowering; invariant receiver behavior is unchanged. prior: 7fe68aee0a8fd4bb6477094d78b41714c8c7159f03e074380e6502c635628870)
 decision: qualify invariant field paths in the canonical invariant lowerer
 issue: github:dollspace-gay/Thermite#110
 governs:
   - thermite-lower/src/lower.rs
+  - thermite-lower/src/l1.rs
   - thermite-lower/tests/adt_lower_conformance.rs
   - forge/tests/struct_invariant_receiver.rs
+  - conformance/nested_adt.th
 thesis-refs:
   - thermite-design.md §3
   - thermite-design.md §6
@@ -20,11 +22,13 @@ thesis-refs:
 
 Every bare path naming a declared struct field in a type invariant lowers as a
 field of the invariant predicate receiver. This rule applies through unary
-expressions as well as binary expressions, calls, casts, field access, and
-method calls. For example,
-`inv !panic_latched || !reschedule_pending` becomes
+expressions and variant tests as well as binary expressions, calls, casts,
+field access, and method calls. For example,
+`keeps !panic_latched || !reschedule_pending` becomes
 `!self.panic_latched || !self.reschedule_pending` inside
-`well_formed(&self)`.
+`well_formed(&self)`, while `keeps privilege is User` becomes
+`self.privilege is User` at L3 and a receiver-bound, enum-qualified `matches!`
+at L1.
 
 The solver-vacuity harness continues to consume the canonical lowered Verus
 declaration. It does not maintain a second field-qualification pass. This keeps
@@ -34,14 +38,20 @@ representation.
 ## Root cause
 
 `lower_inv_expr` already rewrote a direct field path to `self.<field>` and
-recursed through several compound expression nodes. It had no `Expr::Unary`
-arm. A unary expression therefore reached the generic spec-expression lowerer,
-which has no struct receiver context. Both paths below emitted bare names:
+recursed through several compound expression nodes. It originally had no
+`Expr::Unary` arm, and issue #5 showed that it also had no `Expr::Is` arm. Either
+expression therefore reached a generic lowerer with no struct receiver context.
+The unary defect emitted the first bare name below; the variant-test defect
+emitted the second:
 
 ```text
 Expr::Unary(Not, Path("panic_latched"))
     -> generic spec lowering
     -> !panic_latched
+
+Expr::Is(Path("privilege"), "User")
+    -> generic spec lowering
+    -> privilege is User
 ```
 
 The solver-vacuity harness places the full lowered struct declaration in its
@@ -58,6 +68,12 @@ the vacuity gate exposed it first.
    context;
 2. emits Verus's type-directed `!` operator;
 3. preserves grouping for a binary operand.
+
+Its `Expr::Is` arm recursively binds the scrutinee and retains Verus's
+type-directed bare variant. The L1 mirror threads the program variant map into
+`lower_struct_l1`, recursively binds the scrutinee, and emits the qualified Rust
+pattern. The two assurance rungs therefore agree on the receiver and enum while
+using their native discriminant syntax.
 
 This is the smallest shared correction. Qualifying text while building a
 vacuity harness would create a harness-only interpretation and leave the normal
@@ -83,6 +99,10 @@ the same unary struct invariant.
   battery rendering after all solver-vacuity queries elaborate.
 - Existing ADT lowering, solver-vacuity, formatting, lint, requirement, and
   documentation gates remain green.
+- `conformance/nested_adt.th` combines issue #5's struct-typed and enum-typed
+  fields with `keeps privilege is User`; lowerer conformance verifies the L3
+  artifact and compiles/runs its L1 mirror, while the standalone Forge regression
+  requires every declaration to certify at L3.
 
 ## Requirements
 
@@ -94,4 +114,5 @@ Source: `.design/reqs/registry.toml`
 | REQ-INVBIND-1 | shipped | `.design/lower/struct-invariant-receiver-binding.md` | Canonical receiver binding under unary operators |  |
 | REQ-INVBIND-2 | shipped | `.design/lower/struct-invariant-receiver-binding.md` | Solver-vacuity harness reuses bound invariants |  |
 | REQ-INVBIND-3 | shipped | `.design/lower/struct-invariant-receiver-binding.md` | Check and battery regression coverage |  |
+| REQ-INVBIND-4 | shipped | `.design/lower/struct-invariant-receiver-binding.md` | Receiver binding through variant tests |  |
 <!-- /generated:reqs -->

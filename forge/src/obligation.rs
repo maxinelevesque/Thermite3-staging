@@ -273,7 +273,7 @@ impl Obligation {
             ast_slice,
             env: ObligationEnv {
                 params,
-                req: Some(Box::new(f.contract.req.expr.clone())),
+                req: Some(Box::new(f.contract.requires.expr.clone())),
                 spec_defs: called_spec_fns,
                 ..ObligationEnv::default()
             },
@@ -366,7 +366,7 @@ mod tests {
     #[test]
     fn contract_obligation_is_neutral_content() {
         let p = parse_one(
-            "fn add(x: u64, y: u64) -> u64 req x < 100 ens result == x + y fx pure { x + y }",
+            "fn add(x: u64, y: u64) -> u64 ! pure requires x < 100 ensures result == x + y { x + y }",
         );
         let f = fn_item(&p, "add");
         let o = Obligation::contract_for_fn(f, vec![]);
@@ -413,7 +413,7 @@ mod tests {
     // inspectable content the engine renders).
     #[test]
     fn obligation_is_a_comparable_neutral_value() {
-        let p = parse_one("fn id(x: u64) -> u64 req true ens result == x fx pure { x }");
+        let p = parse_one("fn id(x: u64) -> u64 ! pure requires true ensures result == x { x }");
         let f = fn_item(&p, "id");
         let o = Obligation::contract_for_fn(f, vec![]);
         let clone = o.clone();
@@ -422,7 +422,8 @@ mod tests {
             "the Obligation is a comparable neutral value (REQ-1)"
         );
         // A different item is not equal (the value carries real content).
-        let p2 = parse_one("fn other(y: u64) -> u64 req true ens result == y fx pure { y }");
+        let p2 =
+            parse_one("fn other(y: u64) -> u64 ! pure requires true ensures result == y { y }");
         let o2 = Obligation::contract_for_fn(fn_item(&p2, "other"), vec![]);
         assert_ne!(o, o2);
     }

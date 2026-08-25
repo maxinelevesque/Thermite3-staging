@@ -14,10 +14,10 @@
   },
   "reject": [
     { "name": "nested_scheme_in_step", "expect_error_contains": "nested",
-      "program": "enum List { Nil, Cons(u64, Box<List>) } spec fn bad(l: List) -> u64 dec l { fold(l, 0, |x, acc| fold(l, 0, |y, a| y + a) + acc) } }",
+      "program": "enum List { Nil, Cons(u64, Box<List>) } spec fn bad(l: List) -> u64 measures l { fold(l, 0, |x, acc| fold(l, 0, |y, a| y + a) + acc) } }",
       "why": "the step closure contains a NESTED scheme call (fold inside the step) -> rejected (REQ-2: the step is a FLAT per-node closure, no nested scheme; the cage's no-anonymous-nested rule extends to schemes)." },
     { "name": "unknown_scheme", "expect_error_contains": "not a registered",
-      "program": "enum List { Nil, Cons(u64, Box<List>) } spec fn bad(l: List) -> u64 dec l { frobnicate(l, 0, |x, acc| x + acc) } }",
+      "program": "enum List { Nil, Cons(u64, Box<List>) } spec fn bad(l: List) -> u64 measures l { frobnicate(l, 0, |x, acc| x + acc) } }",
       "why": "frobnicate is not a registered scheme or combinator or declared spec fn -> rejected (REQ-1: the scheme set is closed)." }
   ]
 }

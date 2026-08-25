@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 1db26fff290ff1b75339f512102a5dae2c8a067c711c257e8d24afe0c0262148 (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: 4b7376c90d1e93d96de7d617503cd79c41d17dbe9feeeb2b49df59879f99695a (re-pinned 2026-08-25 for issue #8 Vec View lowering; map semantics are unchanged. prior: 06660e2af10dadf0f3017e53eb300568d23fad46e15fe82e87dffb7ffdb219df)
 governs: thermite-syntax/src/ast.rs
 governs: thermite-syntax/src/parser.rs
 governs: thermite-spec/src/validator.rs
@@ -108,7 +108,7 @@ law (`.design/basis/01-adts.md` "the unifying principle";
 COMPILE-TIME tooth, `.design/basis/01-adts.md` REQ-5/REQ-12, SHIPPED) forces the
 absent case to be HANDLED or to SCREAM. This is the no-OOB accessor generalized
 from `Vec::get(i)`'s index bound to `Map::get(k)`'s key membership: where the
-`Vec` `get` carries `req i < len`, the `Map` `get` is TOTAL (it takes any `k`) and
+`Vec` `get` carries `requires i < len`, the `Map` `get` is TOTAL (it takes any `k`) and
 encodes the partiality in the `Option` RESULT — strictly louder than a precondition
 the caller might forget. GROUNDED non-vacuous: a `get` returning `Some(0)` for an
 absent key FAILS verus (`2 verified, 1 errors` — the `None => !spec_contains_key(k)`
@@ -158,14 +158,14 @@ exactly as the `Vec`/`String` accessors were.
 
 - **REQ-3 (`contains_key`/`insert` in `BUILTIN_METHODS`; the capacity / op
   contracts fit the §4.2 cage):** `contains_key` is ADDED to `BUILTIN_METHODS`
-  (`thermite-spec/src/validator.rs`) so an `ens result == m.contains_key(k)`
+  (`thermite-spec/src/validator.rs`) so an `ensures result == m.contains_key(k)`
   validates inside the §4.2 cage as a flat built-in (exactly as `Vec`'s
   `contains` and the no-OOB `get` were, `.design/basis/04-collections.md` REQ-12);
   `get` and `len` are ALREADY present. `insert` is EXEC-only (it mutates — never
   named in a contract), so like `push`/`pop_last` it needs NO `BUILTIN_METHODS`
   entry. The capacity bound (`m.len() <= CAP`, `m.len() < CAP`) is a flat
   comparison over the `len` built-in; the key-membership / round-trip contracts
-  are written as the C7 spec-`match`-in-`ens` over the `get` result (`match
+  are written as the C7 spec-`match`-in-`ensures` over the `get` result (`match
   m.get(k) { Some(v) => …, None => … }`, an admitted flat built-in,
   `.design/basis/01-adts.md` REQ-7). The caged-flat walk is UNCHANGED. Derived
   from §4.2 (the cage — every op bounded, every quantifier named/frozen),
@@ -175,7 +175,7 @@ exactly as the `Vec`/`String` accessors were.
 ### Verus lowering (governs `thermite-lower/src/lower.rs`)
 
 - **REQ-4 (`Map<K,V>` → the Vec-of-pairs wrapper + the spec abstraction view;
-  `insert`/`get`/`contains_key`/`len` → verified ops; `fx alloc`):** A Thermite
+  `insert`/`get`/`contains_key`/`len` → verified ops; `! alloc`):** A Thermite
   `Map<K, V>` lowers to a `TMap<K,V>` newtype over `vstd::vec::Vec<(K, V)>` (the
   Vec-of-pairs backing — C9 tuple `(K, V)` + C6 `Vec<tuple>`), materialized ONCE
   per `(K, V)` pair by a new `emit_map_wrappers` (MIRRORING `emit_vec_wrappers` /
@@ -191,17 +191,17 @@ exactly as the `Vec`/`String` accessors were.
     data.len() && data@[j].0 == k` (the spec membership abstraction);
   - `pub open spec fn len(&self) -> nat` = `data.len() as nat`;
   - `pub fn contains_key(&self, k) -> bool` — the exec linear scan, `req
-    well_formed`, `ens result == spec_contains_key(k)`, the scan invariant +
+    well_formed`, `ensures result == spec_contains_key(k)`, the scan invariant +
     `decreases`; PURE;
-  - `pub fn get(&self, k) -> Option<V>` — the no-OOB accessor, `req well_formed`,
-    `ens match result { Some(v) => spec_contains_key(k) && (exists|j| … data@[j].0
+  - `pub fn get(&self, k) -> Option<V>` — the no-OOB accessor, `requires well_formed`,
+    `ensures match result { Some(v) => spec_contains_key(k) && (exists|j| … data@[j].0
     == k && data@[j].1 == v), None => !spec_contains_key(k) }` (the absent →
     `None` handled-or-loud refusal); PURE; reuses the C7 `Option` lowering;
   - `pub fn insert(&mut self, k, v)` — the append (under `!spec_contains_key(k)`),
-    `req well_formed && len < CAP && !spec_contains_key(k)`, `ens final(self)...`
+    `requires well_formed && len < CAP && !spec_contains_key(k)`, `ensures final(self)...`
     (the `final(self)` &mut postcondition — the SHIPPED `Vec::push` grounding
     finding) `&& final(self).spec_contains_key(k) && (exists|j| … == k && … == v)
-    && len' == len + 1`; carries `fx alloc` (the `Vec`-`push` / Stage-1
+    && len' == len + 1`; carries `! alloc` (the `Vec`-`push` / Stage-1
     `Effect::Alloc` rule, `.design/basis/04-collections.md` REQ-5).
   Spec-position `m.get(k)`/`m.contains_key(k)`/`m.len()` map to the wrapper's spec
   fns (the `lower_expr` `MethodCall` arm, mirroring `v.get(i)` →
@@ -254,7 +254,7 @@ and confirmed to pass `verus`. The cert golden lives at
   validator accepts the capacity + op contracts in the §4.2 cage (`contains_key`
   in `BUILTIN_METHODS`, the C7 spec-`match` over `get`'s result, REQ-3); the
   lowerer emits the Vec-of-pairs `TMap` wrapper + the spec abstraction + the four
-  ops (REQ-4); the `insert`-ing fn carries `fx alloc` and passes
+  ops (REQ-4); the `insert`-ing fn carries `! alloc` and passes
   effect-subsumption; running the real `verus` binary on the emitted output exits
   0 with `N verified, 0 errors` — `insert(k, v)` then `get(k) == Some(v)` proven
   (the round-trip, the inserted key maps the value). **GROUNDED `8 verified, 0
@@ -276,7 +276,7 @@ and confirmed to pass `verus`. The cert golden lives at
   BOTH a present key (true) and an absent key (false) at L3; `insert` under
   `len < CAP` preserves `well_formed` (the capacity bound). The `len < CAP` guard
   is load-bearing — an `insert` without it cannot prove `final(self).well_formed`.
-  **GROUNDED: `contains_key`'s `ens result == spec_contains_key(k)` verifies (the
+  **GROUNDED: `contains_key`'s `ensures result == spec_contains_key(k)` verifies (the
   scan invariant proves both branches); the capacity bound is in the `well_formed`
   the round-trip threads.** (REQ-3, REQ-4.)
 
@@ -371,7 +371,7 @@ impl TMapU64U64 {
         },
     { /* linear scan; on match return Some(v); fall through to None */ }
 
-    pub fn insert(&mut self, k: u64, v: u64)                    // append under !contains; fx alloc
+    pub fn insert(&mut self, k: u64, v: u64)                    // append under !contains; ! alloc
         requires old(self).well_formed(), old(self).data.len() < MAP_CAP,
                  !old(self).spec_contains_key(k),
         ensures
@@ -420,7 +420,7 @@ to compose end-to-end in the grounding (`8 verified, 0 errors`):
 
 - **C7 `Option<T>`** (`.design/basis/09-option-result.md` REQ-1, SHIPPED) —
   `get(k) -> Option<V>` reuses the C7 `Type::Option` lowering and the
-  spec-`match`-in-`ens` for the round-trip / refusal contract. The absent→`None`
+  spec-`match`-in-`ensures` for the round-trip / refusal contract. The absent→`None`
   is the C7 handled-or-loud `None`.
 - **C6 `Vec<tuple>` / non-Copy** (`.design/basis/04-collections.md` REQ-9, SHIPPED)
   — the backing is `Vec<(K, V)>`, a `Vec` of a tuple (non-Copy in general); the
@@ -477,7 +477,7 @@ Gauntlet (R-DEFER-6, per crate): `cargo test -p <crate>`, `cargo clippy -p
 ## Routes to add (orchestrator)
 
 C12 adds NEW concerns to files that already carry routes; add these routes to
-`tooling/spec-routes.toml` pointing at THIS doc (a file may carry multiple
+`gates/routes.toml` pointing at THIS doc (a file may carry multiple
 governing docs — the `lower.rs` precedent):
 
 ```
@@ -498,8 +498,8 @@ from this doc (and the GROUNDED `TMapU64U64` seed) before the builder runs
 |---|---|---|
 | REQ-1 (`Map<K,V>` two-arg `Type` node + grammar) | SHIPPED | #123. `enum Type` (`thermite-syntax/src/ast.rs`) gains `Map(Box<Type>, Box<Type>)` — the SECOND two-type-argument node, mirroring the SHIPPED `Type::Result(Box, Box)`. `parser::parse_type`'s `"Map"` contextual-ident arm parses `<K, V>` (a comma + a second type + `>`, the SAME two-arg parse as `"Result"`). `Map<u64, u64>` parses to `Type::Map(Box::new(u64), Box::new(u64))`. Consumer: `thermite_lower::lower::lower_type`. Verified: `forge/tests/map_conformance.rs` (the `map_kv.th` `Map<u64,u64>` parses + lowers + verus L3). |
 | REQ-2 (`Map` ops are `Expr::MethodCall` — no new node) | SHIPPED | #123. `insert`/`get`/`contains_key`/`len` over a `Map` reuse the EXISTING `Expr::MethodCall` (no new expression node — the one call syntax), parsed by `parse_postfix`. `get` returns the C7 `Option<V>`. Verified: `forge/tests/map_conformance.rs` (the corpus fns exercise all four ops). |
-| REQ-3 (`contains_key`/`insert` cage admission; capacity/op contracts in §4.2) | SHIPPED | #123. `contains_key` ADDED to `BUILTIN_METHODS` (`thermite-spec/src/validator.rs`) so `ens result == m.contains_key(k)` validates inside the §4.2 cage as a flat built-in (the lowerer maps spec-position `m.contains_key(k)` → `m.spec_contains_key(k)`); `get`/`len` already present; `insert` stays EXEC-only (`&mut`, like `push`). The round-trip / absent→None contracts are the C7 spec-`match`-in-`ens` over `get`'s `Option` result. The caged-flat walk is UNCHANGED. Consumer: `validate`. Verified: `forge/tests/map_conformance.rs::ac3_..._certifies_l3` (`has_key` L3). |
-| REQ-4 (`Map` → Vec-of-pairs wrapper + spec view; ops; `fx alloc`) | SHIPPED | #123. `lower.rs`: `Type::Map(k, v)` → `tmap_name` (`Map<u64,u64>` → `TMapU64U64`); `emit_map_wrappers` materializes ONCE per `(K,V)` pair the GROUNDED `TMapU64U64` newtype over `vstd::vec::Vec<(u64,u64)>` with `spec_dom`/`well_formed` (capacity + key-uniqueness)/`spec_contains_key`/`len` spec view, the exec linear-scan `contains_key`, the no-OOB / handled-or-loud `get -> Option<V>` (absent → None), and the append-under-`!contains_key` `insert` (`ens final(self)...`). A `Map`-param weaves `well_formed()` (`is_map_param_ty`); `Map::new()` `let`-init rewrites to `<TMap> { data: Vec::new() }` (`is_map_new`). `fx alloc` accepted by effect-subsumption. Consumer: `lower`. Verified: real `verus --no-cheating` — the GROUNDED `TMapU64U64` + the insert-then-get round-trip → `Some(v)` + absent → `None` + contains_key both branches = **`9 verified, 0 errors`** (`forge/tests/map_conformance.rs::ac1_2_3`); the broken `Some(0)`-for-absent FAILS **`verified, 1 errors`** (`ac2_broken_..`, non-vacuity R-DEFER-9); the emitted `map_kv.th` lowering verifies `0 errors` (`ac1_..._lowering`) + builds+runs (`ac1_..._builds_and_runs`, `demo() = 42`). |
+| REQ-3 (`contains_key`/`insert` cage admission; capacity/op contracts in §4.2) | SHIPPED | #123. `contains_key` ADDED to `BUILTIN_METHODS` (`thermite-spec/src/validator.rs`) so `ensures result == m.contains_key(k)` validates inside the §4.2 cage as a flat built-in (the lowerer maps spec-position `m.contains_key(k)` → `m.spec_contains_key(k)`); `get`/`len` already present; `insert` stays EXEC-only (`&mut`, like `push`). The round-trip / absent→None contracts are the C7 spec-`match`-in-`ensures` over `get`'s `Option` result. The caged-flat walk is UNCHANGED. Consumer: `validate`. Verified: `forge/tests/map_conformance.rs::ac3_..._certifies_l3` (`has_key` L3). |
+| REQ-4 (`Map` → Vec-of-pairs wrapper + spec view; ops; `! alloc`) | SHIPPED | #123. `lower.rs`: `Type::Map(k, v)` → `tmap_name` (`Map<u64,u64>` → `TMapU64U64`); `emit_map_wrappers` materializes ONCE per `(K,V)` pair the GROUNDED `TMapU64U64` newtype over `vstd::vec::Vec<(u64,u64)>` with `spec_dom`/`well_formed` (capacity + key-uniqueness)/`spec_contains_key`/`len` spec view, the exec linear-scan `contains_key`, the no-OOB / handled-or-loud `get -> Option<V>` (absent → None), and the append-under-`!contains_key` `insert` (`ensures final(self)...`). A `Map`-param weaves `well_formed()` (`is_map_param_ty`); `Map::new()` `let`-init rewrites to `<TMap> { data: Vec::new() }` (`is_map_new`). `! alloc` accepted by effect-subsumption. Consumer: `lower`. Verified: real `verus --no-cheating` — the GROUNDED `TMapU64U64` + the insert-then-get round-trip → `Some(v)` + absent → `None` + contains_key both branches = **`9 verified, 0 errors`** (`forge/tests/map_conformance.rs::ac1_2_3`); the broken `Some(0)`-for-absent FAILS **`verified, 1 errors`** (`ac2_broken_..`, non-vacuity R-DEFER-9); the emitted `map_kv.th` lowering verifies `0 errors` (`ac1_..._lowering`) + builds+runs (`ac1_..._builds_and_runs`, `demo() = 42`). |
 | REQ-5 (`Type::Map` exhaustive-match + skill ripple) | SHIPPED | #123. The new two-arg `Type::Map` rippled to every exhaustive `match Type`: `parser.rs` (the `"Map"` arm), `ast.rs` (the variant + doc), `lower.rs` (`lower_type`/`tmap_name`/`tmap_type_suffix`/`collect_map_kv_types`/`note_map_kv`/`note_vec_elems`/`ty_reaches_string`), `l1.rs` (`lower_type` + `emit_map_runtime_l1` + the `Map::new()` rewrite + `ty_is_string`), `l2.rs` (`type_label`), `forge/src/check.rs` (`collect_type_adt_refs` both args — the #68 ADT weave), `forge/src/review.rs` (`render_type`), `thermite-skill/src/generate.rs` (the `Map<K,V>` SkillFragment + inventory). `mutation.rs`'s `zero_value_for`/`zero_desc` route a `Map`-returning fn to the no-scalar-zero `_` catch-all (like `Result`) — honest. No `_`/panic fallthrough. The 6,000-token skill budget gate passes. Verified: `cargo build --workspace` (exhaustiveness) + `cargo run -p thermite-skill -- --check-budget` + `forge/tests/map_conformance.rs`. |
 | REQ-6 (`LowerError`/`SpecError` extension, no panics) | SHIPPED | #123. Reuses the EXISTING `LowerError::Unsupported` (`tmap_name`/`tmap_type_suffix` on a non-Copy key / unsupported key-value type — v1 grounds `Map<u64,u64>` Copy keys, OQ-4) — no new variant. No `unwrap`/`expect`/`panic!` added (R-CODE-2 / R-APG-1); verified by `cargo clippy --workspace -D warnings` + the anti-pattern-gate. |
 
@@ -514,7 +514,7 @@ from this doc (and the GROUNDED `TMapU64U64` seed) before the builder runs
   WITHOUT changing user `.th` code. Pinned for the builder; not a blocker.
 
 - **OQ-2 (`insert` semantics — append-under-`!contains` vs replace-on-collision):**
-  the GROUNDED v1 `insert` is the APPEND form, `req !spec_contains_key(k)` (a
+  the GROUNDED v1 `insert` is the APPEND form, `requires !spec_contains_key(k)` (a
   re-insert of an existing key is a precondition violation, the caller's
   responsibility — the simplest form that grounds the round-trip + key-uniqueness
   cleanly). A REPLACE-on-collision `insert` (overwrite the value, no precondition)

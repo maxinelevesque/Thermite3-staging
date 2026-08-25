@@ -19,6 +19,9 @@ import Thermite.Exec.WhileBody
 -- The composed translation-validation theorem.
 import Thermite.Faithfulness
 
+-- RFC-9 finite footprint and concurrent-composition laws.
+import Thermite.EffectRows
+
 -- Solver-replay examples, generated exporter fixtures, and BitVec models.
 import Thermite.SmtDemo
 import Thermite.SmtExport
@@ -46,3 +49,12 @@ import Thermite.PinGroundingCompleteness
 import Thermite.PinInstantiationOmission
 import Thermite.PinStructuralSkolemScopes
 import Thermite.PinEprReplay
+
+-- RFC-10 canonical traversal/witness replay checker.
+import Thermite.LanguageCompleteness
+import Thermite.PinLanguageNarrowing
+import Thermite.CheckedTraversal
+
+-- Closed, parameterized assurance policy and generated Rust/Lean replay.
+import Thermite.AssurancePolicyV2
+import Thermite.AssuranceV2Replay

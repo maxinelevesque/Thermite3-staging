@@ -88,9 +88,9 @@ fn lower_str(src: &str) -> String {
 fn fresh_program_ens_violation_aborts() {
     let src = r#"
 fn identity_should_be_zero(n: u32) -> u32
-  req n <= 1_000_000
-  ens result == 0
-  fx  pure
+  ! pure
+  requires n <= 1_000_000
+  ensures result == 0
 {
   n
 }
@@ -134,9 +134,9 @@ fn identity_should_be_zero(n: u32) -> u32
 fn check_fires_under_release_optimization() {
     let src = r#"
 fn must_be_zero(n: u32) -> u32
-  req n <= 1_000_000
-  ens result == 0
-  fx  pure
+  ! pure
+  requires n <= 1_000_000
+  ensures result == 0
 {
   n
 }
@@ -164,7 +164,7 @@ fn must_be_zero(n: u32) -> u32
 fn renamed_accumulator_lowers_to_its_own_names() {
     let src = r#"
 spec fn spec_tally(zs: &[u32]) -> u64
-  dec zs.len()
+  measures zs.len()
 {
   match zs {
     []          => 0,
@@ -173,16 +173,16 @@ spec fn spec_tally(zs: &[u32]) -> u64
 }
 
 fn tally(zs: &[u32]) -> u64
-  req zs.len() <= 50
-  ens result == spec_tally(zs)
-  fx  pure
+  ! pure
+  requires zs.len() <= 50
+  ensures result == spec_tally(zs)
 {
   let mut total: u64 = 0;
   let mut k: usize = 0;
   while k < zs.len()
-    inv k <= zs.len()
-    inv total == spec_tally(&zs[..k])
-    dec zs.len() - k
+    keeps k <= zs.len()
+    keeps total == spec_tally(&zs[..k])
+    measures zs.len() - k
   {
     total = total + zs[k] as u64;
     k = k + 1;

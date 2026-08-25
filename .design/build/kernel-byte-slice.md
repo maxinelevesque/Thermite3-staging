@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: f81b6903366ceec0ce435089c7f021c8c25f951c51aa3d2d08ca8a73ea08e5e3
+audited-content-sha256: ef62c718f496efa073764b392e547c2d617ffb68c05937ba5eff53c4efffa05b (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 2a71db355ec7fc53b0a982fd29c41aa0694676d97038af4e3f24e3acc328488b.)
 decision: explicit pinned vstd proof-model import plus deterministic no_std erased link metadata
 issue: github:dollspace-gay/Thermite#108
 governs:

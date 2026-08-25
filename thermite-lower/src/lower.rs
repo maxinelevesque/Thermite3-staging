@@ -23,7 +23,7 @@
 //! The source-level value conventions this context split realizes — casts are
 //! value-preserving in spec position and truncating in exec position (under the
 //! no-overflow source obligation), and `div`/`rem` are partial with a source-side
-//! divisor obligation — are stated normatively in `thermite2-semantics.md` §4 (the
+//! divisor obligation — are stated normatively in `docs/v2/semantics.md` §4 (the
 //! audit F2 corners). This module lowers them; the semantics doc is the authority.
 //!
 //! ## Proof aids are shape-keyed, not program-keyed (REQ-7)
@@ -218,6 +218,13 @@ pub enum LowerError {
     /// An expression/type/statement nested past `MAX_EMIT_DEPTH` — surfaced
     /// structurally so input can never overflow the C stack (REQ-9, R-CODE-2).
     TooDeep { limit: usize, span: Span },
+    /// Canonical semantic inventory or checked analysis exhausted its explicit
+    /// operational work budget. This is non-certifying and is not a source
+    /// language validity judgment.
+    ResourceLimit {
+        budget: usize,
+        required_at_least: usize,
+    },
     /// A construct the v0.1 lowering does not cover (e.g. a `Type` or `Expr`
     /// shape outside the corpus mapping tables). Carries a human description.
     Unsupported { what: String, span: Span },
@@ -234,6 +241,8 @@ pub enum LowerError {
         missing: Vec<thermite_syntax::ast::Effect>,
         span: Span,
     },
+    /// RFC-9 region metadata or concurrent-footprint rejection.
+    EffectAnalysis { detail: String, span: Span },
 }
 
 /// One explicit public function in an L3 verified library artifact
@@ -280,7 +289,7 @@ impl From<L3ExportVisibility> for L3FnVisibility {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum L3LibraryTarget {
     Std,
-    Kernel,
+    Freestanding,
 }
 
 impl std::fmt::Display for LowerError {
@@ -298,6 +307,13 @@ impl std::fmt::Display for LowerError {
                 span.start,
                 span.end()
             ),
+            LowerError::ResourceLimit {
+                budget,
+                required_at_least,
+            } => write!(
+                f,
+                "checked semantic analysis exhausted its work budget of {budget} units (requires at least {required_at_least}); no certificate or executable lowering was produced"
+            ),
             LowerError::Unsupported { what, span } => write!(
                 f,
                 "unsupported construct for L3 lowering: {what} at byte {}..{}",
@@ -310,7 +326,7 @@ impl std::fmt::Display for LowerError {
                 missing,
                 span,
             } => {
-                let atoms: Vec<String> = missing.iter().map(effect_atom_name).collect();
+                let atoms: Vec<String> = missing.iter().map(effect_atom_diagnostic).collect();
                 write!(
                     f,
                     "effect row of `{caller}` does not subsume callee `{callee}` at byte {}..{}: \
@@ -320,6 +336,12 @@ impl std::fmt::Display for LowerError {
                     atoms.join(", ")
                 )
             }
+            LowerError::EffectAnalysis { detail, span } => write!(
+                f,
+                "effect analysis failed at byte {}..{}: {detail}",
+                span.start,
+                span.end()
+            ),
         }
     }
 }
@@ -329,20 +351,32 @@ impl std::fmt::Display for LowerError {
 /// OQ-1), so the carrier atoms (`read`/`write`/`net`) are reported by kind
 /// without their (empty) path argument — the agent's fix is to add the effect
 /// kind to the caller's row.
-fn effect_atom_name(effect: &thermite_syntax::ast::Effect) -> String {
+fn effect_atom_name(effect: &thermite_syntax::ast::Effect) -> &'static str {
     use thermite_syntax::ast::Effect;
     match effect {
-        Effect::Read(_) => "read".to_string(),
-        Effect::Write(_) => "write".to_string(),
-        Effect::Net(_) => "net".to_string(),
-        Effect::Alloc => "alloc".to_string(),
-        Effect::Time => "time".to_string(),
-        Effect::Rand => "rand".to_string(),
-        Effect::Panic => "panic".to_string(),
-        Effect::Diverge => "diverge".to_string(),
-        Effect::Term => "term".to_string(),
-        Effect::Platform(domain) => format!("platform({})", domain.surface()),
+        Effect::Read(_) => "read",
+        Effect::Write(_) => "write",
+        Effect::Net(_) => "net",
+        Effect::Alloc => "alloc",
+        Effect::Time => "time",
+        Effect::Rand => "rand",
+        Effect::Panic => "panic",
+        Effect::Diverge => "diverge",
+        Effect::Term => "term",
+        Effect::Owns(_) => "owns",
     }
+}
+
+/// Enrich the existing missing-atom diagnostic with the algebraic basis entry
+/// and generated frame condition (effect-algebra.md REQ-9). This is reporting
+/// only: the exact `missing` carrier stored in the error remains unchanged.
+fn effect_atom_diagnostic(effect: &thermite_syntax::ast::Effect) -> String {
+    let entry = thermite_syntax::effect_basis::entry_for_effect(effect);
+    let frame = entry.frame_condition();
+    format!(
+        "{} (basis: {entry:?}; frame: {frame:?})",
+        effect_atom_name(effect)
+    )
 }
 
 impl std::error::Error for LowerError {}
@@ -356,15 +390,18 @@ enum Pos {
     Spec,
 }
 
-/// Lowering context: the position plus the set of in-scope slice-typed
-/// parameter names. In spec position a bare slice-param path `xs` becomes the
-/// `vstd` view `xs@` (a `Seq<T>`) — REQ-5. The set is computed per item from the
-/// parameter types (a shape-derived fact, not a name list), so the `@` rewrite
-/// generalizes to any slice-typed parameter.
+/// Lowering context: the position plus the set of in-scope values that expose a
+/// sequence view (borrowed slices and bounded Vec parameters). In spec position
+/// a bare such path `xs` passed to a sequence combinator becomes `xs@` (a
+/// `Seq<T>`) — REQ-5. The set is computed from parameter types, never names.
 #[derive(Debug, Clone, Copy)]
 struct Ctx<'a> {
     pos: Pos,
     slices: &'a [&'a str],
+    /// Names of bounded `Vec` values in scope for an exec body. Unlike a native
+    /// slice, a `TVec*` wrapper does not implement Rust's indexing operator; a
+    /// single index therefore lowers through its verified `get` accessor.
+    vecs: &'a [&'a str],
     /// Names of `spec fn`s lowered with a `nat` return type (the head-fold-sum
     /// shape — OQ-1). An `Eq` between a `u64`-valued scalar and a call to one of
     /// these coerces the scalar with `as nat`, since `nat` and `u64` are not the
@@ -473,6 +510,7 @@ impl<'a> Ctx<'a> {
         Ctx {
             pos: Pos::Exec,
             slices: NO_SLICES,
+            vecs: NO_SLICES,
             nat_fns: NO_SLICES,
             variants: NO_VARIANTS,
             nat_ret: false,
@@ -488,6 +526,7 @@ impl<'a> Ctx<'a> {
         Ctx {
             pos: Pos::Spec,
             slices,
+            vecs: NO_SLICES,
             nat_fns,
             variants: NO_VARIANTS,
             nat_ret: false,
@@ -506,6 +545,7 @@ impl<'a> Ctx<'a> {
         Ctx {
             pos: Pos::Spec,
             slices: NO_SLICES,
+            vecs: NO_SLICES,
             nat_fns: NO_SLICES,
             variants: NO_VARIANTS,
             nat_ret: false,
@@ -521,6 +561,10 @@ impl<'a> Ctx<'a> {
     /// qualification). Carried through `match`/pattern lowering.
     fn with_variants(mut self, variants: &'a [(&'a str, &'a str)]) -> Ctx<'a> {
         self.variants = variants;
+        self
+    }
+    fn with_vecs(mut self, vecs: &'a [&'a str]) -> Ctx<'a> {
+        self.vecs = vecs;
         self
     }
     /// This context marked as a `nat`-returning spec-fn body (REQ-10 — integer
@@ -640,9 +684,13 @@ impl<'a> Ctx<'a> {
     fn is_spec(&self) -> bool {
         self.pos == Pos::Spec
     }
-    /// True if `name` is an in-scope slice-typed parameter (gets `@` in spec).
+    /// True if `name` is an in-scope slice/Vec parameter that gets `@` when
+    /// passed to a sequence combinator in spec position.
     fn is_slice(&self, name: &str) -> bool {
         self.slices.contains(&name)
+    }
+    fn is_vec(&self, name: &str) -> bool {
+        self.vecs.contains(&name)
     }
     /// True if `name` is a `nat`-returning spec fn (drives `as nat` coercion).
     fn is_nat_fn(&self, name: &str) -> bool {
@@ -676,7 +724,15 @@ fn zero_span() -> Span {
 /// in source order with their shape-derived proof aids, and (3) a trailing
 /// `fn main() {}`.
 pub fn lower(program: &Program) -> Result<String, LowerError> {
-    lower_with_profile(program, None)
+    let checked = crate::checked::require_checked(program)?;
+    let program = checked.source();
+    if crate::program_uses_holding(program) {
+        let prepared = crate::locks::prepare_l3_shared(program)?;
+        let seam = crate::locks::verification_lock_provider_source(program)?;
+        lower_with_profile(&prepared, None, Some(&seam))
+    } else {
+        lower_with_profile(program, None, None)
+    }
 }
 
 /// Emit the canonical executable Verus library compiled by the L3 verified-build
@@ -689,6 +745,14 @@ pub fn lower_l3_library(
     exports: &[L3Export],
     target: L3LibraryTarget,
 ) -> Result<String, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    let program = checked.source();
+    if crate::program_uses_holding(program) {
+        return Err(LowerError::Unsupported {
+            what: "executable L3 `holding` requires a target provider integration; provider-free lowering is verification-only and must not produce an artifact".to_string(),
+            span: zero_span(),
+        });
+    }
     let mut by_source: BTreeMap<&str, &L3Export> = BTreeMap::new();
     for export in exports {
         if by_source.insert(&export.source_name, export).is_some() {
@@ -708,12 +772,52 @@ pub fn lower_l3_library(
             });
         }
     }
-    lower_with_profile(program, Some((by_source, target)))
+    lower_with_profile(program, Some((by_source, target)), None)
+}
+
+/// Provider-backed L3 artifact lowering for RFC-10 shared state. The provider's
+/// Verus declarations establish acquisition and make each normalized close call
+/// prove invariant restoration before releasing the target lock.
+pub fn lower_l3_library_with_lock_provider(
+    program: &Program,
+    exports: &[L3Export],
+    target: L3LibraryTarget,
+    provider: &crate::LockProvider,
+) -> Result<String, LowerError> {
+    let checked = crate::checked::require_checked(program)?;
+    let program = checked.source();
+    provider.validate_l3()?;
+    let prepared = crate::locks::prepare_l3_shared(program)?;
+    let mut by_source: BTreeMap<&str, &L3Export> = BTreeMap::new();
+    for export in exports {
+        if by_source.insert(&export.source_name, export).is_some() {
+            return Err(LowerError::Unsupported {
+                what: format!("duplicate L3 export `{}`", export.source_name),
+                span: zero_span(),
+            });
+        }
+        if !program
+            .items
+            .iter()
+            .any(|item| matches!(item, Item::Fn(f) if f.name == export.source_name))
+        {
+            return Err(LowerError::Unsupported {
+                what: format!("unknown L3 export `{}`", export.source_name),
+                span: zero_span(),
+            });
+        }
+    }
+    lower_with_profile(
+        &prepared,
+        Some((by_source, target)),
+        Some(&provider.verus_source),
+    )
 }
 
 fn lower_with_profile(
     program: &Program,
     library: Option<(BTreeMap<&str, &L3Export>, L3LibraryTarget)>,
+    provider_source: Option<&str>,
 ) -> Result<String, LowerError> {
     // Verus 0.2026.05.24 synthesizes named-enum projection helpers by iterating
     // a randomly seeded HashMap. That order reaches `lib.rmeta`, so an otherwise
@@ -733,23 +837,29 @@ fn lower_with_profile(
     });
     let mut out = String::new();
     if let Some((_, target)) = &library {
-        if matches!(target, L3LibraryTarget::Kernel) {
+        if matches!(target, L3LibraryTarget::Freestanding) {
             out.push_str("#![no_std]\n");
         }
         out.push_str("#![crate_type = \"rlib\"]\n");
-        if matches!(target, L3LibraryTarget::Kernel) && program_needs_kernel_alloc(program) {
+        if matches!(target, L3LibraryTarget::Freestanding) && program_needs_kernel_alloc(program) {
             out.push_str("extern crate alloc;\nuse alloc::vec::Vec;\n");
         }
     }
     if matches!(
         library.as_ref().map(|(_, target)| target),
-        Some(L3LibraryTarget::Kernel)
+        Some(L3LibraryTarget::Freestanding)
     ) {
         out.push_str("use verus_builtin::*;\nuse verus_builtin_macros::*;\n");
     } else {
         out.push_str("use vstd::prelude::*;\n");
     }
     out.push_str("verus! {\n");
+    if let Some(source) = provider_source {
+        out.push_str(source);
+        if !source.ends_with('\n') {
+            out.push('\n');
+        }
+    }
 
     if deterministic_composition_enums
         && program
@@ -790,7 +900,7 @@ fn lower_with_profile(
     // Empty when the program uses no `Vec` (byte-stable for the existing corpus).
     let kernel_minimal_collections = matches!(
         library.as_ref().map(|(_, target)| target),
-        Some(L3LibraryTarget::Kernel)
+        Some(L3LibraryTarget::Freestanding)
     );
     let vec_wrappers = emit_vec_wrappers(program, kernel_minimal_collections)?;
     out.push_str(&vec_wrappers);
@@ -893,8 +1003,8 @@ fn lower_with_profile(
         .iter()
         .filter_map(|item| match item {
             Item::SpecFn(s)
-                if is_head_fold_sum(&s.body)
-                    || is_adt_fold_sum(&s.body)
+                if (declared_return_can_lower_to_nat(&s.ret)
+                    && (is_head_fold_sum(&s.body) || is_adt_fold_sum(&s.body)))
                     || is_fold_scheme_call_body(&s.body) =>
             {
                 Some(s.name.as_str())
@@ -932,7 +1042,7 @@ fn lower_with_profile(
         .items
         .iter()
         .filter_map(|item| match item {
-            Item::Struct(s) if s.inv.is_some() => Some(s.name.as_str()),
+            Item::Struct(s) if s.keeps.is_some() => Some(s.name.as_str()),
             _ => None,
         })
         .collect();
@@ -1094,7 +1204,11 @@ fn lower_with_profile(
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering/cert
             // consumer yet (increments 2b-3); emit nothing, mirroring the inert
             // ADT-decl arms.
-            Item::Forge(_) => continue,
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => continue,
         };
         out.push('\n');
         out.push_str(&item_src);
@@ -1144,7 +1258,7 @@ fn program_needs_kernel_alloc(program: &Program) -> bool {
     program.items.iter().any(|item| match item {
         Item::Fn(function) => {
             matches!(
-                &function.contract.fx,
+                &function.contract.effects,
                 thermite_syntax::ast::EffectRow::Set(effects)
                     if effects.iter().any(|effect| matches!(
                         effect,
@@ -1174,7 +1288,11 @@ fn program_needs_kernel_alloc(program: &Program) -> bool {
                 .iter()
                 .any(|field| type_needs_kernel_alloc(&field.ty)),
         }),
-        Item::Forge(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
@@ -1232,7 +1350,7 @@ fn lower_struct(
     // struct without an invariant is a plain `pub struct` (no predicate, nothing
     // to thread — the OQ-3 threading in `lower_fn_signature` keys on `inv_structs`
     // which is exactly the invariant-bearing set).
-    if let Some(inv) = &s.inv {
+    if let Some(inv) = &s.keeps {
         let field_names: Vec<&str> = s.fields.iter().map(|f| f.name.as_str()).collect();
         // The subset of fields whose type reaches `String` (REQ-4): a `String`
         // field's `<field>.len()` / `<field>.byte_at(i)` inside the spec-position
@@ -1469,6 +1587,23 @@ fn lower_inv_expr(
                 span,
             )?;
             Ok(format!("{r}.{name}"))
+        }
+        // A variant test in a receiver-bound invariant must recurse through this
+        // invariant-specific lowerer. The shared spec lowerer would emit the bare
+        // field (`privilege is User`), losing the `self` receiver and failing
+        // elaboration. The enum type of `self.<field>` fixes the bare Verus
+        // variant name, exactly as it does for an `is` in a function contract.
+        Expr::Is { scrutinee, variant } => {
+            let s = lower_inv_expr(
+                scrutinee,
+                field_names,
+                string_fields,
+                spec_fn_param_types,
+                d,
+                span,
+            )?;
+            let v = variant.last().cloned().unwrap_or_default();
+            Ok(format!("({s} is {v})"))
         }
         // Basis Stage 7 (`.design/basis/07-strings.md` REQ-4): a method call inside
         // the spec-position `well_formed` predicate — the editor core `inv cursor <=
@@ -1780,8 +1915,8 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
     for item in &program.items {
         match item {
             Item::Fn(f) => {
-                collect_combinators_in_expr(&f.contract.req.expr, f.span, &mut names);
-                for ens in &f.contract.ens {
+                collect_combinators_in_expr(&f.contract.requires.expr, f.span, &mut names);
+                for ens in &f.contract.ensures {
                     collect_combinators_in_expr(&ens.expr, f.span, &mut names);
                 }
                 // A boundary fn (ffi-boundary.md REQ-2) has `body: None` — its
@@ -1791,7 +1926,7 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
                 }
             }
             Item::SpecFn(s) => {
-                collect_combinators_in_expr(&s.dec.expr, s.span, &mut names);
+                collect_combinators_in_expr(&s.measures.expr, s.span, &mut names);
                 collect_combinators_in_block_specs(&s.body, s.span, &mut names);
             }
             // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum`
@@ -1801,7 +1936,11 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
             Item::Struct(_) | Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 combinator-collection
             // consumer yet (increments 2b-3); inert here, mirroring the ADT-decl arm.
-            Item::Forge(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
 
@@ -1946,7 +2085,7 @@ fn collect_combinators_in_block_specs(block: &Block, span: Span, acc: &mut Vec<(
                 for inv in &l.invs {
                     collect_combinators_in_expr(&inv.expr, span, acc);
                 }
-                collect_combinators_in_expr(&l.dec.expr, span, acc);
+                collect_combinators_in_expr(&l.measures.expr, span, acc);
                 collect_combinators_in_block_specs(&l.body, span, acc);
             }
             Stmt::If { then, else_, .. } => {
@@ -2649,7 +2788,7 @@ fn lower_spec_fn(
         write!(
             out,
             ") -> {ret}\n    decreases {}\n",
-            spec_dec(&s.dec, &s.params, spec_fn_param_types)
+            spec_dec(&s.measures, &s.params, spec_fn_param_types)
         )
         .ok();
     }
@@ -2772,7 +2911,8 @@ fn lower_spec_fn_body_with_schemes(
     // uses, covering the whole spec-fn-body class (no scheme sibling left to
     // re-pin). Empty for a non-`String` spec fn (byte-stable).
     let strings = string_param_names(params);
-    let ctx = Ctx::spec_seq()
+    let vecs = vec_param_names(params);
+    let ctx = Ctx::spec(&vecs, NO_SLICES)
         .with_variants(variants)
         .with_nat_ret(ret == "nat")
         .with_schemes(bindings)
@@ -2786,17 +2926,26 @@ fn lower_spec_fn_body_with_schemes(
     Ok(out)
 }
 
-/// The slice-typed parameter names of an item (the shape-derived set whose bare
-/// paths get `@` in spec position, REQ-5).
-fn slice_param_names(params: &[Param]) -> Vec<&str> {
+/// The sequence-view parameter names of an item (the shape-derived set whose
+/// bare paths get `@` when passed to a spec combinator): borrowed slices and the
+/// bounded `Vec` wrapper, which implements `View`.
+fn seq_view_param_names(params: &[Param]) -> Vec<&str> {
     params
         .iter()
         .filter_map(|p| match &p.ty {
             Type::Ref { inner, .. } if matches!(inner.as_ref(), Type::Slice(_)) => {
                 Some(p.name.as_str())
             }
+            Type::Vec(_) => Some(p.name.as_str()),
             _ => None,
         })
+        .collect()
+}
+
+fn vec_param_names(params: &[Param]) -> Vec<&str> {
+    params
+        .iter()
+        .filter_map(|p| matches!(p.ty, Type::Vec(_)).then_some(p.name.as_str()))
         .collect()
 }
 
@@ -2958,7 +3107,7 @@ fn owned_string_value_names(f: &FnItem) -> Vec<&str> {
 /// only to a diverge fn (a non-diverge loop still proves termination).
 fn fn_is_diverge(f: &FnItem) -> bool {
     use thermite_syntax::ast::{Effect, EffectRow};
-    matches!(&f.contract.fx, EffectRow::Set(es) if es.contains(&Effect::Diverge))
+    matches!(&f.contract.effects, EffectRow::Set(es) if es.contains(&Effect::Diverge))
 }
 
 struct CallLoweringContext<'a> {
@@ -3036,7 +3185,7 @@ fn lower_fn(
     // exemption above (`#[verifier::exec_allows_no_decreases_clause]`, #88) lets a
     // diverge fn recurse without a `dec` (L1-capped, partial correctness only);
     // such a fn carries `dec = None`, so this block emits nothing.
-    if let Some(dec) = &f.dec {
+    if let Some(dec) = &f.measures {
         let measure = spec_dec(dec, &f.params, spec_fn_param_types);
         writeln!(out, "    decreases {measure}").ok();
     }
@@ -3082,7 +3231,7 @@ fn lower_fn_signature(
     emit_params(&mut out, &f.params, Pos::Exec)?;
     writeln!(out, ") -> (result: {ret})").ok();
 
-    let slices = slice_param_names(&f.params);
+    let slices = seq_view_param_names(&f.params);
     // Basis Stage 7 (`.design/basis/07-strings.md` REQ-4): the `String`-named
     // values in scope for this fn's contract — every `String`/`&String` param plus
     // `result` when the return is `String`. A `String` receiver's spec-position
@@ -3157,7 +3306,7 @@ fn lower_fn_signature(
             }
         }
     }
-    let req = lower_expr(&f.contract.req.expr, spec, 0, f.span)?;
+    let req = lower_expr(&f.contract.requires.expr, spec, 0, f.span)?;
     if woven_reqs.is_empty() {
         // No woven invariant conjunct: keep the existing single-line
         // `requires <req>,` form byte-for-byte (no golden churn for the non-ADT
@@ -3188,7 +3337,7 @@ fn lower_fn_signature(
             out.push_str("        result.well_formed(),\n");
         }
     }
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let e = lower_expr(&ens.expr, spec, 0, f.span)?;
         writeln!(out, "        {e},").ok();
     }
@@ -3210,7 +3359,7 @@ fn lower_fn_signature(
 /// (the `String`/`&String` value names whose `.len()`/`.byte_at(i)` rewrite to
 /// the wrapper spec fns), `string_fields` (the `String`-typed field names), and
 /// `user_string_spec_fns` (the #127 byte-view-dispatch shape key). Passing the
-/// same context the signature path computes (`slice_param_names`/
+/// same context the signature path computes (`seq_view_param_names`/
 /// `string_value_names`/the program-wide field + user-spec-fn sets) makes
 /// `lower_contract_expr(clause.expr, …)` produce a clause's predicate
 /// byte-identical to the line `lower_fn_signature` emits for it, so the forge TV
@@ -3347,7 +3496,7 @@ fn lower_l3_export_wrapper(
     emit_params(&mut out, &f.params, Pos::Exec)?;
     writeln!(out, ") -> (result: Result<{ret}, ThermiteContractError>)").ok();
 
-    let slices = slice_param_names(&f.params);
+    let slices = seq_view_param_names(&f.params);
     let strings = string_value_names(f);
     let spec = Ctx::spec(&slices, nat_fns)
         .with_strings(&strings)
@@ -3356,7 +3505,7 @@ fn lower_l3_export_wrapper(
         .with_spec_fn_param_types(spec_fn_param_types);
 
     let mut ensured = Vec::new();
-    for ens in &f.contract.ens {
+    for ens in &f.contract.ensures {
         let lowered = lower_expr(&ens.expr, spec, 0, f.span)?;
         ensured.push(replace_ident(&lowered, "result", "value"));
     }
@@ -3375,7 +3524,13 @@ fn lower_l3_export_wrapper(
     out.push_str("            Err(_) => true,\n");
     out.push_str("        },\n");
 
-    let guard = lower_expr(&f.contract.req.expr, Ctx::exec(), 0, f.span)?;
+    let vecs = vec_param_names(&f.params);
+    let guard = lower_expr(
+        &f.contract.requires.expr,
+        Ctx::exec().with_vecs(&vecs),
+        0,
+        f.span,
+    )?;
     let args = f
         .params
         .iter()
@@ -3536,6 +3691,15 @@ pub fn lower_equivalence_obligation(
     mutant_body: &Block,
     callee_deps: &[Item],
 ) -> Result<String, LowerError> {
+    lower_equivalence_obligation_with_shared(f, mutant_body, callee_deps, &[])
+}
+
+pub fn lower_equivalence_obligation_with_shared(
+    f: &FnItem,
+    mutant_body: &Block,
+    callee_deps: &[Item],
+    observations: &[crate::witness::SharedObservation],
+) -> Result<String, LowerError> {
     let real_body = f.body.as_ref().ok_or_else(|| LowerError::Unsupported {
         what: "equivalence obligation reached a bodyless (boundary) fn; a boundary \
                fn is never mutation-scored (equivalent-mutants.md OQ-2)"
@@ -3543,12 +3707,42 @@ pub fn lower_equivalence_obligation(
         span: f.span,
     })?;
 
+    // A shared observation denotes the value obtained while the holding is
+    // active. It is not the function-entry value seen by `requires`: another
+    // actor may change guarded state before this function acquires the lock.
+    // Equating those instants is unsound, so keep such survivors counted until
+    // the obligation models a two-state acquire relation explicitly.
+    if !observations.is_empty() {
+        let rendered_req = lower_expr(
+            &f.contract.requires.expr,
+            Ctx::spec(NO_SLICES, NO_SLICES),
+            0,
+            f.span,
+        )?;
+        if replace_shared_observations(rendered_req.clone(), observations) != rendered_req {
+            return Err(LowerError::Unsupported {
+                what: format!(
+                    "equivalence obligation for `{}` does not identify function-entry \
+                     shared state in `requires` with a later holding-time observation",
+                    f.name
+                ),
+                span: f.contract.requires.span,
+            });
+        }
+    }
+
     // Call-bearing arm (REQ-7): a non-empty callee closure means the compared
     // bodies invoke in-file fns whose contracts govern the call sites; the
     // self-contained spec-fn pair below cannot declare them, so route to the
     // exec harness with the closure woven (modulo callee contracts, §9).
     if !callee_deps.is_empty() {
-        return lower_call_bearing_equivalence_obligation(f, real_body, mutant_body, callee_deps);
+        return lower_call_bearing_equivalence_obligation(
+            f,
+            real_body,
+            mutant_body,
+            callee_deps,
+            observations,
+        );
     }
 
     // Scope gate (OQ-1): every param + the return must be a scalar primitive so
@@ -3579,10 +3773,23 @@ pub fn lower_equivalence_obligation(
     // nat-fns. The same context the L3 spec path uses for a scalar predicate.
     let ctx = Ctx::spec(NO_SLICES, NO_SLICES);
 
-    let params = obligation_param_list(&f.params)?;
-    let real_value = render_body_as_spec_value(real_body, &ret_spelling, ctx, f.span)?;
-    let mut_value = render_body_as_spec_value(mutant_body, &ret_spelling, ctx, f.span)?;
-    let req = lower_expr(&f.contract.req.expr, ctx, 0, f.span)?;
+    let mut params = obligation_param_list(&f.params)?;
+    let observation_params = observation_param_list(observations)?;
+    if !observation_params.is_empty() {
+        if !params.is_empty() {
+            params.push_str(", ");
+        }
+        params.push_str(&observation_params);
+    }
+    let real_value = replace_shared_observations(
+        render_body_as_spec_value(real_body, &ret_spelling, ctx, f.span)?,
+        observations,
+    );
+    let mut_value = replace_shared_observations(
+        render_body_as_spec_value(mutant_body, &ret_spelling, ctx, f.span)?,
+        observations,
+    );
+    let req = lower_expr(&f.contract.requires.expr, ctx, 0, f.span)?;
 
     let name = &f.name;
     let mut out = String::new();
@@ -3603,7 +3810,14 @@ pub fn lower_equivalence_obligation(
     if req != "true" {
         writeln!(out, "    requires {req},").map_err(|_| fmt_err())?;
     }
-    let arg_names = obligation_arg_names(&f.params);
+    let mut arg_names = obligation_arg_names(&f.params);
+    let observation_args = observation_arg_names(observations);
+    if !observation_args.is_empty() {
+        if !arg_names.is_empty() {
+            arg_names.push_str(", ");
+        }
+        arg_names.push_str(&observation_args);
+    }
     writeln!(
         out,
         "    ensures equiv_mut_{name}({arg_names}) == equiv_real_{name}({arg_names}),"
@@ -3665,6 +3879,7 @@ fn lower_call_bearing_equivalence_obligation(
     real_body: &Block,
     mutant_body: &Block,
     callee_deps: &[Item],
+    observations: &[crate::witness::SharedObservation],
 ) -> Result<String, LowerError> {
     // Scope gate (REQ-7 v1): scalar params + return. The harness compares two
     // scalar block values with `==`. A non-scalar shape is Unsupported (REQ-9).
@@ -3715,11 +3930,24 @@ fn lower_call_bearing_equivalence_obligation(
     // here: the closure declares every callee). The early-return mutant's
     // observable value is its returned expression; a tail body's is its tail.
     let exec = Ctx::exec();
-    let real_value = render_body_as_exec_value(real_body, exec, f.span)?;
-    let mut_value = render_body_as_exec_value(mutant_body, exec, f.span)?;
-    let params = obligation_param_list(&f.params)?;
+    let real_value = replace_shared_observations(
+        render_body_as_exec_value(real_body, exec, f.span)?,
+        observations,
+    );
+    let mut_value = replace_shared_observations(
+        render_body_as_exec_value(mutant_body, exec, f.span)?,
+        observations,
+    );
+    let mut params = obligation_param_list(&f.params)?;
+    let observation_params = observation_param_list(observations)?;
+    if !observation_params.is_empty() {
+        if !params.is_empty() {
+            params.push_str(", ");
+        }
+        params.push_str(&observation_params);
+    }
     let req = lower_expr(
-        &f.contract.req.expr,
+        &f.contract.requires.expr,
         Ctx::spec(NO_SLICES, NO_SLICES),
         0,
         f.span,
@@ -3799,6 +4027,16 @@ fn render_body_as_exec_value(body: &Block, ctx: Ctx, span: Span) -> Result<Strin
             span,
         })?;
         return lower_expr(e, ctx, 0, span);
+    }
+
+    // Lock acquisition and invariant close do not change the scalar value of a
+    // sole value-producing holding block. Compare its body recursively; shared
+    // observations inside it are still lowered normally and must be in scope in
+    // the surrounding equivalence harness.
+    if body.tail.is_none() {
+        if let [Stmt::Holding { body: held, .. }] = body.stmts.as_slice() {
+            return render_body_as_exec_value(held, ctx, span);
+        }
     }
 
     // A bare tail body (`{ ext_id(x) }`): the observable value is the tail.
@@ -3890,6 +4128,78 @@ fn obligation_arg_names(params: &[Param]) -> String {
         .join(", ")
 }
 
+fn observation_name(path: &str) -> String {
+    format!(
+        "__thermite_shared_{}",
+        path.chars()
+            .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '_' })
+            .collect::<String>()
+    )
+}
+
+fn observation_param_list(
+    observations: &[crate::witness::SharedObservation],
+) -> Result<String, LowerError> {
+    observations
+        .iter()
+        .map(|observation| {
+            let ty =
+                scalar_obligation_type(&observation.ty).ok_or_else(|| LowerError::Unsupported {
+                    what: format!(
+                        "equivalence obligation shared observation `{}` is non-scalar",
+                        observation.path
+                    ),
+                    span: zero_span(),
+                })?;
+            Ok(format!("{}: {ty}", observation_name(&observation.path)))
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(|items| items.join(", "))
+}
+
+fn observation_arg_names(observations: &[crate::witness::SharedObservation]) -> String {
+    observations
+        .iter()
+        .map(|observation| observation_name(&observation.path))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn replace_shared_observations(
+    mut rendered: String,
+    observations: &[crate::witness::SharedObservation],
+) -> String {
+    let mut ordered = observations.iter().collect::<Vec<_>>();
+    ordered.sort_by_key(|observation| std::cmp::Reverse(observation.path.len()));
+    for observation in ordered {
+        let replacement = observation_name(&observation.path);
+        let mut out = String::with_capacity(rendered.len());
+        let mut cursor = 0usize;
+        while let Some(relative) = rendered[cursor..].find(&observation.path) {
+            let start = cursor + relative;
+            let end = start + observation.path.len();
+            let left_is_path = rendered[..start]
+                .chars()
+                .next_back()
+                .is_some_and(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '.');
+            let right_is_path = rendered[end..]
+                .chars()
+                .next()
+                .is_some_and(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '.');
+            if left_is_path || right_is_path {
+                out.push_str(&rendered[cursor..end]);
+            } else {
+                out.push_str(&rendered[cursor..start]);
+                out.push_str(&replacement);
+            }
+            cursor = end;
+        }
+        out.push_str(&rendered[cursor..]);
+        rendered = out;
+    }
+    rendered
+}
+
 /// Render an exec body as the spec-fn body of an equivalence-obligation
 /// (REQ-1). The observable result of:
 ///
@@ -3919,6 +4229,15 @@ fn render_body_as_spec_value(
         })?;
         let lowered = lower_expr(e, ctx, 0, span)?;
         return Ok(coerce_obligation_expr(&lowered, ret));
+    }
+
+    // A sole holding statement is observationally transparent for this scalar
+    // value relation. This admits the common RFC-10 `{ holding gate { value } }`
+    // body without treating acquire/release as a result-producing operation.
+    if body.tail.is_none() {
+        if let [Stmt::Holding { body: held, .. }] = body.stmts.as_slice() {
+            return render_body_as_spec_value(held, ret, ctx, span);
+        }
     }
 
     // A let-chain plus tail: render each `let` (init coerced to its declared type,
@@ -3993,6 +4312,7 @@ fn stmt_kind(stmt: &Stmt) -> &'static str {
         Stmt::Break => "a `break`",
         Stmt::Continue => "a `continue`",
         Stmt::Expr(_) => "an expression statement",
+        Stmt::Holding { .. } => "a `holding` statement",
     }
 }
 
@@ -4031,10 +4351,22 @@ fn spec_param_type(ty: &Type) -> Result<String, LowerError> {
 /// fold cannot overflow the spec relation (OQ-1). Detected by shape: a `Match`
 /// or `if/else` whose recursive arm adds a cast slice head to a recursive call.
 fn lower_spec_fn_ret(ret: &Type, body: &Block) -> String {
-    if is_head_fold_sum(body) || is_adt_fold_sum(body) {
+    if declared_return_can_lower_to_nat(ret) && (is_head_fold_sum(body) || is_adt_fold_sum(body)) {
         return "nat".to_string();
     }
     lower_type(ret).unwrap_or_else(|_| "bool".to_string())
+}
+
+/// Whether a declared surface return may use the overflow-free Verus `nat`
+/// representation reserved for numeric folds. Shape recognition is deliberately
+/// secondary to this type gate: an ADT match containing a call through `*box`
+/// can also be a predicate or a traversal, and its declared result must not be
+/// rewritten merely because it resembles a sum syntactically (issue #7).
+fn declared_return_can_lower_to_nat(ret: &Type) -> bool {
+    matches!(
+        ret,
+        Type::Prim(PrimType::U8 | PrimType::U16 | PrimType::U32 | PrimType::U64 | PrimType::Usize)
+    )
 }
 
 /// Detect the general ADT structural-fold shape (`.design/basis/01-adts.md`
@@ -4218,7 +4550,8 @@ fn lower_spec_fn_body(
     // non-`String` spec fn (byte-stable for the existing corpus; `spec_sum`/ADT
     // folds carry no `String` param, so the set is empty and nothing changes).
     let strings = string_param_names(params);
-    let ctx = Ctx::spec_seq()
+    let vecs = vec_param_names(params);
+    let ctx = Ctx::spec(&vecs, NO_SLICES)
         .with_variants(variants)
         .with_nat_ret(ret == "nat")
         .with_strings(&strings)
@@ -4885,7 +5218,11 @@ pub(crate) fn collect_vec_elem_types(program: &Program) -> Vec<Type> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 type-reachability
             // consumer yet (increments 2b-3); contributes no Vec element types,
             // mirroring the inert ADT-decl arms.
-            Item::Forge(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     // Cluster C5 (`.design/basis/07-strings.md` REQ-15, issue #102): the emitted
@@ -4983,6 +5320,7 @@ fn note_stmt_vec_elems(stmt: &Stmt, elems: &mut Vec<Type>) {
             }
         }
         Stmt::Loop(l) => note_block_vec_elems(&l.body, elems),
+        Stmt::Holding { body, .. } => note_block_vec_elems(body, elems),
         Stmt::Assign { .. } | Stmt::Return(_) | Stmt::Expr(_) | Stmt::Break | Stmt::Continue => {}
     }
 }
@@ -4995,6 +5333,10 @@ fn note_stmt_vec_elems(stmt: &Stmt, elems: &mut Vec<Type>) {
 ///
 /// ```verus
 /// pub struct TVecU64 { pub data: Vec<u64> }
+/// impl View for TVecU64 {
+///     type V = Seq<u64>;
+///     open spec fn view(&self) -> Seq<u64> { self.data@ }
+/// }
 /// impl TVecU64 {
 ///     pub open spec fn well_formed(&self) -> bool { self.data.len() <= 1000000 }
 ///     pub open spec fn len(&self) -> nat { self.data.len() as nat }
@@ -5088,6 +5430,18 @@ fn emit_one_vec_wrapper(elem: &Type) -> Result<String, LowerError> {
     let mut out = String::new();
     out.push('\n');
     writeln!(out, "pub struct {name} {{ pub data: Vec<{ety}> }}").ok();
+    // Issue #8: expose the backing vstd Vec's sequence view on the Thermite
+    // wrapper. Spec indexing (`v@[i]`) and sequence combinators (`forall_in(v,
+    // ..)`) both desugar through `View`; without this bridge they respectively
+    // fail with a missing `view` method and a `TVec`/`Seq` type mismatch.
+    writeln!(out, "impl View for {name} {{").ok();
+    writeln!(out, "    type V = Seq<{ety}>;").ok();
+    writeln!(
+        out,
+        "    open spec fn view(&self) -> Seq<{ety}> {{ self.data@ }}"
+    )
+    .ok();
+    out.push_str("}\n");
     writeln!(out, "impl {name} {{").ok();
     writeln!(
         out,
@@ -5281,7 +5635,11 @@ pub(crate) fn collect_map_kv_types(program: &Program) -> Vec<(Type, Type)> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 type-reachability
             // consumer yet (increments 2b-3); contributes no Map (K,V) pairs,
             // mirroring the inert ADT-decl arms.
-            Item::Forge(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     pairs
@@ -5344,6 +5702,7 @@ fn note_stmt_map_kv(stmt: &Stmt, pairs: &mut Vec<(Type, Type)>) {
             }
         }
         Stmt::Loop(l) => note_block_map_kv(&l.body, pairs),
+        Stmt::Holding { body, .. } => note_block_map_kv(body, pairs),
         Stmt::Assign { .. } | Stmt::Return(_) | Stmt::Expr(_) | Stmt::Break | Stmt::Continue => {}
     }
 }
@@ -5672,7 +6031,11 @@ fn program_uses_string(program: &Program) -> bool {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 String-reachability
             // consumer yet (increments 2b-3); reaches no String, so fall through
             // without returning, mirroring the inert ADT-decl arms.
-            Item::Forge(_) => {}
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => {}
         }
     }
     false
@@ -5704,6 +6067,7 @@ fn stmt_has_string_local(stmt: &Stmt) -> bool {
                 || else_.as_ref().map(block_has_string_local).unwrap_or(false)
         }
         Stmt::Loop(l) => block_has_string_local(&l.body),
+        Stmt::Holding { body, .. } => block_has_string_local(body),
         // break/continue declare no local (#93): no string-typed binding.
         Stmt::Assign { .. } | Stmt::Return(_) | Stmt::Expr(_) | Stmt::Break | Stmt::Continue => {
             false
@@ -5732,6 +6096,7 @@ fn stmt_has_str_lit(stmt: &Stmt) -> bool {
                 || else_.as_ref().map(block_has_str_lit).unwrap_or(false)
         }
         Stmt::Loop(l) => block_has_str_lit(&l.body),
+        Stmt::Holding { body, .. } => block_has_str_lit(body),
         Stmt::Expr(e) => expr_has_str_lit(e),
         // break/continue carry no sub-expression (#93): no string literal.
         Stmt::Break | Stmt::Continue => false,
@@ -6327,15 +6692,19 @@ pub(crate) fn program_uses_string_search(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
 /// True if a fn `Contract`'s `req`/`ens` uses a C5 construct (REQ-13..16).
 fn contract_uses_string_search(contract: &thermite_syntax::ast::Contract, shadow: &[&str]) -> bool {
-    expr_uses_string_search(&contract.req.expr, shadow)
+    expr_uses_string_search(&contract.requires.expr, shadow)
         || contract
-            .ens
+            .ensures
             .iter()
             .any(|c| expr_uses_string_search(&c.expr, shadow))
 }
@@ -6374,6 +6743,7 @@ fn stmt_uses_string_search(stmt: &Stmt, shadow: &[&str]) -> bool {
                     .unwrap_or(false)
         }
         Stmt::Loop(l) => block_uses_string_search(&l.body, shadow),
+        Stmt::Holding { body, .. } => block_uses_string_search(body, shadow),
         Stmt::Expr(e) => expr_uses_string_search(e, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
@@ -6515,15 +6885,19 @@ fn program_uses_numfmt(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
 /// True if a fn `Contract`'s `req`/`ens` names a numfmt construct (REQ-8).
 fn contract_uses_numfmt(contract: &thermite_syntax::ast::Contract, shadow: &[&str]) -> bool {
-    expr_uses_numfmt(&contract.req.expr, shadow)
+    expr_uses_numfmt(&contract.requires.expr, shadow)
         || contract
-            .ens
+            .ensures
             .iter()
             .any(|c| expr_uses_numfmt(&c.expr, shadow))
 }
@@ -6560,6 +6934,7 @@ fn stmt_uses_numfmt(stmt: &Stmt, shadow: &[&str]) -> bool {
                     .unwrap_or(false)
         }
         Stmt::Loop(l) => block_uses_numfmt(&l.body, shadow),
+        Stmt::Holding { body, .. } => block_uses_numfmt(body, shadow),
         Stmt::Expr(e) => expr_uses_numfmt(e, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
@@ -7088,14 +7463,18 @@ pub(crate) fn program_uses_parse(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
 fn contract_uses_parse(contract: &thermite_syntax::ast::Contract, shadow: &[&str]) -> bool {
-    expr_uses_parse(&contract.req.expr, shadow)
+    expr_uses_parse(&contract.requires.expr, shadow)
         || contract
-            .ens
+            .ensures
             .iter()
             .any(|c| expr_uses_parse(&c.expr, shadow))
 }
@@ -7130,6 +7509,7 @@ fn stmt_uses_parse(stmt: &Stmt, shadow: &[&str]) -> bool {
                     .unwrap_or(false)
         }
         Stmt::Loop(l) => block_uses_parse(&l.body, shadow),
+        Stmt::Holding { body, .. } => block_uses_parse(body, shadow),
         Stmt::Expr(e) => expr_uses_parse(e, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
@@ -7350,14 +7730,18 @@ pub(crate) fn program_uses_bytes_eq(program: &Program) -> bool {
         Item::Struct(_) | Item::Enum(_) => false,
         // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 emission-gate consumer
         // yet (increments 2b-3); never drives generation, mirroring the ADT-decl arm.
-        Item::Forge(_) => false,
+        Item::Forge(_)
+        | Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_) => false,
     })
 }
 
 fn contract_uses_bytes_eq(contract: &thermite_syntax::ast::Contract, shadow: &[&str]) -> bool {
-    expr_uses_bytes_eq(&contract.req.expr, shadow)
+    expr_uses_bytes_eq(&contract.requires.expr, shadow)
         || contract
-            .ens
+            .ensures
             .iter()
             .any(|c| expr_uses_bytes_eq(&c.expr, shadow))
 }
@@ -7392,6 +7776,7 @@ fn stmt_uses_bytes_eq(stmt: &Stmt, shadow: &[&str]) -> bool {
                     .unwrap_or(false)
         }
         Stmt::Loop(l) => block_uses_bytes_eq(&l.body, shadow),
+        Stmt::Holding { body, .. } => block_uses_bytes_eq(body, shadow),
         Stmt::Expr(e) => expr_uses_bytes_eq(e, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
@@ -8598,7 +8983,11 @@ fn lower_index(
         }
         (Pos::Exec, IndexArg::Single(i)) => {
             let idx = lower_expr(i, ctx, depth, span)?;
-            Ok(format!("{b}[{idx}]"))
+            if matches!(base, Expr::Path(segs) if segs.len() == 1 && ctx.is_vec(&segs[0])) {
+                Ok(format!("{b}.get({idx})"))
+            } else {
+                Ok(format!("{b}[{idx}]"))
+            }
         }
         (Pos::Exec, IndexArg::RangeTo(i)) => {
             let idx = lower_expr(i, ctx, depth, span)?;
@@ -8946,7 +9335,7 @@ fn lower_fn_body(
 /// so their products are covered by the enclosing block's proof block.
 fn req_bounded_mul_asserts(f: &FnItem, body: &Block) -> Result<Vec<String>, LowerError> {
     let mut bounds = std::collections::BTreeMap::new();
-    collect_req_upper_bounds(&f.contract.req.expr, &mut bounds);
+    collect_req_upper_bounds(&f.contract.requires.expr, &mut bounds);
     if bounds.is_empty() {
         return Ok(vec![]);
     }
@@ -9189,6 +9578,7 @@ fn collect_block_local_muls(block: &Block, muls: &mut Vec<Expr>) {
             // block (emitted by `lower_loop`), since a body-start fact does not
             // flow past the loop head (#196).
             Stmt::Loop(_) => {}
+            Stmt::Holding { body, .. } => collect_block_local_muls(body, muls),
         }
     }
     if let Some(tail) = &block.tail {
@@ -9229,8 +9619,10 @@ fn lower_block_with_fn_aids(
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let owned = owned_string_value_names(f);
+    let vecs = vec_param_names(&f.params);
     let exec = Ctx::exec()
         .with_variants(variants)
+        .with_vecs(&vecs)
         .with_owned_strings(&owned);
     let mut out = String::new();
     for stmt in &block.stmts {
@@ -9266,8 +9658,16 @@ fn lower_block_inner(
     span: Span,
 ) -> Result<String, LowerError> {
     let mut out = String::new();
-    for stmt in &block.stmts {
-        out.push_str(&lower_stmt(stmt, ctx, depth + 1)?);
+    for (index, stmt) in block.stmts.iter().enumerate() {
+        let mut rendered = lower_stmt(stmt, ctx, depth + 1)?;
+        if matches!(stmt, Stmt::Holding { .. })
+            && (block.tail.is_some() || index + 1 < block.stmts.len())
+            && rendered.ends_with("}\n")
+        {
+            rendered.truncate(rendered.len() - 2);
+            rendered.push_str("};\n");
+        }
+        out.push_str(&rendered);
     }
     if let Some(tail) = &block.tail {
         let t = lower_expr(tail, ctx, depth, span)?;
@@ -9358,6 +9758,10 @@ fn lower_stmt(stmt: &Stmt, ctx: Ctx, indent: usize) -> Result<String, LowerError
             what: "nested loop without fn-aid context".to_string(),
             span: zero_span(),
         }),
+        Stmt::Holding { body, .. } => {
+            let inner = lower_block_inner(body, ctx, indent + 1, zero_span())?;
+            Ok(format!("{pad}{{\n{inner}{pad}}}\n"))
+        }
     }
 }
 
@@ -9393,8 +9797,10 @@ fn lower_loop(
     let pad = "    ".repeat(indent);
     let ipad = "    ".repeat(indent + 1);
     let owned = owned_string_value_names(f);
+    let vecs = vec_param_names(&f.params);
     let exec = Ctx::exec()
         .with_variants(variants)
+        .with_vecs(&vecs)
         .with_owned_strings(&owned);
     let mut out = String::new();
 
@@ -9407,7 +9813,7 @@ fn lower_loop(
         }
     };
 
-    let slices = slice_param_names(&f.params);
+    let slices = seq_view_param_names(&f.params);
     let strings = string_value_names(f);
     // The loop's `inv` clauses and its `dec` measure lower in spec context, and a
     // loop invariant / decreases measure may name a user `spec fn` with an
@@ -9452,7 +9858,7 @@ fn lower_loop(
     // still prove termination → L3): the exemption is diverge-only and is not a
     // termination-proof escape hatch.
     if !fn_is_diverge(f) {
-        let dec = lower_expr(&l.dec.expr, spec, 0, f.span)?;
+        let dec = lower_expr(&l.measures.expr, spec, 0, f.span)?;
         writeln!(out, "{ipad}decreases {dec},").map_err(|_| fmt_err())?;
     }
 
@@ -9602,7 +10008,7 @@ fn lift_immutable_preconds(
     spec: Ctx,
     existing_invs: &[String],
 ) -> Result<Vec<String>, LowerError> {
-    let req = lower_expr(&f.contract.req.expr, spec, 0, f.span)?;
+    let req = lower_expr(&f.contract.requires.expr, spec, 0, f.span)?;
     if req == "true" {
         return Ok(Vec::new());
     }
@@ -9614,7 +10020,7 @@ fn lift_immutable_preconds(
     // gets its `@` view (REQ-5).
     let param_names: Vec<&str> = f.params.iter().map(|p| p.name.as_str()).collect();
     let mut lifted = Vec::new();
-    for conj in split_conjuncts(&f.contract.req.expr) {
+    for conj in split_conjuncts(&f.contract.requires.expr) {
         let lowered = lower_expr(conj, spec, 0, f.span)?;
         let mentions_param = param_names.iter().any(|p| expr_mentions(conj, p));
         if mentions_param && !existing_invs.iter().any(|e| e == &lowered) {
@@ -9792,7 +10198,7 @@ fn nonlinear_overflow_assert(
     // callee's declared param type (`Ctx::spec_call_param_cast`).
     let slice = first_slice_param(&f.params).unwrap_or("xs");
     let req = lower_expr(
-        &f.contract.req.expr,
+        &f.contract.requires.expr,
         Ctx::spec_seq().with_spec_fn_param_types(spec_fn_param_types),
         0,
         f.span,
@@ -9967,8 +10373,10 @@ fn lower_loop_body(
     // None-postcondition match template (e).
     let coverage = complementary_coverage_split(f, invs, spec_fn_param_types)?;
     let owned = owned_string_value_names(f);
+    let vecs = vec_param_names(&f.params);
     let exec = Ctx::exec()
         .with_variants(variants)
+        .with_vecs(&vecs)
         .with_owned_strings(&owned);
 
     let mut out = String::new();
@@ -10028,8 +10436,10 @@ fn emit_if_with_split(
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let owned = owned_string_value_names(f);
+    let vecs = vec_param_names(&f.params);
     let exec = Ctx::exec()
         .with_variants(variants)
+        .with_vecs(&vecs)
         .with_owned_strings(&owned);
     let c = lower_expr(cond, exec, 0, f.span)?;
     let mut out = format!("{pad}if {c} {{\n");
@@ -10074,7 +10484,8 @@ fn complementary_coverage_split(
     spec_fn_param_types: &[(&str, &[PrimType])],
 ) -> Result<Option<CoverageSplit>, LowerError> {
     // 1. Find a `None => forall_in(s, ptarget)` arm in some `ens`.
-    let Some((slice, ptarget)) = find_none_forall_in(&f.contract.ens, spec_fn_param_types) else {
+    let Some((slice, ptarget)) = find_none_forall_in(&f.contract.ensures, spec_fn_param_types)
+    else {
         return Ok(None);
     };
 
@@ -10478,7 +10889,7 @@ mod exec_body_tests {
                 span: zero_span(),
                 bv: None,
             }],
-            dec: Clause {
+            measures: Clause {
                 expr: int(0),
                 text: "0".to_string(),
                 span: zero_span(),

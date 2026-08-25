@@ -12,7 +12,7 @@
   ],
   "reject": [
     { "name": "oob_byte_at_no_req", "expect_level": "L0",
-      "program": "fn bad(s: String) -> u64 req true ens result == s.byte_at(0) fx pure { s.byte_at(0) }",
+      "program": "fn bad(s: String) -> u64 ! pure requires true ensures result == s.byte_at(0) { s.byte_at(0) }",
       "why": "without `req s.len() > 0`, byte_at(0) is unproven in-bounds (an empty string has no byte 0) -> byte_at's precondition undischarged -> L0 (the no-OOB guarantee requires the caller to establish the bound; a missing bound is caught, not laundered)." }
   ]
 }

@@ -273,14 +273,14 @@ fn complete_rich_composition_tv(
                 let detail = Some(rich_completion_detail());
                 completed.push(TvEvidenceRow {
                     phase: "contract".to_string(),
-                    label: format!("{}.req", function.name),
+                    label: format!("{}.requires", function.name),
                     verdict: "faithful".to_string(),
                     detail: detail.clone(),
                 });
-                for index in 0..function.contract.ens.len() {
+                for index in 0..function.contract.ensures.len() {
                     completed.push(TvEvidenceRow {
                         phase: "contract".to_string(),
-                        label: format!("{}.ens#{}", function.name, index + 1),
+                        label: format!("{}.ensures#{}", function.name, index + 1),
                         verdict: "faithful".to_string(),
                         detail: detail.clone(),
                     });
@@ -386,7 +386,7 @@ fn assemble(
     }));
     let lower_target = match target.target {
         VerifiedTarget::Std => L3LibraryTarget::Std,
-        VerifiedTarget::Kernel => L3LibraryTarget::Kernel,
+        VerifiedTarget::Freestanding => L3LibraryTarget::Freestanding,
     };
     let lowered_thermite =
         thermite_lower::lower_l3_library(&selected_program, &lower_exports, lower_target)

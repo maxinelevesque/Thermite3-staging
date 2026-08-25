@@ -1,0 +1,686 @@
+#!/usr/bin/env python3
+"""Check whether routed design documents are current with their source files.
+
+Routes come from ``gates/routes.toml``. Each routed document must contain
+either an ``audited-content-sha256`` pin or a legacy ``audited-sha`` commit pin.
+Content pins are compared with a digest of the governed files. Legacy pins are
+checked against commits that touched those files after the pinned commit.
+
+Results are sorted by document and file:
+
+* 0: every document is pinned and current
+* 1: drift, a missing pin, or an invalid pin was found
+* 3: the check could not run reliably
+
+Usage: ``python3 gates/doc-drift.py [--root <repo-toplevel>]``
+
+The detailed rules are in ``.design/gates/doc-drift-tripwire.md``.
+This is a standalone/CI check, not a Claude Code hook or part of ``make audit``.
+Customize ``ROUTES_RELPATH`` and the pin expressions below when adapting it.
+"""
+
+import hashlib
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+try:
+    import tomllib  # Python 3.11+
+except ImportError:  # pragma: no cover - exercised via the env-failure path
+    tomllib = None
+
+
+# Project settings
+
+# Repo-relative path to the route table (the enumeration source, REQ-1).
+ROUTES_RELPATH = "gates/routes.toml"
+
+# Preferred content pin: a deterministic aggregate SHA-256 over the doc's
+# governed file set. This makes drift a data-consistency check, independent of
+# merge topology.
+CONTENT_PIN_FIELD_RE = re.compile(
+    r"^audited-content-sha256:\s*([0-9a-f]{64})\b",
+    re.MULTILINE,
+)
+CONTENT_PIN_ANY_RE = re.compile(r"^audited-content-sha256:\s*(\S+)", re.MULTILINE)
+
+# Legacy commit pin, per REQ-5: the first matching line in a doc's header.
+# Use all 40 hex digits to avoid ambiguity as the repository grows.
+PIN_FIELD_RE = re.compile(r"^audited-sha:\s*([0-9a-f]{40})\b", re.MULTILINE)
+
+# Implementation
+
+# Defect classes (REQ-7/REQ-8). The literal tokens the report emits and the
+# oracle asserts.
+DRIFT = "DRIFT"
+MISSING_PIN = "MISSING-PIN"
+INVALID_PIN = "INVALID-PIN"
+CURRENT = "CURRENT"
+
+# Exit codes (REQ-9).
+EXIT_OK = 0
+EXIT_FAIL = 1
+EXIT_INCONCLUSIVE = 3
+
+
+class EnvironmentError3(Exception):
+    """The check could not determine the answer; maps to exit 3 (REQ-9).
+
+    This covers missing git, an invalid repository, missing tomllib, and an
+    unreadable route table.
+    """
+
+
+# --- git helpers (every subprocess exit status is inspected, R-CODE-4) ------
+
+def _run_git(root, args):
+    """Run `git <args>` in `root`; return (returncode, stdout, stderr).
+
+    Raise EnvironmentError3 when git cannot be invoked. Otherwise return git's
+    status to the caller for interpretation.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), *args],
+            capture_output=True,
+            text=True,
+        )
+    except (FileNotFoundError, PermissionError, OSError) as exc:
+        raise EnvironmentError3(f"git could not be invoked: {exc}") from exc
+    return proc.returncode, proc.stdout, proc.stderr
+
+
+def _git_toplevel(start):
+    """Resolve the git worktree toplevel containing `start`, or raise exit-3."""
+    rc, out, _ = _run_git(start, ["rev-parse", "--show-toplevel"])
+    if rc != 0:
+        raise EnvironmentError3(f"not inside a git repository: {start}")
+    top = out.strip()
+    if not top:
+        raise EnvironmentError3(f"could not resolve git toplevel for: {start}")
+    return Path(top)
+
+
+def _resolve_head(root):
+    """The HEAD commit SHA, or exit-3 (e.g. an unborn branch / not a repo)."""
+    rc, out, _ = _run_git(root, ["rev-parse", "--verify", "HEAD^{commit}"])
+    if rc != 0:
+        raise EnvironmentError3("could not resolve HEAD (no commits / not a repo)")
+    return out.strip()
+
+
+def _pin_resolves(root, pin):
+    """True iff `pin` resolves to a commit object (REQ-6d, first clause)."""
+    rc, _, _ = _run_git(root, ["rev-parse", "--verify", f"{pin}^{{commit}}"])
+    return rc == 0
+
+
+def _pin_is_ancestor(root, pin):
+    """True iff `pin` is an ancestor of HEAD (REQ-6d, second clause).
+
+    `git merge-base --is-ancestor` exits 0 (yes) / 1 (no) / other (error).
+    An error status is an environment failure (exit 3), never silently "no".
+    """
+    rc, _, _ = _run_git(root, ["merge-base", "--is-ancestor", pin, "HEAD"])
+    if rc == 0:
+        return True
+    if rc == 1:
+        return False
+    raise EnvironmentError3(
+        f"git merge-base --is-ancestor exited {rc} for pin {pin}"
+    )
+
+
+def _intervening_commits(root, pin, pathspec):
+    """The commits in <pin>..HEAD touching `pathspec`, newest-first.
+
+    Returns a list of (sha, subject). Empty => CURRENT (REQ-6 unbuilt-file
+    rule: a never-committed file yields an empty list and is CURRENT). A
+    non-zero git status here is an environment failure (exit 3), never
+    collapsed to "no drift".
+    """
+    rc, out, err = _run_git(
+        root,
+        ["log", "--full-history", "--format=%H %s", f"{pin}..HEAD", "--", pathspec],
+    )
+    if rc != 0:
+        raise EnvironmentError3(
+            f"git log --full-history {pin}..HEAD -- {pathspec} exited {rc}: "
+            f"{err.strip()}"
+        )
+    commits = []
+    for line in out.splitlines():
+        line = line.rstrip("\n")
+        if not line:
+            continue
+        sha, _, subject = line.partition(" ")
+        commits.append((sha, subject))
+    return commits
+
+
+# --- route table ------------------------------------------------------------
+
+def load_doc_files(root):
+    """Invert the route table to doc -> sorted(set(governed file patterns)).
+
+    Raise EnvironmentError3 when tomllib is unavailable or the route table
+    cannot be read and validated (REQ-1, REQ-6b, REQ-9).
+    """
+    if tomllib is None:
+        raise EnvironmentError3("tomllib is unavailable (Python < 3.11)")
+    p = root / ROUTES_RELPATH
+    if not p.is_file():
+        raise EnvironmentError3(f"route table not found: {ROUTES_RELPATH}")
+    try:
+        with open(p, "rb") as f:
+            data = tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        raise EnvironmentError3(
+            f"route table unreadable ({ROUTES_RELPATH}): {exc}"
+        ) from exc
+
+    # TOML syntax alone does not validate the route-table shape. Check it here
+    # so malformed input is reported as inconclusive instead of raising while
+    # the entries are traversed (REQ-9).
+    routes = data.get("route", [])
+    if not isinstance(routes, list):
+        raise EnvironmentError3(
+            f"route table {ROUTES_RELPATH} is wrong-shaped: `route` must be a "
+            f"list of [[route]] tables, got {type(routes).__name__}"
+        )
+
+    doc_files = {}
+    for i, route in enumerate(routes):
+        if not isinstance(route, dict):
+            raise EnvironmentError3(
+                f"route table {ROUTES_RELPATH} is wrong-shaped: route entry "
+                f"#{i} must be a [[route]] table, got {type(route).__name__}"
+            )
+        design = route.get("design")
+        pattern = route.get("crate_pattern")
+        # Both fields are required by the routes.toml schema. Reject absent,
+        # empty, or non-string values so a malformed route cannot reduce coverage
+        # while the check still succeeds (#261).
+        for field, value in (("design", design), ("crate_pattern", pattern)):
+            if value is not None and not isinstance(value, str):
+                raise EnvironmentError3(
+                    f"route table {ROUTES_RELPATH} is wrong-shaped: route entry "
+                    f"#{i} `{field}` must be a string, got "
+                    f"{type(value).__name__}"
+                )
+            if not value:
+                what = "is missing" if value is None else "is empty"
+                raise EnvironmentError3(
+                    f"route table {ROUTES_RELPATH} is wrong-shaped: route entry "
+                    f"#{i} required field `{field}` {what} (both `crate_pattern` "
+                    f"and `design` are required per the schema header)"
+                )
+        doc_files.setdefault(design, set()).add(pattern)
+    if not doc_files:
+        # With no routes, the check cannot establish that routed docs are current.
+        # Treat that case as inconclusive (REQ-9).
+        raise EnvironmentError3(
+            f"route table {ROUTES_RELPATH} yielded zero routed docs — nothing "
+            f"to check; an empty enumeration source is INCONCLUSIVE, not a pass"
+        )
+    return {doc: sorted(files) for doc, files in doc_files.items()}
+
+
+def extract_pins(root, doc_relpath):
+    """Pins in `doc_relpath`: (content_pin, bad_content_pin, commit_pin).
+
+    A doc that does not exist on disk has no pins -> MISSING-PIN; the doc is
+    named, never a traceback. A malformed content pin is distinct from an absent
+    one so a typo cannot silently fall back to a legacy commit pin.
+    """
+    p = root / doc_relpath
+    try:
+        text = p.read_text(encoding="utf-8", errors="replace")
+    except (OSError, FileNotFoundError):
+        return None, None, None
+    content_m = CONTENT_PIN_FIELD_RE.search(text)
+    bad_content_m = CONTENT_PIN_ANY_RE.search(text) if content_m is None else None
+    commit_m = PIN_FIELD_RE.search(text)
+    return (
+        content_m.group(1) if content_m else None,
+        bad_content_m.group(1) if bad_content_m else None,
+        commit_m.group(1) if commit_m else None,
+    )
+
+
+def _pathspec_for(pattern):
+    """REQ-6e: literal path -> `<f>`; any glob -> `:(glob)<f>`."""
+    if "*" in pattern or "?" in pattern or "[" in pattern:
+        return f":(glob){pattern}"
+    return pattern
+
+
+def _is_glob(pattern):
+    return "*" in pattern or "?" in pattern or "[" in pattern
+
+
+def _content_paths(root, pattern):
+    """Repo-relative file paths represented by `pattern`, sorted."""
+    if _is_glob(pattern):
+        try:
+            matches = sorted(
+                p.relative_to(root).as_posix()
+                for p in root.glob(pattern)
+                if p.is_file()
+            )
+        except (OSError, ValueError) as exc:
+            raise EnvironmentError3(
+                f"could not expand content-hash glob {pattern}: {exc}"
+            ) from exc
+        return matches
+
+    p = root / pattern
+    return [pattern] if p.is_file() else []
+
+
+# --- narrowing: anchors and extractions (RFC-16 §5.1) -----------------------
+
+# `doc:begin(<doc-relpath>[#label])` ... `doc:end` in a governed file narrows
+# what that doc's pin digests to the enclosed region. A file with no anchor
+# naming this doc is digested whole, so every existing pin keeps its value and
+# this ships without a flag day.
+ANCHOR_BEGIN_RE = re.compile(rb"doc:begin\(\s*([^)\s#]+)(?:#[^)\s]*)?\s*\)")
+ANCHOR_END_RE = re.compile(rb"doc:end\b")
+
+# `pin-extract: <governed-path>=<extractor>` in a doc's header narrows that ONE
+# file to the part the doc actually audits. Extractors live in EXTRACTORS.
+PIN_EXTRACT_RE = re.compile(r"^pin-extract:\s*(\S+?)\s*=\s*(\S+)\s*$", re.MULTILINE)
+
+
+def _extract_claude_hooks(data, relpath):
+    """The hook entries this repository OWNS, as canonical JSON bytes.
+
+    A settings file accumulates entries from whatever tooling a contributor
+    installs. Digesting the whole file conflates "the audited control plane
+    changed" with "somebody else's tool is also installed" — measured: sixteen
+    additive lines wiring a second agent harness moved this doc's pin while
+    `control-plane-check.py` exited 0 on both sides.
+
+    Ownership is decided by the command referencing a path under `gates/`,
+    which is exactly the set `control-plane-check.py` verifies.
+    """
+    try:
+        parsed = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise EnvironmentError3(f"pin-extract claude-hooks: {relpath} is not JSON: {exc}") from exc
+    owned = []
+    hooks = parsed.get("hooks")
+    if isinstance(hooks, dict):
+        for event in sorted(hooks):
+            entries = hooks.get(event)
+            if not isinstance(entries, list):
+                continue
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                for hook in entry.get("hooks", []) or []:
+                    command = (hook or {}).get("command", "")
+                    if isinstance(command, str) and "gates/" in command:
+                        owned.append(
+                            {"event": event, "matcher": entry.get("matcher"), "command": command}
+                        )
+    owned.sort(key=lambda h: (h["event"], h["matcher"] or "", h["command"]))
+    return json.dumps(owned, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def _extract_code_normalized(data, relpath):
+    """The file's code with comments dropped and formatting collapsed.
+
+    RFC-16 shape (ii): formatting and comments move bytes without moving
+    meaning. Measured, 2026-08-07: one commit deleted an orphaned comment and
+    let rustfmt re-wrap an export list, and four documents drifted with no
+    claim in any of them affected. This extractor digests what the compiler
+    sees instead of what the formatter wrote:
+
+    * ``//`` and nestable ``/* */`` comments are dropped;
+    * whitespace outside string literals collapses (kept as one space only
+      between two word characters, so ``pub use`` stays two tokens);
+    * a trailing comma before a closing bracket is dropped, because rustfmt
+      adds and removes those as it re-wraps lists;
+    * string literals (including raw strings) are preserved byte-for-byte —
+      a rename that passes through a format string is a semantic change and
+      must still fire.
+
+    Named blindness, accepted: a comment-only edit no longer drifts a doc
+    pinned this way (REQ-status rows in ``//!`` comments are separately
+    linted by req-status.py), and ``(x,)`` → ``(x)`` normalizes equal.
+    """
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise EnvironmentError3(
+            f"pin-extract code-normalized: {relpath} is not UTF-8: {exc}"
+        ) from exc
+
+    out = []
+    i, n = 0, len(text)
+    in_line = False
+    block_depth = 0
+    string_end = None  # the terminator of the current string literal
+    while i < n:
+        c = text[i]
+        nxt = text[i + 1] if i + 1 < n else ""
+        if in_line:
+            if c == "\n":
+                in_line = False
+            i += 1
+            continue
+        if block_depth:
+            if c == "/" and nxt == "*":
+                block_depth += 1
+                i += 2
+                continue
+            if c == "*" and nxt == "/":
+                block_depth -= 1
+                i += 2
+                continue
+            i += 1
+            continue
+        if string_end is not None:
+            out.append(c)
+            if c == "\\" and string_end == '"' and nxt:
+                out.append(nxt)
+                i += 2
+                continue
+            if text.startswith(string_end, i):
+                out.append(string_end[1:])
+                i += len(string_end)
+                string_end = None
+                continue
+            i += 1
+            continue
+        if c == "/" and nxt == "/":
+            in_line = True
+            i += 2
+            continue
+        if c == "/" and nxt == "*":
+            block_depth = 1
+            i += 2
+            continue
+        if c == "'":
+            # A char literal ('"', '\\', 'x') is copied verbatim so a quote
+            # inside it cannot open a phantom string; a lifetime ('a) has no
+            # closing quote and falls through as plain code.
+            m = re.match(r"'(\\.|[^'\\\n])'", text[i:])
+            if m:
+                out.append(m.group(0))
+                i += len(m.group(0))
+                continue
+        if c == '"':
+            out.append(c)
+            string_end = '"'
+            i += 1
+            continue
+        m = re.match(r'r(#*)"', text[i:])
+        if c == "r" and m:
+            out.append(m.group(0))
+            string_end = '"' + m.group(1)
+            i += len(m.group(0))
+            continue
+        if c.isspace():
+            j = i
+            while j < n and text[j].isspace():
+                j += 1
+            prev = out[-1] if out else ""
+            after = text[j] if j < n else ""
+            if re.match(r"\w", prev or " ") and re.match(r"\w", after or " "):
+                out.append(" ")
+            i = j
+            continue
+        out.append(c)
+        i += 1
+
+    normalized = "".join(out)
+    for closer in ("}", ")", "]"):
+        normalized = normalized.replace("," + closer, closer)
+    return normalized.encode("utf-8")
+
+
+EXTRACTORS = {
+    "claude-hooks": _extract_claude_hooks,
+    "code-normalized": _extract_code_normalized,
+}
+
+
+def extract_pin_config(root, doc_relpath):
+    """`{governed-path: extractor-name}` declared in `doc_relpath`'s header."""
+    try:
+        text = (root / doc_relpath).read_text(encoding="utf-8", errors="replace")
+    except (OSError, FileNotFoundError):
+        return {}
+    config = {}
+    for path, name in PIN_EXTRACT_RE.findall(text):
+        if name not in EXTRACTORS:
+            raise EnvironmentError3(
+                f"{doc_relpath}: pin-extract names unknown extractor `{name}` "
+                f"(known: {', '.join(sorted(EXTRACTORS))})"
+            )
+        config[path] = name
+    return config
+
+
+def _anchored_regions(data, doc_relpath):
+    """Concatenated regions of `data` anchored to `doc_relpath`, or None.
+
+    None means "no anchor names this doc", which is the whole-file default.
+    An anchor opened and never closed is a defect rather than an empty region:
+    it would silently shrink what the pin covers, which is the failure this
+    mechanism exists to avoid.
+    """
+    target = doc_relpath.encode("utf-8")
+    regions, depth, start, found = [], 0, None, False
+    for m in re.finditer(rb"doc:begin\([^)]*\)|doc:end\b", data):
+        token = m.group(0)
+        if token.startswith(b"doc:begin"):
+            begin = ANCHOR_BEGIN_RE.match(token)
+            if begin is None or begin.group(1) != target:
+                continue
+            found = True
+            if depth == 0:
+                start = m.end()
+            depth += 1
+        elif depth:
+            depth -= 1
+            if depth == 0:
+                regions.append(data[start : m.start()])
+    if not found:
+        return None
+    if depth:
+        raise EnvironmentError3(
+            f"unclosed `doc:begin({doc_relpath})` — an anchor without its "
+            f"`doc:end` would silently narrow the pin"
+        )
+    return b"".join(regions)
+
+
+def _digest_subject(root, relpath, doc_relpath, extractors):
+    """(bytes, mode) actually digested for one governed file."""
+    try:
+        data = (root / relpath).read_bytes()
+    except OSError as exc:
+        raise EnvironmentError3(
+            f"could not read governed file for content hash {relpath}: {exc}"
+        ) from exc
+    name = extractors.get(relpath)
+    if name is not None:
+        return EXTRACTORS[name](data, relpath), f"extract:{name}"
+    regions = _anchored_regions(data, doc_relpath)
+    if regions is not None:
+        return regions, "anchored"
+    return data, None
+
+
+def _content_digest(root, patterns, doc_relpath=None, extractors=None):
+    """Deterministic aggregate digest for a doc's governed file set.
+
+    With no anchors and no `pin-extract`, this is byte-for-byte the v1 digest,
+    so existing pins are unaffected.
+    """
+    extractors = extractors or {}
+    digest = hashlib.sha256()
+    digest.update(b"doc-drift-content-v1\0")
+    for pattern in patterns:
+        digest.update(b"pattern\0")
+        digest.update(pattern.encode("utf-8", errors="surrogateescape"))
+        digest.update(b"\0")
+        paths = _content_paths(root, pattern)
+        if not paths:
+            digest.update(b"missing\0")
+            continue
+        for relpath in paths:
+            digest.update(b"file\0")
+            digest.update(relpath.encode("utf-8", errors="surrogateescape"))
+            digest.update(b"\0")
+            data, mode = _digest_subject(root, relpath, doc_relpath, extractors)
+            if mode is not None:
+                # Only narrowed files carry a mode marker, so an un-narrowed
+                # file's contribution is identical to the v1 digest.
+                digest.update(b"mode\0")
+                digest.update(mode.encode("ascii"))
+                digest.update(b"\0")
+            digest.update(hashlib.sha256(data).hexdigest().encode("ascii"))
+            digest.update(b"\0")
+    return digest.hexdigest()
+
+
+# --- the check --------------------------------------------------------------
+
+def evaluate(root):
+    """Run the gate over `root`; return (exit_code, report_lines).
+
+    Deterministic: docs sorted by path, files sorted by path within each doc
+    (R-CODE-5 / AC-8). Never raises for a doc-level defect — only an
+    environment failure escapes as EnvironmentError3 (exit 3).
+    """
+    doc_files = load_doc_files(root)
+    _resolve_head(root)  # exit-3 early if HEAD is unresolvable
+
+    lines = []
+    failed = False
+
+    for doc in sorted(doc_files):
+        files = doc_files[doc]
+        content_pin, bad_content_pin, pin = extract_pins(root, doc)
+
+        if bad_content_pin is not None:
+            lines.append(
+                f"{INVALID_PIN}  {doc}  audited-content-sha256 "
+                f"{bad_content_pin} is not a 64-hex SHA-256 digest"
+            )
+            failed = True
+            continue
+
+        if content_pin is not None:
+            current = _content_digest(
+                root, files, doc, extract_pin_config(root, doc)
+            )
+            if current == content_pin:
+                lines.append(f"{CURRENT}  {doc}  (content-sha256 {content_pin})")
+                continue
+            lines.append(
+                f"{DRIFT}  {doc}  content-sha256 {content_pin}  "
+                f"current {current}  governed file pattern(s):"
+            )
+            for pattern in files:
+                lines.append(f"    {pattern}")
+            failed = True
+            continue
+
+        if pin is None:
+            lines.append(
+                f"{MISSING_PIN}  {doc}  "
+                "(no audited-content-sha256: or audited-sha: line)"
+            )
+            failed = True
+            continue
+
+        if not _pin_resolves(root, pin):
+            lines.append(
+                f"{INVALID_PIN}  {doc}  pin {pin} does not resolve to a commit"
+            )
+            failed = True
+            continue
+
+        if not _pin_is_ancestor(root, pin):
+            lines.append(
+                f"{INVALID_PIN}  {doc}  pin {pin} is not an ancestor of HEAD"
+            )
+            failed = True
+            continue
+
+        drifted = []
+        for pattern in files:
+            commits = _intervening_commits(root, pin, _pathspec_for(pattern))
+            if commits:
+                drifted.append((pattern, commits))
+
+        if not drifted:
+            lines.append(f"{CURRENT}  {doc}  (pin {pin})")
+            continue
+
+        failed = True
+        for pattern, commits in drifted:
+            lines.append(
+                f"{DRIFT}  {doc}  pin {pin}  governed file {pattern} "
+                f"has {len(commits)} intervening commit(s):"
+            )
+            for sha, subject in commits:
+                lines.append(f"    {sha} {subject}")
+
+    return (EXIT_FAIL if failed else EXIT_OK), lines
+
+
+# --- main -------------------------------------------------------------------
+
+def _parse_args(argv):
+    root_arg = None
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--root":
+            if i + 1 >= len(argv):
+                raise EnvironmentError3("--root requires a path argument")
+            root_arg = argv[i + 1]
+            i += 2
+        elif a.startswith("--root="):
+            root_arg = a[len("--root="):]
+            i += 1
+        elif a in ("-h", "--help"):
+            print(__doc__)
+            sys.exit(EXIT_OK)
+        else:
+            raise EnvironmentError3(f"unknown argument: {a}")
+        i += 1
+    return root_arg
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    try:
+        root_arg = _parse_args(argv)
+        start = Path(root_arg) if root_arg else Path.cwd()
+        if not start.exists():
+            raise EnvironmentError3(f"--root path does not exist: {start}")
+        root = _git_toplevel(start)
+        exit_code, lines = evaluate(root)
+    except EnvironmentError3 as exc:
+        # REQ-9: environment failure is exit 3, never a traceback, never
+        # fail-open. Diagnostics go to stderr; stdout stays report-only so
+        # AC-8 byte-identity is unaffected.
+        print(f"doc-drift: INCONCLUSIVE (exit 3): {exc}", file=sys.stderr)
+        sys.exit(EXIT_INCONCLUSIVE)
+
+    for line in lines:
+        print(line)
+    sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()

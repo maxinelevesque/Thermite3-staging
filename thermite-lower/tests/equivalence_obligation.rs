@@ -106,9 +106,14 @@ fn early_return_body(real: &Block, lit: u128) -> Block {
     body
 }
 
-const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    req x == 0\n    ens result == 0\n    fx pure\n{\n    let y: u64 = x + 0;\n    y\n}\n";
+const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    ! pure
+    requires x == 0\n    ensures result == 0\n{\n    let y: u64 = x + 0;\n    y\n}\n";
 
-const LOOSE: &str = "fn loose(x: u64) -> u64\n    req x <= 100\n    ens result <= 1000\n    fx pure\n{\n    let y: u64 = x + 0;\n    y\n}\n";
+const LOOSE: &str = "fn loose(x: u64) -> u64\n    ! pure
+    requires x <= 100\n    ensures result <= 1000\n{\n    let y: u64 = x + 0;\n    y\n}\n";
+
+const HELD_IDENTITY: &str = "fn held_identity(x: u64) -> u64\n    ! owns(gate)
+    requires x == 0\n    ensures result == 0\n{\n    holding gate { x }\n}\n";
 
 #[test]
 fn equivalent_early_return_verifies() {
@@ -172,11 +177,108 @@ fn loose_early_return_stays_distinguishing() {
 }
 
 #[test]
+fn sole_holding_body_participates_in_equivalence_proof() {
+    if !verus_present() {
+        eprintln!("SKIP sole_holding_body_participates_in_equivalence_proof: verus absent");
+        return;
+    }
+    let f = parse_fn(HELD_IDENTITY);
+    let mutant = early_return_body(f.body.as_ref().unwrap(), 0);
+    let obligation = thermite_lower::lower_equivalence_obligation(&f, &mutant, &[])
+        .expect("a sole value-producing holding body lowers");
+    assert!(verus_verifies(&obligation, "held_equiv"), "{obligation}");
+}
+
+#[test]
+fn sole_holding_body_does_not_hide_a_distinguishing_mutant() {
+    if !verus_present() {
+        eprintln!("SKIP sole_holding_body_does_not_hide_a_distinguishing_mutant: verus absent");
+        return;
+    }
+    let f = parse_fn(HELD_IDENTITY);
+    let mutant = early_return_body(f.body.as_ref().unwrap(), 1);
+    let obligation = thermite_lower::lower_equivalence_obligation(&f, &mutant, &[])
+        .expect("a sole value-producing holding body lowers");
+    assert!(
+        !verus_verifies(&obligation, "held_distinguish"),
+        "{obligation}"
+    );
+}
+
+#[test]
+fn shared_read_in_requires_is_unsupported_across_the_acquire_boundary() {
+    let source = "struct State { n: u64 } keeps n < 10\n\
+        shared state: State\n\
+        lock gate guards state\n\
+        fn read() -> u64 ! owns(gate), read(state.n)\n\
+          requires state.n == 0 ensures result == 0\n\
+        { holding gate { state.n } }";
+    let program = thermite_syntax::parse(source).program;
+    let f = program
+        .items
+        .iter()
+        .find_map(|item| match item {
+            thermite_syntax::ast::Item::Fn(f) => Some(f.clone()),
+            _ => None,
+        })
+        .unwrap();
+    let observations = thermite_lower::equivalence_shared_observations(&program, "read").unwrap();
+    assert_eq!(observations.len(), 1);
+    let mutant = early_return_body(f.body.as_ref().unwrap(), 0);
+    let error =
+        thermite_lower::lower_equivalence_obligation_with_shared(&f, &mutant, &[], &observations)
+            .expect_err("entry-time shared requires must not constrain a later held read");
+    assert!(
+        error.to_string().contains("function-entry shared state"),
+        "{error}"
+    );
+}
+
+#[test]
+fn shared_read_holding_uses_one_symbolic_observation_in_both_bodies() {
+    if !verus_present() {
+        eprintln!(
+            "SKIP shared_read_holding_uses_one_symbolic_observation_in_both_bodies: verus absent"
+        );
+        return;
+    }
+    let source = "struct State { n: u64 } keeps n < 10\n\
+        shared state: State\n\
+        lock gate guards state\n\
+        fn read() -> u64 ! owns(gate), read(state.n)\n\
+          requires true ensures result < 10\n\
+        { holding gate { state.n } }";
+    let program = thermite_syntax::parse(source).program;
+    let f = program
+        .items
+        .iter()
+        .find_map(|item| match item {
+            thermite_syntax::ast::Item::Fn(f) => Some(f.clone()),
+            _ => None,
+        })
+        .unwrap();
+    let observations = thermite_lower::equivalence_shared_observations(&program, "read").unwrap();
+    let obligation = thermite_lower::lower_equivalence_obligation_with_shared(
+        &f,
+        f.body.as_ref().unwrap(),
+        &[],
+        &observations,
+    )
+    .expect("read-only holding-time observation lowers when requires is entry-state neutral");
+    assert!(obligation.contains("__thermite_shared_state_n: u64"));
+    assert!(
+        verus_verifies(&obligation, "shared_held_equiv"),
+        "{obligation}"
+    );
+}
+
+#[test]
 fn non_scalar_return_is_unsupported() {
     // A non-scalar (slice) return is out of the OQ-1 scalar scope: the seam
     // returns `Unsupported` so the caller leaves the survivor counted (the
     // sound-but-incomplete fallback), never a panic, never a spurious exclusion.
-    let src = "fn head(xs: &[u32]) -> &[u32]\n    req true\n    ens true\n    fx pure\n{\n    &xs[..0]\n}\n";
+    let src = "fn head(xs: &[u32]) -> &[u32]\n    ! pure
+    requires true\n    ensures true\n{\n    &xs[..0]\n}\n";
     let f = parse_fn(src);
     let body = f.body.clone().unwrap();
     let res = thermite_lower::lower_equivalence_obligation(&f, &body, &[]);
@@ -194,11 +296,11 @@ fn non_scalar_return_is_unsupported() {
 /// The §9 direct-composition fixture verbatim from `conformance/composition/
 /// cases.json` (`verifies_to_boundary`): a `#[boundary]` `ext_id` whose contract
 /// pins its result, and `caller` whose body is `{ ext_id(x) }`.
-const DIRECT_COMPOSITION: &str = "#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 req x < 100 ens result == x fx pure ; fn caller(x: u32) -> u32 req x < 100 ens result == x fx pure { ext_id(x) }";
+const DIRECT_COMPOSITION: &str = "#[boundary(\"ext::ext_id\")] fn ext_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ; fn caller(x: u32) -> u32 ! pure requires x < 100 ensures result == x { ext_id(x) }";
 
 /// The AC-8 weak-callee fixture: `ext_weak`'s `ens` does not pin its result
 /// (`result <= 100`), so the identity mutant of `wcaller` is unprovable.
-const WEAK_COMPOSITION: &str = "#[boundary(\"ext::ext_weak\")] fn ext_weak(x: u32) -> u32 req x < 100 ens result <= 100 fx pure ; fn wcaller(x: u32) -> u32 req x < 100 ens result <= 100 fx pure { ext_weak(x) }";
+const WEAK_COMPOSITION: &str = "#[boundary(\"ext::ext_weak\")] fn ext_weak(x: u32) -> u32 ! pure requires x < 100 ensures result <= 100 ; fn wcaller(x: u32) -> u32 ! pure requires x < 100 ensures result <= 100 { ext_weak(x) }";
 
 /// Parse `src` and return `(the named fn, every OTHER fn as the woven closure)`.
 /// The closure mirrors `forge::check::reachable_fn_deps` (every in-file fn the

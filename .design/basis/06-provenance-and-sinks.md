@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: df46fa15bb567a028110cf04c5492f9ed82528235d5c49b95df1912519cf084b
+audited-content-sha256: c89fe9a24a17ce623adc9cdc371e5ef2e3aea6656a6b3bca0c0b91e46763ecea (re-pinned 2026-08-25 for issue #41 proof-target binding; provenance and sink semantics are unchanged. prior: a060bf580e9bd95560cfb0ad2c6faa6b8030ca969f352440609a24f80644a192)
 governs: thermite-spec/src/validator.rs
 governs: thermite-syntax/src/ast.rs
 governs: thermite-lower/src/lower.rs
@@ -93,7 +93,7 @@ Data from an untrusted source (user input, network, a file read) carries a
 **taint mark**. The mark is a TYPE property: `Tainted` is a Stage-1 wrapper over
 the carried value (`01-adts.md` REQ-1 — a `struct`/newtype). A tainted value
 **cannot reach a SINK** without first passing a declared **sanitizer door**. The
-sink catalog (each sink's parameter type / `req` demands a SANITIZED/clean type,
+sink catalog (each sink's parameter type / `requires` demands a SANITIZED/clean type,
 never the raw/tainted one):
 
 | Sink (`#[boundary]` primitive) | Bug class killed | Sanitizer door (the clean-type producer) | Clean type the sink demands (`#[sealed]`) |
@@ -141,8 +141,8 @@ it, so `delete(Authorized { id: u.id })` (forging a capability via a `StructLit`
 (insecure-direct-object-reference). The capability is the dual of a sink: where a
 sink's parameter type demands the *absence* of a mark (the clean type, not the
 tainted one), a protected op's parameter type demands the *presence* of a mark
-(`Authorized`, only the `authorize` door produces it). The op's `req` (e.g. `req
-c.ok`) discharges from the door's `ens` (e.g. `ens result.ok`).
+(`Authorized`, only the `authorize` door produces it). The op's `requires` (e.g. `req
+c.ok`) discharges from the door's `ensures` (e.g. `ensures result.ok`).
 
 ### The unifying law — handled-or-loud, the COMPILE-TIME tooth (the loudest)
 
@@ -198,7 +198,7 @@ DIRECT validator rule keyed off a new struct attribute:
 
 - **`#[sealed]` struct attribute.** A `struct` may carry a `#[sealed]` attribute.
   AST: a new boolean flag `StructItem.sealed: bool` (`struct StructItem` in
-  `ast.rs` currently carries `name` + `fields` + `inv` + `span` — verified — and
+  `ast.rs` currently carries `name` + `fields` + `keeps` + `span` — verified — and
   gains `sealed`). Parser: `#[sealed]` on a `struct` sets the flag, mirroring the
   `#[slag]`/`#[boundary]` attribute precedent (`ffi-boundary.md` "Exact ast.rs /
   parser.rs additions" — `parse_attribute` generalized from `parse_slag`).
@@ -276,7 +276,7 @@ honest (`03-effect-stdlib.md` "the door-as-TCB" = "the boundary-as-TCB"):
 - **A door is a `#[boundary]`/`#[slag]` with a contract.** A sanitizer
   (`parameterize`, `html_escape`, `validate_path`, `allowlist_host`) is a
   `#[boundary]` fn whose contract STATES what it guarantees (e.g. `parameterize`'s
-  `ens result.q == t.raw`), whose RETURN TYPE is the `#[sealed]` clean type (so the
+  `ensures result.q == t.raw`), whose RETURN TYPE is the `#[sealed]` clean type (so the
   door is the only mint), and whose body is the trusted escaper. `declassify` and
   `authorize` likewise. The door's contract is L1-ENFORCED at the crossing
   (`ffi-boundary.md` REQ-4, the `lower_boundary_fn_l1` wrapper) — a door that
@@ -311,7 +311,7 @@ dataflow engine (REQ-4) rejects.
 
 **The marked types are per-axis concrete newtype `struct`s, NOT generics.**
 Thermite has **no user generics** — `StructItem` in `ast.rs` carries `name` +
-`fields` + `inv` + `span` and NO type parameters (verified). A user cannot write
+`fields` + `keeps` + `span` and NO type parameters (verified). A user cannot write
 `struct Tainted<T>`. So the marked types are concrete Stage-1 wrappers (`struct
 Tainted { raw: u64 }`, `struct Secret { val: u64 }`), and the clean/capability
 types are concrete `#[sealed]` wrappers (`#[sealed] struct Sql { stmt: u64 }`,
@@ -325,7 +325,7 @@ the grounding exemplar (the mechanism is identical for any payload type).
 
 **The doors are `#[boundary]` fns (the SHIPPED FFI-boundary form), audited, and
 the ONLY mint of a sealed clean type.** A door is a `#[boundary("ifc::parameterize")]
-fn parameterize(t: Tainted) -> Sql ens result.q == t.raw fx pure ;` — a boundary
+fn parameterize(t: Tainted) -> Sql ensures result.q == t.raw ! pure ;` — a boundary
 fn (`body: None`, `boundary: Some`, `FnItem.boundary` in `ast.rs`) whose foreign
 body is the trusted escaper, whose return type is the `#[sealed]` clean type
 (`Sql`), whose contract is L1-enforced, and which `forge audit` enumerates in the
@@ -341,8 +341,8 @@ clean type.** A sink demands the clean type by its PARAMETER TYPE (`fn query(s:
 Sql)`): a raw `Tainted` argument is a type mismatch the lower→verus type-check
 rejects (emergent); a `StructLit`-minted `Sql` is rejected by the `#[sealed]` rule
 (REQ-8) so the only `Sql` the sink can be handed is a door-produced one. The
-capability sink ALSO uses its `req` (`fn delete(c: Authorized) req c.ok`) which
-discharges from the door's `ens result.ok`. The mechanism is the existing
+capability sink ALSO uses its `requires` (`fn delete(c: Authorized) requires c.ok`) which
+discharges from the door's `ensures result.ok`. The mechanism is the existing
 type-checking + the NEW `#[sealed]` validator rule at v1, extended by the
 dataflow-propagation pass at v1.1.
 
@@ -415,7 +415,7 @@ values).
 - **REQ-8 (v1 — the `#[sealed]` abstraction barrier — the clean/capability type is
   door-only-mintable):** a `struct` may carry a `#[sealed]` attribute; AST gains a
   boolean flag `StructItem.sealed: bool` (`struct StructItem` in `ast.rs`, today
-  `name`+`fields`+`inv`+`span` — verified — plus `sealed`); the parser sets it
+  `name`+`fields`+`keeps`+`span` — verified — plus `sealed`); the parser sets it
   mirroring the `#[slag]`/`#[boundary]` attribute precedent (`ffi-boundary.md`
   `parse_attribute`). The validator (`pub fn validate` in `validator.rs`) collects
   the `#[sealed]` struct-name set in its pre-pass and REJECTS any `Expr::StructLit`
@@ -437,22 +437,22 @@ values).
 ### The sink catalog + the flow rules (governs `thermite-syntax/src/ast.rs`,
 `thermite-spec/src/validator.rs`)
 
-- **REQ-3 (v1 — the sink catalog — every sink's parameter type / `req` demands the
+- **REQ-3 (v1 — the sink catalog — every sink's parameter type / `requires` demands the
   CLEAN type):** each security sink is a `#[boundary]` whose PARAMETER TYPE (and,
-  for the capability sink, its `req`) demands the SANITIZED/clean type, never the
+  for the capability sink, its `requires`) demands the SANITIZED/clean type, never the
   raw/tainted one: the SQL sink demands `Sql` (only `parameterize` produces it, and
   `Sql` is `#[sealed]` so nothing else mints it), the shell sink `Argv`, the path
   sink `SafePath`, the HTML sink `Html`, the net sink `Host`, the public-output
   sinks demand `Public` (not `Secret`, Axis 2). The protected-op sink (Axis 3)
   inverts it: its parameter type demands the PRESENCE of `Authorized` (only
-  `authorize` produces it) + a `req cap.ok`. The sink demanding the clean type is
+  `authorize` produces it) + a `requires cap.ok`. The sink demanding the clean type is
   just a boundary contract the caller verifies THROUGH
   (`boundary-composition.md` REQ-1); the seal (REQ-8) ensures the clean value the
   sink receives can ONLY be a door's. **GROUNDED end-to-end** (the full-path slice
   below): `query(s: Sql)` accepts only a `parameterize`-produced `Sql`; raw
   `Tainted` to `query` is `L0`/`FAILED` with `E0308`; the doored path `L3`. (The
   `StructLit` launder rejection is REQ-8, not yet grounded.) Derived from §4.1 (the
-  effect `req`/`ens` row) + §9 + `03-effect-stdlib.md` (the sinks are boundary
+  effect `requires`/`ensures` row) + §9 + `03-effect-stdlib.md` (the sinks are boundary
   primitives) + `boundary-composition.md` REQ-1.
 
 - **REQ-4 (v1.1 — the validator mark-PROPAGATION + REJECTION engine — the core new
@@ -482,7 +482,7 @@ values).
 - **REQ-5 (v1 — marks lower to Stage-1 wrapper types; doors lower to
   `external_body`):** a marked type lowers to its Stage-1 Verus wrapper
   (`01-adts.md` REQ-8/REQ-9 — a `struct`/`enum`, SHIPPED); the sink's clean-type
-  parameter and the door's `ens` lower to the existing Verus param-type +
+  parameter and the door's `ensures` lower to the existing Verus param-type +
   `ensures` (`verus-lowering.md`), and the door (a `#[boundary]`) lowers to a
   `#[verifier::external_body]` signature woven into the caller's sub-program
   (`boundary-composition.md` REQ-1, `lower_external_body_fn in lower.rs`) — so the
@@ -570,13 +570,13 @@ The EXACT corpus + expected full-path output:
 
 - **AC-3 (v1 — a protected op called without `Authorized` does NOT compile, direct
   OR forged):** `conformance/provenance/cap_missing.th` (`fn unauth_delete(u: User)
-  { delete(u) }` where `delete(c: Authorized) req c.ok`) is REJECTED (`L0`/`FAILED`,
+  { delete(u) }` where `delete(c: Authorized) requires c.ok`) is REJECTED (`L0`/`FAILED`,
   `E0308: expected Authorized, found User`); the `StructLit` forge `fn
   forge_cap(u: User) { delete(Authorized { id: u.id }) }` is ALSO REJECTED
   (`SpecError::SealedConstruction { name: "Authorized", .. }` — `Authorized` is
   `#[sealed]`, REQ-8/#77 fix); `cap_safe.th` (`fn safe_delete(u: User) {
-  delete(authorize(u)) }`) certifies — the op's `req c.ok` discharges from
-  `authorize`'s `ens result.ok`. **GROUNDED (direct + doored)**: missing =
+  delete(authorize(u)) }`) certifies — the op's `requires c.ok` discharges from
+  `authorize`'s `ensures result.ok`. **GROUNDED (direct + doored)**: missing =
   `L0`/`E0308`; safe = `L3`. Forge-rejection GROUNDED (REQ-8 SHIPPED —
   `divergence_provenance.rs`). (REQ-1, REQ-3, REQ-8.)
 
@@ -638,7 +638,7 @@ crates, additively:
 - **`thermite-syntax/src/ast.rs`** — the three marked types are Stage-1 concrete
   `struct` wrappers (`StructItem`, SHIPPED, `01-adts.md` REQ-1); the clean types
   add the NEW `StructItem.sealed: bool` flag (REQ-8 — `struct StructItem` today
-  carries `name`+`fields`+`inv`+`span`, verified, and gains `sealed`); the doors
+  carries `name`+`fields`+`keeps`+`span`, verified, and gains `sealed`); the doors
   are the SHIPPED `#[boundary]`/`#[slag]` form (`FnItem.boundary` / `FnItem.slag`,
   with `struct BoundaryAttr`/`struct SlagAttr` ALREADY in `ast.rs`). The marked
   types reuse the struct surface, the doors reuse the boundary surface; the ONLY new
@@ -750,8 +750,8 @@ lists the doors `[declassify, emit]` in the `tcb` `boundary_contracts`. (The
 it is now `L0`/`SealedConstruction` — REQ-8 SHIPPED.)
 
 **CAPABILITY axis (`cap_safe.th` / `cap_missing.th`):** `safe_delete(u) {
-delete(authorize(u)) }` certifies `L3` (the op's `req c.ok` discharges from
-`authorize`'s `ens result.ok`); `unauth_delete(u) { delete(u) }` is `L0`/`FAILED`
+delete(authorize(u)) }` certifies `L3` (the op's `requires c.ok` discharges from
+`authorize`'s `ensures result.ok`); `unauth_delete(u) { delete(u) }` is `L0`/`FAILED`
 with `error[E0308]: expected Authorized, found User`. (The `delete(Authorized { id:
 u.id })` forge WAS the #77 hole; with `Authorized` `#[sealed]` it is now
 `L0`/`SealedConstruction` — REQ-8 SHIPPED.)
@@ -827,7 +827,7 @@ shipped (#77 CLOSED).
 ## Routes to add (orchestrator)
 
 This stage adds NEW concerns to files that already carry routes; the orchestrator
-adds these routes to `tooling/spec-routes.toml` pointing at THIS doc (a file may
+adds these routes to `gates/routes.toml` pointing at THIS doc (a file may
 carry multiple governing docs — the #52 `lower.rs` precedent):
 
 ```toml
@@ -851,8 +851,8 @@ NOT author the oracle, the goldens, or the routes (R-DOC-1).
 | REQ | Status | Evidence |
 |---|---|---|
 | REQ-1 (v1 — the three marked types — `Tainted`/`Secret`/`Authorized`) | SHIPPED | issue **#76** (the v1 corpus). `Tainted`/`Secret`/`User` + the `#[sealed]` clean types `Sql`/`Public`/`Authorized` are declared as concrete Stage-1 newtype structs in `conformance/provenance_demo.th` (all three axes in ONE combined corpus program, rather than the per-axis `conformance/provenance/*.th` files the ACs sketched); the oracle `conformance/provenance/cases.json` hand-derives the expected levels (R-CHAR-3). Consumer: `forge::check::check_file` via the conformance suite. Verified: `forge/tests/provenance_conformance.rs` (`centerpiece_sqli_careless_is_l0_safe_is_l3` + the `secret_leak_`/`missing_capability_` twins + `no_careless_path_ever_certifies`, real toolchain). Residue: the §10 skill grammar does not yet teach the IFC vocabulary (no marked-type/door-verb fragment in `thermite-skill/src/generate.rs`) — #76 owns it. |
-| REQ-2 (v1 — the doors — only mark-changing ops, contracted `#[boundary]`/`#[slag]`) | SHIPPED | issue **#76** + blocker **#77** (closed). The doors `parameterize`/`declassify`/`authorize` are declared as contracted `#[boundary]` fns in `conformance/provenance_demo.th` (e.g. `#[boundary("ifc::parameterize")] fn parameterize(t: Tainted) -> Sql ens result.stmt == t.raw fx pure`), each returning a `#[sealed]` clean type — so "only the door changes a mark" HOLDS, because REQ-8 (SHIPPED) closes the #77 `StructLit` launder. Verified: `provenance_conformance.rs::doors_and_sinks_are_l1_boundary_and_the_audit_tcb` (doors are L1 boundaries, TCB-enumerated) + `divergence_provenance.rs` (the 3 un-ignored launder rejects → `SealedConstruction`, never `L3`). |
-| REQ-3 (v1 — the sink catalog — every sink's param type / `req` demands the CLEAN type) | SHIPPED | issue **#76**. The three-axis sink exemplars are live in `conformance/provenance_demo.th`: `query(q: Sql)` (SQL), `emit(p: Public)` (public output), `delete(c: Authorized)` (the capability inversion) — each a `#[boundary]` whose PARAMETER TYPE demands the `#[sealed]` clean type. Careless direct calls are `L0` (verus type mismatch), doored calls `L3`/to-boundary, and the `StructLit` launder is `SealedConstruction` (REQ-8 SHIPPED). Verified: `provenance_conformance.rs` per-axis tests + `no_careless_path_ever_certifies` against `conformance/provenance/cases.json`. The WIDER catalog rows (shell `Argv`, path `SafePath`, HTML `Html`, net `Host`) are corpus vocabulary not yet declared — the mechanism requires no new toolchain code for them (#76 owns the residue). |
+| REQ-2 (v1 — the doors — only mark-changing ops, contracted `#[boundary]`/`#[slag]`) | SHIPPED | issue **#76** + blocker **#77** (closed). The doors `parameterize`/`declassify`/`authorize` are declared as contracted `#[boundary]` fns in `conformance/provenance_demo.th` (e.g. `#[boundary("ifc::parameterize")] fn parameterize(t: Tainted) -> Sql ensures result.stmt == t.raw ! pure`), each returning a `#[sealed]` clean type — so "only the door changes a mark" HOLDS, because REQ-8 (SHIPPED) closes the #77 `StructLit` launder. Verified: `provenance_conformance.rs::doors_and_sinks_are_l1_boundary_and_the_audit_tcb` (doors are L1 boundaries, TCB-enumerated) + `divergence_provenance.rs` (the 3 un-ignored launder rejects → `SealedConstruction`, never `L3`). |
+| REQ-3 (v1 — the sink catalog — every sink's param type / `requires` demands the CLEAN type) | SHIPPED | issue **#76**. The three-axis sink exemplars are live in `conformance/provenance_demo.th`: `query(q: Sql)` (SQL), `emit(p: Public)` (public output), `delete(c: Authorized)` (the capability inversion) — each a `#[boundary]` whose PARAMETER TYPE demands the `#[sealed]` clean type. Careless direct calls are `L0` (verus type mismatch), doored calls `L3`/to-boundary, and the `StructLit` launder is `SealedConstruction` (REQ-8 SHIPPED). Verified: `provenance_conformance.rs` per-axis tests + `no_careless_path_ever_certifies` against `conformance/provenance/cases.json`. The WIDER catalog rows (shell `Argv`, path `SafePath`, HTML `Html`, net `Host`) are corpus vocabulary not yet declared — the mechanism requires no new toolchain code for them (#76 owns the residue). |
 | REQ-8 (v1 — the `#[sealed]` abstraction barrier — clean type is door-only-mintable) | SHIPPED | **blocker #77** (the abstraction-barrier fix). AST: `StructItem.sealed: bool` (`struct StructItem` in `thermite-syntax/src/ast.rs`). Parser: `parse_attribute` dispatches `#[sealed]` → `ParsedAttr::Sealed`, routed by `parse_item` onto a `struct` (`parse_struct(start, sealed)`); `#[sealed]` on `enum`/`fn`/`spec fn` is a parse error (struct-only barrier). Validator: the `Validator::new` pre-pass collects `sealed_structs` (alongside `struct_fields`); `check_sealed_construction` (called from BOTH `Expr::StructLit` walk arms — exec `scan_expr_for_loops` + caged `walk_expr_inner`) emits the NEW span-bearing `SpecError::SealedConstruction { name, span }` for any literal of a sealed struct. Inert with no `#[sealed]` declared (the non-IFC corpus UNCHANGED). A sealed type is thus obtainable ONLY as a `#[boundary]` door's return (foreign `external_body`, no in-language `StructLit`), so the safe doored path is unaffected. Consumer: `pub fn validate` → `forge::check::check_file` (a `ForgeError::Spec`: exit non-zero, the `SealedConstruction` diagnostic, NO L3 cert). Corpus: `Sql`/`Public`/`Authorized` marked `#[sealed]` in `conformance/provenance_demo.th`. Verification: the three #77 `#[ignore]`d tests (`forge/tests/divergence_provenance.rs`: `taint_/secret_/capability_structlit_bypass_must_not_certify_l3`) UN-IGNORED + REJECT on all 3 axes; `thermite-syntax/tests/sealed_parse.rs` (5) + `thermite-spec/tests/sealed_validate.rs` (4); `forge/tests/provenance_conformance.rs` unchanged (safe paths L3, naive careless L0, plain structs unaffected). |
 | REQ-4 (v1.1 — validator mark-PROPAGATION + REJECTION engine — the core new work) | NOT-STARTED | epic **#62** / issue **#76** Stage 6, **v1.1** (NOT v1). `thermite-spec/src/validator.rs` has no taint/secret/capability propagation pass and no `TaintReachesSink`/`SecretReachesPublic`/`MissingCapability` `SpecError` variant. This is the NEW dataflow engine (NOT SMT) — DISTINCT from REQ-8 (REQ-8 rejects a clean-type `StructLit` at the construction site, no propagation; REQ-4 tracks a mark through arbitrary derived values and rejects at the sink). Compile-time tooth of handled-or-loud for derived flows. |
 | REQ-5 (v1 — marks lower to Stage-1 wrappers; doors lower to `external_body`) | SHIPPED | issue **#76**. The marked/clean types lower via the SHIPPED `lower_struct in thermite-lower/src/lower.rs` (a `#[sealed]` struct lowers identically to a plain struct — the seal fires at validation, before lowering); the doors lower via `lower_external_body_fn in lower.rs` to `#[verifier::external_body]` signatures woven into the caller's sub-program (`boundary-composition.md` REQ-1). Consumer: `forge::check::check_file`. Verified: `provenance_conformance.rs` (the doored fns certify `L3` against the real toolchain; the careless `Tainted`-arg-at-`Sql`-param paths are `L0` — verus rejects the emitted source). |

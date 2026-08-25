@@ -139,19 +139,20 @@ fn assert_sealed_launder_rejected(outcome: &CheckOutcome, item: &str, sealed_ty:
 /// Taint axis: `Sql { stmt: input.raw }` launders a `Tainted` into the SQL sink's
 /// clean type without `parameterize`. The SQLi-un-typeable centerpiece is hollow.
 const TAINT_BYPASS: &str = r#"
+shared db: u8
 struct Tainted { raw: u64 }
 #[sealed] struct Sql { stmt: u64 }
 
 #[boundary("ifc::query")] fn query(q: Sql) -> u64
-  req true
-  ens result == q.stmt
-  fx  net(db)
+  ! net(db)
+  requires true
+  ensures result == q.stmt
   ;
 
 fn bypass_query(input: Tainted) -> u64
-  req true
-  ens result == input.raw
-  fx  net(db)
+  ! net(db)
+  requires true
+  ensures result == input.raw
 {
   query(Sql { stmt: input.raw })
 }
@@ -160,19 +161,20 @@ fn bypass_query(input: Tainted) -> u64
 /// Secret axis: `Public { val: s.val }` launders a `Secret` into the public sink's
 /// clean type without `declassify`. The secret reaches `emit` un-declassified.
 const SECRET_BYPASS: &str = r#"
+shared log: u8
 struct Secret { val: u64 }
 #[sealed] struct Public { val: u64 }
 
 #[boundary("ifc::emit")] fn emit(p: Public) -> u64
-  req true
-  ens result == p.val
-  fx  write(log)
+  ! write(log)
+  requires true
+  ensures result == p.val
   ;
 
 fn bypass_emit(s: Secret) -> u64
-  req true
-  ens result == s.val
-  fx  write(log)
+  ! write(log)
+  requires true
+  ensures result == s.val
 {
   emit(Public { val: s.val })
 }
@@ -181,19 +183,20 @@ fn bypass_emit(s: Secret) -> u64
 /// Capability axis: `Authorized { id: u.id }` forges the capability token without
 /// `authorize`. The protected op `delete` runs on an unauthorized `User`.
 const CAP_BYPASS: &str = r#"
+shared db: u8
 struct User { id: u64 }
 #[sealed] struct Authorized { id: u64 }
 
 #[boundary("ifc::delete")] fn delete(c: Authorized) -> u64
-  req true
-  ens result == c.id
-  fx  write(db)
+  ! write(db)
+  requires true
+  ensures result == c.id
   ;
 
 fn bypass_delete(u: User) -> u64
-  req true
-  ens result == u.id
-  fx  write(db)
+  ! write(db)
+  requires true
+  ensures result == u.id
 {
   delete(Authorized { id: u.id })
 }

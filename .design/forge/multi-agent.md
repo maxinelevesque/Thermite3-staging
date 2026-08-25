@@ -284,7 +284,7 @@ documentation + the demonstration tests regardless of whether the optional comma
 
 ## Route
 
-This doc's route is **not yet in `tooling/spec-routes.toml`** (it is the contract being
+This doc's route is **not yet in `gates/routes.toml`** (it is the contract being
 authored ahead of the builder). The orchestrator adds, per OQ-2:
 - minimal/hardening (OQ-2 b): no new route file; this doc + `proof-cache.md` jointly govern
   the concurrency hardening of `forge/src/cache.rs`; OR

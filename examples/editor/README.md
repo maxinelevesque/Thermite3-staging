@@ -38,7 +38,7 @@ within the bounded string capacity.
 | `read_key_raw` | Read and pack a key sequence for `decode` |
 | `write_frame` | Write and flush a rendered frame |
 | `read_file` / `write_file` | Load and save the configured file |
-| `run` | Drive the `fx diverge` event loop under runtime contract checks |
+| `run` | Drive the `! diverge` event loop under runtime contract checks |
 
 The terminal wrappers return status values instead of panicking when stdin is
 not a TTY. A missing input file produces an empty buffer. `run` is partial
@@ -94,8 +94,8 @@ The saved content is `ab\ncd`.
 ## Sandbox
 
 The binary runs under the default seccomp filter. The terminal boundaries
-declare `fx term`, which adds `ioctl`; file effects add the required `read`,
-`write`, and `openat` calls. Programs without `fx term` do not receive `ioctl`.
+declare `! term`, which adds `ioctl`; file effects add the required `read`,
+`write`, and `openat` calls. Programs without `! term` do not receive `ioctl`.
 Classic seccomp-BPF cannot filter the `ioctl` command argument, so the grant is
 syscall-wide.
 

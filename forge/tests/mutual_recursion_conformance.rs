@@ -137,10 +137,12 @@ fn reject_cause(certs: &[Value], item: &str) -> String {
 // the other on `n - 1`, non-vacuous `ens` tied to `n % 2`. Verus proves the
 // mutual-decreases group → L3 (raw verus `2 verified, 0 errors`).
 const EVEN_ODD_L3: &str = "fn is_even(n: u64) -> bool\n  \
-    req n <= 1000\n  ens result == (n % 2 == 0)\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == (n % 2 == 0)\n  measures n\n\
     {\n  if n == 0 { true } else { is_odd(n - 1) }\n}\n\n\
     fn is_odd(n: u64) -> bool\n  \
-    req n <= 1000\n  ens result == (n % 2 == 1)\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == (n % 2 == 1)\n  measures n\n\
     {\n  if n == 0 { false } else { is_even(n - 1) }\n}\n";
 
 // AC-2 (grounded): both members `dec n`, but the cross-call does not decrease
@@ -148,10 +150,12 @@ const EVEN_ODD_L3: &str = "fn is_even(n: u64) -> bool\n  \
 // has `dec`, so it is not caught by the missing-dec reject) → "could not prove
 // termination" → L0.
 const PING_PONG_NONDECREASING: &str = "fn ping(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == n\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == n\n  measures n\n\
     {\n  if n == 0 { 0 } else { pong(n) }\n}\n\n\
     fn pong(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == n\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == n\n  measures n\n\
     {\n  if n == 0 { 0 } else { ping(n) }\n}\n";
 
 // AC-3 (grounded): `is_even` lacks `dec` (and is not `fx diverge`); `is_odd` has
@@ -159,10 +163,11 @@ const PING_PONG_NONDECREASING: &str = "fn ping(n: u64) -> u64\n  \
 // verus) with cause `MutualRecursionMissingDecreases`. The whole non-diverge
 // cycle is rejected (both members), since Verus would reject the entire group.
 const EVEN_ODD_MISSING_DEC: &str = "fn is_even(n: u64) -> bool\n  \
-    req n <= 1000\n  ens result == (n % 2 == 0)\n  fx pure\n\
-    {\n  if n == 0 { true } else { is_odd(n - 1) }\n}\n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == (n % 2 == 0)\n{\n  if n == 0 { true } else { is_odd(n - 1) }\n}\n\n\
     fn is_odd(n: u64) -> bool\n  \
-    req n <= 1000\n  ens result == (n % 2 == 1)\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == (n % 2 == 1)\n  measures n\n\
     {\n  if n == 0 { false } else { is_even(n - 1) }\n}\n";
 
 // AC-4: a `fx diverge` mutual cycle. Both members are non-terminating
@@ -170,23 +175,26 @@ const EVEN_ODD_MISSING_DEC: &str = "fn is_even(n: u64) -> bool\n  \
 // missing `dec`, lowered with `#[verifier::exec_allows_no_decreases_clause]`,
 // L1-capped (partial correctness).
 const DIVERGE_CYCLE_L1: &str = "fn loop_a(n: u64) -> u64\n  \
-    req true\n  ens result == 0\n  fx diverge\n\
-    {\n  if n == 0 { 0 } else { loop_b(n + 1) }\n}\n\n\
+    ! diverge
+  requires true\n  ensures result == 0\n{\n  if n == 0 { 0 } else { loop_b(n + 1) }\n}\n\n\
     fn loop_b(n: u64) -> u64\n  \
-    req true\n  ens result == 0\n  fx diverge\n\
-    {\n  if n == 0 { 0 } else { loop_a(n + 1) }\n}\n";
+    ! diverge
+  requires true\n  ensures result == 0\n{\n  if n == 0 { 0 } else { loop_a(n + 1) }\n}\n";
 
 // AC-5 (grounded): a 3-cycle `step_a -> step_b -> step_c -> step_a`, each member
 // `dec n` cross-calling on `n - 1`. Verus proves the mutual-decreases group for
 // the whole SCC → L3 for all three (v1 is n-cycles, not pairs-only).
 const THREE_CYCLE_L3: &str = "fn step_a(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == 0\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == 0\n  measures n\n\
     {\n  if n == 0 { 0 } else { step_b(n - 1) }\n}\n\n\
     fn step_b(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == 0\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == 0\n  measures n\n\
     {\n  if n == 0 { 0 } else { step_c(n - 1) }\n}\n\n\
     fn step_c(n: u64) -> u64\n  \
-    req n <= 1000\n  ens result == 0\n  fx pure\n  dec n\n\
+    ! pure
+  requires n <= 1000\n  ensures result == 0\n  measures n\n\
     {\n  if n == 0 { 0 } else { step_a(n - 1) }\n}\n";
 
 // ---------------------------------------------------------------------------

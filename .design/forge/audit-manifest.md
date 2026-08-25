@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: f07b4f4149f471a3c37d5443a6e1178e3e7deec4845c9941a327a9aa5f65150f
+audited-content-sha256: f817f3380c67e47b30fd948106f8123b4fd74f529a00f3b0383a9add93117983 (re-pinned 2026-08-16 after re-auditing live general-Verus artifact authority and substitution rejection; project Level aggregation remains pending retirement. prior: c9da396682d8781d9e5871214378d83580d5e20b01e4ecbc8217817d1c2694db)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6
@@ -38,6 +38,35 @@ Gate G4 adds one backward-compatible residual-trust field:
 relation/array surface. The accompanying `unsupported_fragments` list now names
 only genuine boundaries: formulas rejected by the S₂.0 classifier and
 quantifier-free leaves outside the checked QF_LIA/QF_BV source surface.
+
+RFC-3 migration adds two optional, verbatim per-function projections:
+`certification` (`scope/refutation/residual_trust@boundary`) and
+`classification` (the fragment prognosis before discharge). They are copied
+from the certificate rather than recomputed. The historical `level` and
+project scalar aggregate remain during the beta migration and are not an
+independent source for either new field.
+
+The runtime-enforced L1 migration uses the same projection seam. Audit validates
+the migrated pair before copying it, retains the checked wrapper identity in
+`certification.discharged_trust`, and preserves distinct slag and FFI boundary
+rows. An unmarked historical L1 row remains readable; a marked migrated L1 row
+with either half removed is rejected before projection. Audit recognizes migrated
+L1 provenance independently of the legacy `level`, so changing that scalar does
+not suppress checked-artifact validation. Audit additionally requires a
+non-serializable producer admission capability: direct certificate JSON is
+readable but is never audit authority. The live check pipeline mints admission,
+and the audit command disables proof-cache certificate reuse so its input cannot
+cross a serialization boundary before projection.
+
+The homogeneous general-Verus migration follows the same rule. Audit validates
+the live opaque artifact attachment before copying its classification and
+position: item, exact effects, isolated-query SHA-256 identity,
+`thermite-verus-v1` classifier, legacy level, success/non-claim position, and
+boundary must all agree. A retained Verus proof and non-claim retain the same pre-execution query
+classification; only discharge changes the position. A serialized row can be
+read for compatibility but has no producer authority, and a half-pair or
+substituted row cannot be projected as a current audit claim. Mixed clause
+solver routes remain outside this item-level cut pending clause coordinates.
 
 ## Decided scope
 
@@ -92,6 +121,9 @@ amendment — next heading):
    - `level` (`L0..L3`, the ladder rung),
    - `assurance_scope` (§9: end-to-end vs to-the-boundary, from
      `Certificate.assurance_scope`),
+   - `engine_attribution` (the discharging engine and enumerated trust profile,
+     copied independently from `level`/`assurance_scope`; absent only when the
+     source certificate uses the legacy default-Verus omission),
    - `contract_quality` (the §7 battery block: `tautology`,
      `vacuous_precondition`, `mutants_killed`, `survivor` — from
      `Certificate.contract_quality`),
@@ -114,7 +146,7 @@ amendment — next heading):
    - `slag_blocks` — every `#[slag]` fn: `name` + its `reason`/`owner`/`review`
      (from `Certificate.slag_meta` — §8's mandatory justification),
    - `boundary_contracts` — every `#[boundary]` fn: `name` + the foreign
-     `boundary_target` + its enforced contract (the `req`/`ens`/`fx`, §9
+     `boundary_target` + its enforced contract (the `!`/`requires`/`ensures`, §9
      per-function contracts),
    - `toolchain` — the toolchain identity: the `verus` version
      (`resolve_verus_version` in `check.rs`) and the `thermite`/`forge` version
@@ -313,8 +345,8 @@ on it would make Lean-fragment growth a breaking event. A future opt-in gate
 
 - **REQ-1 (the AuditManifest v1 schema — stable field set + version tag):**
   define a project-level `AuditManifest` carrying `manifest_version` (`"v1"`),
-  the per-fn `functions` rows (name, level, assurance_scope, contract_quality,
-  slag, boundary + boundary_target), the `project_assurance` section (the #10/#17
+  the per-fn `functions` rows (name, level, assurance_scope, engine_attribution,
+  contract_quality, slag, boundary + boundary_target), the `project_assurance` section (the #10/#17
   aggregate: level headline + project scope + lowered-assurance list), and the
   `tcb` section (slag_blocks ∪ boundary_contracts ∪ toolchain). Additive
   evolution only (`#[serde(default, skip_serializing_if)]` precedent). Derived
@@ -416,7 +448,7 @@ hand-derived from `thermite-design.md`, never copied from forge output).
   `#[boundary("crate::path")]` fn emits a `tcb` whose `slag_blocks` lists the
   slag fn with its `reason`/`owner`/`review` (from `slag_meta`) and whose
   `boundary_contracts` lists the boundary fn with its `boundary_target` + its
-  enforced `req`/`ens`/`fx`. The §8/§9 "grep slag"-complete fiat-trust
+  enforced `!`/`requires`/`ensures`. The §8/§9 "grep slag"-complete fiat-trust
   enumeration — nothing omitted (R-DEFER-9). The slag/boundary fns certify L1
   (their existing `Certificate::slag_l1`/`boundary_l1` verdicts, unchanged).
 - **AC-3 (degraded / to-boundary project → project_assurance reflects it):** a
@@ -438,6 +470,17 @@ hand-derived from `thermite-design.md`, never copied from forge output).
   certs `forge check <file>` emits for the same file (the manifest is a
   projection, not a recomputation) — the audit and check verdicts agree
   field-for-field on the deterministic (oracle) subset.
+  RFC-3 migrated L1 adds a deterministic provenance validation before that copy:
+  audit reconstructs the opaque checked-lowering artifact from the supplied
+  program and requires the persisted item, effect row, route/classifier, wrapper
+  identity, exact slag metadata, FFI fields/target, and boundary to match. Audit
+  also recomputes the deterministic syntactic closure classification and requires
+  both stored scope and formal boundary to match it. It still re-runs no solver or
+  mutation score. This prevents hostile JSON
+  from deleting the migration pair to pose as current historical evidence, or
+  substituting provenance fields, including the legacy `level`, while standalone
+  legacy L1 remains readable. Even simultaneous deletion of the complete pair and
+  relabeling to `L3` fails because deserialization cannot mint audit admission.
 - **AC-7 (#274 — membership rows present, one per fn, classes hand-derivable):**
   `forge audit conformance/sum.th --json` emits a `lean_fragment.functions`
   array with exactly one row per `functions` row (`spec_sum`, `sum`), source
@@ -546,11 +589,11 @@ identity and the cache provenance agree.
 ## Verification
 
 - **Route to add (orchestrator, not this doc):** add a `[[route]]` to
-  `tooling/spec-routes.toml` mapping `forge/src/audit.rs` → this doc, with
+  `gates/routes.toml` mapping `forge/src/audit.rs` → this doc, with
   `reference = ["conformance/audit"]` and `conformance_ops = ["sum",
   "binary_search", "slag_boundary", "to_boundary_project"]`. The spec-discipline
   hook (R-XLATE-2/R-XLATE-3) blocks the builder's edit until both the route and
-  this doc exist. *(Status: the route exists at `tooling/spec-routes.toml`
+  this doc exist. *(Status: the route exists at `gates/routes.toml`
   `crate_pattern = "forge/src/audit.rs"` → this doc — no #274 route change
   needed; the amendment edits files already routed here.)*
 - **Oracle (orchestrator-authored):** a `conformance/audit/cases.json`
@@ -639,7 +682,7 @@ identity and the cache provenance agree.
 |---|---|---|
 | REQ-1 (AuditManifest v1 schema + version tag) | SHIPPED | `struct AuditManifest { manifest_version, functions, project_assurance, tcb }` in `audit.rs`; `manifest_version` is `MANIFEST_VERSION` (`"v1"`) with `#[serde(default)]` for additive evolution. Built by `AuditManifest::from_certificates`; consumer `cli::run_audit` (`--json` + `cli::render_audit`). Oracle: `forge/tests/audit_conformance.rs::corpus_empty_tcb` asserts `manifest_version == "v1"`. |
 | REQ-2 (`forge audit <file>` command) | SHIPPED | `cli::parse_args`'s `"audit"` verb → `Command::Audit { file, json }`; `cli::run_audit` runs `check::check_file` (the default-config pipeline, no extra verification, OQ-3) and emits `--json` or `render_audit`. Oracle: `audit_conformance.rs` drives the built binary with `forge audit <file> --json`. |
-| REQ-3 (TCB enumeration = slag ∪ boundary ∪ toolchain) | SHIPPED | `Tcb::from_certificates` enumerates every `cert.slag` → `SlagBlock` (reason/owner/review from `slag_meta`), every `cert.boundary` → `BoundaryContract` (target + `req`/`ens`/`fx` looked up in the program), and `Toolchain` (always present). Oracle: `audit_conformance.rs::slag_boundary_tcb` asserts BOTH `vendored` + `ext_f` enumerated (R-DEFER-9); `corpus_empty_tcb` asserts the empty-but-toolchain pure state. |
+| REQ-3 (TCB enumeration = slag ∪ boundary ∪ toolchain) | SHIPPED | `Tcb::from_certificates` enumerates every `cert.slag` → `SlagBlock` (reason/owner/review from `slag_meta`), every `cert.boundary` → `BoundaryContract` (target + `!`/`requires`/`ensures` looked up in the program), and `Toolchain` (always present). Oracle: `audit_conformance.rs::slag_boundary_tcb` asserts BOTH `vendored` + `ext_f` enumerated (R-DEFER-9); `corpus_empty_tcb` asserts the empty-but-toolchain pure state. |
 | REQ-4 (aggregation, never re-derivation) | SHIPPED | `AuditManifest::from_certificates` reads only the cert collection + `AssuranceManifest::aggregate(&certs)` + the parsed program (boundary contract text) + the two version strings; it owns no prover invocation. `cli::run_audit` calls `check::check_file` once and projects its certs. |
 | REQ-5 (project assurance embedded) | SHIPPED | `ProjectAssuranceSection::from_assurance` embeds `AssuranceManifest::aggregate` — the `ProjectAssurance` headline, the `ProjectScope`, and the lowered-assurance fn names (from `FunctionAssurance.lowered_assurance`). Oracle: `audit_conformance.rs::corpus_empty_tcb` asserts the L3/end-to-end headline; unit test `lowered_assurance_listed_in_project_section`. |
 | REQ-6 (determinism) | SHIPPED | the manifest is a pure function of its inputs; `functions`/TCB lists in cert/source order; `solver_time_ms` structurally absent; `mutants_killed`/`survivor` carried but oracle-shape-asserted (OQ-2). Oracle: `audit_conformance.rs::audit_is_deterministic` (two runs → byte-identical `--json`) + unit test `manifest_is_deterministic`. |

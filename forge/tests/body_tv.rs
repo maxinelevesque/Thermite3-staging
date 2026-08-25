@@ -193,8 +193,8 @@ fn faithful_straight_line_body_is_faithful() {
     }
     let file = write_th(
         "sl",
-        "fn sl(x: u64) -> u64\n  req x <= 1000\n  ens result == (x + 1) * 2\n  fx  pure\n\
-         {\n  let a: u64 = x + 1;\n  let b: u64 = a * 2;\n  b\n}\n",
+        "fn sl(x: u64) -> u64\n  ! pure
+  requires x <= 1000\n  ensures result == (x + 1) * 2\n{\n  let a: u64 = x + 1;\n  let b: u64 = a * 2;\n  b\n}\n",
     );
     let report = run_body_tv_json(&file);
     let counts = &report["counts"];
@@ -233,14 +233,14 @@ fn faithful_while_loop_body_is_faithful() {
     }
     let src = concat!(
         "fn wl(n: usize) -> usize\n",
-        "  req n <= 1000\n",
-        "  ens result == n\n",
-        "  fx  pure\n",
+        "  ! pure\n",
+        "  requires n <= 1000\n",
+        "  ensures result == n\n",
         "{\n",
         "  let mut lo: usize = 0;\n",
         "  while lo < n\n",
-        "    inv lo <= n\n",
-        "    dec n - lo\n",
+        "    keeps lo <= n\n",
+        "    measures n - lo\n",
         "  {\n",
         "    lo = lo + 1;\n",
         "  }\n",

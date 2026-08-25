@@ -3,7 +3,7 @@
 tier: 3-component
 status: complete (epic #60 CLOSED 2026-06-05 — Tier-1 MAXED at six verified cores, verus --no-cheating `26 verified, 0 errors`: `subsumes` REQ-5, `ladder_action` REQ-7, `io_allow`/`syscall_allowlist` REQ-8, `should_emit_external_body` boundary-honesty, `aggregate_level` honest-min, `meets_floor_60` the 0/0 gate. The rest of the original REQ-2 list was adjudicated OUT by the Tier-1 boundary rule "soundness reduces to a finite enumerable domain": `cache_key` is cryptographic (SHA-256), `triage`/`mutation::generate` walk unbounded ASTs (Tier-2-adjacent), `is_strictly_stronger` is structural — an honest coverage boundary, not a deferral; see the #60 closing comment.)
 audited-sha: 39967df868c4a228894efdd48f136358db23e49d (re-pinned 2026-06-15: batch source status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (bootstrap pin: decision 4; status header amended at #262 — the stale "epic #60 open" claim corrected against the epic's closing record))
-audited-content-sha256: 1b50700c6314fcaa8e4ab31ae8af6ec571c9e63365729cbdf5d204c5c6a26aa8
+audited-content-sha256: 8523af19df2b45af54d874cf964842f50195dd070a8c55c339ac6dfa6c55492f (re-pinned 2026-08-07 for the in-tree kernel removal (#10): the governed files lost the `fx platform(...)` atom / kernel-image surface, or moved from `--target kernel` to `--target freestanding`; no other behavior changed. prior: 1b50700c6314fcaa8e4ab31ae8af6ec571c9e63365729cbdf5d204c5c6a26aa8)
 governs: thermite-verified/src/lib.rs (the verified core — six soundness-critical pure functions proved + production-anchored)
 thesis-refs:
   - thermite-design.md §6   (Verus is the L3 prover)
@@ -155,7 +155,7 @@ tags); REQ-8's is the 2^8 fx-atom masks (the same enumeration style as `subsumes
   `thermite-design.md` §5.2 + `goal.md` R-DEFER-9 / R-CODE-4. **NOT-STARTED** (grounded
   below; epic #60).
 
-- **REQ-8 (seccomp allowlist SOUNDNESS verified + anchored):** The `fx`-atom-set →
+- **REQ-8 (seccomp allowlist SOUNDNESS verified + anchored):** The `!`-atom-set →
   syscall-set mapping (`sandbox::syscall_allowlist`) is ported into the verified `verus!{}`
   body as a **bitset map** over the ~8 fx-atom kinds (`u8` fx-mask) → a membership over the
   sensitive user-I/O syscalls (`openat`/`socket`/`connect`/`getrandom`/`clock_gettime`),
@@ -677,7 +677,7 @@ exhaustively checkable in the verus fragment:
 | Function | Soundness role | Why NOT verus-verified (honest) |
 |---|---|---|
 | `cache::cache_key` (`forge/src/cache.rs`, §5.3) | content-addressing — a collision/under-mix serves a stale cert for changed inputs | **INFEASIBLE in verus.** The key is a SHA-256 over the canonicalized inputs; modeling SHA-256's collision resistance is a cryptographic assumption, not an exhaustively-checkable finite predicate. The soundness rests on the hash primitive (a Tier-3-style trusted floor), empirically grounded by the cache's hit/miss conformance, not provable here. |
-| `vacuity::triage` structural battery (`forge/src/vacuity.rs`, §7.1) | a vacuous/trivial contract must not pass the gate | **NOT exhaustively-checkable (Tier-2-adjacent).** Triage is an AST-walk over UNBOUNDED programs (arbitrary `req`/`ens` expression trees); its input domain is infinite and structural, not a fixed-width finite lattice. Verifying it is verified-compiler / verified-static-analysis territory (Tier 2, §11 "Thermite is not a proof assistant"). Grounded by the §7.1 triage conformance corpus. |
+| `vacuity::triage` structural battery (`forge/src/vacuity.rs`, §7.1) | a vacuous/trivial contract must not pass the gate | **NOT exhaustively-checkable (Tier-2-adjacent).** Triage is an AST-walk over UNBOUNDED programs (arbitrary `requires`/`ensures` expression trees); its input domain is infinite and structural, not a fixed-width finite lattice. Verifying it is verified-compiler / verified-static-analysis territory (Tier 2, §11 "Thermite is not a proof assistant"). Grounded by the §7.1 triage conformance corpus. |
 | `mutation::generate` enumeration (`forge/src/mutation.rs`) | the frozen mutant set must be complete + deterministic | **NOT exhaustively-checkable (Tier-2-adjacent).** `generate` is an AST-walk emitting mutants over an unbounded body; like `triage` its domain is infinite/structural. Determinism is grounded by the same-input double-run conformance, completeness by the frozen-family tests — empirical, not verus. (NOTE: the mutation FLOOR gate — the finite numeric decision — IS verified, REQ-11; only the unbounded ENUMERATION is out.) |
 | `strengthen::is_strictly_stronger` (`forge/src/strengthen.rs`, §7) | a non-stronger candidate must not be suggested as stronger | Carried under REQ-2; it compares two contract expression trees (structural, unbounded domain — Tier-2-adjacent), so it is NOT a finite-lattice port. Honestly out of the finite-domain batch. |
 

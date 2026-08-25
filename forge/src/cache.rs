@@ -3,9 +3,11 @@
 //! §5.3: "Proof results are content-addressed and cached per item").
 //!
 //! For each `.th` item, `check::check_file` computes a stable cache key from the
-//! four inputs that determine that item's verdict (the item's lowered Verus
-//! source, the pinned solver seed, the verus version, and the thermite toolchain
-//! version), consults the cache before spawning verus, returns the stored
+//! five inputs that determine one of that item's oracle fields (the item's
+//! lowered Verus source, the pinned solver seed, the verus version, the thermite
+//! toolchain version, and the item's declared effect row — the row determines
+//! `Certificate::effects` without reaching the lowered source, REQ-1e),
+//! consults the cache before spawning verus, returns the stored
 //! [`Certificate`] on a hit (skipping the solver), and stores the result on a
 //! miss. The cache is a performance optimization that does not change a verdict: a
 //! hit is indistinguishable from a fresh verify (`goal.md` R-DEFER-9: the cache
@@ -38,7 +40,9 @@
 //! <!-- /generated:reqs -->
 
 use std::path::{Path, PathBuf};
+use std::{cell::Cell, thread_local};
 
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::manifest::{Certificate, ObligationStatus};
@@ -50,8 +54,8 @@ const DOMAIN: &[u8] = b"thermite.forge.proof-cache.v1";
 
 /// The version of forge's verdict-affecting check logic — the set of gates a
 /// cached certificate was produced under (`.design/forge/proof-cache.md` REQ-2,
-/// the soundness-completeness invariant). It is a fifth cache-key input
-/// (domain-tagged + length-prefixed like the other four) so that a certificate
+/// the soundness-completeness invariant). It is a further cache-key input
+/// (domain-tagged + length-prefixed like the caller-passed ones) so that a certificate
 /// stored under one set of gates is not re-served once the gate set changes: a
 /// different schema ⇒ a different key ⇒ a miss ⇒ a full re-check under the current
 /// gates. This closes the bypass where a cert cached by a forge before a gate
@@ -123,7 +127,46 @@ const DOMAIN: &[u8] = b"thermite.forge.proof-cache.v1";
 ///       stored under schema 6 must be re-checked under schema 7 (else
 ///       `forge check` serves a stale schema-6 `WeakContract` on an identical
 ///       lowered-source key, REQ-2: a hit must equal a fresh verify).
-const CHECK_SCHEMA_VERSION: u32 = 7;
+///   8 — RFC-3 homogeneous general-Verus migration: every current general-Verus
+///       result must be assembled from a pre-execution `L3Artifact`, retaining
+///       its query identity and classification on proof or non-claim. A schema-7
+///       cached certificate predates that authority and cannot be upgraded after
+///       deserialization, so it must miss and be produced again under schema 8.
+///   9 — RFC-3 cache-domain repair: main-item, mutation, equivalence, and
+///       strengthening queries now have distinct key roles, and partial EPR
+///       evidence no longer enters an item-level certificate without a defined
+///       aggregation. Schema-8 entries predate both verdict-affecting rules.
+///  10 — typed result-arbiter migration: Verus, Lean fallback, EPR, vacuity, and
+///       mutation outcomes now combine through one total precedence rule. Complete
+///       supplemental proof cannot erase a counterexample or settled policy reject,
+///       and replacement preserves orthogonal boundary/policy context. Schema-9
+///       entries predate these verdict- and boundary-affecting semantics.
+///  11 — cache-envelope integrity: the stored query key and canonical certificate
+///       digest are verified before any certificate is decoded as authority. A
+///       damaged policy verdict therefore misses instead of being promoted by a
+///       coherent-looking public-field edit.
+const CHECK_SCHEMA_VERSION: u32 = 11;
+
+thread_local! {
+    static REUSE_SUPPRESSED: Cell<bool> = const { Cell::new(false) };
+}
+
+struct ReuseRestore(bool);
+
+impl Drop for ReuseRestore {
+    fn drop(&mut self) {
+        REUSE_SUPPRESSED.with(|suppressed| suppressed.set(self.0));
+    }
+}
+
+/// Run `operation` with certificate cache reads forced to misses on this
+/// thread. Audit uses this so its certificate inputs come from live producers;
+/// the guard restores the prior state even during unwinding.
+pub fn without_reuse<T>(operation: impl FnOnce() -> T) -> T {
+    let previous = REUSE_SUPPRESSED.with(|suppressed| suppressed.replace(true));
+    let _restore = ReuseRestore(previous);
+    operation()
+}
 
 /// The project-local proof-cache directory (`.design/forge/proof-cache.md`
 /// REQ-6, OQ-1): `target/thermite-proof-cache/`. It is build output under the
@@ -135,7 +178,7 @@ pub fn default_cache_dir() -> PathBuf {
 }
 
 /// Compute the stable content-address cache key for one item (REQ-1) — a
-/// lowercase-hex sha256 over the four verdict-determining inputs:
+/// lowercase-hex sha256 over the five inputs that determine an oracle field:
 ///
 /// 1. `lowered_src` — the item's lowered Verus source (what verus checks; the
 ///    §5.3 isolated sub-program). REQ-1a.
@@ -143,25 +186,96 @@ pub fn default_cache_dir() -> PathBuf {
 /// 3. `verus_version` — the verus binary version (`verus --version`). REQ-1d/REQ-5.
 /// 4. `thermite_version` — the `forge` toolchain version
 ///    (`env!("CARGO_PKG_VERSION")`). REQ-1c/REQ-5.
+/// 5. `effect_row` — the item's declared effect row, as the canonical token
+///    vector `check::item_effects` produces. REQ-1e.
+///
+/// The row is a key input because it determines `Certificate::effects`, the
+/// third element of `Certificate::oracle_subset`, which a hit must agree with a
+/// fresh verify on (REQ-2). It does not reach `lowered_src`: the bookkeeping
+/// labels (`read`, `write`, `net`, `alloc`, `time`, `rand`, `panic`, `term`)
+/// change no proof obligation, so lowering erases them, while `diverge` survives
+/// through the termination obligation. Without this input, two items identical
+/// but for their row share a key, and the second is served a certificate
+/// reporting a row its source does not declare. Passing the same vector the
+/// certificate carries keeps the two in agreement by construction; the
+/// divergence is pinned by `forge/tests/divergence_cache_effect_row.rs`.
 ///
 /// Each field is domain-tagged and length-prefixed (`field`), so two distinct
 /// input tuples do not collide by concatenation ambiguity: the hash is injective
-/// on the structured tuple, not on a flat byte concatenation (the soundness
-/// argument, REQ-2). This function is pure: no wall-clock, no environment beyond
-/// the explicitly-passed arguments (R-CODE-5). Identical inputs ⇒ identical key;
+/// on the structured tuple rather than on a flat byte concatenation (the
+/// soundness argument, REQ-2). The row is fed as its length followed by each
+/// token as its own length-prefixed field, extending that property to a
+/// sequence. Order is significant, since `manifest::effects_of` preserves
+/// declaration order (R-CODE-5) and a reordered row is a different certificate.
+///
+/// This function is pure: no wall-clock, no environment beyond the
+/// explicitly-passed arguments (R-CODE-5). Identical inputs ⇒ identical key;
 /// a differing input ⇒ a different key ⇒ a miss ⇒ re-verify.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CacheQueryRole {
+    MainItem,
+    Mutation,
+    Equivalence,
+    Strengthening,
+}
+
+impl CacheQueryRole {
+    fn tag(self) -> &'static [u8] {
+        match self {
+            Self::MainItem => b"main-item",
+            Self::Mutation => b"mutation",
+            Self::Equivalence => b"equivalence",
+            Self::Strengthening => b"strengthening",
+        }
+    }
+}
+
 pub fn cache_key(
     lowered_src: &str,
     seed: u64,
     verus_version: &str,
     thermite_version: &str,
+    effect_row: &[String],
+) -> String {
+    cache_key_for_role(
+        CacheQueryRole::MainItem,
+        lowered_src,
+        seed,
+        verus_version,
+        thermite_version,
+        effect_row,
+    )
+}
+
+/// Content address for a specific proof-query role. Auxiliary mutation,
+/// equivalence, and strengthening results must never be replayed as the main
+/// item certificate even when their lowered source later becomes identical to
+/// an authored item.
+pub fn cache_key_for_role(
+    role: CacheQueryRole,
+    lowered_src: &str,
+    seed: u64,
+    verus_version: &str,
+    thermite_version: &str,
+    effect_row: &[String],
 ) -> String {
     let mut hasher = Sha256::new();
     hasher.update(DOMAIN);
+    field(&mut hasher, b"query-role", role.tag());
     field(&mut hasher, b"lowered", lowered_src.as_bytes());
     field(&mut hasher, b"seed", &seed.to_le_bytes());
     field(&mut hasher, b"verus", verus_version.as_bytes());
     field(&mut hasher, b"thermite", thermite_version.as_bytes());
+    // REQ-1e: the declared row. The length goes in first so a sequence boundary
+    // is fixed before the tokens, then each token is length-prefixed in turn.
+    field(
+        &mut hasher,
+        b"effect-row-len",
+        &(effect_row.len() as u64).to_le_bytes(),
+    );
+    for token in effect_row {
+        field(&mut hasher, b"effect", token.as_bytes());
+    }
     // The fifth input (blocker #49): the verdict-affecting check-logic version, so
     // a cert cached under one set of gates is not re-served once the gate set
     // changes (a different schema ⇒ a different key ⇒ a miss ⇒ re-check under the
@@ -207,6 +321,23 @@ fn entry_path(cache_dir: &Path, key: &str) -> PathBuf {
     cache_dir.join(format!("{key}.json"))
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct CacheEntry {
+    schema: u32,
+    key: String,
+    certificate_digest: String,
+    certificate: Certificate,
+}
+
+fn certificate_digest(certificate: &Certificate) -> Option<String> {
+    let bytes = serde_json::to_vec(certificate).ok()?;
+    let mut hasher = Sha256::new();
+    hasher.update(b"thermite-proof-cache-certificate-v1\0");
+    hasher.update((bytes.len() as u64).to_le_bytes());
+    hasher.update(bytes);
+    Some(hex_lower(&hasher.finalize()))
+}
+
 /// Look up a cached [`Certificate`] by `key` under `cache_dir` (REQ-3/REQ-6).
 ///
 /// Returns `Some(cert)` on a hit (a present, readable, parseable entry whose key
@@ -217,10 +348,20 @@ fn entry_path(cache_dir: &Path, key: &str) -> PathBuf {
 /// value was stored (`store` persists `false`); `check::check_file` sets the
 /// observable `cached: true` via `Certificate::with_cached` on the hit it serves.
 pub fn load(cache_dir: &Path, key: &str) -> Option<Certificate> {
+    if REUSE_SUPPRESSED.with(Cell::get) {
+        return None;
+    }
     let path = entry_path(cache_dir, key);
     let src = std::fs::read_to_string(&path).ok()?;
     // A corrupt/unparseable entry is a miss (not an error): re-verify + overwrite.
-    let cert = serde_json::from_str::<Certificate>(&src).ok()?;
+    let entry = serde_json::from_str::<CacheEntry>(&src).ok()?;
+    if entry.schema != CHECK_SCHEMA_VERSION || entry.key != key {
+        return None;
+    }
+    let cert = entry.certificate;
+    if certificate_digest(&cert).as_deref() != Some(entry.certificate_digest.as_str()) {
+        return None;
+    }
     // An internally-inconsistent entry is also a miss (blocker #49). A cert
     // produced under a different set of gates than the current `forge` (e.g.
     // stored by a forge before the §7 mutation floor existed) can land under the
@@ -276,7 +417,18 @@ fn is_internally_consistent(cert: &Certificate) -> bool {
 pub fn store(cache_dir: &Path, key: &str, cert: &Certificate) -> std::io::Result<()> {
     std::fs::create_dir_all(cache_dir)?;
     let canonical = cert.clone().with_cached(false);
-    let json = serde_json::to_string_pretty(&canonical)
+    let entry = CacheEntry {
+        schema: CHECK_SCHEMA_VERSION,
+        key: key.to_string(),
+        certificate_digest: certificate_digest(&canonical).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "certificate could not be serialized for its cache digest",
+            )
+        })?,
+        certificate: canonical,
+    };
+    let json = serde_json::to_string_pretty(&entry)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
     // Atomic publish: write a unique temp sibling, then rename over the target.
     let tmp = temp_sibling(cache_dir, key);
@@ -469,12 +621,17 @@ mod tests {
         ))
     }
 
-    // AC-4 / REQ-8: the key is a pure function of its four inputs — same inputs,
+    /// The `pure` row every pre-REQ-1e test case implicitly carried.
+    fn pure_row() -> Vec<String> {
+        vec!["pure".to_string()]
+    }
+
+    // AC-4 / REQ-8: the key is a pure function of its inputs — same inputs,
     // same hex key.
     #[test]
     fn cache_key_is_pure() {
-        let a = cache_key("fn f() {}", 0, VERUS, THERMITE);
-        let b = cache_key("fn f() {}", 0, VERUS, THERMITE);
+        let a = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
+        let b = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
         assert_eq!(a, b, "same inputs must yield the same key");
         // The key is lowercase hex of a 32-byte sha256 digest.
         assert_eq!(a.len(), 64, "sha256 hex is 64 chars");
@@ -490,17 +647,78 @@ mod tests {
     // single-input change from the same baseline.
     #[test]
     fn key_changes_when_any_input_changes() {
-        let base = cache_key("fn f() {}", 0, VERUS, THERMITE);
+        let base = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
         // (a) lowered source.
-        assert_ne!(base, cache_key("fn g() {}", 0, VERUS, THERMITE));
+        assert_ne!(
+            base,
+            cache_key("fn g() {}", 0, VERUS, THERMITE, &pure_row())
+        );
         // (b) seed.
-        assert_ne!(base, cache_key("fn f() {}", 1, VERUS, THERMITE));
+        assert_ne!(
+            base,
+            cache_key("fn f() {}", 1, VERUS, THERMITE, &pure_row())
+        );
         // (c) thermite version.
-        assert_ne!(base, cache_key("fn f() {}", 0, VERUS, "0.2.0"));
+        assert_ne!(base, cache_key("fn f() {}", 0, VERUS, "0.2.0", &pure_row()));
         // (d) verus version.
         assert_ne!(
             base,
-            cache_key("fn f() {}", 0, "verus 0.2024.02.02", THERMITE)
+            cache_key("fn f() {}", 0, "verus 0.2024.02.02", THERMITE, &pure_row())
+        );
+        // (e) the declared effect row. The lowered source is identical across
+        // this perturbation, which is the case the row input exists for.
+        assert_ne!(
+            base,
+            cache_key("fn f() {}", 0, VERUS, THERMITE, &["write(log)".to_string()]),
+            "a differing declared row must change the key"
+        );
+    }
+
+    #[test]
+    fn auxiliary_query_roles_cannot_alias_the_main_item_keyspace() {
+        let args = ("fn f() {}", 0, VERUS, THERMITE, pure_row());
+        let main = cache_key(args.0, args.1, args.2, args.3, &args.4);
+        let roles = [
+            CacheQueryRole::Mutation,
+            CacheQueryRole::Equivalence,
+            CacheQueryRole::Strengthening,
+        ];
+        let auxiliary: Vec<_> = roles
+            .into_iter()
+            .map(|role| cache_key_for_role(role, args.0, args.1, args.2, args.3, &args.4))
+            .collect();
+        assert!(auxiliary.iter().all(|key| key != &main));
+        assert_ne!(auxiliary[0], auxiliary[1]);
+        assert_ne!(auxiliary[1], auxiliary[2]);
+        assert_ne!(auxiliary[0], auxiliary[2]);
+    }
+
+    // REQ-1e: the row is a SEQUENCE, so order and boundaries are significant.
+    // `effects_of` preserves declaration order, making a reordered row a
+    // different certificate; and two rows whose tokens concatenate to the same
+    // bytes must not collide.
+    #[test]
+    fn key_distinguishes_row_order_and_token_boundaries() {
+        let ab = ["read(a)".to_string(), "write(b)".to_string()];
+        let ba = ["write(b)".to_string(), "read(a)".to_string()];
+        assert_ne!(
+            cache_key("fn f() {}", 0, VERUS, THERMITE, &ab),
+            cache_key("fn f() {}", 0, VERUS, THERMITE, &ba),
+            "a reordered row is a different certificate, so a different key"
+        );
+
+        let split = ["ab".to_string(), "c".to_string()];
+        let joined = ["abc".to_string()];
+        assert_ne!(
+            cache_key("fn f() {}", 0, VERUS, THERMITE, &split),
+            cache_key("fn f() {}", 0, VERUS, THERMITE, &joined),
+            "token boundaries within the row must be unambiguous"
+        );
+
+        assert_ne!(
+            cache_key("fn f() {}", 0, VERUS, THERMITE, &[]),
+            cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row()),
+            "an empty row and a `pure` row are distinct addresses"
         );
     }
 
@@ -511,8 +729,8 @@ mod tests {
     fn length_prefixing_prevents_boundary_collision() {
         // ("ab","") vs ("a","b") on (source, verus_version): a flat concat of the
         // bytes would be identical; length-prefixing keeps them distinct.
-        let x = cache_key("ab", 0, "", THERMITE);
-        let y = cache_key("a", 0, "b", THERMITE);
+        let x = cache_key("ab", 0, "", THERMITE, &pure_row());
+        let y = cache_key("a", 0, "b", THERMITE, &pure_row());
         assert_ne!(
             x, y,
             "field boundaries must be unambiguous (no concat collision)"
@@ -525,7 +743,7 @@ mod tests {
     fn round_trip_load_store() {
         let dir = unique_test_dir("roundtrip");
         let _ = std::fs::remove_dir_all(&dir);
-        let key = cache_key("fn f() {}", 0, VERUS, THERMITE);
+        let key = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
         // A miss before any store.
         assert!(load(&dir, &key).is_none(), "empty cache is a MISS");
         // Store a hit-flagged cert; the stored form must be canonical false.
@@ -541,6 +759,18 @@ mod tests {
             !loaded.cached,
             "stored cert is canonical fresh-verify (cached:false); provenance is set at serve time"
         );
+        assert!(
+            !loaded.is_audit_admitted(),
+            "deserialization cannot restore live-producer audit authority"
+        );
+        assert!(
+            without_reuse(|| load(&dir, &key)).is_none(),
+            "audit cache suppression forces a stored certificate to miss"
+        );
+        assert!(
+            load(&dir, &key).is_some(),
+            "suppression is scoped and restored"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -551,11 +781,48 @@ mod tests {
         let dir = unique_test_dir("corrupt");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("mkdir");
-        let key = cache_key("fn f() {}", 0, VERUS, THERMITE);
+        let key = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
         std::fs::write(entry_path(&dir, &key), b"{ this is not valid json").expect("write garbage");
         assert!(
             load(&dir, &key).is_none(),
             "a corrupt entry degrades to a MISS"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn edited_policy_verdict_fails_envelope_integrity_and_misses() {
+        let dir = unique_test_dir("policy_tamper");
+        let _ = std::fs::remove_dir_all(&dir);
+        let key = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
+        let rejected =
+            Certificate::rejected_weak_contract("f", pure_row(), "1/3".into(), "return 0".into());
+        store(&dir, &key, &rejected).expect("store policy reject");
+        let path = entry_path(&dir, &key);
+        let source = std::fs::read_to_string(&path).expect("read envelope");
+        let mut value: serde_json::Value = serde_json::from_str(&source).expect("parse envelope");
+        value["certificate"]["level"] = serde_json::Value::String("L3".into());
+        value["certificate"]["reject"] = serde_json::Value::Null;
+        value["certificate"]["obligations"] = serde_json::Value::Array(Vec::new());
+        std::fs::write(&path, serde_json::to_vec_pretty(&value).unwrap()).expect("edit envelope");
+        assert!(
+            load(&dir, &key).is_none(),
+            "editing a cached policy verdict without its canonical digest must miss"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn pre_envelope_certificate_row_is_a_schema_miss() {
+        let dir = unique_test_dir("schema10_row");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        let key = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
+        let legacy = serde_json::to_vec_pretty(&sample_cert("f", Level::L3)).unwrap();
+        std::fs::write(entry_path(&dir, &key), legacy).expect("write schema-10 row");
+        assert!(
+            load(&dir, &key).is_none(),
+            "a pre-envelope certificate cannot bypass schema 11"
         );
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -599,7 +866,7 @@ mod tests {
             "carrier participates"
         );
         // The accessibility key never collides with a same-text proof key (distinct domain).
-        assert_ne!(a, cache_key("lt", 0, "u32", "0.1.0"));
+        assert_ne!(a, cache_key("lt", 0, "u32", "0.1.0", &pure_row()));
     }
 
     // REQ-9 / AC-13: a `dec wf` re-check hits the cache — a stored accessibility proof is

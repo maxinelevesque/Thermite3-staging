@@ -80,7 +80,7 @@ messages and the `Faithfulness.lean` header). **Any edit to a pinned encoder fil
 corresponding table section and requires re-audit (see "Drift" below).**
 
 > **Amendment 2026-06-10 (re-pin, crosslink #200) — VERIFIED additive-only, NO re-audit of the arm
-> tables needed.** The deep-audit drift tripwire (`scripts/audit.sh` check [4], commit `a0d8ea64`)
+> tables needed.** The deep-audit drift tripwire (`gates/audit.sh` check [4], commit `a0d8ea64`)
 > correctly fired: two pinned SHAs were stale because the loop-TV work (#163) landed AFTER the
 > arm-by-arm audit. The drift was VERIFIED additive-only against the actual diffs before re-pinning,
 > NOT rubber-stamped:
@@ -142,7 +142,7 @@ corresponding table section and requires re-audit (see "Drift" below).**
 > new-constructor arms only; zero deletions against the pin. Re-pinned `65504c18` → `1438dc5f`.**
 
 > **Amendment 2026-06-18 (re-pin, crosslink #283) — VERIFIED comment-only + additive-only, NO re-audit
-> of the arm tables needed.** The deep-audit drift tripwire (`scripts/audit.sh` check [4]) fired on
+> of the arm tables needed.** The deep-audit drift tripwire (`gates/audit.sh` check [4]) fired on
 > the post-#53-merge tip (HEAD `49ca894e`): all six pinned SHAs were stale after the #240–#264
 > stage-1-forge-tier arc and the tree-wide `543b506e` "source status turnover" (the REQ-status comment
 > migration to the `<!-- generated:reqs -->` block). The drift was VERIFIED by a comment-stripped
@@ -159,7 +159,7 @@ corresponding table section and requires re-audit (see "Drift" below).**
 >   unchanged. The arm tables stand verbatim.
 > - **The Lean spine `1438dc5f` → `b6038651` is comment-only on every modified file, plus 7 NEW files.**
 >   (`033d9fb2` was the post-#53-merge last-touch; merging current `origin/main` 904ee01c into this branch
->   added the #314 commit `b6038651` "point module headers at thermite2-semantics.md", a module-header
+>   added the #314 commit `b6038651` "point module headers at docs/v2/semantics.md", a module-header
 >   doc-comment touch to `Ast.lean`/`Denote.lean`/`Relax.lean` — VERIFIED CODE-IDENTICAL by the same
 >   comment-stripped diff, so the spine pin advances `033d9fb2 → b6038651` with no arm-table impact.)
 >   `git diff --name-status` shows 7 ADDED — `Exec/WhileBody.lean` + `PinWhile{Composition,DecShape,
@@ -192,7 +192,7 @@ corresponding table section and requires re-audit (see "Drift" below).**
 > `1438dc5f → b6038651`. The full deep audit (`make audit`) re-runs green after the re-pin.**
 
 > **Amendment 2026-06-21 (re-pin, crosslink #331 — stage-2 REQ-9) — VERIFIED additive-only, NO re-audit
-> of the arm tables needed.** The deep-audit drift tripwire (`scripts/audit.sh` check [4]) fired on the
+> of the arm tables needed.** The deep-audit drift tripwire (`gates/audit.sh` check [4]) fired on the
 > branch tip (HEAD `48817df5`): four pinned SHAs were stale after the stage-2 REQ-0..REQ-8 merge arc
 > (#322–#330). The drift was VERIFIED additive-only by a comment-stripped code-level diff before
 > re-pinning, NOT rubber-stamped:
@@ -271,7 +271,7 @@ corresponding table section and requires re-audit (see "Drift" below).**
 > Stage 4 proof boundary. The audit inspected the exporter at `06e14a2e` and the Lean spine
 > at `ba960a9a`; PR #98 squashed both into `10365b60` with the exporter blob and complete
 > `lean/Thermite` tree byte-identical to those audited branch revisions. The drift pins now
-> name that content-identical commit on `main`; `make audit` and `scripts/g4-gate.sh` must
+> name that content-identical commit on `main`; `make audit` and `gates/g4.sh` must
 > both be green before this amendment is accepted.
 
 
@@ -470,7 +470,7 @@ element. The `wrong_combinator_breaks_soundness` (forallIn↔existsIn) and the `
 | per-arg encoding | `encode_call_arg`: `Closure => encode_pred_arg; other => encode_slice_arg` | `refIntValArgs \| a::rest => refIntVal fuel a env :: refIntValArgs fuel rest env` | each arg re-encoded (slice `@`-view / closure form) | `refIntValArgs_eq` |
 
 The fuel index is the Lean modelling of Verus's well-founded `spec fn` unfolding (every Thermite
-spec fn carries a mandatory `dec` measure, §4.2). The Rust encoder does NOT inline (it emits a call),
+spec fn carries a mandatory `measures` measure, §4.2). The Rust encoder does NOT inline (it emits a call),
 so there is no recursion to bound on the Rust side; the fuel models the *meaning* of the resulting
 recursive spec-fn definition. See Bridge Assumption A2.
 
@@ -625,7 +625,7 @@ datum) and the "Verus-meaning" column is replaced by the targeted spine arm.
 > **PIN: this table is current as of `forge/src/lean_export.rs` @ the #240 closing commit (see the
 > Audited-commits table) + the `lean/Thermite/**` spine SHA pinned there.** A change to either the
 > exporter arms below OR the targeted spine constructors INVALIDATES this table and forces re-audit
-> (the `scripts/audit.sh` check [4] drift tripwire already covers the `lean/Thermite/**` spine SHA;
+> (the `gates/audit.sh` check [4] drift tripwire already covers the `lean/Thermite/**` spine SHA;
 > the exporter file's SHA is added to the Audited-commits table below).
 
 | # | Thermite `Expr` (`thermite-syntax`) | `lean_export.rs` arm (`encode_expr`/helper) | Targeted spine constructor (`Ast.lean`/`Denote.lean`) | Inspection tier |
@@ -645,7 +645,7 @@ datum) and the "Verus-meaning" column is replaced by the targeted spine arm.
 | specCall | `Expr::Call(spec_fn, args)` (a NON-combinator/NON-`old` callee) | `Expr.specCall {name} [args]` (tier (c)); STATICALLY UNFOLDED to its body for tier (b) | `Expr.specCall`+the fuel-indexed `Registry` (Table 1G, #181); `R_item` populated by the closure | direct + the static-unfolding sub-inspection (the unfolded `Expr` MUST equal the spec-fn's real body substituted — §6.1(b)) |
 | `old(x)` | `Expr::Call(old, [Path x])` | `Expr.var "old(x)"` | `Expr.var` (a free pre-state name, the `old(_)` arm of Table 1G) | direct |
 | **R_item** (registry) | the `req ∪ ens ∪ body ∪ dec` closure (`Obligation.env.spec_defs`) | `def R_item : Registry := fun name => match name with \| "f" => some ⟨[params], body⟩ \| … \| _ => none` + per-name `example : R_item "f" ≠ none := by decide` | `abbrev Registry := String → Option SpecFn`; `Env.specs` | direct + the HARD GATE (refuse-to-emit when `calledSpecFns ⊄ dom(R_item)` AND a re-check that every spec-call in the exprs is covered) + the per-name `decide` lemma (§4 mechanisms 1+2) + EXP body-faithfulness (each entry binds the REAL `Denote`-encoded body) |
-| **the theorem** | the per-item CONTRACT obligation | tier (a)/(b): `denote 0 req env → denote 0 ens (env.bindInt "result" (intVal 0 body env))`; tier (c): `∀ r, stabilizes body env r → stabilizesProp req env → stabilizesProp ens (env.bindInt "result" r)` | `denote`/`intVal`/`stabilizes`/`stabilizesProp` + `stabilizes_iff_intVal_zero` / `stabilizesProp_iff_denote_zero` (tier a/b) / `stabilization_exists` (tier c) — `Stabilize.lean` | the §4/§6.1 form: tier (a)/(b) fuel-free (sound by fuel-irrelevance / static unfolding), tier (c) the `∃N∀fuel` stabilized form (INTERACTIVE) |
+| **the theorem** | the per-item CONTRACT obligation | tier (a)/(b): `denote 0 requires env → denote 0 ensures (env.bindInt "result" (intVal 0 body env))`; tier (c): `∀ r, stabilizes body env r → stabilizesProp requires env → stabilizesProp ensures (env.bindInt "result" r)` | `denote`/`intVal`/`stabilizes`/`stabilizesProp` + `stabilizes_iff_intVal_zero` / `stabilizesProp_iff_denote_zero` (tier a/b) / `stabilization_exists` (tier c) — `Stabilize.lean` | the §4/§6.1 form: tier (a)/(b) fuel-free (sound by fuel-irrelevance / static unfolding), tier (c) the `∃N∀fuel` stabilized form (INTERACTIVE) |
 
 ### Table 4B — the EXEC-BODY bridge arms (`export_straight_line_body`, §4.1 / REQ-10, increment (iv-b))
 
@@ -668,7 +668,7 @@ DIRECT inspection row.
 | Stmt.ifElse | `Stmt::If { cond, then, else_ }` | `Exec.Stmt.ifElse {cond} {then} {else}` (a missing else → `Block.mk [] none`) | `Stmt.ifElse`+`State.restoreScope` (branch-local `let` discarded) | direct |
 | Block | `Block { stmts, tail }` | `Exec.Block.mk [stmts] (some tail)` | `Block.mk (stmts : List Stmt) (tail : Option ExecExpr)`; `bodyDenote` | direct (a tail-less block → the encoder's `none`) |
 | **stateOf** | the item's params | `def stateOf (v : Env) : Exec.State := { env := { vars := …, slices := … }, scope := fun _ => false }` (int → `.int ⟨uW, v.ints x⟩`; bool → `.bool (v.bools p)`; slice → `(v.seqs xs).map (⟨uW,·⟩)`) | `Exec.State`/`ExecEnv`; the `inputState` exemplar (`scope := fun _ => false`) | direct + the per-param correspondence `rfl`-lemma (`asInt … = some ⟨uW, v.ints x⟩` / `asBool …` / `slices.map BVal.value = v.seqs xs`, the §4.1.4 compile-time tripwire) + EXP `scope := false` faithfulness (VERIFIED against `body_ref_state`'s EMPTY initial env — params are free inputs, a param `assign` is `none`/`Err` both sides) |
-| **the body theorems** | the per-item CONTRACT + OVERFLOW obligations | the HYPOTHESIZE `bodyConverges body_block (stateOf v) r → denote 0 req … → denote 0 ens (bindResult … r)` AND the conjoined `(bodyDenote body_block (stateOf v)).isSome` under `req` (one file) | `bodyConverges`/`bodyDenote`/`bindResult` (`Exec/Stmt.lean`) + `denote`/`intVal` + `Env.bindInt`/`bindBool` | the §4.1.5 form: the result bound THROUGH `bodyConverges` (uniqueness FREE — `bodyDenote` a function); the OVERFLOW conjunct the conjunction-rule soundness condition (PinExecOverflowVacuity) |
+| **the body theorems** | the per-item CONTRACT + OVERFLOW obligations | the HYPOTHESIZE `bodyConverges body_block (stateOf v) r → denote 0 req … → denote 0 ensures (bindResult … r)` AND the conjoined `(bodyDenote body_block (stateOf v)).isSome` under `requires` (one file) | `bodyConverges`/`bodyDenote`/`bindResult` (`Exec/Stmt.lean`) + `denote`/`intVal` + `Env.bindInt`/`bindBool` | the §4.1.5 form: the result bound THROUGH `bodyConverges` (uniqueness FREE — `bodyDenote` a function); the OVERFLOW conjunct the conjunction-rule soundness condition (PinExecOverflowVacuity) |
 
 **Re-pin coverage note (Amendment 2026-06-11, #255).** The `1438dc5f` spine additions that touch
 the CONTRACT family — `Expr.boolVar` (`Ast.lean`), `Env.bools`/`Env.bindBool` (`Denote.lean`), and
@@ -731,7 +731,7 @@ on any tier that targets Verus text).
   `thermite-semantics.md` reduced-trusted-base table item #1, the target semantics).
 - **A2 (fuel ↔ Verus well-founded unfolding).** The Lean fuel index on `refDenote`/`refIntVal`
   /`denote` models Verus's well-founded `spec fn` unfolding (every Thermite spec fn carries a
-  mandatory `dec` measure, §4.2 ⟹ termination ⟹ a well-founded fixpoint). The Rust `encode_call`
+  mandatory `measures` measure, §4.2 ⟹ termination ⟹ a well-founded fixpoint). The Rust `encode_call`
   case (3) does not inline (it emits a call), so the fuel models the MEANING of the recursive spec-fn
   definition, not a Rust recursion bound. The soundness is proved for ALL fuel and both sides share
   the fuel + registry, so it is fuel-uniform (the `Denote.lean`/`RefEncode.lean` headers state this;
@@ -776,7 +776,7 @@ on any tier that targets Verus text).
 - **Struct-field / tuple-projection access in contract position.** The `ref_encode.rs::encode`
   `Expr::Field` arm (`result.x` → `{r}.{name}`) and `Expr::TupleProj` arm (`result.0` → `{r}.{index}`)
   are live in the Rust encoder but have NO Lean `Expr` constructor — the Lean `S_C` fragment does not
-  model member access. Reachable in a struct-field / tuple-projection `ens`; inspection-only (no T1
+  model member access. Reachable in a struct-field / tuple-projection `ensures`; inspection-only (no T1
   theorem) — see Discrepancy D6.
 - **The extraction-bridge tier (REQ-2, the named stronger closure).** A Lean→Rust extraction (or a
   Rust-side proof) would make the Rust encoder equal the Lean model BY CONSTRUCTION, discharging A2/A3
@@ -847,8 +847,8 @@ sides are not arm-for-arm identical.
   ```
 
   They emit the Verus member-access token `<receiver>.<name>` / `<receiver>.<index>` (the receiver
-  recursively re-encoded). They are reachable in the frozen contract subset for a struct-field `ens`
-  (`result.x == 0`) and a tuple-projection `ens` (`result.0 == a`) — the multi-cell/struct CONTRACT
+  recursively re-encoded). They are reachable in the frozen contract subset for a struct-field `ensures`
+  (`result.x == 0`) and a tuple-projection `ensures` (`result.0 == a`) — the multi-cell/struct CONTRACT
   surface. (This is DISTINCT from D5: D5 covers the EXEC-BODY tuple obligation SHAPE built by
   `body_ref_state_ensures`, i.e. the `result.{i} == {cell}` conjunction the body-refinement emits;
   D6 covers these `ref_encode.rs::encode` CONTRACT-position projection arms.) The Lean `Expr`

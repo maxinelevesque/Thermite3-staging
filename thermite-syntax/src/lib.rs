@@ -1,5 +1,5 @@
 //! `thermite-syntax` — the Thermite surface-syntax foundation: lexer, recovering
-//! parser, AST, and stable semantic addressing (`loop#1.inv#2`).
+//! parser, AST, and stable semantic addressing (`loop#1.keeps#2`).
 //!
 //! This is the leaf crate of the v0.1 kernel DAG (workspace REQ-2): it has no
 //! intra-workspace dependencies. The four modules below are the executable form
@@ -41,17 +41,24 @@
 pub mod address;
 pub mod ast;
 pub mod desugar;
+pub mod effect_basis;
 pub mod lexer;
 pub mod parser;
+pub mod semantic;
 
 pub use address::{addresses_of, resolve, AddrKind, AddressEntry, AddressError};
 pub use ast::{
-    BinOp, Block, BoundaryAttr, BvTag, BvWidth, Clause, ClauseSelector, Contract, Effect,
-    EffectRow, EnumItem, Expr, Falsify, FieldDef, FnItem, ForgeItem, Hole, HoleContext, IndexArg,
-    Inhabit, Item, LemmaItem, LoopKind, LoopNode, MatchArm, Param, Pattern, PlatformDomain,
-    PrimType, Program, ProofBlock, ProofItem, ProofObligation, PropFnItem, Quant, Refinement,
-    RefinementTarget, SlagAttr, SlicePat, SpecFnItem, Stmt, StructItem, Type, UnaryOp, VariantDef,
-    VariantShape, WitnessBlock,
+    BinOp, Block, BoundaryAttr, BvTag, BvWidth, Clause, ClauseSelector, ConcurrentItem, Contract,
+    Effect, EffectDeclItem, EffectPrimitive, EffectRow, EnumItem, Expr, Falsify, FieldDef, FnItem,
+    ForgeItem, Hole, HoleContext, IndexArg, Inhabit, Item, LemmaItem, LoopKind, LoopNode, MatchArm,
+    Param, Pattern, PrimType, Program, ProofBlock, ProofItem, ProofObligation, PropFnItem, Quant,
+    Refinement, RefinementTarget, RegionPath, SharedDeclItem, SlagAttr, SlicePat, SpecFnItem, Stmt,
+    StructItem, Type, UnaryOp, VariantDef, VariantShape, WitnessBlock,
 };
 pub use lexer::{tokenize, Span, TokKind, Token};
 pub use parser::{parse, ParseResult, SyntaxError};
+pub use semantic::{
+    is_lexically_shadowed, semantic_inventory, walk_semantic, ChildRole, NodeId, NodeKind,
+    ResourceLimit, SemanticEdge, SemanticEvent, SemanticFact, SemanticInventory, SemanticNode,
+    WorkBudget,
+};

@@ -1,0 +1,1649 @@
+# routes.toml — the Thermite route table (single source of truth).
+#
+# Each route maps a toolchain source file to the design doc that governs it
+# and, where one exists, the golden/conformance reference that is the
+# external truth for its behavior. The spec-discipline.py hook reads this
+# file to enforce "read goal.md + the design doc (+ a reference) before
+# editing the file".
+#
+# Schema:
+#   [[route]]
+#   crate_pattern   = "<repo-relative path or glob>"   # required
+#   design          = ".design/<area>/<doc>.md"        # required; must exist
+#   reference       = ["conformance/<name>.th", ...]   # optional; if non-empty,
+#                                                       #   >=1 must be Read
+#   conformance_ops = ["<corpus program names>"]        # informational
+#
+# A file with no matching route BLOCKS until a route is added (R-XLATE-2).
+# A route whose design doc doesn't exist BLOCKS until acto-doc-author
+# authors it (R-XLATE-3).
+#
+# NOTE: This table doubles as the intended v0.1 module map. The crate/file
+# layout below is the target for scaffold issue #1; adjust these routes if
+# #1 settles on different paths. Routes are seeded for the v0.1 kernel
+# (crosslink milestone #1); v0.2-v0.5 routes are added as the loop reaches
+# them.
+
+# ---------------------------------------------------------------------
+# scaffold — workspace crate roots (issue #1)
+# ---------------------------------------------------------------------
+
+[[route]]
+crate_pattern = "thermite-syntax/src/lib.rs"
+design = ".design/scaffold/workspace.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/lib.rs"
+design = ".design/scaffold/workspace.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/lib.rs"
+design = ".design/scaffold/workspace.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/main.rs"
+design = ".design/scaffold/workspace.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-skill/src/lib.rs"
+design = ".design/scaffold/workspace.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# thermite-syntax — lexer, recovering parser, AST, semantic addressing
+#   (issues #1 scaffold, #3 parser). Owns the SURFACE grammar (the whole
+#   language: fn/req/ens/fx/loop/inv/dec/spec fn/#[slag]); the parser is the
+#   grammar's executable form, spec'd by .design/syntax/ + the conformance
+#   corpus. Registry-free (does not depend on thermite-spec).
+# ---------------------------------------------------------------------
+
+[[route]]
+crate_pattern = "thermite-syntax/src/lexer.rs"
+design = ".design/syntax/lexer.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/parser.rs"
+design = ".design/syntax/parser.md"
+reference = ["conformance/parse"]
+conformance_ops = ["binary_search", "sum", "recover_per_item"]
+
+# Basis Stage 4 (bounded collections, issue #73 / epic #62): parser.rs ALSO parses
+# the `Vec<T>` type spelling (the contextual `Vec` ident, mirroring `Box<T>`),
+# governed by 04-collections.md.
+[[route]]
+crate_pattern = "thermite-syntax/src/parser.rs"
+design = ".design/basis/04-collections.md"
+reference = ["conformance/vec_demo.th", "conformance/collections/cases.json"]
+conformance_ops = ["checked_get", "push_one"]
+
+[[route]]
+crate_pattern = "thermite-syntax/src/ast.rs"
+design = ".design/syntax/ast.md"
+reference = []
+conformance_ops = []
+
+# Basis Stage 4 (bounded collections, issue #73 / epic #62): ast.rs ALSO carries
+# the `Type::Vec(Box<Type>)` element-type node governed by 04-collections.md
+# (a file may carry multiple governing docs — the lower.rs precedent).
+[[route]]
+crate_pattern = "thermite-syntax/src/ast.rs"
+design = ".design/basis/04-collections.md"
+reference = ["conformance/vec_demo.th", "conformance/collections/cases.json"]
+conformance_ops = ["checked_get", "push_one"]
+
+[[route]]
+crate_pattern = "thermite-syntax/src/address.rs"
+design = ".design/syntax/semantic-addressing.md"
+reference = ["conformance/address"]
+conformance_ops = ["binary_search.loop#1.inv#2"]
+
+# ---------------------------------------------------------------------
+# thermite-spec — the SpecTherm combinator registry (issue #2)
+#   Built just before thermite-lower (#4) — its first in-workspace consumer.
+#   The parser (#3) does NOT depend on this crate: it parses combinator calls
+#   as generic call expressions; the "only a fixed combinator set" rule
+#   (design §4.2) is a SEMANTIC check enforced here, not a grammar rule. So
+#   #2 and #3 are independent leaves and #4 depends on both. The SURFACE
+#   grammar is a thermite-syntax concern (governed by .design/syntax/), not a
+#   thermite-spec one — there is no thermite-spec/src/grammar.rs route.
+# ---------------------------------------------------------------------
+
+[[route]]
+crate_pattern = "thermite-spec/src/combinators.rs"
+design = ".design/spec/spectherm-combinators.md"
+reference = ["tests/golden/combinators"]
+conformance_ops = ["forall_in", "forall_below", "forall_from", "sorted", "permutation_of", "disjoint", "count_where", "exists_in"]
+
+[[route]]
+crate_pattern = "thermite-spec/src/validator.rs"
+design = ".design/spec/spectherm-combinators.md"
+reference = ["tests/golden/combinators"]
+conformance_ops = ["accept", "reject"]
+
+# Basis Stage 2 (recursion schemes, issue #70 / epic #62): validator.rs ALSO
+# carries the scheme-call recognition + flat-step cage governed by
+# 02-recursion-schemes.md (a file may carry multiple governing docs).
+[[route]]
+crate_pattern = "thermite-spec/src/validator.rs"
+design = ".design/basis/02-recursion-schemes.md"
+reference = ["conformance/list_fold.th"]
+conformance_ops = ["nested_scheme_in_step", "unknown_scheme"]
+
+# Basis Stage 4 (bounded collections, issue #73 / epic #62): validator.rs ALSO
+# admits the bounded `Vec` operation contracts as flat built-ins (`v.len()`,
+# the no-OOB accessor `v.get(i)`) inside the §4.2 cage, governed by
+# 04-collections.md.
+[[route]]
+crate_pattern = "thermite-spec/src/validator.rs"
+design = ".design/basis/04-collections.md"
+reference = ["conformance/vec_demo.th", "conformance/collections/cases.json"]
+conformance_ops = ["checked_get", "push_one"]
+
+# Basis Stage 2 (recursion schemes, issue #70): the NEW scheme registry,
+# mirroring combinators.rs.
+[[route]]
+crate_pattern = "thermite-spec/src/schemes.rs"
+design = ".design/basis/02-recursion-schemes.md"
+reference = ["conformance/list_fold.th"]
+conformance_ops = ["fold", "map", "for_all", "exists", "traverse"]
+
+# ---------------------------------------------------------------------
+# thermite-lower — Thermite AST -> Verus source; L1 runtime checks
+#   (issue #4)
+# ---------------------------------------------------------------------
+
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/lower/verus-lowering.md"
+reference = ["tests/golden/lower"]
+conformance_ops = ["sum", "binary_search"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/l3.rs"
+design = ".design/lower/verus-lowering.md"
+reference = ["thermite-lower/tests/l3_artifact.rs", ".design/rfcs/0003-certification-surface.md"]
+conformance_ops = ["lower_l3_artifact", "query_identity"]
+
+[[route]]
+crate_pattern = "thermite-lower/tests/l3_artifact.rs"
+design = ".design/lower/verus-lowering.md"
+reference = ["thermite-lower/src/l3.rs"]
+conformance_ops = ["classification-before-discharge", "query-substitution"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/lower/struct-invariant-receiver-binding.md"
+reference = ["conformance/struct-invariant-receiver/repro.th", "conformance/nested_adt.th"]
+conformance_ops = ["clear", "Frame::well_formed"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/l1.rs"
+design = ".design/lower/struct-invariant-receiver-binding.md"
+reference = ["conformance/nested_adt.th"]
+conformance_ops = ["Frame::well_formed"]
+
+[[route]]
+crate_pattern = "thermite-lower/tests/adt_lower_conformance.rs"
+design = ".design/lower/struct-invariant-receiver-binding.md"
+reference = ["conformance/nested_adt.th"]
+conformance_ops = ["nested_adt_fields_and_is_invariant_lower_and_verify_l3", "nested_adt_fields_and_is_invariant_compile_and_run_l1"]
+
+# Basis Stage 2 (recursion schemes, issue #70 / epic #62): lower.rs ALSO carries
+# the generated per-(ADT,scheme) Verus recursive spec fns (fold_<e>/for_all_<e>)
+# + the fold_bound_<e> law + the scheme-call lowering, governed by
+# 02-recursion-schemes.md (a file may carry multiple governing docs).
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/basis/02-recursion-schemes.md"
+reference = ["conformance/list_fold.th"]
+conformance_ops = ["len_list", "sum_list", "all_positive"]
+
+# Basis Stage 4 (bounded collections, issue #73 / epic #62): lower.rs ALSO carries
+# the `Vec<T>` → vstd-`Vec` newtype wrapper (`TVec<elem>` with `well_formed`/
+# `len`/`get`/`push`, the `final(self)` &mut postcondition, the `fx alloc`
+# boundary), governed by 04-collections.md.
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/basis/04-collections.md"
+reference = ["tests/golden/lower/vec_demo.verus.rs", "conformance/vec_demo.th"]
+conformance_ops = ["checked_get", "push_one", "vec_view_supports_spec_indexing_and_combinators"]
+
+[[route]]
+crate_pattern = "thermite-lower/tests/collections_conformance.rs"
+design = ".design/basis/04-collections.md"
+reference = ["thermite-lower/src/lower.rs", "conformance/vec_demo.th"]
+conformance_ops = ["vec_demo_lowers_wrapper_and_verifies_l3", "vec_view_supports_spec_indexing_and_combinators"]
+
+[[route]]
+crate_pattern = "forge/tests/divergence_collections.rs"
+design = ".design/basis/04-collections.md"
+reference = ["thermite-lower/tests/collections_conformance.rs", "conformance/vec_demo.th"]
+conformance_ops = ["confirm_checked_get_bound_is_load_bearing", "vec_view_index_and_combinator_certify_l3"]
+
+# #52 §9 boundary-composition: lower.rs ALSO carries the external_body emission
+# arm governed by boundary-composition.md (a file may carry multiple governing
+# docs; the spec-discipline hook requires each matched route satisfied).
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/lower/boundary-composition.md"
+reference = ["conformance/composition"]
+conformance_ops = ["direct_boundary_caller", "transitive_boundary_caller", "req_violating_caller"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/l1.rs"
+design = ".design/lower/l1-runtime-checks.md"
+reference = ["tests/golden/l1"]
+conformance_ops = ["sum"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/effects.rs"
+design = ".design/lower/effect-subsumption.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# forge — the CLI / verification driver (issues #5, #6, #8)
+# ---------------------------------------------------------------------
+
+[[route]]
+crate_pattern = "forge/src/cli.rs"
+design = ".design/forge/cli.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/forge/check.md"
+reference = ["conformance", "conformance/nested_adt.th", "forge/tests/divergence_multi_adt_subprogram.rs"]
+conformance_ops = ["sum", "binary_search", "standalone_nested_adt_weaves_its_field_type"]
+
+[[route]]
+crate_pattern = "forge/tests/divergence_multi_adt_subprogram.rs"
+design = ".design/forge/check.md"
+reference = ["conformance/nested_adt.th", "thermite-lower/tests/divergence_adt_fold_generality.rs"]
+conformance_ops = ["standalone_nested_adt_weaves_its_field_type", "adt_predicates_with_deref_calls_certify_at_their_declared_type"]
+
+[[route]]
+crate_pattern = "thermite-lower/tests/divergence_adt_fold_generality.rs"
+design = ".design/basis/01-adts.md"
+reference = ["thermite-lower/src/lower.rs"]
+conformance_ops = ["divergence_tree_fold_does_not_lower_and_verify", "adt_predicates_keep_their_declared_bool_return"]
+
+# #52 §9 boundary-composition: check.rs's `item_subprogram` ALSO weaves the
+# transitively-reachable in-file fns (boundary/slag as external_body sigs), the
+# PRIMARY change site governed by boundary-composition.md.
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/lower/boundary-composition.md"
+reference = ["conformance/composition"]
+conformance_ops = ["direct_boundary_caller", "transitive_boundary_caller", "req_violating_caller"]
+
+# proof-backends increment (i), crosslink #204: the backend-neutral Obligation
+# artifact (`obligation.rs`) + the Engine trait & the Verus engine (`engine.rs`),
+# and the L3-discharge refactor that routes the per-item certification path through
+# the engine + the REQ-3.1 fast-unknown remap (`check.rs`). Governed by
+# proof-backends.md; verified against the conformance cert oracle (byte-identical).
+[[route]]
+crate_pattern = "forge/src/obligation.rs"
+design = ".design/verified/proof-backends.md"
+reference = ["conformance"]
+conformance_ops = ["sum"]
+
+[[route]]
+crate_pattern = "forge/src/engine.rs"
+design = ".design/verified/proof-backends.md"
+reference = ["conformance"]
+conformance_ops = ["sum"]
+
+[[route]]
+crate_pattern = "forge/src/result_arbiter.rs"
+design = ".design/forge-result-arbiter.md"
+reference = ["forge/src/check.rs", "forge/src/manifest.rs"]
+conformance_ops = ["result_arbiter", "complete_epr_uses_the_typed_arbiter"]
+
+# proof-backends increment (ii-b), crosslink #240 (ref #203): the Thermite→Lean
+# OBLIGATION EXPORTER (`lean_export.rs`) + the LeanEngine (`engine.rs`). The exporter
+# serializes a checked PURE-CONTRACT item into a self-contained Lean file
+# instantiating the SHIPPED spine (`lean/Thermite/Stabilize.lean` + Ast/Denote); the
+# LeanEngine implements the `Engine` trait (export → lake → kernel verdict). NOT wired
+# into the default check path (Verus stays the sole default engine; byte-identical).
+# Governed by proof-backends.md §4/§6/§6.1 + REQ-6/REQ-7/REQ-8; verified against the
+# live lake suite + the conformance cert oracle (byte-identical).
+[[route]]
+crate_pattern = "forge/src/lean_export.rs"
+design = ".design/verified/proof-backends.md"
+reference = ["conformance"]
+conformance_ops = ["sum"]
+
+# stage-1-forge-tier REQ-2/AC-6 (crosslink #5i5F-VUZC): the exporter-surface
+# correspondence table — the F10 re-inspection artifact. Drift-tripwired against
+# lean_export.rs @ b60b75a4 (the tone-pass commit); any subsequent edit to the
+# exporter fires the gate and demands re-audit of the arm-by-arm tables.
+[[route]]
+crate_pattern = "forge/src/lean_export.rs"
+design = ".design/verified/exporter-surface-correspondence.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/verified/proof-backends.md"
+reference = ["conformance"]
+conformance_ops = ["sum"]
+
+[[route]]
+crate_pattern = "forge/src/manifest.rs"
+design = ".design/forge/certificate-manifest.md"
+reference = ["conformance"]
+conformance_ops = ["sum"]
+
+[[route]]
+crate_pattern = "forge/src/vacuity.rs"
+design = ".design/forge/vacuity-triage.md"
+reference = ["conformance/vacuity"]
+conformance_ops = ["tautology_reject", "ens_is_true_reject", "missing_result_reject"]
+
+[[route]]
+crate_pattern = "forge/src/slag.rs"
+design = ".design/forge/slag.md"
+reference = ["conformance/slag"]
+conformance_ops = ["simd_sum"]
+
+[[route]]
+crate_pattern = "forge/src/cache.rs"
+design = ".design/forge/proof-cache.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# thermite-skill — THERMITE.skill.md generator + 6k-token budget gate
+#   (issue #7)
+# ---------------------------------------------------------------------
+
+[[route]]
+crate_pattern = "thermite-skill/src/generate.rs"
+design = ".design/skill/skill-generator.md"
+reference = []
+conformance_ops = []
+
+# The thermite-skill bin (--emit / --check-budget), governed by the same
+# skill-generator contract (REQ-6, the bin; REQ-4, the budget gate). Issue #7.
+[[route]]
+crate_pattern = "thermite-skill/src/main.rs"
+design = ".design/skill/skill-generator.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# v0.2 — L2 Kani bounded checking (issue #9)
+#   l2.rs lowers a Thermite fn to a Kani proof harness; forge/kani.rs runs the
+#   real kani binary. Auto-degrade (#10) + solver profiles (#11) are separate.
+# ---------------------------------------------------------------------
+
+[[route]]
+crate_pattern = "thermite-lower/src/l2.rs"
+design = ".design/lower/l2-kani.md"
+reference = []
+conformance_ops = ["sum", "binary_search"]
+
+[[route]]
+crate_pattern = "forge/src/kani.rs"
+design = ".design/lower/l2-kani.md"
+reference = []
+conformance_ops = []
+
+# v0.2 — solver profiles as proof-repair prompts (issue #11)
+[[route]]
+crate_pattern = "forge/src/profile.rs"
+design = ".design/forge/solver-profiles.md"
+reference = []
+conformance_ops = []
+
+# v0.3 — solver-backed vacuity (tautology + unsat-precondition) (issue #13)
+[[route]]
+crate_pattern = "forge/src/vacuity_solver.rs"
+design = ".design/forge/solver-vacuity.md"
+reference = ["conformance/solver-vacuity"]
+conformance_ops = ["tautology", "vacuous_precondition"]
+
+# v0.3 — mutation scoring (issue #12)
+[[route]]
+crate_pattern = "forge/src/mutation.rs"
+design = ".design/forge/mutation-scoring.md"
+reference = ["conformance/mutation"]
+conformance_ops = ["weak_contract", "sum"]
+
+# v0.2 — automatic L3->L2->L1 degrade ladder + assurance manifest (issue #10)
+[[route]]
+crate_pattern = "forge/src/degrade.rs"
+design = ".design/forge/degrade-ladder.md"
+reference = []
+conformance_ops = ["sum", "binary_search"]
+
+# v0.3 — strengthening probes (issue #14)
+[[route]]
+crate_pattern = "forge/src/strengthen.rs"
+design = ".design/forge/strengthening-probes.md"
+reference = ["conformance/strengthening"]
+conformance_ops = ["weak_loose_bound", "sum"]
+
+# v0.4 — crates.io FFI boundary modules (issue #16)
+#   The boundary fn syntax also touches ast.rs/parser.rs (governed by their docs
+#   + ffi-boundary.md); the L1 wrapper may live in l1.rs or boundary.rs.
+#   Both files are ahead of the build (the manifest-time route convention);
+#   `unbuilt = true` tells gates/route-coverage.py the empty match is intended,
+#   and the gate flags the flag itself once the file lands.
+[[route]]
+crate_pattern = "thermite-lower/src/boundary.rs"
+design = ".design/boundary/ffi-boundary.md"
+reference = []
+conformance_ops = []
+unbuilt = true
+
+[[route]]
+crate_pattern = "forge/src/boundary.rs"
+design = ".design/boundary/ffi-boundary.md"
+reference = ["conformance/boundary"]
+conformance_ops = ["foreign_id"]
+unbuilt = true
+
+# v0.4 — end-to-end vs to-the-boundary certification (issue #17)
+[[route]]
+crate_pattern = "forge/src/closure.rs"
+design = ".design/forge/e2e-vs-boundary.md"
+reference = ["conformance/e2e"]
+conformance_ops = ["sum", "boundary_caller"]
+
+# v0.3 — audit manifest v1, the trust deliverable (issue #15)
+[[route]]
+crate_pattern = "forge/src/audit.rs"
+design = ".design/forge/audit-manifest.md"
+reference = ["conformance/audit"]
+conformance_ops = ["sum", "slag_boundary"]
+
+# v0.5 — background proof-repair loop (issue #18)
+[[route]]
+crate_pattern = "forge/src/repair.rs"
+design = ".design/forge/proof-repair.md"
+reference = ["conformance/repair"]
+conformance_ops = ["never_provable_counterexample", "sum"]
+
+# v0.5 — pluggable spec-intent review slot (issue #19)
+[[route]]
+crate_pattern = "forge/src/review.rs"
+design = ".design/forge/spec-review.md"
+reference = ["conformance/review"]
+conformance_ops = ["sum", "vacuous"]
+
+# v0.5 — multi-agent Forge sessions (issue #20)
+#   The concurrency-safety primitive (atomic cache) is emergent from #8; #20 is
+#   chiefly the guarantee + the concurrency test suite. session.rs is optional
+#   and ahead of the build — see the boundary.rs `unbuilt` note above.
+[[route]]
+crate_pattern = "forge/src/session.rs"
+design = ".design/forge/multi-agent.md"
+reference = []
+conformance_ops = []
+unbuilt = true
+
+# Goal-state REPL — forge goal/fill/edit/battery (issue #21 item 3, #193).
+# The last unshipped thesis surface (design 5/5.1, Appendix B): views over the
+# shipped check pipeline (per-obligation results + the vacuity/mutation battery)
+# + semantic-address splice (edit/fill) + the body-position `?N` hole spike.
+[[route]]
+crate_pattern = "forge/src/goal_repl.rs"
+design = ".design/forge/goal-repl.md"
+reference = ["conformance/sum.th", "conformance/address/binary_search.addresses.json"]
+conformance_ops = ["sum", "binary_search"]
+
+# forge build — lower to Rust + rustc -> compiled artifact (issue #56)
+[[route]]
+crate_pattern = "forge/src/build.rs"
+design = ".design/forge/build.md"
+reference = ["conformance/build"]
+conformance_ops = ["sum"]
+
+# Stage 8 — the runnable effect link (issue #81): forge build emits a `mod os`
+# linking the v1 os::<name> syscall wrappers so a verified program RUNS + does I/O.
+[[route]]
+crate_pattern = "forge/src/build.rs"
+design = ".design/basis/08-runnable-effect-link.md"
+reference = ["conformance/effect-link", "conformance/build"]
+conformance_ops = ["now_runs", "read_runs", "now_sandbox_confined"]
+
+# Freestanding no_std kernel build target (crosslink #164, epic #169): forge build
+# --target kernel emits a no_std+alloc rlib (no main, no seccomp, panic=abort) and
+# REJECTS an fx row carrying an ambient syscall (read/write/net/term — kernel code
+# has no userspace syscall surface); the L3 (Verus) path is target-independent and
+# untouched. build.rs forks the verb at build_file/emit_source/invoke_rustc (a
+# BuildTarget Std/Kernel). Governed by kernel-target.md; the reference is the corpus
+# sum (the pure fn that compiles to a no_std kernel rlib) + the build oracle. The
+# governed change site (build.rs) is UNBUILT (blocker #197); this route is added at
+# manifest time so the spec-discipline hook routes the builder's edit.
+[[route]]
+crate_pattern = "forge/src/build.rs"
+design = ".design/build/freestanding-target.md"
+reference = ["conformance/build"]
+conformance_ops = ["sum"]
+
+# Correspondence-backed L3 artifacts (issue #101): the additive verified-build
+# orchestrator, CLI surface, strict closure, and export-aware L3 library lowering.
+# The ordinary no-level `forge build` path remains governed by build.md and
+# kernel-target.md; these routes apply only to the new `--level l3` behavior.
+[[route]]
+crate_pattern = "forge/src/verified_build.rs"
+design = ".design/build/l3-verified-artifact.md"
+reference = ["conformance/verified-build"]
+conformance_ops = ["identity", "bounded_inc", "closure", "kernel_link"]
+
+[[route]]
+crate_pattern = "forge/src/cli.rs"
+design = ".design/build/l3-verified-artifact.md"
+reference = ["conformance/verified-build"]
+conformance_ops = ["identity", "bounded_inc"]
+
+[[route]]
+crate_pattern = "forge/src/main.rs"
+design = ".design/build/l3-verified-artifact.md"
+reference = ["conformance/verified-build"]
+conformance_ops = ["identity"]
+
+[[route]]
+crate_pattern = "forge/src/closure.rs"
+design = ".design/build/l3-verified-artifact.md"
+reference = ["conformance/verified-build"]
+conformance_ops = ["closure"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/build/l3-verified-artifact.md"
+reference = ["conformance/verified-build"]
+conformance_ops = ["identity", "bounded_inc", "kernel_link"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/lib.rs"
+design = ".design/build/l3-verified-artifact.md"
+reference = ["conformance/verified-build"]
+conformance_ops = ["identity", "bounded_inc", "kernel_link"]
+
+# Exact-source rich-state composition builds (issue #104): crate-visible rich
+# Thermite roots and authored direct-Verus shells share one strict compiler
+# input while only primitive link exports / shell observations cross crates.
+[[route]]
+crate_pattern = "forge/src/verified_build.rs"
+design = ".design/build/l3-rich-composition.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["probe_step", "boot_observation"]
+
+[[route]]
+crate_pattern = "forge/src/verified_build/composition.rs"
+design = ".design/build/l3-rich-composition.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["probe_step", "boot_observation"]
+
+[[route]]
+crate_pattern = "forge/src/cli.rs"
+design = ".design/build/l3-rich-composition.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["compose-export", "compose-shell"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/build/l3-rich-composition.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["crate-visible-export", "kernel-bounded-state"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/lib.rs"
+design = ".design/build/l3-rich-composition.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["L3ExportVisibility"]
+
+[[route]]
+crate_pattern = "forge/tests/verified_composition.rs"
+design = ".design/build/l3-rich-composition.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["probe_step", "boot_observation", "private-rich-root"]
+
+# Receipt-bound kernel byte-slice proof model (issue #108): Forge explicitly
+# imports the pinned vstd VIR while pairing it with deterministic no_std erased
+# metadata, then proves exact native &[u8] reads in the combined crate.
+[[route]]
+crate_pattern = "forge/src/verified_build.rs"
+design = ".design/build/kernel-byte-slice.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["read_le_u32", "read_le_u64"]
+
+[[route]]
+crate_pattern = "forge/src/verified_build/composition.rs"
+design = ".design/build/kernel-byte-slice.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["read_le_u32", "read_le_u64"]
+
+[[route]]
+crate_pattern = "forge/src/kernel_vstd_link.rs"
+design = ".design/build/kernel-byte-slice.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["Seq", "View", "slice-index"]
+
+[[route]]
+crate_pattern = "forge/tests/kernel_byte_slice.rs"
+design = ".design/build/kernel-byte-slice.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["exact-content", "bounds-rejection", "freestanding-link", "replay"]
+
+# Honest whole-crate Verus error accounting (issue #111): structured counts are
+# preserved when present; frontend omissions remain explicitly unknown.
+[[route]]
+crate_pattern = "forge/src/verified_build.rs"
+design = ".design/build/verus-error-accounting.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["known-error-count", "unknown-frontend-count"]
+
+[[route]]
+crate_pattern = "forge/src/verified_build/composition.rs"
+design = ".design/build/verus-error-accounting.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["unknown-frontend-count"]
+
+[[route]]
+crate_pattern = "forge/tests/verus_error_accounting.rs"
+design = ".design/build/verus-error-accounting.md"
+reference = ["conformance/verified-composition"]
+conformance_ops = ["unknown-frontend-count", "atomic-rejection"]
+
+[[route]]
+crate_pattern = "forge/tests/struct_invariant_receiver.rs"
+design = ".design/lower/struct-invariant-receiver-binding.md"
+reference = ["conformance/struct-invariant-receiver/repro.th", "conformance/struct-invariant-receiver/accept.th"]
+conformance_ops = ["clear"]
+
+[[route]]
+crate_pattern = "forge/src/effect_wrappers.rs"
+design = ".design/basis/08-runnable-effect-link.md"
+reference = ["conformance/effect-link"]
+conformance_ops = ["now_runs", "read_runs"]
+
+# runtime effect sandbox — seccomp filter from fx (issue #57)
+[[route]]
+crate_pattern = "forge/src/sandbox.rs"
+design = ".design/forge/runtime-sandbox.md"
+reference = ["conformance/sandbox"]
+conformance_ops = ["sum"]
+
+# self-verification: the Verus-verified soundness-critical core (epic #60)
+[[route]]
+crate_pattern = "thermite-verified/src/lib.rs"
+design = ".design/verified/self-verification.md"
+reference = []
+conformance_ops = []
+
+# Stage 6 IFC — the #[sealed] abstraction barrier governs these (issue #76/#77)
+[[route]]
+crate_pattern = "thermite-spec/src/validator.rs"
+design = ".design/basis/06-provenance-and-sinks.md"
+reference = ["conformance/provenance"]
+conformance_ops = []
+
+# Stage 7 Strings — String/str + literals + ops (issue #79)
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/basis/07-strings.md"
+reference = ["conformance/string"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/ast.rs"
+design = ".design/basis/07-strings.md"
+reference = ["conformance/string_demo.th"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/parser.rs"
+design = ".design/basis/07-strings.md"
+reference = ["conformance/string_demo.th"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/validator.rs"
+design = ".design/basis/07-strings.md"
+reference = ["conformance/string_demo.th"]
+conformance_ops = []
+
+# C7 Option/Result + payload-in-contract (issue #95). These files gain the
+# built-in Option/Result variant registry, the Type::Option/Type::Result nodes +
+# the parse_type two-arg arm, the spec-match-in-ens payload projection, the new-
+# Type exhaustive-match arms, and the generated parse_u64 (the C4 07-strings.md
+# REQ-9 payoff). The external truth is the conformance test that shells the real
+# verus binary (forge/tests/option_result_conformance.rs) — the C7 cert/golden
+# corpus (conformance/option-result/cases.json) is orchestrator-authored
+# (R-CHAR-3), so `reference = []` until it lands (the hook requires a reference
+# read only for a NON-empty list; the verus-grounded test IS the C7 truth here).
+[[route]]
+crate_pattern = "thermite-spec/src/validator.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/ast.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/parser.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/l1.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/l2.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/review.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/mutation.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/vacuity.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/closure.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/strengthen.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-skill/src/generate.rs"
+design = ".design/basis/09-option-result.md"
+reference = []
+conformance_ops = []
+
+# Basis Cluster C9 (plain-fn recursion + tuples, issue #107): four files carry
+# the 10-recursion-tuples.md governing doc (a file may carry multiple governing
+# docs — the lower.rs / ast.rs precedent). The fn `dec` clause + Type::Tuple/
+# Expr::Tuple/projection AST + parse slot (syntax), the self-call validator rule
+# (spec), and the fn `decreases` + Verus-tuple lowering (lower).
+[[route]]
+crate_pattern = "thermite-syntax/src/ast.rs"
+design = ".design/basis/10-recursion-tuples.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/parser.rs"
+design = ".design/basis/10-recursion-tuples.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/validator.rs"
+design = ".design/basis/10-recursion-tuples.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/basis/10-recursion-tuples.md"
+reference = []
+conformance_ops = []
+
+# Cluster C10 (binding/control-flow ergonomics, issue #112): tuple destructuring
+# (`let (x,y)=e`), `for i in 0..n`, match guards (`x if c`), or-patterns (`1|2`),
+# and `if let`/`while let`. Mostly SUGAR over the shipped while/match/projection.
+# REQ-1/2/5 are PURE-DESUGAR in the parser (zero new AST nodes — OQ-1 parser-site
+# choice); REQ-3 (MatchArm.guard) + REQ-4 (Pattern::Or) add AST shape the
+# lower/validator emit. The verus-grounded ergonomics_conformance test IS the C10
+# truth (R-CHAR-3), so `reference = []` until a golden lands.
+[[route]]
+crate_pattern = "thermite-syntax/src/ast.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/parser.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/l1.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/l2.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/validator.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/review.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/mutation.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/vacuity.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/closure.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/strengthen.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-skill/src/generate.rs"
+design = ".design/basis/11-ergonomics.md"
+reference = []
+conformance_ops = []
+
+# Basis Cluster C11 (mutual recursion — the C9 deferral, issue #113): refines the
+# #110 blanket `MutualRecursionUnsupported` reject in `forge::check`'s
+# `mutual_recursion_cycle_fns` to CONDITIONAL — a mutual cycle whose every member
+# carries `dec` falls through to the normal lower/verus ladder (the existing
+# source-order single-`verus!`-block emission ALREADY produces a valid Verus
+# mutual-decreases group, GROUNDED, no adjacency required); a cycle with a member
+# lacking `dec` (and not `fx diverge`) stays a clean L0 cert with a refined
+# missing-decreases cause. check.rs owns the conditional; lower.rs's mutual-group
+# emission is grandfathered-correct (REQ-3). The verus-grounded
+# mutual_recursion_conformance test IS the C11 truth (R-CHAR-3); `reference = []`
+# until a golden lands.
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/basis/12-mutual-recursion.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/basis/12-mutual-recursion.md"
+reference = []
+conformance_ops = []
+
+# C12 Map<K,V> — bounded verified kv collection (issue #114/#123/#124). The
+# design's "Routes to add" mandates the syntax/spec files (ast/parser/validator)
+# carry the corpus reference + the lower.rs file carry the golden lowering
+# reference (mirroring the C7/C9 multi-file route pattern).
+[[route]]
+crate_pattern = "thermite-syntax/src/ast.rs"
+design = ".design/basis/13-map.md"
+reference = ["conformance/map_kv.th"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/parser.rs"
+design = ".design/basis/13-map.md"
+reference = ["conformance/map_kv.th"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/validator.rs"
+design = ".design/basis/13-map.md"
+reference = ["conformance/map_kv.th"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/lower.rs"
+design = ".design/basis/13-map.md"
+reference = ["tests/golden/lower/map_kv.verus.rs"]
+conformance_ops = []
+
+# Contract-faithfulness translation validation (crosslink epic #139).
+# The new artifact is the INDEPENDENT reference encoder for the SpecTherm
+# contract sublanguage (thermite-tv) + the forge check phase that discharges
+# the per-clause Z3 equivalence obligation. Governed by contract-tv.md; the
+# reference is the corpus clause (sum) + its golden lowering (the faithful
+# production side the obligation compares against the reference encoding).
+[[route]]
+crate_pattern = "thermite-tv/src/lib.rs"
+design = ".design/verified/contract-tv.md"
+reference = ["tests/golden/lower/sum.verus.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-tv/src/ref_encode.rs"
+design = ".design/verified/contract-tv.md"
+reference = ["tests/golden/lower/sum.verus.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-tv/src/obligation.rs"
+design = ".design/verified/contract-tv.md"
+reference = ["tests/golden/lower/sum.verus.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-tv/src/gen.rs"
+design = ".design/verified/contract-tv.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/contract_tv.rs"
+design = ".design/verified/contract-tv.md"
+reference = ["conformance/sum.th"]
+conformance_ops = ["sum"]
+
+# Exec-position (body) translation validation — step 2 (crosslink epic #151).
+# Step 2.1 extends TV from CONTRACT position (contract-tv.md, #139) to pure
+# EXEC-position EXPRESSIONS: an INDEPENDENT exec-VALUE reference denotation
+# (bounded u64/usize, NOT spec @/nat) wrapped as an exec-fn obligation
+# `fn tv_exec_wrap(..) ensures result == <reference> { <production exec lowering> }`,
+# discharged through forge::check::run_verus. Closes the #122/#146 cast-paren /
+# cast-< class GENERALLY (off-corpus). Governed by exec-tv.md; the reference is
+# the corpus sum body (the `acc = acc + xs[i] as u64` exec arithmetic shape).
+# (Step 2.2 — operational semantics for statements/loops/mutation — is DESIGNED in
+# .design/verified/exec-stmt-tv.md (crosslink epic #158): REQ-1 freezes the kernel
+# exec-statement subset v1, REQ-2 the operational state-denotation, REQ-3 the GROUNDED
+# straight-line body state-refinement TV (2.2.1), REQ-4 frames loops (2.2.2, kernel-
+# gated). The governed code — thermite-tv/src/exec_stmt_encode.rs, forge/src/body_tv.rs,
+# thermite-lower lower_exec_body — is unbuilt (blockers #159/#160/#161/#162); routes are
+# added by the builder at manifest time, exactly as the exec_encode.rs/exec_tv.rs routes
+# below were added when step 2.1 shipped.)
+[[route]]
+crate_pattern = "thermite-tv/src/exec_encode.rs"
+design = ".design/verified/exec-tv.md"
+reference = ["tests/golden/lower/sum.verus.rs"]
+conformance_ops = []
+
+# Step 2.2.1 — straight-line exec-BODY translation validation (crosslink epic #158).
+# Extends exec-position TV from EXPRESSIONS (exec-tv.md, #151) to straight-line exec
+# BODIES (let/assign/mutation/if/sequencing/tail, NO loops): an INDEPENDENT
+# operational-semantics state-DENOTATION (the big-step state-transformer reference,
+# #159) wrapped as a body state-refinement obligation `fn tv_body_wrap(..) ensures
+# result == <body_ref_state(source)> { <production lower_exec_body> }` (#160),
+# discharged through forge::check::run_verus. The production side is the per-body
+# exec entry thermite_lower::lower_exec_body (#161, the lower_exec_expr analogue).
+# Governed by exec-stmt-tv.md; the reference is the corpus sum body (the exec
+# let/assign/tail shape). The forge phase (#162), loops (#163, kernel-gated), and
+# the no_std target (#164) are LATER dispatches.
+[[route]]
+crate_pattern = "thermite-tv/src/exec_stmt_encode.rs"
+design = ".design/verified/exec-stmt-tv.md"
+reference = ["tests/golden/lower/sum.verus.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/exec_tv.rs"
+design = ".design/verified/exec-tv.md"
+reference = ["conformance/sum.th"]
+conformance_ops = ["sum"]
+
+# Step 2.2.1 / 2.2.2-iii — the forge body-TV check phase (crosslink #162, epic #169).
+# The state analogue of forge/src/exec_tv.rs: the `forge body-tv <file>` verb runs the
+# straight-line body state-refinement TV (exec-stmt-tv.md REQ-5) AND the v1 `while`-loop
+# three per-run obligations (loop-tv.md REQ-5 / increment 2.2.2-iii) over each checked
+# item's exec body, with four-way Faithful/Divergent/Unverifiable/Skipped reporting
+# (R-HONEST-3 — an out-of-v1 loop / non-scalar mutation / mid-body return is Skipped
+# honestly, never masking an infidelity). It lowers each body via
+# thermite_lower::lower_exec_body, builds the obligation via
+# thermite_tv::{body_equivalence_obligation, loop_entry/preservation/exit_obligation},
+# and discharges through verus (reusing the ScratchDir #53 cleanup, exactly as exec_tv).
+# Governed by exec-stmt-tv.md (REQ-5 is binding here); the reference is the corpus
+# binary_search loop (whose loop-kind / mid-body returns come out Skipped-with-reason —
+# the honest expected result).
+[[route]]
+crate_pattern = "forge/src/body_tv.rs"
+design = ".design/verified/exec-stmt-tv.md"
+reference = ["conformance/binary_search.th"]
+conformance_ops = ["binary_search"]
+
+# The SHARED Verus/Z3 rlimit/timeout signal discriminator (crosslink #192, ref #166,
+# #189). The #192 ROOT-CAUSE fix: forge had THREE per-phase copies of is_rlimit_signal
+# (contract_tv/body_tv/exec_tv) and they DRIFTED — contract_tv dropped the z3-phrased
+# `resource limit exceeded` clause, exec_tv had no rlimit gate at all. This module is
+# the ONE shared discriminator (pub(crate) fn is_rlimit_signal) consumed by all three
+# TV-phase verus-discharge paths so an `errors >= 1` rlimit-hit run routes to their
+# Unverifiable-equivalent verdict, NEVER Divergent (a solver-budget timeout is never
+# fabricated into an infidelity — R-HONEST-3 / R-CODE-4). Governed by exec-stmt-tv.md
+# (REQ-5's four-way Faithful/Divergent/Unverifiable/Skipped — the rlimit→Unverifiable
+# mapping the body-TV #189 fix established, now centralized). The reference is the
+# corpus binary_search loop (the same body-TV reference; the discriminator is the
+# body-TV four-way's degrade gate).
+[[route]]
+crate_pattern = "forge/src/tv_signal.rs"
+design = ".design/verified/exec-stmt-tv.md"
+reference = ["conformance/binary_search.th"]
+conformance_ops = ["binary_search"]
+
+# ---------------------------------------------------------------------
+# tooling — the doc-drift tripwire gating itself (crosslink #258, REQ-11)
+# ---------------------------------------------------------------------
+# DECLARATIVE in v1: the spec-discipline hook structurally cannot gate a .py
+# file (is_gated_path requires TARGET_EXTENSION ".rs" + a thermite-/forge crate
+# dir + a src/ component — see .design/gates/doc-drift-tripwire.md REQ-11).
+# This route therefore makes the gate's OWN doc-drift checkable by doc-drift.py
+# itself (which IS enforced via `make doc-drift`): editing the gate without
+# bumping the doc's audited-sha fires the tripwire on this route (the dogfood).
+[[route]]
+crate_pattern = "gates/doc-drift.py"
+design = ".design/gates/doc-drift-tripwire.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# tooling — canonical REQ registry and generated status views (GitHub #17)
+# ---------------------------------------------------------------------
+# DECLARATIVE like the doc-drift route above: the edit hook does not gate
+# gates/ and .design/ data paths, but doc-drift can still enforce that the governing
+# design doc is re-pinned when the registry, generator, generated view, or legacy
+# bridge changes.
+[[route]]
+crate_pattern = "gates/req-registry.py"
+design = ".design/gates/req-registry.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/reqs"
+design = ".design/gates/req-registry.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_req_registry.py"
+design = ".design/gates/req-registry.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = ".design/reqs/registry.toml"
+design = ".design/gates/req-registry.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = ".design/reqs/status.md"
+design = ".design/gates/req-registry.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/req-status.py"
+design = ".design/gates/req-registry.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# Stage-2 stratified cage — the three Rust mirrors of the kernel-proven
+# Lean Strat models (crosslink #331, REQ-9 [4′]). Governed by the
+# stratified Rust↔Lean correspondence doc, content-pinned and drift-gated
+# (gates/doc-drift.py) as one of the four make-audit checks that gate the
+# G2 trust flip (.design/stage2-stratified-cage.md REQ-9 / AC-9). These
+# routes make the doc-drift tripwire COVER the three mirrors; before #331
+# the strat files were unrouted (no freshness gate).
+# ---------------------------------------------------------------------
+
+[[route]]
+crate_pattern = "thermite-spec/src/classifier.rs"
+design = ".design/verified/strat-rust-lean-correspondence.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-tv/src/strat_ref_encode.rs"
+design = ".design/verified/strat-rust-lean-correspondence.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-tv/src/strat_two_phase.rs"
+design = ".design/verified/strat-rust-lean-correspondence.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# Stage 4 checked EPR reconstruction. The design pin covers the canonical
+# source bridge, typed Lean semantics, proof/model replay, production route,
+# audit boundary, and the single memory-bounded completion gate.
+# ---------------------------------------------------------------------
+
+[[route]]
+crate_pattern = "thermite-spec/src/s2_recon.rs"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/lib.rs"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/epr_reconstruct.rs"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/lean_smt_export.rs"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/audit.rs"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/tests/bv_lowering.rs"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/PropReconstruct.lean"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/Strat/*.lean"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "dev/g4-*"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+# gates/g4.sh was gates/g4.sh and was covered by the dev/g4-* glob
+# above until RFC-18 step 1 moved it. Named explicitly so the move does not
+# silently drop its route (R-XLATE-2 would otherwise block the next edit).
+crate_pattern = "gates/g4.sh"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "dev/install-g4-tools.sh"
+design = ".design/stage4-epr-reconstruction.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# tooling — the control plane gating itself (crosslink #93)
+# ---------------------------------------------------------------------
+# The two agent-facing gates (spec-discipline.py, anti-pattern-gate.py) only
+# fire because .claude/settings.json WIRES them, and until #93 no route covered
+# that file — so commit 5581b65f could de-wire both gates for the whole Stage-3
+# arc while README/goal.md/the agent defs kept claiming they enforce
+# automatically, and nothing in the repo could see it.
+#
+# DECLARATIVE for spec-discipline, ENFORCED for doc-drift (the same split as the
+# doc-drift.py dogfood route above): is_gated_path requires TARGET_EXTENSION
+# ".rs" + a thermite-/forge crate dir + a src/ component, so the hook
+# structurally cannot gate a .json or .md control-plane file. These routes make
+# the control plane CONTENT-PINNED under doc-drift.py (which IS enforced via
+# `make doc-drift` + CI): editing the hook wiring or an agent def without
+# bumping .design/gates/control-plane.md's audited-content-sha256 fires the
+# tripwire. The wiring itself is separately asserted by
+# gates/control-plane-check.py (`make control-plane`).
+
+[[route]]
+crate_pattern = ".claude/settings.json"
+design = ".design/gates/control-plane.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = ".claude/agents/*.md"
+design = ".design/gates/control-plane.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/control-plane-check.py"
+design = ".design/gates/control-plane.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# The effect algebra — what a row denotes (RFC-8)
+# ---------------------------------------------------------------------
+#   .design/syntax/effect-algebra.md contracts the three REQs RFC-8
+#   introduces: REQ-SYNTAX-EFFECT-BASIS and REQ-SYNTAX-EFFECT-DECLARED in
+#   thermite-syntax, REQ-SPEC-EFFECT-COMMUTATION in thermite-spec (the
+#   R-DEFER-7 order, and the scopes .design/reqs/registry.toml records).
+#   Both files are ahead of the build, so they take the manifest-time
+#   `unbuilt = true` convention documented at the boundary.rs routes above.
+#
+#   The declaration surface (REQ-7) also touches ast.rs and parser.rs, which
+#   are already routed to their own docs; that step re-pins the eight docs
+#   governing those two files and adds no route here.
+[[route]]
+crate_pattern = "thermite-syntax/src/effect_basis.rs"
+design = ".design/syntax/effect-algebra.md"
+reference = []
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/effect_commutation.rs"
+design = ".design/syntax/effect-algebra.md"
+reference = []
+conformance_ops = []
+
+# ---------------------------------------------------------------------
+# Verified effect rows (RFC-9)
+# ---------------------------------------------------------------------
+[[route]]
+crate_pattern = "thermite-syntax/src/ast.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/src/parser.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-syntax/tests/verified_effect_rows.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/effect_commutation.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/src/regions.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-spec/tests/verified_effect_rows.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/effects.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/rfcs/0009-verified-effect-rows.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/build.rs"
+design = ".design/syntax/verified-effect-rows.md"
+reference = ["conformance/verified-build"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/rfc9-effect-inventory.py"
+design = ".design/syntax/verified-effect-rows.md"
+reference = ["gates/rfc9-effect-inventory.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/rfc9-effect-inventory.json"
+design = ".design/syntax/verified-effect-rows.md"
+reference = ["gates/rfc9-effect-inventory.py"]
+conformance_ops = []
+
+# Issue #48 first implementation slice: the derived public-AST inventory, its
+# explicit ledger, and fail-closed oracle tests are one governed surface.
+[[route]]
+crate_pattern = "gates/language-completeness-inventory.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-completeness-inventory.toml"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-completeness-inventory.toml"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-completeness-inventory.py", "gates/language-support-matrix.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-support-matrix.json"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-completeness-inventory.py", "gates/language-completeness-inventory.toml"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_language_completeness_inventory.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-completeness-inventory.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/outcome_matrix.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["forge/tests/language_outcome_matrix.rs", "gates/language-outcome-matrix.json", "lean/Thermite/LanguageCompleteness.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/audit.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["forge/src/manifest.rs", ".design/rfcs/0003-certification-surface.md"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/manifest.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["thermite-lower/src/l1.rs", "thermite-lower/src/l3.rs", ".design/rfcs/0003-certification-surface.md"]
+conformance_ops = ["CertificationPosition", "with_l1_artifact", "with_verus_artifact"]
+
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["thermite-lower/src/l3.rs", "forge/src/manifest.rs"]
+conformance_ops = ["assemble_certificate", "lower_l3_artifact"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/l3.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["forge/src/check.rs", "forge/src/manifest.rs"]
+conformance_ops = ["thermite-verus-v1", "query_identity"]
+
+[[route]]
+crate_pattern = "forge/tests/language_outcome_matrix.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["forge/src/outcome_matrix.rs", "gates/language-outcome-matrix.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-outcome-matrix.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-outcome-matrix.json", "forge/src/outcome_matrix.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-outcome-matrix.json"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-outcome-matrix.py", "forge/src/outcome_matrix.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_language_outcome_matrix.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-outcome-matrix.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/rfc3_replay.rs"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.json", "lean/Thermite/CertificationReplay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/rfc3-certification-replay.py"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.json", "forge/src/rfc3_replay.rs", "lean/Thermite/CertificationReplay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/rfc3-certification-replay.json"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.py", "forge/src/rfc3_replay.rs", "lean/Thermite/CertificationReplay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/CertificationReplay.lean"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.py", "gates/rfc3-certification-replay.json", "forge/src/rfc3_replay.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/CertificationReplaySemantics.lean"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["lean/Thermite/CertificationReplay.lean", "gates/rfc3-certification-replay.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_rfc3_certification_replay.py"
+design = ".design/rfc3-certification-metatheory.md"
+reference = ["gates/rfc3-certification-replay.py", "gates/rfc3-certification-replay.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/AssurancePolicyV2.lean"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["lean/Thermite/AssuranceV2Replay.lean", "gates/assurance-v2-replay.json", "forge/src/assurance_v2.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/AssuranceV2Replay.lean"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["lean/Thermite/AssurancePolicyV2.lean", "gates/assurance-v2-replay.py", "gates/assurance-v2-replay.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/assurance_v2.rs"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.json", "lean/Thermite/AssuranceV2Replay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/assurance-v2-replay.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.json", "lean/Thermite/AssuranceV2Replay.lean", "forge/src/assurance_v2.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/assurance-v2-replay.json"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.py", "lean/Thermite/AssuranceV2Replay.lean", "forge/src/assurance_v2.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/assurance-v2-issuers.json"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.py", "lean/Thermite/AssurancePolicyV2.lean", "forge/src/check.rs", "forge/src/kani.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_assurance_v2_replay.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-v2-replay.py", "gates/assurance-v2-replay.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-rfc-evolution.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-rfc-evolution.toml", "gates/tests/test_language_rfc_evolution.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/language-rfc-evolution.toml"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-rfc-evolution.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_language_rfc_evolution.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/language-rfc-evolution.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/completeness-review.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/completeness-review.toml", "gates/language-completeness-inventory.toml", "gates/tests/test_completeness_review.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/completeness-review.toml"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/completeness-review.py", "gates/language-completeness-inventory.toml"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_completeness_review.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/completeness-review.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/LanguageCompleteness.lean"
+design = ".design/versioned-language-completeness.md"
+reference = ["lean/Thermite/CheckedTraversal.lean", "lean/Thermite/PinLanguageNarrowing.lean", "gates/lean-axiom-probe.sh"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/PinLanguageNarrowing.lean"
+design = ".design/versioned-language-completeness.md"
+reference = ["lean/Thermite/LanguageCompleteness.lean", "gates/lean-axiom-probe.sh"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/witness.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["thermite-lower/tests/traversal_witness.rs", "lean/Thermite/CheckedTraversal.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/tests/traversal_witness.rs"
+design = ".design/versioned-language-completeness.md"
+reference = ["thermite-lower/src/witness.rs", "lean/Thermite/CheckedTraversal.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "lean/Thermite/EffectRows.lean"
+design = ".design/syntax/verified-effect-rows.md"
+reference = [".design/research/relational-contracts.md"]
+conformance_ops = ["gates/lean-axiom-probe.sh"]
+
+# ---------------------------------------------------------------------
+# Shared-state invariants and checked traversal (RFC-10 revision 2)
+# ---------------------------------------------------------------------
+[[route]]
+crate_pattern = "thermite-syntax/src/semantic.rs"
+design = ".design/rfc10-checked-traversal.md"
+reference = [
+  ".design/rfcs/0010-shared-state-invariants.md",
+  ".design/syntax/shared-state-invariants.md",
+  ".design/rfc10-evidence-completeness.md",
+]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/checked.rs"
+design = ".design/rfc10-checked-traversal.md"
+reference = [
+  ".design/rfcs/0010-shared-state-invariants.md",
+  ".design/syntax/shared-state-invariants.md",
+  ".design/rfc10-evidence-completeness.md",
+]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/locks.rs"
+design = ".design/rfc10-checked-traversal.md"
+reference = [
+  ".design/rfcs/0010-shared-state-invariants.md",
+  ".design/syntax/shared-state-invariants.md",
+]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "thermite-lower/src/witness.rs"
+design = ".design/rfc10-checked-traversal.md"
+reference = [
+  ".design/rfcs/0010-shared-state-invariants.md",
+  ".design/rfc10-evidence-completeness.md",
+]
+conformance_ops = []

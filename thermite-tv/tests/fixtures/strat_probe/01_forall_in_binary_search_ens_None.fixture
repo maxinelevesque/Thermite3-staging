@@ -1,6 +1,6 @@
-# strat_probe fixture — binary_search.ens.None
+# strat_probe fixture — binary_search.ensures.None
 shape: forall_in
-source: binary_search.ens.None
+source: binary_search.ensures.None
 origin: corpus
 hit: true
 --- production ---

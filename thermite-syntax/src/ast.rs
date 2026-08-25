@@ -3,8 +3,8 @@
 //!
 //! Governing design: `.design/syntax/ast.md`. The node set mirrors
 //! `.design/syntax/surface-grammar.md` one-for-one. The mandatory-contract
-//! rule (§4.1) is encoded in the types: `Contract.req`/`Contract.fx` are
-//! non-`Option`, `Contract.ens` is a non-empty `Vec`, and `LoopNode` carries a
+//! rule (§4.1) is encoded in the types: `Contract.requires`/`Contract.effects` are
+//! non-`Option`, `Contract.ensures` is a non-empty `Vec`, and `LoopNode` carries a
 //! non-empty `invs` plus a single `dec`, so an ill-formed contract is
 //! unrepresentable (ast.md REQ-2/REQ-5). The frontend is registry-free:
 //! combinator calls (`forall_in`, `sorted`) are ordinary `Expr::Call` nodes.
@@ -136,6 +136,45 @@ use crate::lexer::Span;
 /// An identifier (a single name segment).
 pub type Ident = String;
 
+/// A shared-state region path. The first segment names a [`SharedDeclItem`];
+/// later segments name fields reached through declared types.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct RegionPath {
+    pub segments: Vec<Ident>,
+}
+
+impl RegionPath {
+    pub fn root(name: Ident) -> Self {
+        Self {
+            segments: vec![name],
+        }
+    }
+
+    pub fn display(&self) -> String {
+        self.segments.join(".")
+    }
+}
+
+impl std::fmt::Display for RegionPath {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.display())
+    }
+}
+
+impl From<&str> for RegionPath {
+    fn from(value: &str) -> Self {
+        Self {
+            segments: value.split('.').map(str::to_string).collect(),
+        }
+    }
+}
+
+impl From<String> for RegionPath {
+    fn from(value: String) -> Self {
+        Self::from(value.as_str())
+    }
+}
+
 /// A whole parsed program: the recovered top-level items, in source order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Program {
@@ -149,7 +188,7 @@ pub struct Program {
 /// `match`es over `Item` downstream (thermite-spec/thermite-lower/forge) gain
 /// the validate/lower arms in basis stages 1b/1c.
 #[derive(Debug, Clone, PartialEq, Eq)]
-// C9-A (#108): adding `FnItem.dec: Option<Clause>` (the recursive-fn termination
+// C9-A (#108): adding `FnItem.measures: Option<Clause>` (the recursive-fn termination
 // measure) grew `Item::Fn` past clippy's `large_enum_variant` threshold (Fn ~560
 // bytes vs SpecFn ~256). Boxing `Item::Fn(Box<FnItem>)` would ripple a `Box` deref
 // to every exhaustive `match Item` across thermite-spec/thermite-lower/forge
@@ -165,7 +204,7 @@ pub struct Program {
 pub enum Item {
     Fn(FnItem),
     SpecFn(SpecFnItem),
-    /// A `struct NAME { field: type, … } [inv <expr>]` product type
+    /// A `struct NAME { field: type, … } [keeps <expr>]` product type
     /// (`.design/basis/01-adts.md` REQ-1).
     Struct(StructItem),
     /// An `enum NAME { Variant, Variant(type, …), Variant { field: type, … } }`
@@ -182,6 +221,14 @@ pub enum Item {
     /// (REQ-9). Increment 2a ships the PARSE + AST + ADDRESS + hole-gating surface
     /// (each kind has parse/address/round-trip tests); the consumers arrive next.
     Forge(ForgeItem),
+    /// An RFC-8 user-declared effect combination.
+    EffectDecl(EffectDeclItem),
+    /// An RFC-9 declared shared-state root: `shared NAME: TYPE`.
+    SharedDecl(SharedDeclItem),
+    /// An RFC-9 named set of roots that may execute concurrently.
+    Concurrent(ConcurrentItem),
+    /// An RFC-10 lock guarding one RFC-9 shared-state region.
+    LockDecl(LockDeclItem),
 }
 
 impl Item {
@@ -196,8 +243,56 @@ impl Item {
             Item::Struct(s) => &s.name,
             Item::Enum(e) => &e.name,
             Item::Forge(forge) => forge.name(),
+            Item::EffectDecl(effect) => &effect.name,
+            Item::SharedDecl(shared) => &shared.name,
+            Item::Concurrent(composition) => &composition.name,
+            Item::LockDecl(lock) => &lock.name,
         }
     }
+}
+
+/// `shared NAME: TYPE` — the root of a field-derived region tree.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SharedDeclItem {
+    pub name: Ident,
+    pub ty: Type,
+    pub span: Span,
+}
+
+/// `concurrent NAME { ROOT, ... }` — roots compared for effect commutation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConcurrentItem {
+    pub name: Ident,
+    pub roots: Vec<Ident>,
+    pub span: Span,
+}
+
+/// `lock NAME guards REGION [after LOCK]` — a symbolic lock and its order edge.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LockDeclItem {
+    pub name: Ident,
+    pub guards: RegionPath,
+    pub after: Option<Ident>,
+    pub span: Span,
+}
+
+/// `effect name(param) = primitive + ...` (effect-algebra.md REQ-7).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EffectDeclItem {
+    pub name: Ident,
+    pub param: Ident,
+    pub combination: Vec<EffectPrimitive>,
+    pub span: Span,
+}
+
+/// A primitive admitted on an effect declaration's right-hand side.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EffectPrimitive {
+    State(Ident),
+    Accrues(Ident),
+    Exception,
+    Partiality,
+    Io(Ident),
 }
 
 /// A Stage-1 forge-tier item (`.design/stage1-forge-tier.md` REQ-3, increment 2a).
@@ -213,8 +308,8 @@ pub enum ForgeItem {
     /// `lemma NAME(params) req … ens … proof { … }` — a named lemma carrying a
     /// req/ens statement and a proof block.
     Lemma(LemmaItem),
-    /// `proof for f { ens#k by { … } }` — a proof item discharging specific
-    /// contract clauses (`ens#k`) of an existing function `f`.
+    /// `proof for f { ensures#k by { … } }` — a proof item discharging specific
+    /// contract clauses (`ensures#k`) of an existing function `f`.
     Proof(ProofItem),
     /// `witness { inhabit (…); falsify N; }` — a covenant witness block (the
     /// covenant logic is increment 2b; here parsed + represented only).
@@ -246,7 +341,7 @@ pub struct PropFnItem {
     pub name: Ident,
     pub params: Vec<Param>,
     pub ret: Type,
-    pub dec: Option<Clause>,
+    pub measures: Option<Clause>,
     pub body: Block,
     pub span: Span,
 }
@@ -262,18 +357,18 @@ pub struct PropFnItem {
 pub struct LemmaItem {
     pub name: Ident,
     pub params: Vec<Param>,
-    pub req: Clause,
-    pub ens: Vec<Clause>,
+    pub requires: Clause,
+    pub ensures: Vec<Clause>,
     pub proof: ProofBlock,
     pub span: Span,
 }
 
-/// A `proof for f { ens#k by { … } }` item (`.design/stage1-forge-tier.md`
+/// A `proof for f { ensures#k by { … } }` item (`.design/stage1-forge-tier.md`
 /// REQ-3). A proof item discharges one or more specific contract clauses of an
-/// existing function `target` (`f`), each named by a [`ClauseSelector`] (`ens#k`)
+/// existing function `target` (`f`), each named by a [`ClauseSelector`] (`ensures#k`)
 /// and proved by a `by { … }` proof block. The clauses are resolved against `f`'s
 /// contract by the proof view (increment 2e, REQ-7); here the surface is parsed
-/// and addressed (`f.proof.ens#k`) only.
+/// and addressed (`f.proof.ensures#k`) only.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProofItem {
     /// The target function name `f` (the `proof for f` head). The address root.
@@ -283,7 +378,7 @@ pub struct ProofItem {
 }
 
 /// One `clause by { … }` obligation inside a [`ProofItem`]
-/// (`.design/stage1-forge-tier.md` REQ-3): a [`ClauseSelector`] (`ens#k`) plus the
+/// (`.design/stage1-forge-tier.md` REQ-3): a [`ClauseSelector`] (`ensures#k`) plus the
 /// proof block discharging it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProofObligation {
@@ -292,10 +387,10 @@ pub struct ProofObligation {
     pub span: Span,
 }
 
-/// A reference to a specific contract clause of a function, e.g. `ens#k`
+/// A reference to a specific contract clause of a function, e.g. `ensures#k`
 /// (`.design/stage1-forge-tier.md` REQ-3). `keyword` is the clause family
-/// (`"ens"`/`"req"`/`"inv"`); `index` is the `#k` ordinal, or `None` for an
-/// unindexed family (`req`). The surface spelling of the `f.proof.ens#k` address.
+/// (`"ensures"`/`"requires"`/`"keeps"`); `index` is the `#k` ordinal, or `None` for an
+/// unindexed family (`requires`). The surface spelling of the `f.proof.ensures#k` address.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClauseSelector {
     pub keyword: Ident,
@@ -370,7 +465,7 @@ pub struct Falsify {
 pub struct StructItem {
     pub name: Ident,
     pub fields: Vec<FieldDef>,
-    pub inv: Option<Clause>,
+    pub keeps: Option<Clause>,
     pub sealed: bool,
     pub span: Span,
 }
@@ -439,7 +534,7 @@ pub struct FnItem {
     /// is a validator error (REQ-2). The clause parses after `fx` (REQ-1, OQ-4,
     /// keeping the `req`/`ens`/`fx` parse byte-stable), mirroring the loop order
     /// where `dec` follows the `inv`s.
-    pub dec: Option<Clause>,
+    pub measures: Option<Clause>,
     /// The Thermite body — `Some(Block)` for an in-language fn, `None` for a
     /// boundary fn (the body is foreign; ffi REQ-2).
     pub body: Option<Block>,
@@ -544,7 +639,7 @@ pub struct SpecFnItem {
     pub name: Ident,
     pub params: Vec<Param>,
     pub ret: Type,
-    pub dec: Clause,
+    pub measures: Clause,
     pub body: Block,
     pub span: Span,
 }
@@ -584,9 +679,9 @@ pub struct Param {
 /// non-optional: `ens` is a `Vec` the parser only ever fills with ≥1 element.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Contract {
-    pub req: Clause,
-    pub ens: Vec<Clause>,
-    pub fx: EffectRow,
+    pub requires: Clause,
+    pub ensures: Vec<Clause>,
+    pub effects: EffectRow,
 }
 
 /// The fixed bit-width of a `@bv` machine-semantics clause tag
@@ -657,11 +752,13 @@ pub enum EffectRow {
 }
 
 /// A single effect in a non-`pure` row.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Effect {
-    Read(Ident),
-    Write(Ident),
-    Net(Ident),
+    Read(RegionPath),
+    Write(RegionPath),
+    Net(RegionPath),
+    /// Public, transitive acquisition footprint for an RFC-10 lock.
+    Owns(Ident),
     Alloc,
     Time,
     Rand,
@@ -673,85 +770,6 @@ pub enum Effect {
     /// (runtime-sandbox.md REQ-7); it carries no proof obligation (only the
     /// syscall grant + the §4.1 row-subsumption every atom is subject to).
     Term,
-    /// A privileged operation in one frozen kernel platform domain
-    /// (`.design/build/bootable-multicore-kernel.md` REQ-MKERNEL-3). The domain
-    /// is closed by [`PlatformDomain`]; a source program cannot mint an
-    /// unregistered platform effect by spelling an arbitrary identifier.
-    Platform(PlatformDomain),
-}
-
-/// The closed authority/effect domains of the bootable-kernel target platform
-/// layer (`.design/build/bootable-multicore-kernel.md` REQ-MKERNEL-3).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum PlatformDomain {
-    Boot,
-    Memory,
-    Mmio,
-    Pio,
-    Irq,
-    Cpu,
-    Atomic,
-    Smp,
-    Dma,
-    Clock,
-    Entropy,
-    Power,
-}
-
-impl PlatformDomain {
-    /// Every frozen kernel-platform domain, in canonical surface order.
-    pub const ALL: [Self; 12] = [
-        Self::Boot,
-        Self::Memory,
-        Self::Mmio,
-        Self::Pio,
-        Self::Irq,
-        Self::Cpu,
-        Self::Atomic,
-        Self::Smp,
-        Self::Dma,
-        Self::Clock,
-        Self::Entropy,
-        Self::Power,
-    ];
-
-    /// Parse the one canonical surface spelling of a platform domain. The
-    /// parser is the production consumer of this closed mapping.
-    pub fn from_surface(surface: &str) -> Option<Self> {
-        match surface {
-            "boot" => Some(Self::Boot),
-            "memory" => Some(Self::Memory),
-            "mmio" => Some(Self::Mmio),
-            "pio" => Some(Self::Pio),
-            "irq" => Some(Self::Irq),
-            "cpu" => Some(Self::Cpu),
-            "atomic" => Some(Self::Atomic),
-            "smp" => Some(Self::Smp),
-            "dma" => Some(Self::Dma),
-            "clock" => Some(Self::Clock),
-            "entropy" => Some(Self::Entropy),
-            "power" => Some(Self::Power),
-            _ => None,
-        }
-    }
-
-    /// The canonical effect-row spelling used by manifests and lowering.
-    pub fn surface(self) -> &'static str {
-        match self {
-            Self::Boot => "boot",
-            Self::Memory => "memory",
-            Self::Mmio => "mmio",
-            Self::Pio => "pio",
-            Self::Irq => "irq",
-            Self::Cpu => "cpu",
-            Self::Atomic => "atomic",
-            Self::Smp => "smp",
-            Self::Dma => "dma",
-            Self::Clock => "clock",
-            Self::Entropy => "entropy",
-            Self::Power => "power",
-        }
-    }
 }
 
 /// A `{ ... }` block: statements plus an optional trailing tail expression
@@ -783,6 +801,12 @@ pub enum Stmt {
         else_: Option<Block>,
     },
     Loop(LoopNode),
+    /// A lexical RFC-10 critical section.
+    Holding {
+        lock: Ident,
+        body: Block,
+        span: Span,
+    },
     /// `break;` — the loop-control statement (ast.md REQ-12, #93). Payload-less
     /// and value-less (no loop label, no `break expr` — §2.3). Lowers to the
     /// Verus-native `break;` (`verus-lowering.md` REQ-12). Valid only inside a
@@ -803,7 +827,7 @@ pub enum Stmt {
 pub struct LoopNode {
     pub kind: LoopKind,
     pub invs: Vec<Clause>,
-    pub dec: Clause,
+    pub measures: Clause,
     pub body: Block,
     pub span: Span,
 }

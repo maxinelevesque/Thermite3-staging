@@ -63,7 +63,7 @@ fn build_args(bundle: &Path, shell: &str, crate_name: &str) -> Vec<String> {
         "--crate-name".to_string(),
         crate_name.to_string(),
         "--target".to_string(),
-        "kernel".to_string(),
+        "freestanding".to_string(),
         "--out".to_string(),
         bundle.to_string_lossy().to_string(),
     ]

@@ -13,3 +13,6 @@ thermite-spec = { path = "../thermite-spec" }
 # (mechanism (c) — the plain-Rust mirror of the proved exec body), anchoring the
 # soundness-critical decision to the `verus` proof.
 thermite-verified = { path = "../thermite-verified" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"

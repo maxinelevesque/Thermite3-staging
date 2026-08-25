@@ -86,6 +86,10 @@ pub enum ForgeError {
     /// or it reported an internal (VIR) error (never swallowed, REQ-3 /
     /// R-CODE-4).
     VerusOutput { detail: String },
+    /// RFC-10 Lean replay could not be invoked or communicated with.
+    Rfc10ReplayUnavailable { detail: String },
+    /// RFC-10 Lean replay ran and kernel-rejected the checked witness.
+    Rfc10ReplayRejected { detail: String },
     /// The `cargo kani` / kani binary was not found on `PATH` — an environment
     /// error, not a verification failure (`.design/lower/l2-kani.md` REQ-8). The
     /// L2 parallel of `VerusAbsent`.
@@ -157,6 +161,10 @@ pub enum ForgeError {
     /// and the refuting counterexample). Surfaced under `--engine auto` (a Verus and a
     /// Lean verdict on the same obligation).
     SoundnessAlarm(crate::engine::Disagreement),
+    /// A persisted or legacy certificate had a contradictory structural shape
+    /// and could not be decoded into the typed result arbiter. This is a hard
+    /// soundness halt, not permission to guess a favorable disposition.
+    ResultArbiterAlarm { item: String, detail: String },
 }
 
 impl fmt::Display for ForgeError {
@@ -192,6 +200,12 @@ impl fmt::Display for ForgeError {
             ForgeError::VerusSpawn { source } => write!(f, "failed to spawn verus: {source}"),
             ForgeError::VerusOutput { detail } => {
                 write!(f, "could not interpret verus output: {detail}")
+            }
+            ForgeError::Rfc10ReplayUnavailable { detail } => {
+                write!(f, "RFC-10 Lean replay unavailable: {detail}")
+            }
+            ForgeError::Rfc10ReplayRejected { detail } => {
+                write!(f, "RFC-10 verified replay rejected: {detail}")
             }
             ForgeError::KaniAbsent { binary } => write!(
                 f,
@@ -236,6 +250,10 @@ impl fmt::Display for ForgeError {
             }
             ForgeError::Usage(msg) => write!(f, "usage error: {msg}"),
             ForgeError::SoundnessAlarm(d) => write!(f, "SOUNDNESS ALARM: {d}"),
+            ForgeError::ResultArbiterAlarm { item, detail } => write!(
+                f,
+                "SOUNDNESS ALARM: result arbiter rejected certificate for `{item}`: {detail}"
+            ),
             ForgeError::StratDifferential { detail } => {
                 write!(
                     f,
@@ -250,11 +268,11 @@ impl std::error::Error for ForgeError {}
 
 impl ForgeError {
     /// The exit code class for this error (REQ-5). Every `ForgeError` is an
-    /// environment/usage/IO outcome — a verification failure is a reported
-    /// certificate, not a `ForgeError`. So every variant maps to
-    /// [`EXIT_ENVIRONMENT`].
     fn exit_code(&self) -> u8 {
-        EXIT_ENVIRONMENT
+        match self {
+            Self::Rfc10ReplayRejected { .. } => EXIT_VERIFICATION_FAILURE,
+            _ => EXIT_ENVIRONMENT,
+        }
     }
 }
 
@@ -358,14 +376,13 @@ enum Command {
         /// `./<PATH>` runs directly — no `/tmp/..._build_out_<pid>/` path / wrapper
         /// script). `None` keeps the existing stable /tmp output path.
         out: Option<PathBuf>,
-        /// `--target std|kernel` (#197; `.design/build/kernel-target.md` REQ-1): the
+        /// `--target std|kernel` (#197; `.design/build/freestanding-target.md` REQ-1): the
         /// codegen profile. The default ([`BuildTarget::Std`]) is the unchanged
-        /// hosted build; `--target kernel` emits a freestanding `no_std + alloc`
+        /// hosted build; `--target freestanding` emits a freestanding `no_std + alloc`
         /// library rlib (no `main`/seccomp, `panic=abort`) and refuses ambient-syscall
-        /// `fx` rows. `--target kernel` + `--entry` is a usage error.
+        /// `fx` rows. `--target freestanding` + `--entry` is a usage error.
         target: BuildTarget,
-        /// Frozen platform profile required by `--target kernel-image`.
-        platform: Option<String>,
+        lock_provider: Option<String>,
     },
     /// `forge verify-build <bundle-dir> [--replay] [--json]` validates the
     /// canonical receipt and all bound files, and optionally reproduces the
@@ -393,7 +410,7 @@ enum Command {
         generated: Option<usize>,
         /// `--seed <u64>` — the generator seed for the `--generated` space. `None`
         /// uses the pinned [`TV_DEFAULT_SEED`] (deterministic, for the corpus gate);
-        /// a rotating value (the scheduled-CI job, `thermite2-program.md` REQ-2c)
+        /// a rotating value (the scheduled-CI job, `docs/v2/program.md` REQ-2c)
         /// walks a different slice of the off-corpus clause space each run, surfacing
         /// seed-dependent lowering divergences the fixed-seed gate would never reach.
         seed: Option<u64>,
@@ -905,13 +922,13 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             let mut self_test = false;
             let mut out: Option<PathBuf> = None;
             let mut target = BuildTarget::Std;
-            let mut platform = None;
             let mut level = BuildLevel::L1;
             let mut exports = Vec::new();
             let mut composition_exports = Vec::new();
             let mut composition_shells = Vec::new();
             let mut crate_name = None;
             let mut sandbox_flag_seen = false;
+            let mut lock_provider = None;
             let mut iter = iter.peekable();
             while let Some(arg) = iter.next() {
                 match arg.as_str() {
@@ -961,33 +978,25 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                         crate_name = Some(value.to_string());
                     }
                     "--target" => {
-                        // `--target std|kernel` (#197; `.design/build/kernel-target.md`
+                        // `--target std|kernel` (#197; `.design/build/freestanding-target.md`
                         // REQ-1). The value is a separate token; a missing or unknown
-                        // value is a Usage error, never a silent default. `kernel`
-                        // selects the freestanding no_std+alloc rlib profile.
+                        // value is a Usage error, never a silent default.
+                        // `freestanding` selects the no_std+alloc rlib profile.
                         let value = iter.next().ok_or_else(|| {
                             ForgeError::Usage(
-                                "`--target` requires a value (`std`, `kernel`, or `kernel-image`)"
-                                    .to_string(),
+                                "`--target` requires a value (`std` or `freestanding`)".to_string(),
                             )
                         })?;
                         target = match value.as_str() {
                             "std" => BuildTarget::Std,
-                            "kernel" => BuildTarget::Kernel,
-                            "kernel-image" => BuildTarget::KernelImage,
+                            "freestanding" => BuildTarget::Freestanding,
                             other => {
                                 return Err(ForgeError::Usage(format!(
-                                    "unknown `--target` value `{other}` (expected `std`, \
-                                     `kernel`, or `kernel-image`)"
+                                    "unknown `--target` value `{other}` \
+                                     (expected `std` or `freestanding`)"
                                 )));
                             }
                         };
-                    }
-                    "--platform" => {
-                        let value = iter.next().ok_or_else(|| {
-                            ForgeError::Usage("`--platform` requires a profile name".to_string())
-                        })?;
-                        platform = Some(value.to_string());
                     }
                     "--entry" => {
                         let value = iter.next().ok_or_else(|| {
@@ -998,6 +1007,19 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                             )
                         })?;
                         entry = Some(value.to_string());
+                    }
+                    "--lock-provider" => {
+                        let value = iter.next().ok_or_else(|| {
+                            ForgeError::Usage(
+                                "`--lock-provider` requires a provider name (`test`)".to_string(),
+                            )
+                        })?;
+                        if value != "test" {
+                            return Err(ForgeError::Usage(format!(
+                                "unknown lock provider `{value}` (only the non-production `test` provider is repository-owned; production providers are target integrations)"
+                            )));
+                        }
+                        lock_provider = Some(value.to_string());
                     }
                     "--out" | "-o" => {
                         // `--out <PATH>` / `-o <PATH>` (#128; REQ-7). The value is a
@@ -1044,31 +1066,14 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                         .to_string(),
                 )
             })?;
-            if matches!(target, BuildTarget::KernelImage) {
-                if !matches!(level, BuildLevel::L3) {
-                    return Err(ForgeError::Usage(
-                        "`--target kernel-image` requires `--level l3`".to_string(),
-                    ));
-                }
-                if platform.as_deref() != Some("x86_64-pc-uefi-smp-v1") {
-                    return Err(ForgeError::Usage(
-                        "`--target kernel-image` requires `--platform \
-                         x86_64-pc-uefi-smp-v1`"
-                            .to_string(),
-                    ));
-                }
-                if out.is_none() {
-                    return Err(ForgeError::Usage(
-                        "`--target kernel-image` requires `--out <image.img>`".to_string(),
-                    ));
-                }
-            } else if platform.is_some() {
-                return Err(ForgeError::Usage(
-                    "`--platform` is valid only with `--target kernel-image`".to_string(),
-                ));
-            }
             match level {
                 BuildLevel::L3 => {
+                    if lock_provider.is_some() {
+                        return Err(ForgeError::Usage(
+                            "`--lock-provider test` currently supplies the L1 executable provider only; L3 provider mappings must come from the target integration and are not silently accepted"
+                                .to_string(),
+                        ));
+                    }
                     if entry.is_some() || sandbox_flag_seen {
                         return Err(ForgeError::Usage(
                             "`forge build --level l3` is a library build and rejects `--entry`, \
@@ -1118,7 +1123,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                 },
                 out,
                 target,
-                platform,
+                lock_provider,
             })
         }
         ForgeMethod::VerifyBuild => {
@@ -1558,7 +1563,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             })?;
             let addr = addr.ok_or_else(|| {
                 ForgeError::Usage(
-                    "`forge edit` requires a semantic <addr> (e.g. `binary_search.loop#1.inv#2`)"
+                    "`forge edit` requires a semantic <addr> (e.g. `binary_search.loop#1.keeps#2`)"
                         .to_string(),
                 )
             })?;
@@ -1753,7 +1758,7 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             sandbox,
             out,
             target,
-            platform,
+            lock_provider,
         } => run_build(BuildRun {
             file: &file,
             level,
@@ -1766,7 +1771,7 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             sandbox,
             out: out.as_deref(),
             target,
-            platform: platform.as_deref(),
+            lock_provider: lock_provider.as_deref(),
         }),
         Command::VerifyBuild {
             bundle,
@@ -2090,6 +2095,7 @@ fn run_check(
     mutation_floor: f64,
     engine: check::EngineSelection,
 ) -> Result<ExitCode, ForgeError> {
+    emit_effect_warnings(file, json)?;
     // The default (no flag) uses automatic L3 routing; `--level l2` is an explicit
     // choice that runs the Kani bounded model check instead, never an automatic
     // degrade (`.design/lower/l2-kani.md` REQ-7; #10 owns the auto-degrade). The
@@ -2167,7 +2173,11 @@ fn run_check(
     // failure — non-zero, but a valid cert document on stdout (verdict-in-cert).
     // The #10 assurance aggregate's `Failed` headline and this all-certified check
     // agree (both use `manifest::cert_certifies`).
-    let all_certified = matches!(manifest.project, ProjectAssurance::Certified(_));
+    // An explicit L2 request that produced no function certificate did not run
+    // a bounded check. `[]` is useful machine output, but it is not vacuous
+    // project certification and therefore must not exit successfully.
+    let all_certified = !matches!(level, CheckLevel::L2) || !certs.is_empty();
+    let all_certified = all_certified && matches!(manifest.project, ProjectAssurance::Certified(_));
     if all_certified {
         Ok(ExitCode::SUCCESS)
     } else {
@@ -2209,17 +2219,19 @@ fn run_audit(
     // section — auditing a machine-semantics clause via the unbounded Verus path would be
     // wrong. Every tag-free project (the whole v1 corpus) keeps the default `check_file`
     // pipeline byte-identical (the canonical default-config entry that serves the cache).
-    let certs = if check::program_has_bv_tag(&parsed.program) {
-        check::check_file_with_engine(
-            file,
-            check::CheckOptions {
-                engine: check::EngineSelection::Bv,
-                ..Default::default()
-            },
-        )?
-    } else {
-        check::check_file(file)?
-    };
+    let certs = crate::cache::without_reuse(|| {
+        if check::program_has_bv_tag(&parsed.program) {
+            check::check_file_with_engine(
+                file,
+                check::CheckOptions {
+                    engine: check::EngineSelection::Bv,
+                    ..Default::default()
+                },
+            )
+        } else {
+            check::check_file(file)
+        }
+    })?;
 
     // The toolchain identity (the irreducible §9 TCB residue): the verus version
     // (the same deterministic sourcing the proof cache uses) + the compile-time
@@ -2463,7 +2475,7 @@ struct BuildRun<'a> {
     sandbox: build::SandboxConfig,
     out: Option<&'a Path>,
     target: BuildTarget,
-    platform: Option<&'a str>,
+    lock_provider: Option<&'a str>,
 }
 
 fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
@@ -2479,39 +2491,16 @@ fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
         sandbox,
         out,
         target,
-        platform,
+        lock_provider,
     } = request;
-    if matches!(target, BuildTarget::KernelImage) {
-        let output = out.ok_or_else(|| {
-            ForgeError::Usage("`--target kernel-image` requires `--out <image.img>`".to_string())
-        })?;
-        let receipt = crate::kernel_image::build_image(crate::kernel_image::ImageBuildRequest {
-            source: file,
-            composition_exports,
-            composition_shells,
-            platform: platform.ok_or_else(|| {
-                ForgeError::Usage("`--target kernel-image` requires `--platform`".to_string())
-            })?,
-            output,
-        })?;
-        if json {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&receipt).map_err(|error| {
-                    ForgeError::RustcOutput {
-                        detail: format!("failed to serialize kernel-image receipt: {error}"),
-                    }
-                })?
-            );
-        } else {
-            println!("bootable kernel image: {}", receipt.image_path);
-            println!("image sha256: {}", receipt.image_sha256);
-            println!("assurance scope: {}", receipt.assurance_scope);
-        }
-        return Ok(ExitCode::SUCCESS);
-    }
+    emit_effect_warnings(file, json)?;
     if matches!(level, BuildLevel::L1) {
-        let manifest = build::build_file(file, entry, sandbox, out, target)?;
+        let manifest = if lock_provider.is_some() {
+            let provider = build::repository_test_lock_provider(file)?;
+            build::build_file_with_lock_provider(file, entry, sandbox, out, target, &provider)?
+        } else {
+            build::build_file(file, entry, sandbox, out, target)?
+        };
         if json {
             let doc =
                 serde_json::to_string_pretty(&manifest).map_err(|e| ForgeError::RustcOutput {
@@ -2526,8 +2515,7 @@ fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
 
     let verified_target = match target {
         BuildTarget::Std => crate::verified_build::VerifiedTarget::Std,
-        BuildTarget::Kernel => crate::verified_build::VerifiedTarget::Kernel,
-        BuildTarget::KernelImage => unreachable!("handled above"),
+        BuildTarget::Freestanding => crate::verified_build::VerifiedTarget::Freestanding,
     };
     let outcome = if composition_exports.is_empty() {
         crate::verified_build::build_file(file, exports, crate_name, out, verified_target)?
@@ -2574,29 +2562,6 @@ fn run_build(request: BuildRun<'_>) -> Result<ExitCode, ForgeError> {
 }
 
 fn run_verify_build(bundle: &Path, replay: bool, json: bool) -> Result<ExitCode, ForgeError> {
-    let is_kernel_image = bundle.extension().and_then(|value| value.to_str()) == Some("img")
-        || bundle
-            .file_name()
-            .and_then(|value| value.to_str())
-            .is_some_and(|value| value.ends_with(".receipt.json"));
-    if is_kernel_image {
-        let report = crate::kernel_image::validate_image(bundle, replay)?;
-        if json {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&report).map_err(|error| {
-                    ForgeError::RustcOutput {
-                        detail: format!("failed to serialize kernel-image validation: {error}"),
-                    }
-                })?
-            );
-        } else {
-            println!("valid bootable kernel image: {}", report.image);
-            println!("binding sha256: {}", report.binding_sha256);
-            println!("replayed: {}", report.replayed);
-        }
-        return Ok(ExitCode::SUCCESS);
-    }
     let report = crate::verified_build::validate_bundle(bundle, replay)?;
     if json {
         println!(
@@ -3179,6 +3144,9 @@ fn render_build(manifest: &BuildManifest) -> String {
         ));
     }
     out.push_str(&format!("assurance: {}\n", manifest.assurance));
+    if let Some(provider) = &manifest.lock_provider {
+        out.push_str(&format!("lock-provider: {provider}\n"));
+    }
     out.push_str("functions:\n");
     for f in &manifest.functions {
         out.push_str(&format!("  {} fx=[{}]\n", f.name, f.fx.join(", ")));
@@ -3241,7 +3209,7 @@ fn render_review(artifact: &ReviewArtifact) -> String {
         }
         out.push_str(&format!("  fx  [{}]\n", r.spec_layer.fx.join(", ")));
         for decl in &r.spec_layer.referenced_spec_fns {
-            out.push_str(&format!("  {} dec {}\n", decl.signature, decl.dec));
+            out.push_str(&format!("  {} dec {}\n", decl.signature, decl.measures));
         }
         out.push_str(&format!("  prompt: {}\n", r.prompt));
     }
@@ -3477,9 +3445,9 @@ fn render_audit(manifest: &AuditManifest) -> String {
                 "  boundary: {} -> {} (req={:?} ens=[{}] fx=[{}])\n",
                 c.name,
                 c.target,
-                c.req.as_deref().unwrap_or("(unresolved)"),
-                c.ens.join("; "),
-                c.fx.join(", ")
+                c.requires.as_deref().unwrap_or("(unresolved)"),
+                c.ensures.join("; "),
+                c.effects.join(", ")
             ));
         }
     }
@@ -3603,6 +3571,7 @@ fn render_human(cert: &Certificate) -> String {
         _covenant_evidence,
         _meaning,
         _bv_shadows,
+        _clause_certifications,
     ) = cert.oracle_subset();
     let mut out = String::new();
     out.push_str(&format!("item: {item}\n"));
@@ -3729,9 +3698,68 @@ fn write_file(path: &Path, contents: &str) -> Result<(), ForgeError> {
     })
 }
 
+fn emit_effect_warnings(file: &Path, json: bool) -> Result<(), ForgeError> {
+    for warning in check::effect_warnings_for_file(file)? {
+        if json {
+            eprintln!("{}", effect_warning_json(&warning));
+        } else {
+            eprintln!("warning: {warning}");
+        }
+    }
+    Ok(())
+}
+
+fn effect_warning_json(warning: &thermite_lower::EffectWarning) -> serde_json::Value {
+    let excess: Vec<String> = warning.excess.iter().map(effect_spelling).collect();
+    serde_json::json!({
+        "kind": "effect-row-excess",
+        "severity": "warning",
+        "function": warning.function,
+        "span": { "start": warning.span.start, "end": warning.span.end() },
+        "excess": excess,
+    })
+}
+
+fn effect_spelling(effect: &thermite_syntax::Effect) -> String {
+    match effect {
+        thermite_syntax::Effect::Read(path) => format!("read({path})"),
+        thermite_syntax::Effect::Write(path) => format!("write({path})"),
+        thermite_syntax::Effect::Net(path) => format!("net({path})"),
+        thermite_syntax::Effect::Alloc => "alloc".into(),
+        thermite_syntax::Effect::Time => "time".into(),
+        thermite_syntax::Effect::Rand => "rand".into(),
+        thermite_syntax::Effect::Panic => "panic".into(),
+        thermite_syntax::Effect::Diverge => "diverge".into(),
+        thermite_syntax::Effect::Term => "term".into(),
+        thermite_syntax::Effect::Owns(lock) => format!("owns({lock})"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn effect_warning_json_is_structured_and_canonical() {
+        let warning = thermite_lower::EffectWarning {
+            function: "overdeclared".into(),
+            excess: vec![
+                thermite_syntax::Effect::Write("db.child".into()),
+                thermite_syntax::Effect::Alloc,
+            ],
+            span: thermite_syntax::Span::new(7, 11),
+        };
+        assert_eq!(
+            effect_warning_json(&warning),
+            serde_json::json!({
+                "kind": "effect-row-excess",
+                "severity": "warning",
+                "function": "overdeclared",
+                "span": { "start": 7, "end": 18 },
+                "excess": ["write(db.child)", "alloc"],
+            })
+        );
+    }
 
     fn argv(parts: &[&str]) -> Vec<String> {
         parts.iter().map(|s| s.to_string()).collect()
@@ -3872,7 +3900,7 @@ mod tests {
         ));
     }
 
-    // REQ-2c (`thermite2-program.md` AC-4): `forge tv --seed <u64>` sets the
+    // REQ-2c (`docs/v2/program.md` AC-4): `forge tv --seed <u64>` sets the
     // off-corpus generator seed (the rotating-seed scheduled-CI lever); the default
     // (no flag) is `None` (→ the pinned `TV_DEFAULT_SEED`); a missing / non-numeric
     // value is a Usage error, never a silent default (REQ-8 flag discipline).
@@ -4009,7 +4037,7 @@ mod tests {
                 },
                 out: None,
                 target: BuildTarget::Std,
-                platform: None,
+                lock_provider: None,
             })
         );
         // --no-sandbox opts out.
@@ -4080,7 +4108,7 @@ mod tests {
         ));
     }
 
-    // #197 (`.design/build/kernel-target.md` REQ-1): `--target std|kernel` parses to
+    // #197 (`.design/build/freestanding-target.md` REQ-1): `--target std|kernel` parses to
     // the codegen profile; the default is `Std`; an unknown / missing value is a
     // Usage error, never a silent default.
     #[test]
@@ -4093,10 +4121,10 @@ mod tests {
         };
         // The default (no `--target`) is the unchanged std profile.
         assert_eq!(target_of(&["build", "a.th"]), Some(BuildTarget::Std));
-        // `--target kernel` selects the freestanding profile.
+        // `--target freestanding` selects the freestanding profile.
         assert_eq!(
-            target_of(&["build", "a.th", "--target", "kernel"]),
-            Some(BuildTarget::Kernel)
+            target_of(&["build", "a.th", "--target", "freestanding"]),
+            Some(BuildTarget::Freestanding)
         );
         // `--target std` is the explicit-default form.
         assert_eq!(
@@ -4130,7 +4158,7 @@ mod tests {
                 "--crate-name",
                 "verified_a",
                 "--target",
-                "kernel",
+                "freestanding",
                 "--out",
                 "a.verified",
                 "--json"
@@ -4147,8 +4175,8 @@ mod tests {
                 json: true,
                 sandbox: build::SandboxConfig::default(),
                 out: Some(PathBuf::from("a.verified")),
-                target: BuildTarget::Kernel,
-                platform: None,
+                target: BuildTarget::Freestanding,
+                lock_provider: None,
             })
         );
         assert_eq!(
@@ -4174,7 +4202,7 @@ mod tests {
                 "--compose-shell",
                 "probe_shell.rs",
                 "--target",
-                "kernel",
+                "freestanding",
             ]))
             .ok(),
             Some(Command::Build {
@@ -4188,8 +4216,8 @@ mod tests {
                 json: false,
                 sandbox: build::SandboxConfig::default(),
                 out: None,
-                target: BuildTarget::Kernel,
-                platform: None,
+                target: BuildTarget::Freestanding,
+                lock_provider: None,
             })
         );
         for args in [
@@ -4216,78 +4244,6 @@ mod tests {
                 "probe_step",
                 "--compose-shell",
                 "probe_shell.rs",
-            ],
-        ] {
-            assert!(matches!(
-                parse_args(&argv(&args)),
-                Err(ForgeError::Usage(_))
-            ));
-        }
-    }
-
-    #[test]
-    fn parses_frozen_kernel_image_surface_and_rejects_incomplete_profiles() {
-        assert_eq!(
-            parse_args(&argv(&[
-                "build",
-                "kernel.th",
-                "--level",
-                "l3",
-                "--target",
-                "kernel-image",
-                "--platform",
-                "x86_64-pc-uefi-smp-v1",
-                "--compose-export",
-                "kernel_step",
-                "--compose-shell",
-                "platform_shell.rs",
-                "--out",
-                "dist/kernel.img",
-            ]))
-            .ok(),
-            Some(Command::Build {
-                file: PathBuf::from("kernel.th"),
-                level: BuildLevel::L3,
-                exports: Vec::new(),
-                composition_exports: vec!["kernel_step".to_string()],
-                composition_shells: vec![PathBuf::from("platform_shell.rs")],
-                crate_name: None,
-                entry: None,
-                json: false,
-                sandbox: build::SandboxConfig::default(),
-                out: Some(PathBuf::from("dist/kernel.img")),
-                target: BuildTarget::KernelImage,
-                platform: Some("x86_64-pc-uefi-smp-v1".to_string()),
-            })
-        );
-        for args in [
-            vec![
-                "build",
-                "kernel.th",
-                "--level",
-                "l3",
-                "--target",
-                "kernel-image",
-                "--compose-export",
-                "kernel_step",
-                "--compose-shell",
-                "platform_shell.rs",
-                "--out",
-                "dist/kernel.img",
-            ],
-            vec![
-                "build",
-                "kernel.th",
-                "--level",
-                "l3",
-                "--target",
-                "kernel-image",
-                "--platform",
-                "x86_64-pc-uefi-smp-v1",
-                "--compose-export",
-                "kernel_step",
-                "--compose-shell",
-                "platform_shell.rs",
             ],
         ] {
             assert!(matches!(
@@ -4379,6 +4335,10 @@ mod tests {
         assert_eq!(e.exit_code(), EXIT_ENVIRONMENT);
         let e = ForgeError::Usage("x".to_string());
         assert_eq!(e.exit_code(), EXIT_ENVIRONMENT);
+        let e = ForgeError::Rfc10ReplayRejected {
+            detail: "kernel rejected witness".to_string(),
+        };
+        assert_eq!(e.exit_code(), EXIT_VERIFICATION_FAILURE);
     }
 
     // REQ-7: scaffold layout + no-clobber.

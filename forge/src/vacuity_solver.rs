@@ -472,7 +472,7 @@ fn parse_lowered_fn(lowered: &str, name: &str) -> Result<LoweredFn, ForgeError> 
         ));
     }
     if ensures_lines.is_empty() {
-        // Every `fn` has ≥1 `ens` clause (ast.rs `Contract.ens` is non-empty), so
+        // Every `fn` has ≥1 `ens` clause (ast.rs `Contract.ensures` is non-empty), so
         // the lowerer always emits an `ensures` keyword line — an empty capture
         // means the frame shape changed; surface it rather than emit a harness with
         // no `ensures` (which would prove vacuously and spuriously detect).
@@ -768,16 +768,16 @@ mod tests {
             params: Vec::new(),
             ret: thermite_syntax::Type::Unit,
             contract: thermite_syntax::Contract {
-                req: thermite_syntax::Clause {
+                requires: thermite_syntax::Clause {
                     expr: thermite_syntax::Expr::BoolLit(true),
                     text: String::new(),
                     span: thermite_syntax::Span::new(0, 0),
                     bv: None,
                 },
-                ens: Vec::new(),
-                fx: thermite_syntax::EffectRow::Pure,
+                ensures: Vec::new(),
+                effects: thermite_syntax::EffectRow::Pure,
             },
-            dec: None,
+            measures: None,
             body: Some(thermite_syntax::Block {
                 stmts: Vec::new(),
                 tail: None,
@@ -795,7 +795,7 @@ mod tests {
     #[test]
     fn tautology_harness_reuses_lowered_contract() {
         let (f, specs) =
-            fn_and_specs("fn f(x: u32) -> u32 req x > 0 ens result >= 0 fx pure { x }");
+            fn_and_specs("fn f(x: u32) -> u32 ! pure requires x > 0 ensures result >= 0 { x }");
         let h = build_tautology_harness(&f, &specs, &[]).expect("build taut harness");
         assert!(
             h.contains("proof fn taut_check(x: u32, result: u32)"),
@@ -813,8 +813,9 @@ mod tests {
     // `result`/`ens` binder. The `req` text is reused verbatim from the lowering.
     #[test]
     fn vacuity_harness_assumes_req_asserts_false() {
-        let (f, specs) =
-            fn_and_specs("fn f(x: u32) -> u32 req x > 5 && x < 3 ens result == x fx pure { x }");
+        let (f, specs) = fn_and_specs(
+            "fn f(x: u32) -> u32 ! pure requires x > 5 && x < 3 ensures result == x { x }",
+        );
         let h = build_vacuity_harness(&f, &specs, &[]).expect("build vac harness");
         assert!(h.contains("proof fn vac_check(x: u32)"), "harness:\n{h}");
         assert!(h.contains("requires x > 5 && x < 3,"), "harness:\n{h}");
@@ -899,7 +900,7 @@ mod tests {
     #[test]
     fn tautology_harness_weaves_reachable_adt_decl() {
         let src = "struct Pair { a: u32, b: u32 } \
-                   fn mk(x: u32) -> Pair req x > 0 ens result.a >= 0 fx pure { Pair { a: x, b: x } }";
+                   fn mk(x: u32) -> Pair ! pure requires x > 0 ensures result.a >= 0 { Pair { a: x, b: x } }";
         let (f, specs) = fn_and_specs(src);
         let adts = adt_items(src);
         let h = build_tautology_harness(&f, &specs, &adts).expect("build adt taut harness");
@@ -923,7 +924,7 @@ mod tests {
     #[test]
     fn vacuity_harness_weaves_reachable_adt_decl() {
         let src = "struct Acct { bal: u32 } \
-                   fn f(a: Acct, x: u32) -> u32 req x > 100 && x < 10 ens result == x fx pure { x }";
+                   fn f(a: Acct, x: u32) -> u32 ! pure requires x > 100 && x < 10 ensures result == x { x }";
         let (f, specs) = fn_and_specs(src);
         let adts = adt_items(src);
         let h = build_vacuity_harness(&f, &specs, &adts).expect("build adt vac harness");

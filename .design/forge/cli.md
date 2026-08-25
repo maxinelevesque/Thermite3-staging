@@ -4,7 +4,7 @@
 tier: 3-component
 status: shipped
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 / AC-8 (#349), the automated Rust→Lean obligation exporter: the change to this doc's governed file (cli.rs) is the additive `forge smt-export [<file>] [--out <path>]` subcommand (`Command::SmtExport` → `run_smt_export`, emitting the `(P_prod) ⟺ (P_ref)` `by smt` Lean theorems + `#print axioms` probes via `lean_smt_export.rs`); every other subcommand + flag parse is unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-21 stage-2 REQ-8 / AC-8 (#330) `forge strat-faithful-tv`; 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `forge strat-tv` + `ForgeError::StratDifferential`; 2026-06-18 umbrella REQ-2c / AC-4 rotating-seed `--seed` flag on `forge tv`; §6 metrics dashboard `--metrics` value)
-audited-content-sha256: b412ca0108ddb5fc0ed7a18617d653c706d7f5790d75f9fefdfea6a28433c52a (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: 149378293d85e5428f088ac9f8fb2e73d7cf729093d04ecbd24338c43a588d19 (re-pinned 2026-08-16 for the fail-closed ResultArbiterAlarm error surface; command parsing and success behavior are unchanged. prior: 6389548e2c130e6586a9f595f0e14bc1e0ce72e506d7048788415ea28a39fc4b)
 governs: forge/src/cli.rs
 thesis-refs:
   - thermite-design.md §5
@@ -234,7 +234,7 @@ The methods fall into five families, each with its own exit-code convention
    `fn tv_report_json` / `exec_tv_report_json` / `body_tv_report_json in
    cli.rs`. `forge tv --seed <u64>` overrides the off-corpus generator seed
    (`--generated` space) — the lever the rotating-seed scheduled-CI watchdog
-   uses (`thermite2-program.md` REQ-2c, `.github/workflows/generated-tv.yml`);
+   uses (`docs/v2/program.md` REQ-2c, `.github/workflows/generated-tv.yml`);
    absent, it rides the pinned deterministic `TV_DEFAULT_SEED`, and the corpus
    phase always does, so the fixed corpus gate stays reproducible.
 3. **View/build verbs** — `review` (`run_review`: artifact emission +

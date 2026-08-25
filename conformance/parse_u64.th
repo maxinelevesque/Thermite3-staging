@@ -7,16 +7,16 @@
 // proven at parse_u64's own verification (tests/golden/lower/parse_u64.verus.rs).
 
 // A valid digit string in range parses to Some of its big-endian value — proven (not
-// runtime-checked). `ens result is Some` discharges from the req via parse_u64's
+// runtime-checked). `ensures result is Some` discharges from the requires via parse_u64's
 // strengthened contract; the round-trip `Some(v) => parse_be(s) == v` follows. A None
-// mutant violates `result is Some` given the req -> mutation-killable -> L3. This is the
+// mutant violates `result is Some` given the requires -> mutation-killable -> L3. This is the
 // calculator's parse primitive: a valid digit string in range -> Some(value), for all
 // such inputs.
 fn parse_valid(s: String) -> Option<u64>
-  req all_digits(s) && s.len() >= 1 && parse_be(s) <= 18446744073709551615
-  ens result is Some
-  ens match result { Some(v) => parse_be(s) == v, None => true }
-  fx  pure
+  ! pure
+  requires all_digits(s) && s.len() >= 1 && parse_be(s) <= 18446744073709551615
+  ensures result is Some
+  ensures match result { Some(v) => parse_be(s) == v, None => true }
 {
   parse_u64(s)
 }

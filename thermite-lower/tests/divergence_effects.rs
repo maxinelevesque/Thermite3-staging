@@ -43,7 +43,7 @@ fn call(callee: &str) -> Expr {
 }
 
 /// A `fn` with the given effect row and an explicit body block.
-fn fn_with_body(name: &str, fx: EffectRow, body: Block) -> Item {
+fn fn_with_body(name: &str, effects: EffectRow, body: Block) -> Item {
     Item::Fn(FnItem {
         slag: None,
         boundary: None,
@@ -51,11 +51,11 @@ fn fn_with_body(name: &str, fx: EffectRow, body: Block) -> Item {
         params: vec![],
         ret: Type::Unit,
         contract: Contract {
-            req: true_clause(),
-            ens: vec![true_clause()],
-            fx,
+            requires: true_clause(),
+            ensures: vec![true_clause()],
+            effects,
         },
-        dec: None,
+        measures: None,
         body: Some(body),
         holes: Vec::new(),
         refinements: Vec::new(),
@@ -84,7 +84,7 @@ fn divergence_while_condition_callee_is_checked() {
     let while_loop = Stmt::Loop(LoopNode {
         kind: LoopKind::While(Box::new(call("effectful"))),
         invs: vec![true_clause()],
-        dec: true_clause(),
+        measures: true_clause(),
         body: Block {
             stmts: vec![],
             tail: None,
@@ -99,7 +99,7 @@ fn divergence_while_condition_callee_is_checked() {
             tail: None,
         },
     );
-    let callee = fn_with_body(
+    let mut callee = fn_with_body(
         "effectful",
         EffectRow::Set(vec![Effect::Alloc]),
         Block {
@@ -107,6 +107,12 @@ fn divergence_while_condition_callee_is_checked() {
             tail: None,
         },
     );
+    let Item::Fn(callee_fn) = &mut callee else {
+        unreachable!()
+    };
+    // A boundary's declared row is its trusted direct footprint. An empty
+    // in-language body would correctly infer pure under RFC-9.
+    callee_fn.body = None;
     let prog = Program {
         items: vec![caller, callee],
     };
@@ -119,7 +125,8 @@ fn divergence_while_condition_callee_is_checked() {
                 errs.iter().any(|e| matches!(
                     e,
                     LowerError::EffectNotSubsumed { callee, missing, .. }
-                        if callee == "effectful" && *missing == vec![Effect::Alloc]
+                        if callee == "inferred transitive footprint"
+                            && *missing == vec![Effect::Alloc]
                 )),
                 "while-condition callee must be checked; expected EffectNotSubsumed \
                  {{callee: effectful, missing: [Alloc]}}, got {errs:?}"

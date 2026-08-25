@@ -140,14 +140,17 @@ fn reject_cause(cert: &Value) -> Option<String> {
         .map(|s| s.to_string())
 }
 
-const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    req x == 0\n    ens result == 0\n    fx pure\n{\n    let y: u64 = x + 0;\n    y\n}\n";
+const CLAMP_ZERO: &str = "fn clamp_zero(x: u64) -> u64\n    ! pure
+    requires x == 0\n    ensures result == 0\n{\n    let y: u64 = x + 0;\n    y\n}\n";
 
-const LOOSE: &str = "fn loose(x: u64) -> u64\n    req x <= 100\n    ens result <= 1000\n    fx pure\n{\n    let y: u64 = x + 0;\n    y\n}\n";
+const LOOSE: &str = "fn loose(x: u64) -> u64\n    ! pure
+    requires x <= 100\n    ensures result <= 1000\n{\n    let y: u64 = x + 0;\n    y\n}\n";
 
-const REFUSE: &str =
-    "fn refuse(x: u64) -> u64\n    req x == 0\n    ens result == 0\n    fx pure\n{\n    x\n}\n";
+const REFUSE: &str = "fn refuse(x: u64) -> u64\n    ! pure
+    requires x == 0\n    ensures result == 0\n{\n    x\n}\n";
 
-const ADD: &str = "fn add(a: u64, b: u64) -> u64\n    req a <= 10 && b <= 10\n    ens result == a + b\n    fx pure\n{\n    let s: u64 = a + b;\n    s\n}\n";
+const ADD: &str = "fn add(a: u64, b: u64) -> u64\n    ! pure
+    requires a <= 10 && b <= 10\n    ensures result == a + b\n{\n    let s: u64 = a + b;\n    s\n}\n";
 
 /// AC-1: the equivalent-mutant exclusion flips `clamp_zero` from the pre-#101
 /// `WeakContract 1/3` to a certifying `L3` `1/1` — the two proved-equivalent
@@ -184,6 +187,12 @@ fn ac1_forced_output_excludes_equivalents_and_certifies() {
         killed >= 1 && killed == scored,
         "AC-1: after excluding the proved-equivalent survivors the ratio is 1.0 \
          (every remaining scored mutant killed); got `{mk}`"
+    );
+    assert!(
+        cert["contract_quality"]["equivalent_mutants_excluded"]
+            .as_u64()
+            .is_some_and(|count| count >= 1),
+        "AC-1: denominator narrowing must be visible in the certificate: {cert}"
     );
     let _ = std::fs::remove_file(&path);
 }
@@ -253,6 +262,12 @@ fn ac3_all_equivalent_reduces_to_zero_over_zero_still_gated() {
         "0/0",
         "AC-3: the sole proved-equivalent survivor leaves the denominator EMPTY \
          (0/0), not a spurious 1/1; cert: {cert}"
+    );
+    assert!(
+        cert["contract_quality"]["equivalent_mutants_excluded"]
+            .as_u64()
+            .is_some_and(|count| count >= 1),
+        "AC-3: every removed equivalent must be surfaced: {cert}"
     );
     let _ = std::fs::remove_file(&path);
 }

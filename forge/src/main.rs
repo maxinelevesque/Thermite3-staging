@@ -47,7 +47,6 @@ mod exec_tv;
 mod forks;
 mod goal_repl;
 mod kani;
-mod kernel_image;
 mod lean_export;
 mod lean_smt_export;
 mod lemma_library;
@@ -56,10 +55,19 @@ mod meaning;
 mod metrics;
 mod mutation;
 mod obligation;
+#[allow(dead_code)]
+mod outcome_matrix;
 mod profile;
 mod relax;
 mod repair;
+mod result_arbiter;
 mod review;
+#[cfg(test)]
+mod rfc3_replay;
+// Issue #54 ships the checked replay before issue #56 moves production
+// authority decisions onto this seam.
+#[allow(dead_code)]
+mod assurance_v2;
 mod sandbox;
 /// The seven-verdict hermetic suite (REQ-10 / AC-14) — test-only.
 #[cfg(test)]

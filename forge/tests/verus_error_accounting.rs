@@ -57,7 +57,7 @@ fn frontend_rejection_omits_an_unknown_error_count_and_publishes_nothing() {
         "--crate-name",
         "frontend_error_count",
         "--target",
-        "kernel",
+        "freestanding",
         "--out",
         bundle.to_string_lossy().as_ref(),
     ]);

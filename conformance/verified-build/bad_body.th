@@ -1,7 +1,7 @@
 fn bad_identity(x: u64) -> u64
-  req x < u64::MAX
-  ens result == x
-  fx pure
+  ! pure
+  requires x < u64::MAX
+  ensures result == x
 {
   x + 1
 }

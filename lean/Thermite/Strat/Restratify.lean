@@ -143,7 +143,7 @@ theorem restrat_complete (e : Thermite.Expr) (q : Atom → Bool) (dom : List Tm)
 /-! ## Axiom hygiene (documented in-file, the REQ-2/REQ-6 convention)
 
     `restrat_conservative` is additionally added to the axiom-gated THEOREMS list in
-    `scripts/lean-axiom-probe.sh` (the REQ-9 [1′] extension, brought forward for AC-7,
+    `gates/lean-axiom-probe.sh` (the REQ-9 [1′] extension, brought forward for AC-7,
     as REQ-5 did for `strat_ref_sound`). -/
 section AxiomHygiene
 -- All four T4-R theorems are core-Lean-only (⊆ {propext, Classical.choice, Quot.sound}).

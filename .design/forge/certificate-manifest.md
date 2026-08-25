@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: 1b78069cfb3366771bfc869082ca8f3f4619333a7a4ce7645065cae3d4fdb317 (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: d1ddb81fb0c02faf879c7252d5a5b71f594e624817ab2e95e623950495f143dd (re-pinned 2026-08-17 for the non-operative Assurance V2 predecessor annotation; manifest behavior is unchanged. prior: 353fa8ebcd57c6b901bca64f727764a338ccd98a7a1e7dab33eed731637afbef)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -29,6 +29,63 @@ code-local choice.
 This component is SHIPPED (`forge/src/manifest.rs`; all REQs SHIPPED — see the
 REQ status table). The "two-speed schema" below has since EXECUTED and the
 certificate gained a family of ADDITIVE fields — see the Amendment.
+
+> **RFC-3 migration amendment, 2026-08-16.** `Certificate::certification`
+> persists the typed `scope/refutation/residual-trust@boundary` position and
+> `Certificate::classification` reserves the typed pre-discharge fragment
+> prognosis. `CertificationPosition::validate` admits only RFC-3's coherent
+> cells; `partial_cmp_assurance` preserves the solver/forge incomparability.
+> Kani records its actual bound in matching `bounded/trace` coordinates.
+> Historical L2 values cannot be inferred and therefore remain absent. The old
+> `level` field and its project aggregation remain live during this migration;
+> RFC-3 R2-7/R2-9 are not claimed complete by this amendment.
+
+> **Runtime L1 migration amendment, 2026-08-16.**
+> `Certificate::with_l1_artifact` accepts only an opaque checked-lowering
+> artifact for the same item and matching runtime/slag/FFI/divergence row. It
+> installs the per-execution/abort/fiat position and the route-specific admitted
+> classification atomically. The checked wrapper digest is retained as a
+> discharged bridge fact, which marks new L1 documents: deleting classification
+> from such a document fails the public reader, while historical unmarked L1
+> position-only documents remain readable. The artifact also retains the exact
+> effect row. Slag and FFI keep separate fragments, and item, effect, route, or
+> FFI-target substitution is rejected during attachment. Slag reason, owner, and
+> review are retained exactly from the checked source attribute. Audit additionally
+> reconstructs the checked artifact from the program and revalidates the entire
+> persisted row, so simultaneous removal of the marker and classification is
+> compatibility-readable but cannot become a current audit claim; it also rejects
+> substituted slag metadata or a fabricated closure boundary. Detection of the
+> migrated pair is independent of the mutable legacy `level`: relabeling a row
+> away from `L1` while retaining L1 provenance is rejected by the public reader.
+> Certificate deserialization deliberately does not mint audit authority: JSON
+> remains compatibility-readable data, but only a live producer value may be
+> projected by audit; the audit command deliberately runs its producer path with
+> proof-cache certificate reuse disabled. Therefore coordinated removal of every
+> marker plus a `Level` upgrade cannot turn attacker-controlled persistence into
+> a current claim.
+
+> **General Verus migration amendment, 2026-08-16.**
+> `Certificate::with_verus_artifact` accepts the opaque lowering artifact for
+> the same item and exact effects row. The artifact fixes
+> `thermite-verus-v1` and a SHA-256 identity of the isolated Verus source before
+> execution. A successful result atomically installs
+> all-inputs/incomplete/solver; an unsuccessful result installs the coherent
+> none/none/fiat non-claim while retaining the identical classification and
+> query identity. Counterexamples, non-degraded timeouts, mutation-floor failures, and
+> semantic tautology/vacuity failures therefore describe what was attempted
+> without turning failure into certification. Item, effect, query, classifier,
+> level, boundary, or success/failure substitution is rejected. As with migrated
+> L1, deserialization does not mint the private producer authority required by
+> audit. Historical bare L3 documents remain compatibility-readable. Mixed
+> clause portfolios remain unmigrated until clause-level coordinates and their
+> aggregation rule exist; this amendment does not collapse them into a single
+> item-level fragment.
+> A timeout that successfully degrades is represented by the achieved Kani or
+> runtime artifact rather than by this superseded Verus non-claim.
+> Main cache replay must structurally match the fresh artifact and never restores
+> audit authority. Partial EPR reconstruction is not appended to this
+> authoritative Verus item certificate; only complete homogeneous reconstruction
+> may replace it with the EPR result.
 
 > **Amendment 2026-06-12 (doc-freshness re-audit, #262).** Re-verified against the
 > current tree (`dff9ae86`, 12 post-pin commits to `manifest.rs`). Corrections and
@@ -92,7 +149,7 @@ certificate gained a family of ADDITIVE fields — see the Amendment.
 - REQ-2 (which fields #5 produces NOW): in #5 the certificate carries real,
   derived values for `item`, `level`, `effects`, `slag`, and the per-obligation
   results. `item` is the checked item's name; `level` is L3 iff verus reports 0
-  errors (`.design/forge/check.md` REQ-5); `effects` is the item's `fx` row
+  errors (`.design/forge/check.md` REQ-5); `effects` is the item's `!` row
   (lowercased combinator-free strings, e.g. `["pure"]`); `slag` is `false` in
   #5 (`#[slag]` handling is issue #6 / §8).
   Source: `conformance/sum.cert.json` (`item`/`level`/`effects`/`slag` are the

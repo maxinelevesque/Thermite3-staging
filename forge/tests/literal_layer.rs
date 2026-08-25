@@ -94,7 +94,7 @@ fn cert_for<'a>(certs: &'a [Value], item: &str) -> &'a Value {
 /// allocates, so the fn carries `fx alloc` (07-strings.md REQ-4).
 fn escape_eq_program(name: &str, lit: &str, code: u64) -> String {
     format!(
-        "fn {name}(n: u64) -> bool\n  req true\n  ens result == (n == {code})\n  fx alloc\n{{ \"{lit}\".byte_at(0) == n }}\n"
+        "fn {name}(n: u64) -> bool\n ! alloc  requires true\n  ensures result == (n == {code})\n\n{{ \"{lit}\".byte_at(0) == n }}\n"
     )
 }
 
@@ -172,7 +172,8 @@ fn escape_byte_is_load_bearing_wrong_code_not_l3() {
     // body decodes to 27, but the contract claims the byte is 99.
     let certs = check_program(
         "wrong",
-        "fn wrong(n: u64) -> bool\n  req true\n  ens result == (n == 99)\n  fx alloc\n{ \"\\x1b\".byte_at(0) == n }\n",
+        "fn wrong(n: u64) -> bool\n  ! alloc
+  requires true\n  ensures result == (n == 99)\n{ \"\\x1b\".byte_at(0) == n }\n",
     );
     let c = cert_for(&certs, "wrong");
     assert_ne!(

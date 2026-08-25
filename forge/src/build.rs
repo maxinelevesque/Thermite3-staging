@@ -55,7 +55,7 @@
 //! | REQ-FORGE-BUILD-RUSTC | shipped | `forge/src/build.rs` | Checked rustc invocation and scratch cleanup |  |
 //! <!-- /generated:reqs -->
 //!
-//! ## `.design/build/kernel-target.md` REQ status (`forge build --target kernel`, #197)
+//! ## `.design/build/freestanding-target.md` REQ status (`forge build --target freestanding`, #197)
 //!
 //! <!-- generated:reqs view=forge-build-kernel-status -->
 //! Source: `.design/reqs/registry.toml`
@@ -73,7 +73,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use serde::Serialize;
-use thermite_syntax::{FnItem, Item, PrimType, Program, Type};
+use thermite_syntax::{FnItem, Item, PrimType, Program, RegionPath, Type};
 
 use std::collections::BTreeSet;
 
@@ -97,9 +97,101 @@ const EDITION: &str = "2021";
 /// proof. Not an L3 claim (R-DEFER-9).
 const ASSURANCE_L1: &str = "L1 (built, runtime-checked)";
 
+/// Explicit non-production provider used only by repository conformance tests.
+pub fn repository_test_lock_provider(
+    path: impl AsRef<Path>,
+) -> Result<thermite_lower::LockProvider, ForgeError> {
+    let program = parse_program(path.as_ref())?;
+    let mut source = String::from("use std::sync::atomic::{AtomicUsize, Ordering};\nstatic __THERMITE_ACQUIRES: AtomicUsize = AtomicUsize::new(0);\nstatic __THERMITE_RELEASES: AtomicUsize = AtomicUsize::new(0);\n");
+    for lock in program.items.iter().filter_map(|item| match item {
+        Item::LockDecl(lock) => Some(lock.name.as_str()),
+        _ => None,
+    }) {
+        let acquire = thermite_lower::LockProvider::acquire_symbol(lock);
+        let release = thermite_lower::LockProvider::release_symbol(lock);
+        source.push_str(&format!("fn {acquire}() {{ __THERMITE_ACQUIRES.fetch_add(1, Ordering::SeqCst); }}\nfn {release}() {{ __THERMITE_RELEASES.fetch_add(1, Ordering::SeqCst); }}\n"));
+    }
+    for shared in program.items.iter().filter_map(|item| match item {
+        Item::SharedDecl(shared) => Some(shared),
+        _ => None,
+    }) {
+        let Type::Named(ty) = &shared.ty else {
+            continue;
+        };
+        let symbol = thermite_lower::LockProvider::shared_symbol(&shared.name);
+        let storage = format!("{}__STORAGE", symbol.to_ascii_uppercase());
+        let wrapper = format!("{storage}__CELL");
+        let initializer = repository_test_initializer(&program, &shared.ty, &mut Vec::new())
+            .ok_or_else(|| {
+                ForgeError::Usage(format!(
+                "repository test lock provider cannot safely initialize shared `{}` of type `{ty}`",
+                shared.name
+            ))
+            })?;
+        source.push_str(&format!(
+            "struct {wrapper}(std::cell::UnsafeCell<{ty}>);\nunsafe impl Sync for {wrapper} {{}}\nstatic {storage}: {wrapper} = {wrapper}(std::cell::UnsafeCell::new({initializer}));\nfn {symbol}() -> &'static mut {ty} {{ unsafe {{ &mut *{storage}.0.get() }} }}\n"
+        ));
+    }
+    Ok(thermite_lower::LockProvider {
+        name: "repository-test".to_string(),
+        rust_source: source,
+        verus_source: String::new(),
+        proves_exclusive_acquire: true,
+        proves_restore_before_release: true,
+        states_interrupt_policy: true,
+    })
+}
+
+fn repository_test_initializer(
+    program: &Program,
+    ty: &Type,
+    stack: &mut Vec<String>,
+) -> Option<String> {
+    match ty {
+        Type::Prim(PrimType::Bool) => Some("false".into()),
+        Type::Prim(_) => Some("0".into()),
+        Type::Unit => Some("()".into()),
+        Type::Named(name) => {
+            if stack.contains(name) {
+                return None;
+            }
+            let item = program.items.iter().find_map(|item| match item {
+                Item::Struct(item) if item.name == *name => Some(item),
+                _ => None,
+            })?;
+            stack.push(name.clone());
+            let fields = item
+                .fields
+                .iter()
+                .map(|field| {
+                    repository_test_initializer(program, &field.ty, stack)
+                        .map(|value| format!("{}: {value}", field.name))
+                })
+                .collect::<Option<Vec<_>>>()?;
+            stack.pop();
+            Some(format!("{name} {{ {} }}", fields.join(", ")))
+        }
+        Type::Tuple(items) => {
+            let values = items
+                .iter()
+                .map(|item| repository_test_initializer(program, item, stack))
+                .collect::<Option<Vec<_>>>()?;
+            Some(format!("({},)", values.join(", ")))
+        }
+        Type::Option(_) => Some("None".into()),
+        Type::String => Some("TString { data: Vec::new() }".into()),
+        Type::Vec(_) | Type::Map(_, _) => None,
+        Type::Ref { .. }
+        | Type::Slice(_)
+        | Type::Generic { .. }
+        | Type::Box(_)
+        | Type::Result(_, _) => None,
+    }
+}
+
 /// The codegen target profile `forge build --target` selects
-/// (`.design/build/kernel-target.md` REQ-1). The default ([`BuildTarget::Std`])
-/// is the unchanged hosted profile; [`BuildTarget::Kernel`] emits a freestanding
+/// (`.design/build/freestanding-target.md` REQ-1). The default ([`BuildTarget::Std`])
+/// is the unchanged hosted profile; [`BuildTarget::Freestanding`] emits a freestanding
 /// `no_std + alloc` library crate (no `main`, no seccomp, `panic=abort`) and
 /// refuses ambient-syscall `fx` rows. A "target" is a rustc-invocation +
 /// crate-prelude choice (rustc is the codegen backend — `thermite-design.md` §3);
@@ -109,21 +201,18 @@ const ASSURANCE_L1: &str = "L1 (built, runtime-checked)";
 pub enum BuildTarget {
     /// The default hosted profile: the std crate, seccomp sandbox available for an
     /// `--entry` runner, the existing `forge build` corpus byte-unchanged
-    /// (`.design/build/kernel-target.md` AC-4).
+    /// (`.design/build/freestanding-target.md` AC-4).
     Std,
     /// The freestanding profile (REQ-1/REQ-2): a `#![no_std]` + `extern crate
     /// alloc;` library crate compiled `--crate-type=rlib -C panic=abort`, with no
-    /// `main`/seccomp prelude, suitable for linking into a verified microkernel. An
-    /// ambient-syscall `fx` row (`read`/`write`/`net`/`term`) is refused (REQ-3).
-    Kernel,
-    /// A receipt-bound bootable image. The CLI handles this profile before the
-    /// ordinary Rust-crate lowerer; treating it as the kernel prelude here keeps
-    /// internal exhaustive matches fail-closed if it is ever routed incorrectly.
-    KernelImage,
+    /// `main`/seccomp prelude, suitable for linking into a verified microkernel,
+    /// a bootloader, or an embedded target. An ambient-syscall `fx` row
+    /// (`read`/`write`/`net`/`term`) is refused (REQ-3).
+    Freestanding,
 }
 
 /// The freestanding `#![no_std] + alloc` crate prelude prepended to `lower_l1`'s
-/// output under [`BuildTarget::Kernel`] (REQ-2). `#![no_std]` drops the std
+/// output under [`BuildTarget::Freestanding`] (REQ-2). `#![no_std]` drops the std
 /// prelude; `extern crate alloc;` + `use alloc::vec::Vec;` resolves the bare `Vec`
 /// the L1 collection wrappers (`TString { data: Vec<u8> }`, the `TVec*`/`TMap*`
 /// runtime) spell (OQ-3: the L1 emission carries no `std::`-qualified path — the
@@ -133,21 +222,7 @@ pub enum BuildTarget {
 /// import, `E0252`)). `panic!` is a core macro (no import needed); it routes to the
 /// kernel host's `#[panic_handler]` under `panic=abort` (REQ-4, OQ-1). The
 /// `#![allow(internal_features)]`-free, deterministic fixed string (R-CODE-5).
-const KERNEL_PRELUDE: &str = "#![no_std]\nextern crate alloc;\nuse alloc::vec::Vec;\n\n";
-
-/// The ambient-syscall effect verbs a [`BuildTarget::Kernel`] build refuses (REQ-3):
-/// `read`/`write`/`net`/`term` carry a userspace syscall surface (the #57 seccomp
-/// allowlist maps them to `openat`/`socket`/`ioctl`/…) with no kernel analogue, and
-/// `time`/`rand` carry std-bodied effect wrappers (`effect_wrappers::WRAPPERS`
-/// `os::now` = `std::time::SystemTime::now()` → `clock_gettime`; `getrandom`) which
-/// `emit_mod_os` would emit into the `#![no_std]` crate (a raw `E0433` leak); a kernel
-/// has no ambient clock/entropy. So a fn whose
-/// transitive `fx` carries any of these cannot be a freestanding kernel library item.
-/// The admit set is `pure`/`alloc`/`panic`/`diverge` (`.design/build/
-/// kernel-target.md` OQ-2, amended by #198: the original "time/rand benign" premise
-/// was falsified by the std-bodied `os::now` wrapper). Matched by the leading verb of
-/// each `effects_of` token (`read(stdin)` → `read`), mirroring `sandbox::syscall_allowlist`.
-const KERNEL_REJECTED_FX: &[&str] = &["read", "write", "net", "term", "time", "rand"];
+const FREESTANDING_PRELUDE: &str = "#![no_std]\nextern crate alloc;\nuse alloc::vec::Vec;\n\n";
 
 /// The artifact kind `forge build` produces (REQ-3). The default is a library;
 /// `--entry <fn>` produces a runnable executable.
@@ -255,6 +330,9 @@ pub struct BuildManifest {
     /// (`.design/forge/build.md` REQ-4), so this records the L1 statement
     /// `"L1 (built, runtime-checked)"`, not an L3 proof claim.
     pub assurance: String,
+    /// Explicit RFC-10 synchronization provider selected for this artifact.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lock_provider: Option<String>,
     /// The `--entry` fn, when a runnable executable was produced (REQ-3 (b)).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entry: Option<String>,
@@ -290,16 +368,38 @@ pub fn build_file(
     out: Option<&Path>,
     target: BuildTarget,
 ) -> Result<BuildManifest, ForgeError> {
+    build_file_inner(path, entry, sandbox, out, target, None)
+}
+
+pub fn build_file_with_lock_provider(
+    path: impl AsRef<Path>,
+    entry: Option<&str>,
+    sandbox: SandboxConfig,
+    out: Option<&Path>,
+    target: BuildTarget,
+    provider: &thermite_lower::LockProvider,
+) -> Result<BuildManifest, ForgeError> {
+    build_file_inner(path, entry, sandbox, out, target, Some(provider))
+}
+
+fn build_file_inner(
+    path: impl AsRef<Path>,
+    entry: Option<&str>,
+    sandbox: SandboxConfig,
+    out: Option<&Path>,
+    target: BuildTarget,
+    lock_provider: Option<&thermite_lower::LockProvider>,
+) -> Result<BuildManifest, ForgeError> {
     let path = path.as_ref();
     let program = parse_program(path)?;
 
-    // `.design/build/kernel-target.md` REQ-1/REQ-3: a kernel build is a library
-    // (no `main`), so `--target kernel` + `--entry` is a usage error — a kernel
+    // `.design/build/freestanding-target.md` REQ-1/REQ-3: a kernel build is a library
+    // (no `main`), so `--target freestanding` + `--entry` is a usage error — a kernel
     // crate has no userspace process entry point / seccomp sandbox.
-    if matches!(target, BuildTarget::Kernel | BuildTarget::KernelImage) {
+    if matches!(target, BuildTarget::Freestanding) {
         if let Some(name) = entry {
             return Err(ForgeError::Usage(format!(
-                "`forge build --target kernel` emits a no_std LIBRARY crate and takes no \
+                "`forge build --target freestanding` emits a no_std LIBRARY crate and takes no \
                  `--entry` (a kernel crate has no userspace `main`/seccomp surface); drop \
                  `--entry {name}` to build the kernel rlib"
             )));
@@ -317,8 +417,8 @@ pub fn build_file(
     // (#198: their std-bodied effect wrappers leak into `#![no_std]`; OQ-2 amended).
     // Every in-language fn is scanned (the whole class, not just an `--entry` closure) so
     // a library exporting an ambient-`fx` fn is refused regardless of call site.
-    if matches!(target, BuildTarget::Kernel | BuildTarget::KernelImage) {
-        reject_ambient_fx_for_kernel(&program)?;
+    if matches!(target, BuildTarget::Freestanding) {
+        reject_ambient_fx_for_freestanding(&program)?;
     }
 
     // #193/#195 open-hole refusal (`.design/forge/goal-repl.md` REQ-4/REQ-5;
@@ -338,6 +438,7 @@ pub fn build_file(
         // `?N` body-hole refusal — a holed proof must not ship a trust-stamped
         // artifact. Hole-free forge items contribute no reason (`None`).
         Item::Forge(forge) => crate::goal_repl::open_proof_hole_reason(forge),
+        Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => None,
     }) {
         return Err(ForgeError::Usage(format!(
             "`forge build` refuses a holed item: {detail} `forge build` lowers to a \
@@ -350,7 +451,7 @@ pub fn build_file(
     // prelude) — the byte-deterministic emission the reproducibility check
     // (AC-6) asserts is stable (`emit_source` is this build's source-of-truth,
     // REQ-5).
-    let source = emit_source(path, entry, sandbox, target)?;
+    let source = emit_source_inner(path, entry, sandbox, target, lock_provider)?;
 
     // REQ-3: a `--entry` produced the deterministic generated runner inside
     // `emit_source` → a runnable executable; the default is a library (rlib) of the
@@ -410,6 +511,7 @@ pub fn build_file(
         artifact,
         crate_type,
         assurance: ASSURANCE_L1.to_string(),
+        lock_provider: lock_provider.map(|provider| provider.name.clone()),
         entry: entry_name,
         functions,
         sandbox: sandbox_record,
@@ -442,17 +544,43 @@ fn parse_program(path: &Path) -> Result<Program, ForgeError> {
 /// reproducibility test asserts they are byte-identical across two calls (forge
 /// owns the emission determinism, independent of any rustc nondeterminism). The
 /// `--entry` runner is appended deterministically (`synthesize_entry_main`).
+#[allow(dead_code)]
 pub fn emit_source(
     path: impl AsRef<Path>,
     entry: Option<&str>,
     sandbox: SandboxConfig,
     target: BuildTarget,
 ) -> Result<String, ForgeError> {
+    emit_source_inner(path, entry, sandbox, target, None)
+}
+
+#[allow(dead_code)]
+pub fn emit_source_with_lock_provider(
+    path: impl AsRef<Path>,
+    entry: Option<&str>,
+    sandbox: SandboxConfig,
+    target: BuildTarget,
+    provider: &thermite_lower::LockProvider,
+) -> Result<String, ForgeError> {
+    emit_source_inner(path, entry, sandbox, target, Some(provider))
+}
+
+fn emit_source_inner(
+    path: impl AsRef<Path>,
+    entry: Option<&str>,
+    sandbox: SandboxConfig,
+    target: BuildTarget,
+    lock_provider: Option<&thermite_lower::LockProvider>,
+) -> Result<String, ForgeError> {
     let path = path.as_ref();
     let program = parse_program(path)?;
-    let lowered = thermite_lower::lower_l1(&program).map_err(ForgeError::Lower)?;
+    let lowered = match lock_provider {
+        Some(provider) => thermite_lower::lower_l1_with_lock_provider(&program, provider),
+        None => thermite_lower::lower_l1(&program),
+    }
+    .map_err(ForgeError::Lower)?;
 
-    // `.design/build/kernel-target.md` REQ-2: under the kernel target, prepend the
+    // `.design/build/freestanding-target.md` REQ-2: under the kernel target, prepend the
     // `#![no_std]` + `extern crate alloc;` + `use alloc::vec::Vec;` prelude (a crate
     // inner attribute must be the first token) before the lowered body. The std
     // default prepends nothing (the existing emission is byte-unchanged, AC-4). The
@@ -460,7 +588,7 @@ pub fn emit_source(
     // `panic!` is `alloc`-clean — OQ-3 — and resolves against the prelude).
     let mut source = match target {
         BuildTarget::Std => String::new(),
-        BuildTarget::Kernel | BuildTarget::KernelImage => KERNEL_PRELUDE.to_string(),
+        BuildTarget::Freestanding => FREESTANDING_PRELUDE.to_string(),
     };
 
     // Basis Stage 8 (`.design/basis/08-runnable-effect-link.md` REQ-2): emit a
@@ -477,7 +605,7 @@ pub fn emit_source(
     source.push_str(&lowered);
 
     // REQ-2: a kernel build is a library — no `synthesize_entry_main` (no `main`, no
-    // seccomp prelude). `build_file` already rejected `--target kernel` + `--entry`,
+    // seccomp prelude). `build_file` already rejected `--target freestanding` + `--entry`,
     // so `entry` is `None` here under the kernel target; the guard keeps the
     // invariant local and explicit.
     if let (Some(name), BuildTarget::Std) = (entry, target) {
@@ -487,35 +615,58 @@ pub fn emit_source(
     Ok(source)
 }
 
-/// Refuse a [`BuildTarget::Kernel`] build of `program` if any in-language `fn`'s
-/// transitive `fx` carries an ambient-syscall effect (`read`/`write`/`net`/`term`,
-/// [`KERNEL_REJECTED_FX`]) — REQ-3. Kernel code has no ambient userspace syscall
-/// surface, so an item carrying one cannot be a freestanding kernel library item.
-/// Reuses `sandbox::transitive_fx` (the #57 reachability walk the userspace seccomp
-/// allowlist is derived from) per `Item::Fn`, scanning the whole function class
-/// (not just an `--entry` closure — a kernel build has no `--entry`). Returns a
-/// structured `ForgeError::Usage` naming the rejected effect + the carrying fn on
-/// the first offender (source order, deterministic — R-CODE-5); `Ok(())` when every
-/// fn is ambient-syscall-free (`pure`/`alloc`/`panic`/`diverge` admit; `time`/`rand`
-/// are rejected — #198, their std-bodied effect wrappers leak into the `#![no_std]`
-/// crate and a kernel has no ambient clock/entropy).
-fn reject_ambient_fx_for_kernel(program: &Program) -> Result<(), ForgeError> {
-    for item in &program.items {
-        let Item::Fn(f) = item else { continue };
-        let fx = sandbox::transitive_fx(program, &f.name);
-        for tok in &fx {
-            // Match the leading verb (before any `(`), mirroring
-            // `sandbox::syscall_allowlist` so `read(stdin)` → `read`.
-            let verb = tok.split('(').next().unwrap_or(tok);
-            if KERNEL_REJECTED_FX.contains(&verb) {
-                return Err(ForgeError::Usage(format!(
-                    "`forge build --target kernel` refuses `{}`: its transitive effect row \
-                     carries the ambient-syscall effect `{tok}` (a `{verb}` userspace syscall), \
-                     which kernel code has no ambient surface for. The admitted kernel effects \
-                     are pure/alloc/panic/diverge; build it for the default (std) target, or \
-                     remove the `{verb}` effect.",
-                    f.name
-                )));
+/// Fail closed at the RFC-9/Bulla classification boundary. Region-bearing
+/// operations are admitted only once a platform policy classifies their region
+/// as kernel-owned; Thermite never infers ambientness from the operation verb.
+fn reject_ambient_fx_for_freestanding(program: &Program) -> Result<(), ForgeError> {
+    validate_freestanding_effects_with(program, |_| None)
+}
+
+/// Validate a freestanding program against a platform region policy. Thermite
+/// supplies exact canonical region identities; Bulla (or another kernel
+/// integration) supplies ownership. `None` is deliberately fail-closed.
+pub fn validate_freestanding_effects_with(
+    program: &Program,
+    classify: impl Fn(&RegionPath) -> Option<thermite_spec::regions::RegionClass>,
+) -> Result<(), ForgeError> {
+    let analysis = thermite_lower::analyze_effects(program).map_err(ForgeError::Effects)?;
+    for (function, footprint) in analysis.footprints {
+        for effect in footprint {
+            let effect_name = match &effect {
+                thermite_syntax::Effect::Read(_) => "read",
+                thermite_syntax::Effect::Write(_) => "write",
+                thermite_syntax::Effect::Net(_) => "net",
+                thermite_syntax::Effect::Alloc => "alloc",
+                thermite_syntax::Effect::Time => "time",
+                thermite_syntax::Effect::Rand => "rand",
+                thermite_syntax::Effect::Panic => "panic",
+                thermite_syntax::Effect::Diverge => "diverge",
+                thermite_syntax::Effect::Term => "term",
+                thermite_syntax::Effect::Owns(_) => "owns",
+            };
+            let basis = thermite_syntax::effect_basis::entry_for_effect(&effect).footprint();
+            for instance in basis.reads.iter().chain(&basis.writes) {
+                let region = RegionPath::from(instance.0.as_str());
+                match classify(&region) {
+                    Some(thermite_spec::regions::RegionClass::KernelOwned) => {}
+                    Some(thermite_spec::regions::RegionClass::Ambient) => {
+                        return Err(ForgeError::Usage(format!(
+                            "`forge build --target freestanding` rejects ambient region \
+                             `{region}` in the transitive footprint of `{function}` \
+                             (effect `{effect_name}`, {effect:?}); the Bulla region policy classifies it as \
+                             syscall-backed rather than kernel-owned."
+                        )));
+                    }
+                    None => {
+                        return Err(ForgeError::Usage(format!(
+                            "`forge build --target freestanding` cannot classify region \
+                             `{region}` in the transitive footprint of `{function}` \
+                             (effect `{effect_name}`, {effect:?}). Thermite does not infer kernel ownership \
+                             from the operation verb; supply the Bulla kernel-region policy. \
+                             The target fails closed while classification is unavailable."
+                        )));
+                    }
+                }
             }
         }
     }
@@ -541,7 +692,11 @@ fn reachable_boundary_targets(program: &Program) -> BTreeSet<String> {
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 boundary-target
             // consumer yet (increments 2b-3); declares no boundary crossing (neutral
             // `None`), mirroring the inert ADT-decl arm.
-            Item::Forge(_) => None,
+            Item::Forge(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => None,
         })
         .collect()
 }
@@ -556,7 +711,7 @@ fn build_functions(program: &Program) -> Vec<BuildFunction> {
         .filter_map(|item| match item {
             Item::Fn(f) => Some(BuildFunction {
                 name: f.name.clone(),
-                fx: effects_of(&f.contract.fx),
+                fx: effects_of(&f.contract.effects),
             }),
             Item::SpecFn(_) => None,
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 manifest consumer
@@ -567,7 +722,12 @@ fn build_functions(program: &Program) -> Vec<BuildFunction> {
             // item carries no `fx` contract row → contributes no manifest
             // function (neutral value `None`). Dead-in-1a: an ADT program dies
             // at the validator before `forge build` projects its functions.
-            Item::Struct(_) | Item::Enum(_) => None,
+            Item::Struct(_)
+            | Item::Enum(_)
+            | Item::EffectDecl(_)
+            | Item::SharedDecl(_)
+            | Item::Concurrent(_)
+            | Item::LockDecl(_) => None,
         })
         .collect()
 }
@@ -601,6 +761,14 @@ fn find_entry_fn<'a>(program: &'a Program, name: &str) -> Result<&'a FnItem, For
             "`--entry {name}` names a forge-tier item (prop/lemma/proof/witness), not a \
              runnable `fn`; name a `fn`"
         ))),
+        Some(Item::EffectDecl(_)) => Err(ForgeError::Usage(format!(
+            "`--entry {name}` names an effect declaration, not a runnable `fn`; name a `fn`"
+        ))),
+        Some(Item::SharedDecl(_)) | Some(Item::Concurrent(_)) | Some(Item::LockDecl(_)) => {
+            Err(ForgeError::Usage(format!(
+                "`--entry {name}` names effect-region metadata, not a runnable `fn`; name a `fn`"
+            )))
+        }
         None => Err(ForgeError::Usage(format!(
             "`--entry {name}` names no `fn` in the program"
         ))),
@@ -826,14 +994,14 @@ fn invoke_rustc(
         .env("SOURCE_DATE_EPOCH", SOURCE_DATE_EPOCH)
         .current_dir(&scratch.path);
 
-    // `.design/build/kernel-target.md` REQ-2: a freestanding crate cannot unwind, so
+    // `.design/build/freestanding-target.md` REQ-2: a freestanding crate cannot unwind, so
     // pin `-C panic=abort` under the kernel target (`--edition`/`--crate-name`/
     // `SOURCE_DATE_EPOCH`/`--remap-path-prefix` are target-independent, unchanged).
     // The std default adds nothing here, so the existing build is byte-unchanged
     // (AC-4). The kernel `#![no_std]` rlib needs no `#[panic_handler]`/allocator to
     // compile (only a final bin/staticlib link does — OQ-1; the test harness supplies
     // a stub for the freestanding-compile AC).
-    if matches!(target, BuildTarget::Kernel | BuildTarget::KernelImage) {
+    if matches!(target, BuildTarget::Freestanding) {
         command.arg("-C").arg("panic=abort");
     }
 
@@ -971,6 +1139,43 @@ fn resolve_rustc_version() -> Result<String, ForgeError> {
 mod tests {
     use super::*;
 
+    fn region_program(region: &str) -> Program {
+        let source = format!(
+            "shared {region}: u8\n#[boundary(\"kernel::touch\")] fn touch() -> u8 \
+             ! write({region}) requires nothing ensures result == 0;"
+        );
+        let parsed = thermite_syntax::parse(&source);
+        assert!(
+            parsed.is_clean(),
+            "kernel region fixture must parse: {:?}",
+            parsed.errors
+        );
+        parsed.program
+    }
+
+    #[test]
+    fn bulla_region_policy_controls_freestanding_acceptance() {
+        let kernel = region_program("scheduler");
+        assert!(validate_freestanding_effects_with(&kernel, |path| {
+            (path.to_string() == "scheduler")
+                .then_some(thermite_spec::regions::RegionClass::KernelOwned)
+        })
+        .is_ok());
+
+        let ambient = region_program("stdout");
+        let rejected = validate_freestanding_effects_with(&ambient, |_| {
+            Some(thermite_spec::regions::RegionClass::Ambient)
+        })
+        .expect_err("ambient classification must reject");
+        assert!(rejected.to_string().contains("ambient region `stdout`"));
+
+        let unavailable = validate_freestanding_effects_with(&kernel, |_| None)
+            .expect_err("missing Bulla classification must fail closed");
+        let detail = unavailable.to_string();
+        assert!(detail.contains("cannot classify region `scheduler`"));
+        assert!(detail.contains("operation verb"));
+    }
+
     fn corpus(name: &str) -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("..")
@@ -982,15 +1187,15 @@ mod tests {
     /// — only `kernel_target.rs::reconstruct_kernel_source` (an independent N-version
     /// reconstruction). Close the gap directly against `emit_source`: the kernel
     /// emission for the pure corpus item `sum.th` must carry the design-pinned
-    /// `#![no_std]` prelude (`.design/build/kernel-target.md` REQ-2:
-    /// [`KERNEL_PRELUDE`]) and not a `std::`-qualified path / `fn main` (a pure lib).
+    /// `#![no_std]` prelude (`.design/build/freestanding-target.md` REQ-2:
+    /// [`FREESTANDING_PRELUDE`]) and not a `std::`-qualified path / `fn main` (a pure lib).
     #[test]
     fn kernel_emit_source_carries_no_std_prelude() -> Result<(), ForgeError> {
         let source = emit_source(
             corpus("sum.th"),
             None,
             SandboxConfig::default(),
-            BuildTarget::Kernel,
+            BuildTarget::Freestanding,
         )?;
 
         // The actual emission begins with the design-pinned freestanding prelude.
@@ -1017,6 +1222,37 @@ mod tests {
             !source.contains("fn main"),
             "a kernel LIBRARY emits no `fn main`:\n{source}"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn rfc10_build_requires_and_records_explicit_provider() -> Result<(), ForgeError> {
+        let path = std::env::temp_dir().join(format!("forge-rfc10-{}.th", std::process::id()));
+        std::fs::write(
+            &path,
+            "struct S { n: u64 } keeps n < 10\nshared state: S\nlock gate guards state\nfn f() -> u64 ! owns(gate) requires true ensures result == 0 { holding gate { } 0 }",
+        )
+        .map_err(|source| ForgeError::Io { path: path.display().to_string(), source })?;
+        let missing = emit_source(&path, None, SandboxConfig::default(), BuildTarget::Std)
+            .expect_err("holding must not erase without a provider");
+        assert!(missing
+            .to_string()
+            .contains("explicit target lock provider"));
+
+        let provider = repository_test_lock_provider(&path)?;
+        let emitted = emit_source_with_lock_provider(
+            &path,
+            None,
+            SandboxConfig::default(),
+            BuildTarget::Std,
+            &provider,
+        )?;
+        assert!(emitted.contains("__thermite_lock_acquire_gate();"));
+        assert!(emitted.contains("__thermite_lock_release_gate"));
+        std::fs::remove_file(&path).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
         Ok(())
     }
 }

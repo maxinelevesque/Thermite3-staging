@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 720c33b61138d572065cbcf3f8c9f87c824a5eec2cf8793e00102029b6498d0b (re-pinned 2026-08-01 after auditing the bootable multicore kernel integration; existing behavior remains regression-covered)
+audited-content-sha256: 608131b9211e84be3cba610e1937b7eb6f765c5187679c1ed28aac7a0e15a6f7 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 98bb2d305dc2ea9a8d09aeece1393cadeaf8d2905203c21778aa0855afce75d1.)
 governs: thermite-tv/src/exec_stmt_encode.rs, thermite-tv/src/obligation.rs, thermite-lower/src/lower.rs, forge/src/body_tv.rs, forge/src/tv_signal.rs
 thesis-refs:
   - thermite-design.md §1 (trust relocated: code → spec → spec-intent)
@@ -52,7 +52,7 @@ component delivers the groundwork:
   invariant / bounded unrolling / a fixpoint argument. The hard, kernel-gated piece. NOT designed here
   (see "Step 2.2.2 horizon").
 - **Sibling groundwork (FRAMED, NOT designed here):** the `no_std` freestanding target
-  (`forge build --target kernel`) — the verified-microkernel enablement. It is a SEPARATE deliverable,
+  (`forge build --target freestanding`) — the verified-microkernel enablement. It is a SEPARATE deliverable,
   NOT a step-2.2 prerequisite (see "Kernel convergence").
 
 ## Trust model (same as step 1 / 2.1 — N-version differential validation, not proof)
@@ -94,8 +94,8 @@ exec language v1.
 | block tail value | `Block.tail: Option<Box<Expr>>` | trailing expr = the block's value (`lower_block_inner`) | the body's RESULT (final-state projection) |
 | expression statement | `Stmt::Expr(e)` | `<e>;` | a side-effecting exec expr (a non-tail call) |
 | `return` | `Stmt::Return(Option<Expr>)` | `return [<e>];` | early exit with a value (straight-line: TAIL position only — see OUT) |
-| `while` with `inv`/`dec` | `Stmt::Loop(LoopNode { kind: While(..), invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed, not in 2.2.1 |
-| `loop` with `inv`/`dec` | `Stmt::Loop(LoopNode { kind: Loop, invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed |
+| `while` with `keeps`/`measures` | `Stmt::Loop(LoopNode { kind: While(..), invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed, not in 2.2.1 |
+| `loop` with `keeps`/`measures` | `Stmt::Loop(LoopNode { kind: Loop, invs, dec, .. })` | `lower_loop` | **step 2.2.2** — framed |
 | `break` | `Stmt::Break` | `break;` (`lower_stmt`) | **step 2.2.2** — loop-control only |
 | `continue` | `Stmt::Continue` | `continue;` (`lower_stmt`) | **step 2.2.2** — loop-control only |
 
@@ -240,7 +240,7 @@ is an EXEC `fn` (not `proof`/`spec`), so the always-active runtime overflow chec
 ## Acceptance criteria
 
 - **AC-1 (faithful straight-line body → verified)** — the body obligation for `{ let a = x + 1; let b
-  = a * 2; b }` (`x: u64`, `req x <= 1000`, reference `body_ref(x) = ((x as nat) + 1) * 2`, production
+  = a * 2; b }` (`x: u64`, `requires x <= 1000`, reference `body_ref(x) = ((x as nat) + 1) * 2`, production
   the faithful `let a = x + 1; let b = a * 2; b`) discharges as `success: true, verified: 1, errors:
   0`. GROUNDED below.
 - **AC-2 (dropped-statement infidelity → counterexample)** — the SAME obligation with production
@@ -379,7 +379,7 @@ The REQ-1 frozen exec-statement subset + the REQ-2 operational semantics are the
 EXEC-LANGUAGE foundation: a kernel written in Thermite needs (a) a pinned, semantics-bearing exec
 statement language (REQ-1/REQ-2 deliver exactly this — let/assign/mutation/seq/if/while with a
 mechanized state-transformer meaning) and (b) a freestanding `no_std` lowering target. (b) is a
-SEPARATE sibling groundwork item — `forge build --target kernel` emitting `no_std` freestanding
+SEPARATE sibling groundwork item — `forge build --target freestanding` emitting `no_std` freestanding
 Verus-Rust (no `vstd::prelude::*` std assumptions, a freestanding allocator/panic discipline). It is
 **NOT a step-2.2 prerequisite** (2.2.1/2.2.2 are TV over the SAME lowering target as the rest of the
 toolchain). It is FRAMED here as a sibling and tracked as blocker #164; it is NOT designed in this doc
@@ -395,7 +395,7 @@ kernel's exec language — one frozen set, two consumers.
   per-RHS value faithfulness.
 - **2.2.2 (loops, KERNEL-GATED):** `while`/`loop`/`break`/`continue` — the after-loop state needs the
   invariant / unrolling / a fixpoint. Framed, not designed; a loop body is Skipped honestly.
-- **no_std kernel target (SIBLING groundwork):** `forge build --target kernel` — separate deliverable,
+- **no_std kernel target (SIBLING groundwork):** `forge build --target freestanding` — separate deliverable,
   not a step-2.2 prerequisite, framed not designed (blocker #164).
 
 A reader must NOT read straight-line body-TV (2.2.1) as whole-body (loop-inclusive) faithfulness, nor
@@ -406,7 +406,7 @@ as the kernel target.
 Three post-pin commits hardened the REQ-5 phase WITHOUT changing the four-way
 contract:
 
-- **#189** — `body_tv` gates the spec-fn-helper `req` and NEVER maps a verus
+- **#189** — `body_tv` gates the spec-fn-helper `requires` and NEVER maps a verus
   frame/compile abort of the obligation SCAFFOLD to `Divergent`: a discharge
   failure is `Unverifiable`; `Divergent` is reserved for a real counterexample /
   a non-compiling PRODUCTION body (R-HONEST-3).

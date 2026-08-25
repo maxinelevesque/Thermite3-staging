@@ -12,7 +12,7 @@ increments.
 clusters and AC-1..AC-14 are the contract; its Architecture section grounds
 every increment in the existing tree at the cited files. This plan does **not**
 restate the REQs; it sequences them into committable increments and pins the
-per-increment verification. The umbrella is `.design/thermite2-program.md`
+per-increment verification. The umbrella is `docs/v2/program.md`
 (REQ-3); the gate is **G1**.
 
 Two design questions are already **resolved** in the spec — do not re-litigate:
@@ -41,12 +41,12 @@ independent (may land first) → 9 trails → 10 gate.** Mapped to committable u
 | **0** | relax spine lemmas (independent, can land first) | REQ-8a | new Mathlib-island module under `lean/Thermite/` (`r_relax_sound`, `rencode_sound`); axiom probe `[1′]` extended; **+ a Lean-CI job (`lake build` + axiom probe) and lean-smt pinned to a SHA** (audit F4 prereq) | `lake build` green; `make audit` axiom probe covers both lemmas; the new probe runs in CI, not just locally |
 | **1** | **foundation** (gates the rest) | REQ-1, REQ-2, + the REQ-4 `Engine`-signature change | **Q-KBSIGNAL signal probe first**; new *separate cert-level* seven-verdict enum (4 verdicts produced upstream, not mapped from `engine::Verdict`); `Engine::discharge` gains the non-optional covenant param (touch all call sites once); axiom-gate hoist to all Lean tiers; correspondence table + repoint the *existing* doc-drift route | full gauntlet + **`oracle_subset` byte-identical on all 7 `conformance/*.cert.json`** (AC-4) |
 | **2a** | surface syntax | REQ-3 | `thermite-syntax/src/{parser,address}.rs` (new items beside `fn`; `?pN` holes; proof addresses) | `cargo test -p thermite-syntax`; AST + address round-trips |
-| **2b** | covenant engine | REQ-4 | covenant *logic* on the foundation-threaded discharge param: `inhabit` type-check+execute against `req`, `falsify` via `thermite-tv/src/gen.rs` (Q3 50k fixed seed), `CovenantRefuted` hard-fail in `forge/src/degrade.rs` | `cargo test -p forge`; structural no-witness→no-proof-search test |
+| **2b** | covenant engine | REQ-4 | covenant *logic* on the foundation-threaded discharge param: `inhabit` type-check+execute against `requires`, `falsify` via `thermite-tv/src/gen.rs` (Q3 50k fixed seed), `CovenantRefuted` hard-fail in `forge/src/degrade.rs` | `cargo test -p forge`; structural no-witness→no-proof-search test |
 | **2c** | frozen battery | REQ-5 | new registry data file modeled on `thermite-spec/src/combinators.rs` `REGISTRY`; elaboration-time enforcement; `Stuck` hints | `cargo test -p forge`; unlisted-tactic refusal test |
 | **2d** | anti-Goodhart at L3 | REQ-6 | re-elab tautology harness beside `forge/src/vacuity_solver.rs`; reuse `forge/src/mutation.rs` `generate()` (swapped kill check); `forge audit --meaning` in `forge/src/audit.rs` | `cargo test -p forge`; mutation catalogue-shared assertion |
 | **2e** | goal/fill UX | REQ-7 | `forge/src/goal_repl.rs` proof view + `fill_hole` `?pN`; burn receipt in cert | `cargo test -p forge`; fill-to-close on merge example |
 | **2f** | relax engine route | REQ-8b | new `Engine`-trait impl (relaxable check, nlsat + integrality, `RealWitness` escalation); attribution via `Certificate::with_engine_attribution` | `cargo test -p forge`; isqrt L4 push-button; `∀n. n*n≠2` → `RealWitness` |
-| **3** | lemma library mechanics (trails usage) | REQ-9 | per-project lemma namespace; certified-only citation resolution; dedup-on-burn by statement hash; `dec wf` accessibility cache (`forge/src/cache.rs`) | `cargo test -p forge`; uncertified-citation failure + dedup-rewrite tests |
+| **3** | lemma library mechanics (trails usage) | REQ-9 | per-project lemma namespace; certified-only citation resolution; dedup-on-burn by statement hash; `measures wf` accessibility cache (`forge/src/cache.rs`) | `cargo test -p forge`; uncertified-citation failure + dedup-rewrite tests |
 | **G1** | **gate** | REQ-10 | end-to-end on a real merge-class example; README headline flip | full G1 checklist (below) |
 
 Increments **2a–2f** parallelize once increment 1 lands (they depend on the
@@ -128,12 +128,12 @@ authoritative spec was amended to match (see its dated amendment note):
   committed — treat its findings as history, the present look as authoritative.)
 - **`forge audit` gates nothing** (#274) — certify-time gating lives on the
   discharge path; `forge audit --meaning` stays a read-only projection.
-- **Decisions recorded**: `dec wf <rel>` ASCII (Q-DECWF); a new
+- **Decisions recorded**: `measures wf <rel>` ASCII (Q-DECWF); a new
   `EngineName::Nlsat` direct Z3 nlsat tactic (Q-NLSAT); refinement sugar needs a
   new post-parse desugaring pass.
 
 **Risk hotspots** (from the 19-subtask estimate — weight critic effort here):
-REQ-1b KernelBudget signal, REQ-3c desugaring/`dec`-forms, REQ-4 covenant
+REQ-1b KernelBudget signal, REQ-3c desugaring/`measures`-forms, REQ-4 covenant
 signature ripple, REQ-6a/b re-elaboration (perf: ≤64 re-typechecks/item within
 the 30s budget — verify early), REQ-6c definition-tower instrumentation, REQ-8b/8c
 nlsat + integrality, REQ-9 lemma-library schema expansion.

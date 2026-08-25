@@ -3,12 +3,30 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: adba1a733f08c9644914fad439fcaf367e972adeebc3039b37fd9dea8c8c233f (re-pinned 2026-08-01 after restoring the Rust cache before the pinned Stage 4 tools; Gate G4 identities remain enforced)
+audited-content-sha256: 6acf8d2cd690775a6e8b31620ecea61cfaea77c1ade5c6c43ab21c258bbcdce0 (re-pinned 2026-08-25 for issue #41 certificate-path characterization; reconstruction semantics are unchanged. prior: f50871fd74f58a92bc6f7d18554150c8515602ef203bca7fe571ff9f9602fd7c)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
-         audit boundary, proof tooling, and Gate G4 (see tooling/spec-routes.toml)
+         audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->
 
-Status: shipped. Gate G4 is `bash scripts/g4-gate.sh`.
+Status: shipped. Gate G4 is `bash gates/g4.sh`.
+
+**RFC-3 aggregation amendment, 2026-08-16.** A successful reconstruction of
+only some clauses is not appended to the authoritative base certificate. Until
+clause-level RFC-3 coordinates and an aggregation rule exist, the base item
+certificate remains unchanged; only reconstruction of every clause may replace
+it with the homogeneous EPR L4 certificate. This prevents mixed EPR/Verus
+evidence from being projected under one item-level Verus classification.
+
+**Typed result-arbiter amendment, 2026-08-16.** Complete reconstruction is
+supplemental proof evidence, not a license to rewrite an arbitrary settled
+certificate. `forge/src/result_arbiter.rs` combines it with the typed base
+disposition: clean L3 and explicit timeout/degrade outcomes may upgrade; a
+Verus counterexample plus an EPR proof (or a Verus proof plus an EPR
+countermodel) is `EprVerifierDisagreement`; WeakContract and semantic-vacuity
+policy rejections remain byte-for-byte settled. Replacement retains the exact
+assurance scope/certification boundary and already-accepted mutation and
+strengthening evidence, plus covenant evidence and the meaning audit. Partial,
+unavailable, timeout, unknown, and proof-failure EPR results preserve the base.
 
 Stage 2 proved the shape of the stratified encoder, but left relation and
 array-property atoms interpreted by the solver. Stage 3 added checked replay for
@@ -18,7 +36,7 @@ countermodel or a kernel-checked proof of its actual `req → clause` theorem.
 
 The external solver may search for a proof, but it is not trusted. Lean rebuilds
 the finite grounding and CNF, checks an LRAT certificate, and derives the clause
-theorem. `scripts/install-g4-tools.sh` builds CaDiCaL 2.1.3 at
+theorem. `dev/install-g4-tools.sh` builds CaDiCaL 2.1.3 at
 `f13d74439a5b5c963ac5b02d05ce93a8098018b8` and drat-trim at
 `effa1dcce85c878236f8313133dff1a2b766cd7c`; the gate accepts only those
 identities.
@@ -177,7 +195,7 @@ not race to compile the shared Lean artifacts.
   clause routing without an engine flag.
 - [x] Restratified formulas and their side obligations have positive and
   fail-closed tests.
-- [x] `bash scripts/g4-gate.sh`, the workspace tests, Lean build and axiom probe,
+- [x] `bash gates/g4.sh`, the workspace tests, Lean build and axiom probe,
   audit, drift checks, and requirement-registry checks all pass with no skipped
   dependency.
 
@@ -192,7 +210,7 @@ not race to compile the shared Lean artifacts.
   models, replays proofs, records evidence, and maintains the checked cache.
 - `forge/src/check.rs` applies the route automatically and changes trust only
   after checked replay.
-- `scripts/g4-gate.sh` is the memory-bounded completion gate.
+- `gates/g4.sh` is the memory-bounded completion gate.
 
 ## Residual trust after G4
 

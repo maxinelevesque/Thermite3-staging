@@ -1,15 +1,15 @@
 fn plus_one(x: u64) -> u64
-  req x < u64::MAX
-  ens result == x + 1
-  fx pure
+  ! pure
+  requires x < u64::MAX
+  ensures result == x + 1
 {
   x + 1
 }
 
 fn bad_call(x: u64) -> u64
-  req x < u64::MAX
-  ens result == x
-  fx pure
+  ! pure
+  requires x < u64::MAX
+  ensures result == x
 {
   plus_one(x)
 }

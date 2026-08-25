@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 58d8755d00550c507a768a19c5c0c7d15d135c78cd4538eb02efe1518210840e
+audited-content-sha256: f8a1523d0ef20a1b4559c5f9e9eed894463e3e4be79ff9d8dfc3e64a985e8608 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 507b82598c08e11659751b02128e847ad747dc28dc70215dfd5826ccf4913b08.)
 decision: preserve verifier counts when present and represent frontend counts as unknown
 issue: github:dollspace-gay/Thermite#111
 governs:
