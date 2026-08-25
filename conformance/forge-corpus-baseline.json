@@ -8,7 +8,7 @@
   "effect_link_demo.th": {"now":{"level":"L1","cause":null},"elapsed_ok":{"level":"L0","cause":"WeakContract"}},
   "list_fold.th": {"List":"L3","len_list":"L3","sum_list":"L3","all_positive":"L3"},
   "list_sum.th": {"List":"L3","sum_list":"L3"},
-  "map_kv.th": {"build_one":{"level":"L0","cause":"WeakContract"},"has_key":"L3","demo":{"level":"L0","cause":"EnsIsTrivial"},"lookup_absent":{"level":"L0","cause":"WeakContract"}},
+  "map_kv.th": {"build_one":{"level":"L0","cause":"WeakContract"},"has_key":"L3","demo":{"level":"L0","cause":"EnsIsTrivial"},"first_value":"L3","last_value":"L3","lookup_absent":{"level":"L0","cause":"WeakContract"}},
   "multi_adt.th": {"Role":"L3","Action":"L3","may_ban":"L3","is_ban":"L3","authorize":"L3"},
   "option_result.th": {"ParseErr":"L3","make_some":"L3","small":"L3","ok_seven":"L3","checked":"L3"},
   "parse_u64.th": {"parse_valid":"L3"},
