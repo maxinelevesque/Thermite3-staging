@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: a7b6cf93d94e82cab567a373dfafe7cf5324d671a43662bdba620d048ff86355 (re-pinned 2026-08-25 for issue #8 and the final L3-or-higher registry-evidence source pin; GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 052ae4b575e7ce240cf2296acafba70bb445d6400c03dacceffecbf5b1970411)
+audited-content-sha256: 24e06be01211ed7f4587077bc0ee2e2bd7ab1662cfb79c52ac66a10650fe9a57 (re-pinned 2026-08-25 for issue #9 and the language-inventory registry source pin; GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: a7b6cf93d94e82cab567a373dfafe7cf5324d671a43662bdba620d048ff86355)
 
 ## Summary
 
