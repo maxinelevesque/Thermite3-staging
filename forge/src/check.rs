@@ -11772,6 +11772,56 @@ requires true\n\
         )
     }
 
+    #[test]
+    fn orphan_proof_is_rot_and_cannot_false_discharge_a_renamed_function() {
+        let (source, mut program, function, _bindings, base) = g1_producer_fixture();
+        for item in &mut program.items {
+            if let Item::Forge(thermite_syntax::ForgeItem::Proof(proof)) = item {
+                proof.target = "old_g1_multi".into();
+            }
+        }
+        assert!(
+            forge_proof_text_for(&program, "g1_multi", function.contract.ensures.len(), 1)
+                .is_none(),
+            "an orphan proof must never be selected for the renamed function"
+        );
+
+        let bindings = crate::covenant_engine::witness_bindings(&program);
+        let nlsat = crate::engine::NlsatEngine::new(program.clone());
+        let lean = crate::engine::LeanEngine::new(program.clone(), lean_package_root());
+        let certificate = forge_gate_item_cert_with(
+            &nlsat,
+            &lean,
+            &program,
+            &source,
+            &function,
+            &bindings,
+            &[],
+            base,
+            &mut ScriptedG1Routes {
+                nlsat: [].into(),
+                lean: [].into(),
+                mutation: (
+                    crate::mutation::MutationScore {
+                        killed: 0,
+                        scored: 0,
+                        equivalent: 0,
+                        survivor: None,
+                    },
+                    Vec::new(),
+                ),
+            },
+        );
+        assert_eq!(certificate.level, Level::L0);
+        assert_eq!(
+            certificate
+                .reject
+                .as_ref()
+                .map(|reason| reason.cause.as_str()),
+            Some("ForgeGateMissingProof")
+        );
+    }
+
     fn g1_replay_matrix(
         outcomes: [[crate::engine::MutationReplayOutcome; 2]; 2],
     ) -> Vec<crate::manifest::ClauseMutationReplay> {

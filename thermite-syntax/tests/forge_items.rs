@@ -161,7 +161,8 @@ fn proof_clause_ordinal_overflow_is_rejected_without_truncation() {
 
 #[test]
 fn proof_obligation_clause_and_hole_addresses() {
-    let src = "proof for f { ensures#2 by { ?p3 } }";
+    let src = "fn f(n: u32) -> u32 ! pure requires true ensures result == n ensures result >= n ensures n <= result { n }\n\
+               proof for f { ensures#2 by { ?p3 } }";
     let addrs = address_set(src);
     assert!(
         addrs.contains(&"f.proof.ensures#2".to_string()),
@@ -182,6 +183,29 @@ fn proof_obligation_clause_and_hole_addresses() {
             .kind,
         AddrKind::ProofHole
     );
+}
+
+#[test]
+fn orphan_and_wrong_kind_proofs_have_no_semantic_addresses() {
+    for src in [
+        "proof for missing { ensures#0 by { omega } }",
+        "spec fn not_exec(n: u32) -> u32 measures n { n }\n\
+         proof for not_exec { ensures#0 by { omega } }",
+    ] {
+        let result = parse(src);
+        assert!(
+            result.is_clean(),
+            "surface parse remains syntactic: {:?}",
+            result.errors
+        );
+        assert!(
+            addresses_of(&result.program)
+                .iter()
+                .all(|entry| !entry.addr.contains(".proof.")),
+            "an unbound proof target must not mint an address: {:?}",
+            addresses_of(&result.program)
+        );
+    }
 }
 
 // ---------------------------------------------------------------------------

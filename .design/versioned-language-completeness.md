@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 3bf032f07bcdf3ac65b427e0f7b93f81758c95e994aff3e62773246c0a17a0cb (Roadmap/status reconciliation after RFC-10 replay closure, 2026-08-25: CLAIM-REGISTRY-SHIPPED-EVIDENCE pins the reconciled registry where the Assurance V2 formal display result and RFC-10 replay independence/mutation closure are shipped, production display non-authority remains partial under issue 56, and GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 001748d567af813fc0a2a48b00495b906c01f3a4acc3470c646239902d7cab54)
+audited-content-sha256: 766777ecf9994011b89875d7f6d9ee4f07e09f63bb56cc7a770c28906f7a3602 (re-pinned 2026-08-25 for issue #41 and the updated registry-evidence source pin; GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 3bf032f07bcdf3ac65b427e0f7b93f81758c95e994aff3e62773246c0a17a0cb)
 
 ## Summary
 

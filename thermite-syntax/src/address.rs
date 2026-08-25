@@ -27,7 +27,8 @@
 //! | REQ-SYNTAX-ADDRESS-STABILITY | shipped | `thermite-syntax/src/address.rs` | Semantic address stability |  |
 //! <!-- /generated:reqs -->
 
-use crate::ast::{Block, Item, LoopNode, Program, Stmt};
+use crate::ast::{Block, ForgeItem, Item, LoopNode, Program, Stmt};
+use std::collections::HashSet;
 use std::fmt;
 
 /// A structured error from address resolution (semantic-addressing.md REQ-6).
@@ -93,6 +94,17 @@ pub struct AddressEntry {
 /// (R-CODE-5).
 pub fn addresses_of(program: &Program) -> Vec<AddressEntry> {
     let mut out = Vec::new();
+    // Resolve `proof for f` roots against the complete item set before emitting
+    // addresses, so forward references work but orphan/wrong-kind proof material
+    // never manufactures an apparently valid semantic address.
+    let fn_names: HashSet<&str> = program
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Fn(function) => Some(function.name.as_str()),
+            _ => None,
+        })
+        .collect();
     // Witness blocks have no name (`.design/stage1-forge-tier.md` REQ-3), so they
     // are numbered `witness#N` (1-based, source order) like `loop#N`.
     let mut witness_index = 0usize;
@@ -150,6 +162,7 @@ pub fn addresses_of(program: &Program) -> Vec<AddressEntry> {
             // Stage-1 forge-tier items (`.design/stage1-forge-tier.md` REQ-3): the
             // prop/lemma/proof/witness addressing, including the proof-block
             // addresses (`f.proof.ensures#k`) and the `?pN` proof-hole form (AC-7).
+            Item::Forge(ForgeItem::Proof(proof)) if !fn_names.contains(proof.target.as_str()) => {}
             Item::Forge(forge) => collect_forge_addresses(forge, &mut witness_index, &mut out),
         }
     }
