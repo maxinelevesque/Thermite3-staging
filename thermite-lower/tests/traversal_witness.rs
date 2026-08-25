@@ -1,21 +1,15 @@
 use thermite_lower::witness::{emit_witness_with_budget, required_witness_budget};
 use thermite_lower::{
-    canonical_ast_projection, check_program, emit_witness, replay_witness, TraversalWitness,
-    WitnessError,
+    canonical_ast_projection, check_program, emit_witness, replay_witness, CanonicalAstProjection,
+    TraversalWitness, WitnessError,
 };
 use thermite_syntax::{parse, WorkBudget};
 
-fn lean_replays(source: &str) {
+fn lean_output(ast: &CanonicalAstProjection, witness: &TraversalWitness) -> std::process::Output {
     use std::io::Write;
     use std::process::{Command, Stdio};
 
-    let parsed = parse(source);
-    assert!(parsed.is_clean(), "{source}: {:?}", parsed.errors);
-    let checked = check_program(&parsed.program)
-        .unwrap_or_else(|errors| panic!("fixture must check: {source}: {errors:?}"));
-    let witness = emit_witness(&checked);
-    let ast = canonical_ast_projection(&parsed.program).unwrap();
-    let replay = thermite_lower::lean_replay_source(&ast, &witness);
+    let replay = thermite_lower::lean_replay_source(ast, witness);
     let lean_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../lean");
     let mut child = Command::new("lake")
         .args(["env", "lean", "--stdin", "--threads=1"])
@@ -31,7 +25,17 @@ fn lean_replays(source: &str) {
         .unwrap()
         .write_all(replay.as_bytes())
         .unwrap();
-    let output = child.wait_with_output().unwrap();
+    child.wait_with_output().unwrap()
+}
+
+fn lean_replays(source: &str) {
+    let parsed = parse(source);
+    assert!(parsed.is_clean(), "{source}: {:?}", parsed.errors);
+    let checked = check_program(&parsed.program)
+        .unwrap_or_else(|errors| panic!("fixture must check: {source}: {errors:?}"));
+    let witness = emit_witness(&checked);
+    let ast = canonical_ast_projection(&parsed.program).unwrap();
+    let output = lean_output(&ast, &witness);
     assert!(
         output.status.success(),
         "Lean rejected supported fixture:\n{}\n{}",
@@ -138,6 +142,150 @@ fn independently_mutated_evidence_is_rejected_by_named_field() {
             field: "shared_places"
         }
     );
+
+    for index in 0..original.edges.len() {
+        let mut missing_child = original.clone();
+        missing_child.edges.remove(index);
+        assert_eq!(
+            replay_witness(&parsed.program, &missing_child).unwrap_err(),
+            WitnessError::Mismatch { field: "edges" },
+            "canonical child edge {index} must be observed"
+        );
+    }
+}
+
+#[test]
+fn lean_derives_lock_authority_order_and_all_close_edges_from_neutral_facts() {
+    let parsed = parse(SOURCE);
+    let witness = emit_witness(&check_program(&parsed.program).unwrap());
+    let ast = canonical_ast_projection(&parsed.program).unwrap();
+    assert!(lean_output(&ast, &witness).status.success());
+
+    let mut forged_guard = ast.clone();
+    forged_guard.lock_decls[0].guarded_region = "forged.region".into();
+    assert!(!lean_output(&forged_guard, &witness).status.success());
+
+    let mut omitted_place = ast.clone();
+    omitted_place
+        .events
+        .iter_mut()
+        .find(|event| event.entering && event.kind == "Place" && event.eligible)
+        .unwrap()
+        .eligible = false;
+    assert!(!lean_output(&omitted_place, &witness).status.success());
+
+    let mut forged_fallthrough = ast.clone();
+    forged_fallthrough
+        .events
+        .iter_mut()
+        .find(|event| !event.entering && event.kind == "Holding")
+        .unwrap()
+        .node = u32::MAX;
+    assert!(!lean_output(&forged_fallthrough, &witness).status.success());
+
+    let ordered = parse(
+        "struct State { a: u64, b: u64 } keeps a < 10\n\
+         shared state: State\n\
+         lock alpha guards state.a\n\
+         lock beta guards state.b after alpha\n\
+         fn ordered() -> u64 ! owns(alpha), owns(beta) requires true ensures result == 0\n\
+         { holding alpha { holding beta { } } 0 }",
+    );
+    let ordered_witness = emit_witness(&check_program(&ordered.program).unwrap());
+    let ordered_ast = canonical_ast_projection(&ordered.program).unwrap();
+    assert!(lean_output(&ordered_ast, &ordered_witness).status.success());
+    let mut missing_order = ordered_ast.clone();
+    missing_order
+        .lock_decls
+        .iter_mut()
+        .find(|lock| lock.name == "beta")
+        .unwrap()
+        .after = None;
+    assert!(!lean_output(&missing_order, &ordered_witness)
+        .status
+        .success());
+    let mut direct_reentrancy = ordered_ast.clone();
+    direct_reentrancy
+        .events
+        .iter_mut()
+        .filter(|event| event.entering && event.kind == "Holding")
+        .nth(1)
+        .expect("inner holding event")
+        .value = "alpha".into();
+    assert!(
+        !lean_output(&direct_reentrancy, &ordered_witness)
+            .status
+            .success(),
+        "Lean must reject a neutral event stream forged into direct reentrancy"
+    );
+
+    let control = parse(
+        "struct State { n: u64 } keeps n < 10\n\
+         shared state: State\n\
+         lock gate guards state\n\
+         fn via_return() -> u64 ! owns(gate) requires true ensures result == 1\n\
+         { holding gate { return 1; } 0 }\n\
+         fn via_break() -> u64 ! owns(gate) requires true ensures result == 2\n\
+         { loop keeps true measures 1 as u64 { holding gate { break; } } 2 }\n\
+         fn via_continue() -> u64 ! owns(gate) requires true ensures result == 3\n\
+         { let mut i: u64 = 0; while i < 1 keeps i <= 1 measures 1 - i\n\
+           { holding gate { i = i + 1; continue; } } 3 }",
+    );
+    let control_witness = emit_witness(&check_program(&control.program).unwrap());
+    let control_ast = canonical_ast_projection(&control.program).unwrap();
+    assert!(lean_output(&control_ast, &control_witness).status.success());
+    for reason in ["Return", "Break", "Continue"] {
+        let mut omitted = control_ast.clone();
+        omitted
+            .events
+            .iter_mut()
+            .find(|event| event.entering && event.kind == reason)
+            .unwrap()
+            .kind = "Other".into();
+        assert!(!lean_output(&omitted, &control_witness).status.success());
+
+        let mut forged_witness = control_witness.clone();
+        forged_witness
+            .holdings
+            .iter_mut()
+            .flat_map(|holding| holding.close_edges.iter_mut())
+            .find(|edge| edge.reason == reason)
+            .unwrap_or_else(|| panic!("{reason} witness close"))
+            .inner_to_outer
+            .clear();
+        assert!(
+            !lean_output(&control_ast, &forged_witness).status.success(),
+            "Lean must reject forged {reason} witness close evidence"
+        );
+    }
+}
+
+#[test]
+fn lean_rejects_specific_condition_and_match_guard_child_omissions() {
+    let parsed = parse(
+        "fn probe(x: u64) -> u64 ! pure requires true ensures true {\n\
+         if x == 0 { }\n\
+         match x { n if n == 1 => n, _ => x }\n\
+         }",
+    );
+    assert!(parsed.is_clean(), "{:?}", parsed.errors);
+    let checked = check_program(&parsed.program).unwrap();
+    let witness = emit_witness(&checked);
+    let ast = canonical_ast_projection(&parsed.program).unwrap();
+    assert!(lean_output(&ast, &witness).status.success());
+    for role in ["Condition", "Guard"] {
+        let mut omitted = witness.clone();
+        let index = omitted
+            .edges
+            .iter()
+            .position(|edge| edge.role == role)
+            .unwrap_or_else(|| panic!("{role} edge"));
+        omitted.edges.remove(index);
+        assert!(
+            !lean_output(&ast, &omitted).status.success(),
+            "Lean must reject an omitted {role} child"
+        );
+    }
 }
 
 #[test]
@@ -200,6 +348,10 @@ fn checked_shared_places_obey_the_same_lexical_scope_as_projection() {
     let checked = check_program(&parsed.program).expect("shadowed locals are not shared places");
     let witness = emit_witness(&checked);
     let ast = canonical_ast_projection(&parsed.program).unwrap();
+    assert!(ast
+        .events
+        .iter()
+        .all(|event| { event.kind != "Other" && (event.kind != "Place" || event.eligible) }));
     assert_eq!(witness.shared_places.len(), 1);
     assert_eq!(
         witness
@@ -207,9 +359,10 @@ fn checked_shared_places_obey_the_same_lexical_scope_as_projection() {
             .iter()
             .map(|place| place.node)
             .collect::<Vec<_>>(),
-        ast.shared_places
+        ast.events
             .iter()
-            .map(|place| place.node)
+            .filter(|event| event.entering && event.kind == "Place" && event.eligible)
+            .map(|event| event.node)
             .collect::<Vec<_>>()
     );
     replay_witness(&parsed.program, &witness).expect("shadowed program replays");
@@ -224,7 +377,7 @@ fn lock_free_shared_place_has_no_authority_requirement() {
     let ast = canonical_ast_projection(&parsed.program).unwrap();
     assert_eq!(witness.shared_places.len(), 1);
     assert!(witness.shared_places[0].authorizing_locks.is_empty());
-    assert!(ast.authority_required_nodes.is_empty());
+    assert!(ast.lock_decls.is_empty());
 }
 
 #[test]

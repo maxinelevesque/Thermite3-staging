@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: d2b7de30182f0a76dba8cd5bdc2a6f1974b31e7ddc6d32ffb5d0c75173cbf0f8 (re-pinned 2026-08-17 after classifying the result-arbiter effect-row fixture in the reviewed RFC-9 inventory; effect semantics are unchanged. prior: 44089661422c4313edbc0e07e675347c68c2c3bb032e6a602d94385c5eca480b)
+audited-content-sha256: e6a7e885f6c7071b95df0fc62e2507f8ec9f218954a539c5f91199b0f05a5e16 (re-pinned 2026-08-24 after the reviewed RFC-9 inventory classified five new RFC-10 shared-state fixture token sites; effect semantics are unchanged. prior: d2b7de30182f0a76dba8cd5bdc2a6f1974b31e7ddc6d32ffb5d0c75173cbf0f8)
 -->
 
 ## Summary

@@ -18082,18 +18082,58 @@ target = "thermite-syntax/tests/semantic_inventory.rs"
 note = "exact sufficient-budget boundary separates language support from resource availability"
 
 [[requirement]]
+id = "REQ-RFC10-SEMANTIC-REPLAY-INDEPENDENCE"
+title = "Lean independently derives RFC-10 semantic evidence"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "verified"
+summary = "Lean replay derives exact guarded regions, held-lock order and reentrancy, normalized close sequences, and shared-place authority from neutral canonical graph and declaration facts."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "file"
+target = "lean/Thermite/CheckedTraversal.lean"
+note = "deriveSemantics computes guarded regions, order validity, held stacks, close sequences, shared-place coverage, and authority from finite neutral declarations/events"
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-lower/src/witness.rs"
+note = "canonical projection serializes sorted lock declarations and syntax inventory enter/leave facts without expected holding/shared/authority payloads"
+
+[[requirement]]
+id = "REQ-RFC10-REPLAY-MUTATION-CLOSURE"
+title = "Every derived RFC-10 field has replay mutation controls"
+owner = ".design/rfc10-checked-traversal.md"
+status = "shipped"
+scope = "verified"
+summary = "Valid nested and expression-position artifacts pass replay while omission and forgery of every independently derived structural, effect, call, lock, capability, authority, and close fact fail closed."
+remaining_scope = ""
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "kernel replay rejects structural, direct/transitive footprint, call, holding, capability, guarded-region, order, authority, shared-place, and close mutations"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/traversal_witness.rs"
+note = "Rust and Lean replay cover every canonical child deletion, condition/guard omissions, direct reentrancy, order, authority, and fallthrough/return/break/continue close mutations"
+
+[[requirement]]
 id = "REQ-RFC10-CONFORMANCE-MATRIX"
 title = "Generated traversal and phase conformance matrix"
 owner = ".design/rfc10-checked-traversal.md"
-status = "partial"
+status = "shipped"
 scope = "test"
-summary = "Generated fixtures cross ten positions with core positive, rejection, and deep-expression payloads through parser, checked IR, replay, L1, and L3."
-remaining_scope = "GitHub issue 49: cross non-Copy move, escaping-borrow, invariant-mutation payloads and every compatible L2/Forge route in the generated matrix."
+summary = "Canonical-role-grounded fixtures cross ten positions with positive, rejection, affine, invariant, and finite-depth payloads through every compatible parser, checked-IR, replay, L1, L2, L3, and Forge route."
+remaining_scope = ""
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "test"
 target = "thermite-lower/tests/rfc10_conformance_matrix.rs"
-note = "ten-position generated matrix with compile/execute L1, L3, witness replay, rejection classes, and deep finite terms"
+note = "ten-position generated matrix covers canonical role ancestry, compile/execute L1, typed L2 exclusions, L3, replay, rejection classes, affine exclusions, invariant restoration/breakage, and deep finite terms"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/check_conformance.rs"
+note = "provider-free Forge matrix covers all ten positions, matching L2 exclusions, bounded deep terms, explicit loop proof failure, and invariant-breaking L0 outcomes"
 
 [[requirement]]
 id = "REQ-RFC10-DELTA-LEDGER"

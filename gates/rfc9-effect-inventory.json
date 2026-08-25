@@ -142,11 +142,12 @@
     },
     {
       "atoms": [
-        "read(state.n)"
+        "read(state.n)",
+        "write(state.n)"
       ],
       "classification": "RFC-10 shared-state invariant conformance fixtures",
       "path": "forge/tests/check_conformance.rs",
-      "sites": 2
+      "sites": 5
     },
     {
       "atoms": [
@@ -254,11 +255,12 @@
     {
       "atoms": [
         "read(state.n)",
+        "read(state.text)",
         "write(state.n)"
       ],
       "classification": "RFC-10 phase cross-product fixtures",
       "path": "thermite-lower/tests/rfc10_conformance_matrix.rs",
-      "sites": 4
+      "sites": 6
     },
     {
       "atoms": [
@@ -364,7 +366,7 @@
     "json_missing_shared": 0,
     "json_program_fields_with_state_effects": 5,
     "rust_files_reviewed": 32,
-    "rust_reviewed_sites": 180,
+    "rust_reviewed_sites": 185,
     "th_missing_shared": 0,
     "th_programs_with_state_effects": 5,
     "tracked_th_files": 66

@@ -137,29 +137,46 @@ impl<'a> SemanticNode<'a> {
                     .collect(),
             },
             Self::Item(item) => SemanticFact::NamedItem(item.name().to_string()),
-            Self::Stmt(Stmt::Holding { lock, .. }) => SemanticFact::Holding { lock: lock.clone() },
-            Self::Stmt(Stmt::Let { name, .. }) => SemanticFact::LetBinding(name.clone()),
+            Self::Stmt(Stmt::Holding {
+                lock,
+                body: _,
+                span: _,
+            }) => SemanticFact::Holding { lock: lock.clone() },
+            Self::Stmt(Stmt::Let {
+                mutable: _,
+                name,
+                ty: _,
+                init: _,
+            }) => SemanticFact::LetBinding(name.clone()),
             Self::Stmt(Stmt::Return(_)) => SemanticFact::Return,
             Self::Stmt(Stmt::Break) => SemanticFact::Break,
             Self::Stmt(Stmt::Continue) => SemanticFact::Continue,
             Self::Loop(_) => SemanticFact::Loop,
             Self::Clause(_) => SemanticFact::Clause,
             Self::MatchArm(arm) => SemanticFact::MatchBindings(pattern_bindings(&arm.pattern)),
-            Self::Expr(Expr::Call { callee, .. }) => SemanticFact::Call {
+            Self::Expr(Expr::Call { callee, args: _ }) => SemanticFact::Call {
                 path: match callee.as_ref() {
                     Expr::Path(path) => Some(path.clone()),
                     _ => None,
                 },
             },
-            Self::Expr(Expr::MethodCall { name, .. }) => SemanticFact::MethodCall {
+            Self::Expr(Expr::MethodCall {
+                receiver: _,
+                name,
+                args: _,
+            }) => SemanticFact::MethodCall {
                 method: name.clone(),
             },
-            Self::Expr(Expr::Closure { params, .. }) => {
+            Self::Expr(Expr::Closure { params, body: _ }) => {
                 SemanticFact::ClosureBindings(params.clone())
             }
-            Self::Expr(Expr::Quantifier { var, .. }) => {
-                SemanticFact::QuantifierBinding(var.clone())
-            }
+            Self::Expr(Expr::Quantifier {
+                quant: _,
+                var,
+                sort: _,
+                domain: _,
+                body: _,
+            }) => SemanticFact::QuantifierBinding(var.clone()),
             Self::Expr(Expr::StrLit(_)) => SemanticFact::StringLiteral,
             Self::Expr(expr) => semantic_place(expr)
                 .map(SemanticFact::Place)
@@ -245,7 +262,12 @@ impl<'a> SemanticNode<'a> {
                 }
             }
             Self::Stmt(stmt) => match stmt {
-                Stmt::Let { init, .. } => out.push((ChildRole::Initializer, Self::Expr(init))),
+                Stmt::Let {
+                    mutable: _,
+                    name: _,
+                    ty: _,
+                    init,
+                } => out.push((ChildRole::Initializer, Self::Expr(init))),
                 Stmt::Assign { target, value } => {
                     out.push((ChildRole::Target, Self::Expr(target)));
                     out.push((ChildRole::Value, Self::Expr(value)));
@@ -263,7 +285,11 @@ impl<'a> SemanticNode<'a> {
                     }
                 }
                 Stmt::Loop(loop_) => out.push((ChildRole::Body, Self::Loop(loop_))),
-                Stmt::Holding { body, .. } => out.push((ChildRole::HoldingBody, Self::Block(body))),
+                Stmt::Holding {
+                    lock: _,
+                    body,
+                    span: _,
+                } => out.push((ChildRole::HoldingBody, Self::Block(body))),
                 Stmt::Expr(expr) => out.push((ChildRole::Body, Self::Expr(expr))),
                 Stmt::Break | Stmt::Continue => {}
             },
@@ -290,19 +316,28 @@ impl<'a> SemanticNode<'a> {
                 out.push((ChildRole::MatchBody, Self::Expr(&arm.body)));
             }
             Self::Expr(expr) => match expr {
-                Expr::IntLit { .. } | Expr::BoolLit(_) | Expr::Path(_) | Expr::StrLit(_) => {}
+                Expr::IntLit { value: _, raw: _ }
+                | Expr::BoolLit(_)
+                | Expr::Path(_)
+                | Expr::StrLit(_) => {}
                 Expr::Call { callee, args } => {
                     out.push((ChildRole::Callee, Self::Expr(callee)));
                     out.extend(args.iter().map(|x| (ChildRole::Argument, Self::Expr(x))));
                 }
-                Expr::MethodCall { receiver, args, .. } => {
+                Expr::MethodCall {
+                    receiver,
+                    name: _,
+                    args,
+                } => {
                     out.push((ChildRole::Receiver, Self::Expr(receiver)));
                     out.extend(args.iter().map(|x| (ChildRole::Argument, Self::Expr(x))));
                 }
-                Expr::Field { receiver, .. } | Expr::TupleProj { receiver, .. } => {
+                Expr::Field { receiver, name: _ } | Expr::TupleProj { receiver, index: _ } => {
                     out.push((ChildRole::Receiver, Self::Expr(receiver)))
                 }
-                Expr::Closure { body, .. } => out.push((ChildRole::ClosureBody, Self::Expr(body))),
+                Expr::Closure { params: _, body } => {
+                    out.push((ChildRole::ClosureBody, Self::Expr(body)))
+                }
                 Expr::Match { scrutinee, arms } => {
                     out.push((ChildRole::Scrutinee, Self::Expr(scrutinee)));
                     out.extend(
@@ -315,22 +350,23 @@ impl<'a> SemanticNode<'a> {
                     out.push((ChildRole::Then, Self::Block(then)));
                     out.push((ChildRole::Else, Self::Block(else_)));
                 }
-                Expr::Binary { lhs, rhs, .. } => {
+                Expr::Binary { op: _, lhs, rhs } => {
                     out.push((ChildRole::Left, Self::Expr(lhs)));
                     out.push((ChildRole::Right, Self::Expr(rhs)));
                 }
-                Expr::Unary { expr, .. }
-                | Expr::Cast { expr, .. }
-                | Expr::Ref { expr, .. }
+                Expr::Unary { op: _, expr }
+                | Expr::Cast { expr, ty: _ }
+                | Expr::Ref { mutable: _, expr }
                 | Expr::Deref(expr)
                 | Expr::Is {
-                    scrutinee: expr, ..
+                    scrutinee: expr,
+                    variant: _,
                 } => out.push((ChildRole::Operand, Self::Expr(expr))),
                 Expr::Index { base, index } => {
                     out.push((ChildRole::Receiver, Self::Expr(base)));
                     out.push((ChildRole::Index, Self::IndexArg(index)));
                 }
-                Expr::StructLit { fields, .. } => out.extend(
+                Expr::StructLit { path: _, fields } => out.extend(
                     fields
                         .iter()
                         .map(|(_, x)| (ChildRole::FieldValue, Self::Expr(x))),
@@ -340,7 +376,13 @@ impl<'a> SemanticNode<'a> {
                         .iter()
                         .map(|x| (ChildRole::TupleElement, Self::Expr(x))),
                 ),
-                Expr::Quantifier { domain, body, .. } => {
+                Expr::Quantifier {
+                    quant: _,
+                    var: _,
+                    sort: _,
+                    domain,
+                    body,
+                } => {
                     out.push((ChildRole::QuantifierDomain, Self::Expr(domain)));
                     out.push((ChildRole::QuantifierBody, Self::Expr(body)));
                 }
@@ -363,12 +405,16 @@ impl<'a> SemanticNode<'a> {
                         .iter()
                         .map(|x| (ChildRole::PatternElement, Self::SlicePattern(x))),
                 ),
-                Pattern::Enum { fields, .. } | Pattern::Or(fields) => out.extend(
+                Pattern::Enum { path: _, fields } | Pattern::Or(fields) => out.extend(
                     fields
                         .iter()
                         .map(|x| (ChildRole::PatternElement, Self::Pattern(x))),
                 ),
-                Pattern::Struct { fields, .. } => out.extend(
+                Pattern::Struct {
+                    path: _,
+                    fields,
+                    rest: _,
+                } => out.extend(
                     fields
                         .iter()
                         .map(|(_, x)| (ChildRole::PatternElement, Self::Pattern(x))),
@@ -401,12 +447,16 @@ fn pattern_bindings(pattern: &Pattern) -> Vec<String> {
                     }
                 }
             }
-            Pattern::Enum { fields, .. } | Pattern::Or(fields) => {
+            Pattern::Enum { path: _, fields } | Pattern::Or(fields) => {
                 for field in fields {
                     collect(field, bindings);
                 }
             }
-            Pattern::Struct { fields, .. } => {
+            Pattern::Struct {
+                path: _,
+                fields,
+                rest: _,
+            } => {
                 for (_, field) in fields {
                     collect(field, bindings);
                 }

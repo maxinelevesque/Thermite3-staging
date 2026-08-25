@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 340dad67bbbaa9987c0ae9316426ad5f636815180c4f869b5f870735f9f1bac6 (re-pinned 2026-08-17 for exact Assurance V2 producer-core characterizations; mutual-recursion behavior is unchanged. prior: 7287e219e6e263a7ddf8d085f72909b79db67f5c694e3dd4e1239c2872a8252a)
+audited-content-sha256: 6184cc9c90c6d2e77a7e1f0d5113a7f0f6f99c3bc4ec5d7fa7998489713d7ac2 (re-pinned 2026-08-17 for exact Assurance V2 producer-core characterizations; mutual-recursion behavior is unchanged. prior: 7287e219e6e263a7ddf8d085f72909b79db67f5c694e3dd4e1239c2872a8252a)
 governs: forge/src/check.rs
 governs: thermite-lower/src/lower.rs
 thesis-refs:
