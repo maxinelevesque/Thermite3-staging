@@ -435,6 +435,11 @@ pub fn canonical_ast_projection(source: &Program) -> Result<CanonicalAstProjecti
                 eligible,
             }
         })
+        // `deriveStep` is definitionally a no-op for `Other` events and for
+        // ineligible places.  Keep the canonical replay stream semantically
+        // complete without forcing Lean to normalize two inert records for
+        // every node in large programs.
+        .filter(|event| event.kind != "Other" && (event.kind != "Place" || event.eligible))
         .collect::<Vec<_>>();
     for (node, fact) in inventory.facts.iter().enumerate() {
         let Some(function) = function_of(node) else {

@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: b84746698228b3b7c4de13e2e88df21218cba8073d19249dd9b100431630ddd6 (RFC-10 review closure, 2026-08-24: refreshed the reviewed shipped-evidence registry hash after the RFC-10 requirement additions; language-stage classifications and total-outcome policy are unchanged. prior: 3c4949a98be0ae20c84982f0274758bf5e3c6796ccf8780925058571860e87f9)
+audited-content-sha256: 001748d567af813fc0a2a48b00495b906c01f3a4acc3470c646239902d7cab54 (RFC-10 replay scaling closure, 2026-08-24: definitionally inert neutral events are compacted before Lean transport while the complete node/fact/edge inventory remains bound; language-stage classifications and total-outcome policy are unchanged. prior: b84746698228b3b7c4de13e2e88df21218cba8073d19249dd9b100431630ddd6)
 
 ## Summary
 

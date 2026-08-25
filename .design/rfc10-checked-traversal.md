@@ -1,7 +1,7 @@
 # Feature: RFC-10 checked traversal and proof-carrying interpretation
 
 <!--
-audited-content-sha256: 683cb07363a1dc89ad4fbd1d525e404951d69555a57bcfb423afcad11e78bc94 (re-pinned 2026-08-24 after closing the cold-review follow-ups: canonical AST matches explicitly destructure every field, six new tests have reviewed CI duration assignments, and environment-dependent workspace failures are no longer stated as one fixed count/cause. prior: 7509c474554b42e886213948a552794f1f59c1c0e4757eb44b90d926a3d273cf)
+audited-content-sha256: 9efd7207b67ed4e6b310cb7394b645a482eff2b8016624238f4107b467fbadd2 (re-pinned 2026-08-24 after compacting definitionally inert replay events so large corpus programs retain kernel-only verification without timeout or stack overflow. prior: 683cb07363a1dc89ad4fbd1d525e404951d69555a57bcfb423afcad11e78bc94)
 -->
 
 ## Summary
@@ -145,12 +145,16 @@ direct and transitive footprints, added and omitted call edges, holding and
 shared-place coverage, capabilities, close evidence, and authority evidence.
 
 AC-7 and AC-8 now hold at their full wording. The canonical projection carries
-neutral lock declarations and semantic enter/leave events; Lean derives exact
+neutral lock declarations and semantically active enter/leave events; Lean derives exact
 guarded regions, held stacks, ordering validity, close normalization, and
 shared-place authority, and `semantic_derivation_sound_of_verify` exposes the
 accepted result. Mutation controls cover every named structural, footprint,
 call, holding, capability, authority, reentrancy/order, and close family while
-the axiom probe remains unchanged. AC-9 is closed by the canonical-role-grounded
+the axiom probe remains unchanged. Events that `deriveStep` defines as exact
+no-ops (`Other` and ineligible places) are omitted from the replay stream; the
+complete node/fact/edge inventory remains bound separately. This keeps the
+kernel proof finite on large corpus programs without changing derived semantic
+state or adding a native-evaluation axiom. AC-9 is closed by the canonical-role-grounded
 ten-position matrix: compatible cells traverse parser, checked IR, replay, L1,
 L2, L3, and provider-free Forge; typed grammar/type/backend exclusions are
 asserted, invariant-breaking cells fail at every close, and the frozen 18-file
@@ -486,7 +490,9 @@ impossibility evidence specified by REQ-3.
 - The production Rust analyzer constructs the witness, while a separate Rust
   canonical projection constructs the syntax-side node inventory, direct
   footprints, free-function call graph, sorted lock declarations, and neutral
-  semantic enter/leave facts. Lean independently derives holding, guarded-region,
+  semantically active enter/leave facts. Definitionally inert `Other` events and
+  ineligible places are compacted out before transport; node, fact, and edge
+  completeness is still checked independently. Lean derives holding, guarded-region,
   held-stack, close, shared-place, and authority payloads and recomputes
   transitive footprints. The Rust classification of neutral place events
   (lexical shadowing, clause exclusion, and target/read mode) remains part of

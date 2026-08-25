@@ -348,6 +348,10 @@ fn checked_shared_places_obey_the_same_lexical_scope_as_projection() {
     let checked = check_program(&parsed.program).expect("shadowed locals are not shared places");
     let witness = emit_witness(&checked);
     let ast = canonical_ast_projection(&parsed.program).unwrap();
+    assert!(ast
+        .events
+        .iter()
+        .all(|event| { event.kind != "Other" && (event.kind != "Place" || event.eligible) }));
     assert_eq!(witness.shared_places.len(), 1);
     assert_eq!(
         witness
