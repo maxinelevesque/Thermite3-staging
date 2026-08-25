@@ -62,7 +62,8 @@ class RoadmapRendererTests(unittest.TestCase):
         self.assertIn("https://example.test/repo/blob/deadbeef/.design/rfcs/0009.md", rendered)
         self.assertIn("checked &lt;effects&gt;", rendered)
         self.assertIn("A &amp; B", rendered)
-        self.assertIn("1/1 registered requirements shipped", rendered)
+        self.assertIn("proposal: draft", rendered)
+        self.assertIn("implementation: 1/1 registered requirements shipped", rendered)
 
     def test_origin_ssh_url_becomes_browser_url(self):
         with mock.patch.object(

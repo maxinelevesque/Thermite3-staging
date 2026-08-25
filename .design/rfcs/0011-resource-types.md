@@ -15,6 +15,7 @@ introduces:
 | | |
 |---|---|
 | **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
+| **Fork implementation** | **Not started.** This is the next capability RFC after issue #49 and the core correctness blockers are dispositioned. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 7 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md) |

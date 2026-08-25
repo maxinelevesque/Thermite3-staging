@@ -18422,29 +18422,40 @@ note = "missing, orphan, premature, mismatched, and evidence-free closure transi
 id = "REQ-COMPLETE-PROVED-DISPLAY"
 title = "Engineer labels have kernel-checked meanings"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "A total versioned projection maps coherent formal positions to closed engineer labels, with one entailment theorem per label and one common-semantics theorem per collapse."
-remaining_scope = "Define the display vocabulary, projection, meaning and collapse theorems, and generated lost-distinction disclosures per REQ-13 and AC-13/AC-14."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-13 and AC-13/AC-14 define the proved non-specialist projection"
+kind = "symbol"
+target = "Thermite.AssurancePolicyV2.engineer_meaning_is_licensed"
+note = "every admitted realized certification has a display with the licensed scope, refutation, trust, boundary, fragment, frame, and population meaning"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.AssurancePolicyV2.engineer_projection_fiber_is_exact"
+note = "kernel-checked global characterization of exactly which formal positions share one engineer display"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/assurance-v2-replay.py"
+note = "the generated six-family replay and disclosure matrix rejects missing families and mismatched formal/display rows"
 
 [[requirement]]
 id = "REQ-COMPLETE-DISPLAY-NONAUTHORITATIVE"
 title = "Display labels never decide certification"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "partial"
 scope = "manifest"
 summary = "Stored display labels validate against formal positions and a collapse-policy version, while gates, routing, floors, aggregation, and certification consume only formal data."
-remaining_scope = "Implement round-trip validation, mutation coverage, and structural non-consumption checks per REQ-14 and AC-15."
+remaining_scope = "Issue 56: move the V2 authority/display replay model into the production certificate envelope, validate stored display round trips, and make every Level/display authority-decision consumer disappear atomically."
 generated_to = ["status"]
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-14 and AC-15 define display-label validation and non-authority"
+kind = "file"
+target = "forge/src/assurance_v2.rs"
+note = "formal authority and engineer presentation use domain-separated digests; the module explicitly leaves production Certificate migration to issue 56"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/assurance_v2.rs"
+note = "authority_and_presentation_digests_have_disjoint_mutation_domains pins display non-authority in the replay model"
 
 [[requirement]]
 id = "REQ-SYNTAX-RESOURCE-MODIFIER"

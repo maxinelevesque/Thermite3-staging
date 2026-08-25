@@ -193,7 +193,7 @@ def render_rfc_guides(guides, requirements, source_base):
         linked = requirements_for_rfc(requirements, rfc_file)
         shipped = sum(1 for req in linked if req.get("status") in {"shipped", "retired"})
         progress = (
-            f"{shipped}/{len(linked)} registered requirements shipped"
+            f"implementation: {shipped}/{len(linked)} registered requirements shipped"
             if linked else "No registry requirements linked"
         )
         features = "".join(f"<li>{e(feature)}</li>" for feature in guide["features"])
@@ -203,7 +203,7 @@ def render_rfc_guides(guides, requirements, source_base):
         <div class="rfc-card-head">
           <div><a class="rfc-number" href="{source_href}">RFC-{guide['rfc']}</a>
             <h3>{e(index['title'])}</h3></div>
-          <div class="rfc-state">{badge('good' if shipped == len(linked) and linked else 'warning', index['status'])}
+          <div class="rfc-state">{badge('good' if shipped == len(linked) and linked else 'warning', 'proposal: ' + index['status'])}
             <span>{e(progress)}</span></div>
         </div>
         <p>{e(guide['summary'])}</p>

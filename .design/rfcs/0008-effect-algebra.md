@@ -14,6 +14,7 @@ introduces:
 | | |
 |---|---|
 | **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
+| **Fork implementation** | **Shipped on `staging`.** Proposal status remains draft because upstream filing is a separate, deferred reconciliation. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 4 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md) |
@@ -23,6 +24,12 @@ introduces:
 > direction in [RFC-7](0007-thermite-3.md) is answered. Filing six capability
 > proposals against a surface nobody has adopted is the failure RFC-7's own
 > sequencing rule exists to prevent.
+
+The status above is proposal status, not implementation status. The staging
+fork implements the fixed basis, declared effects, computed commutation, and
+their checked registry evidence. Keeping `status: draft` records that this RFC
+has not been filed or accepted upstream; it does not mean the fork is waiting
+to build RFC-8.
 
 **Cross-cutting**, like [the surface conventions](0007-thermite-3.md), and
 underneath [verified effect rows](0009-verified-effect-rows.md): that document makes
