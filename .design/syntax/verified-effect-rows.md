@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: e6a7e885f6c7071b95df0fc62e2507f8ec9f218954a539c5f91199b0f05a5e16 (re-pinned 2026-08-24 after the reviewed RFC-9 inventory classified five new RFC-10 shared-state fixture token sites; effect semantics are unchanged. prior: d2b7de30182f0a76dba8cd5bdc2a6f1974b31e7ddc6d32ffb5d0c75173cbf0f8)
+audited-content-sha256: 9daaee5d825e5b8a223ed6e9e360ccbb002766bf292e24ab281d66eebd85d180 (re-pinned 2026-08-25 after adding the effect-free nested-ADT conformance fixture; the RFC-9 inventory now tracks 67 `.th` files and effect semantics are unchanged. prior: e6a7e885f6c7071b95df0fc62e2507f8ec9f218954a539c5f91199b0f05a5e16)
 -->
 
 ## Summary

@@ -18602,6 +18602,70 @@ target = ".design/rfcs/0014-crash-clause.md"
 note = "the proposal, with its design record and probe results"
 
 [[requirement]]
+id = "REQ-FORGE-NESTED-ADT-ROOT"
+title = "Checked ADT roots close over user-declared field types"
+owner = ".design/forge/check.md"
+status = "shipped"
+scope = "forge"
+summary = "A struct or enum certified as the checked item seeds its own immediate field-type dependencies before the transitive ADT closure, so standalone artifacts include every reachable user-declared struct and enum."
+remaining_scope = ""
+contributors = ["conformance/nested_adt.th", "forge/tests/divergence_multi_adt_subprogram.rs", "thermite-lower/tests/adt_lower_conformance.rs"]
+aliases = ["issue 5 nested ADT root", "user-declared struct field type", "user-declared enum field type"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "collect_item_adt_refs"
+note = "checked struct and enum roots seed collect_decl_field_adt_refs before the fixed point"
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "reachable_adt_deps"
+note = "cycle-safe transitive field-type dependency closure"
+
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/divergence_multi_adt_subprogram.rs::standalone_nested_adt_weaves_its_field_type"
+note = "real Forge certification requires the enum, nested struct, and containing frame all at L3"
+
+[[requirement.evidence]]
+kind = "file"
+target = "conformance/nested_adt.th"
+note = "issue #5 combined struct-field, enum-field, and containing-record reproduction"
+
+[[requirement]]
+id = "REQ-INVBIND-4"
+title = "Receiver binding through variant tests"
+owner = ".design/lower/struct-invariant-receiver-binding.md"
+status = "shipped"
+scope = "lower"
+summary = "Both assurance lowerers recursively bind an `is` invariant's scrutinee to the struct receiver; L3 retains Verus's type-directed variant and L1 emits an enum-qualified Rust pattern."
+remaining_scope = ""
+contributors = ["conformance/nested_adt.th", "thermite-lower/src/lower.rs", "thermite-lower/src/l1.rs", "thermite-lower/tests/adt_lower_conformance.rs"]
+aliases = ["issue 5 invariant is receiver", "privilege is User", "is under struct keeps"]
+generated_to = ["status", "struct-invariant-receiver-binding-status"]
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "lower_inv_expr"
+note = "Verus invariant lowering binds the variant-test scrutinee through self"
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "lower_inv_expr_l1"
+note = "L1 invariant lowering binds the scrutinee and qualifies the variant pattern"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/adt_lower_conformance.rs::nested_adt_fields_and_is_invariant_lower_and_verify_l3"
+note = "real Verus regression for receiver-bound is over a user-declared enum field"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/adt_lower_conformance.rs::nested_adt_fields_and_is_invariant_compile_and_run_l1"
+note = "plain Rust compile/run regression for receiver-bound qualified matches"
+
+[[requirement]]
 id = "REQ-S1-PROOF-TARGET-BINDING"
 title = "Out-of-line proofs bind only to existing executable functions"
 owner = ".design/stage1-forge-tier.md"

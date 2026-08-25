@@ -473,6 +473,18 @@ test = "thermite-lower::adt_lower_conformance deposit_matches_cert_oracle_stable
 
 [[assignment]]
 bucket = 1
+seconds = 0.400
+test = "thermite-lower::adt_lower_conformance nested_adt_fields_and_is_invariant_compile_and_run_l1"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.800
+test = "thermite-lower::adt_lower_conformance nested_adt_fields_and_is_invariant_lower_and_verify_l3"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
 seconds = 0.009
 test = "thermite-lower::boundary_gate_verified lower_fn_emits_external_body_iff_proved_predicate"
 

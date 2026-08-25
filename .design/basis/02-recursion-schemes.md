@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 3a409e06f7cc3ec0802950f5515e097bf6fe9bc4e9e22f5ae0011a168b3b6a7a (re-pinned 2026-08-25 for issue #41 proof-target binding: absent or wrong-kind proof roots now fail closed before lowering. prior: 21eefd6d9e94b29865692a0a2e9247b7b7d85f400927f4796a0e2bcf8c67f618)
+audited-content-sha256: bb873162dcf6de66a970e0068cfc28a3db80903ddda233cdeab7e6ab821a459c (re-pinned 2026-08-25 for issue #5 receiver-bound variant tests; recursion-scheme semantics are unchanged. prior: 3a409e06f7cc3ec0802950f5515e097bf6fe9bc4e9e22f5ae0011a168b3b6a7a)
 governs: thermite-syntax/src/ast.rs
 governs: thermite-syntax/src/parser.rs
 governs: thermite-spec/src/validator.rs

@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: a1308b50278a9f044de93236736645eabe4a161406fdbe991d67cb8582173d34 (re-pinned 2026-08-16 for the opaque homogeneous L3Artifact and its query-identity tests; existing Verus emission semantics are unchanged. Prior digest: 4c4ed207c04cb93c1cc685da83b466096a6e6925ed45960877ac1c378424a38e.)
+audited-content-sha256: 258d1e8619c77350e9b531000a9a80c76a7bde1b5e6af52aa9d7aa618739f6e3 (re-pinned 2026-08-25 for issue #5 receiver-bound Verus variant tests. prior: a1308b50278a9f044de93236736645eabe4a161406fdbe991d67cb8582173d34)
 governs: thermite-lower/src/lower.rs + thermite-lower/src/l3.rs
 thesis-refs:
   - thermite-design.md §3
