@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 030291639ca066139cc26e3daf8f898aa87c4447170f74c34c8db1c5e1955ff4 (re-pinned 2026-08-25 for issue #7 declared-return gating. prior: 258d1e8619c77350e9b531000a9a80c76a7bde1b5e6af52aa9d7aa618739f6e3)
+audited-content-sha256: 7176d360ac07f5920a859291fcfaaa3fad8c3052c978ec26c3055b4baa65b6d4 (re-pinned 2026-08-25 for issue #8 Vec View and exec-index lowering. prior: 5c35cee350cd5e8ec630af0bbacb3976d057892151d9f9b66711ba0bee9daa50)
 governs: thermite-lower/src/lower.rs + thermite-lower/src/l3.rs
 thesis-refs:
   - thermite-design.md §3

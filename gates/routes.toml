@@ -217,7 +217,19 @@ conformance_ops = ["len_list", "sum_list", "all_positive"]
 crate_pattern = "thermite-lower/src/lower.rs"
 design = ".design/basis/04-collections.md"
 reference = ["tests/golden/lower/vec_demo.verus.rs", "conformance/vec_demo.th"]
-conformance_ops = ["checked_get", "push_one"]
+conformance_ops = ["checked_get", "push_one", "vec_view_supports_spec_indexing_and_combinators"]
+
+[[route]]
+crate_pattern = "thermite-lower/tests/collections_conformance.rs"
+design = ".design/basis/04-collections.md"
+reference = ["thermite-lower/src/lower.rs", "conformance/vec_demo.th"]
+conformance_ops = ["vec_demo_lowers_wrapper_and_verifies_l3", "vec_view_supports_spec_indexing_and_combinators"]
+
+[[route]]
+crate_pattern = "forge/tests/divergence_collections.rs"
+design = ".design/basis/04-collections.md"
+reference = ["thermite-lower/tests/collections_conformance.rs", "conformance/vec_demo.th"]
+conformance_ops = ["confirm_checked_get_bound_is_load_bearing", "vec_view_index_and_combinator_certify_l3"]
 
 # #52 §9 boundary-composition: lower.rs ALSO carries the external_body emission
 # arm governed by boundary-composition.md (a file may carry multiple governing

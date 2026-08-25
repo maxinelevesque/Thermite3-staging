@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: f0b485838293e2d52742fd700d545f5199bce56dab5578be568cd5a3d4a0d27a (re-pinned 2026-08-25 for issue #7 declared-return gating; mutual-recursion behavior is unchanged. prior: ee61fa338f7290a6b36a6f76bfef8a7e8d9f081d28afc37eaeb20012c8b8d4a6)
+audited-content-sha256: 7ae57f24e2406efe54405ab2ccf1ac9b7b87b4786874556a48ae1fa4394d4e8b (re-pinned 2026-08-25 for issue #8 Vec View lowering; mutual-recursion behavior is unchanged. prior: 9bd9c6ffa7571eb30ae7fe07cdf6c45de88225634d7dd0b1bfaf757e1aea4367)
 governs: forge/src/check.rs
 governs: thermite-lower/src/lower.rs
 thesis-refs:

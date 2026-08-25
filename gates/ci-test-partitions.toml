@@ -8193,3 +8193,15 @@ bucket = 7
 seconds = 0.100
 test = "thermite-lower::rfc10_conformance_matrix generated_affine_payload_matrix_records_compatible_cells_and_exclusions"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 1.000
+test = "thermite-lower::collections_conformance vec_view_supports_spec_indexing_and_combinators"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 5.000
+test = "forge::divergence_collections vec_view_index_and_combinator_certify_l3"
+timing_provenance = "reviewed_local_estimate_after_baseline"

@@ -390,15 +390,18 @@ enum Pos {
     Spec,
 }
 
-/// Lowering context: the position plus the set of in-scope slice-typed
-/// parameter names. In spec position a bare slice-param path `xs` becomes the
-/// `vstd` view `xs@` (a `Seq<T>`) — REQ-5. The set is computed per item from the
-/// parameter types (a shape-derived fact, not a name list), so the `@` rewrite
-/// generalizes to any slice-typed parameter.
+/// Lowering context: the position plus the set of in-scope values that expose a
+/// sequence view (borrowed slices and bounded Vec parameters). In spec position
+/// a bare such path `xs` passed to a sequence combinator becomes `xs@` (a
+/// `Seq<T>`) — REQ-5. The set is computed from parameter types, never names.
 #[derive(Debug, Clone, Copy)]
 struct Ctx<'a> {
     pos: Pos,
     slices: &'a [&'a str],
+    /// Names of bounded `Vec` values in scope for an exec body. Unlike a native
+    /// slice, a `TVec*` wrapper does not implement Rust's indexing operator; a
+    /// single index therefore lowers through its verified `get` accessor.
+    vecs: &'a [&'a str],
     /// Names of `spec fn`s lowered with a `nat` return type (the head-fold-sum
     /// shape — OQ-1). An `Eq` between a `u64`-valued scalar and a call to one of
     /// these coerces the scalar with `as nat`, since `nat` and `u64` are not the
@@ -507,6 +510,7 @@ impl<'a> Ctx<'a> {
         Ctx {
             pos: Pos::Exec,
             slices: NO_SLICES,
+            vecs: NO_SLICES,
             nat_fns: NO_SLICES,
             variants: NO_VARIANTS,
             nat_ret: false,
@@ -522,6 +526,7 @@ impl<'a> Ctx<'a> {
         Ctx {
             pos: Pos::Spec,
             slices,
+            vecs: NO_SLICES,
             nat_fns,
             variants: NO_VARIANTS,
             nat_ret: false,
@@ -540,6 +545,7 @@ impl<'a> Ctx<'a> {
         Ctx {
             pos: Pos::Spec,
             slices: NO_SLICES,
+            vecs: NO_SLICES,
             nat_fns: NO_SLICES,
             variants: NO_VARIANTS,
             nat_ret: false,
@@ -555,6 +561,10 @@ impl<'a> Ctx<'a> {
     /// qualification). Carried through `match`/pattern lowering.
     fn with_variants(mut self, variants: &'a [(&'a str, &'a str)]) -> Ctx<'a> {
         self.variants = variants;
+        self
+    }
+    fn with_vecs(mut self, vecs: &'a [&'a str]) -> Ctx<'a> {
+        self.vecs = vecs;
         self
     }
     /// This context marked as a `nat`-returning spec-fn body (REQ-10 — integer
@@ -674,9 +684,13 @@ impl<'a> Ctx<'a> {
     fn is_spec(&self) -> bool {
         self.pos == Pos::Spec
     }
-    /// True if `name` is an in-scope slice-typed parameter (gets `@` in spec).
+    /// True if `name` is an in-scope slice/Vec parameter that gets `@` when
+    /// passed to a sequence combinator in spec position.
     fn is_slice(&self, name: &str) -> bool {
         self.slices.contains(&name)
+    }
+    fn is_vec(&self, name: &str) -> bool {
+        self.vecs.contains(&name)
     }
     /// True if `name` is a `nat`-returning spec fn (drives `as nat` coercion).
     fn is_nat_fn(&self, name: &str) -> bool {
@@ -2897,7 +2911,8 @@ fn lower_spec_fn_body_with_schemes(
     // uses, covering the whole spec-fn-body class (no scheme sibling left to
     // re-pin). Empty for a non-`String` spec fn (byte-stable).
     let strings = string_param_names(params);
-    let ctx = Ctx::spec_seq()
+    let vecs = vec_param_names(params);
+    let ctx = Ctx::spec(&vecs, NO_SLICES)
         .with_variants(variants)
         .with_nat_ret(ret == "nat")
         .with_schemes(bindings)
@@ -2911,17 +2926,26 @@ fn lower_spec_fn_body_with_schemes(
     Ok(out)
 }
 
-/// The slice-typed parameter names of an item (the shape-derived set whose bare
-/// paths get `@` in spec position, REQ-5).
-fn slice_param_names(params: &[Param]) -> Vec<&str> {
+/// The sequence-view parameter names of an item (the shape-derived set whose
+/// bare paths get `@` when passed to a spec combinator): borrowed slices and the
+/// bounded `Vec` wrapper, which implements `View`.
+fn seq_view_param_names(params: &[Param]) -> Vec<&str> {
     params
         .iter()
         .filter_map(|p| match &p.ty {
             Type::Ref { inner, .. } if matches!(inner.as_ref(), Type::Slice(_)) => {
                 Some(p.name.as_str())
             }
+            Type::Vec(_) => Some(p.name.as_str()),
             _ => None,
         })
+        .collect()
+}
+
+fn vec_param_names(params: &[Param]) -> Vec<&str> {
+    params
+        .iter()
+        .filter_map(|p| matches!(p.ty, Type::Vec(_)).then_some(p.name.as_str()))
         .collect()
 }
 
@@ -3207,7 +3231,7 @@ fn lower_fn_signature(
     emit_params(&mut out, &f.params, Pos::Exec)?;
     writeln!(out, ") -> (result: {ret})").ok();
 
-    let slices = slice_param_names(&f.params);
+    let slices = seq_view_param_names(&f.params);
     // Basis Stage 7 (`.design/basis/07-strings.md` REQ-4): the `String`-named
     // values in scope for this fn's contract — every `String`/`&String` param plus
     // `result` when the return is `String`. A `String` receiver's spec-position
@@ -3335,7 +3359,7 @@ fn lower_fn_signature(
 /// (the `String`/`&String` value names whose `.len()`/`.byte_at(i)` rewrite to
 /// the wrapper spec fns), `string_fields` (the `String`-typed field names), and
 /// `user_string_spec_fns` (the #127 byte-view-dispatch shape key). Passing the
-/// same context the signature path computes (`slice_param_names`/
+/// same context the signature path computes (`seq_view_param_names`/
 /// `string_value_names`/the program-wide field + user-spec-fn sets) makes
 /// `lower_contract_expr(clause.expr, …)` produce a clause's predicate
 /// byte-identical to the line `lower_fn_signature` emits for it, so the forge TV
@@ -3472,7 +3496,7 @@ fn lower_l3_export_wrapper(
     emit_params(&mut out, &f.params, Pos::Exec)?;
     writeln!(out, ") -> (result: Result<{ret}, ThermiteContractError>)").ok();
 
-    let slices = slice_param_names(&f.params);
+    let slices = seq_view_param_names(&f.params);
     let strings = string_value_names(f);
     let spec = Ctx::spec(&slices, nat_fns)
         .with_strings(&strings)
@@ -3500,7 +3524,13 @@ fn lower_l3_export_wrapper(
     out.push_str("            Err(_) => true,\n");
     out.push_str("        },\n");
 
-    let guard = lower_expr(&f.contract.requires.expr, Ctx::exec(), 0, f.span)?;
+    let vecs = vec_param_names(&f.params);
+    let guard = lower_expr(
+        &f.contract.requires.expr,
+        Ctx::exec().with_vecs(&vecs),
+        0,
+        f.span,
+    )?;
     let args = f
         .params
         .iter()
@@ -4520,7 +4550,8 @@ fn lower_spec_fn_body(
     // non-`String` spec fn (byte-stable for the existing corpus; `spec_sum`/ADT
     // folds carry no `String` param, so the set is empty and nothing changes).
     let strings = string_param_names(params);
-    let ctx = Ctx::spec_seq()
+    let vecs = vec_param_names(params);
+    let ctx = Ctx::spec(&vecs, NO_SLICES)
         .with_variants(variants)
         .with_nat_ret(ret == "nat")
         .with_strings(&strings)
@@ -5302,6 +5333,10 @@ fn note_stmt_vec_elems(stmt: &Stmt, elems: &mut Vec<Type>) {
 ///
 /// ```verus
 /// pub struct TVecU64 { pub data: Vec<u64> }
+/// impl View for TVecU64 {
+///     type V = Seq<u64>;
+///     open spec fn view(&self) -> Seq<u64> { self.data@ }
+/// }
 /// impl TVecU64 {
 ///     pub open spec fn well_formed(&self) -> bool { self.data.len() <= 1000000 }
 ///     pub open spec fn len(&self) -> nat { self.data.len() as nat }
@@ -5395,6 +5430,18 @@ fn emit_one_vec_wrapper(elem: &Type) -> Result<String, LowerError> {
     let mut out = String::new();
     out.push('\n');
     writeln!(out, "pub struct {name} {{ pub data: Vec<{ety}> }}").ok();
+    // Issue #8: expose the backing vstd Vec's sequence view on the Thermite
+    // wrapper. Spec indexing (`v@[i]`) and sequence combinators (`forall_in(v,
+    // ..)`) both desugar through `View`; without this bridge they respectively
+    // fail with a missing `view` method and a `TVec`/`Seq` type mismatch.
+    writeln!(out, "impl View for {name} {{").ok();
+    writeln!(out, "    type V = Seq<{ety}>;").ok();
+    writeln!(
+        out,
+        "    open spec fn view(&self) -> Seq<{ety}> {{ self.data@ }}"
+    )
+    .ok();
+    out.push_str("}\n");
     writeln!(out, "impl {name} {{").ok();
     writeln!(
         out,
@@ -8936,7 +8983,11 @@ fn lower_index(
         }
         (Pos::Exec, IndexArg::Single(i)) => {
             let idx = lower_expr(i, ctx, depth, span)?;
-            Ok(format!("{b}[{idx}]"))
+            if matches!(base, Expr::Path(segs) if segs.len() == 1 && ctx.is_vec(&segs[0])) {
+                Ok(format!("{b}.get({idx})"))
+            } else {
+                Ok(format!("{b}[{idx}]"))
+            }
         }
         (Pos::Exec, IndexArg::RangeTo(i)) => {
             let idx = lower_expr(i, ctx, depth, span)?;
@@ -9568,8 +9619,10 @@ fn lower_block_with_fn_aids(
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let owned = owned_string_value_names(f);
+    let vecs = vec_param_names(&f.params);
     let exec = Ctx::exec()
         .with_variants(variants)
+        .with_vecs(&vecs)
         .with_owned_strings(&owned);
     let mut out = String::new();
     for stmt in &block.stmts {
@@ -9744,8 +9797,10 @@ fn lower_loop(
     let pad = "    ".repeat(indent);
     let ipad = "    ".repeat(indent + 1);
     let owned = owned_string_value_names(f);
+    let vecs = vec_param_names(&f.params);
     let exec = Ctx::exec()
         .with_variants(variants)
+        .with_vecs(&vecs)
         .with_owned_strings(&owned);
     let mut out = String::new();
 
@@ -9758,7 +9813,7 @@ fn lower_loop(
         }
     };
 
-    let slices = slice_param_names(&f.params);
+    let slices = seq_view_param_names(&f.params);
     let strings = string_value_names(f);
     // The loop's `inv` clauses and its `dec` measure lower in spec context, and a
     // loop invariant / decreases measure may name a user `spec fn` with an
@@ -10318,8 +10373,10 @@ fn lower_loop_body(
     // None-postcondition match template (e).
     let coverage = complementary_coverage_split(f, invs, spec_fn_param_types)?;
     let owned = owned_string_value_names(f);
+    let vecs = vec_param_names(&f.params);
     let exec = Ctx::exec()
         .with_variants(variants)
+        .with_vecs(&vecs)
         .with_owned_strings(&owned);
 
     let mut out = String::new();
@@ -10379,8 +10436,10 @@ fn emit_if_with_split(
 ) -> Result<String, LowerError> {
     let pad = "    ".repeat(indent);
     let owned = owned_string_value_names(f);
+    let vecs = vec_param_names(&f.params);
     let exec = Ctx::exec()
         .with_variants(variants)
+        .with_vecs(&vecs)
         .with_owned_strings(&owned);
     let c = lower_expr(cond, exec, 0, f.span)?;
     let mut out = format!("{pad}if {c} {{\n");

@@ -6014,9 +6014,9 @@ title = "Vec wrapper lowering"
 owner = "thermite-lower/src/lower.rs"
 status = "shipped"
 scope = "lower"
-summary = "`Vec<T>` lowers to a bounded Verus `TVec` wrapper with capacity, length, get, and push contracts."
+summary = "`Vec<T>` lowers to a bounded Verus `TVec` wrapper with capacity, length, get, push, and a `Seq<T>` View bridge for spec indexing and combinators."
 aliases = ["thermite-lower/src/lower.rs REQ-5 (`Vec<T>` → vstd-`Vec` newtype; push/get/len; `! alloc`; backing-agnostic)"]
-contributors = [".design/basis/04-collections.md", "thermite-lower/tests/collections_conformance.rs"]
+contributors = [".design/basis/04-collections.md", "thermite-lower/tests/collections_conformance.rs", "forge/tests/divergence_collections.rs"]
 generated_to = ["status", "thermite-lower-collections-status"]
 
 [[requirement.evidence]]
@@ -6030,9 +6030,19 @@ target = "tvec_name"
 note = "surface Vec to wrapper-name mapping"
 
 [[requirement.evidence]]
+kind = "symbol"
+target = "emit_one_vec_wrapper"
+note = "bounded wrapper including the Verus View implementation"
+
+[[requirement.evidence]]
 kind = "test"
 target = "thermite-lower/tests/collections_conformance.rs"
-note = "Vec get/push real-Verus conformance"
+note = "Vec get/push plus View indexing/combinator real-Verus conformance"
+
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/divergence_collections.rs::vec_view_index_and_combinator_certify_l3"
+note = "Forge L3 certification for the issue #8 indexing and combinator paths"
 
 [[requirement]]
 id = "REQ-LOWER-COLLECTIONS-MAP-VSTD"

@@ -173,3 +173,29 @@ fn confirm_checked_get_bound_is_load_bearing() {
         off["level"]
     );
 }
+
+/// Issue #8: the per-item Forge path must preserve the `View` bridge, not just
+/// whole-program lowering. One item pins spec indexing plus exec indexing; the
+/// other pins a sequence combinator receiving the same bounded Vec value.
+#[test]
+fn vec_view_index_and_combinator_certify_l3() {
+    if !verus_present() {
+        eprintln!("SKIP: verus absent — Vec View certification not exercised.");
+        return;
+    }
+    let fixture = std::env::temp_dir().join(format!("forge_vec_view_{}.th", std::process::id()));
+    std::fs::write(
+        &fixture,
+        "fn indexed(xs: Vec<u64>) -> u64\n  ! alloc\n  requires xs.len() > 0\n  ensures result == xs[0]\n{\n  xs[0]\n}\n\nfn excludes(xs: Vec<u32>, n: u32) -> bool\n  ! alloc\n  requires forall_in(xs, |x| x != n)\n  ensures result == forall_in(xs, |x| x != n)\n{\n  true\n}\n",
+    )
+    .expect("write Vec View fixture");
+    let certs = check_json_file(&fixture);
+    let _ = std::fs::remove_file(&fixture);
+    for item in ["indexed", "excludes"] {
+        assert_eq!(
+            cert_for(&certs, item)["level"],
+            "L3",
+            "issue #8 `{item}` must certify L3 through Forge: {certs:?}"
+        );
+    }
+}

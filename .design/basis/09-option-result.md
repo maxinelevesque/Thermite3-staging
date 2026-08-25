@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: f76dc338c28aed0d60b85a0beb1a0115d59622ff5976b5e94bd9736cafbdc49f (re-pinned 2026-08-25 for issue #7 declared-return gating; Option/Result semantics are unchanged. prior: 80388f117335a2fe69cc695e55cf038c9ce91b80edf320574d9e10a9fa4e4c78)
+audited-content-sha256: 7d4609264f2925da0ca2373f90e66a10d71ebaf5ec8d5cb3d8753353934acc34 (re-pinned 2026-08-25 for issue #8 Vec View lowering; Option/Result semantics are unchanged. prior: fea532dd5b13cab80cca2b7a601f799a08efcac9d809095f0a807185b9c574f2)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized
