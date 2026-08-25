@@ -242,6 +242,8 @@ const BUILTIN_METHODS: &[&str] = &[
     // like `push`); `get`/`len` are already present. The §4.2 caged-flat walk
     // (`walk_expr_inner`'s `MethodCall` allowlist arm) is unchanged.
     "contains_key",
+    "key_at",
+    "value_at",
     "byte_at",
     "concat",
     "slice",

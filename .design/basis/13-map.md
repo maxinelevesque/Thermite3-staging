@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 0d0472b8cfd32bb2fe18f5873a8320193c716799d50bfe54b69a655daeb0d2d2 (re-pinned 2026-08-25 for issue #9 invariant combinator lowering; map semantics are unchanged. prior: 4b7376c90d1e93d96de7d617503cd79c41d17dbe9feeeb2b49df59879f99695a)
+audited-content-sha256: 5fb0488000dd706a63337ba83678e00d39907b5068e4f4b08959d5fb8551c53e (re-pinned 2026-08-25 for issue #6 verified Map removal and actual bounded-loop traversal. prior: 7c76f3c6ba031505f00989bc66bfad41d3199970801cf0bcb6bacbf7de4ffc13)
 governs: thermite-syntax/src/ast.rs
 governs: thermite-syntax/src/parser.rs
 governs: thermite-spec/src/validator.rs
@@ -19,7 +19,7 @@ thesis-refs:
 
 Cluster **C12** (crosslink **#114**) adds the last deferred basis-stdlib primitive:
 a **bounded, verified `Map<K, V>`** — a key-value collection with `insert` /
-`get` / `contains_key` / `len`, a capacity bound (`len() <= CAP`) and a
+`get` / `contains_key` / `len` / `remove` and bounded index traversal, a capacity bound (`len() <= CAP`) and a
 key-uniqueness invariant, the no-OOB accessor (`get(absent) -> None`, NOT a wrong
 value), and the §4.2 cage preserved (every operation bounded, every quantifier a
 named / frozen-trigger predicate). It is the `Map` half of
@@ -127,6 +127,22 @@ cage. The validator's caged-flat walk (`walk_expr_inner`'s `MethodCall` arm,
 exactly as the `Vec`/`String` accessors were.
 
 ## Requirements
+
+### Issue #6 extension — removal and bounded traversal
+
+- **REQ-7 (`remove(k) -> Option<V>`):** the wrapper performs a bounded linear
+  search. An absent key returns `None` without changing the backing sequence. A
+  present key returns its prior value, removes the unique pair, reduces length by
+  one, preserves `well_formed`, and makes the key absent. L1 mirrors this with
+  ordinary `Vec::remove`; L3 proves all branches without `assume` or external bodies.
+
+- **REQ-8 (`key_at` / `value_at` bounded traversal):** maps expose checked,
+  stable index accessors with `i < len`. Their spec forms read the same pair from
+  the backing sequence. The executable `count()` mirror plus existing
+  `for i in 0..m.count()` range loops therefore cover
+  iteration and values traversal without adding an iterator object, allocation, or
+  a second loop protocol. Out-of-range access is a proof obligation at L3 and an
+  always-active check at L1.
 
 ### Surface + AST (governs `thermite-syntax/src/ast.rs`, `parser.rs`)
 
@@ -497,11 +513,13 @@ from this doc (and the GROUNDED `TMapU64U64` seed) before the builder runs
 | REQ | Status | Evidence |
 |---|---|---|
 | REQ-1 (`Map<K,V>` two-arg `Type` node + grammar) | SHIPPED | #123. `enum Type` (`thermite-syntax/src/ast.rs`) gains `Map(Box<Type>, Box<Type>)` — the SECOND two-type-argument node, mirroring the SHIPPED `Type::Result(Box, Box)`. `parser::parse_type`'s `"Map"` contextual-ident arm parses `<K, V>` (a comma + a second type + `>`, the SAME two-arg parse as `"Result"`). `Map<u64, u64>` parses to `Type::Map(Box::new(u64), Box::new(u64))`. Consumer: `thermite_lower::lower::lower_type`. Verified: `forge/tests/map_conformance.rs` (the `map_kv.th` `Map<u64,u64>` parses + lowers + verus L3). |
-| REQ-2 (`Map` ops are `Expr::MethodCall` — no new node) | SHIPPED | #123. `insert`/`get`/`contains_key`/`len` over a `Map` reuse the EXISTING `Expr::MethodCall` (no new expression node — the one call syntax), parsed by `parse_postfix`. `get` returns the C7 `Option<V>`. Verified: `forge/tests/map_conformance.rs` (the corpus fns exercise all four ops). |
+| REQ-2 (`Map` ops are `Expr::MethodCall` — no new node) | SHIPPED | #123/#6. `insert`/`get`/`contains_key`/`len`/`count`/`remove`/`key_at`/`value_at` over a `Map` reuse the EXISTING `Expr::MethodCall` (no new expression node — the one call syntax), parsed by `parse_postfix`. `get` and `remove` return the C7 `Option<V>`. Verified: `forge/tests/map_conformance.rs`. |
 | REQ-3 (`contains_key`/`insert` cage admission; capacity/op contracts in §4.2) | SHIPPED | #123. `contains_key` ADDED to `BUILTIN_METHODS` (`thermite-spec/src/validator.rs`) so `ensures result == m.contains_key(k)` validates inside the §4.2 cage as a flat built-in (the lowerer maps spec-position `m.contains_key(k)` → `m.spec_contains_key(k)`); `get`/`len` already present; `insert` stays EXEC-only (`&mut`, like `push`). The round-trip / absent→None contracts are the C7 spec-`match`-in-`ensures` over `get`'s `Option` result. The caged-flat walk is UNCHANGED. Consumer: `validate`. Verified: `forge/tests/map_conformance.rs::ac3_..._certifies_l3` (`has_key` L3). |
 | REQ-4 (`Map` → Vec-of-pairs wrapper + spec view; ops; `! alloc`) | SHIPPED | #123. `lower.rs`: `Type::Map(k, v)` → `tmap_name` (`Map<u64,u64>` → `TMapU64U64`); `emit_map_wrappers` materializes ONCE per `(K,V)` pair the GROUNDED `TMapU64U64` newtype over `vstd::vec::Vec<(u64,u64)>` with `spec_dom`/`well_formed` (capacity + key-uniqueness)/`spec_contains_key`/`len` spec view, the exec linear-scan `contains_key`, the no-OOB / handled-or-loud `get -> Option<V>` (absent → None), and the append-under-`!contains_key` `insert` (`ensures final(self)...`). A `Map`-param weaves `well_formed()` (`is_map_param_ty`); `Map::new()` `let`-init rewrites to `<TMap> { data: Vec::new() }` (`is_map_new`). `! alloc` accepted by effect-subsumption. Consumer: `lower`. Verified: real `verus --no-cheating` — the GROUNDED `TMapU64U64` + the insert-then-get round-trip → `Some(v)` + absent → `None` + contains_key both branches = **`9 verified, 0 errors`** (`forge/tests/map_conformance.rs::ac1_2_3`); the broken `Some(0)`-for-absent FAILS **`verified, 1 errors`** (`ac2_broken_..`, non-vacuity R-DEFER-9); the emitted `map_kv.th` lowering verifies `0 errors` (`ac1_..._lowering`) + builds+runs (`ac1_..._builds_and_runs`, `demo() = 42`). |
 | REQ-5 (`Type::Map` exhaustive-match + skill ripple) | SHIPPED | #123. The new two-arg `Type::Map` rippled to every exhaustive `match Type`: `parser.rs` (the `"Map"` arm), `ast.rs` (the variant + doc), `lower.rs` (`lower_type`/`tmap_name`/`tmap_type_suffix`/`collect_map_kv_types`/`note_map_kv`/`note_vec_elems`/`ty_reaches_string`), `l1.rs` (`lower_type` + `emit_map_runtime_l1` + the `Map::new()` rewrite + `ty_is_string`), `l2.rs` (`type_label`), `forge/src/check.rs` (`collect_type_adt_refs` both args — the #68 ADT weave), `forge/src/review.rs` (`render_type`), `thermite-skill/src/generate.rs` (the `Map<K,V>` SkillFragment + inventory). `mutation.rs`'s `zero_value_for`/`zero_desc` route a `Map`-returning fn to the no-scalar-zero `_` catch-all (like `Result`) — honest. No `_`/panic fallthrough. The 6,000-token skill budget gate passes. Verified: `cargo build --workspace` (exhaustiveness) + `cargo run -p thermite-skill -- --check-budget` + `forge/tests/map_conformance.rs`. |
 | REQ-6 (`LowerError`/`SpecError` extension, no panics) | SHIPPED | #123. Reuses the EXISTING `LowerError::Unsupported` (`tmap_name`/`tmap_type_suffix` on a non-Copy key / unsupported key-value type — v1 grounds `Map<u64,u64>` Copy keys, OQ-4) — no new variant. No `unwrap`/`expect`/`panic!` added (R-CODE-2 / R-APG-1); verified by `cargo clippy --workspace -D warnings` + the anti-pattern-gate. |
+| REQ-7 (`remove(k) -> Option<V>`) | SHIPPED | #6. `emit_one_map_wrapper` emits the verified search/remove operation; `emit_map_runtime_l1` emits its runnable mirror. Real Verus proves present and absent branches, returned-value provenance, key absence, length change, and preserved `well_formed`. `conformance/map_kv.th::demo` executes removal. |
+| REQ-8 (`key_at` / `value_at` bounded traversal) | SHIPPED | #6. L3 emits spec and exec accessors with the index bound; spec-position calls rewrite to `spec_key_at` / `spec_value_at`. L1 emits always-checked accessors. `first_value` and the runnable `demo` in `conformance/map_kv.th` exercise proof and runtime paths. |
 
 ## Open questions (for the orchestrator before the builder runs)
 
@@ -523,13 +541,11 @@ from this doc (and the GROUNDED `TMapU64U64` seed) before the builder runs
   the append form at C12; defer replace to a follow-up. Not a blocker; flagged so
   the builder does not over-scope.
 
-- **OQ-3 (`remove` / iteration / a `len`-capacity bound beyond `well_formed` —
-  thin first cut):** REQ-4 ships the THIN first cut (`insert`/`get`/`contains_key`/
-  `len`) — the `.design/basis/04-collections.md` OQ-3 thin-`Map` recommendation.
-  `remove`, key/value iteration, and a tighter `dom().len()` capacity are deferred
-  to a Stage-4 follow-up under #114. RECOMMEND the thin first cut (it certifies the
-  practical "verified key-value store" claim without the iteration/removal proof
-  surface). Not a blocker.
+- **OQ-3 (`remove` / iteration` — RESOLVED by #6):** `remove(k) -> Option<V>` is
+  shipped with a verified bounded search. Traversal composes `key_at(i)` and
+  `value_at(i)` with the existing bounded range loop `for i in 0..m.count()`; no
+  iterator protocol or allocated `values()` collection is introduced. The
+  `len <= CAP` invariant remains the bound.
 
 - **OQ-4 (the `(K, V)` monomorphization breadth — `u64`/`String`/`Named` keys and
   values):** the GROUNDED form is `Map<u64, u64>`. The `tmap_name`/`emit_map_wrappers`

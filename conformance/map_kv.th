@@ -1,6 +1,6 @@
 // Cluster C12 (`.design/basis/13-map.md`): the bounded verified `Map<u64, u64>`
 // corpus oracle. Exercises the parse + validate + lower of the two-arg `Map<K,V>`
-// type and its `insert`/`get`/`contains_key`/`len` ops over the Vec-of-pairs
+// type and its `insert`/`get`/`contains_key`/`len`/`remove`/indexed traversal ops over the Vec-of-pairs
 // `TMap` backing (C6 `Vec<tuple>` + C9 `(u64,u64)` pair + C7 `Option` for the
 // no-OOB / handled-or-loud `get`, absent key → None). Hand-authored from the
 // design's GROUNDED `TMapU64U64` form (`9 verified, 0 errors`), NOT regenerated
@@ -45,7 +45,36 @@ fn demo() -> u64
 {
   let mut m: Map<u64, u64> = Map::new();
   m.insert(7, 42);
-  match m.get(7) { Some(v) => v, None => 0 }
+  m.insert(8, 99);
+  m.remove(8);
+  m.value_at(0)
+}
+
+// Maps compose with the existing bounded range loop through stable index accessors;
+// no separate iterator protocol or heap-allocating values collection is required.
+fn first_value(m: Map<u64, u64>) -> u64
+  ! pure
+  requires m.len() > 0
+  ensures result == m.value_at(0)
+{
+  m.value_at(0)
+}
+
+fn last_value(m: Map<u64, u64>) -> u64
+  ! pure
+  requires m.len() > 0
+  ensures result == m.value_at(m.len() - 1)
+{
+  let mut value = m.value_at(0);
+  let n = m.count();
+  for i in 0..n
+    keeps i <= n
+    keeps n == m.len()
+    keeps i == 0 || value == m.value_at(i - 1)
+  {
+    value = m.value_at(i);
+  }
+  value
 }
 
 // The no-OOB `get`: an ABSENT key (one the map does not contain) returns `None`,

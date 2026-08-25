@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 456054e00e8e4ab8274201c76fdaa1d479f5c3c00cf23cbdf94581320502fff3 (re-pinned 2026-08-25 for issue #9 invariant combinator lowering; boundary composition is unchanged. prior: 7ae57f24e2406efe54405ab2ccf1ac9b7b87b4786874556a48ae1fa4394d4e8b)
+audited-content-sha256: c407501248f0dbdd49b429993f4f3061475e012ba42e62817dfebe4773cbf291 (re-pinned 2026-08-25 for issue #6 final Map iteration form; boundary composition unchanged. prior: e02dce23d2f2be4af6f4ee0e37a548c7247d6dbcdd1e217c8d2461b6f504dcc6)
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9
