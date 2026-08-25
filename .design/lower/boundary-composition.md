@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 7ae57f24e2406efe54405ab2ccf1ac9b7b87b4786874556a48ae1fa4394d4e8b (re-pinned 2026-08-25 for issue #8 Vec View lowering; boundary composition is unchanged. prior: 9bd9c6ffa7571eb30ae7fe07cdf6c45de88225634d7dd0b1bfaf757e1aea4367)
+audited-content-sha256: 456054e00e8e4ab8274201c76fdaa1d479f5c3c00cf23cbdf94581320502fff3 (re-pinned 2026-08-25 for issue #9 invariant combinator lowering; boundary composition is unchanged. prior: 7ae57f24e2406efe54405ab2ccf1ac9b7b87b4786874556a48ae1fa4394d4e8b)
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9

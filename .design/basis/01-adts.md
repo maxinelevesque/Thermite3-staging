@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 3b088b3f79401510a861f63d9f4dd042480c78da6c3fcefc696ddf246b61496e (pinned 2026-08-25 for issue #7: declared return types bound the numeric-fold nat representation; recursive and non-recursive ADT predicates retain bool.)
+audited-content-sha256: 3b088b3f79401510a861f63d9f4dd042480c78da6c3fcefc696ddf246b61496e (re-pinned 2026-08-25 for issue #9: struct invariants discover combinators and adapt bounded Vec fields at L3/L1. prior: issue #7 declared-return pin.)
 governs: thermite-syntax/src/ast.rs
 governs: thermite-syntax/src/parser.rs
 governs: thermite-spec/src/validator.rs
@@ -417,6 +417,15 @@ consistent visibility tier for the invariant predicate, the struct, its fields,
 and any constant the invariant references. The non-vacuity of the invariant was
 confirmed: a guard-less `deposit` (omitting `amount <= CAP - a.balance`)
 correctly FAILS to verify — the invariant is not trivially true.
+
+**Invariant combinators.** A struct `keeps` clause is a first-class spec
+position. Combinators referenced only there are collected and emitted just as
+they are for `requires`, `ensures`, and spec-function bodies. A bounded `Vec<T>`
+field used in a sequence combinator crosses the wrapper's `View` bridge at the
+call site (`forall_in(xs, p)` becomes `forall_in(self.xs@, p)`); the L1 mirror
+passes the wrapper's backing vector by slice reference. The issue #9 regression
+checks the exact `struct S { xs: Vec<u32> } keeps forall_in(xs, |x| x < 100)`
+program with real Verus, runnable Rust, and Forge's per-item certificate path.
 
 **Enum + `match` + `is` (REQ-9).**
 

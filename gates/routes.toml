@@ -197,7 +197,7 @@ conformance_ops = ["Frame::well_formed"]
 crate_pattern = "thermite-lower/tests/adt_lower_conformance.rs"
 design = ".design/lower/struct-invariant-receiver-binding.md"
 reference = ["conformance/nested_adt.th"]
-conformance_ops = ["nested_adt_fields_and_is_invariant_lower_and_verify_l3", "nested_adt_fields_and_is_invariant_compile_and_run_l1"]
+conformance_ops = ["nested_adt_fields_and_is_invariant_lower_and_verify_l3", "nested_adt_fields_and_is_invariant_compile_and_run_l1", "struct_invariant_combinator_is_emitted_and_runs_at_l1"]
 
 # Basis Stage 2 (recursion schemes, issue #70 / epic #62): lower.rs ALSO carries
 # the generated per-(ADT,scheme) Verus recursive spec fns (fold_<e>/for_all_<e>)
@@ -229,7 +229,7 @@ conformance_ops = ["vec_demo_lowers_wrapper_and_verifies_l3", "vec_view_supports
 crate_pattern = "forge/tests/divergence_collections.rs"
 design = ".design/basis/04-collections.md"
 reference = ["thermite-lower/tests/collections_conformance.rs", "conformance/vec_demo.th"]
-conformance_ops = ["confirm_checked_get_bound_is_load_bearing", "vec_view_index_and_combinator_certify_l3"]
+conformance_ops = ["confirm_checked_get_bound_is_load_bearing", "vec_view_index_and_combinator_certify_l3", "struct_invariant_combinator_certifies_l3"]
 
 # #52 §9 boundary-composition: lower.rs ALSO carries the external_body emission
 # arm governed by boundary-composition.md (a file may carry multiple governing

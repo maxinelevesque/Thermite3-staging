@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 91e68a13058f712d3d1e876d8f4c7ec05fff50119871b5ac81fb38f20d0b41f7 (re-pinned 2026-08-25 for issue #8 Vec View lowering; invariant receiver behavior is unchanged. prior: 7fe68aee0a8fd4bb6477094d78b41714c8c7159f03e074380e6502c635628870)
+audited-content-sha256: 4955a024e1ceb013cf71e4220c8d31918e851cabcf8761904e3fd367994c247d (re-pinned 2026-08-25 for issue #9: invariant receiver binding now includes combinator Vec-field View/L1 backing-slice adaptation. prior: 91e68a13058f712d3d1e876d8f4c7ec05fff50119871b5ac81fb38f20d0b41f7)
 decision: qualify invariant field paths in the canonical invariant lowerer
 issue: github:dollspace-gay/Thermite#110
 governs:
