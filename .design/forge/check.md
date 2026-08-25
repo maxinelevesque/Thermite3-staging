@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: db869c16d3ec4fd1952ccf77be70b1b4691f4952f01c5d9d8246ad7a34e3c8d7 (re-pinned 2026-08-17 for exact Assurance V2 producer-core characterizations; check behavior is unchanged. prior: d6776bf74185ea12c8637a2650f172f1412349da6c2580ac892a9efb38d41c8e)
+audited-content-sha256: db6c35747f9d61b24c321abbeabfb2c54633c91611cc68615f95e7ffb4d4b9f1 (re-pinned 2026-08-17 for exact Assurance V2 producer-core characterizations; check behavior is unchanged. prior: d6776bf74185ea12c8637a2650f172f1412349da6c2580ac892a9efb38d41c8e)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1

@@ -1,9 +1,10 @@
 use thermite_lower::{
-    check_program, emit_witness, lower, lower_l1_with_lock_provider, replay_witness, LockProvider,
+    check_program, emit_witness, lower, lower_l1_with_lock_provider, lower_l2, replay_witness,
+    LockProvider,
 };
-use thermite_syntax::parse;
+use thermite_syntax::{parse, semantic_inventory, ChildRole, SemanticFact, WorkBudget};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Position {
     Initializer,
     AssignmentValue,
@@ -29,6 +30,39 @@ const POSITIONS: [Position; 10] = [
     Position::TupleElement,
     Position::LoopTest,
 ];
+
+impl Position {
+    fn canonical_role(self) -> ChildRole {
+        match self {
+            Self::Initializer => ChildRole::Initializer,
+            Self::AssignmentValue => ChildRole::Value,
+            Self::ReturnValue => ChildRole::ReturnValue,
+            Self::Tail => ChildRole::Tail,
+            Self::IfCondition | Self::LoopTest => ChildRole::Condition,
+            Self::MatchScrutinee => ChildRole::Scrutinee,
+            Self::MatchGuard => ChildRole::Guard,
+            Self::CallArgument => ChildRole::Argument,
+            Self::TupleElement => ChildRole::TupleElement,
+        }
+    }
+}
+
+const ESCAPING_BORROW_EXCLUSIONS: [(Position, &str); 8] = [
+    (Position::Initializer, "slot requires a u64 value"),
+    (Position::AssignmentValue, "slot requires a u64 value"),
+    (Position::IfCondition, "condition requires a scalar value"),
+    (Position::MatchScrutinee, "outer probe returns u64"),
+    (
+        Position::MatchGuard,
+        "guard requires bool/scalar comparison",
+    ),
+    (Position::CallArgument, "id parameter is u64"),
+    (Position::TupleElement, "outer probe returns u64"),
+    (Position::LoopTest, "test requires bool/scalar comparison"),
+];
+
+const L2_SHARED_STATE_EXCLUSION: &str =
+    "RFC-10 shared-state L2 Kani harness is not implemented; L3 replay remains authoritative";
 
 #[derive(Clone, Copy, Debug)]
 enum RejectingPayload {
@@ -91,6 +125,52 @@ fn source_with_payload(position: Position, declarations: &str, payload: &str) ->
     )
 }
 
+fn affine_source(position: Position, action: &str) -> String {
+    let payload = format!("if true {{ holding gate {{ {action} }} 0 }} else {{ 0 }}");
+    format!(
+        "struct State {{ text: String }} keeps text.len() <= 20\n\
+         shared state: State\n\
+         lock gate guards state\n\
+         fn id(x: u64) -> u64 ! pure requires true ensures result == x {{ x }}\n\
+         fn probe() -> u64 ! owns(gate), read(state.text)\n\
+           requires true ensures result == 0\n\
+         {{ {} }}",
+        body(position, &payload)
+    )
+}
+
+fn assert_l2_shared_state_exclusion(position: Position, source: &str) {
+    let parsed = parse(source);
+    let error = lower_l2(&parsed.program).expect_err("RFC-10 shared-state L2 is a typed exclusion");
+    assert!(
+        error
+            .to_string()
+            .contains("RFC-10 shared-state L2 Kani harness"),
+        "{position:?}: {L2_SHARED_STATE_EXCLUSION}: {error}"
+    );
+}
+
+fn assert_position_is_a_canonical_holding_ancestor(position: Position, source: &str) {
+    let parsed = parse(source);
+    let inventory = semantic_inventory(&parsed.program, WorkBudget(100_000)).unwrap();
+    let holding = inventory
+        .facts
+        .iter()
+        .position(|fact| matches!(fact, SemanticFact::Holding { lock } if lock == "gate"))
+        .expect("generated cell contains holding gate");
+    let mut cursor = thermite_syntax::NodeId(holding as u32);
+    let mut ancestor_roles = Vec::new();
+    while let Some(edge) = inventory.edges.iter().find(|edge| edge.child == cursor) {
+        ancestor_roles.push(edge.role);
+        cursor = edge.parent;
+    }
+    assert!(
+        ancestor_roles.contains(&position.canonical_role()),
+        "{position:?} must be grounded in canonical role {:?}: {ancestor_roles:?}",
+        position.canonical_role()
+    );
+}
+
 fn rejecting_source(position: Position, payload: RejectingPayload) -> String {
     match payload {
         RejectingPayload::DirectReentrancy => source(position, "holding gate { } "),
@@ -138,10 +218,37 @@ fn provider() -> LockProvider {
     }
 }
 
+fn compile_and_run_l1(position: Position, label: &str, mut source: String) -> bool {
+    source.push_str("\nfn main() { assert_eq!(probe(), 0); }\n");
+    let dir = std::env::temp_dir().join(format!(
+        "thermite-rfc10-matrix-{}-{position:?}-{label}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&dir).unwrap();
+    let source_path = dir.join("main.rs");
+    let binary_path = dir.join("main");
+    std::fs::write(&source_path, source).unwrap();
+    let built = std::process::Command::new("rustc")
+        .args([
+            "--edition=2021",
+            source_path.to_str().unwrap(),
+            "-o",
+            binary_path.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(built.success(), "{position:?}/{label}");
+    std::process::Command::new(&binary_path)
+        .status()
+        .unwrap()
+        .success()
+}
+
 #[test]
 fn generated_holding_position_matrix_agrees_across_phases() {
     for position in POSITIONS {
         let source = source(position, "state.n = 1;");
+        assert_position_is_a_canonical_holding_ancestor(position, &source);
         let parsed = parse(&source);
         assert!(
             parsed.is_clean(),
@@ -166,33 +273,8 @@ fn generated_holding_position_matrix_agrees_across_phases() {
         let l1 = lower_l1_with_lock_provider(&parsed.program, &provider())
             .unwrap_or_else(|error| panic!("{position:?}: {error}"));
         assert!(l1.contains("__thermite_lock_acquire_gate"), "{position:?}");
-        let mut runnable = l1;
-        runnable.push_str("\nfn main() { assert_eq!(probe(), 0); }\n");
-        let dir = std::env::temp_dir().join(format!(
-            "thermite-rfc10-matrix-{}-{position:?}",
-            std::process::id()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        let source_path = dir.join("main.rs");
-        let binary_path = dir.join("main");
-        std::fs::write(&source_path, runnable).unwrap();
-        let built = std::process::Command::new("rustc")
-            .args([
-                "--edition=2021",
-                source_path.to_str().unwrap(),
-                "-o",
-                binary_path.to_str().unwrap(),
-            ])
-            .status()
-            .unwrap();
-        assert!(built.success(), "{position:?}");
-        assert!(
-            std::process::Command::new(&binary_path)
-                .status()
-                .unwrap()
-                .success(),
-            "{position:?}"
-        );
+        assert_l2_shared_state_exclusion(position, &source);
+        assert!(compile_and_run_l1(position, "restored", l1), "{position:?}");
     }
 }
 
@@ -214,6 +296,71 @@ fn deep_finite_expression_payload_reaches_every_position() {
         lower(&parsed.program).unwrap_or_else(|error| panic!("{position:?}: {error}"));
         lower_l1_with_lock_provider(&parsed.program, &provider())
             .unwrap_or_else(|error| panic!("{position:?}: {error}"));
+        assert_l2_shared_state_exclusion(position, &source);
+    }
+}
+
+#[test]
+fn generated_affine_payload_matrix_records_compatible_cells_and_exclusions() {
+    for position in POSITIONS {
+        let source = affine_source(position, "let moved: String = state.text;");
+        let parsed = parse(&source);
+        assert!(
+            parsed.is_clean(),
+            "non-Copy/{position:?}: {:?}\n{source}",
+            parsed.errors
+        );
+        let error = check_program(&parsed.program).unwrap_err();
+        assert!(
+            format!("{error:?}").contains("moves non-Copy shared place"),
+            "non-Copy/{position:?}: {error:?}\n{source}"
+        );
+        assert_l2_shared_state_exclusion(position, &source);
+    }
+
+    for (position, body) in [
+        (Position::Tail, "holding gate { &state.text }"),
+        (
+            Position::ReturnValue,
+            "return if true { holding gate { &state.text } } else { holding gate { &state.text } };",
+        ),
+    ] {
+        let escaping = parse(&format!(
+            "struct State {{ text: String }} keeps text.len() <= 20\n\
+             shared state: State\n\
+             lock gate guards state\n\
+             fn escape() -> &String ! owns(gate), read(state.text)\n\
+               requires true ensures true {{ {body} }}"
+        ));
+        assert!(escaping.is_clean(), "{position:?}: {:?}", escaping.errors);
+        let error = check_program(&escaping.program).unwrap_err();
+        assert!(
+            format!("{error:?}").contains("escaping reference to shared place"),
+            "escaping-borrow/{position:?}: {error:?}"
+        );
+    }
+
+    assert_eq!(ESCAPING_BORROW_EXCLUSIONS.len(), 8);
+    for (position, reason) in ESCAPING_BORROW_EXCLUSIONS {
+        assert_ne!(position, Position::Tail);
+        assert!(!reason.is_empty(), "{position:?} exclusion must be typed");
+    }
+}
+
+#[test]
+fn generated_invariant_breaking_payload_fails_at_every_l1_close() {
+    for position in POSITIONS {
+        let source = source(position, "state.n = 10;");
+        let parsed = parse(&source);
+        assert!(parsed.is_clean(), "{position:?}: {:?}", parsed.errors);
+        let checked = check_program(&parsed.program)
+            .unwrap_or_else(|errors| panic!("{position:?}: {errors:?}\n{source}"));
+        replay_witness(&parsed.program, &emit_witness(&checked)).unwrap();
+        let l1 = lower_l1_with_lock_provider(&parsed.program, &provider()).unwrap();
+        assert!(
+            !compile_and_run_l1(position, "broken-invariant", l1),
+            "{position:?}: an invariant-breaking close must abort"
+        );
     }
 }
 

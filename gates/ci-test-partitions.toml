@@ -1201,7 +1201,7 @@ seconds = 0.012
 test = "thermite-lower::traversal_witness checked_shared_places_obey_the_same_lexical_scope_as_projection"
 
 [[assignment]]
-bucket = 2
+bucket = 7
 seconds = 10.431
 test = "thermite-lower::traversal_witness complete_current_inventory_matrix_uses_the_universal_lean_theorem"
 
@@ -8099,3 +8099,43 @@ test = "thermite-tv::loop_teeth l1_entry_obligation_verifies"
 bucket = 12
 seconds = 0.018
 test = "thermite-tv::strat_two_phase_corpus corpus_sweep_is_entirely_syntactic"
+
+# RFC-10 closure tests postdate the baseline timing snapshot. These reviewed
+# estimates use the most recent local batched runtimes; the manifest's global
+# noise allowance covers startup variance until GitHub timing artifacts replace
+# them.
+[[assignment]]
+bucket = 2
+seconds = 94.000
+test = "forge::check_conformance generated_rfc10_positions_reach_provider_free_forge_check"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 70.000
+test = "thermite-lower::traversal_witness lean_derives_lock_authority_order_and_all_close_edges_from_neutral_facts"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 35.000
+test = "forge::check_conformance generated_rfc10_invariant_breaks_fail_provider_free_forge_check"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 25.000
+test = "thermite-lower::traversal_witness lean_rejects_specific_condition_and_match_guard_child_omissions"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 5.000
+test = "thermite-lower::rfc10_conformance_matrix generated_invariant_breaking_payload_fails_at_every_l1_close"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.100
+test = "thermite-lower::rfc10_conformance_matrix generated_affine_payload_matrix_records_compatible_cells_and_exclusions"
+timing_provenance = "reviewed_local_estimate_after_baseline"

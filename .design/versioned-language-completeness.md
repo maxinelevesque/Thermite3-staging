@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 396435e3f6f0135d8d408d783c2bc3d071e779c0865e869bca6c3ea9ad019905 (Assurance V2 extension-tax closure, 2026-08-17: the reviewed RFC-3 content pin now names the exact V2-corrected source; producer-core, predecessor, and characterization markers remain non-operative and bidirectionally checked. prior: a961e0ce7858b516dd3583c02903e07d62333cdbf436196df7adcc4db0cf0736)
+audited-content-sha256: 001748d567af813fc0a2a48b00495b906c01f3a4acc3470c646239902d7cab54 (RFC-10 replay scaling closure, 2026-08-24: definitionally inert neutral events are compacted before Lean transport while the complete node/fact/edge inventory remains bound; language-stage classifications and total-outcome policy are unchanged. prior: b84746698228b3b7c4de13e2e88df21218cba8073d19249dd9b100431630ddd6)
 
 ## Summary
 

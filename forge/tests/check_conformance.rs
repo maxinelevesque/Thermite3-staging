@@ -375,6 +375,158 @@ fn rfc10_shared_state_certifies_through_the_production_route() {
 }
 
 #[test]
+fn generated_rfc10_positions_reach_provider_free_forge_check() {
+    if !verus_present() {
+        eprintln!("SKIP: verus not available — generated RFC-10 Forge matrix not run.");
+        return;
+    }
+    let mut payload =
+        "if flag { holding gate { state.n; 1 } } else { holding gate { state.n; 2 } }".to_string();
+    let mut loop_payload = "if true { holding gate { state.n; flag } } else { flag }".to_string();
+    // The lowerer matrix separately uses depth 24. Keep the provider-free cells
+    // below the production Lean replay's 60-second operational timeout.
+    for _ in 0..8 {
+        payload = format!("if true {{ {payload} }} else {{ 0 }}");
+        loop_payload = format!("if true {{ {loop_payload} }} else {{ flag }}");
+    }
+    let positions = [
+        ("initializer", format!("let x: u64 = {payload}; x")),
+        (
+            "assignment_value",
+            format!("let mut x: u64 = 0; x = {payload}; x"),
+        ),
+        ("return_value", format!("return {payload};")),
+        ("tail", payload.clone()),
+        (
+            "if_condition",
+            format!("if {payload} == 1 {{ 1 }} else {{ 2 }}"),
+        ),
+        (
+            "match_scrutinee",
+            format!("match {payload} {{ 1 => 1, _ => 2 }}"),
+        ),
+        (
+            "match_guard",
+            format!("match 0 {{ _ if {payload} == 1 => 1, _ => 2 }}"),
+        ),
+        ("call_argument", format!("id({payload})")),
+        ("tuple_element", format!("({payload}, 0).0")),
+        (
+            "loop_test",
+            format!(
+                "let mut out: u64 = 2; while {loop_payload} keeps (flag && (out == 1 || out == 2)) || (!flag && out == 2) measures 1 as u64 {{ out = 1; break; }} out"
+            ),
+        ),
+    ];
+    for (name, body) in positions {
+        let source = format!(
+            "struct State {{ n: u64 }} keeps n < 10\n\
+             shared state: State\n\
+             lock gate guards state\n\
+             fn id(x: u64) -> u64 ! pure requires true ensures result == x {{ x }}\n\
+             fn probe_{name}(flag: bool) -> u64 ! owns(gate), read(state.n)\n\
+             requires true ensures (flag && result == 1) || (!flag && result == 2) {{ {body} }}\n"
+        );
+        let fixture = std::env::temp_dir().join(format!(
+            "forge_rfc10_matrix_{}_{name}.th",
+            std::process::id()
+        ));
+        std::fs::write(&fixture, source).expect("write RFC-10 matrix fixture");
+        let l2 = Command::new(forge_bin())
+            .arg("check")
+            .arg(&fixture)
+            .args(["--level", "l2"])
+            .output()
+            .expect("spawn Forge L2 RFC-10 matrix cell");
+        assert_eq!(l2.status.code(), Some(2), "probe_{name}");
+        assert!(
+            String::from_utf8_lossy(&l2.stderr).contains("RFC-10 shared-state L2 Kani harness"),
+            "probe_{name}: {}",
+            String::from_utf8_lossy(&l2.stderr)
+        );
+        let (code, certs) = run_check_json(&fixture);
+        let _ = std::fs::remove_file(&fixture);
+        let cert = find_cert(&certs, &format!("probe_{name}"));
+        if name == "loop_test" {
+            assert_eq!(code, Some(1), "probe_{name}: {certs:?}");
+            assert_eq!(cert["level"], Value::from("L0"), "probe_{name}");
+            assert!(
+                cert["obligations"].as_array().is_some_and(|rows| rows
+                    .iter()
+                    .any(|row| { row["diagnostic"] == "error: postcondition not satisfied" })),
+                "loop-test proof failure must remain explicit: {cert:?}"
+            );
+        } else {
+            assert_eq!(code, Some(0), "probe_{name} must certify: {certs:?}");
+            assert_eq!(cert["level"], Value::from("L3"), "probe_{name}");
+        }
+    }
+}
+
+#[test]
+fn generated_rfc10_invariant_breaks_fail_provider_free_forge_check() {
+    if !verus_present() {
+        eprintln!("SKIP: verus not available — RFC-10 invariant-break matrix not run.");
+        return;
+    }
+    let payload = "if true { holding gate { state.n = 10; state.n } 0 } else { 0 }";
+    let positions = [
+        ("initializer", format!("let x: u64 = {payload}; x")),
+        (
+            "assignment_value",
+            format!("let mut x: u64 = 0; x = {payload}; x"),
+        ),
+        ("return_value", format!("return {payload};")),
+        ("tail", payload.to_string()),
+        (
+            "if_condition",
+            format!("if {payload} == 0 {{ 0 }} else {{ 1 }}"),
+        ),
+        ("match_scrutinee", format!("match {payload} {{ _ => 0 }}")),
+        (
+            "match_guard",
+            format!("match 0 {{ _ if {payload} == 0 => 0, _ => 0 }}"),
+        ),
+        ("call_argument", format!("id({payload})")),
+        ("tuple_element", format!("({payload}, 0).0")),
+        (
+            "loop_test",
+            format!("while {payload} == 0 keeps true measures 1 as u64 {{ break; }} 0"),
+        ),
+    ];
+    for (name, body) in positions {
+        let source = format!(
+            "struct State {{ n: u64 }} keeps n < 10\n\
+             shared state: State\n\
+             lock gate guards state\n\
+             fn id(x: u64) -> u64 ! pure requires true ensures result == x {{ x }}\n\
+             fn break_invariant_{name}() -> u64 ! owns(gate), read(state.n), write(state.n)\n\
+             requires true ensures result < 10 {{ {body} }}\n"
+        );
+        let fixture = std::env::temp_dir().join(format!(
+            "forge_rfc10_invariant_break_{}_{name}.th",
+            std::process::id()
+        ));
+        std::fs::write(&fixture, source).expect("write RFC-10 invariant-break fixture");
+        let (code, certs) = run_check_json(&fixture);
+        let _ = std::fs::remove_file(&fixture);
+        let cert = find_cert(&certs, &format!("break_invariant_{name}"));
+        assert_eq!(code, Some(1), "break_invariant_{name}: {certs:?}");
+        assert_eq!(cert["level"], Value::from("L0"), "break_invariant_{name}");
+        assert!(
+            cert["obligations"]
+                .as_array()
+                .is_some_and(|rows| rows.iter().any(|row| {
+                    row["diagnostic"]
+                        .as_str()
+                        .is_some_and(|diagnostic| diagnostic.contains("precondition not satisfied"))
+                })),
+            "invariant-breaking close must remain an explicit proof failure: {cert:?}"
+        );
+    }
+}
+
+#[test]
 fn explicit_l2_cleanly_refuses_rfc10_without_losing_metadata() {
     let out = Command::new(forge_bin())
         .arg("check")
