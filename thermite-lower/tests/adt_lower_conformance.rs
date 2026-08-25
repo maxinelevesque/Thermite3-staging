@@ -32,6 +32,16 @@ fn parse_corpus(name: &str) -> thermite_syntax::ast::Program {
     parsed.program
 }
 
+fn parse_src(src: &str, label: &str) -> thermite_syntax::ast::Program {
+    let parsed = thermite_syntax::parse(src);
+    assert!(
+        parsed.errors.is_empty(),
+        "{label} must parse clean: {:?}",
+        parsed.errors
+    );
+    parsed.program
+}
+
 fn lower_l3(name: &str) -> String {
     thermite_lower::lower(&parse_corpus(name))
         .unwrap_or_else(|e| panic!("L3 lowering {name}.th failed: {e}"))
@@ -168,6 +178,45 @@ fn unary_struct_invariant_binds_fields_and_verifies_l3() {
         "the corrected predicate must remain threaded through the function contract:\n{emitted}"
     );
     assert_no_cheats(&emitted, "struct-invariant-receiver/repro");
+}
+
+/// Issue #9: struct invariants are first-class spec/contract positions. A
+/// combinator referenced only from `keeps` must be discovered, and a bounded
+/// Vec field must cross the same View bridge as a Vec function parameter.
+#[test]
+fn struct_invariant_combinator_is_emitted_and_runs_at_l1() {
+    let src = "struct S { xs: Vec<u32> } keeps forall_in(xs, |x| x < 100)";
+    let program = parse_src(src, "struct invariant combinator");
+
+    let l3 = thermite_lower::lower(&program).expect("L3 lowering must succeed");
+    assert!(
+        l3.contains("spec fn forall_in(") && l3.contains("forall_in(self.xs@, |x: u32| x < 100)"),
+        "the invariant-only combinator definition and Vec view must be emitted:\n{l3}"
+    );
+    let tmp = std::env::temp_dir().join("struct_inv_combinator_l3.rs");
+    std::fs::write(&tmp, &l3).expect("write issue #9 L3 fixture");
+    match run_verus(&tmp) {
+        Some((ok, output)) => assert!(
+            ok && output.contains("verified, 0 errors"),
+            "issue #9 emitted unit must verify. exit_success={ok}\n\
+             --- verus output ---\n{output}\n--- emitted ---\n{l3}"
+        ),
+        None => eprintln!("SKIP: verus not available — issue #9 L3 fixture not verified."),
+    }
+
+    let l1 = thermite_lower::lower_l1(&program).expect("L1 lowering must succeed");
+    assert!(
+        l1.contains("fn forall_in(") && l1.contains("forall_in(&self.xs.data, |x: u32| x < 100)"),
+        "the L1 invariant must emit and borrow its runnable combinator:\n{l1}"
+    );
+    let runnable = format!(
+        "{l1}\nfn main() {{\n    assert!(S {{ xs: TVecU32 {{ data: vec![1, 99] }} }}.well_formed());\n    assert!(!S {{ xs: TVecU32 {{ data: vec![100] }} }}.well_formed());\n}}\n"
+    );
+    let (compiled, ran, output) = compile_and_run(&runnable, "struct_inv_combinator_l1");
+    assert!(
+        compiled && ran,
+        "issue #9 L1 fixture must compile and run:\n{output}\n--- emitted ---\n{runnable}"
+    );
 }
 
 // ---- AC-1 cert oracle: deposit → L3, the stable subset matches the golden ----

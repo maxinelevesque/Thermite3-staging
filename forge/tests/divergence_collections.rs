@@ -199,3 +199,30 @@ fn vec_view_index_and_combinator_certify_l3() {
         );
     }
 }
+
+/// Issue #9: a combinator referenced only by a struct invariant must be woven
+/// into the struct's per-item certification unit. The Vec field is passed
+/// through its sequence View, so the complete item certifies at L3 or higher.
+#[test]
+fn struct_invariant_combinator_certifies_l3() {
+    if !verus_present() {
+        eprintln!("SKIP: verus absent — struct-invariant combinator not exercised.");
+        return;
+    }
+    let fixture = std::env::temp_dir().join(format!(
+        "forge_struct_inv_combinator_{}.th",
+        std::process::id()
+    ));
+    std::fs::write(
+        &fixture,
+        "struct S { xs: Vec<u32> } keeps forall_in(xs, |x| x < 100)\n",
+    )
+    .expect("write struct-invariant combinator fixture");
+    let certs = check_json_file(&fixture);
+    let _ = std::fs::remove_file(&fixture);
+    let level = cert_for(&certs, "S")["level"].as_str();
+    assert!(
+        matches!(level, Some("L3" | "L4")),
+        "issue #9 struct invariant must certify at L3 or higher: {certs:?}"
+    );
+}

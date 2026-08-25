@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 6b86f74476122cfddbdcf168d37a3561d2598054 (re-pinned 2026-06-16 for PR #46 after merging main: lower_l1's TString runtime gate now treats String-typed ADT declarations as TString users so ADT fields cannot name an unemitted runtime; main's inert Item::Forge skip is preserved; core req/ens/keeps check emission is unchanged.)
-audited-content-sha256: ccd40661274e7ddf46d072cf7eb3fb591448485f6aea6c58efc93095f4242c37 (re-pinned 2026-08-25 for issue #5: L1 struct invariants bind `is` scrutinees and qualify enum variants. prior: ba6c2a25f97368fbd2e4bacce774adc43a016c0d105947ead5a9daf6092bbced)
+audited-content-sha256: 5eaac47ab298f57891617fe685215f34944f6968c4e9c0cc0e0ffac8988b8569 (re-pinned 2026-08-25 for issue #9: L1 struct invariants collect combinators and borrow bounded Vec backing slices. prior: ccd40661274e7ddf46d072cf7eb3fb591448485f6aea6c58efc93095f4242c37)
 governs: thermite-lower/src/l1.rs
 thesis-refs:
   - thermite-design.md §4.2

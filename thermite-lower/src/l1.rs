@@ -521,7 +521,13 @@ fn lower_struct_l1(s: &StructItem, variants: &[(&str, &str)]) -> Result<String, 
     out.push_str("}\n");
     if let Some(inv) = &s.keeps {
         let field_names: Vec<&str> = s.fields.iter().map(|f| f.name.as_str()).collect();
-        let body = lower_inv_expr_l1(&inv.expr, &field_names, variants, 0, s.span)?;
+        let vec_fields: Vec<&str> = s
+            .fields
+            .iter()
+            .filter(|f| matches!(f.ty, Type::Vec(_)))
+            .map(|f| f.name.as_str())
+            .collect();
+        let body = lower_inv_expr_l1(&inv.expr, &field_names, &vec_fields, variants, 0, s.span)?;
         writeln!(out, "\nimpl {} {{", s.name).ok();
         writeln!(out, "    #[allow(dead_code)]").ok();
         writeln!(out, "    fn well_formed(&self) -> bool {{ {body} }}").ok();
@@ -536,6 +542,7 @@ fn lower_struct_l1(s: &StructItem, variants: &[(&str, &str)]) -> Result<String, 
 fn lower_inv_expr_l1(
     expr: &Expr,
     field_names: &[&str],
+    vec_fields: &[&str],
     variants: &[(&str, &str)],
     depth: usize,
     span: Span,
@@ -556,19 +563,19 @@ fn lower_inv_expr_l1(
             }
         }
         Expr::Binary { op, lhs, rhs } => {
-            let l = lower_inv_expr_l1(lhs, field_names, variants, d, span)?;
-            let r = lower_inv_expr_l1(rhs, field_names, variants, d, span)?;
+            let l = lower_inv_expr_l1(lhs, field_names, vec_fields, variants, d, span)?;
+            let r = lower_inv_expr_l1(rhs, field_names, vec_fields, variants, d, span)?;
             Ok(format!("{l} {} {r}", binop(*op)))
         }
         Expr::Field { receiver, name } => {
-            let r = lower_inv_expr_l1(receiver, field_names, variants, d, span)?;
+            let r = lower_inv_expr_l1(receiver, field_names, vec_fields, variants, d, span)?;
             Ok(format!("{r}.{name}"))
         }
         // The L1 mirror of the receiver-bound Verus `is` lowering. Recurse into
         // the scrutinee so a bare invariant field becomes `self.<field>`, then
         // resolve the variant to the Rust-qualified `Enum::Variant` pattern.
         Expr::Is { scrutinee, variant } => {
-            let s = lower_inv_expr_l1(scrutinee, field_names, variants, d, span)?;
+            let s = lower_inv_expr_l1(scrutinee, field_names, vec_fields, variants, d, span)?;
             let v = variant.last().cloned().unwrap_or_default();
             let qualified = qualify_variant_path_l1(variant, variants);
             let pat_path = if qualified == v && variant.len() == 1 {
@@ -590,10 +597,17 @@ fn lower_inv_expr_l1(
             name,
             args,
         } => {
-            let r = lower_inv_expr_l1(receiver, field_names, variants, d, span)?;
+            let r = lower_inv_expr_l1(receiver, field_names, vec_fields, variants, d, span)?;
             let mut parts = Vec::with_capacity(args.len());
             for a in args {
-                parts.push(lower_inv_expr_l1(a, field_names, variants, d, span)?);
+                parts.push(lower_inv_expr_l1(
+                    a,
+                    field_names,
+                    vec_fields,
+                    variants,
+                    d,
+                    span,
+                )?);
             }
             Ok(format!("{r}.{name}({})", parts.join(", ")))
         }
@@ -602,10 +616,27 @@ fn lower_inv_expr_l1(
         // receiver above, so the whole call family is covered, not just the one
         // triggering site).
         Expr::Call { callee, args } => {
-            let c = lower_inv_expr_l1(callee, field_names, variants, d, span)?;
+            let c = lower_inv_expr_l1(callee, field_names, vec_fields, variants, d, span)?;
+            let arg_kinds = match callee.as_ref() {
+                Expr::Path(segs) => segs.last().and_then(|name| thermite_spec::lookup(name)),
+                _ => None,
+            }
+            .map(|sig| sig.arg_kinds);
             let mut parts = Vec::with_capacity(args.len());
-            for a in args {
-                parts.push(lower_inv_expr_l1(a, field_names, variants, d, span)?);
+            for (i, a) in args.iter().enumerate() {
+                let lowered = lower_inv_expr_l1(a, field_names, vec_fields, variants, d, span)?;
+                let is_slice_arg = arg_kinds.and_then(|kinds| kinds.get(i))
+                    == Some(&thermite_spec::ArgKind::Slice);
+                let is_vec_field = matches!(
+                    a,
+                    Expr::Path(segs)
+                        if segs.len() == 1 && vec_fields.contains(&segs[0].as_str())
+                );
+                if is_slice_arg && is_vec_field {
+                    parts.push(format!("&{lowered}.data"));
+                } else {
+                    parts.push(lowered);
+                }
             }
             Ok(format!("{c}({})", parts.join(", ")))
         }
@@ -719,11 +750,16 @@ pub(crate) fn emit_combinator_l1_defs(program: &Program) -> Result<String, Lower
                 collect_combinators_in_expr(&s.measures.expr, s.span, &mut names);
                 collect_combinators_in_block_specs(&s.body, s.span, &mut names);
             }
-            // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum`
-            // item carries no contract clauses → references no combinator; the
-            // collector's neutral value is a no-op. (Dead-in-1a: gated at the
-            // validator.)
-            Item::Struct(_) | Item::Enum(_) => {}
+            // A struct invariant is an executable contract position at L1.
+            // Collect its combinators before emitting `well_formed`, matching
+            // the L3 collector (issue #9).
+            Item::Struct(s) => {
+                if let Some(inv) = &s.keeps {
+                    collect_combinators_in_expr(&inv.expr, s.span, &mut names);
+                }
+            }
+            // Enums currently carry no invariant clause.
+            Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 combinator-collection
             // consumer yet (increments 2b-3); inert here, mirroring the ADT-decl arm.
             Item::Forge(_)

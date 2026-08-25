@@ -8205,3 +8205,15 @@ bucket = 6
 seconds = 45.000
 test = "forge::divergence_collections vec_view_index_and_combinator_certify_l3"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.800
+test = "thermite-lower::adt_lower_conformance struct_invariant_combinator_is_emitted_and_runs_at_l1"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 45.000
+test = "forge::divergence_collections struct_invariant_combinator_certifies_l3"
+timing_provenance = "reviewed_local_estimate_after_baseline"

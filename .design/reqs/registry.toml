@@ -5559,9 +5559,9 @@ title = "Combinator Verus definitions"
 owner = "thermite-lower/src/lower.rs"
 status = "shipped"
 scope = "lower"
-summary = "The L3 lowerer emits Verus definitions for the frozen SpecTherm combinator registry entries used by a program."
+summary = "The L3 lowerer discovers frozen SpecTherm combinators in function contracts, spec bodies, and struct invariants, then emits their Verus definitions."
 aliases = ["thermite-lower/src/lower.rs REQ-6 (combinator Verus(L3) defs)"]
-contributors = [".design/lower/verus-lowering.md", "thermite-spec/src/combinators.rs"]
+contributors = [".design/lower/verus-lowering.md", ".design/basis/01-adts.md", "thermite-spec/src/combinators.rs", "thermite-lower/tests/adt_lower_conformance.rs", "forge/tests/divergence_collections.rs"]
 generated_to = ["status", "thermite-lower-verus-lowering-status"]
 
 [[requirement.evidence]]
@@ -5578,6 +5578,16 @@ note = "registry entry carrying Verus L3 definitions"
 kind = "test"
 target = "thermite-spec/tests/combinators_conformance.rs"
 note = "registry conformance oracle"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/adt_lower_conformance.rs::struct_invariant_combinator_is_emitted_and_runs_at_l1"
+note = "real-Verus invariant-only combinator discovery and Vec View regression"
+
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/divergence_collections.rs::struct_invariant_combinator_certifies_l3"
+note = "Forge per-item certification for the issue #9 reproduction"
 
 [[requirement]]
 id = "REQ-LOWER-VERUS-PROOF-AIDS"
@@ -5725,7 +5735,7 @@ title = "ADT struct lowering with invariants"
 owner = "thermite-lower/src/lower.rs"
 status = "shipped"
 scope = "lower"
-summary = "Struct items lower to Verus structs with public fields and a `well_formed` predicate threaded into relevant signatures."
+summary = "Struct items lower to Verus structs with public fields and a `well_formed` predicate threaded into relevant signatures; invariant-only combinators are emitted and bounded Vec fields use their sequence View."
 aliases = ["thermite-lower/src/lower.rs REQ-8 (struct → Verus struct; type-invariant → enforced predicate)"]
 contributors = [".design/basis/01-adts.md", ".design/lower/struct-invariant-receiver-binding.md", "thermite-lower/tests/adt_lower_conformance.rs", "forge/tests/struct_invariant_receiver.rs"]
 generated_to = ["status", "thermite-lower-adt-status"]
@@ -5744,6 +5754,11 @@ note = "type-invariant predicate lowerer"
 kind = "test"
 target = "thermite-lower/tests/adt_lower_conformance.rs"
 note = "bank-account invariant conformance"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/adt_lower_conformance.rs::struct_invariant_combinator_is_emitted_and_runs_at_l1"
+note = "struct invariant combinator discovery and Vec-field View conformance"
 
 [[requirement]]
 id = "REQ-INVBIND-1"
@@ -9918,7 +9933,7 @@ title = "Combinator L1 executable forms"
 owner = "thermite-lower/src/l1.rs"
 status = "shipped"
 scope = "lower"
-summary = "`emit_combinator_l1_defs` collects referenced SpecTherm combinators and emits each registry-provided executable L1 body in deterministic source order."
+summary = "`emit_combinator_l1_defs` collects referenced SpecTherm combinators from contracts, spec bodies, and struct invariants, then emits each registry-provided executable L1 body in deterministic source order."
 aliases = ["thermite-lower/src/l1.rs REQ-3 (combinator L1 executable forms)"]
 contributors = [".design/lower/l1-runtime-checks.md", ".design/spec/spectherm-combinators.md", "thermite-lower/tests/l1_conformance.rs"]
 generated_to = ["status", "thermite-lower-l1-core-status"]
@@ -9937,6 +9952,11 @@ note = "collects combinator references from contracts/spec positions"
 kind = "symbol"
 target = "combinator_l1_forms_run"
 note = "concrete L1 combinator execution test"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/adt_lower_conformance.rs::struct_invariant_combinator_is_emitted_and_runs_at_l1"
+note = "invariant-only L1 combinator discovery, Vec backing-slice borrow, and execution"
 
 [[requirement]]
 id = "REQ-LOWER-L1-SPEC-FN"
@@ -10048,7 +10068,7 @@ title = "L1 struct invariants"
 owner = "thermite-lower/src/l1.rs"
 status = "shipped"
 scope = "lower"
-summary = "`lower_struct_l1` emits plain Rust structs with `well_formed` predicates, and `lower_fn_l1` weaves always-active checks for invariant-bearing struct params and returns."
+summary = "`lower_struct_l1` emits plain Rust structs with `well_formed` predicates, including runnable combinators over bounded Vec backing slices, and `lower_fn_l1` weaves always-active checks for invariant-bearing struct params and returns."
 aliases = ["thermite-lower/src/l1.rs REQ-8 (struct → L1 struct + always-active invariant check)"]
 contributors = [".design/basis/01-adts.md", "thermite-lower/tests/adt_lower_conformance.rs"]
 generated_to = ["status", "thermite-lower-l1-adt-status"]
@@ -10067,6 +10087,11 @@ note = "invariant-bearing struct detector"
 kind = "test"
 target = "thermite-lower/tests/adt_lower_conformance.rs"
 note = "struct invariant L1 conformance"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/adt_lower_conformance.rs::struct_invariant_combinator_is_emitted_and_runs_at_l1"
+note = "runnable issue #9 struct-invariant combinator regression"
 
 [[requirement]]
 id = "REQ-LOWER-L1-ENUM-MATCH"

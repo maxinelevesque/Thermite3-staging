@@ -1364,6 +1364,12 @@ fn lower_struct(
             .filter(|f| ty_reaches_string(&f.ty))
             .map(|f| f.name.as_str())
             .collect();
+        let vec_fields: Vec<&str> = s
+            .fields
+            .iter()
+            .filter(|f| matches!(f.ty, Type::Vec(_)))
+            .map(|f| f.name.as_str())
+            .collect();
         let body = if let Some(tag) = inv.bv {
             lower_bv_prop(&inv.expr, tag, Some(&field_names), 0, s.span)?
         } else {
@@ -1371,6 +1377,7 @@ fn lower_struct(
                 &inv.expr,
                 &field_names,
                 &string_fields,
+                &vec_fields,
                 spec_fn_param_types,
                 0,
                 s.span,
@@ -1532,6 +1539,7 @@ fn lower_inv_expr(
     expr: &Expr,
     field_names: &[&str],
     string_fields: &[&str],
+    vec_fields: &[&str],
     spec_fn_param_types: &[(&str, &[PrimType])],
     depth: usize,
     span: Span,
@@ -1561,6 +1569,7 @@ fn lower_inv_expr(
                 true,
                 field_names,
                 string_fields,
+                vec_fields,
                 spec_fn_param_types,
                 d,
                 span,
@@ -1571,6 +1580,7 @@ fn lower_inv_expr(
                 false,
                 field_names,
                 string_fields,
+                vec_fields,
                 spec_fn_param_types,
                 d,
                 span,
@@ -1582,6 +1592,7 @@ fn lower_inv_expr(
                 receiver,
                 field_names,
                 string_fields,
+                vec_fields,
                 spec_fn_param_types,
                 d,
                 span,
@@ -1598,6 +1609,7 @@ fn lower_inv_expr(
                 scrutinee,
                 field_names,
                 string_fields,
+                vec_fields,
                 spec_fn_param_types,
                 d,
                 span,
@@ -1626,6 +1638,7 @@ fn lower_inv_expr(
                 receiver,
                 field_names,
                 string_fields,
+                vec_fields,
                 spec_fn_param_types,
                 d,
                 span,
@@ -1648,6 +1661,7 @@ fn lower_inv_expr(
                             &args[0],
                             field_names,
                             string_fields,
+                            vec_fields,
                             spec_fn_param_types,
                             d,
                             span,
@@ -1669,6 +1683,7 @@ fn lower_inv_expr(
                     a,
                     field_names,
                     string_fields,
+                    vec_fields,
                     spec_fn_param_types,
                     d,
                     span,
@@ -1697,6 +1712,7 @@ fn lower_inv_expr(
                 callee,
                 field_names,
                 string_fields,
+                vec_fields,
                 spec_fn_param_types,
                 d,
                 span,
@@ -1708,8 +1724,27 @@ fn lower_inv_expr(
             let cast_ctx = Ctx::spec_seq().with_spec_fn_param_types(spec_fn_param_types);
             let mut parts = Vec::with_capacity(args.len());
             for (i, a) in args.iter().enumerate() {
-                let lowered =
-                    lower_inv_expr(a, field_names, string_fields, spec_fn_param_types, d, span)?;
+                let lowered = lower_inv_expr(
+                    a,
+                    field_names,
+                    string_fields,
+                    vec_fields,
+                    spec_fn_param_types,
+                    d,
+                    span,
+                )?;
+                let is_seq_arg = combinator_arg_kinds(callee).and_then(|kinds| kinds.get(i))
+                    == Some(&thermite_spec::ArgKind::Slice);
+                let is_vec_field = matches!(
+                    a,
+                    Expr::Path(segs)
+                        if segs.len() == 1 && vec_fields.contains(&segs[0].as_str())
+                );
+                let lowered = if is_seq_arg && is_vec_field {
+                    format!("{lowered}@")
+                } else {
+                    lowered
+                };
                 if matches!(a, Expr::Binary { .. } | Expr::Unary { .. }) {
                     // #233: a bool-param position (`Some(None)`) takes no cast — a
                     // comparison `x < y` / a `!flag` arg is already bool-typed and
@@ -1743,6 +1778,7 @@ fn lower_inv_expr(
                 inner,
                 field_names,
                 string_fields,
+                vec_fields,
                 spec_fn_param_types,
                 d,
                 span,
@@ -1765,6 +1801,7 @@ fn lower_inv_expr(
                 inner,
                 field_names,
                 string_fields,
+                vec_fields,
                 spec_fn_param_types,
                 d,
                 span,
@@ -1806,6 +1843,7 @@ fn lower_inv_operand(
     is_left: bool,
     field_names: &[&str],
     string_fields: &[&str],
+    vec_fields: &[&str],
     spec_fn_param_types: &[(&str, &[PrimType])],
     depth: usize,
     span: Span,
@@ -1814,6 +1852,7 @@ fn lower_inv_operand(
         operand,
         field_names,
         string_fields,
+        vec_fields,
         spec_fn_param_types,
         depth,
         span,
@@ -1929,11 +1968,17 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
                 collect_combinators_in_expr(&s.measures.expr, s.span, &mut names);
                 collect_combinators_in_block_specs(&s.body, s.span, &mut names);
             }
-            // Basis Stage 1a (`.design/basis/01-adts.md`): a `struct`/`enum`
-            // item carries no contract clauses, so it references no combinators
-            // — the neutral value for this collector is a no-op. (The item is
-            // gated at the validator anyway; this arm is dead-in-1a.)
-            Item::Struct(_) | Item::Enum(_) => {}
+            // A struct invariant is a spec position just like a function
+            // contract. Its combinators must be present before `well_formed`
+            // is emitted, otherwise the generated predicate names an absent
+            // definition and dies at L0 (issue #9).
+            Item::Struct(s) => {
+                if let Some(inv) = &s.keeps {
+                    collect_combinators_in_expr(&inv.expr, s.span, &mut names);
+                }
+            }
+            // Enums currently carry no invariant clause.
+            Item::Enum(_) => {}
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 combinator-collection
             // consumer yet (increments 2b-3); inert here, mirroring the ADT-decl arm.
             Item::Forge(_)
