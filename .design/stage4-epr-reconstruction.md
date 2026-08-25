@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: f50871fd74f58a92bc6f7d18554150c8515602ef203bca7fe571ff9f9602fd7c (re-pinned 2026-08-17 for exact Assurance V2 producer-core characterizations in shared check.rs; reconstruction semantics are unchanged. prior: 7898fdd83c40562e99d53987c807274ca79eae949746f47213f0308d233b3aec)
+audited-content-sha256: 6acf8d2cd690775a6e8b31620ecea61cfaea77c1ade5c6c43ab21c258bbcdce0 (re-pinned 2026-08-25 for issue #41 certificate-path characterization; reconstruction semantics are unchanged. prior: f50871fd74f58a92bc6f7d18554150c8515602ef203bca7fe571ff9f9602fd7c)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 5fe2048e681fce53241aa087d9a7b66563d5448dfb78e431ca0a87ee2dac9fe8 (re-pinned 2026-08-14 for RFC-10 after re-auditing the governed shared-state invariant, certificate, replay, and completeness surfaces against the landed implementation. Canonical doc-drift digest is current. Earlier note: re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: 8f913d6392aceeeb943eb0369c79bb5e2dd75fae1914436dbea1690b14659e4a.)
+audited-content-sha256: cd82ddc6e8c6e66c0158f44fe351fbeb64d2c79d0556380accd52ad17cc325c2 (re-pinned 2026-08-25 for issue #41 proof-target binding; string semantics are unchanged. prior: 5fe2048e681fce53241aa087d9a7b66563d5448dfb78e431ca0a87ee2dac9fe8)
 governs: thermite-syntax/src/ast.rs
 governs: thermite-syntax/src/parser.rs
 governs: thermite-spec/src/validator.rs

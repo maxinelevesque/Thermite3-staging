@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 6184cc9c90c6d2e77a7e1f0d5113a7f0f6f99c3bc4ec5d7fa7998489713d7ac2 (re-pinned 2026-08-17 for exact Assurance V2 producer-core characterizations; dependency closure and weaving are unchanged. prior: 7287e219e6e263a7ddf8d085f72909b79db67f5c694e3dd4e1239c2872a8252a)
+audited-content-sha256: 2e4eddf0e93168ee3a41e46c796044ae69ddebfe9ba0c8fb8338b369af3916bc (re-pinned 2026-08-25 for issue #41 certificate-path characterization; dependency closure and weaving are unchanged. prior: 6184cc9c90c6d2e77a7e1f0d5113a7f0f6f99c3bc4ec5d7fa7998489713d7ac2)
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9

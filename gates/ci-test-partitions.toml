@@ -82,6 +82,12 @@ test = "forge::bin/forge check::tests::complete_epr_uses_the_typed_arbiter_for_c
 
 [[assignment]]
 bucket = 1
+seconds = 0.007
+test = "forge::bin/forge check::tests::orphan_proof_is_rot_and_cannot_false_discharge_a_renamed_function"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
 seconds = 0.009
 test = "forge::bin/forge check::tests::rfc10_shared_type_survives_per_item_dependency_weaving"
 
@@ -593,6 +599,24 @@ test = "thermite-spec::divergence_nesting nested_combinator_in_loop_inv_rejects"
 [[assignment]]
 bucket = 1
 seconds = 0.007
+test = "thermite-spec::proof_target_validate proof_target_accepts_an_existing_fn_in_either_source_order"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-spec::proof_target_validate proof_target_rejects_a_name_of_the_wrong_item_kind"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-spec::proof_target_validate proof_target_rejects_an_absent_fn"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
 test = "thermite-spec::verified_effect_rows concurrent_consumer_reports_ancestry_conflicts_and_accepts_siblings"
 
 [[assignment]]
@@ -619,6 +643,12 @@ test = "thermite-syntax::conformance negative_inputs_never_panic"
 bucket = 1
 seconds = 0.006
 test = "thermite-syntax::forge_items nested_braces_in_proof_block_are_balanced"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-syntax::forge_items orphan_and_wrong_kind_proofs_have_no_semantic_addresses"
+timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 1

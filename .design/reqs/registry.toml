@@ -18602,6 +18602,48 @@ target = ".design/rfcs/0014-crash-clause.md"
 note = "the proposal, with its design record and probe results"
 
 [[requirement]]
+id = "REQ-S1-PROOF-TARGET-BINDING"
+title = "Out-of-line proofs bind only to existing executable functions"
+owner = ".design/stage1-forge-tier.md"
+status = "shipped"
+scope = "spec"
+summary = "Every `proof for f` target resolves across the complete program to an executable `fn` before lowering or certification. Missing targets and names of the wrong item kind are structured SpecTherm errors, invalid proof roots mint no semantic addresses, and a certificate-level rename regression proves an orphan cannot discharge another function."
+remaining_scope = ""
+contributors = [".design/rfcs/0019-the-proof-layer.md"]
+aliases = ["proof target resolution", "orphan proof", "proof for binding", "issue 41"]
+generated_to = ["status"]
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "SpecError::UnknownProofTarget"
+note = "thermite-spec rejects a proof target that names no declared fn"
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "SpecError::ProofTargetNotFunction"
+note = "thermite-spec distinguishes an existing name of the wrong item kind"
+
+[[requirement.evidence]]
+kind = "symbol"
+target = "addresses_of"
+note = "thermite-syntax emits proof coordinates only for roots bound to an executable fn"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-spec/tests/proof_target_validate.rs"
+note = "forward-reference acceptance plus absent-target and wrong-kind rejection"
+
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-syntax/tests/forge_items.rs"
+note = "orphan and wrong-kind proofs mint no semantic addresses"
+
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "orphan_proof_is_rot_and_cannot_false_discharge_a_renamed_function pins ForgeGateMissingProof at the certificate producer"
+
+[[requirement]]
 id = "REQ-CLAUSE-PORTFOLIO-ADDRESS"
 title = "Clause certificates use checked typed identities"
 owner = ".design/clause-coordinate-portfolios.md"

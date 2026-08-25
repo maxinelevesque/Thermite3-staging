@@ -995,16 +995,25 @@ was being written.
 
 ## Appendix: what the probes established
 
-Parser probes run against `thermite-syntax` at `staging @ b79b4005`, through a
-temporary integration test since no parse-only binary exists. These measure the
-parse and address layers; no Verus or Lean run was made, so every certification
-statement in this document is cited from a REQ status table or a corpus header
-rather than produced here.
+The original parser probes ran against `thermite-syntax` at `staging @ b79b4005`,
+through a temporary integration test since no parse-only binary existed. Issue
+#41 subsequently closed the unresolved-target finding at the `3.0.0-alpha.5`
+baseline. The syntax remains parseable so tooling can produce a structured
+diagnostic, but semantic addressing now emits proof coordinates only when the
+target resolves to an executable `fn`, and SpecTherm validation rejects absent
+and wrong-kind targets before lowering or certification.
+
+The certification trace classifies the original defect as **rot, not false
+discharge**: `forge_proof_text_for` selects proof material only when the proof's
+target equals the function being certified. A renamed function therefore receives
+`ForgeGateMissingProof`; the detached proof is never reused for another item. A
+certificate-level regression pins that fail-closed behavior alongside the new
+binding validation.
 
 | probe | verdict |
 |---|---|
 | `fn` + `witness { … }` + `proof for sum { ensures#1 by { … } }` in one ordinary file, no attribute, no feature flag | clean parse, 3 items; addresses `sum:Fn`, `witness#1:Forge`, `sum.proof.ensures#1:Forge` |
-| `proof for no_such_function { ensures#1 by { … } }` | **clean parse.** The target is resolved by nothing; addressed as `no_such_function.proof.ensures#1` |
+| `proof for no_such_function { ensures#1 by { … } }` | syntactically parsed, then rejected as `UnknownProofTarget`; no proof address is emitted |
 | `witness for sum { … }` | parse error — the proposed spelling does not exist |
 | bodyless `fn` with no attribute | parse error, "a non-`#[boundary]` fn requires a `{ }` body" (`ffi-boundary.md` REQ-3, deliberate) |
 | `#[boundary("core::sum")] fn sum(..) requires … ensures … ! … ;` | clean parse; `FnItem { body: None }` |
@@ -1013,7 +1022,7 @@ rather than produced here.
 | `inhabit` sites in the corpus | 10, across 4 `witness` blocks |
 | `contract` and `opaque` as reserved words | neither appears in `keyword_kind` (`thermite-syntax/src/lexer.rs`). `contract fn` (§9(a)) is an addition rather than a re-use, and `opaque spec fn` is RFC-7 §6's proposed surface rather than shipped grammar |
 
-Two of these decided sections rather than confirming them. The unresolved
-`proof for` target is why §7 names target resolution as the first thing owed; the
-absence of `body for` against the presence of everything it needs is what §9(a)
-measures.
+Two of the original probes decided sections rather than confirming them. The
+unresolved `proof for` target made target resolution the first thing §7 owed;
+issue #41 now supplies that binding. The absence of `body for` against the
+presence of everything it needs remains what §9(a) measures.

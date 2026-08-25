@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: db6c35747f9d61b24c321abbeabfb2c54633c91611cc68615f95e7ffb4d4b9f1 (re-pinned 2026-08-17 for exact Assurance V2 producer-core characterizations; check behavior is unchanged. prior: d6776bf74185ea12c8637a2650f172f1412349da6c2580ac892a9efb38d41c8e)
+audited-content-sha256: 883d5e453463e76ca2daf9f704b43115a7764f3aa0dc461ec06370b98eb8392d (re-pinned 2026-08-25 for issue #41: the certificate producer pins orphan proofs as rot, not false discharge. prior: db6c35747f9d61b24c321abbeabfb2c54633c91611cc68615f95e7ffb4d4b9f1)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1

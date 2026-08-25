@@ -330,6 +330,18 @@ const GENERATED_SPEC_FNS: &[&str] = &[
 /// (R-CODE-2 / R-APG-1): every rejection is a variant here.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SpecError {
+    /// A `proof for target { ... }` item whose target names no declared executable
+    /// `fn`. Out-of-line proof material may not float free of a declaration: a
+    /// rename must fail here rather than leave an apparently usable orphan.
+    UnknownProofTarget { target: String, span: Span },
+    /// A `proof for target { ... }` item whose target name exists, but belongs to
+    /// something other than an executable `fn` (for example a `spec fn` or
+    /// `struct`). Proof obligations attach only to `FnItem` contracts.
+    ProofTargetNotFunction {
+        target: String,
+        found: &'static str,
+        span: Span,
+    },
     /// A call in a contract position whose callee is neither a registered
     /// combinator nor a declared `spec fn` — an arbitrary free-function call,
     /// forbidden by the §4.2 cage (REQ-4 (i)). `name` is the unresolved callee.
@@ -502,7 +514,9 @@ impl SpecError {
     /// The source span this diagnostic points at.
     pub fn span(&self) -> Span {
         match self {
-            SpecError::UnknownCombinator { span, .. }
+            SpecError::UnknownProofTarget { span, .. }
+            | SpecError::ProofTargetNotFunction { span, .. }
+            | SpecError::UnknownCombinator { span, .. }
             | SpecError::WrongArity { span, .. }
             | SpecError::WrongArgKind { span, .. }
             | SpecError::ForbiddenCall { span, .. }
@@ -528,6 +542,16 @@ impl SpecError {
 impl fmt::Display for SpecError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            SpecError::UnknownProofTarget { target, .. } => write!(
+                f,
+                "`proof for {target}` names no declared `fn`; out-of-line proof material must \
+                 resolve to an existing function contract"
+            ),
+            SpecError::ProofTargetNotFunction { target, found, .. } => write!(
+                f,
+                "`proof for {target}` resolves to a {found}, not a `fn`; out-of-line proof \
+                 material can discharge only an executable function's contract"
+            ),
             SpecError::UnknownCombinator { name, .. } => write!(
                 f,
                 "`{name}` is not a registered SpecTherm combinator or a declared `spec fn`; \
@@ -672,6 +696,12 @@ pub fn validate(program: &Program) -> Result<(), Vec<SpecError>> {
 /// The walk state: the declared `spec fn` name set, the current recursion depth,
 /// the accumulated diagnostics, and the "caged-flat" mode flag (REQ-6).
 struct Validator {
+    /// Every executable `fn` name, collected before the walk so `proof for f`
+    /// supports forward references while still rejecting orphans.
+    exec_fns: HashSet<String>,
+    /// Declared non-`fn` names and their surface kinds. Used to distinguish an
+    /// absent proof target from a name that exists at the wrong item kind.
+    non_fn_items: HashMap<String, &'static str>,
     spec_fns: HashSet<String>,
     /// REQ-5: each declared `enum`'s variant names, in declaration order
     /// (collected from `Item::Enum` in the pre-pass). Keyed by enum name. The
@@ -724,6 +754,35 @@ struct Validator {
 
 impl Validator {
     fn new(program: &Program) -> Self {
+        let exec_fns: HashSet<String> = program
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                Item::Fn(function) => Some(function.name.clone()),
+                _ => None,
+            })
+            .collect();
+        let non_fn_items: HashMap<String, &'static str> = program
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                Item::Fn(_) | Item::Forge(thermite_syntax::ForgeItem::Proof(_)) => None,
+                Item::SpecFn(item) => Some((item.name.clone(), "`spec fn`")),
+                Item::Struct(item) => Some((item.name.clone(), "`struct`")),
+                Item::Enum(item) => Some((item.name.clone(), "`enum`")),
+                Item::Forge(thermite_syntax::ForgeItem::PropFn(item)) => {
+                    Some((item.name.clone(), "`prop fn`"))
+                }
+                Item::Forge(thermite_syntax::ForgeItem::Lemma(item)) => {
+                    Some((item.name.clone(), "`lemma`"))
+                }
+                Item::Forge(thermite_syntax::ForgeItem::Witness(_)) => None,
+                Item::EffectDecl(item) => Some((item.name.clone(), "effect declaration")),
+                Item::SharedDecl(item) => Some((item.name.clone(), "shared declaration")),
+                Item::Concurrent(item) => Some((item.name.clone(), "concurrent declaration")),
+                Item::LockDecl(item) => Some((item.name.clone(), "lock declaration")),
+            })
+            .collect();
         // Collect every declared `spec fn` name first so a forward reference in
         // a contract (`ens result == sz(xs)` before `spec fn sz` is seen) still
         // resolves (REQ-3 (b)).
@@ -873,6 +932,8 @@ impl Validator {
         }
 
         Validator {
+            exec_fns,
+            non_fn_items,
             spec_fns,
             enums,
             variant_to_enum,
@@ -1005,6 +1066,22 @@ impl Validator {
                 // forge increments (2b covenant, 2c battery, 2e proof view, 3
                 // library), not the v1 spec cage. No v1 contract walk applies here;
                 // the surface is parse/address/round-trip tested in thermite-syntax.
+                Item::Forge(thermite_syntax::ForgeItem::Proof(proof)) => {
+                    if !self.exec_fns.contains(&proof.target) {
+                        if let Some(found) = self.non_fn_items.get(&proof.target) {
+                            self.errors.push(SpecError::ProofTargetNotFunction {
+                                target: proof.target.clone(),
+                                found,
+                                span: proof.span,
+                            });
+                        } else {
+                            self.errors.push(SpecError::UnknownProofTarget {
+                                target: proof.target.clone(),
+                                span: proof.span,
+                            });
+                        }
+                    }
+                }
                 Item::Forge(_) => {}
                 Item::EffectDecl(declaration) => {
                     let _resolved = thermite_syntax::effect_basis::resolve_declaration(declaration);
