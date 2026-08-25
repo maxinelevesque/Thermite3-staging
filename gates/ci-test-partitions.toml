@@ -8202,6 +8202,6 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 6
-seconds = 5.000
+seconds = 45.000
 test = "forge::divergence_collections vec_view_index_and_combinator_certify_l3"
 timing_provenance = "reviewed_local_estimate_after_baseline"

@@ -192,10 +192,10 @@ fn vec_view_index_and_combinator_certify_l3() {
     let certs = check_json_file(&fixture);
     let _ = std::fs::remove_file(&fixture);
     for item in ["indexed", "excludes"] {
-        assert_eq!(
-            cert_for(&certs, item)["level"],
-            "L3",
-            "issue #8 `{item}` must certify L3 through Forge: {certs:?}"
+        let level = cert_for(&certs, item)["level"].as_str();
+        assert!(
+            matches!(level, Some("L3" | "L4")),
+            "issue #8 `{item}` must certify at L3 or higher through Forge: {certs:?}"
         );
     }
 }

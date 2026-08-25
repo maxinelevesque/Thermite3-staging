@@ -6042,7 +6042,7 @@ note = "Vec get/push plus View indexing/combinator real-Verus conformance"
 [[requirement.evidence]]
 kind = "test"
 target = "forge/tests/divergence_collections.rs::vec_view_index_and_combinator_certify_l3"
-note = "Forge L3 certification for the issue #8 indexing and combinator paths"
+note = "Forge certification at L3 or higher for the issue #8 indexing and combinator paths"
 
 [[requirement]]
 id = "REQ-LOWER-COLLECTIONS-MAP-VSTD"
