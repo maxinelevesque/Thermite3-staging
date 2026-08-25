@@ -7,8 +7,8 @@
 //! only through a woven spec fn was therefore absent from the emitted sub-program
 //! and verus could not resolve it. Three surfaces, all live-confirmed:
 //!
-//!   1. a checked `struct`/`enum`: `collect_item_adt_refs` is inert on an ADT decl
-//!      (field types are followed by the type-graph fixed point instead), so
+//!   1. a checked `struct`/`enum`: `collect_item_adt_refs` was inert on an ADT decl
+//!      (field types were followed only after seeding the type-graph fixed point), so
 //!      `adt_deps` came out empty for every ADT item while the arm wove the file's
 //!      whole `spec_items` — a spec fn naming a second ADT dangled, the item landed
 //!      L0 on `E0425 cannot find type`, and `project assurance` was FAILED;
@@ -281,8 +281,12 @@ fn standalone_nested_adt_weaves_its_field_type() {
     }
     let certs = check_program(
         "nested",
-        "struct Inner { n: u64 } keeps n < 10\nstruct Outer { inner: Inner } keeps true",
+        "enum Privilege { Kernel, User }\n\
+         struct Regs { ip: u64 }\n\
+         struct Frame { regs: Regs, privilege: Privilege, generation: u64 } \
+             keeps privilege is User",
     );
-    assert_eq!(level_of(&certs, "Inner"), "L3");
-    assert_eq!(level_of(&certs, "Outer"), "L3");
+    assert_eq!(level_of(&certs, "Privilege"), "L3");
+    assert_eq!(level_of(&certs, "Regs"), "L3");
+    assert_eq!(level_of(&certs, "Frame"), "L3");
 }

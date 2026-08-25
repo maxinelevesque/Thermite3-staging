@@ -385,7 +385,7 @@ fn lower_l1_inner(
             // Basis Stage 1c (`.design/basis/01-adts.md` REQ-8/REQ-9): a `struct`
             // lowers to a plain Rust `struct` + a `well_formed` method (the
             // always-active invariant predicate); an `enum` to a plain Rust `enum`.
-            Item::Struct(s) => lower_struct_l1(s)?,
+            Item::Struct(s) => lower_struct_l1(s, &variants)?,
             Item::Enum(e) => lower_enum_l1(e)?,
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer
             // yet (increments 2b-3); emit nothing, mirroring the inert ADT-decl arms.
@@ -502,7 +502,7 @@ fn qualify_variant_path_l1(path: &[String], variants: &[(&str, &str)]) -> String
 /// clause, a `well_formed(&self) -> bool` method (REQ-8): the always-active
 /// invariant predicate a producing fn checks at run time (handled-or-loud, §6 L1
 /// rung). The `inv` body rewrites bare field-name paths to `self.<field>`.
-fn lower_struct_l1(s: &StructItem) -> Result<String, LowerError> {
+fn lower_struct_l1(s: &StructItem, variants: &[(&str, &str)]) -> Result<String, LowerError> {
     let mut out = String::new();
     // `#[derive(Clone)]`: the L1 ens-check snapshots a non-Copy struct parameter
     // before the body consumes it (`lower_fn_l1`'s `<p>__pre` snapshot) so a field
@@ -521,7 +521,7 @@ fn lower_struct_l1(s: &StructItem) -> Result<String, LowerError> {
     out.push_str("}\n");
     if let Some(inv) = &s.keeps {
         let field_names: Vec<&str> = s.fields.iter().map(|f| f.name.as_str()).collect();
-        let body = lower_inv_expr_l1(&inv.expr, &field_names, 0, s.span)?;
+        let body = lower_inv_expr_l1(&inv.expr, &field_names, variants, 0, s.span)?;
         writeln!(out, "\nimpl {} {{", s.name).ok();
         writeln!(out, "    #[allow(dead_code)]").ok();
         writeln!(out, "    fn well_formed(&self) -> bool {{ {body} }}").ok();
@@ -536,6 +536,7 @@ fn lower_struct_l1(s: &StructItem) -> Result<String, LowerError> {
 fn lower_inv_expr_l1(
     expr: &Expr,
     field_names: &[&str],
+    variants: &[(&str, &str)],
     depth: usize,
     span: Span,
 ) -> Result<String, LowerError> {
@@ -555,13 +556,27 @@ fn lower_inv_expr_l1(
             }
         }
         Expr::Binary { op, lhs, rhs } => {
-            let l = lower_inv_expr_l1(lhs, field_names, d, span)?;
-            let r = lower_inv_expr_l1(rhs, field_names, d, span)?;
+            let l = lower_inv_expr_l1(lhs, field_names, variants, d, span)?;
+            let r = lower_inv_expr_l1(rhs, field_names, variants, d, span)?;
             Ok(format!("{l} {} {r}", binop(*op)))
         }
         Expr::Field { receiver, name } => {
-            let r = lower_inv_expr_l1(receiver, field_names, d, span)?;
+            let r = lower_inv_expr_l1(receiver, field_names, variants, d, span)?;
             Ok(format!("{r}.{name}"))
+        }
+        // The L1 mirror of the receiver-bound Verus `is` lowering. Recurse into
+        // the scrutinee so a bare invariant field becomes `self.<field>`, then
+        // resolve the variant to the Rust-qualified `Enum::Variant` pattern.
+        Expr::Is { scrutinee, variant } => {
+            let s = lower_inv_expr_l1(scrutinee, field_names, variants, d, span)?;
+            let v = variant.last().cloned().unwrap_or_default();
+            let qualified = qualify_variant_path_l1(variant, variants);
+            let pat_path = if qualified == v && variant.len() == 1 {
+                v
+            } else {
+                qualified
+            };
+            Ok(format!("matches!({s}, {pat_path} {{ .. }})"))
         }
         // A method-call receiver/args (`cursor <= text.len()`'s `text.len()`,
         // `b.text.slice(0, b.cursor)`) must have the field-path rewrite recurse
@@ -575,10 +590,10 @@ fn lower_inv_expr_l1(
             name,
             args,
         } => {
-            let r = lower_inv_expr_l1(receiver, field_names, d, span)?;
+            let r = lower_inv_expr_l1(receiver, field_names, variants, d, span)?;
             let mut parts = Vec::with_capacity(args.len());
             for a in args {
-                parts.push(lower_inv_expr_l1(a, field_names, d, span)?);
+                parts.push(lower_inv_expr_l1(a, field_names, variants, d, span)?);
             }
             Ok(format!("{r}.{name}({})", parts.join(", ")))
         }
@@ -587,10 +602,10 @@ fn lower_inv_expr_l1(
         // receiver above, so the whole call family is covered, not just the one
         // triggering site).
         Expr::Call { callee, args } => {
-            let c = lower_inv_expr_l1(callee, field_names, d, span)?;
+            let c = lower_inv_expr_l1(callee, field_names, variants, d, span)?;
             let mut parts = Vec::with_capacity(args.len());
             for a in args {
-                parts.push(lower_inv_expr_l1(a, field_names, d, span)?);
+                parts.push(lower_inv_expr_l1(a, field_names, variants, d, span)?);
             }
             Ok(format!("{c}({})", parts.join(", ")))
         }

@@ -1,0 +1,14 @@
+enum Privilege {
+  Kernel,
+  User,
+}
+
+struct Regs {
+  ip: u64,
+}
+
+struct Frame {
+  regs: Regs,
+  privilege: Privilege,
+  generation: u64,
+} keeps privilege is User

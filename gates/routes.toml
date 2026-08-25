@@ -184,8 +184,20 @@ conformance_ops = ["classification-before-discharge", "query-substitution"]
 [[route]]
 crate_pattern = "thermite-lower/src/lower.rs"
 design = ".design/lower/struct-invariant-receiver-binding.md"
-reference = ["conformance/struct-invariant-receiver/repro.th"]
-conformance_ops = ["clear"]
+reference = ["conformance/struct-invariant-receiver/repro.th", "conformance/nested_adt.th"]
+conformance_ops = ["clear", "Frame::well_formed"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/l1.rs"
+design = ".design/lower/struct-invariant-receiver-binding.md"
+reference = ["conformance/nested_adt.th"]
+conformance_ops = ["Frame::well_formed"]
+
+[[route]]
+crate_pattern = "thermite-lower/tests/adt_lower_conformance.rs"
+design = ".design/lower/struct-invariant-receiver-binding.md"
+reference = ["conformance/nested_adt.th"]
+conformance_ops = ["nested_adt_fields_and_is_invariant_lower_and_verify_l3", "nested_adt_fields_and_is_invariant_compile_and_run_l1"]
 
 # Basis Stage 2 (recursion schemes, issue #70 / epic #62): lower.rs ALSO carries
 # the generated per-(ADT,scheme) Verus recursive spec fns (fold_<e>/for_all_<e>)
@@ -241,8 +253,14 @@ conformance_ops = []
 [[route]]
 crate_pattern = "forge/src/check.rs"
 design = ".design/forge/check.md"
-reference = ["conformance"]
-conformance_ops = ["sum", "binary_search"]
+reference = ["conformance", "conformance/nested_adt.th", "forge/tests/divergence_multi_adt_subprogram.rs"]
+conformance_ops = ["sum", "binary_search", "standalone_nested_adt_weaves_its_field_type"]
+
+[[route]]
+crate_pattern = "forge/tests/divergence_multi_adt_subprogram.rs"
+design = ".design/forge/check.md"
+reference = ["conformance/nested_adt.th"]
+conformance_ops = ["standalone_nested_adt_weaves_its_field_type"]
 
 # #52 §9 boundary-composition: check.rs's `item_subprogram` ALSO weaves the
 # transitively-reachable in-file fns (boundary/slag as external_body sigs), the

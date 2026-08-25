@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 3a8255160684f77d50c1855dc2be89ac534a02d5bbacf94dec8aee904fb1d63f (re-pinned 2026-08-16 after the result-arbiter error surface was added to shared cli.rs; rich-state composition and build artifacts are unchanged. prior: 6203e443f556240763edf121143d1e7635bbf7265bf980c6cb7833496de48626)
+audited-content-sha256: 04edd49045aed40db062d14057eaff03aed01d34c3f70aed5b510845aaff5440 (re-pinned 2026-08-25 for issue #5 receiver-bound variant tests; rich composition behavior is unchanged. prior: 3a8255160684f77d50f1855dc2be89ac534a02d5bbacf94dec8aee904fb1d63f)
 decision: one canonical Verus crate with crate-visible rich Thermite roots and public shell exports
 issue: github:dollspace-gay/Thermite#104
 governs:

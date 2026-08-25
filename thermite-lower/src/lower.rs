@@ -1574,6 +1574,23 @@ fn lower_inv_expr(
             )?;
             Ok(format!("{r}.{name}"))
         }
+        // A variant test in a receiver-bound invariant must recurse through this
+        // invariant-specific lowerer. The shared spec lowerer would emit the bare
+        // field (`privilege is User`), losing the `self` receiver and failing
+        // elaboration. The enum type of `self.<field>` fixes the bare Verus
+        // variant name, exactly as it does for an `is` in a function contract.
+        Expr::Is { scrutinee, variant } => {
+            let s = lower_inv_expr(
+                scrutinee,
+                field_names,
+                string_fields,
+                spec_fn_param_types,
+                d,
+                span,
+            )?;
+            let v = variant.last().cloned().unwrap_or_default();
+            Ok(format!("({s} is {v})"))
+        }
         // Basis Stage 7 (`.design/basis/07-strings.md` REQ-4): a method call inside
         // the spec-position `well_formed` predicate — the editor core `inv cursor <=
         // text.len()`. The receiver's bare field name is rewritten to `self.<field>`

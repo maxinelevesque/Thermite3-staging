@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 883d5e453463e76ca2daf9f704b43115a7764f3aa0dc461ec06370b98eb8392d (re-pinned 2026-08-25 for issue #41: the certificate producer pins orphan proofs as rot, not false discharge. prior: db6c35747f9d61b24c321abbeabfb2c54633c91611cc68615f95e7ffb4d4b9f1)
+audited-content-sha256: 400346b98bef93b5dfd36ad2bc3930d12dcdf76b09c4f42e43ed938c1a6723cc (re-pinned 2026-08-25 for issue #5: standalone checked ADT roots include struct-typed and enum-typed field dependencies. prior: 883d5e453463e76ca2daf9f704b43115a7764f3aa0dc461ec06370b98eb8392d)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -87,6 +87,17 @@ REQ status table).
 > `forge/tests/divergence_multi_adt_subprogram.rs`. Same under-approximated-closure
 > class as the `reachable_spec_fn_deps` body-only omission recorded in
 > `.design/verified/proof-backends.md`'s increment-(i) build-blocker note.
+
+> **Amendment 2026-08-25 (issue #5 — checked ADT roots).** RFC-10 later closed
+> the remaining root-ADT variant of this under-approximated closure: when the
+> checked item is itself a `struct` or `enum`, `collect_item_adt_refs` seeds its
+> immediate field-type dependencies through `collect_decl_field_adt_refs` before
+> the fixed point runs. Issue #5's exact containing-record shape is now pinned
+> with both a struct-typed field and an enum-typed field. The standalone Forge
+> regression requires `Privilege`, `Regs`, and `Frame` all to certify at L3;
+> `conformance/nested_adt.th` supplies the shared lowerer witness. This reconciles
+> the issue with the already-landed RFC-10 correction instead of claiming the
+> stale inert-ADT behavior above remains current.
 >
 > The same issue carried a diagnostics defect, corrected alongside. `run_verus`
 > took its scratch stem from `program.items.first()`, and `item_subprogram` weaves
