@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-token-stream",
+  "cases": [
+    {
+      "source": "#[slag(reason=\"x\\n\",owner=\"y\",review=\"required\")]",
+      "expected": {
+        "errors": [],
+        "tokens": [
+          { "kind": "HashBracket", "span": [0, 2] },
+          { "kind": "Ident", "span": [2, 4], "value": "slag" },
+          { "kind": "LParen", "span": [6, 1] },
+          { "kind": "Ident", "span": [7, 6], "value": "reason" },
+          { "kind": "Eq", "span": [13, 1] },
+          { "kind": "Str", "span": [14, 5], "value": "x\n" },
+          { "kind": "Comma", "span": [19, 1] },
+          { "kind": "Ident", "span": [20, 5], "value": "owner" },
+          { "kind": "Eq", "span": [25, 1] },
+          { "kind": "Str", "span": [26, 3], "value": "y" },
+          { "kind": "Comma", "span": [29, 1] },
+          { "kind": "Ident", "span": [30, 6], "value": "review" },
+          { "kind": "Eq", "span": [36, 1] },
+          { "kind": "Str", "span": [37, 10], "value": "required" },
+          { "kind": "RParen", "span": [47, 1] },
+          { "kind": "RBracket", "span": [48, 1] },
+          { "kind": "Eof", "span": [49, 0] }
+        ]
+      }
+    },
+    {
+      "source": "\"\\x80\"",
+      "expected": {
+        "errors": [
+          { "kind": "StrayChar", "span": [1, 4] }
+        ],
+        "tokens": [
+          { "kind": "Eof", "span": [6, 0] }
+        ]
+      }
+    }
+  ]
+}
