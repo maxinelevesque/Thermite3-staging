@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-token-stream",
+  "cases": [
+    {
+      "source": " \t// ignored\n<= << >> &mut",
+      "expected": {
+        "errors": [],
+        "tokens": [
+          { "kind": "Le", "span": [13, 2] },
+          { "kind": "Shl", "span": [16, 2] },
+          { "kind": "Shr", "span": [19, 2] },
+          { "kind": "Amp", "span": [22, 1] },
+          { "kind": "Mut", "span": [23, 3] },
+          { "kind": "Eof", "span": [26, 0] }
+        ]
+      }
+    }
+  ]
+}
