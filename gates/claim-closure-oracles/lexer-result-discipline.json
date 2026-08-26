@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-token-stream",
+  "cases": [
+    {
+      "source": "~ 0x 7",
+      "expected": {
+        "errors": [
+          { "kind": "StrayChar", "span": [0, 1] },
+          { "kind": "StrayChar", "span": [2, 2] }
+        ],
+        "tokens": [
+          { "kind": "Int", "raw": "7", "span": [5, 1], "value": "7" },
+          { "kind": "Eof", "span": [6, 0] }
+        ]
+      }
+    }
+  ]
+}
