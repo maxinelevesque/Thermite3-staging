@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "slice_id": "executable-lexer-integers-1",
+  "entries": [
+    {
+      "requirement_id": "REQ-SYNTAX-LEXER-INT-VALUE",
+      "witness_id": "W-EXEC-LEXER-INT-DECIMAL",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lexer-int-decimal.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "0057d822f5e2cd24afb321700f9c970d274f4f29cfaee3565c388a2a7f1918cc"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/lexer-int-decimal.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lexer-int-decimal.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/lexer.rs",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "wrong-stripped-decimal-value",
+            "mutation": "replace_text",
+            "from": "\"value\": \"1000000\"",
+            "to": "\"value\": \"1000001\"",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-LEXER-INT-RAW",
+      "witness_id": "W-EXEC-LEXER-INT-DECIMAL",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lexer-int-decimal.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "06cc5723d87398c2dc510d1cd217aaa7caa009c52c04a5009e4a901114ed48fe"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/lexer-int-decimal.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lexer-int-decimal.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/lexer.rs",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "discard-verbatim-spelling",
+            "mutation": "replace_text",
+            "from": "\"raw\": \"1_000_000\"",
+            "to": "\"raw\": \"1000000\"",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-LEXER-INT-RADIX",
+      "witness_id": "W-EXEC-LEXER-INT-RADIX",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lexer-int-radix.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "ce2079c5325c5bb81f3bcf5b848416d483f76927e7b16448f0bb11c3bfed7f00"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/lexer-int-radix.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lexer-int-radix.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/lexer.rs",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "wrong-hex-value",
+            "mutation": "replace_text",
+            "from": "\"value\": \"255\"",
+            "to": "\"value\": \"256\"",
+            "expected_exit": 4
+          },
+          {
+            "name": "wrong-malformed-radix-diagnostic",
+            "mutation": "replace_text",
+            "from": "\"kind\": \"StrayChar\"",
+            "to": "\"kind\": \"Unexpected\"",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

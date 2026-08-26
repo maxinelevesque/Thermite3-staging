@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-integer-tokens",
+  "cases": [
+    {
+      "source": "0xFF 0B1010 0x",
+      "expected": {
+        "errors": [
+          {
+            "kind": "StrayChar",
+            "span": [12, 2]
+          }
+        ],
+        "integers": [
+          {
+            "raw": "0xFF",
+            "span": [0, 4],
+            "value": "255"
+          },
+          {
+            "raw": "0B1010",
+            "span": [5, 6],
+            "value": "10"
+          }
+        ]
+      }
+    }
+  ]
+}
