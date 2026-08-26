@@ -7,8 +7,8 @@ use std::{
 
 use serde_json::{json, Value};
 use thermite_syntax::{
-    addresses_of, parse, tokenize, AddrKind, BinOp, Block, EffectRow, Expr, Item, PrimType, Stmt,
-    SyntaxError, TokKind, Type, UnaryOp,
+    addresses_of, parse, tokenize, AddrKind, BinOp, Block, EffectRow, Expr, HoleContext, Item,
+    PrimType, Stmt, SyntaxError, TokKind, Type, UnaryOp,
 };
 
 fn error_kind(error: &SyntaxError) -> &'static str {
@@ -46,6 +46,11 @@ fn errors_json(errors: &[SyntaxError]) -> Vec<Value> {
             {
                 value["clause"] = json!(clause);
                 value["item"] = json!(item);
+            }
+            if let SyntaxError::HoleOutsideFnBody { number, .. }
+            | SyntaxError::ProofHoleOutsideProofBlock { number, .. } = error
+            {
+                value["number"] = json!(number);
             }
             value
         })
@@ -232,7 +237,12 @@ fn main() {
     let mode = env::args().nth(1).unwrap_or_default();
     if !matches!(
         mode.as_str(),
-        "integers" | "parse-expressions" | "parse-fidelity" | "parse-items" | "tokens"
+        "integers"
+            | "parse-edges"
+            | "parse-expressions"
+            | "parse-fidelity"
+            | "parse-items"
+            | "tokens"
     ) {
         std::process::exit(2);
     }
@@ -242,9 +252,35 @@ fn main() {
         .expect("read syntax probe source");
     if matches!(
         mode.as_str(),
-        "parse-expressions" | "parse-fidelity" | "parse-items"
+        "parse-edges" | "parse-expressions" | "parse-fidelity" | "parse-items"
     ) {
         let result = parse(&source);
+        if mode == "parse-edges" {
+            let functions = result
+                .program
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    Item::Fn(function) => Some(json!({
+                        "body": function.body.is_some(),
+                        "boundary_target": function.boundary.as_ref().map(|boundary| &boundary.target),
+                        "holes": function.holes.iter().map(|hole| json!({
+                            "context": match hole.context { HoleContext::Body => "Body", HoleContext::Proof => "Proof" },
+                            "number": hole.number,
+                        })).collect::<Vec<_>>(),
+                        "name": function.name,
+                    })),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            let observation =
+                json!({"errors": errors_json(&result.errors), "functions": functions});
+            println!(
+                "{}",
+                serde_json::to_string(&observation).expect("serialize syntax probe observation")
+            );
+            return;
+        }
         if mode == "parse-fidelity" {
             let addresses = addresses_of(&result.program)
                 .into_iter()
