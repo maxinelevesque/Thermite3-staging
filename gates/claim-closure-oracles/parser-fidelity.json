@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-parse-fidelity",
+  "cases": [
+    {
+      "source_path": "conformance/sum.th",
+      "expected": {
+        "errors": [],
+        "items": [
+          {
+            "has_dec": true,
+            "kind": "spec fn",
+            "name": "spec_sum",
+            "params": [{"name": "xs", "type": "&[u32]"}],
+            "ret": "u64"
+          },
+          {
+            "ens_count": 2,
+            "fx": "pure",
+            "kind": "fn",
+            "loops": [
+              {"has_dec": true, "inv_count": 3, "surface_keyword": "while"}
+            ],
+            "name": "sum",
+            "params": [{"name": "xs", "type": "&[u32]"}],
+            "req_count": 1,
+            "ret": "u64"
+          }
+        ],
+        "addresses": [
+          {"addr": "spec_sum", "kind": "spec fn", "surface_keyword": null, "text": null},
+          {"addr": "sum", "kind": "fn", "surface_keyword": null, "text": null},
+          {"addr": "sum.loop#1", "kind": "loop", "surface_keyword": "while", "text": null},
+          {"addr": "sum.loop#1.keeps#1", "kind": "keeps", "surface_keyword": null, "text": "i <= xs.len()"},
+          {"addr": "sum.loop#1.keeps#2", "kind": "keeps", "surface_keyword": null, "text": "acc == spec_sum(&xs[..i])"},
+          {"addr": "sum.loop#1.keeps#3", "kind": "keeps", "surface_keyword": null, "text": "acc <= i as u64 * u32::MAX as u64"},
+          {"addr": "sum.loop#1.measures", "kind": "measures", "surface_keyword": null, "text": "xs.len() - i"}
+        ]
+      }
+    },
+    {
+      "source_path": "conformance/binary_search.th",
+      "expected": {
+        "errors": [],
+        "items": [
+          {
+            "ens_count": 1,
+            "fx": "pure",
+            "kind": "fn",
+            "loops": [
+              {"has_dec": true, "inv_count": 3, "surface_keyword": "loop"}
+            ],
+            "name": "binary_search",
+            "params": [
+              {"name": "haystack", "type": "&[u32]"},
+              {"name": "needle", "type": "u32"}
+            ],
+            "req_count": 1,
+            "ret": "Option<usize>"
+          }
+        ],
+        "addresses": [
+          {"addr": "binary_search", "kind": "fn", "surface_keyword": null, "text": null},
+          {"addr": "binary_search.loop#1", "kind": "loop", "surface_keyword": "loop", "text": null},
+          {"addr": "binary_search.loop#1.keeps#1", "kind": "keeps", "surface_keyword": null, "text": "lo <= hi && hi <= haystack.len()"},
+          {"addr": "binary_search.loop#1.keeps#2", "kind": "keeps", "surface_keyword": null, "text": "forall_below(haystack, lo, |x| x < needle)"},
+          {"addr": "binary_search.loop#1.keeps#3", "kind": "keeps", "surface_keyword": null, "text": "forall_from(haystack, hi, |x| x > needle)"},
+          {"addr": "binary_search.loop#1.measures", "kind": "measures", "surface_keyword": null, "text": "hi - lo"}
+        ]
+      }
+    }
+  ]
+}

@@ -6,7 +6,10 @@ use std::{
 };
 
 use serde_json::{json, Value};
-use thermite_syntax::{parse, tokenize, BinOp, Expr, Item, SyntaxError, TokKind, UnaryOp};
+use thermite_syntax::{
+    addresses_of, parse, tokenize, AddrKind, BinOp, Block, EffectRow, Expr, Item, PrimType, Stmt,
+    SyntaxError, TokKind, Type, UnaryOp,
+};
 
 fn error_kind(error: &SyntaxError) -> &'static str {
     match error {
@@ -131,11 +134,105 @@ fn expr_json(expr: &Expr) -> Value {
     }
 }
 
+fn type_text(ty: &Type) -> String {
+    match ty {
+        Type::Prim(PrimType::U8) => "u8".to_string(),
+        Type::Prim(PrimType::U16) => "u16".to_string(),
+        Type::Prim(PrimType::U32) => "u32".to_string(),
+        Type::Prim(PrimType::U64) => "u64".to_string(),
+        Type::Prim(PrimType::Usize) => "usize".to_string(),
+        Type::Prim(PrimType::Bool) => "bool".to_string(),
+        Type::Ref { mutable, inner } => format!(
+            "&{}{}",
+            if *mutable { "mut " } else { "" },
+            type_text(inner)
+        ),
+        Type::Slice(inner) => format!("[{}]", type_text(inner)),
+        Type::Generic { name, arg } => format!("{name}<{}>", type_text(arg)),
+        Type::Unit => "()".to_string(),
+        Type::Named(name) => name.clone(),
+        Type::Box(inner) => format!("Box<{}>", type_text(inner)),
+        Type::Vec(inner) => format!("Vec<{}>", type_text(inner)),
+        Type::String => "String".to_string(),
+        Type::Option(inner) => format!("Option<{}>", type_text(inner)),
+        Type::Result(ok, error) => format!("Result<{}, {}>", type_text(ok), type_text(error)),
+        Type::Map(key, value) => format!("Map<{}, {}>", type_text(key), type_text(value)),
+        Type::Tuple(types) => format!(
+            "({})",
+            types.iter().map(type_text).collect::<Vec<_>>().join(", ")
+        ),
+    }
+}
+
+fn collect_loop_facts(block: &Block, loops: &mut Vec<Value>) {
+    for statement in &block.stmts {
+        match statement {
+            Stmt::Loop(loop_node) => {
+                loops.push(json!({
+                    "has_dec": true,
+                    "inv_count": loop_node.invs.len(),
+                    "surface_keyword": loop_node.kind.surface_keyword(),
+                }));
+                collect_loop_facts(&loop_node.body, loops);
+            }
+            Stmt::If { then, else_, .. } => {
+                collect_loop_facts(then, loops);
+                if let Some(otherwise) = else_ {
+                    collect_loop_facts(otherwise, loops);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+fn fidelity_item_json(item: &Item) -> Value {
+    match item {
+        Item::Fn(function) => {
+            let mut loops = Vec::new();
+            if let Some(body) = &function.body {
+                collect_loop_facts(body, &mut loops);
+            }
+            json!({
+                "ens_count": function.contract.ensures.len(),
+                "fx": match function.contract.effects { EffectRow::Pure => "pure", EffectRow::Set(_) => "set" },
+                "kind": "fn",
+                "loops": loops,
+                "name": function.name,
+                "params": function.params.iter().map(|param| json!({"name": param.name, "type": type_text(&param.ty)})).collect::<Vec<_>>(),
+                "req_count": 1,
+                "ret": type_text(&function.ret),
+            })
+        }
+        Item::SpecFn(function) => json!({
+            "has_dec": true,
+            "kind": "spec fn",
+            "name": function.name,
+            "params": function.params.iter().map(|param| json!({"name": param.name, "type": type_text(&param.ty)})).collect::<Vec<_>>(),
+            "ret": type_text(&function.ret),
+        }),
+        _ => json!({"kind": "other", "name": item.name()}),
+    }
+}
+
+fn address_kind_text(kind: AddrKind) -> &'static str {
+    match kind {
+        AddrKind::Fn => "fn",
+        AddrKind::SpecFn => "spec fn",
+        AddrKind::Loop => "loop",
+        AddrKind::Inv => "keeps",
+        AddrKind::Dec => "measures",
+        AddrKind::Hole => "hole",
+        AddrKind::Forge => "forge",
+        AddrKind::ProofHole => "proof hole",
+    }
+}
+
 fn main() {
     let mode = env::args().nth(1).unwrap_or_default();
     if !matches!(
         mode.as_str(),
-        "integers" | "parse-expressions" | "parse-items" | "tokens"
+        "integers" | "parse-expressions" | "parse-fidelity" | "parse-items" | "tokens"
     ) {
         std::process::exit(2);
     }
@@ -143,8 +240,34 @@ fn main() {
     io::stdin()
         .read_to_string(&mut source)
         .expect("read syntax probe source");
-    if matches!(mode.as_str(), "parse-expressions" | "parse-items") {
+    if matches!(
+        mode.as_str(),
+        "parse-expressions" | "parse-fidelity" | "parse-items"
+    ) {
         let result = parse(&source);
+        if mode == "parse-fidelity" {
+            let addresses = addresses_of(&result.program)
+                .into_iter()
+                .map(|entry| {
+                    json!({
+                        "addr": entry.addr,
+                        "kind": address_kind_text(entry.kind),
+                        "surface_keyword": entry.surface_keyword,
+                        "text": entry.text,
+                    })
+                })
+                .collect::<Vec<_>>();
+            let observation = json!({
+                "addresses": addresses,
+                "errors": errors_json(&result.errors),
+                "items": result.program.items.iter().map(fidelity_item_json).collect::<Vec<_>>(),
+            });
+            println!(
+                "{}",
+                serde_json::to_string(&observation).expect("serialize syntax probe observation")
+            );
+            return;
+        }
         if mode == "parse-expressions" {
             let expressions = result
                 .program
