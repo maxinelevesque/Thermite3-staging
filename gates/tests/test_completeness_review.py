@@ -164,6 +164,9 @@ class ReviewTrackTests(unittest.TestCase):
         )
 
     def write_executable(self, *, counterfeit_field: str = ""):
+        (self.root / "implementation.rs").write_text(
+            "// implementation under test\n", encoding="utf-8"
+        )
         (self.root / "oracle.json").write_text(
             '{"verdict":"good"}\n', encoding="utf-8"
         )
@@ -188,7 +191,7 @@ class ReviewTrackTests(unittest.TestCase):
                 [[requirement]]
                 id = "REQ-X"
                 title = "Fixture closure"
-                owner = "verify.py"
+                owner = "implementation.rs"
                 status = "shipped"
                 scope = "tooling"
                 summary = "Fixture closure."
@@ -214,6 +217,7 @@ class ReviewTrackTests(unittest.TestCase):
             "artifacts": [
                 "oracle.json",
                 "verify.py",
+                "implementation.rs",
                 "gates/completeness-review.py",
                 "gates/claim_closure_schema.py",
             ],
@@ -262,7 +266,7 @@ class ReviewTrackTests(unittest.TestCase):
                 tool_version_argv = ["{sys.executable}", "--version"]
                 tool_version = "{tool_version}"
                 oracle = "oracle.json"
-                artifacts = ["oracle.json", "verify.py", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
+                artifacts = ["oracle.json", "verify.py", "implementation.rs", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
                 expected = ["accepted"]
                 counterfeit = [{{ name = "replace-positive-oracle", mutation = "replace_text", from = '\"good\"', to = '\"evil\"', expected_exit = 7{counterfeit_field} }}]
                 receipt = "{receipt}"
@@ -328,6 +332,23 @@ class ReviewTrackTests(unittest.TestCase):
     def test_executable_discriminator_runs_same_verifier_on_mutated_oracle(self):
         self.write_executable()
         self.assertEqual(MODULE.check(self.root), [])
+
+    def test_executable_discriminator_binds_requirement_owner(self):
+        self.write_executable()
+        path = self.root / MODULE.BACKLOG
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                '"implementation.rs", ',
+                "",
+            ),
+            encoding="utf-8",
+        )
+
+        problems = MODULE.check(self.root)
+
+        self.assertTrue(
+            any("requirement owner must be content-bound" in value for value in problems)
+        )
 
     def test_executable_discriminator_rejects_second_counterfeit_verifier(self):
         self.write_executable(counterfeit_field=', verifier = ["false"]')

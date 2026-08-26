@@ -20,6 +20,12 @@ class KnownRedCorpusTests(unittest.TestCase):
         self.assertEqual(positive[0], 0)
         mutations = [
             ({
+                "name": "unbind-executable-owner",
+                "mutation": "replace_text",
+                "from": '"executable_owner_is_content_bound": true',
+                "to": '"executable_owner_is_content_bound": false',
+            }, 11),
+            ({
                 "name": "launder-raw-provenance",
                 "mutation": "replace_text",
                 "from": '"raw_provenance_closes_semantic_claim": false',
