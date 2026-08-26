@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 652e5ee9f9b4ded1214885f3d6fe460ff2111999e650410c80422c9c255983fc (re-pinned 2026-08-26 for the pre-population hardening: shared claim grammar, JSON semantic counterfeits, multi-member closed populations, known-red corpus, non-authoritative draft author/materializer, baseline-plus-live activation, CI/route wiring, and receipts bound to both the gate and shared schema. GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 10e99bb4fa1caeaf15b579badb74d47ee65882e139107cd86b0cc48c8ed6ce8f)
+audited-content-sha256: dc190668645fe637a8dc9e1baafd3a74d4b2c461f23e0059fffb4370c18976c2 (re-pinned 2026-08-26 so formal claim observations resolve Lake from the repository's pinned `lean/` toolchain instead of an ambient default. GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 652e5ee9f9b4ded1214885f3d6fe460ff2111999e650410c80422c9c255983fc)
 
 ## Summary
 

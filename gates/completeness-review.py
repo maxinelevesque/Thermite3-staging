@@ -284,7 +284,11 @@ def probe_lean_theorem(root: Path, subject: object) -> tuple[list[str] | None, s
     if shutil.which("lake") is None:
         return None, "lake is unavailable"
     version_result = subprocess.run(
-        ["lake", "--version"], capture_output=True, text=True, check=False
+        ["lake", "--version"],
+        cwd=root / "lean",
+        capture_output=True,
+        text=True,
+        check=False,
     )
     if version_result.returncode != 0:
         return None, "lake version probe failed"

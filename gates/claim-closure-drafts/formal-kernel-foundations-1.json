@@ -12,7 +12,7 @@
           "declaration:Thermite.CheckedTraversal.verify_sound",
           "type_sha256:8eac7a4fb20610a0b7fa777b79bb82bf23010c4ff3a593f68ac4c1d9a47c474b",
           "axioms:Classical.choice,Quot.sound,propext",
-          "tool:Lake version 5.0.0-src+819816b (Lean version 4.33.1)"
+          "tool:Lake version 5.0.0-src+98dc76e (Lean version 4.29.0)"
         ],
         "reviewed_summary_sha256": "77ee1d71decfb2e59ed1b6eb5b6ec892a9a6b3cde9b6d5d8a5196500d19a3690"
       },
@@ -34,7 +34,7 @@
           "declaration:Thermite.Strat.Cls.classifier_correct",
           "type_sha256:075cfb4bd396725801a2106dd2cb5907e4230d75653bbad299d149cf2b4b8734",
           "axioms:Quot.sound,propext",
-          "tool:Lake version 5.0.0-src+819816b (Lean version 4.33.1)"
+          "tool:Lake version 5.0.0-src+98dc76e (Lean version 4.29.0)"
         ],
         "reviewed_summary_sha256": "a4c701f4b643695abb7779f3ce15be51405aebe7a7ab5875c505262ccc472e4b"
       },
