@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: f13f6fa8ed66ba085db63cea1ffb81d7b7cd5f09278f2e38795981c53a56d7f8 (re-pinned 2026-08-25 for the canonical RFC-11/#75, RFC-12/#76, and RFC-13/#77 tracking refresh; GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 537526d5cd70cb893f7d2b2271e6b67fc51b972f762776ce4fb4d8d1d532a626)
+audited-content-sha256: f3c4a9bafc0debb0bdc57b28ef2cb382069e46cce21d9045a8d0c0dac79bfa15 (re-pinned 2026-08-26 for the recorded typed-claim closure design, non-launderable witness kernels, frozen baseline, inventory pin, and atomic v1-to-v2 migration boundary; GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: cf50a5869b539bf80618ca70e77254aeac37e458fc742c7356084bbf1a6b51ca)
 
 ## Summary
 
@@ -92,6 +92,32 @@ checker vocabulary as the language-wide ontology.
   engineer label. Stored formal coordinates and frames remain authoritative;
   stored engineer labels shall be checked against the versioned projection so
   they cannot drift independently.
+- REQ-15: Every shipped requirement shall have a typed, machine-checkable claim
+  whose normalized payload is authoritative for closure. The registry's prose
+  `summary` remains a non-authoritative presentation and review aid; changing
+  prose alone shall neither establish nor invalidate semantic closure, while a
+  disagreement between prose and the typed claim remains reportable drift.
+- REQ-16: Claim/evidence closure shall cover the exact population of 566
+  requirements recorded as shipped when this migration is designed. Migration
+  may land in reviewable slices, but no pre-existing shipped requirement is
+  grandfathered and GAP-CLAIM-EVIDENCE-CLOSURE shall remain open until every
+  baseline ID has a valid closure receipt and the live shipped population has
+  no unclosed additions.
+- REQ-17: A semantic closure witness shall use exactly one of three closed
+  mechanisms: a kernel-checked formal theorem, an executable discriminator
+  that rejects named counterfeits, or an exact-population/invariant gate with
+  hostile mutation tests. A file, symbol, test, document, issue, or command
+  reference is provenance only and shall not by itself close a claim.
+- REQ-18: A witness may support multiple requirements only by declaring the
+  exact set of requirement IDs and supplying an independently checked
+  per-claim discriminator for every member. Umbrella coverage, prefix matching,
+  implicit inheritance, and an undeclared extra or missing member shall fail
+  closed.
+- REQ-19: Each closure receipt shall bind the requirement ID, normalized typed
+  claim, witness mechanism and inputs, verifier identity and version, and
+  observed result by content digest. Claim, evidence, verifier, population, or
+  tool-version drift shall invalidate the receipt rather than preserving a
+  stale closed state.
 
 ## Acceptance Criteria
 
@@ -157,6 +183,32 @@ checker vocabulary as the language-wide ontology.
   tuple, frame, policy version, or display label either recompute consistently
   or reject. Repository search and structural tests demonstrate that gates and
   routing inspect formal data rather than display labels.
+- [ ] AC-16: (REQ-15) The requirement-registry gate rejects a shipped row with
+  no well-typed claim and rejects a claim payload that does not match its
+  declared claim kind. Mutating only the prose summary leaves the authoritative
+  claim digest unchanged but produces a review-visible presentation-drift
+  diagnostic when the registered correspondence check no longer holds.
+- [ ] AC-17: (REQ-16) A generated migration manifest contains exactly the 566
+  baseline shipped IDs, and the live closure view contains every currently
+  shipped ID. Removing, duplicating, substituting, or adding an unclosed ID
+  fails the gate; the completeness-review item cannot close while either set is
+  incomplete.
+- [ ] AC-18: (REQ-17) The closure schema rejects an unknown mechanism and any
+  attempt to use a bare provenance link as semantic closure. Each accepted
+  formal theorem is checked under its declared axiom profile, each executable
+  discriminator accepts its named positive oracle and rejects every named
+  counterfeit, and each population/invariant witness fails under hostile
+  omission, addition, substitution, and duplication mutations.
+- [ ] AC-19: (REQ-18) Shared-witness fixtures fail when a requirement is omitted
+  from or added to the declared membership, when a declared member has no
+  per-claim discriminator, or when one member's discriminator is reused as
+  proof of a different claim. The generated report exposes the exact witness
+  set and the result for every requirement ID.
+- [ ] AC-20: (REQ-19) Closure receipts reproduce from canonical inputs. A
+  one-byte change to the typed claim, witness input, expected oracle, verifier
+  implementation/version, or exact population changes the bound digest and
+  makes the old receipt stale; a clean checkout can deterministically rebuild
+  and verify the same receipts.
 
 ### Implementation reconciliation — 2026-08-23
 
@@ -174,6 +226,13 @@ states that issue #56 performs that atomic authority migration. Issue #56 owns
 stored-envelope round trips and the proof that every production decision has
 stopped consuming `Level` or engineer display. This document does not treat the
 formal projection as production migration evidence.
+
+AC-16 through AC-20 specify the remaining #48 claim/evidence closure rather
+than retroactively treating the registry's structurally resolved paths as
+semantic proof. Their migration baseline is the 566 rows already marked
+shipped at this design decision; later shipped rows enter the same live closure
+gate. This work is independent of AC-15's production certificate-authority
+migration, which remains owned by issue #56.
 
 ## Architecture
 
@@ -207,6 +266,68 @@ The project implements gaps required to make the initial formal framework
 honest and executable. Independent language-feature gaps become issues on the
 completeness-review track; their presence remains visible in generated support
 views until closed with evidence.
+
+### Typed claim and semantic-closure ledger
+
+GAP-CLAIM-EVIDENCE-CLOSURE is closed by extending the existing requirement
+registry and completeness-review track rather than creating a second
+requirements authority. `.design/reqs/registry.toml` advances to a schema that
+gives every shipped row a closed, typed claim payload. The row's stable ID and
+typed payload are authoritative; `summary`, ownership, source links, and the
+existing `evidence` list remain useful presentation and provenance but cannot
+assert semantic closure.
+
+`gates/completeness-review.toml` becomes the closure ledger keyed by exact
+requirement ID, and `gates/completeness-review.py` validates and reproduces its
+receipts. A ledger entry chooses one closed mechanism:
+
+- `formal_theorem` invokes the repository's built-in Lean prober on a bound
+  module and declaration, then compares the kernel-reported normalized theorem
+  type digest, dependency set, axiom profile, and Lean/Lake version;
+- `executable_discriminator` runs one content-bound, versioned deterministic
+  verifier against a copied positive oracle and against named minimal byte
+  mutations derived from that same oracle; the positive must exit zero and
+  every counterfeit must produce a distinct non-sentinel rejection; or
+- `exact_population` runs a closed regex extractor against a content-bound
+  artifact, compares the observed canonical member keys exactly, then applies
+  omission, addition, substitution, and duplication mutations to artifact text
+  and reruns the same extractor.
+
+Mechanism-specific payloads are disjoint and unknown mechanisms fail closed.
+For a shared theorem, verifier, or extractor, the witness declares its complete
+requirement-ID membership and records a distinct discriminator result for each
+claim. This permits honest reuse of one expensive check without allowing a
+passing umbrella command or a common source path to launder unrelated claims.
+Discriminator values are derived from the observed result, mechanism inputs,
+counterfeit specification, verifier identity, and artifact content rather than
+accepted as author-chosen labels. Equivalent witness identities cannot be split
+across separately named witnesses to evade exact shared membership, and an
+observed discriminator cannot be reused anywhere in the ledger.
+
+The migration manifest freezes the 566 IDs that were shipped when this design
+decision was taken. It is generated from the registry, reviewed as a complete
+set, and checked bidirectionally against closure entries. The live gate also
+requires closure for every subsequently shipped ID, so staged migration cannot
+become permanent grandfathering. GAP-CLAIM-EVIDENCE-CLOSURE remains open until
+both the frozen baseline and live shipped set are complete.
+
+Migration uses one explicit atomic compatibility boundary. Registry and ledger
+schema version 1 freeze and audit the 566-ID population but forbid typed claims,
+witnesses, and closures; they continue to validate the honest pre-migration
+structural registry. Registry and ledger schema version 2 must activate
+together, at which point every shipped claim and closure is mandatory. There is
+no mixed-version or partially enforced state that CI can treat as complete.
+
+Every receipt hashes a canonical envelope containing the requirement ID,
+normalized claim, mechanism payload and referenced artifact content, verifier
+identity and version, exact shared-witness population where applicable, and
+observed result. The gate rebuilds receipts rather than trusting a stored
+`closed = true` bit. Any bound-input drift makes the prior receipt stale. The
+gate implementation's own content digest and the probed external tool version
+are inputs, so verifier changes invalidate all dependent receipts. The
+generated status view distinguishes missing claim, missing witness, rejected
+counterfeit or mutation, stale receipt, presentation drift, and closed claim so
+reviewers can see why a row has or lacks closure.
 
 ### Stage-indexed results
 
@@ -446,6 +567,18 @@ narrowing.
 - The non-specialist display is a proved, versioned projection. Every label has
   a meaning theorem, every collapse has a common-semantics theorem, and display
   labels never drive certification decisions.
+- A typed, normalized claim is authoritative for requirement closure. The prose
+  summary remains presentation and can trigger a correspondence warning, but
+  prose is not the proposition a closure witness proves.
+- The migration covers all 566 requirements already marked shipped and every
+  later shipped row. Slices may land incrementally, but there is no legacy
+  grandfathering and the gap remains open until both populations are complete.
+- Semantic closure has exactly three mechanisms: formal theorem, executable
+  discriminator with named counterfeits, or exact population/invariant with
+  hostile mutations. Provenance links are never sufficient by themselves.
+- Shared witnesses are allowed only with an exact requirement-ID set and a
+  separately checked discriminator for every member; umbrella assertions are
+  rejected.
 
 ## Residual trust
 
@@ -466,6 +599,20 @@ turn corpus coverage or document scanning into a theorem about the language.
 Human review remains responsible for deciding whether a discovered gap belongs
 in this implementation, a bounded exclusion, or the completeness-review track.
 
+The claim-closure gate proves only the proposition encoded by each typed claim
+under its declared mechanism. A formal theorem retains the trust base exposed
+by its axiom profile and toolchain; an executable discriminator separates the
+claim from its enumerated counterfeits but is not a proof against every
+unimagined false implementation; an exact-population witness is complete only
+for its declared extractor and invariant. Content-addressed receipts expose and
+invalidate drift in those assumptions but do not make the verifier, compiler,
+operating system, or source-to-formal correspondence infallible.
+
+Prose-to-typed-claim correspondence remains an editorial judgment. Because the
+typed payload is authoritative, ambiguous natural-language entailment is not
+silently promoted to a machine proof. The presentation-drift diagnostic makes
+review necessary without allowing prose changes to rewrite a closed claim.
+
 ## Out of Scope
 
 - Proving completeness of Verus, Z3, Kani, CBMC, nlsat, rustc, LLVM, or any
@@ -476,5 +623,11 @@ in this implementation, a bounded exclusion, or the completeness-review track.
 - RFC-10-specific cross-product expansion that remains after extracting the
   general producer-refinement framework from issue #49.
 - Implementing RFC-11 or RFC-12 language features.
+- Implementing RFC-13 protocol types.
+- Using natural-language inference to prove that a prose summary entails a
+  typed claim.
+- Treating a resolvable file, symbol, test, document, issue, or command as
+  semantic closure without one of the three admitted witness mechanisms.
+- Completing issue #56's production certificate authority/display migration.
 - Treating corpus coverage, generated matrices, or adversarial review as a
   substitute for formal completeness claims.

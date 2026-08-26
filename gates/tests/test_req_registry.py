@@ -35,7 +35,7 @@ class Fixture:
         self.write("tests/thing.rs", "# test fixture\n")
         self.registry(
             f"""
-            schema_version = 1
+            schema_version = 2
 
             [[status]]
             name = "shipped"
@@ -68,6 +68,8 @@ class Fixture:
             owner = "src/lib.rs"
             status = "shipped"
             scope = "tooling"
+            summary = "Valid requirement."
+            claim = {{ kind = "exact_population", subject = "source-symbols:src/lib.rs", expected = ["real_symbol"], reviewed_summary_sha256 = "f7b034b65c4157d13950cae0b5d4b2d97963ee638a005bfb0ddc1eb4d9bb5b3e" }}
             generated_to = ["status"]
 
             [[requirement.evidence]]
@@ -176,10 +178,61 @@ class ReqRegistryOracleTest(unittest.TestCase):
         self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
         self.assertIn("BAD-STATUS", res.stdout)
 
+    def test_shipped_requirement_requires_typed_claim(self):
+        self.fx.valid_registry()
+        path = self.root / ".design/reqs/registry.toml"
+        text = path.read_text(encoding="utf-8")
+        text = "\n".join(line for line in text.splitlines() if "claim =" not in line) + "\n"
+        path.write_text(text, encoding="utf-8")
+
+        res = self.fx.run()
+
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("MISSING-TYPED-CLAIM", res.stdout)
+
+    def test_rejects_unknown_typed_claim_kind(self):
+        self.fx.valid_registry()
+        path = self.root / ".design/reqs/registry.toml"
+        text = path.read_text(encoding="utf-8").replace(
+            'kind = "exact_population"', 'kind = "bare_provenance"'
+        )
+        path.write_text(text, encoding="utf-8")
+
+        res = self.fx.run()
+
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("BAD-CLAIM-KIND", res.stdout)
+
+    def test_summary_drift_does_not_change_authoritative_claim_digest(self):
+        self.fx.valid_registry()
+        module = importlib.util.spec_from_file_location("req_registry_claim_digest", GATE)
+        self.assertIsNotNone(module)
+        self.assertIsNotNone(module.loader)
+        loaded = importlib.util.module_from_spec(module)
+        sys.modules[module.name] = loaded
+        module.loader.exec_module(loaded)
+        before = loaded.load_registry(self.root).requirements[0]
+        before_digest = loaded.normalized_claim_digest(before.id, before.claim)
+
+        path = self.root / ".design/reqs/registry.toml"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                'summary = "Valid requirement."', 'summary = "Drifted prose."'
+            ),
+            encoding="utf-8",
+        )
+        after = loaded.load_registry(self.root).requirements[0]
+        after_digest = loaded.normalized_claim_digest(after.id, after.claim)
+        res = self.fx.run()
+
+        self.assertEqual(before_digest, after_digest)
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("PRESENTATION-CLAIM-DRIFT", res.stdout)
+
     def test_shipped_requires_proof_evidence_kind(self):
         self.fx.registry(
             """
-            schema_version = 1
+            schema_version = 2
 
             [[status]]
             name = "shipped"
@@ -385,7 +438,7 @@ class ReqRegistryOracleTest(unittest.TestCase):
         )
         self.fx.registry(
             """
-            schema_version = 1
+            schema_version = 2
 
             [[status]]
             name = "shipped"
@@ -406,6 +459,8 @@ class ReqRegistryOracleTest(unittest.TestCase):
             owner = "src/lib.rs"
             status = "shipped"
             scope = "tooling"
+            summary = "Valid requirement."
+            claim = { kind = "exact_population", subject = "source-symbols:src/lib.rs", expected = ["real_symbol"], reviewed_summary_sha256 = "f7b034b65c4157d13950cae0b5d4b2d97963ee638a005bfb0ddc1eb4d9bb5b3e" }
             generated_to = ["source-status"]
 
             [[requirement.evidence]]
