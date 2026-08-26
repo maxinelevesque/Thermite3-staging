@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-parse-items",
+  "cases": [
+    {
+      "source": "fn broken(x: u32) -> u32\n  ! pure\n  requires true\n{\n  x\n}\n\nfn ok(x: u32) -> u32\n  ! pure\n  requires true\n  ensures result == x\n{\n  x\n}\n",
+      "expected": {
+        "errors": [
+          {
+            "clause": "ensures",
+            "item": "broken",
+            "kind": "MissingClause",
+            "span": [50, 1]
+          }
+        ],
+        "items": [
+          {
+            "kind": "Fn",
+            "name": "ok"
+          }
+        ]
+      }
+    }
+  ]
+}

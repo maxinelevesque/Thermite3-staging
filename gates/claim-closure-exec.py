@@ -11,6 +11,7 @@ from pathlib import Path
 VERSION = "thermite-claim-closure-exec 2"
 PROBES = {
     "thermite-syntax-integer-tokens": "integers",
+    "thermite-syntax-parse-items": "parse-items",
     "thermite-syntax-token-stream": "tokens",
 }
 PROBE_ARGV = [
