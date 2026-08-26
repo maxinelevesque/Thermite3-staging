@@ -8,8 +8,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "thermite-claim-closure-exec 1"
-PROBE = "thermite-syntax-integer-tokens"
+VERSION = "thermite-claim-closure-exec 2"
+PROBES = {
+    "thermite-syntax-integer-tokens": "integers",
+    "thermite-syntax-token-stream": "tokens",
+}
 PROBE_ARGV = [
     "cargo",
     "run",
@@ -40,7 +43,8 @@ def main(argv: list[str]) -> int:
         return 2
     if not isinstance(oracle, dict) or set(oracle) != {"cases", "probe", "version"}:
         return 2
-    if oracle.get("version") != 1 or oracle.get("probe") != PROBE:
+    probe = oracle.get("probe")
+    if oracle.get("version") != 1 or probe not in PROBES:
         return 2
     cases = oracle.get("cases")
     if not isinstance(cases, list) or not cases:
@@ -54,7 +58,7 @@ def main(argv: list[str]) -> int:
             return 2
         try:
             result = subprocess.run(
-                PROBE_ARGV,
+                [*PROBE_ARGV, PROBES[probe]],
                 input=source,
                 capture_output=True,
                 text=True,

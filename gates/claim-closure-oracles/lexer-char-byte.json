@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-integer-tokens",
+  "cases": [
+    {
+      "source": "'A' '\\n' '\\x1b' '' 'é'",
+      "expected": {
+        "errors": [
+          {
+            "kind": "StrayChar",
+            "span": [16, 2]
+          },
+          {
+            "kind": "StrayChar",
+            "span": [19, 4]
+          }
+        ],
+        "integers": [
+          {
+            "raw": "'A'",
+            "span": [0, 3],
+            "value": "65"
+          },
+          {
+            "raw": "'\\n'",
+            "span": [4, 4],
+            "value": "10"
+          },
+          {
+            "raw": "'\\x1b'",
+            "span": [9, 6],
+            "value": "27"
+          }
+        ]
+      }
+    }
+  ]
+}
