@@ -175,6 +175,7 @@ schema_version = 1
 [[requirement]]
 id = "REQ-A"
 status = "shipped"
+owner = "implementation.rs"
 summary = "{summary}"
 '''.lstrip(),
             encoding="utf-8",
@@ -200,6 +201,9 @@ summary = "{summary}"
             "sys.exit(0 if value == {'verdict': 'good'} else 7)\n",
             encoding="utf-8",
         )
+        (self.root / "implementation.rs").write_text(
+            "// implementation under test\n", encoding="utf-8"
+        )
         draft_dir = self.root / MODULE.DRAFT_DIR
         draft_dir.mkdir()
         draft = {
@@ -224,6 +228,7 @@ summary = "{summary}"
                         "artifacts": [
                             "oracle.json",
                             "verify.py",
+                            "implementation.rs",
                             "gates/completeness-review.py",
                             "gates/claim_closure_schema.py",
                         ],
@@ -240,6 +245,19 @@ summary = "{summary}"
                 }
             ],
         }
+        (draft_dir / "executable.json").write_text(
+            json.dumps(draft, indent=2) + "\n", encoding="utf-8"
+        )
+
+        unbound = json.loads(json.dumps(draft))
+        unbound["entries"][0]["closure"]["artifacts"].remove("implementation.rs")
+        (draft_dir / "executable.json").write_text(
+            json.dumps(unbound, indent=2) + "\n", encoding="utf-8"
+        )
+        _, unbound_problems = MODULE.check_drafts(self.root)
+        self.assertTrue(
+            any("requirement owner must be content-bound" in value for value in unbound_problems)
+        )
         (draft_dir / "executable.json").write_text(
             json.dumps(draft, indent=2) + "\n", encoding="utf-8"
         )

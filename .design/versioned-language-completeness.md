@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: dc190668645fe637a8dc9e1baafd3a74d4b2c461f23e0059fffb4370c18976c2 (re-pinned 2026-08-26 so formal claim observations resolve Lake from the repository's pinned `lean/` toolchain instead of an ambient default. GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 652e5ee9f9b4ded1214885f3d6fe460ff2111999e650410c80422c9c255983fc)
+audited-content-sha256: e62717bb887a7070b67cade10f8e18ac29e56cf40cf2f157e134a1e01920a4a8 (re-pinned 2026-08-26 to require executable closures to content-bind file-backed requirement owners after formal observations were bound to the repository-pinned Lean toolchain. The known-red corpus covers owner unbinding. GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: dc190668645fe637a8dc9e1baafd3a74d4b2c461f23e0059fffb4370c18976c2)
 
 ## Summary
 
@@ -305,7 +305,9 @@ receipts. A ledger entry chooses one closed mechanism:
   verifier against a copied positive oracle and against named semantic text
   replacements derived from that same well-formed oracle; the positive must
   exit zero and every counterfeit must produce a distinct non-sentinel
-  rejection rather than merely becoming unparsable; or
+  rejection rather than merely becoming unparsable. When the requirement owner
+  resolves to a file, that implementation file is also content-bound so its
+  drift invalidates the closure receipt; or
 - `exact_population` runs a closed regex extractor against a content-bound
   artifact, requires an anchored whole-line population of at least two members
   and a named closed-set class, compares the observed canonical member keys
@@ -349,8 +351,8 @@ Before population authoring, the claim grammar and closure kernel are frozen
 and tested by `gates/fixtures/claim-closure-known-red.json`. That corpus states
 the load-bearing policies positively and is mutated into genuine semantic
 neighbours: provenance is allowed to claim closure, shared membership becomes
-inexact, or prose displaces typed authority. The same deterministic verifier
-must reject each inversion. A broad passing suite is never sufficient merely
+inexact, an executable owner becomes unbound, or prose displaces typed
+authority. The same deterministic verifier must reject each inversion. A broad passing suite is never sufficient merely
 because it contains a cited test; every executable claim must identify a
 claim-specific positive oracle and semantic negative that exercises the
 requirement's decision-relevant property.

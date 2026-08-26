@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 EXPECTED_KEYS = {
+    "executable_owner_is_content_bound",
     "raw_provenance_closes_semantic_claim",
     "shared_witness_membership_is_exact",
     "typed_claim_is_authoritative",
@@ -28,6 +29,8 @@ def main(argv: list[str]) -> int:
         return 10
     if set(properties) != EXPECTED_KEYS:
         return 10
+    if properties["executable_owner_is_content_bound"] is not True:
+        return 11
     if properties["raw_provenance_closes_semantic_claim"] is not False:
         return 7
     if properties["shared_witness_membership_is_exact"] is not True:

@@ -673,6 +673,8 @@ def check(
         elif mechanism == "executable_discriminator":
             argv = closure.get("verifier")
             oracle = closure.get("oracle")
+            owner = raw_req.get("owner")
+            owner_path = bound_input_path(root, owner)
             if not isinstance(argv, list) or not argv or any(
                 not isinstance(v, str) or not v for v in argv
             ):
@@ -709,6 +711,14 @@ def check(
                 problems.append(f"{req_id}: executable positive observation must be accepted")
             if oracle not in (artifacts or []):
                 problems.append(f"{req_id}: oracle must be a content-bound artifact")
+            if (
+                owner_path is not None
+                and owner_path.is_file()
+                and owner not in artifact_paths
+            ):
+                problems.append(
+                    f"{req_id}: executable requirement owner must be content-bound"
+                )
             key = (*argv, str(oracle))
             result = verifier_cache.get(key)
             if result is None:

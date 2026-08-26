@@ -225,6 +225,8 @@ def author_entry(root: Path, entry: dict, row: dict) -> tuple[dict | None, list[
         argv = closure.get("verifier")
         oracle = closure.get("oracle")
         version_argv = closure.get("tool_version_argv")
+        owner = row.get("owner")
+        owner_path = REVIEW.bound_input_path(root, owner)
         closure["tool_version"] = REVIEW.command_version(root, version_argv)
         if claim.get("subject") != f"oracle:{oracle}":
             problems.append(f"{label}: executable claim does not bind its oracle")
@@ -232,6 +234,14 @@ def author_entry(root: Path, entry: dict, row: dict) -> tuple[dict | None, list[
             problems.append(f"{label}: executable expectation must be accepted")
         if oracle not in (artifacts or []):
             problems.append(f"{label}: executable oracle must be content-bound")
+        if (
+            owner_path is not None
+            and owner_path.is_file()
+            and owner not in _artifact_paths(closure)
+        ):
+            problems.append(
+                f"{label}: executable requirement owner must be content-bound"
+            )
         oracle_path = REVIEW.bound_input_path(root, oracle)
         if oracle_path is None or oracle_path.suffix != ".json":
             problems.append(f"{label}: executable oracle must be repo-relative JSON")
