@@ -9,3 +9,9 @@ Drafts do not close requirements. Registry and ledger schema version 1 continue
 to forbid authoritative claims, witnesses, and closures. Coordinated
 materialization is available only after the drafts cover all 566 frozen shipped
 IDs plus every live shipped addition exactly.
+
+All `formal_theorem` entries use `W-FORMAL-LEAN-AXIOM-PROBE`. The closed
+witness identity for formal claims is the built-in Lean/axiom verifier itself;
+the theorem subject and kernel observation still derive a distinct
+per-requirement discriminator. Splitting equivalent formal identities across
+invented witness names is rejected.
