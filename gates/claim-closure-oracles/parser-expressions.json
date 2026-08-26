@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-parse-expressions",
+  "cases": [
+    {
+      "source": "fn expressions(a: u64, b: u64, c: u64) -> bool\n  ! pure\n  requires true\n  ensures pkg::f(a).m(b).field == c\n  ensures result == (!a & b ^ c | a + b << c % 1 >> a)\n  ensures result == (a / 0 % 0 << 999 >> 999)\n{\n  true\n}\n",
+      "expected": {
+        "errors": [],
+        "functions": [
+          {
+            "name": "expressions",
+            "ensures": [
+              {
+                "kind": "Binary",
+                "op": "Eq",
+                "lhs": {
+                  "kind": "Field",
+                  "name": "field",
+                  "receiver": {
+                    "kind": "MethodCall",
+                    "name": "m",
+                    "receiver": {
+                      "kind": "Call",
+                      "callee": {
+                        "kind": "Path",
+                        "segments": ["pkg", "f"]
+                      },
+                      "args": [
+                        {"kind": "Path", "segments": ["a"]}
+                      ]
+                    },
+                    "args": [
+                      {"kind": "Path", "segments": ["b"]}
+                    ]
+                  }
+                },
+                "rhs": {"kind": "Path", "segments": ["c"]}
+              },
+              {
+                "kind": "Binary",
+                "op": "Eq",
+                "lhs": {"kind": "Path", "segments": ["result"]},
+                "rhs": {
+                  "kind": "Binary",
+                  "op": "BitOr",
+                  "lhs": {
+                    "kind": "Binary",
+                    "op": "BitXor",
+                    "lhs": {
+                      "kind": "Binary",
+                      "op": "BitAnd",
+                      "lhs": {
+                        "kind": "Unary",
+                        "op": "Not",
+                        "expr": {"kind": "Path", "segments": ["a"]}
+                      },
+                      "rhs": {"kind": "Path", "segments": ["b"]}
+                    },
+                    "rhs": {"kind": "Path", "segments": ["c"]}
+                  },
+                  "rhs": {
+                    "kind": "Binary",
+                    "op": "Shr",
+                    "lhs": {
+                      "kind": "Binary",
+                      "op": "Shl",
+                      "lhs": {
+                        "kind": "Binary",
+                        "op": "Add",
+                        "lhs": {"kind": "Path", "segments": ["a"]},
+                        "rhs": {"kind": "Path", "segments": ["b"]}
+                      },
+                      "rhs": {
+                        "kind": "Binary",
+                        "op": "Rem",
+                        "lhs": {"kind": "Path", "segments": ["c"]},
+                        "rhs": {"kind": "Int", "raw": "1", "value": "1"}
+                      }
+                    },
+                    "rhs": {"kind": "Path", "segments": ["a"]}
+                  }
+                }
+              },
+              {
+                "kind": "Binary",
+                "op": "Eq",
+                "lhs": {"kind": "Path", "segments": ["result"]},
+                "rhs": {
+                  "kind": "Binary",
+                  "op": "Shr",
+                  "lhs": {
+                    "kind": "Binary",
+                    "op": "Shl",
+                    "lhs": {
+                      "kind": "Binary",
+                      "op": "Rem",
+                      "lhs": {
+                        "kind": "Binary",
+                        "op": "Div",
+                        "lhs": {"kind": "Path", "segments": ["a"]},
+                        "rhs": {"kind": "Int", "raw": "0", "value": "0"}
+                      },
+                      "rhs": {"kind": "Int", "raw": "0", "value": "0"}
+                    },
+                    "rhs": {"kind": "Int", "raw": "999", "value": "999"}
+                  },
+                  "rhs": {"kind": "Int", "raw": "999", "value": "999"}
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
