@@ -21,9 +21,11 @@ class ReviewTrackTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         (self.root / "gates").mkdir()
         (self.root / MODULE.GATE).write_text("# fixture gate\n", encoding="utf-8")
+        (self.root / MODULE.SCHEMA).write_text("# fixture schema\n", encoding="utf-8")
         (self.root / ".design/reqs").mkdir(parents=True)
         (self.root / "proof.py").write_text(
-            "def closure_witness(): pass\n", encoding="utf-8"
+            "def closure_counterfeit(): pass\ndef closure_witness(): pass\n",
+            encoding="utf-8",
         )
         self.previous_baseline_count = MODULE.BASELINE_SHIPPED_COUNT
         MODULE.BASELINE_SHIPPED_COUNT = 1
@@ -64,8 +66,8 @@ class ReviewTrackTests(unittest.TestCase):
     ):
         claim = {
             "kind": "exact_population",
-            "subject": r"regex:proof.py#^def ([a-z_]+)\(",
-            "expected": ["closure_witness"],
+            "subject": r"regex:proof.py#^def ([a-z_]+)\(\): pass$",
+            "expected": ["closure_counterfeit", "closure_witness"],
         }
         claim_sha = MODULE.claim_digest("REQ-X", claim)
         assert claim_sha is not None
@@ -82,7 +84,7 @@ class ReviewTrackTests(unittest.TestCase):
                 status = "shipped"
                 scope = "tooling"
                 summary = "Fixture closure."
-                claim = {{ kind = "exact_population", subject = 'regex:proof.py#^def ([a-z_]+)\\(', expected = ["closure_witness"], reviewed_summary_sha256 = "{summary_sha}" }}
+                claim = {{ kind = "exact_population", subject = 'regex:proof.py#^def ([a-z_]+)\\(\\): pass$', expected = ["closure_counterfeit", "closure_witness"], reviewed_summary_sha256 = "{summary_sha}" }}
                 generated_to = ["status"]
                 '''
             ).lstrip(),
@@ -99,19 +101,20 @@ class ReviewTrackTests(unittest.TestCase):
             "requirement_id": "REQ-X",
             "witness_id": "W-X",
             "mechanism": "exact_population",
+            "population_semantics": "closed_case_set",
             "claim_digest": claim_sha,
             "verifier": ["builtin:exact_population"],
             "verifier_version": MODULE.gate_version(self.root),
-            "artifacts": ["proof.py#closure_witness", "gates/completeness-review.py"],
-            "expected": ["closure_witness"],
+            "artifacts": ["proof.py#closure_witness", "gates/completeness-review.py", "gates/claim_closure_schema.py"],
+            "expected": ["closure_counterfeit", "closure_witness"],
             "extractor": {
                 "kind": "regex",
                 "path": "proof.py",
-                "pattern": r"^def ([a-z_]+)\(",
+                "pattern": r"^def ([a-z_]+)\(\): pass$",
             },
             "counterfeit": counterfeits,
         }
-        observed = ["closure_witness"]
+        observed = ["closure_counterfeit", "closure_witness"]
         discriminator = MODULE.discriminator_digest(self.root, closure, observed)
         assert discriminator is not None
         closure["discriminator"] = discriminator
@@ -128,13 +131,14 @@ class ReviewTrackTests(unittest.TestCase):
                 requirement_id = "REQ-X"
                 witness_id = "W-X"
                 mechanism = "exact_population"
+                population_semantics = "closed_case_set"
                 discriminator = "{discriminator}"
                 claim_digest = "{claim_sha}"
                 verifier = ["builtin:exact_population"]
                 verifier_version = "{MODULE.gate_version(self.root)}"
-                artifacts = ["proof.py#closure_witness", "gates/completeness-review.py"]
-                expected = ["closure_witness"]
-                extractor = {{ kind = "regex", path = "proof.py", pattern = '^def ([a-z_]+)\\(' }}
+                artifacts = ["proof.py#closure_witness", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
+                expected = ["closure_counterfeit", "closure_witness"]
+                extractor = {{ kind = "regex", path = "proof.py", pattern = '^def ([a-z_]+)\\(\\): pass$' }}
                 counterfeit = [{{ name = "addition" }}, {{ name = "duplication" }}, {{ name = "omission" }}, {{ name = "substitution" }}]
                 receipt = "{receipt}"
                 '''
@@ -160,15 +164,18 @@ class ReviewTrackTests(unittest.TestCase):
         )
 
     def write_executable(self, *, counterfeit_field: str = ""):
-        (self.root / "oracle.txt").write_bytes(b"good")
+        (self.root / "oracle.json").write_text(
+            '{"verdict":"good"}\n', encoding="utf-8"
+        )
         (self.root / "verify.py").write_text(
-            "import pathlib, sys\n"
-            "sys.exit(0 if pathlib.Path(sys.argv[1]).read_bytes() == b'good' else 7)\n",
+            "import json, pathlib, sys\n"
+            "value = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+            "sys.exit(0 if value == {'verdict': 'good'} else 7)\n",
             encoding="utf-8",
         )
         claim = {
             "kind": "executable_discriminator",
-            "subject": "oracle:oracle.txt",
+            "subject": "oracle:oracle.json",
             "expected": ["accepted"],
         }
         claim_sha = MODULE.claim_digest("REQ-X", claim)
@@ -185,7 +192,7 @@ class ReviewTrackTests(unittest.TestCase):
                 status = "shipped"
                 scope = "tooling"
                 summary = "Fixture closure."
-                claim = {{ kind = "executable_discriminator", subject = "oracle:oracle.txt", expected = ["accepted"], reviewed_summary_sha256 = "{summary_sha}" }}
+                claim = {{ kind = "executable_discriminator", subject = "oracle:oracle.json", expected = ["accepted"], reviewed_summary_sha256 = "{summary_sha}" }}
                 generated_to = ["status"]
                 '''
             ).lstrip(),
@@ -203,24 +210,26 @@ class ReviewTrackTests(unittest.TestCase):
             "verifier_version": MODULE.gate_version(self.root),
             "tool_version_argv": version_argv,
             "tool_version": tool_version,
-            "oracle": "oracle.txt",
+            "oracle": "oracle.json",
             "artifacts": [
-                "oracle.txt",
+                "oracle.json",
                 "verify.py",
                 "gates/completeness-review.py",
+                "gates/claim_closure_schema.py",
             ],
             "expected": ["accepted"],
             "counterfeit": [
                 {
-                    "name": "flip-first-byte",
-                    "mutation": "flip_byte",
-                    "offset": 0,
+                    "name": "replace-positive-oracle",
+                    "mutation": "replace_text",
+                    "from": '"good"',
+                    "to": '"evil"',
                     "expected_exit": 7,
                 }
             ],
         }
         _, observation_digest = MODULE.run_bound_verifier(
-            self.root, verifier, "oracle.txt"
+            self.root, verifier, "oracle.json"
         )
         observed = {"result": ["accepted"], "output_digest": observation_digest}
         discriminator = MODULE.discriminator_digest(self.root, closure, observed)
@@ -252,10 +261,10 @@ class ReviewTrackTests(unittest.TestCase):
                 verifier_version = "{MODULE.gate_version(self.root)}"
                 tool_version_argv = ["{sys.executable}", "--version"]
                 tool_version = "{tool_version}"
-                oracle = "oracle.txt"
-                artifacts = ["oracle.txt", "verify.py", "gates/completeness-review.py"]
+                oracle = "oracle.json"
+                artifacts = ["oracle.json", "verify.py", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
                 expected = ["accepted"]
-                counterfeit = [{{ name = "flip-first-byte", mutation = "flip_byte", offset = 0, expected_exit = 7{counterfeit_field} }}]
+                counterfeit = [{{ name = "replace-positive-oracle", mutation = "replace_text", from = '\"good\"', to = '\"evil\"', expected_exit = 7{counterfeit_field} }}]
                 receipt = "{receipt}"
                 '''
             ).lstrip(),
@@ -325,6 +334,21 @@ class ReviewTrackTests(unittest.TestCase):
         self.assertTrue(
             any("counterfeit contains unknown field" in e for e in MODULE.check(self.root))
         )
+
+    def test_executable_discriminator_rejects_byte_corruption_counterfeit(self):
+        self.write_executable()
+        path = self.root / MODULE.BACKLOG
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                'mutation = "replace_text"',
+                'mutation = "flip_byte"',
+            ),
+            encoding="utf-8",
+        )
+
+        problems = MODULE.check(self.root)
+
+        self.assertTrue(any("semantic replace_text" in e for e in problems))
 
     def test_constant_nonzero_verifier_cannot_launder_oracle_and_counterfeit(self):
         self.write_executable()

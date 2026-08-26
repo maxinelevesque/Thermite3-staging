@@ -161,6 +161,10 @@ jobs:
         run: uv run python gates/assurance-v2-replay.py
       - name: language RFC fragment-evolution discipline
         run: uv run python gates/language-rfc-evolution.py
+      - name: claim-closure frozen population and draft slices
+        run: |
+          uv run python gates/claim-closure-author.py --check-baseline
+          uv run python gates/claim-closure-author.py --check-drafts
       - name: completeness-review backlog consistency
         run: uv run python gates/completeness-review.py
 

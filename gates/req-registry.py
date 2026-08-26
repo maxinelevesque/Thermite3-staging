@@ -35,6 +35,9 @@ import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from claim_closure_schema import claim_expectation_problem, claim_subject_problem
+
 try:
     import tomllib  # Python 3.11+
 except ImportError:  # pragma: no cover
@@ -872,6 +875,26 @@ def validate_registry(root: Path, registry: Registry, *, live_issues: bool = Fal
                         "EMPTY-CLAIM-EXPECTATION",
                         req.id,
                         "typed claims must declare at least one expected observation",
+                    )
+                )
+            subject_problem = claim_subject_problem(claim.kind, claim.subject)
+            if subject_problem is not None:
+                issues.append(
+                    Issue(
+                        "BAD-CLAIM-SUBJECT",
+                        req.id,
+                        subject_problem,
+                    )
+                )
+            expectation_problem = claim_expectation_problem(
+                claim.kind, claim.expected
+            )
+            if expectation_problem is not None:
+                issues.append(
+                    Issue(
+                        "BAD-CLAIM-EXPECTATION",
+                        req.id,
+                        expectation_problem,
                     )
                 )
             if not re.fullmatch(r"[0-9a-f]{64}", claim.reviewed_summary_sha256):

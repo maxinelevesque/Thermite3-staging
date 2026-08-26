@@ -1578,6 +1578,48 @@ reference = ["gates/completeness-review.py"]
 conformance_ops = []
 
 [[route]]
+crate_pattern = "gates/claim_closure_schema.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/completeness-review.py", "gates/req-registry.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-author.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/claim-closure-drafts/README.md", "gates/tests/test_claim_closure_author.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-red.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/fixtures/claim-closure-known-red.json", "gates/tests/test_claim_closure_red.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/fixtures/claim-closure-known-red.json"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/claim-closure-red.py", "gates/tests/test_claim_closure_red.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_claim_closure_author.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/claim-closure-author.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_claim_closure_red.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/claim-closure-red.py", "gates/fixtures/claim-closure-known-red.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_claim_closure_schema.py"
+design = ".design/versioned-language-completeness.md"
+reference = ["gates/claim_closure_schema.py"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "lean/Thermite/LanguageCompleteness.lean"
 design = ".design/versioned-language-completeness.md"
 reference = ["lean/Thermite/CheckedTraversal.lean", "lean/Thermite/PinLanguageNarrowing.lean", "gates/lean-axiom-probe.sh"]
