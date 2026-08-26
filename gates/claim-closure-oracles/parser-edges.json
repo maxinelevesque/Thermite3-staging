@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-parse-edges",
+  "cases": [
+    {
+      "source": "fn f(x: u64) -> u64 ! pure requires true ensures result == x { ?7 ?2 }",
+      "expected": {
+        "errors": [],
+        "functions": [
+          {
+            "body": true,
+            "boundary_target": null,
+            "holes": [
+              {"context": "Body", "number": 7},
+              {"context": "Body", "number": 2}
+            ],
+            "name": "f"
+          }
+        ]
+      }
+    },
+    {
+      "source": "spec fn s(x: u64) -> u64 measures 0 { ?3 }",
+      "expected": {
+        "errors": [
+          {"kind": "HoleOutsideFnBody", "number": 3, "span": [38, 2]}
+        ],
+        "functions": []
+      }
+    },
+    {
+      "source": "fn f(x: u64) -> u64 ! pure requires true ensures result == x { ?p4 }",
+      "expected": {
+        "errors": [
+          {"kind": "ProofHoleOutsideProofBlock", "number": 4, "span": [63, 3]}
+        ],
+        "functions": []
+      }
+    },
+    {
+      "source": "#[boundary(\"ext::foreign_id\")] fn foreign_id(x: u32) -> u32 ! pure requires x < 100 ensures result == x ;",
+      "expected": {
+        "errors": [],
+        "functions": [
+          {
+            "body": false,
+            "boundary_target": "ext::foreign_id",
+            "holes": [],
+            "name": "foreign_id"
+          }
+        ]
+      }
+    },
+    {
+      "source": "#[boundary(\"ext::g\")] fn g(x: u32) -> u32 ! pure requires true ensures result == x { x }",
+      "expected": {
+        "errors": [{"kind": "Unexpected", "span": [83, 1]}],
+        "functions": []
+      }
+    },
+    {
+      "source": "fn nope(x: u32) -> u32 ! pure requires true ensures result == x ;",
+      "expected": {
+        "errors": [{"kind": "Unexpected", "span": [64, 1]}],
+        "functions": []
+      }
+    },
+    {
+      "source": "#[boundary(\"ext::s\")] spec fn s(x: u32) -> u32 measures 0 { x }",
+      "expected": {
+        "errors": [{"kind": "Unexpected", "span": [22, 4]}],
+        "functions": []
+      }
+    }
+  ]
+}
