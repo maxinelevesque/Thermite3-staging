@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "slice_id": "executable-parser-expressions-5",
+  "entries": [
+    {
+      "requirement_id": "REQ-SYNTAX-PARSER-CALL-SYNTAX",
+      "witness_id": "W-EXEC-PARSER-EXPRESSIONS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/parser-expressions.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "5c51fdf53b8689afbab0be1ff0f999b13e20ddb2e6016255e1811a261c18b30f"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/parser-expressions.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/parser-expressions.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/src/lexer.rs",
+          "thermite-syntax/src/ast.rs",
+          "thermite-syntax/src/desugar.rs",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "collapse-method-call-to-field",
+            "mutation": "replace_text",
+            "from": "\"kind\": \"MethodCall\"",
+            "to": "\"kind\": \"Field\"",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-PARSER-OPERATOR-TIERS",
+      "witness_id": "W-EXEC-PARSER-EXPRESSIONS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/parser-expressions.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "0b41240610de3802f663b6dd60b824b14df6acc3f05597865da9e8dd7779700c"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/parser-expressions.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/parser-expressions.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/src/lexer.rs",
+          "thermite-syntax/src/ast.rs",
+          "thermite-syntax/src/desugar.rs",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "flatten-bitwise-precedence",
+            "mutation": "replace_text",
+            "from": "\"op\": \"BitXor\"",
+            "to": "\"op\": \"BitOr\"",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-PARSER-PARTIALITY",
+      "witness_id": "W-EXEC-PARSER-EXPRESSIONS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/parser-expressions.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "a5f0f7c2f9aa001ba04da406c0cfda879c3daeebb26a97f7e83220ce2cd2184b"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/parser-expressions.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/parser-expressions.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/src/lexer.rs",
+          "thermite-syntax/src/ast.rs",
+          "thermite-syntax/src/desugar.rs",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "inject-partial-operator-rejection",
+            "mutation": "replace_text",
+            "from": "\"errors\": []",
+            "to": "\"errors\": [{\"kind\": \"Unexpected\", \"span\": [0, 0]}]",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}
