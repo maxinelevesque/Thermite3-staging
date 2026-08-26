@@ -14,7 +14,7 @@ introduces:
 | | |
 |---|---|
 | **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
-| **Fork implementation** | **Partial proof-complete stage.** The language and eight revision-2 slices shipped; issue #49 owns the bounded semantic-replay and conformance remainder. |
+| **Fork implementation** | **Shipped on `main`.** The language, eight revision-2 slices, exact semantic replay, and generated conformance expansion are complete; issue #49 is closed. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 6 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), RFC-9 |
@@ -59,10 +59,12 @@ closure, holding/shared-place coverage, exact holding lock identity, and
 structural close/authority evidence. A production Forge anchor and frozen root
 corpus sweep prevent replay or dependency-weaving regressions from hiding behind
 library-only tests.
-This is not yet the amendment's proof-complete stage gate: exact independent
-interpretation of lock/order/close/authority records and the full
-payload-by-position-by-phase cross-product remain open exactly as recorded in
-the amendment and requirement registry.
+Issue #49 completed the amendment's proof-complete stage gate: Lean independently
+derives the lock/order/close/authority records, and the generated
+payload-by-position-by-phase matrix exercises the compatible checked-IR, replay,
+L1, L2, L3, and provider-free Forge routes. Issue #48 retains the separate
+language-wide claim/evidence-closure work; it is not an RFC-10 implementation
+remainder.
 
 1. one repository-wide canonical semantic-child relation inventories all
    executable syntax fields;

@@ -18556,7 +18556,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "syntax"
 summary = "Thermite's declared types are already affine, so the modifier marks the no-drop upgrade: a resource is consumed exactly once on every path that returns."
-remaining_scope = "Parse the modifier. It is an adjective on an item, following pub/unsafe/const. Proposed by RFC-11; staged and not filed."
+remaining_scope = "Parse the modifier. It is an adjective on an item, following pub/unsafe/const. Proposed by RFC-11; staged and not filed; tracked by issue #75."
 contributors = [".design/rfcs/0011-resource-types.md"]
 generated_to = ["status"]
 
@@ -18572,7 +18572,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "syntax"
 summary = "Abandonment is an operation rather than a hole: it is counted in the effect row, so a release rule can refuse it the way TMK's refuses #[boundary]."
-remaining_scope = "Parse forget(g) and emit forgets(r) into the row. Proposed by RFC-11; staged and not filed."
+remaining_scope = "Parse forget(g) and emit forgets(r) into the row. Proposed by RFC-11; staged and not filed; tracked by issue #75."
 contributors = [".design/rfcs/0011-resource-types.md"]
 generated_to = ["status"]
 
@@ -18588,7 +18588,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "spec"
 summary = "Affine types permit dropping; linear types do not. The obligation is scoped exactly as `ensures` is, so a path that diverges or panics owes nothing."
-remaining_scope = "Check consumption per path. This is the half Rust's move semantics does not already give. Proposed by RFC-11; staged and not filed."
+remaining_scope = "Check consumption per path. This is the half Rust's move semantics does not already give. Proposed by RFC-11; staged and not filed; tracked by issue #75."
 contributors = [".design/rfcs/0011-resource-types.md"]
 generated_to = ["status"]
 
@@ -18604,7 +18604,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "spec"
 summary = "A struct or enum reachable to a resource is itself a resource, which answers the contagion question in English rather than by a separate rule."
-remaining_scope = "Check reachability and require the modifier where it is implied. Blocked on Thermite#122 for the composed case, since a declared type cannot appear inside another today. Proposed by RFC-11; staged and not filed."
+remaining_scope = "Check reachability and require the modifier where it is implied. The composed declared-type case is now available. Proposed by RFC-11; staged and not filed; tracked by issue #75."
 contributors = [".design/rfcs/0011-resource-types.md"]
 generated_to = ["status"]
 
@@ -18620,7 +18620,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "syntax"
 summary = "Both clauses are mandatory inside the block, and the words are reserved so that `asks` outside it reaches the unexpected-token arm rather than parsing."
-remaining_scope = "Add the block production and a dedicated diagnostic beside MissingClause and ClauseOrder, so the message names the cause. Proposed by RFC-12; staged and not filed."
+remaining_scope = "Add the block production and a dedicated diagnostic beside MissingClause and ClauseOrder, so the message names the cause. Proposed by RFC-12; staged and not filed; tracked by issue #76."
 contributors = [".design/rfcs/0012-interference-clauses.md"]
 generated_to = ["status"]
 
@@ -18636,7 +18636,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "spec"
 summary = "For each pair that may overlap, the guarantee of one must imply the rely of the other. For interrupt handlers the obligation is generated in one direction only, from the declared preemption order."
-remaining_scope = "Generate and discharge the pairwise obligation. The stability conjunct does not map to persistent sharding and is the one part of the lowering that is not settled. Proposed by RFC-12; staged and not filed."
+remaining_scope = "Generate and discharge the pairwise obligation. The stability conjunct does not map to persistent sharding and is the one part of the lowering that is not settled. Proposed by RFC-12; staged and not filed; tracked by issue #76."
 contributors = [".design/rfcs/0012-interference-clauses.md"]
 generated_to = ["status"]
 
@@ -18652,7 +18652,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "syntax"
 summary = "A sequence of turns, each labelled with whose turn it is. Roles are names rather than keywords, so a protocol names its own and an endpoint is a path to a role."
-remaining_scope = "Parse the declaration, the role sequence, `end`, and the `repeat | end` branch. Proposed by RFC-13; staged and not filed."
+remaining_scope = "Parse the declaration, the role sequence, `end`, and the `repeat | end` branch. Proposed by RFC-13; staged and not filed; tracked by issue #77."
 contributors = [".design/rfcs/0013-protocol-types.md"]
 generated_to = ["status"]
 
@@ -18668,7 +18668,7 @@ owner = ".design/rfcs"
 status = "not_started"
 scope = "spec"
 summary = "Termination is load-bearing: running the protocol to completion is what consumes the endpoint, so an endpoint that can be dropped abandons its peer mid-session."
-remaining_scope = "Check endpoint linearity and session progress. Depends on resource types landing first. Proposed by RFC-13; staged and not filed."
+remaining_scope = "Check endpoint linearity and session progress. Depends on resource types landing first in issue #75. Proposed by RFC-13; staged and not filed; tracked by issue #77."
 contributors = [".design/rfcs/0013-protocol-types.md"]
 generated_to = ["status"]
 

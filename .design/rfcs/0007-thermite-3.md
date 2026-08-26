@@ -504,12 +504,12 @@ churn.
 1. defects                    FILED — #124, #125, #126
 2. the RFC process            FILED — PR #127
 3. the anchor                 FILED — PR #128, RFC-6
-4. the effect algebra         what a row is; underpins 5
-5. verified effect rows       the multiplier
-6. shared-state invariants    locks and masking
-7. resource types             the honest goal
-8. interference clauses       rely-guarantee where locks are too strong
-9. protocol types             server decomposition, end to end
+4. the effect algebra         SHIPPED — RFC-8
+5. verified effect rows       SHIPPED — RFC-9
+6. shared-state invariants    SHIPPED — RFC-10, issue #49
+7. resource types             TRACKED — RFC-11, issue #75
+8. interference clauses       TRACKED — RFC-12, issue #76
+9. protocol types             TRACKED — RFC-13, issue #77
 ```
 
 Defects go first because they are the dependency, not the diplomacy: #124 blocks

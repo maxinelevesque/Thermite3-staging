@@ -176,10 +176,10 @@ pins a real L3 certificate through the production route. A frozen 18-file root
 corpus sweep now checks item identities and certification levels, allowing only
 named tool-unavailable downgrades. Lean also binds each holding node to the exact
 canonical lock name. Exact guarded-region, order, close normalization, and
-shared-place authority binding remain the honest AC-7/8 residual tracked by
-GitHub issue #49.
+shared-place authority binding were subsequently completed by issue #49, as
+recorded in the implementation-pass status above.
 
-### Issue #49 closure plan (2026-08-24)
+### Issue #49 closure record (2026-08-24)
 
 Issue #49 closes AC-7 through AC-9 without widening RFC-10 or changing its
 source syntax. The work is split into three independently reviewable slices;
