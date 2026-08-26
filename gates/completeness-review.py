@@ -18,17 +18,22 @@ import tempfile
 import tomllib
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from claim_closure_schema import (
+    MECHANISMS,
+    canonical_json,
+    claim_digest,
+    claim_expectation_problem,
+    claim_subject_problem,
+)
+
 INVENTORY = "gates/language-completeness-inventory.toml"
 BACKLOG = "gates/completeness-review.toml"
 GATE = "gates/completeness-review.py"
+SCHEMA = "gates/claim_closure_schema.py"
 EVIDENCE_SUFFIXES = {".lean", ".rs", ".py", ".sh", ".json", ".toml"}
 REF = re.compile(r"^([^#]+)#(.+)$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
-MECHANISMS = {
-    "formal_theorem",
-    "executable_discriminator",
-    "exact_population",
-}
 EXACT_POPULATION_MUTATIONS = {
     "addition",
     "duplication",
@@ -52,31 +57,6 @@ def resolves_evidence(root: Path, reference: object) -> bool:
     )
 
 
-def canonical_json(value: object) -> bytes:
-    return json.dumps(
-        value, ensure_ascii=False, separators=(",", ":"), sort_keys=True
-    ).encode("utf-8")
-
-
-def claim_digest(requirement_id: str, claim: object) -> str | None:
-    if not isinstance(claim, dict):
-        return None
-    kind = claim.get("kind")
-    subject = claim.get("subject")
-    expected = claim.get("expected")
-    if not isinstance(kind, str) or not isinstance(subject, str):
-        return None
-    if not isinstance(expected, list) or any(not isinstance(v, str) for v in expected):
-        return None
-    payload = {
-        "expected": expected,
-        "kind": kind,
-        "requirement_id": requirement_id,
-        "subject": subject,
-    }
-    return hashlib.sha256(canonical_json(payload)).hexdigest()
-
-
 def artifact_digest(root: Path, reference: object) -> tuple[str, str] | None:
     if not isinstance(reference, str) or not reference:
         return None
@@ -95,8 +75,14 @@ def artifact_digest(root: Path, reference: object) -> tuple[str, str] | None:
 
 
 def gate_version(root: Path) -> str | None:
-    path = root / GATE
-    return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+    paths = [root / GATE, root / SCHEMA]
+    if any(not path.is_file() for path in paths):
+        return None
+    payload = [
+        (str(path.relative_to(root)), hashlib.sha256(path.read_bytes()).hexdigest())
+        for path in paths
+    ]
+    return hashlib.sha256(canonical_json(payload)).hexdigest()
 
 
 def _string_list(raw: dict, field: str) -> list[str] | None:
@@ -109,13 +95,26 @@ def _string_list(raw: dict, field: str) -> list[str] | None:
 def run_verifier(root: Path, argv: object) -> tuple[int, str]:
     if not isinstance(argv, list) or not argv or any(not isinstance(v, str) for v in argv):
         return 127, "invalid verifier argv"
-    result = subprocess.run(
-        argv,
-        cwd=root,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        result = subprocess.run(
+            argv,
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as error:
+        observation = hashlib.sha256(
+            canonical_json(
+                {
+                    "error": type(error).__name__,
+                    "returncode": 127,
+                    "stderr": "",
+                    "stdout": "",
+                }
+            )
+        ).hexdigest()
+        return 127, observation
     observation = hashlib.sha256(
         canonical_json(
             {
@@ -177,25 +176,29 @@ def run_mutated_verifier(
     if oracle is None or not isinstance(counterfeit, dict):
         return 127, "invalid oracle or counterfeit"
     mutation = counterfeit.get("mutation")
-    offset = counterfeit.get("offset", 0)
-    if not isinstance(offset, int) or offset < 0:
-        return 127, "invalid mutation offset"
-    payload = bytearray(oracle.read_bytes())
-    if mutation == "flip_byte":
-        if offset >= len(payload):
-            return 127, "flip offset outside oracle"
-        payload[offset] ^= 1
-    elif mutation == "delete_byte":
-        if offset >= len(payload):
-            return 127, "delete offset outside oracle"
-        del payload[offset]
-    elif mutation == "append_byte":
-        value = counterfeit.get("value", 0)
-        if not isinstance(value, int) or not 0 <= value <= 255:
-            return 127, "invalid appended byte"
-        payload.append(value)
-    else:
-        return 127, "unknown counterfeit mutation"
+    if mutation != "replace_text":
+        return 127, "executable counterfeits must use semantic replace_text"
+    source = counterfeit.get("from")
+    replacement = counterfeit.get("to")
+    if (
+        not isinstance(source, str)
+        or not source
+        or not isinstance(replacement, str)
+        or source == replacement
+    ):
+        return 127, "replace_text requires distinct non-empty from/to strings"
+    try:
+        text = oracle.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return 127, "replace_text oracle must be UTF-8"
+    if text.count(source) != 1:
+        return 127, "replace_text source must occur exactly once"
+    mutated_text = text.replace(source, replacement, 1)
+    try:
+        json.loads(mutated_text)
+    except json.JSONDecodeError:
+        return 127, "semantic counterfeit must remain valid JSON"
+    payload = mutated_text.encode("utf-8")
     with tempfile.TemporaryDirectory() as tmpdir:
         mutated = Path(tmpdir) / oracle.name
         mutated.write_bytes(payload)
@@ -340,6 +343,7 @@ def discriminator_digest(root: Path, closure: dict, observed: object) -> str | N
         "mechanism": closure.get("mechanism"),
         "observed": observed,
         "oracle": closure.get("oracle"),
+        "population_semantics": closure.get("population_semantics"),
         "subject": closure.get("subject"),
         "extractor": closure.get("extractor"),
         "tool_version": closure.get("tool_version"),
@@ -370,6 +374,7 @@ def closure_receipt_payload(
         "mechanism": closure.get("mechanism"),
         "observed": observed,
         "oracle": closure.get("oracle"),
+        "population_semantics": closure.get("population_semantics"),
         "subject": closure.get("subject"),
         "extractor": closure.get("extractor"),
         "requirement_id": closure.get("requirement_id"),
@@ -388,11 +393,18 @@ def closure_receipt(root: Path, closure: dict, *, observed: str) -> str | None:
     return hashlib.sha256(canonical_json(payload)).hexdigest()
 
 
-def check(root: Path) -> list[str]:
+def check(
+    root: Path,
+    *,
+    backlog_document: dict | None = None,
+    registry_document: dict | None = None,
+) -> list[str]:
     try:
         inventory = tomllib.loads((root / INVENTORY).read_text(encoding="utf-8"))
-        backlog = tomllib.loads((root / BACKLOG).read_text(encoding="utf-8"))
-        registry = tomllib.loads(
+        backlog = backlog_document or tomllib.loads(
+            (root / BACKLOG).read_text(encoding="utf-8")
+        )
+        registry = registry_document or tomllib.loads(
             (root / ".design/reqs/registry.toml").read_text(encoding="utf-8")
         )
     except (OSError, tomllib.TOMLDecodeError) as error:
@@ -574,7 +586,7 @@ def check(root: Path) -> list[str]:
                 "tool_version",
                 "tool_version_argv",
             },
-            "exact_population": {"extractor"},
+            "exact_population": {"extractor", "population_semantics"},
         }
         unknown_fields = sorted(
             set(closure) - common_fields - mechanism_fields[mechanism]
@@ -588,6 +600,16 @@ def check(root: Path) -> list[str]:
         digest = claim_digest(req_id, claim)
         if digest is None:
             problems.append(f"{req_id}: shipped requirement has no well-typed claim")
+            continue
+        subject_problem = claim_subject_problem(claim.get("kind"), claim.get("subject"))
+        if subject_problem is not None:
+            problems.append(f"{req_id}: {subject_problem}")
+            continue
+        expectation_problem = claim_expectation_problem(
+            claim.get("kind"), claim.get("expected")
+        )
+        if expectation_problem is not None:
+            problems.append(f"{req_id}: {expectation_problem}")
             continue
         if isinstance(claim, dict) and claim.get("kind") != mechanism:
             problems.append(f"{req_id}: claim kind and closure mechanism differ")
@@ -620,8 +642,12 @@ def check(root: Path) -> list[str]:
         artifact_paths = {
             value.split("#", 1)[0] for value in (artifacts or [])
         }
-        if GATE not in artifact_paths:
-            problems.append(f"{req_id}: closure must content-bind its gate implementation")
+        missing_kernel = sorted({GATE, SCHEMA} - artifact_paths)
+        if missing_kernel:
+            problems.append(
+                f"{req_id}: closure must content-bind its verification kernel: "
+                + ", ".join(missing_kernel)
+            )
 
         observed: object = None
         if mechanism == "formal_theorem":
@@ -647,6 +673,15 @@ def check(root: Path) -> list[str]:
                 not isinstance(v, str) or not v for v in argv
             ):
                 problems.append(f"{req_id}: verifier must be a non-empty argv list")
+                continue
+            oracle_path = bound_input_path(root, oracle)
+            if oracle_path is None or oracle_path.suffix != ".json":
+                problems.append(f"{req_id}: executable oracle must be repo-relative JSON")
+                continue
+            try:
+                json.loads(oracle_path.read_text(encoding="utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                problems.append(f"{req_id}: executable positive oracle must be valid JSON")
                 continue
             version_argv = closure.get("tool_version_argv")
             if (
@@ -696,7 +731,7 @@ def check(root: Path) -> list[str]:
                     name = counterfeit.get("name")
                     unknown_counterfeit_fields = sorted(
                         set(counterfeit)
-                        - {"expected_exit", "mutation", "name", "offset", "value"}
+                        - {"expected_exit", "from", "mutation", "name", "to"}
                     )
                     if unknown_counterfeit_fields:
                         problems.append(
@@ -708,6 +743,10 @@ def check(root: Path) -> list[str]:
                         problems.append(f"{req_id}: counterfeit names must be non-empty and unique")
                         continue
                     names.add(name)
+                    if counterfeit.get("mutation") != "replace_text":
+                        problems.append(
+                            f"{req_id}/{name}: counterfeit must use semantic replace_text"
+                        )
                     if (
                         not isinstance(expected_exit, int)
                         or expected_exit <= 0
@@ -734,6 +773,15 @@ def check(root: Path) -> list[str]:
         else:
             if closure.get("verifier") != ["builtin:exact_population"]:
                 problems.append(f"{req_id}: exact population must use the built-in verifier")
+            if closure.get("population_semantics") not in {
+                "closed_case_set",
+                "closed_enum",
+                "closed_route_set",
+                "closed_table",
+            }:
+                problems.append(
+                    f"{req_id}: exact population must name a closed-set semantic class"
+                )
             extractor = closure.get("extractor")
             extracted, detail = extract_population(root, extractor)
             if extracted is None:

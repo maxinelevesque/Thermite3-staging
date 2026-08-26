@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: f3c4a9bafc0debb0bdc57b28ef2cb382069e46cce21d9045a8d0c0dac79bfa15 (re-pinned 2026-08-26 for the recorded typed-claim closure design, non-launderable witness kernels, frozen baseline, inventory pin, and atomic v1-to-v2 migration boundary; GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: cf50a5869b539bf80618ca70e77254aeac37e458fc742c7356084bbf1a6b51ca)
+audited-content-sha256: 652e5ee9f9b4ded1214885f3d6fe460ff2111999e650410c80422c9c255983fc (re-pinned 2026-08-26 for the pre-population hardening: shared claim grammar, JSON semantic counterfeits, multi-member closed populations, known-red corpus, non-authoritative draft author/materializer, baseline-plus-live activation, CI/route wiring, and receipts bound to both the gate and shared schema. GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 10e99bb4fa1caeaf15b579badb74d47ee65882e139107cd86b0cc48c8ed6ce8f)
 
 ## Summary
 
@@ -99,15 +99,22 @@ checker vocabulary as the language-wide ontology.
   disagreement between prose and the typed claim remains reportable drift.
 - REQ-16: Claim/evidence closure shall cover the exact population of 566
   requirements recorded as shipped when this migration is designed. Migration
-  may land in reviewable slices, but no pre-existing shipped requirement is
-  grandfathered and GAP-CLAIM-EVIDENCE-CLOSURE shall remain open until every
-  baseline ID has a valid closure receipt and the live shipped population has
-  no unclosed additions.
+  may be authored in reviewable, explicitly non-authoritative draft sidecars,
+  but registry and ledger authority shall activate only at one complete atomic
+  boundary. No pre-existing shipped requirement is grandfathered and
+  GAP-CLAIM-EVIDENCE-CLOSURE shall remain open until every baseline ID has a
+  valid closure receipt and the live shipped population has no unclosed
+  additions.
 - REQ-17: A semantic closure witness shall use exactly one of three closed
   mechanisms: a kernel-checked formal theorem, an executable discriminator
   that rejects named counterfeits, or an exact-population/invariant gate with
   hostile mutation tests. A file, symbol, test, document, issue, or command
   reference is provenance only and shall not by itself close a claim.
+  Executable counterfeits shall remain well-formed semantic neighbours rather
+  than merely failing to parse, and exact-population claims shall enumerate a
+  decision-relevant closed set rather than probe for one symbol's presence. A
+  checked known-red corpus shall invert the load-bearing closure policies and
+  demonstrate that every inversion is rejected.
 - REQ-18: A witness may support multiple requirements only by declaring the
   exact set of requirement IDs and supplying an independently checked
   per-claim discriminator for every member. Umbrella coverage, prefix matching,
@@ -192,13 +199,20 @@ checker vocabulary as the language-wide ontology.
   baseline shipped IDs, and the live closure view contains every currently
   shipped ID. Removing, duplicating, substituting, or adding an unclosed ID
   fails the gate; the completeness-review item cannot close while either set is
-  incomplete.
+  incomplete. Draft slices can be checked and reviewed while schema v1 remains
+  authoritative, but they cannot appear as claims, witnesses, or closures in
+  either authoritative v1 document and materialization refuses any population
+  smaller than the exact live baseline.
 - [ ] AC-18: (REQ-17) The closure schema rejects an unknown mechanism and any
   attempt to use a bare provenance link as semantic closure. Each accepted
   formal theorem is checked under its declared axiom profile, each executable
   discriminator accepts its named positive oracle and rejects every named
   counterfeit, and each population/invariant witness fails under hostile
-  omission, addition, substitution, and duplication mutations.
+  omission, addition, substitution, and duplication mutations. Executable
+  counterfeits use semantic text replacements, exact populations use anchored
+  whole-line extractors over at least two members and name their closed-set
+  class, and the known-red policy corpus is rejected under every load-bearing
+  inversion.
 - [ ] AC-19: (REQ-18) Shared-witness fixtures fail when a requirement is omitted
   from or added to the declared membership, when a declared member has no
   per-claim discriminator, or when one member's discriminator is reused as
@@ -208,7 +222,10 @@ checker vocabulary as the language-wide ontology.
   one-byte change to the typed claim, witness input, expected oracle, verifier
   implementation/version, or exact population changes the bound digest and
   makes the old receipt stale; a clean checkout can deterministically rebuild
-  and verify the same receipts.
+  and verify the same receipts. The checked authoring tool computes claim
+  digests, observations, discriminators, witness membership, and receipts from
+  draft inputs, and refuses coordinated v2 materialization until all frozen
+  baseline rows plus every live shipped addition validate.
 
 ### Implementation reconciliation — 2026-08-23
 
@@ -285,13 +302,15 @@ receipts. A ledger entry chooses one closed mechanism:
   module and declaration, then compares the kernel-reported normalized theorem
   type digest, dependency set, axiom profile, and Lean/Lake version;
 - `executable_discriminator` runs one content-bound, versioned deterministic
-  verifier against a copied positive oracle and against named minimal byte
-  mutations derived from that same oracle; the positive must exit zero and
-  every counterfeit must produce a distinct non-sentinel rejection; or
+  verifier against a copied positive oracle and against named semantic text
+  replacements derived from that same well-formed oracle; the positive must
+  exit zero and every counterfeit must produce a distinct non-sentinel
+  rejection rather than merely becoming unparsable; or
 - `exact_population` runs a closed regex extractor against a content-bound
-  artifact, compares the observed canonical member keys exactly, then applies
-  omission, addition, substitution, and duplication mutations to artifact text
-  and reruns the same extractor.
+  artifact, requires an anchored whole-line population of at least two members
+  and a named closed-set class, compares the observed canonical member keys
+  exactly, then applies omission, addition, substitution, and duplication
+  mutations to artifact text and reruns the same extractor.
 
 Mechanism-specific payloads are disjoint and unknown mechanisms fail closed.
 For a shared theorem, verifier, or extractor, the witness declares its complete
@@ -317,6 +336,24 @@ witnesses, and closures; they continue to validate the honest pre-migration
 structural registry. Registry and ledger schema version 2 must activate
 together, at which point every shipped claim and closure is mandatory. There is
 no mixed-version or partially enforced state that CI can treat as complete.
+Reviewable JSON slices live only in `gates/claim-closure-drafts/`; they are
+non-authoritative recipes checked against the frozen baseline, current prose
+digest, mechanism grammar, live observation, hostile counterfeits, and derived
+  receipt. `gates/claim-closure-author.py` refuses materialization unless those
+  drafts cover the frozen 566-row baseline plus every live shipped addition,
+  then derives the authoritative
+registry claims, exact witness memberships, discriminators, and ledger receipts
+in one operation. Drafts never create a partially closed production state.
+
+Before population authoring, the claim grammar and closure kernel are frozen
+and tested by `gates/fixtures/claim-closure-known-red.json`. That corpus states
+the load-bearing policies positively and is mutated into genuine semantic
+neighbours: provenance is allowed to claim closure, shared membership becomes
+inexact, or prose displaces typed authority. The same deterministic verifier
+must reject each inversion. A broad passing suite is never sufficient merely
+because it contains a cited test; every executable claim must identify a
+claim-specific positive oracle and semantic negative that exercises the
+requirement's decision-relevant property.
 
 Every receipt hashes a canonical envelope containing the requirement ID,
 normalized claim, mechanism payload and referenced artifact content, verifier
@@ -579,6 +616,12 @@ narrowing.
 - Shared witnesses are allowed only with an exact requirement-ID set and a
   separately checked discriminator for every member; umbrella assertions are
   rejected.
+- Draft slices are explicitly non-authoritative. They may be reviewed while v1
+  remains active, but only the complete frozen baseline plus live shipped
+  additions can be materialized as registry/ledger v2.
+- Executable counterfeits are well-formed semantic replacements, not parse
+  failures. Exact-population claims are multi-member, anchored closed sets, not
+  single-symbol provenance probes. The known-red corpus pins these distinctions.
 
 ## Residual trust
 

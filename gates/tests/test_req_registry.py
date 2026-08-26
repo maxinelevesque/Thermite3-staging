@@ -31,7 +31,7 @@ class Fixture:
         return self.write(".design/reqs/registry.toml", body)
 
     def valid_registry(self, extra: str = ""):
-        self.write("src/lib.rs", "pub fn real_symbol() {}\n")
+        self.write("src/lib.rs", "pub fn first_symbol() {}\npub fn real_symbol() {}\n")
         self.write("tests/thing.rs", "# test fixture\n")
         self.registry(
             f"""
@@ -69,7 +69,7 @@ class Fixture:
             status = "shipped"
             scope = "tooling"
             summary = "Valid requirement."
-            claim = {{ kind = "exact_population", subject = "source-symbols:src/lib.rs", expected = ["real_symbol"], reviewed_summary_sha256 = "f7b034b65c4157d13950cae0b5d4b2d97963ee638a005bfb0ddc1eb4d9bb5b3e" }}
+            claim = {{ kind = "exact_population", subject = 'regex:src/lib.rs#^pub fn ([a-z_]+)\\(\\) {{}}$', expected = ["first_symbol", "real_symbol"], reviewed_summary_sha256 = "f7b034b65c4157d13950cae0b5d4b2d97963ee638a005bfb0ddc1eb4d9bb5b3e" }}
             generated_to = ["status"]
 
             [[requirement.evidence]]
@@ -202,6 +202,38 @@ class ReqRegistryOracleTest(unittest.TestCase):
 
         self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
         self.assertIn("BAD-CLAIM-KIND", res.stdout)
+
+    def test_rejects_claim_subject_outside_shared_closure_grammar(self):
+        self.fx.valid_registry()
+        path = self.root / ".design/reqs/registry.toml"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "regex:src/lib.rs#",
+                "source-symbols:",
+            ),
+            encoding="utf-8",
+        )
+
+        res = self.fx.run()
+
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("BAD-CLAIM-SUBJECT", res.stdout)
+
+    def test_rejects_single_symbol_population_as_provenance(self):
+        self.fx.valid_registry()
+        path = self.root / ".design/reqs/registry.toml"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                'expected = ["first_symbol", "real_symbol"]',
+                'expected = ["real_symbol"]',
+            ),
+            encoding="utf-8",
+        )
+
+        res = self.fx.run()
+
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("BAD-CLAIM-EXPECTATION", res.stdout)
 
     def test_summary_drift_does_not_change_authoritative_claim_digest(self):
         self.fx.valid_registry()
@@ -430,6 +462,7 @@ class ReqRegistryOracleTest(unittest.TestCase):
         self.fx.write(
             "src/lib.rs",
             """
+            pub fn first_symbol() {}
             pub fn real_symbol() {}
             //! <!-- generated:reqs view=source-status -->
             //! stale
@@ -460,7 +493,7 @@ class ReqRegistryOracleTest(unittest.TestCase):
             status = "shipped"
             scope = "tooling"
             summary = "Valid requirement."
-            claim = { kind = "exact_population", subject = "source-symbols:src/lib.rs", expected = ["real_symbol"], reviewed_summary_sha256 = "f7b034b65c4157d13950cae0b5d4b2d97963ee638a005bfb0ddc1eb4d9bb5b3e" }
+            claim = { kind = "exact_population", subject = 'regex:src/lib.rs#^pub fn ([a-z_]+)\\(\\) {}$', expected = ["first_symbol", "real_symbol"], reviewed_summary_sha256 = "f7b034b65c4157d13950cae0b5d4b2d97963ee638a005bfb0ddc1eb4d9bb5b3e" }
             generated_to = ["source-status"]
 
             [[requirement.evidence]]

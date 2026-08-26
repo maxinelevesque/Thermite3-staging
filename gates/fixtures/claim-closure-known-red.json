@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "properties": {
+    "raw_provenance_closes_semantic_claim": false,
+    "shared_witness_membership_is_exact": true,
+    "typed_claim_is_authoritative": true
+  }
+}

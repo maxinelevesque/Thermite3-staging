@@ -7355,13 +7355,15 @@ note = "the regenerated agent-facing artifact carrying `## 6. Forge tier (Stage-
 kind = "test"
 target = "thermite-skill/tests/skill.rs"
 note = "forge_tier_section_present pins the four content areas (the seven CertVerdict names as the oracle, the nlsat/verus/lean + L4/L3 routing, the witness/inhabit/falsify covenant surface, the goal --proof/?pN/proof-for/burn-receipt verbs); skill_is_under_budget holds the ≤6,000-token §2.2 gate"
+
+[[requirement]]
 id = "REQ-S1-11"
 title = "Governance normative deliverables — docs/v2/semantics.md + the goal.md R-rules"
 owner = "docs/v2/program.md"
 status = "shipped"
 scope = "forge"
 summary = "The Stage-1 governance/normative deliverables (docs/v2/program.md REQ-8 / AC-13), grounded in the shipped code on main. (1) docs/v2/semantics.md: the single authoritative home for the shipped Stage-1 forge-tier semantics, consolidating conventions that were scattered across module headers — the L0..L4 ladder with the L3 (Verus/Z3 SOLVER) vs L4 (KERNEL-GROUNDED: nlsat + spine-lemma) boundary and the upward forge-escalation (`manifest::Level`); the seven `CertVerdict` outcomes (Proved/Counterexample/RealWitness/CovenantRefuted/Stuck/KernelBudget/Timeout) + the never-converts-silently invariant (`verdict.rs`); the frozen-subset/cage fragment (`battery.rs`) + the relaxable-clause fragment (`relax.rs`); the div/rem (Lean `Int`, source-side divisor obligation) and cast (value-preserving spec vs truncating exec, the no-overflow source obligation) conventions stated ONCE as the audit F2 corners (`Denote.lean`/`Ast.lean`, `covenant_eval.rs`); the covenant (inhabit/falsify, covenant-before-burn, `covenant_engine.rs`) + the trust profiles (`engine::TrustProfile`, solver vs kernel-grounded). The module-header comments in lean/Thermite/ (Denote/Ast/Relax) and thermite-lower/ (lower.rs) that restated these conventions now POINT at the semantics doc rather than restating them (AC-13), with the triggered doc-drift re-pinned. (2) goal.md gains the five R-rule candidates: R-VERDICT-1 (never-converts-silently, enforced NOW in forge/src/verdict.rs), R-COV-1 (covenant-before-burn, enforced NOW in forge/src/covenant_engine.rs), R-GATE-1 (README/docs headline at gate time not merge time), R-SIDE-1 (stage-2 restratify Side obligation, forward-looking), R-BV-1 (stage-3 @bv shadow-flag parse gate, forward-looking). The README headline flip is NOT performed here — R-GATE-1 is a separate gate step (changes at gate time, not merge time)."
-aliases = ["docs/v2/semantics.md", "AC-13", "REQ-8 governance", "governance deliverables", "normative deliverables", "R-rule candidates", "R-VERDICT-1", "R-COV-1", "R-GATE-1", "R-SIDE-1", "R-BV-1", "never-converts-silently"]
+aliases = ["docs/v2/semantics.md", "AC-13", "REQ-8 governance", "governance deliverables", "normative deliverables", "R-rule candidates", "R-VERDICT-1", "R-COV-1", "R-GATE-1", "R-BV-1", "never-converts-silently"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
