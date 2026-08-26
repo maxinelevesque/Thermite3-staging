@@ -411,7 +411,7 @@ class ReviewTrackTests(unittest.TestCase):
         )
         with mock.patch.object(MODULE.shutil, "which", return_value="/test/lake"), mock.patch.object(
             MODULE.subprocess, "run", side_effect=[version, first_lean, version, second_lean]
-        ):
+        ) as run:
             first, _ = MODULE.probe_lean_theorem(
                 self.root, "lean/Thermite/Demo.lean#Thermite.Demo.t"
             )
@@ -423,6 +423,8 @@ class ReviewTrackTests(unittest.TestCase):
         self.assertIsNotNone(second)
         self.assertNotEqual(first[1], second[1])
         self.assertTrue(first[1].startswith("type_sha256:"))
+        self.assertEqual(run.call_args_list[0].kwargs["cwd"], self.root / "lean")
+        self.assertEqual(run.call_args_list[2].kwargs["cwd"], self.root / "lean")
 
 
 if __name__ == "__main__":

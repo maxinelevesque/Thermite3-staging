@@ -161,10 +161,8 @@ jobs:
         run: uv run python gates/assurance-v2-replay.py
       - name: language RFC fragment-evolution discipline
         run: uv run python gates/language-rfc-evolution.py
-      - name: claim-closure frozen population and draft slices
-        run: |
-          uv run python gates/claim-closure-author.py --check-baseline
-          uv run python gates/claim-closure-author.py --check-drafts
+      - name: claim-closure frozen population
+        run: uv run python gates/claim-closure-author.py --check-baseline
       - name: completeness-review backlog consistency
         run: uv run python gates/completeness-review.py
 
@@ -427,6 +425,11 @@ jobs:
           bash /tmp/elan-init.sh -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
+      - name: Install uv (pins the Python the gates run under)
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version-file: .python-version
+
       - name: Cache Lean dependencies
         uses: actions/cache@v4
         with:
@@ -445,6 +448,9 @@ jobs:
         with:
           name: lean-build-${{ github.sha }}
           path: lean/.lake/build
+
+      - name: Claim-closure draft slices (tool-aware)
+        run: uv run python gates/claim-closure-author.py --check-drafts
 
       - name: Lean spine build + axiom probe (lake build + #print axioms gate)
         run: bash gates/lean-axiom-probe.sh
