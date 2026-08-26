@@ -25,6 +25,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shlex
@@ -41,7 +42,14 @@ except ImportError:  # pragma: no cover
 
 
 REGISTRY_RELPATH = ".design/reqs/registry.toml"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+SUPPORTED_SCHEMA_VERSIONS = {1, 2}
+
+VALID_CLAIM_KINDS = {
+    "formal_theorem",
+    "executable_discriminator",
+    "exact_population",
+}
 
 VALID_EVIDENCE_KINDS = {
     "file",
@@ -85,6 +93,14 @@ class Evidence:
 
 
 @dataclass(frozen=True)
+class Claim:
+    kind: str
+    subject: str
+    expected: list[str]
+    reviewed_summary_sha256: str
+
+
+@dataclass(frozen=True)
 class StatusRule:
     name: str
     final: bool
@@ -106,6 +122,7 @@ class Requirement:
     contributors: list[str]
     blockers: list[str]
     generated_to: list[str]
+    claim: Claim | None
     evidence: list[Evidence]
 
 
@@ -387,6 +404,49 @@ def parse_evidence(raw_req: dict, item: str, issues: list[Issue]) -> list[Eviden
     return evidence
 
 
+def parse_claim(raw_req: dict, item: str, issues: list[Issue]) -> Claim | None:
+    raw_claim = raw_req.get("claim")
+    if raw_claim is None:
+        return None
+    if not isinstance(raw_claim, dict):
+        issues.append(Issue("BAD-FIELD", item, "`claim` must be an inline table"))
+        return None
+    claim_item = f"{item}.claim"
+    unknown = sorted(
+        set(raw_claim)
+        - {"kind", "subject", "expected", "reviewed_summary_sha256"}
+    )
+    if unknown:
+        issues.append(
+            Issue(
+                "UNKNOWN-CLAIM-FIELD",
+                item,
+                "typed claim contains unknown field(s): " + ", ".join(unknown),
+            )
+        )
+    return Claim(
+        kind=_as_str(raw_claim, "kind", claim_item, issues),
+        subject=_as_str(raw_claim, "subject", claim_item, issues),
+        expected=_list_of_str(raw_claim, "expected", claim_item, issues),
+        reviewed_summary_sha256=_as_str(
+            raw_claim, "reviewed_summary_sha256", claim_item, issues
+        ),
+    )
+
+
+def normalized_claim_digest(req_id: str, claim: Claim) -> str:
+    payload = {
+        "expected": claim.expected,
+        "kind": claim.kind,
+        "requirement_id": req_id,
+        "subject": claim.subject,
+    }
+    encoded = json.dumps(
+        payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def parse_statuses(raw: dict, item: str, issues: list[Issue]) -> list[StatusRule]:
     raw_statuses = raw.get("status", [])
     if not isinstance(raw_statuses, list):
@@ -482,7 +542,7 @@ def load_registry(root: Path, relpath: str = REGISTRY_RELPATH) -> Registry:
     schema_version = raw.get("schema_version")
     if not isinstance(schema_version, int):
         issues.append(
-            Issue("BAD-SCHEMA", relpath, "`schema_version` must be integer 1")
+            Issue("BAD-SCHEMA", relpath, "`schema_version` must be integer 2")
         )
 
     statuses = parse_statuses(raw, relpath, issues)
@@ -537,6 +597,7 @@ def load_registry(root: Path, relpath: str = REGISTRY_RELPATH) -> Registry:
                 contributors=_list_of_str(raw_req, "contributors", req_item, issues),
                 blockers=_list_of_str(raw_req, "blockers", req_item, issues),
                 generated_to=_list_of_str(raw_req, "generated_to", req_item, issues),
+                claim=parse_claim(raw_req, req_item, issues),
                 evidence=parse_evidence(raw_req, req_item, issues),
             )
         )
@@ -556,12 +617,12 @@ def validate_registry(root: Path, registry: Registry, *, live_issues: bool = Fal
     issues = list(registry.parse_issues)
     haystack = searchable_text(root)
 
-    if registry.schema_version != SCHEMA_VERSION:
+    if registry.schema_version not in SUPPORTED_SCHEMA_VERSIONS:
         issues.append(
             Issue(
                 "BAD-SCHEMA",
                 registry.path,
-                f"schema_version must be {SCHEMA_VERSION}",
+                "schema_version must be 1 or 2 during the fail-closed migration",
             )
         )
 
@@ -608,7 +669,7 @@ def validate_registry(root: Path, registry: Registry, *, live_issues: bool = Fal
                 Issue(
                     "UNKNOWN-VIEW-KIND",
                     view.name,
-                    "`kind` must be `full_inventory` or `reference_list` in schema v1",
+                    "`kind` must be `full_inventory` or `reference_list` in schema v2",
                 )
             )
         if view.mode not in {"file", "region"}:
@@ -786,6 +847,53 @@ def validate_registry(root: Path, registry: Registry, *, live_issues: bool = Fal
                 issues.append(
                     Issue("UNKNOWN-GENERATED-VIEW", req.id, f"unknown view `{view_name}`")
                 )
+
+        if registry.schema_version == 2 and req.status == "shipped" and req.claim is None:
+            issues.append(
+                Issue(
+                    "MISSING-TYPED-CLAIM",
+                    req.id,
+                    "shipped requirements must declare a typed `claim`",
+                )
+            )
+        if req.claim is not None:
+            claim = req.claim
+            if claim.kind not in VALID_CLAIM_KINDS:
+                issues.append(
+                    Issue(
+                        "BAD-CLAIM-KIND",
+                        req.id,
+                        f"claim kind `{claim.kind}` is not accepted",
+                    )
+                )
+            if not claim.expected:
+                issues.append(
+                    Issue(
+                        "EMPTY-CLAIM-EXPECTATION",
+                        req.id,
+                        "typed claims must declare at least one expected observation",
+                    )
+                )
+            if not re.fullmatch(r"[0-9a-f]{64}", claim.reviewed_summary_sha256):
+                issues.append(
+                    Issue(
+                        "BAD-SUMMARY-REVIEW-DIGEST",
+                        req.id,
+                        "reviewed_summary_sha256 must be a lowercase SHA-256 digest",
+                    )
+                )
+            else:
+                actual_summary_digest = hashlib.sha256(
+                    req.summary.encode("utf-8")
+                ).hexdigest()
+                if actual_summary_digest != claim.reviewed_summary_sha256:
+                    issues.append(
+                        Issue(
+                            "PRESENTATION-CLAIM-DRIFT",
+                            req.id,
+                            "summary changed after its correspondence to the typed claim was reviewed",
+                        )
+                    )
 
         if status_rule is not None:
             if status_rule.required_evidence_any and not any(
