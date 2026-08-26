@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 537526d5cd70cb893f7d2b2271e6b67fc51b972f762776ce4fb4d8d1d532a626 (re-pinned 2026-08-25 for issue #6 Map removal/traversal registry evidence; GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 24e06be01211ed7f4587077bc0ee2e2bd7ab1662cfb79c52ac66a10650fe9a57)
+audited-content-sha256: f13f6fa8ed66ba085db63cea1ffb81d7b7cd5f09278f2e38795981c53a56d7f8 (re-pinned 2026-08-25 for the canonical RFC-11/#75, RFC-12/#76, and RFC-13/#77 tracking refresh; GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: 537526d5cd70cb893f7d2b2271e6b67fc51b972f762776ce4fb4d8d1d532a626)
 
 ## Summary
 
