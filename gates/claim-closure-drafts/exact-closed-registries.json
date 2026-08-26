@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "slice_id": "exact-closed-registries",
+  "entries": [
+    {
+      "requirement_id": "REQ-SYNTAX-LEXER-KEYWORDS",
+      "witness_id": "W-EXACT-LEXER-KEYWORDS",
+      "claim": {
+        "kind": "exact_population",
+        "subject": "regex:thermite-syntax/src/lexer.rs#^        \"([^\"]+)\" => TokKind::[A-Za-z]+(?:\\((?:true|false)\\))?,$",
+        "expected": [
+          "as",
+          "break",
+          "continue",
+          "else",
+          "ensures",
+          "enum",
+          "exists",
+          "false",
+          "fn",
+          "forall",
+          "if",
+          "is",
+          "keeps",
+          "let",
+          "loop",
+          "match",
+          "measures",
+          "mut",
+          "pure",
+          "requires",
+          "return",
+          "spec",
+          "struct",
+          "true",
+          "while"
+        ],
+        "reviewed_summary_sha256": "8357b9e961cdf96cdd4187ce691baef966a8a72f072b5911598463cf4fa348c3"
+      },
+      "closure": {
+        "population_semantics": "closed_enum",
+        "artifacts": [
+          "thermite-syntax/src/lexer.rs#keyword_kind",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "extractor": {
+          "kind": "regex",
+          "path": "thermite-syntax/src/lexer.rs",
+          "pattern": "^        \"([^\"]+)\" => TokKind::[A-Za-z]+(?:\\((?:true|false)\\))?,$"
+        },
+        "counterfeit": [
+          { "name": "addition" },
+          { "name": "duplication" },
+          { "name": "omission" },
+          { "name": "substitution" }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-COMBINATORS-FROZEN",
+      "witness_id": "W-EXACT-SPECTHERM-COMBINATORS",
+      "claim": {
+        "kind": "exact_population",
+        "subject": "regex:thermite-spec/src/combinators.rs#^        name: \"([a-z_]+)\",$",
+        "expected": [
+          "count_where",
+          "disjoint",
+          "exists_in",
+          "forall_below",
+          "forall_from",
+          "forall_in",
+          "permutation_of",
+          "sorted"
+        ],
+        "reviewed_summary_sha256": "6c33022a3656dcde9ff2ebc8dd4ab98ebc988a54058b71b8ff6e5ce50d9e686b"
+      },
+      "closure": {
+        "population_semantics": "closed_table",
+        "artifacts": [
+          "thermite-spec/src/combinators.rs#static REGISTRY",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "extractor": {
+          "kind": "regex",
+          "path": "thermite-spec/src/combinators.rs",
+          "pattern": "^        name: \"([a-z_]+)\",$"
+        },
+        "counterfeit": [
+          { "name": "addition" },
+          { "name": "duplication" },
+          { "name": "omission" },
+          { "name": "substitution" }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-SCHEMES-FROZEN",
+      "witness_id": "W-EXACT-RECURSION-SCHEMES",
+      "claim": {
+        "kind": "exact_population",
+        "subject": "regex:thermite-spec/src/schemes.rs#^        name: \"([a-z_]+)\",$",
+        "expected": [
+          "exists",
+          "fold",
+          "for_all",
+          "map",
+          "traverse"
+        ],
+        "reviewed_summary_sha256": "e8a64c31974bbe89fe93b3ede19404686c9457fea1d95895288fb9552150e210"
+      },
+      "closure": {
+        "population_semantics": "closed_table",
+        "artifacts": [
+          "thermite-spec/src/schemes.rs#static REGISTRY",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "extractor": {
+          "kind": "regex",
+          "path": "thermite-spec/src/schemes.rs",
+          "pattern": "^        name: \"([a-z_]+)\",$"
+        },
+        "counterfeit": [
+          { "name": "addition" },
+          { "name": "duplication" },
+          { "name": "omission" },
+          { "name": "substitution" }
+        ]
+      }
+    }
+  ]
+}
