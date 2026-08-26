@@ -12,6 +12,7 @@ VERSION = "thermite-claim-closure-exec 2"
 PROBES = {
     "thermite-syntax-integer-tokens": "integers",
     "thermite-syntax-parse-expressions": "parse-expressions",
+    "thermite-syntax-parse-fidelity": "parse-fidelity",
     "thermite-syntax-parse-items": "parse-items",
     "thermite-syntax-token-stream": "tokens",
 }
@@ -52,10 +53,22 @@ def main(argv: list[str]) -> int:
     if not isinstance(cases, list) or not cases:
         return 2
     for case in cases:
-        if not isinstance(case, dict) or set(case) != {"expected", "source"}:
+        if not isinstance(case, dict) or set(case) not in (
+            {"expected", "source"},
+            {"expected", "source_path"},
+        ):
             return 2
         source = case.get("source")
+        source_path = case.get("source_path")
         expected = case.get("expected")
+        if source_path is not None:
+            relative = Path(source_path) if isinstance(source_path, str) else Path("..")
+            if relative.is_absolute() or ".." in relative.parts:
+                return 2
+            try:
+                source = relative.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                return 2
         if not isinstance(source, str) or not isinstance(expected, dict):
             return 2
         try:
