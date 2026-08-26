@@ -6,7 +6,7 @@ use std::{
 };
 
 use serde_json::{json, Value};
-use thermite_syntax::{tokenize, SyntaxError, TokKind};
+use thermite_syntax::{parse, tokenize, Item, SyntaxError, TokKind};
 
 fn error_kind(error: &SyntaxError) -> &'static str {
     match error {
@@ -34,10 +34,17 @@ fn errors_json(errors: &[SyntaxError]) -> Vec<Value> {
         .iter()
         .map(|error| {
             let span = error.span();
-            json!({
+            let mut value = json!({
                 "kind": error_kind(error),
                 "span": [span.start, span.len],
-            })
+            });
+            if let SyntaxError::MissingClause { item, clause, .. }
+            | SyntaxError::ClauseOrder { item, clause, .. } = error
+            {
+                value["clause"] = json!(clause);
+                value["item"] = json!(item);
+            }
+            value
         })
         .collect()
 }
@@ -66,13 +73,41 @@ fn token_json(token: thermite_syntax::Token) -> Value {
 
 fn main() {
     let mode = env::args().nth(1).unwrap_or_default();
-    if !matches!(mode.as_str(), "integers" | "tokens") {
+    if !matches!(mode.as_str(), "integers" | "parse-items" | "tokens") {
         std::process::exit(2);
     }
     let mut source = String::new();
     io::stdin()
         .read_to_string(&mut source)
         .expect("read syntax probe source");
+    if mode == "parse-items" {
+        let result = parse(&source);
+        let items: Vec<Value> = result
+            .program
+            .items
+            .iter()
+            .map(|item| {
+                let kind = match item {
+                    Item::Fn(_) => "Fn",
+                    Item::SpecFn(_) => "SpecFn",
+                    Item::Struct(_) => "Struct",
+                    Item::Enum(_) => "Enum",
+                    Item::Forge(_) => "Forge",
+                    Item::EffectDecl(_) => "EffectDecl",
+                    Item::SharedDecl(_) => "SharedDecl",
+                    Item::Concurrent(_) => "Concurrent",
+                    Item::LockDecl(_) => "LockDecl",
+                };
+                json!({"kind": kind, "name": item.name()})
+            })
+            .collect();
+        let observation = json!({"errors": errors_json(&result.errors), "items": items});
+        println!(
+            "{}",
+            serde_json::to_string(&observation).expect("serialize syntax probe observation")
+        );
+        return;
+    }
     let (tokens, errors) = tokenize(&source);
     let errors = errors_json(&errors);
     let observation = if mode == "integers" {
