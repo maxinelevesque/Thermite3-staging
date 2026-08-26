@@ -430,6 +430,9 @@ jobs:
         with:
           python-version-file: .python-version
 
+      - name: Install Rust toolchain for executable claim probes
+        uses: dtolnay/rust-toolchain@1.95.0
+
       - name: Cache Lean dependencies
         uses: actions/cache@v4
         with:

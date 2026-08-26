@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""Marshal claim-specific JSON cases through the shipped syntax implementation."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+VERSION = "thermite-claim-closure-exec 1"
+PROBE = "thermite-syntax-integer-tokens"
+PROBE_ARGV = [
+    "cargo",
+    "run",
+    "--quiet",
+    "--locked",
+    "-p",
+    "thermite-syntax",
+    "--example",
+    "claim-closure-probe",
+]
+
+
+def main(argv: list[str]) -> int:
+    if argv == ["--version"]:
+        try:
+            rustc = subprocess.run(
+                ["rustc", "--version"], capture_output=True, text=True, check=True
+            ).stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            return 3
+        print(f"{VERSION}; {rustc}")
+        return 0
+    if len(argv) != 1:
+        return 2
+    try:
+        oracle = json.loads(Path(argv[0]).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return 2
+    if not isinstance(oracle, dict) or set(oracle) != {"cases", "probe", "version"}:
+        return 2
+    if oracle.get("version") != 1 or oracle.get("probe") != PROBE:
+        return 2
+    cases = oracle.get("cases")
+    if not isinstance(cases, list) or not cases:
+        return 2
+    for case in cases:
+        if not isinstance(case, dict) or set(case) != {"expected", "source"}:
+            return 2
+        source = case.get("source")
+        expected = case.get("expected")
+        if not isinstance(source, str) or not isinstance(expected, dict):
+            return 2
+        try:
+            result = subprocess.run(
+                PROBE_ARGV,
+                input=source,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=120,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return 3
+        if result.returncode != 0:
+            return 3
+        try:
+            observed = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return 3
+        if observed != expected:
+            return 4
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

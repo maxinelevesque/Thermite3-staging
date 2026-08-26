@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-integer-tokens",
+  "cases": [
+    {
+      "source": "1_000_000",
+      "expected": {
+        "errors": [],
+        "integers": [
+          {
+            "raw": "1_000_000",
+            "span": [0, 9],
+            "value": "1000000"
+          }
+        ]
+      }
+    }
+  ]
+}
