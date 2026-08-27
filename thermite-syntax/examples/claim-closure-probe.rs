@@ -8,8 +8,8 @@ use std::{
 
 use serde_json::{json, Value};
 use thermite_syntax::{
-    addresses_of, parse, tokenize, AddrKind, BinOp, Block, EffectRow, Expr, HoleContext, Item,
-    PrimType, Stmt, SyntaxError, TokKind, Type, UnaryOp,
+    addresses_of, parse, tokenize, AddrKind, BinOp, Block, EffectRow, Expr, HoleContext, IndexArg,
+    Item, LoopKind, PrimType, Stmt, SyntaxError, TokKind, Type, UnaryOp,
 };
 
 fn error_kind(error: &SyntaxError) -> &'static str {
@@ -172,6 +172,147 @@ fn collect_operator_facts(
     }
 }
 
+fn expr_kind(expr: &Expr) -> &'static str {
+    match expr {
+        Expr::IntLit { .. } => "IntLit",
+        Expr::BoolLit(_) => "BoolLit",
+        Expr::Path(_) => "Path",
+        Expr::Call { .. } => "Call",
+        Expr::MethodCall { .. } => "MethodCall",
+        Expr::Field { .. } => "Field",
+        Expr::Closure { .. } => "Closure",
+        Expr::Match { .. } => "Match",
+        Expr::If { .. } => "If",
+        Expr::Binary { .. } => "Binary",
+        Expr::Unary { .. } => "Unary",
+        Expr::Index { .. } => "Index",
+        Expr::Cast { .. } => "Cast",
+        Expr::Ref { .. } => "Ref",
+        Expr::StructLit { .. } => "StructLit",
+        Expr::Is { .. } => "Is",
+        Expr::Deref(_) => "Deref",
+        Expr::StrLit(_) => "StrLit",
+        Expr::Tuple(_) => "Tuple",
+        Expr::TupleProj { .. } => "TupleProj",
+        Expr::Quantifier { .. } => "Quantifier",
+    }
+}
+
+fn collect_index_expr_kinds(index: &IndexArg, kinds: &mut BTreeSet<&'static str>) {
+    match index {
+        IndexArg::Single(expr) | IndexArg::RangeTo(expr) | IndexArg::RangeFrom(expr) => {
+            collect_expr_kinds(expr, kinds);
+        }
+        IndexArg::Range(start, end) => {
+            collect_expr_kinds(start, kinds);
+            collect_expr_kinds(end, kinds);
+        }
+    }
+}
+
+fn collect_block_expr_kinds(block: &Block, kinds: &mut BTreeSet<&'static str>) {
+    for statement in &block.stmts {
+        match statement {
+            Stmt::Let { init, .. } => collect_expr_kinds(init, kinds),
+            Stmt::Assign { target, value } => {
+                collect_expr_kinds(target, kinds);
+                collect_expr_kinds(value, kinds);
+            }
+            Stmt::Return(value) => {
+                if let Some(value) = value {
+                    collect_expr_kinds(value, kinds);
+                }
+            }
+            Stmt::If { cond, then, else_ } => {
+                collect_expr_kinds(cond, kinds);
+                collect_block_expr_kinds(then, kinds);
+                if let Some(otherwise) = else_ {
+                    collect_block_expr_kinds(otherwise, kinds);
+                }
+            }
+            Stmt::Loop(loop_node) => {
+                if let LoopKind::While(cond) = &loop_node.kind {
+                    collect_expr_kinds(cond, kinds);
+                }
+                for invariant in &loop_node.invs {
+                    collect_expr_kinds(&invariant.expr, kinds);
+                }
+                collect_expr_kinds(&loop_node.measures.expr, kinds);
+                collect_block_expr_kinds(&loop_node.body, kinds);
+            }
+            Stmt::Holding { body, .. } => collect_block_expr_kinds(body, kinds),
+            Stmt::Expr(expr) => collect_expr_kinds(expr, kinds),
+            Stmt::Break | Stmt::Continue => {}
+        }
+    }
+    if let Some(tail) = &block.tail {
+        collect_expr_kinds(tail, kinds);
+    }
+}
+
+fn collect_expr_kinds(expr: &Expr, kinds: &mut BTreeSet<&'static str>) {
+    kinds.insert(expr_kind(expr));
+    match expr {
+        Expr::Call { callee, args } => {
+            collect_expr_kinds(callee, kinds);
+            for arg in args {
+                collect_expr_kinds(arg, kinds);
+            }
+        }
+        Expr::MethodCall { receiver, args, .. } => {
+            collect_expr_kinds(receiver, kinds);
+            for arg in args {
+                collect_expr_kinds(arg, kinds);
+            }
+        }
+        Expr::Field { receiver, .. }
+        | Expr::Unary { expr: receiver, .. }
+        | Expr::Cast { expr: receiver, .. }
+        | Expr::Ref { expr: receiver, .. }
+        | Expr::Deref(receiver)
+        | Expr::TupleProj { receiver, .. } => collect_expr_kinds(receiver, kinds),
+        Expr::Closure { body, .. } => collect_expr_kinds(body, kinds),
+        Expr::Match { scrutinee, arms } => {
+            collect_expr_kinds(scrutinee, kinds);
+            for arm in arms {
+                if let Some(guard) = &arm.guard {
+                    collect_expr_kinds(guard, kinds);
+                }
+                collect_expr_kinds(&arm.body, kinds);
+            }
+        }
+        Expr::If { cond, then, else_ } => {
+            collect_expr_kinds(cond, kinds);
+            collect_block_expr_kinds(then, kinds);
+            collect_block_expr_kinds(else_, kinds);
+        }
+        Expr::Binary { lhs, rhs, .. } => {
+            collect_expr_kinds(lhs, kinds);
+            collect_expr_kinds(rhs, kinds);
+        }
+        Expr::Index { base, index } => {
+            collect_expr_kinds(base, kinds);
+            collect_index_expr_kinds(index, kinds);
+        }
+        Expr::StructLit { fields, .. } => {
+            for (_, value) in fields {
+                collect_expr_kinds(value, kinds);
+            }
+        }
+        Expr::Is { scrutinee, .. } => collect_expr_kinds(scrutinee, kinds),
+        Expr::Tuple(values) => {
+            for value in values {
+                collect_expr_kinds(value, kinds);
+            }
+        }
+        Expr::Quantifier { domain, body, .. } => {
+            collect_expr_kinds(domain, kinds);
+            collect_expr_kinds(body, kinds);
+        }
+        Expr::IntLit { .. } | Expr::BoolLit(_) | Expr::Path(_) | Expr::StrLit(_) => {}
+    }
+}
+
 fn type_text(ty: &Type) -> String {
     match ty {
         Type::Prim(PrimType::U8) => "u8".to_string(),
@@ -306,7 +447,8 @@ fn main() {
     let mode = env::args().nth(1).unwrap_or_default();
     if !matches!(
         mode.as_str(),
-        "ast-operators"
+        "ast-expressions"
+            | "ast-operators"
             | "ast-statements"
             | "integers"
             | "parse-edges"
@@ -323,7 +465,8 @@ fn main() {
         .expect("read syntax probe source");
     if matches!(
         mode.as_str(),
-        "ast-operators"
+        "ast-expressions"
+            | "ast-operators"
             | "ast-statements"
             | "parse-edges"
             | "parse-expressions"
@@ -331,6 +474,37 @@ fn main() {
             | "parse-items"
     ) {
         let result = parse(&source);
+        if mode == "ast-expressions" {
+            let functions = result
+                .program
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    Item::Fn(function) => {
+                        let mut expression_kinds = BTreeSet::new();
+                        collect_expr_kinds(&function.contract.requires.expr, &mut expression_kinds);
+                        for clause in &function.contract.ensures {
+                            collect_expr_kinds(&clause.expr, &mut expression_kinds);
+                        }
+                        if let Some(body) = &function.body {
+                            collect_block_expr_kinds(body, &mut expression_kinds);
+                        }
+                        Some(json!({
+                            "expression_kinds": expression_kinds,
+                            "name": function.name,
+                        }))
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            let observation =
+                json!({"errors": errors_json(&result.errors), "functions": functions});
+            println!(
+                "{}",
+                serde_json::to_string(&observation).expect("serialize syntax probe observation")
+            );
+            return;
+        }
         if mode == "ast-statements" {
             let functions = result
                 .program

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-ast-expressions",
+  "cases": [
+    {
+      "source": "fn expressions(xs: &[u64], a: u64) -> bool\n  ! pure\n  requires true\n  ensures pkg::f(a).m(a).field == a\n  ensures result == (|x| x + 1)\n  ensures result == match a { 0 => true, _ => false }\n  ensures result == if true { true } else { false }\n  ensures result == (xs[a] == a)\n  ensures result == (a as u64 == a)\n  ensures result == (&a == &a)\n  ensures result == !true\n  ensures result == \"x\"\n{\n  true\n}\n",
+      "expected": {
+        "errors": [],
+        "functions": [
+          {
+            "expression_kinds": [
+              "Binary", "BoolLit", "Call", "Cast", "Closure", "Field", "If",
+              "Index", "IntLit", "Match", "MethodCall", "Path", "Ref", "StrLit",
+              "Unary"
+            ],
+            "name": "expressions"
+          }
+        ]
+      }
+    }
+  ]
+}
