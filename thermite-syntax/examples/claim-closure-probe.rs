@@ -224,6 +224,42 @@ fn collect_loop_facts(block: &Block, loops: &mut Vec<Value>) {
     }
 }
 
+fn stmt_kind(statement: &Stmt) -> &'static str {
+    match statement {
+        Stmt::Let { .. } => "Let",
+        Stmt::Assign { .. } => "Assign",
+        Stmt::Return(_) => "Return",
+        Stmt::If { .. } => "If",
+        Stmt::Loop(_) => "Loop",
+        Stmt::Holding { .. } => "Holding",
+        Stmt::Break => "Break",
+        Stmt::Continue => "Continue",
+        Stmt::Expr(_) => "Expr",
+    }
+}
+
+fn collect_stmt_kinds(block: &Block, kinds: &mut BTreeSet<&'static str>) {
+    for statement in &block.stmts {
+        kinds.insert(stmt_kind(statement));
+        match statement {
+            Stmt::If { then, else_, .. } => {
+                collect_stmt_kinds(then, kinds);
+                if let Some(otherwise) = else_ {
+                    collect_stmt_kinds(otherwise, kinds);
+                }
+            }
+            Stmt::Loop(loop_node) => collect_stmt_kinds(&loop_node.body, kinds),
+            Stmt::Holding { body, .. } => collect_stmt_kinds(body, kinds),
+            Stmt::Let { .. }
+            | Stmt::Assign { .. }
+            | Stmt::Return(_)
+            | Stmt::Break
+            | Stmt::Continue
+            | Stmt::Expr(_) => {}
+        }
+    }
+}
+
 fn fidelity_item_json(item: &Item) -> Value {
     match item {
         Item::Fn(function) => {
@@ -271,6 +307,7 @@ fn main() {
     if !matches!(
         mode.as_str(),
         "ast-operators"
+            | "ast-statements"
             | "integers"
             | "parse-edges"
             | "parse-expressions"
@@ -286,9 +323,52 @@ fn main() {
         .expect("read syntax probe source");
     if matches!(
         mode.as_str(),
-        "ast-operators" | "parse-edges" | "parse-expressions" | "parse-fidelity" | "parse-items"
+        "ast-operators"
+            | "ast-statements"
+            | "parse-edges"
+            | "parse-expressions"
+            | "parse-fidelity"
+            | "parse-items"
     ) {
         let result = parse(&source);
+        if mode == "ast-statements" {
+            let functions = result
+                .program
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    Item::Fn(function) => {
+                        let mut statement_kinds = BTreeSet::new();
+                        if let Some(body) = &function.body {
+                            collect_stmt_kinds(body, &mut statement_kinds);
+                        }
+                        Some(json!({
+                            "body_tail": function.body.as_ref().and_then(|body| body.tail.as_ref()).is_some(),
+                            "contract": {
+                                "ensures": function.contract.ensures.len(),
+                                "effects": match function.contract.effects { EffectRow::Pure => "pure", EffectRow::Set(_) => "set" },
+                                "requires": true,
+                            },
+                            "name": function.name,
+                            "slag": function.slag.as_ref().map(|slag| json!({
+                                "owner": slag.owner,
+                                "reason": slag.reason,
+                                "review": slag.review,
+                            })),
+                            "statement_kinds": statement_kinds,
+                        }))
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            let observation =
+                json!({"errors": errors_json(&result.errors), "functions": functions});
+            println!(
+                "{}",
+                serde_json::to_string(&observation).expect("serialize syntax probe observation")
+            );
+            return;
+        }
         if mode == "ast-operators" {
             let functions = result
                 .program
