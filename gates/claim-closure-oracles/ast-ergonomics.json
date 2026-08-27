@@ -1,0 +1,242 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-ast-ergonomics",
+  "cases": [
+    {
+      "source": "enum Maybe { Yes(u64), No }\nfn destructure(a: u64, b: u64) -> u64 ! pure requires true ensures true { let (x, _) = pair(a, b); x }\nfn count(n: u64) -> u64 ! pure requires true ensures true { let mut acc: u64 = 0; for i in 0..n keeps acc == i keeps i <= n { acc = acc + 1; } acc }\nfn guarded(x: u64) -> bool ! pure requires true ensures true { match x { n if n < 10 => true, _ => false } }\nfn alternative(x: u64) -> bool ! pure requires true ensures true { match x { 1 | 2 => true, _ => false } }\nfn unwrap(m: Maybe) -> u64 ! pure requires true ensures true { if let Yes(v) = m { v } else { 0 } }\nfn drain(start: Option<u64>) -> u64 ! pure requires true ensures true { let mut cur: Option<u64> = start; let mut count: u64 = 0; while let Some(_) = cur keeps count <= 1 measures 1 - count { count = 1; cur = None; } count }\n",
+      "expected": {
+        "errors": [],
+        "items": [
+          {"kind": "Other", "name": "Maybe"},
+          {
+            "body": {
+              "statements": [
+                {
+                  "init": {
+                    "args": [
+                      {"kind": "Path", "segments": ["a"]},
+                      {"kind": "Path", "segments": ["b"]}
+                    ],
+                    "callee": {"kind": "Path", "segments": ["pair"]},
+                    "kind": "Call"
+                  },
+                  "kind": "Let",
+                  "mutable": false,
+                  "name": "__tuple_destructure_temp",
+                  "type": null
+                },
+                {
+                  "init": {
+                    "index": 0,
+                    "kind": "TupleProj",
+                    "receiver": {"kind": "Path", "segments": ["__tuple_destructure_temp"]}
+                  },
+                  "kind": "Let",
+                  "mutable": false,
+                  "name": "x",
+                  "type": null
+                }
+              ],
+              "tail": {"kind": "Path", "segments": ["x"]}
+            },
+            "kind": "Fn",
+            "name": "destructure"
+          },
+          {
+            "body": {
+              "statements": [
+                {
+                  "init": {"kind": "IntLit", "raw": "0", "value": "0"},
+                  "kind": "Let",
+                  "mutable": true,
+                  "name": "acc",
+                  "type": {"kind": "Prim", "name": "u64"}
+                },
+                {
+                  "init": {"kind": "IntLit", "raw": "0", "value": "0"},
+                  "kind": "Let",
+                  "mutable": true,
+                  "name": "i",
+                  "type": null
+                },
+                {
+                  "body": {
+                    "statements": [
+                      {
+                        "kind": "Assign",
+                        "target": {"kind": "Path", "segments": ["acc"]},
+                        "value": {
+                          "kind": "Binary",
+                          "lhs": {"kind": "Path", "segments": ["acc"]},
+                          "op": "Add",
+                          "rhs": {"kind": "IntLit", "raw": "1", "value": "1"}
+                        }
+                      },
+                      {
+                        "kind": "Assign",
+                        "target": {"kind": "Path", "segments": ["i"]},
+                        "value": {
+                          "kind": "Binary",
+                          "lhs": {"kind": "Path", "segments": ["i"]},
+                          "op": "Add",
+                          "rhs": {"kind": "IntLit", "raw": "1", "value": "1"}
+                        }
+                      }
+                    ],
+                    "tail": null
+                  },
+                  "condition": {
+                    "kind": "Binary",
+                    "lhs": {"kind": "Path", "segments": ["i"]},
+                    "op": "Lt",
+                    "rhs": {"kind": "Path", "segments": ["n"]}
+                  },
+                  "invariants": ["acc == i", "i <= n"],
+                  "kind": "Loop",
+                  "measures": "hi - i",
+                  "surface_keyword": "while"
+                }
+              ],
+              "tail": {"kind": "Path", "segments": ["acc"]}
+            },
+            "kind": "Fn",
+            "name": "count"
+          },
+          {
+            "body": {
+              "statements": [],
+              "tail": {
+                "arms": [
+                  {
+                    "body": {"kind": "BoolLit", "value": true},
+                    "guard": {
+                      "kind": "Binary",
+                      "lhs": {"kind": "Path", "segments": ["n"]},
+                      "op": "Lt",
+                      "rhs": {"kind": "IntLit", "raw": "10", "value": "10"}
+                    },
+                    "pattern": {"kind": "Binding", "name": "n"}
+                  },
+                  {
+                    "body": {"kind": "BoolLit", "value": false},
+                    "guard": null,
+                    "pattern": {"kind": "Wildcard"}
+                  }
+                ],
+                "kind": "Match",
+                "scrutinee": {"kind": "Path", "segments": ["x"]}
+              }
+            },
+            "kind": "Fn",
+            "name": "guarded"
+          },
+          {
+            "body": {
+              "statements": [],
+              "tail": {
+                "arms": [
+                  {
+                    "body": {"kind": "BoolLit", "value": true},
+                    "guard": null,
+                    "pattern": {
+                      "alternatives": [
+                        {"kind": "Literal", "value": {"kind": "Int", "raw": "1", "value": "1"}},
+                        {"kind": "Literal", "value": {"kind": "Int", "raw": "2", "value": "2"}}
+                      ],
+                      "kind": "Or"
+                    }
+                  },
+                  {
+                    "body": {"kind": "BoolLit", "value": false},
+                    "guard": null,
+                    "pattern": {"kind": "Wildcard"}
+                  }
+                ],
+                "kind": "Match",
+                "scrutinee": {"kind": "Path", "segments": ["x"]}
+              }
+            },
+            "kind": "Fn",
+            "name": "alternative"
+          },
+          {
+            "body": {
+              "statements": [],
+              "tail": {
+                "arms": [
+                  {
+                    "body": {"kind": "Path", "segments": ["v"]},
+                    "guard": null,
+                    "pattern": {
+                      "fields": [{"kind": "Binding", "name": "v"}],
+                      "kind": "Enum",
+                      "path": ["Yes"]
+                    }
+                  },
+                  {
+                    "body": {"kind": "IntLit", "raw": "0", "value": "0"},
+                    "guard": null,
+                    "pattern": {"kind": "Wildcard"}
+                  }
+                ],
+                "kind": "Match",
+                "scrutinee": {"kind": "Path", "segments": ["m"]}
+              }
+            },
+            "kind": "Fn",
+            "name": "unwrap"
+          },
+          {
+            "body": {
+              "statements": [
+                {
+                  "init": {"kind": "Path", "segments": ["start"]},
+                  "kind": "Let",
+                  "mutable": true,
+                  "name": "cur",
+                  "type": {"argument": {"kind": "Prim", "name": "u64"}, "kind": "Option"}
+                },
+                {
+                  "init": {"kind": "IntLit", "raw": "0", "value": "0"},
+                  "kind": "Let",
+                  "mutable": true,
+                  "name": "count",
+                  "type": {"kind": "Prim", "name": "u64"}
+                },
+                {
+                  "body": {
+                    "statements": [
+                      {
+                        "kind": "Assign",
+                        "target": {"kind": "Path", "segments": ["count"]},
+                        "value": {"kind": "IntLit", "raw": "1", "value": "1"}
+                      },
+                      {
+                        "kind": "Assign",
+                        "target": {"kind": "Path", "segments": ["cur"]},
+                        "value": {"kind": "Path", "segments": ["None"]}
+                      }
+                    ],
+                    "tail": null
+                  },
+                  "condition": {
+                    "kind": "Is",
+                    "scrutinee": {"kind": "Path", "segments": ["cur"]},
+                    "variant": ["Some"]
+                  },
+                  "invariants": ["count <= 1"],
+                  "kind": "Loop",
+                  "measures": "1 - count",
+                  "surface_keyword": "while"
+                }
+              ],
+              "tail": {"kind": "Path", "segments": ["count"]}
+            },
+            "kind": "Fn",
+            "name": "drain"
+          }
+        ]
+      }
+    }
+  ]
+}

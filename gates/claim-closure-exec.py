@@ -12,6 +12,7 @@ VERSION = "thermite-claim-closure-exec 2"
 PROBES = {
     "thermite-syntax-ast-adts": "ast-adts",
     "thermite-syntax-ast-basis-types": "ast-basis-types",
+    "thermite-syntax-ast-ergonomics": "ast-ergonomics",
     "thermite-syntax-ast-expressions": "ast-expressions",
     "thermite-syntax-ast-operators": "ast-operators",
     "thermite-syntax-ast-statements": "ast-statements",
