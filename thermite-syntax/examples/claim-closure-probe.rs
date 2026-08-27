@@ -344,6 +344,257 @@ fn type_text(ty: &Type) -> String {
     }
 }
 
+fn type_json(ty: &Type) -> Value {
+    match ty {
+        Type::Prim(prim) => json!({"kind": "Prim", "name": type_text(&Type::Prim(*prim))}),
+        Type::Unit => json!({"arity": 0, "kind": "Unit"}),
+        Type::Ref { mutable, inner } => json!({
+            "inner": type_json(inner),
+            "kind": "Ref",
+            "mutable": mutable,
+        }),
+        Type::Slice(inner) => json!({"element": type_json(inner), "kind": "Slice"}),
+        Type::Generic { name, arg } => json!({
+            "argument": type_json(arg),
+            "kind": "Generic",
+            "name": name,
+        }),
+        Type::Named(name) => json!({"kind": "Named", "name": name}),
+        Type::Box(inner) => json!({"argument": type_json(inner), "kind": "Box"}),
+        Type::Vec(inner) => json!({"element": type_json(inner), "kind": "Vec"}),
+        Type::String => json!({"kind": "String"}),
+        Type::Option(inner) => json!({"argument": type_json(inner), "kind": "Option"}),
+        Type::Result(ok, error) => json!({
+            "error": type_json(error),
+            "kind": "Result",
+            "ok": type_json(ok),
+        }),
+        Type::Map(key, value) => json!({
+            "key": type_json(key),
+            "kind": "Map",
+            "value": type_json(value),
+        }),
+        Type::Tuple(elements) => json!({
+            "arity": elements.len(),
+            "elements": elements.iter().map(type_json).collect::<Vec<_>>(),
+            "kind": "Tuple",
+        }),
+    }
+}
+
+fn collect_basis_index(
+    index: &IndexArg,
+    methods: &mut BTreeSet<String>,
+    tuple_arities: &mut BTreeSet<usize>,
+    tuple_projections: &mut BTreeSet<usize>,
+) {
+    match index {
+        IndexArg::Single(expr) | IndexArg::RangeTo(expr) | IndexArg::RangeFrom(expr) => {
+            collect_basis_expr(expr, methods, tuple_arities, tuple_projections);
+        }
+        IndexArg::Range(start, end) => {
+            collect_basis_expr(start, methods, tuple_arities, tuple_projections);
+            collect_basis_expr(end, methods, tuple_arities, tuple_projections);
+        }
+    }
+}
+
+fn collect_basis_block(
+    block: &Block,
+    methods: &mut BTreeSet<String>,
+    tuple_arities: &mut BTreeSet<usize>,
+    tuple_projections: &mut BTreeSet<usize>,
+) {
+    for statement in &block.stmts {
+        match statement {
+            Stmt::Let { init, .. } => {
+                collect_basis_expr(init, methods, tuple_arities, tuple_projections)
+            }
+            Stmt::Assign { target, value } => {
+                collect_basis_expr(target, methods, tuple_arities, tuple_projections);
+                collect_basis_expr(value, methods, tuple_arities, tuple_projections);
+            }
+            Stmt::Return(value) => {
+                if let Some(value) = value {
+                    collect_basis_expr(value, methods, tuple_arities, tuple_projections);
+                }
+            }
+            Stmt::If { cond, then, else_ } => {
+                collect_basis_expr(cond, methods, tuple_arities, tuple_projections);
+                collect_basis_block(then, methods, tuple_arities, tuple_projections);
+                if let Some(otherwise) = else_ {
+                    collect_basis_block(otherwise, methods, tuple_arities, tuple_projections);
+                }
+            }
+            Stmt::Loop(loop_node) => {
+                if let LoopKind::While(cond) = &loop_node.kind {
+                    collect_basis_expr(cond, methods, tuple_arities, tuple_projections);
+                }
+                for invariant in &loop_node.invs {
+                    collect_basis_expr(&invariant.expr, methods, tuple_arities, tuple_projections);
+                }
+                collect_basis_expr(
+                    &loop_node.measures.expr,
+                    methods,
+                    tuple_arities,
+                    tuple_projections,
+                );
+                collect_basis_block(&loop_node.body, methods, tuple_arities, tuple_projections);
+            }
+            Stmt::Holding { body, .. } => {
+                collect_basis_block(body, methods, tuple_arities, tuple_projections)
+            }
+            Stmt::Expr(expr) => collect_basis_expr(expr, methods, tuple_arities, tuple_projections),
+            Stmt::Break | Stmt::Continue => {}
+        }
+    }
+    if let Some(tail) = &block.tail {
+        collect_basis_expr(tail, methods, tuple_arities, tuple_projections);
+    }
+}
+
+fn collect_basis_expr(
+    expr: &Expr,
+    methods: &mut BTreeSet<String>,
+    tuple_arities: &mut BTreeSet<usize>,
+    tuple_projections: &mut BTreeSet<usize>,
+) {
+    match expr {
+        Expr::Call { callee, args } => {
+            collect_basis_expr(callee, methods, tuple_arities, tuple_projections);
+            for arg in args {
+                collect_basis_expr(arg, methods, tuple_arities, tuple_projections);
+            }
+        }
+        Expr::MethodCall {
+            receiver,
+            name,
+            args,
+        } => {
+            methods.insert(name.clone());
+            collect_basis_expr(receiver, methods, tuple_arities, tuple_projections);
+            for arg in args {
+                collect_basis_expr(arg, methods, tuple_arities, tuple_projections);
+            }
+        }
+        Expr::Field { receiver, .. }
+        | Expr::Unary { expr: receiver, .. }
+        | Expr::Cast { expr: receiver, .. }
+        | Expr::Ref { expr: receiver, .. }
+        | Expr::Deref(receiver) => {
+            collect_basis_expr(receiver, methods, tuple_arities, tuple_projections)
+        }
+        Expr::TupleProj { receiver, index } => {
+            tuple_projections.insert(*index);
+            collect_basis_expr(receiver, methods, tuple_arities, tuple_projections);
+        }
+        Expr::Closure { body, .. } => {
+            collect_basis_expr(body, methods, tuple_arities, tuple_projections)
+        }
+        Expr::Match { scrutinee, arms } => {
+            collect_basis_expr(scrutinee, methods, tuple_arities, tuple_projections);
+            for arm in arms {
+                if let Some(guard) = &arm.guard {
+                    collect_basis_expr(guard, methods, tuple_arities, tuple_projections);
+                }
+                collect_basis_expr(&arm.body, methods, tuple_arities, tuple_projections);
+            }
+        }
+        Expr::If { cond, then, else_ } => {
+            collect_basis_expr(cond, methods, tuple_arities, tuple_projections);
+            collect_basis_block(then, methods, tuple_arities, tuple_projections);
+            collect_basis_block(else_, methods, tuple_arities, tuple_projections);
+        }
+        Expr::Binary { lhs, rhs, .. } => {
+            collect_basis_expr(lhs, methods, tuple_arities, tuple_projections);
+            collect_basis_expr(rhs, methods, tuple_arities, tuple_projections);
+        }
+        Expr::Index { base, index } => {
+            collect_basis_expr(base, methods, tuple_arities, tuple_projections);
+            collect_basis_index(index, methods, tuple_arities, tuple_projections);
+        }
+        Expr::StructLit { fields, .. } => {
+            for (_, value) in fields {
+                collect_basis_expr(value, methods, tuple_arities, tuple_projections);
+            }
+        }
+        Expr::Is { scrutinee, .. } => {
+            collect_basis_expr(scrutinee, methods, tuple_arities, tuple_projections)
+        }
+        Expr::Tuple(values) => {
+            tuple_arities.insert(values.len());
+            for value in values {
+                collect_basis_expr(value, methods, tuple_arities, tuple_projections);
+            }
+        }
+        Expr::Quantifier { domain, body, .. } => {
+            collect_basis_expr(domain, methods, tuple_arities, tuple_projections);
+            collect_basis_expr(body, methods, tuple_arities, tuple_projections);
+        }
+        Expr::IntLit { .. } | Expr::BoolLit(_) | Expr::Path(_) | Expr::StrLit(_) => {}
+    }
+}
+
+fn basis_item_json(item: &Item) -> Value {
+    match item {
+        Item::Fn(function) => {
+            let mut expression_kinds = BTreeSet::new();
+            let mut methods = BTreeSet::new();
+            let mut tuple_arities = BTreeSet::new();
+            let mut tuple_projections = BTreeSet::new();
+            collect_expr_kinds(&function.contract.requires.expr, &mut expression_kinds);
+            collect_basis_expr(
+                &function.contract.requires.expr,
+                &mut methods,
+                &mut tuple_arities,
+                &mut tuple_projections,
+            );
+            for clause in &function.contract.ensures {
+                collect_expr_kinds(&clause.expr, &mut expression_kinds);
+                collect_basis_expr(
+                    &clause.expr,
+                    &mut methods,
+                    &mut tuple_arities,
+                    &mut tuple_projections,
+                );
+            }
+            if let Some(measures) = &function.measures {
+                collect_expr_kinds(&measures.expr, &mut expression_kinds);
+                collect_basis_expr(
+                    &measures.expr,
+                    &mut methods,
+                    &mut tuple_arities,
+                    &mut tuple_projections,
+                );
+            }
+            if let Some(body) = &function.body {
+                collect_block_expr_kinds(body, &mut expression_kinds);
+                collect_basis_block(
+                    body,
+                    &mut methods,
+                    &mut tuple_arities,
+                    &mut tuple_projections,
+                );
+            }
+            json!({
+                "expression_kinds": expression_kinds,
+                "kind": "Fn",
+                "measures": function.measures.as_ref().map(|clause| &clause.text),
+                "methods": methods,
+                "name": function.name,
+                "params": function.params.iter().map(|param| json!({
+                    "name": param.name,
+                    "type": type_json(&param.ty),
+                })).collect::<Vec<_>>(),
+                "ret": type_json(&function.ret),
+                "tuple_expression_arities": tuple_arities,
+                "tuple_projections": tuple_projections,
+            })
+        }
+        _ => json!({"kind": "Other", "name": item.name()}),
+    }
+}
+
 fn effect_text(effect: &Effect) -> String {
     match effect {
         Effect::Read(path) => format!("read({path})"),
@@ -627,7 +878,8 @@ fn main() {
     let mode = env::args().nth(1).unwrap_or_default();
     if !matches!(
         mode.as_str(),
-        "ast-adts"
+        "ast-basis-types"
+            | "ast-adts"
             | "ast-expressions"
             | "ast-operators"
             | "ast-statements"
@@ -647,7 +899,8 @@ fn main() {
         .expect("read syntax probe source");
     if matches!(
         mode.as_str(),
-        "ast-adts"
+        "ast-basis-types"
+            | "ast-adts"
             | "ast-expressions"
             | "ast-operators"
             | "ast-statements"
@@ -658,6 +911,17 @@ fn main() {
             | "parse-items"
     ) {
         let result = parse(&source);
+        if mode == "ast-basis-types" {
+            let observation = json!({
+                "errors": errors_json(&result.errors),
+                "items": result.program.items.iter().map(basis_item_json).collect::<Vec<_>>(),
+            });
+            println!(
+                "{}",
+                serde_json::to_string(&observation).expect("serialize syntax probe observation")
+            );
+            return;
+        }
         if mode == "ast-adts" {
             let observation = json!({
                 "errors": errors_json(&result.errors),

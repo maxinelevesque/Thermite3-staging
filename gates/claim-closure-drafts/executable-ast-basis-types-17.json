@@ -1,0 +1,388 @@
+{
+  "version": 1,
+  "slice_id": "executable-ast-basis-types-17",
+  "entries": [
+    {
+      "requirement_id": "REQ-SYNTAX-COLLECTIONS-VEC",
+      "witness_id": "W-EXEC-AST-BASIS-TYPES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/ast-basis-types.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "49f273bc9253bb6c16c9ab0ff6209a344da26575035487fa2ce374b872423619"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/ast-basis-types.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/ast-basis-types.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#Type",
+          "thermite-syntax/src/parser.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "conformance/vec_demo.th",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "collapse-vec-type-to-generic",
+            "mutation": "replace_text",
+            "from": "\"ret\": {\"element\": {\"kind\": \"Prim\", \"name\": \"u64\"}, \"kind\": \"Vec\"}",
+            "to": "\"ret\": {\"argument\": {\"kind\": \"Prim\", \"name\": \"u64\"}, \"kind\": \"Generic\", \"name\": \"Vec\"}",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-vec-push-method",
+            "mutation": "replace_text",
+            "from": "\"methods\": [\"len\", \"push\"]",
+            "to": "\"methods\": [\"len\"]",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-OPTRES-OPTION",
+      "witness_id": "W-EXEC-AST-BASIS-TYPES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/ast-basis-types.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "03123e95efd7643dec278d952fcb6461b7b2037ce13d87fef3ea88c3e0bff8b1"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/ast-basis-types.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/ast-basis-types.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#Type",
+          "thermite-syntax/src/parser.rs",
+          "forge/tests/option_result_conformance.rs",
+          "conformance/option_result.th",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "collapse-option-type-to-generic",
+            "mutation": "replace_text",
+            "from": "\"name\": \"make_some\",\n            \"params\": [],\n            \"ret\": {\"argument\": {\"kind\": \"Prim\", \"name\": \"u64\"}, \"kind\": \"Option\"}",
+            "to": "\"name\": \"make_some\",\n            \"params\": [],\n            \"ret\": {\"argument\": {\"kind\": \"Prim\", \"name\": \"u64\"}, \"kind\": \"Generic\", \"name\": \"Option\"}",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-option-constructor-call",
+            "mutation": "replace_text",
+            "from": "\"expression_kinds\": [\"Binary\", \"BoolLit\", \"Call\", \"IntLit\", \"Match\", \"Path\"],\n            \"kind\": \"Fn\",\n            \"measures\": null,\n            \"methods\": [],\n            \"name\": \"make_some\"",
+            "to": "\"expression_kinds\": [\"Binary\", \"BoolLit\", \"IntLit\", \"Match\", \"Path\"],\n            \"kind\": \"Fn\",\n            \"measures\": null,\n            \"methods\": [],\n            \"name\": \"make_some\"",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-OPTRES-RESULT",
+      "witness_id": "W-EXEC-AST-BASIS-TYPES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/ast-basis-types.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "f352580c41d649046c9c0e5723a18b9750d62ce2174475fce6ac15157ef9ac45"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/ast-basis-types.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/ast-basis-types.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#Type",
+          "thermite-syntax/src/parser.rs",
+          "forge/tests/option_result_conformance.rs",
+          "conformance/option_result.th",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-result-error-argument",
+            "mutation": "replace_text",
+            "from": "\"name\": \"ok_seven\",\n            \"params\": [],\n            \"ret\": {\"error\": {\"kind\": \"Named\", \"name\": \"ParseErr\"}, \"kind\": \"Result\", \"ok\": {\"kind\": \"Prim\", \"name\": \"u64\"}}",
+            "to": "\"name\": \"ok_seven\",\n            \"params\": [],\n            \"ret\": {\"kind\": \"Result\", \"ok\": {\"kind\": \"Prim\", \"name\": \"u64\"}}",
+            "expected_exit": 4
+          },
+          {
+            "name": "swap-result-type-arguments",
+            "mutation": "replace_text",
+            "from": "\"name\": \"checked\",\n            \"params\": [{\"name\": \"x\", \"type\": {\"kind\": \"Prim\", \"name\": \"u64\"}}],\n            \"ret\": {\"error\": {\"kind\": \"Named\", \"name\": \"ParseErr\"}, \"kind\": \"Result\", \"ok\": {\"kind\": \"Prim\", \"name\": \"u64\"}}",
+            "to": "\"name\": \"checked\",\n            \"params\": [{\"name\": \"x\", \"type\": {\"kind\": \"Prim\", \"name\": \"u64\"}}],\n            \"ret\": {\"error\": {\"kind\": \"Prim\", \"name\": \"u64\"}, \"kind\": \"Result\", \"ok\": {\"kind\": \"Named\", \"name\": \"ParseErr\"}}",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-RECURSION-DEC",
+      "witness_id": "W-EXEC-AST-BASIS-TYPES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/ast-basis-types.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "910a0a73cb59ccfbd10cbe97724bcd7ef49aec2418552520d9018737a1a67d7b"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/ast-basis-types.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/ast-basis-types.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#FnItem",
+          "thermite-syntax/src/parser.rs",
+          "forge/tests/recursion_conformance.rs",
+          "conformance/recursion_tuples.th",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-recursion-measure",
+            "mutation": "replace_text",
+            "from": "\"measures\": \"n\"",
+            "to": "\"measures\": null",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-recursive-call-node",
+            "mutation": "replace_text",
+            "from": "\"expression_kinds\": [\"Binary\", \"Call\", \"If\", \"IntLit\", \"Path\"]",
+            "to": "\"expression_kinds\": [\"Binary\", \"If\", \"IntLit\", \"Path\"]",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-TUPLES-NODES",
+      "witness_id": "W-EXEC-AST-BASIS-TYPES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/ast-basis-types.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "0e410e16ea770008676f3cc4fdf0cc1993d08beb10b18769b2d3193fb5a09379"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/ast-basis-types.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/ast-basis-types.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#Expr",
+          "thermite-syntax/src/parser.rs",
+          "forge/tests/tuples_conformance.rs",
+          "conformance/recursion_tuples.th",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-tuple-projection-node",
+            "mutation": "replace_text",
+            "from": "\"expression_kinds\": [\"Binary\", \"BoolLit\", \"Path\", \"Tuple\", \"TupleProj\"]",
+            "to": "\"expression_kinds\": [\"Binary\", \"BoolLit\", \"Path\", \"Tuple\"]",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-tuple-construction-node",
+            "mutation": "replace_text",
+            "from": "\"tuple_expression_arities\": [2]",
+            "to": "\"tuple_expression_arities\": []",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-TUPLES-ARITY",
+      "witness_id": "W-EXEC-AST-BASIS-TYPES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/ast-basis-types.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "7fe08d137fd52a086072c17276362cbdd586822c5bba315141b25d5a0ba776f5"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/ast-basis-types.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/ast-basis-types.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#Type",
+          "thermite-syntax/src/parser.rs",
+          "forge/tests/tuples_conformance.rs",
+          "conformance/recursion_tuples.th",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "collapse-pair-to-one-tuple",
+            "mutation": "replace_text",
+            "from": "\"ret\": {\"arity\": 2, \"elements\": [{\"kind\": \"Prim\", \"name\": \"u64\"}, {\"kind\": \"Prim\", \"name\": \"u64\"}], \"kind\": \"Tuple\"}",
+            "to": "\"ret\": {\"arity\": 1, \"elements\": [{\"kind\": \"Prim\", \"name\": \"u64\"}], \"kind\": \"Tuple\"}",
+            "expected_exit": 4
+          },
+          {
+            "name": "collapse-unit-to-empty-tuple",
+            "mutation": "replace_text",
+            "from": "\"ret\": {\"arity\": 0, \"kind\": \"Unit\"}",
+            "to": "\"ret\": {\"arity\": 0, \"elements\": [], \"kind\": \"Tuple\"}",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-MAP-TYPE",
+      "witness_id": "W-EXEC-AST-BASIS-TYPES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/ast-basis-types.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "e595c376b1df1bc2c7d6c4b2cb78e69608387019f6d8e9eb3c15f936a4015937"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/ast-basis-types.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/ast-basis-types.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#Type",
+          "thermite-syntax/src/parser.rs",
+          "forge/tests/map_conformance.rs",
+          "conformance/map_kv.th",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "collapse-map-type-to-generic",
+            "mutation": "replace_text",
+            "from": "\"ret\": {\"key\": {\"kind\": \"Prim\", \"name\": \"u64\"}, \"kind\": \"Map\", \"value\": {\"kind\": \"Prim\", \"name\": \"u64\"}}",
+            "to": "\"ret\": {\"argument\": {\"kind\": \"Prim\", \"name\": \"u64\"}, \"kind\": \"Generic\", \"name\": \"Map\"}",
+            "expected_exit": 4
+          },
+          {
+            "name": "swap-map-type-arguments",
+            "mutation": "replace_text",
+            "from": "\"name\": \"has_key\",\n            \"params\": [\n              {\"name\": \"m\", \"type\": {\"key\": {\"kind\": \"Prim\", \"name\": \"u64\"}, \"kind\": \"Map\", \"value\": {\"kind\": \"Prim\", \"name\": \"u64\"}}}",
+            "to": "\"name\": \"has_key\",\n            \"params\": [\n              {\"name\": \"m\", \"type\": {\"key\": {\"kind\": \"Prim\", \"name\": \"bool\"}, \"kind\": \"Map\", \"value\": {\"kind\": \"Prim\", \"name\": \"u64\"}}}",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-MAP-METHODS",
+      "witness_id": "W-EXEC-AST-BASIS-TYPES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/ast-basis-types.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "739fddfc4e9c73a5fc06121f99ecd1daf3563311405bcbd4d2e57f58c1082e27"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/ast-basis-types.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/ast-basis-types.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#Expr",
+          "thermite-syntax/src/parser.rs",
+          "forge/tests/map_conformance.rs",
+          "conformance/map_kv.th",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-map-insert-method",
+            "mutation": "replace_text",
+            "from": "\"methods\": [\"contains_key\", \"insert\"]",
+            "to": "\"methods\": [\"contains_key\"]",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-map-contains-key-method",
+            "mutation": "replace_text",
+            "from": "\"methods\": [\"contains_key\"],\n            \"name\": \"has_key\"",
+            "to": "\"methods\": [],\n            \"name\": \"has_key\"",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-map-len-method",
+            "mutation": "replace_text",
+            "from": "\"methods\": [\"len\", \"value_at\"]",
+            "to": "\"methods\": [\"value_at\"]",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-map-get-method",
+            "mutation": "replace_text",
+            "from": "\"methods\": [\"contains_key\", \"get\"]",
+            "to": "\"methods\": [\"contains_key\"]",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

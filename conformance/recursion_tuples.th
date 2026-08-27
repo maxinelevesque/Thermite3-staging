@@ -1,0 +1,33 @@
+// Focused syntax corpus for recursive exec measures and tuple disambiguation.
+
+fn count_down(n: u64) -> u64
+  ! pure
+  requires n <= 1000
+  ensures result == 0
+  measures n
+{
+  if n == 0 { 0 } else { count_down(n - 1) }
+}
+
+fn swap(a: u64, b: u64) -> (u64, u64)
+  ! pure
+  requires true
+  ensures result.0 == b && result.1 == a
+{
+  (b, a)
+}
+
+fn unit() -> ()
+  ! pure
+  requires true
+  ensures true
+{
+}
+
+fn grouped(a: (u64)) -> (u64)
+  ! pure
+  requires true
+  ensures result == a
+{
+  (a)
+}
