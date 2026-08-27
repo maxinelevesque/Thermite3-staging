@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "slice_id": "executable-ast-loops-addresses-10",
+  "entries": [
+    {
+      "requirement_id": "REQ-SYNTAX-AST-LOOPS",
+      "witness_id": "W-EXEC-PARSER-FIDELITY",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/parser-fidelity.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "5dbf33d46cc960edbbb25f856554d2442e3f20a4c5ba777480f2a9218c81d065"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/parser-fidelity.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/parser-fidelity.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#LoopNode",
+          "thermite-syntax/src/parser.rs#parse_loop",
+          "thermite-syntax/src/address.rs",
+          "thermite-syntax/tests/conformance.rs",
+          "conformance/sum.th",
+          "conformance/binary_search.th",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-while-loop-kind",
+            "mutation": "replace_text",
+            "from": "{\"has_dec\": true, \"inv_count\": 3, \"surface_keyword\": \"while\"}",
+            "to": "{\"has_dec\": true, \"inv_count\": 3, \"surface_keyword\": \"loop\"}",
+            "expected_exit": 4
+          },
+          {
+            "name": "drop-loop-invariant",
+            "mutation": "replace_text",
+            "from": "{\"has_dec\": true, \"inv_count\": 3, \"surface_keyword\": \"loop\"}",
+            "to": "{\"has_dec\": true, \"inv_count\": 2, \"surface_keyword\": \"loop\"}",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-AST-ADDRESSABLE",
+      "witness_id": "W-EXEC-PARSER-FIDELITY",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/parser-fidelity.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "cfed49654242e00db21af073a46dd493f4547a761cb4a60fa5b2e65e75f0b551"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/parser-fidelity.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/parser-fidelity.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#Clause",
+          "thermite-syntax/src/ast.rs#LoopNode",
+          "thermite-syntax/src/address.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/tests/conformance.rs",
+          "conformance/sum.th",
+          "conformance/binary_search.th",
+          "conformance/address/sum.addresses.json",
+          "conformance/address/binary_search.addresses.json",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "renumber-second-sum-invariant",
+            "mutation": "replace_text",
+            "from": "\"addr\": \"sum.loop#1.keeps#2\"",
+            "to": "\"addr\": \"sum.loop#1.keeps#3\"",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-addressable-clause-text",
+            "mutation": "replace_text",
+            "from": "\"text\": \"xs.len() - i\"",
+            "to": "\"text\": null",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}
