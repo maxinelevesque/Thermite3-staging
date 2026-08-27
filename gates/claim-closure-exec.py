@@ -10,6 +10,7 @@ from pathlib import Path
 
 VERSION = "thermite-claim-closure-exec 2"
 PROBES = {
+    "thermite-syntax-ast-adts": "ast-adts",
     "thermite-syntax-ast-expressions": "ast-expressions",
     "thermite-syntax-ast-operators": "ast-operators",
     "thermite-syntax-ast-statements": "ast-statements",

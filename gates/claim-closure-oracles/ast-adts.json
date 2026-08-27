@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-ast-adts",
+  "cases": [
+    {
+      "source_path": "conformance/bank_account.th",
+      "expected": {
+        "errors": [],
+        "items": [
+          {
+            "fields": [{"name": "balance", "type": "u64"}],
+            "keeps": "balance <= 1_000_000",
+            "kind": "Struct",
+            "name": "Account"
+          },
+          {
+            "expression_kinds": ["Binary", "Field", "IntLit", "Path", "StructLit"],
+            "kind": "Fn",
+            "match_patterns": [],
+            "name": "deposit",
+            "params": ["Account", "u64"],
+            "ret": "Account"
+          }
+        ]
+      }
+    },
+    {
+      "source_path": "conformance/shape.th",
+      "expected": {
+        "errors": [],
+        "items": [
+          {
+            "kind": "Enum",
+            "name": "Shape",
+            "variants": [
+              {"name": "Circle", "shape": {"kind": "Tuple", "types": ["u64"]}},
+              {
+                "name": "Rect",
+                "shape": {
+                  "fields": [
+                    {"name": "w", "type": "u64"},
+                    {"name": "h", "type": "u64"}
+                  ],
+                  "kind": "Struct"
+                }
+              }
+            ]
+          },
+          {
+            "expression_kinds": ["Binary", "BoolLit", "Is", "Match", "Path"],
+            "kind": "Fn",
+            "match_patterns": [
+              {
+                "fields": [{"kind": "Binding", "name": "r"}],
+                "kind": "Enum",
+                "path": ["Circle"]
+              },
+              {
+                "fields": [
+                  {"name": "w", "pattern": {"kind": "Binding", "name": "w"}},
+                  {"name": "h", "pattern": {"kind": "Binding", "name": "h"}}
+                ],
+                "kind": "Struct",
+                "path": ["Rect"],
+                "rest": false
+              }
+            ],
+            "name": "is_circle",
+            "params": ["Shape"],
+            "ret": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "source_path": "conformance/list_sum.th",
+      "expected": {
+        "errors": [],
+        "items": [
+          {
+            "kind": "Enum",
+            "name": "List",
+            "variants": [
+              {"name": "Nil", "shape": {"kind": "Unit"}},
+              {
+                "name": "Cons",
+                "shape": {"kind": "Tuple", "types": ["u64", "Box<List>"]}
+              }
+            ]
+          },
+          {
+            "expression_kinds": ["Binary", "Call", "Cast", "Deref", "IntLit", "Match", "Path"],
+            "kind": "SpecFn",
+            "match_patterns": [
+              {"fields": [], "kind": "Enum", "path": ["Nil"]},
+              {
+                "fields": [
+                  {"kind": "Binding", "name": "h"},
+                  {"kind": "Binding", "name": "t"}
+                ],
+                "kind": "Enum",
+                "path": ["Cons"]
+              }
+            ],
+            "name": "sum_list",
+            "params": ["List"],
+            "ret": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}
