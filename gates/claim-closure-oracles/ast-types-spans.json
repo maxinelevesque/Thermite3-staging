@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-ast-types-spans",
+  "cases": [
+    {
+      "source": "shared state: u64\nlock gate guards state\nfn shapes(xs: &[u64], maybe: Option<u64>, pair: (u64, bool), map: Map<u64, u64>) -> Result<u64, Error>\n  ! owns(gate), read(state), write(state), net(state), alloc, time, rand, panic, diverge, term\n  requires true\n  ensures match maybe { Some(x) => x == 0, None => false }\n  ensures match xs { [head, ..tail] => head == 0, _ => false }\n  ensures match 0 { 0 => true, n => false }\n{\n  0\n}\n",
+      "expected": {
+        "errors": [],
+        "functions": [
+          {
+            "effects": [
+              "owns(gate)", "read(state)", "write(state)", "net(state)",
+              "alloc", "time", "rand", "panic", "diverge", "term"
+            ],
+            "ensures": [
+              {
+                "span": [265, 48],
+                "text": "match maybe { Some(x) => x == 0, None => false }"
+              },
+              {
+                "span": [324, 52],
+                "text": "match xs { [head, ..tail] => head == 0, _ => false }"
+              },
+              {
+                "span": [387, 33],
+                "text": "match 0 { 0 => true, n => false }"
+              }
+            ],
+            "name": "shapes",
+            "params": [
+              "&[u64]", "Option<u64>", "(u64, bool)", "Map<u64, u64>"
+            ],
+            "pattern_kinds": [
+              "Binding", "Enum", "Literal", "Slice", "Wildcard"
+            ],
+            "requires": {"span": [250, 4], "text": "true"},
+            "ret": "Result<u64, Error>",
+            "span": [41, 387]
+          }
+        ]
+      }
+    }
+  ]
+}
