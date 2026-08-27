@@ -13,6 +13,7 @@ PROBES = {
     "thermite-syntax-ast-expressions": "ast-expressions",
     "thermite-syntax-ast-operators": "ast-operators",
     "thermite-syntax-ast-statements": "ast-statements",
+    "thermite-syntax-ast-types-spans": "ast-types-spans",
     "thermite-syntax-integer-tokens": "integers",
     "thermite-syntax-parse-edges": "parse-edges",
     "thermite-syntax-parse-expressions": "parse-expressions",

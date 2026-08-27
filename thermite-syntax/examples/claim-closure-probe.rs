@@ -8,8 +8,9 @@ use std::{
 
 use serde_json::{json, Value};
 use thermite_syntax::{
-    addresses_of, parse, tokenize, AddrKind, BinOp, Block, EffectRow, Expr, HoleContext, IndexArg,
-    Item, LoopKind, PrimType, Stmt, SyntaxError, TokKind, Type, UnaryOp,
+    addresses_of, parse, tokenize, AddrKind, BinOp, Block, Effect, EffectRow, Expr, HoleContext,
+    IndexArg, Item, LoopKind, Pattern, PrimType, SlicePat, Stmt, SyntaxError, TokKind, Type,
+    UnaryOp,
 };
 
 fn error_kind(error: &SyntaxError) -> &'static str {
@@ -343,6 +344,72 @@ fn type_text(ty: &Type) -> String {
     }
 }
 
+fn effect_text(effect: &Effect) -> String {
+    match effect {
+        Effect::Read(path) => format!("read({path})"),
+        Effect::Write(path) => format!("write({path})"),
+        Effect::Net(path) => format!("net({path})"),
+        Effect::Owns(lock) => format!("owns({lock})"),
+        Effect::Alloc => "alloc".to_string(),
+        Effect::Time => "time".to_string(),
+        Effect::Rand => "rand".to_string(),
+        Effect::Panic => "panic".to_string(),
+        Effect::Diverge => "diverge".to_string(),
+        Effect::Term => "term".to_string(),
+    }
+}
+
+fn pattern_kind(pattern: &Pattern) -> &'static str {
+    match pattern {
+        Pattern::Wildcard => "Wildcard",
+        Pattern::Literal(_) => "Literal",
+        Pattern::Binding(_) => "Binding",
+        Pattern::Slice(_) => "Slice",
+        Pattern::Enum { .. } => "Enum",
+        Pattern::Struct { .. } => "Struct",
+        Pattern::Or(_) => "Or",
+    }
+}
+
+fn collect_pattern_kinds(pattern: &Pattern, kinds: &mut BTreeSet<&'static str>) {
+    kinds.insert(pattern_kind(pattern));
+    match pattern {
+        Pattern::Slice(parts) => {
+            for part in parts {
+                if let SlicePat::Pat(pattern) = part {
+                    collect_pattern_kinds(pattern, kinds);
+                }
+            }
+        }
+        Pattern::Enum { fields, .. } | Pattern::Or(fields) => {
+            for field in fields {
+                collect_pattern_kinds(field, kinds);
+            }
+        }
+        Pattern::Struct { fields, .. } => {
+            for (_, field) in fields {
+                collect_pattern_kinds(field, kinds);
+            }
+        }
+        Pattern::Wildcard | Pattern::Literal(_) | Pattern::Binding(_) => {}
+    }
+}
+
+fn collect_clause_pattern_kinds(expr: &Expr, kinds: &mut BTreeSet<&'static str>) {
+    match expr {
+        Expr::Match { arms, .. } => {
+            for arm in arms {
+                collect_pattern_kinds(&arm.pattern, kinds);
+            }
+        }
+        Expr::Binary { lhs, rhs, .. } => {
+            collect_clause_pattern_kinds(lhs, kinds);
+            collect_clause_pattern_kinds(rhs, kinds);
+        }
+        _ => {}
+    }
+}
+
 fn collect_loop_facts(block: &Block, loops: &mut Vec<Value>) {
     for statement in &block.stmts {
         match statement {
@@ -450,6 +517,7 @@ fn main() {
         "ast-expressions"
             | "ast-operators"
             | "ast-statements"
+            | "ast-types-spans"
             | "integers"
             | "parse-edges"
             | "parse-expressions"
@@ -468,12 +536,56 @@ fn main() {
         "ast-expressions"
             | "ast-operators"
             | "ast-statements"
+            | "ast-types-spans"
             | "parse-edges"
             | "parse-expressions"
             | "parse-fidelity"
             | "parse-items"
     ) {
         let result = parse(&source);
+        if mode == "ast-types-spans" {
+            let functions = result
+                .program
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    Item::Fn(function) => {
+                        let mut pattern_kinds = BTreeSet::new();
+                        for clause in &function.contract.ensures {
+                            collect_clause_pattern_kinds(&clause.expr, &mut pattern_kinds);
+                        }
+                        let effects = match &function.contract.effects {
+                            EffectRow::Pure => vec!["pure".to_string()],
+                            EffectRow::Set(effects) => effects.iter().map(effect_text).collect(),
+                        };
+                        Some(json!({
+                            "effects": effects,
+                            "ensures": function.contract.ensures.iter().map(|clause| json!({
+                                "span": [clause.span.start, clause.span.len],
+                                "text": clause.text,
+                            })).collect::<Vec<_>>(),
+                            "name": function.name,
+                            "params": function.params.iter().map(|param| type_text(&param.ty)).collect::<Vec<_>>(),
+                            "pattern_kinds": pattern_kinds,
+                            "requires": {
+                                "span": [function.contract.requires.span.start, function.contract.requires.span.len],
+                                "text": function.contract.requires.text,
+                            },
+                            "ret": type_text(&function.ret),
+                            "span": [function.span.start, function.span.len],
+                        }))
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            let observation =
+                json!({"errors": errors_json(&result.errors), "functions": functions});
+            println!(
+                "{}",
+                serde_json::to_string(&observation).expect("serialize syntax probe observation")
+            );
+            return;
+        }
         if mode == "ast-expressions" {
             let functions = result
                 .program
