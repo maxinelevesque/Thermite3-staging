@@ -1,6 +1,7 @@
 //! Narrow machine-readable adapter used by the claim-closure executable oracle.
 
 use std::{
+    collections::BTreeSet,
     env,
     io::{self, Read},
 };
@@ -79,6 +80,35 @@ fn token_json(token: thermite_syntax::Token) -> Value {
     }
 }
 
+fn binop_text(op: BinOp) -> &'static str {
+    match op {
+        BinOp::Add => "Add",
+        BinOp::Sub => "Sub",
+        BinOp::Mul => "Mul",
+        BinOp::Div => "Div",
+        BinOp::Rem => "Rem",
+        BinOp::Shl => "Shl",
+        BinOp::Shr => "Shr",
+        BinOp::BitAnd => "BitAnd",
+        BinOp::BitOr => "BitOr",
+        BinOp::BitXor => "BitXor",
+        BinOp::Eq => "Eq",
+        BinOp::Ne => "Ne",
+        BinOp::Lt => "Lt",
+        BinOp::Le => "Le",
+        BinOp::Gt => "Gt",
+        BinOp::Ge => "Ge",
+        BinOp::And => "And",
+        BinOp::Or => "Or",
+    }
+}
+
+fn unaryop_text(op: UnaryOp) -> &'static str {
+    match op {
+        UnaryOp::Not => "Not",
+    }
+}
+
 fn expr_json(expr: &Expr) -> Value {
     match expr {
         Expr::IntLit { value, raw } => {
@@ -106,36 +136,39 @@ fn expr_json(expr: &Expr) -> Value {
             "name": name,
             "receiver": expr_json(receiver),
         }),
-        Expr::Binary { op, lhs, rhs } => {
-            let op = match op {
-                BinOp::Add => "Add",
-                BinOp::Sub => "Sub",
-                BinOp::Mul => "Mul",
-                BinOp::Div => "Div",
-                BinOp::Rem => "Rem",
-                BinOp::Shl => "Shl",
-                BinOp::Shr => "Shr",
-                BinOp::BitAnd => "BitAnd",
-                BinOp::BitOr => "BitOr",
-                BinOp::BitXor => "BitXor",
-                BinOp::Eq => "Eq",
-                BinOp::Ne => "Ne",
-                BinOp::Lt => "Lt",
-                BinOp::Le => "Le",
-                BinOp::Gt => "Gt",
-                BinOp::Ge => "Ge",
-                BinOp::And => "And",
-                BinOp::Or => "Or",
-            };
-            json!({"kind": "Binary", "lhs": expr_json(lhs), "op": op, "rhs": expr_json(rhs)})
-        }
+        Expr::Binary { op, lhs, rhs } => json!({
+            "kind": "Binary",
+            "lhs": expr_json(lhs),
+            "op": binop_text(*op),
+            "rhs": expr_json(rhs),
+        }),
         Expr::Unary { op, expr } => {
-            let op = match op {
-                UnaryOp::Not => "Not",
-            };
-            json!({"expr": expr_json(expr), "kind": "Unary", "op": op})
+            json!({"expr": expr_json(expr), "kind": "Unary", "op": unaryop_text(*op)})
         }
         _ => json!({"kind": "Other"}),
+    }
+}
+
+fn collect_operator_facts(
+    expr: &Expr,
+    operators: &mut BTreeSet<&'static str>,
+    integers: &mut Vec<Value>,
+) {
+    match expr {
+        Expr::IntLit { value, raw } => integers.push(json!({
+            "raw": raw,
+            "value": value.to_string(),
+        })),
+        Expr::Binary { op, lhs, rhs } => {
+            operators.insert(binop_text(*op));
+            collect_operator_facts(lhs, operators, integers);
+            collect_operator_facts(rhs, operators, integers);
+        }
+        Expr::Unary { op, expr } => {
+            operators.insert(unaryop_text(*op));
+            collect_operator_facts(expr, operators, integers);
+        }
+        _ => {}
     }
 }
 
@@ -237,7 +270,8 @@ fn main() {
     let mode = env::args().nth(1).unwrap_or_default();
     if !matches!(
         mode.as_str(),
-        "integers"
+        "ast-operators"
+            | "integers"
             | "parse-edges"
             | "parse-expressions"
             | "parse-fidelity"
@@ -252,9 +286,38 @@ fn main() {
         .expect("read syntax probe source");
     if matches!(
         mode.as_str(),
-        "parse-edges" | "parse-expressions" | "parse-fidelity" | "parse-items"
+        "ast-operators" | "parse-edges" | "parse-expressions" | "parse-fidelity" | "parse-items"
     ) {
         let result = parse(&source);
+        if mode == "ast-operators" {
+            let functions = result
+                .program
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    Item::Fn(function) => {
+                        let mut operators = BTreeSet::new();
+                        let mut integers = Vec::new();
+                        for clause in &function.contract.ensures {
+                            collect_operator_facts(&clause.expr, &mut operators, &mut integers);
+                        }
+                        Some(json!({
+                            "integers": integers,
+                            "name": function.name,
+                            "operators": operators,
+                        }))
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            let observation =
+                json!({"errors": errors_json(&result.errors), "functions": functions});
+            println!(
+                "{}",
+                serde_json::to_string(&observation).expect("serialize syntax probe observation")
+            );
+            return;
+        }
         if mode == "parse-edges" {
             let functions = result
                 .program

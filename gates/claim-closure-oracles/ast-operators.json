@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-ast-operators",
+  "cases": [
+    {
+      "source": "fn operators(a: u64, b: u64) -> u64\n  ! pure\n  requires true\n  ensures result == 1_000\n  ensures result == 'A'\n  ensures result == 0x1b\n  ensures result == 0b101\n  ensures result == (a + b)\n  ensures result == (a - b)\n  ensures result == (a * b)\n  ensures result == (a / b)\n  ensures result == (a % b)\n  ensures result == (a << b)\n  ensures result == (a >> b)\n  ensures result == (a & b)\n  ensures result == (a | b)\n  ensures result == (a ^ b)\n  ensures result == (a == b)\n  ensures result == (a != b)\n  ensures result == (a < b)\n  ensures result == (a <= b)\n  ensures result == (a > b)\n  ensures result == (a >= b)\n  ensures result == (true && false)\n  ensures result == (true || false)\n  ensures result == !true\n{\n  a\n}\n",
+      "expected": {
+        "errors": [],
+        "functions": [
+          {
+            "integers": [
+              {"raw": "1_000", "value": "1000"},
+              {"raw": "'A'", "value": "65"},
+              {"raw": "0x1b", "value": "27"},
+              {"raw": "0b101", "value": "5"}
+            ],
+            "name": "operators",
+            "operators": [
+              "Add", "And", "BitAnd", "BitOr", "BitXor", "Div", "Eq",
+              "Ge", "Gt", "Le", "Lt", "Mul", "Ne", "Not", "Or", "Rem",
+              "Shl", "Shr", "Sub"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
