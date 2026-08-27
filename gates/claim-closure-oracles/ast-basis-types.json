@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-ast-basis-types",
+  "cases": [
+    {
+      "source_path": "conformance/vec_demo.th",
+      "expected": {
+        "errors": [],
+        "items": [
+          {
+            "expression_kinds": ["Binary", "MethodCall", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": ["get", "len"],
+            "name": "checked_get",
+            "params": [
+              {"name": "v", "type": {"element": {"kind": "Prim", "name": "u64"}, "kind": "Vec"}},
+              {"name": "i", "type": {"kind": "Prim", "name": "usize"}}
+            ],
+            "ret": {"kind": "Prim", "name": "u64"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Binary", "IntLit", "MethodCall", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": ["len", "push"],
+            "name": "push_one",
+            "params": [
+              {"name": "v", "type": {"element": {"kind": "Prim", "name": "u64"}, "kind": "Vec"}},
+              {"name": "x", "type": {"kind": "Prim", "name": "u64"}}
+            ],
+            "ret": {"element": {"kind": "Prim", "name": "u64"}, "kind": "Vec"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          }
+        ]
+      }
+    },
+    {
+      "source_path": "conformance/option_result.th",
+      "expected": {
+        "errors": [],
+        "items": [
+          {"kind": "Other", "name": "ParseErr"},
+          {
+            "expression_kinds": ["Binary", "BoolLit", "Call", "IntLit", "Match", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": [],
+            "name": "make_some",
+            "params": [],
+            "ret": {"argument": {"kind": "Prim", "name": "u64"}, "kind": "Option"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Binary", "BoolLit", "Call", "If", "IntLit", "Match", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": [],
+            "name": "small",
+            "params": [{"name": "x", "type": {"kind": "Prim", "name": "u64"}}],
+            "ret": {"argument": {"kind": "Prim", "name": "u64"}, "kind": "Option"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Binary", "BoolLit", "Call", "IntLit", "Match", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": [],
+            "name": "ok_seven",
+            "params": [],
+            "ret": {"error": {"kind": "Named", "name": "ParseErr"}, "kind": "Result", "ok": {"kind": "Prim", "name": "u64"}},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Binary", "BoolLit", "Call", "If", "IntLit", "Match", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": [],
+            "name": "checked",
+            "params": [{"name": "x", "type": {"kind": "Prim", "name": "u64"}}],
+            "ret": {"error": {"kind": "Named", "name": "ParseErr"}, "kind": "Result", "ok": {"kind": "Prim", "name": "u64"}},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          }
+        ]
+      }
+    },
+    {
+      "source_path": "conformance/recursion_tuples.th",
+      "expected": {
+        "errors": [],
+        "items": [
+          {
+            "expression_kinds": ["Binary", "Call", "If", "IntLit", "Path"],
+            "kind": "Fn",
+            "measures": "n",
+            "methods": [],
+            "name": "count_down",
+            "params": [{"name": "n", "type": {"kind": "Prim", "name": "u64"}}],
+            "ret": {"kind": "Prim", "name": "u64"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Binary", "BoolLit", "Path", "Tuple", "TupleProj"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": [],
+            "name": "swap",
+            "params": [
+              {"name": "a", "type": {"kind": "Prim", "name": "u64"}},
+              {"name": "b", "type": {"kind": "Prim", "name": "u64"}}
+            ],
+            "ret": {"arity": 2, "elements": [{"kind": "Prim", "name": "u64"}, {"kind": "Prim", "name": "u64"}], "kind": "Tuple"},
+            "tuple_expression_arities": [2],
+            "tuple_projections": [0, 1]
+          },
+          {
+            "expression_kinds": ["BoolLit"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": [],
+            "name": "unit",
+            "params": [],
+            "ret": {"arity": 0, "kind": "Unit"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Binary", "BoolLit", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": [],
+            "name": "grouped",
+            "params": [{"name": "a", "type": {"kind": "Prim", "name": "u64"}}],
+            "ret": {"kind": "Prim", "name": "u64"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          }
+        ]
+      }
+    },
+    {
+      "source_path": "conformance/map_kv.th",
+      "expected": {
+        "errors": [],
+        "items": [
+          {
+            "expression_kinds": ["BoolLit", "Call", "MethodCall", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": ["contains_key", "insert"],
+            "name": "build_one",
+            "params": [
+              {"name": "k", "type": {"kind": "Prim", "name": "u64"}},
+              {"name": "v", "type": {"kind": "Prim", "name": "u64"}}
+            ],
+            "ret": {"key": {"kind": "Prim", "name": "u64"}, "kind": "Map", "value": {"kind": "Prim", "name": "u64"}},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Binary", "BoolLit", "MethodCall", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": ["contains_key"],
+            "name": "has_key",
+            "params": [
+              {"name": "m", "type": {"key": {"kind": "Prim", "name": "u64"}, "kind": "Map", "value": {"kind": "Prim", "name": "u64"}}},
+              {"name": "k", "type": {"kind": "Prim", "name": "u64"}}
+            ],
+            "ret": {"kind": "Prim", "name": "bool"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["BoolLit", "Call", "IntLit", "MethodCall", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": ["insert", "remove", "value_at"],
+            "name": "demo",
+            "params": [],
+            "ret": {"kind": "Prim", "name": "u64"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Binary", "IntLit", "MethodCall", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": ["len", "value_at"],
+            "name": "first_value",
+            "params": [{"name": "m", "type": {"key": {"kind": "Prim", "name": "u64"}, "kind": "Map", "value": {"kind": "Prim", "name": "u64"}}}],
+            "ret": {"kind": "Prim", "name": "u64"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Binary", "IntLit", "MethodCall", "Path"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": ["count", "len", "value_at"],
+            "name": "last_value",
+            "params": [{"name": "m", "type": {"key": {"kind": "Prim", "name": "u64"}, "kind": "Map", "value": {"kind": "Prim", "name": "u64"}}}],
+            "ret": {"kind": "Prim", "name": "u64"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          },
+          {
+            "expression_kinds": ["Is", "MethodCall", "Path", "Unary"],
+            "kind": "Fn",
+            "measures": null,
+            "methods": ["contains_key", "get"],
+            "name": "lookup_absent",
+            "params": [
+              {"name": "m", "type": {"key": {"kind": "Prim", "name": "u64"}, "kind": "Map", "value": {"kind": "Prim", "name": "u64"}}},
+              {"name": "k", "type": {"kind": "Prim", "name": "u64"}}
+            ],
+            "ret": {"argument": {"kind": "Prim", "name": "u64"}, "kind": "Option"},
+            "tuple_expression_arities": [],
+            "tuple_projections": []
+          }
+        ]
+      }
+    }
+  ]
+}
