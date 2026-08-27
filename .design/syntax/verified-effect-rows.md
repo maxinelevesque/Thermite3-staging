@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 9daaee5d825e5b8a223ed6e9e360ccbb002766bf292e24ab281d66eebd85d180 (re-pinned 2026-08-25 after adding the effect-free nested-ADT conformance fixture; the RFC-9 inventory now tracks 67 `.th` files and effect semantics are unchanged. prior: e6a7e885f6c7071b95df0fc62e2507f8ec9f218954a539c5f91199b0f05a5e16)
+audited-content-sha256: e41979c65839521be215e02222192c29d9f4bb78f9c264f0ec15505402063fd8 (re-pinned 2026-08-27 after adding the effect-free recursion/tuple claim corpus; the RFC-9 inventory now tracks 68 `.th` files and effect semantics are unchanged. prior: 9daaee5d825e5b8a223ed6e9e360ccbb002766bf292e24ab281d66eebd85d180)
 -->
 
 ## Summary
