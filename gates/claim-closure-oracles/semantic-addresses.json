@@ -1,0 +1,370 @@
+{
+  "version": 1,
+  "probe": "thermite-syntax-semantic-addresses",
+  "cases": [
+    {
+      "source_path": "conformance/binary_search.th",
+      "expected": {
+        "addresses": [
+          {
+            "addr": "binary_search",
+            "kind": "fn",
+            "surface_keyword": null,
+            "text": null
+          },
+          {
+            "addr": "binary_search.loop#1",
+            "kind": "loop",
+            "surface_keyword": "loop",
+            "text": null
+          },
+          {
+            "addr": "binary_search.loop#1.keeps#1",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "lo <= hi && hi <= haystack.len()"
+          },
+          {
+            "addr": "binary_search.loop#1.keeps#2",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "forall_below(haystack, lo, |x| x < needle)"
+          },
+          {
+            "addr": "binary_search.loop#1.keeps#3",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "forall_from(haystack, hi, |x| x > needle)"
+          },
+          {
+            "addr": "binary_search.loop#1.measures",
+            "kind": "measures",
+            "surface_keyword": null,
+            "text": "hi - lo"
+          }
+        ],
+        "errors": [],
+        "repeat_equal": true,
+        "resolutions": [
+          {
+            "addr": "binary_search",
+            "entry": {
+              "addr": "binary_search",
+              "kind": "fn",
+              "surface_keyword": null,
+              "text": null
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "binary_search.loop#1",
+            "entry": {
+              "addr": "binary_search.loop#1",
+              "kind": "loop",
+              "surface_keyword": "loop",
+              "text": null
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "binary_search.loop#1.keeps#1",
+            "entry": {
+              "addr": "binary_search.loop#1.keeps#1",
+              "kind": "keeps",
+              "surface_keyword": null,
+              "text": "lo <= hi && hi <= haystack.len()"
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "binary_search.loop#1.keeps#2",
+            "entry": {
+              "addr": "binary_search.loop#1.keeps#2",
+              "kind": "keeps",
+              "surface_keyword": null,
+              "text": "forall_below(haystack, lo, |x| x < needle)"
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "binary_search.loop#1.keeps#3",
+            "entry": {
+              "addr": "binary_search.loop#1.keeps#3",
+              "kind": "keeps",
+              "surface_keyword": null,
+              "text": "forall_from(haystack, hi, |x| x > needle)"
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "binary_search.loop#1.measures",
+            "entry": {
+              "addr": "binary_search.loop#1.measures",
+              "kind": "measures",
+              "surface_keyword": null,
+              "text": "hi - lo"
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "",
+            "status": "Malformed"
+          },
+          {
+            "addr": "binary_search.loop#x",
+            "status": "Malformed"
+          },
+          {
+            "addr": "binary_search.loop#999",
+            "status": "NotFound"
+          },
+          {
+            "addr": "binary_search.loop#1.dec",
+            "status": "Malformed"
+          },
+          {
+            "addr": "binary_search.loop#1.measures#1",
+            "status": "Malformed"
+          },
+          {
+            "addr": "no_such_item",
+            "status": "NotFound"
+          }
+        ],
+        "stability_errors": [],
+        "stable_addresses": [
+          {
+            "addr": "binary_search",
+            "kind": "fn",
+            "surface_keyword": null,
+            "text": null
+          },
+          {
+            "addr": "binary_search.loop#1",
+            "kind": "loop",
+            "surface_keyword": "loop",
+            "text": null
+          },
+          {
+            "addr": "binary_search.loop#1.keeps#1",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "lo <= hi && hi <= haystack.len()"
+          },
+          {
+            "addr": "binary_search.loop#1.keeps#2",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "forall_below(haystack, lo, |x| x < needle)"
+          },
+          {
+            "addr": "binary_search.loop#1.keeps#3",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "forall_from(haystack, hi, |x| x > needle)"
+          },
+          {
+            "addr": "binary_search.loop#1.measures",
+            "kind": "measures",
+            "surface_keyword": null,
+            "text": "hi - lo"
+          }
+        ],
+        "stable_equal": true
+      }
+    },
+    {
+      "source": "fn mixed(n: u64) -> u64 ! pure requires true ensures true { let mut i: u64 = 0; while i < n keeps i <= n measures n - i { i = i + 1; } loop keeps i >= n measures 0 { break; } i }\n",
+      "expected": {
+        "addresses": [
+          {
+            "addr": "mixed",
+            "kind": "fn",
+            "surface_keyword": null,
+            "text": null
+          },
+          {
+            "addr": "mixed.loop#1",
+            "kind": "loop",
+            "surface_keyword": "while",
+            "text": null
+          },
+          {
+            "addr": "mixed.loop#1.keeps#1",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "i <= n"
+          },
+          {
+            "addr": "mixed.loop#1.measures",
+            "kind": "measures",
+            "surface_keyword": null,
+            "text": "n - i"
+          },
+          {
+            "addr": "mixed.loop#2",
+            "kind": "loop",
+            "surface_keyword": "loop",
+            "text": null
+          },
+          {
+            "addr": "mixed.loop#2.keeps#1",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "i >= n"
+          },
+          {
+            "addr": "mixed.loop#2.measures",
+            "kind": "measures",
+            "surface_keyword": null,
+            "text": "0"
+          }
+        ],
+        "errors": [],
+        "repeat_equal": true,
+        "resolutions": [
+          {
+            "addr": "mixed",
+            "entry": {
+              "addr": "mixed",
+              "kind": "fn",
+              "surface_keyword": null,
+              "text": null
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "mixed.loop#1",
+            "entry": {
+              "addr": "mixed.loop#1",
+              "kind": "loop",
+              "surface_keyword": "while",
+              "text": null
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "mixed.loop#1.keeps#1",
+            "entry": {
+              "addr": "mixed.loop#1.keeps#1",
+              "kind": "keeps",
+              "surface_keyword": null,
+              "text": "i <= n"
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "mixed.loop#1.measures",
+            "entry": {
+              "addr": "mixed.loop#1.measures",
+              "kind": "measures",
+              "surface_keyword": null,
+              "text": "n - i"
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "mixed.loop#2",
+            "entry": {
+              "addr": "mixed.loop#2",
+              "kind": "loop",
+              "surface_keyword": "loop",
+              "text": null
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "mixed.loop#2.keeps#1",
+            "entry": {
+              "addr": "mixed.loop#2.keeps#1",
+              "kind": "keeps",
+              "surface_keyword": null,
+              "text": "i >= n"
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "mixed.loop#2.measures",
+            "entry": {
+              "addr": "mixed.loop#2.measures",
+              "kind": "measures",
+              "surface_keyword": null,
+              "text": "0"
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "",
+            "status": "Malformed"
+          },
+          {
+            "addr": "mixed.loop#x",
+            "status": "Malformed"
+          },
+          {
+            "addr": "mixed.loop#999",
+            "status": "NotFound"
+          },
+          {
+            "addr": "mixed.loop#1.dec",
+            "status": "Malformed"
+          },
+          {
+            "addr": "mixed.loop#1.measures#1",
+            "status": "Malformed"
+          },
+          {
+            "addr": "no_such_item",
+            "status": "NotFound"
+          }
+        ],
+        "stability_errors": [],
+        "stable_addresses": [
+          {
+            "addr": "mixed",
+            "kind": "fn",
+            "surface_keyword": null,
+            "text": null
+          },
+          {
+            "addr": "mixed.loop#1",
+            "kind": "loop",
+            "surface_keyword": "while",
+            "text": null
+          },
+          {
+            "addr": "mixed.loop#1.keeps#1",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "i <= n"
+          },
+          {
+            "addr": "mixed.loop#1.measures",
+            "kind": "measures",
+            "surface_keyword": null,
+            "text": "n - i"
+          },
+          {
+            "addr": "mixed.loop#2",
+            "kind": "loop",
+            "surface_keyword": "loop",
+            "text": null
+          },
+          {
+            "addr": "mixed.loop#2.keeps#1",
+            "kind": "keeps",
+            "surface_keyword": null,
+            "text": "i >= n"
+          },
+          {
+            "addr": "mixed.loop#2.measures",
+            "kind": "measures",
+            "surface_keyword": null,
+            "text": "0"
+          }
+        ],
+        "stable_equal": true
+      }
+    }
+  ]
+}

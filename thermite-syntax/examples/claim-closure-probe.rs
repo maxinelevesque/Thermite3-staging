@@ -8,9 +8,9 @@ use std::{
 
 use serde_json::{json, Value};
 use thermite_syntax::{
-    addresses_of, parse, tokenize, AddrKind, BinOp, Block, Effect, EffectRow, Expr, HoleContext,
-    IndexArg, Item, LoopKind, Pattern, PrimType, SlicePat, Stmt, SyntaxError, TokKind, Type,
-    UnaryOp, VariantShape,
+    addresses_of, parse, resolve, tokenize, AddrKind, AddressEntry, AddressError, BinOp, Block,
+    Effect, EffectRow, Expr, HoleContext, IndexArg, Item, LoopKind, Pattern, PrimType, SlicePat,
+    Stmt, SyntaxError, TokKind, Type, UnaryOp, VariantShape,
 };
 
 fn error_kind(error: &SyntaxError) -> &'static str {
@@ -995,6 +995,80 @@ fn address_kind_text(kind: AddrKind) -> &'static str {
     }
 }
 
+fn address_entry_json(entry: &AddressEntry) -> Value {
+    json!({
+        "addr": entry.addr,
+        "kind": address_kind_text(entry.kind),
+        "surface_keyword": entry.surface_keyword,
+        "text": entry.text,
+    })
+}
+
+fn address_error_text(error: &AddressError) -> &'static str {
+    match error {
+        AddressError::Malformed(_) => "Malformed",
+        AddressError::NotFound(_) => "NotFound",
+    }
+}
+
+fn semantic_addresses_json(source: &str) -> Value {
+    let result = parse(source);
+    let addresses = addresses_of(&result.program);
+    let repeat = addresses_of(&result.program);
+    let unrelated_name = "__claim_closure_unrelated";
+    let augmented_source = format!(
+        "{source}\nfn {unrelated_name}() -> u64 ! pure requires true ensures result == 0 {{ 0 }}\n"
+    );
+    let augmented = parse(&augmented_source);
+    let stable_addresses = addresses_of(&augmented.program)
+        .into_iter()
+        .filter(|entry| {
+            entry.addr != unrelated_name && !entry.addr.starts_with(&format!("{unrelated_name}."))
+        })
+        .collect::<Vec<_>>();
+    let root = addresses
+        .iter()
+        .find(|entry| entry.addr.contains(".loop#"))
+        .or_else(|| addresses.first())
+        .map(|entry| entry.addr.split('.').next().unwrap_or_default())
+        .unwrap_or("missing");
+    let mut queries = addresses
+        .iter()
+        .map(|entry| entry.addr.clone())
+        .collect::<Vec<_>>();
+    queries.extend([
+        String::new(),
+        format!("{root}.loop#x"),
+        format!("{root}.loop#999"),
+        format!("{root}.loop#1.dec"),
+        format!("{root}.loop#1.measures#1"),
+        "no_such_item".to_string(),
+    ]);
+    let resolutions = queries
+        .iter()
+        .map(|addr| match resolve(&result.program, addr) {
+            Ok(entry) => json!({
+                "addr": addr,
+                "entry": address_entry_json(&entry),
+                "status": "resolved",
+            }),
+            Err(error) => json!({
+                "addr": addr,
+                "status": address_error_text(&error),
+            }),
+        })
+        .collect::<Vec<_>>();
+    json!({
+        "addresses": addresses.iter().map(address_entry_json).collect::<Vec<_>>(),
+        "errors": errors_json(&result.errors),
+        "repeat_equal": addresses == repeat,
+        "resolutions": resolutions,
+        "stability_errors": errors_json(&augmented.errors),
+        "stable_addresses": stable_addresses.iter().map(address_entry_json).collect::<Vec<_>>(),
+        "stable_equal": addresses == stable_addresses,
+    })
+}
+
 fn main() {
     let mode = env::args().nth(1).unwrap_or_default();
     if !matches!(
@@ -1011,6 +1085,7 @@ fn main() {
             | "parse-expressions"
             | "parse-fidelity"
             | "parse-items"
+            | "semantic-addresses"
             | "tokens"
     ) {
         std::process::exit(2);
@@ -1019,6 +1094,14 @@ fn main() {
     io::stdin()
         .read_to_string(&mut source)
         .expect("read syntax probe source");
+    if mode == "semantic-addresses" {
+        println!(
+            "{}",
+            serde_json::to_string(&semantic_addresses_json(&source))
+                .expect("serialize syntax probe observation")
+        );
+        return;
+    }
     if matches!(
         mode.as_str(),
         "ast-ergonomics"
