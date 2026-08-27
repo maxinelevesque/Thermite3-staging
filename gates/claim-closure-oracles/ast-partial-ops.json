@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "suite": "forge-partial-operator-controls",
+  "cases": [
+    {
+      "control": "guarded-remainder",
+      "test": "rem_with_nonzero_req_certifies_l3",
+      "expected_level": "L3"
+    },
+    {
+      "control": "unguarded-remainder",
+      "test": "rem_without_nonzero_req_is_l0",
+      "expected_level": "L0"
+    },
+    {
+      "control": "guarded-shifts",
+      "test": "shifts_and_bitwise_certify_l3",
+      "expected_level": "L3"
+    },
+    {
+      "control": "unguarded-left-shift",
+      "test": "shift_without_bound_is_l0",
+      "expected_level": "L0"
+    }
+  ]
+}
