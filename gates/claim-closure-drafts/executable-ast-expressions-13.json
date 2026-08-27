@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "slice_id": "executable-ast-expressions-13",
+  "entries": [
+    {
+      "requirement_id": "REQ-SYNTAX-AST-EXPRS",
+      "witness_id": "W-EXEC-AST-EXPRESSIONS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/ast-expressions.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "afdbbc2543cd455514bc0a9c9cda1468ddca69d842c41a5d40a9e6653a66c8fd"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-exec.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-exec.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/ast-expressions.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/ast-expressions.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/ast.rs#Expr",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/tests/operators_parse.rs",
+          "thermite-syntax/tests/semantic_inventory.rs",
+          "thermite-syntax/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-closure-expression",
+            "mutation": "replace_text",
+            "from": "\"Cast\", \"Closure\", \"Field\"",
+            "to": "\"Cast\", \"Field\"",
+            "expected_exit": 4
+          },
+          {
+            "name": "collapse-method-call-to-call",
+            "mutation": "replace_text",
+            "from": "\"Match\", \"MethodCall\", \"Path\"",
+            "to": "\"Match\", \"Call\", \"Path\"",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-index-expression",
+            "mutation": "replace_text",
+            "from": "\"Index\", \"IntLit\", \"Match\"",
+            "to": "\"IntLit\", \"Match\"",
+            "expected_exit": 4
+          },
+          {
+            "name": "erase-reference-expression",
+            "mutation": "replace_text",
+            "from": "\"Path\", \"Ref\", \"StrLit\"",
+            "to": "\"Path\", \"StrLit\"",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}
