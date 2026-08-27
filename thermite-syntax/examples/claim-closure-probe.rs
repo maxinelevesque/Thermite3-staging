@@ -595,6 +595,127 @@ fn basis_item_json(item: &Item) -> Value {
     }
 }
 
+fn ergonomics_ident(name: &str) -> &str {
+    if name.starts_with("__td") {
+        "__tuple_destructure_temp"
+    } else {
+        name
+    }
+}
+
+fn ergonomics_expr_json(expr: &Expr) -> Value {
+    match expr {
+        Expr::IntLit { value, raw } => {
+            json!({"kind": "IntLit", "raw": raw, "value": value.to_string()})
+        }
+        Expr::BoolLit(value) => json!({"kind": "BoolLit", "value": value}),
+        Expr::Path(segments) => json!({
+            "kind": "Path",
+            "segments": segments.iter().map(|segment| ergonomics_ident(segment)).collect::<Vec<_>>(),
+        }),
+        Expr::Call { callee, args } => json!({
+            "args": args.iter().map(ergonomics_expr_json).collect::<Vec<_>>(),
+            "callee": ergonomics_expr_json(callee),
+            "kind": "Call",
+        }),
+        Expr::Binary { op, lhs, rhs } => json!({
+            "kind": "Binary",
+            "lhs": ergonomics_expr_json(lhs),
+            "op": binop_text(*op),
+            "rhs": ergonomics_expr_json(rhs),
+        }),
+        Expr::TupleProj { receiver, index } => json!({
+            "index": index,
+            "kind": "TupleProj",
+            "receiver": ergonomics_expr_json(receiver),
+        }),
+        Expr::Match { scrutinee, arms } => json!({
+            "arms": arms.iter().map(|arm| json!({
+                "body": ergonomics_expr_json(&arm.body),
+                "guard": arm.guard.as_ref().map(ergonomics_expr_json),
+                "pattern": pattern_json(&arm.pattern),
+            })).collect::<Vec<_>>(),
+            "kind": "Match",
+            "scrutinee": ergonomics_expr_json(scrutinee),
+        }),
+        Expr::Is { scrutinee, variant } => json!({
+            "kind": "Is",
+            "scrutinee": ergonomics_expr_json(scrutinee),
+            "variant": variant,
+        }),
+        _ => json!({"kind": expr_kind(expr)}),
+    }
+}
+
+fn ergonomics_block_json(block: &Block) -> Value {
+    json!({
+        "statements": block.stmts.iter().map(ergonomics_stmt_json).collect::<Vec<_>>(),
+        "tail": block.tail.as_deref().map(ergonomics_expr_json),
+    })
+}
+
+fn ergonomics_stmt_json(statement: &Stmt) -> Value {
+    match statement {
+        Stmt::Let {
+            mutable,
+            name,
+            ty,
+            init,
+        } => json!({
+            "init": ergonomics_expr_json(init),
+            "kind": "Let",
+            "mutable": mutable,
+            "name": ergonomics_ident(name),
+            "type": ty.as_ref().map(type_json),
+        }),
+        Stmt::Assign { target, value } => json!({
+            "kind": "Assign",
+            "target": ergonomics_expr_json(target),
+            "value": ergonomics_expr_json(value),
+        }),
+        Stmt::Loop(loop_node) => json!({
+            "body": ergonomics_block_json(&loop_node.body),
+            "condition": match &loop_node.kind {
+                LoopKind::Loop => None,
+                LoopKind::While(condition) => Some(ergonomics_expr_json(condition)),
+            },
+            "invariants": loop_node.invs.iter().map(|clause| &clause.text).collect::<Vec<_>>(),
+            "kind": "Loop",
+            "measures": loop_node.measures.text,
+            "surface_keyword": loop_node.kind.surface_keyword(),
+        }),
+        Stmt::Return(value) => json!({
+            "kind": "Return",
+            "value": value.as_ref().map(ergonomics_expr_json),
+        }),
+        Stmt::If { cond, then, else_ } => json!({
+            "condition": ergonomics_expr_json(cond),
+            "else": else_.as_ref().map(ergonomics_block_json),
+            "kind": "If",
+            "then": ergonomics_block_json(then),
+        }),
+        Stmt::Holding { lock, body, .. } => json!({
+            "body": ergonomics_block_json(body),
+            "kind": "Holding",
+            "lock": lock,
+        }),
+        Stmt::Break => json!({"kind": "Break"}),
+        Stmt::Continue => json!({"kind": "Continue"}),
+        Stmt::Expr(expr) => json!({"expr": ergonomics_expr_json(expr), "kind": "Expr"}),
+    }
+}
+
+fn ergonomics_item_json(item: &Item) -> Value {
+    match item {
+        Item::Fn(function) => json!({
+            "body": function.body.as_ref().map(ergonomics_block_json),
+            "kind": "Fn",
+            "name": function.name,
+        }),
+        _ => json!({"kind": "Other", "name": item.name()}),
+    }
+}
+
 fn effect_text(effect: &Effect) -> String {
     match effect {
         Effect::Read(path) => format!("read({path})"),
@@ -878,7 +999,8 @@ fn main() {
     let mode = env::args().nth(1).unwrap_or_default();
     if !matches!(
         mode.as_str(),
-        "ast-basis-types"
+        "ast-ergonomics"
+            | "ast-basis-types"
             | "ast-adts"
             | "ast-expressions"
             | "ast-operators"
@@ -899,7 +1021,8 @@ fn main() {
         .expect("read syntax probe source");
     if matches!(
         mode.as_str(),
-        "ast-basis-types"
+        "ast-ergonomics"
+            | "ast-basis-types"
             | "ast-adts"
             | "ast-expressions"
             | "ast-operators"
@@ -911,6 +1034,17 @@ fn main() {
             | "parse-items"
     ) {
         let result = parse(&source);
+        if mode == "ast-ergonomics" {
+            let observation = json!({
+                "errors": errors_json(&result.errors),
+                "items": result.program.items.iter().map(ergonomics_item_json).collect::<Vec<_>>(),
+            });
+            println!(
+                "{}",
+                serde_json::to_string(&observation).expect("serialize syntax probe observation")
+            );
+            return;
+        }
         if mode == "ast-basis-types" {
             let observation = json!({
                 "errors": errors_json(&result.errors),
