@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use thermite_syntax::{
     addresses_of, parse, tokenize, AddrKind, BinOp, Block, Effect, EffectRow, Expr, HoleContext,
     IndexArg, Item, LoopKind, Pattern, PrimType, SlicePat, Stmt, SyntaxError, TokKind, Type,
-    UnaryOp,
+    UnaryOp, VariantShape,
 };
 
 fn error_kind(error: &SyntaxError) -> &'static str {
@@ -410,6 +410,119 @@ fn collect_clause_pattern_kinds(expr: &Expr, kinds: &mut BTreeSet<&'static str>)
     }
 }
 
+fn pattern_json(pattern: &Pattern) -> Value {
+    match pattern {
+        Pattern::Wildcard => json!({"kind": "Wildcard"}),
+        Pattern::Literal(expr) => json!({"kind": "Literal", "value": expr_json(expr)}),
+        Pattern::Binding(name) => json!({"kind": "Binding", "name": name}),
+        Pattern::Slice(parts) => json!({
+            "kind": "Slice",
+            "parts": parts.iter().map(|part| match part {
+                SlicePat::Pat(pattern) => pattern_json(pattern),
+                SlicePat::Rest(name) => json!({"kind": "Rest", "name": name}),
+            }).collect::<Vec<_>>(),
+        }),
+        Pattern::Enum { path, fields } => json!({
+            "fields": fields.iter().map(pattern_json).collect::<Vec<_>>(),
+            "kind": "Enum",
+            "path": path,
+        }),
+        Pattern::Struct { path, fields, rest } => json!({
+            "fields": fields.iter().map(|(name, pattern)| json!({
+                "name": name,
+                "pattern": pattern_json(pattern),
+            })).collect::<Vec<_>>(),
+            "kind": "Struct",
+            "path": path,
+            "rest": rest,
+        }),
+        Pattern::Or(patterns) => json!({
+            "alternatives": patterns.iter().map(pattern_json).collect::<Vec<_>>(),
+            "kind": "Or",
+        }),
+    }
+}
+
+fn direct_match_patterns(block: &Block) -> Vec<Value> {
+    match block.tail.as_deref() {
+        Some(Expr::Match { arms, .. }) => {
+            arms.iter().map(|arm| pattern_json(&arm.pattern)).collect()
+        }
+        _ => Vec::new(),
+    }
+}
+
+fn variant_shape_json(shape: &VariantShape) -> Value {
+    match shape {
+        VariantShape::Unit => json!({"kind": "Unit"}),
+        VariantShape::Tuple(types) => json!({
+            "kind": "Tuple",
+            "types": types.iter().map(type_text).collect::<Vec<_>>(),
+        }),
+        VariantShape::Struct(fields) => json!({
+            "fields": fields.iter().map(|field| json!({
+                "name": field.name,
+                "type": type_text(&field.ty),
+            })).collect::<Vec<_>>(),
+            "kind": "Struct",
+        }),
+    }
+}
+
+fn adt_item_json(item: &Item) -> Value {
+    match item {
+        Item::Struct(item) => json!({
+            "fields": item.fields.iter().map(|field| json!({
+                "name": field.name,
+                "type": type_text(&field.ty),
+            })).collect::<Vec<_>>(),
+            "keeps": item.keeps.as_ref().map(|clause| &clause.text),
+            "kind": "Struct",
+            "name": item.name,
+        }),
+        Item::Enum(item) => json!({
+            "kind": "Enum",
+            "name": item.name,
+            "variants": item.variants.iter().map(|variant| json!({
+                "name": variant.name,
+                "shape": variant_shape_json(&variant.shape),
+            })).collect::<Vec<_>>(),
+        }),
+        Item::Fn(function) => {
+            let mut expression_kinds = BTreeSet::new();
+            collect_expr_kinds(&function.contract.requires.expr, &mut expression_kinds);
+            for clause in &function.contract.ensures {
+                collect_expr_kinds(&clause.expr, &mut expression_kinds);
+            }
+            if let Some(body) = &function.body {
+                collect_block_expr_kinds(body, &mut expression_kinds);
+            }
+            json!({
+                "expression_kinds": expression_kinds,
+                "kind": "Fn",
+                "match_patterns": function.body.as_ref().map(direct_match_patterns).unwrap_or_default(),
+                "name": function.name,
+                "params": function.params.iter().map(|param| type_text(&param.ty)).collect::<Vec<_>>(),
+                "ret": type_text(&function.ret),
+            })
+        }
+        Item::SpecFn(function) => {
+            let mut expression_kinds = BTreeSet::new();
+            collect_expr_kinds(&function.measures.expr, &mut expression_kinds);
+            collect_block_expr_kinds(&function.body, &mut expression_kinds);
+            json!({
+                "expression_kinds": expression_kinds,
+                "kind": "SpecFn",
+                "match_patterns": direct_match_patterns(&function.body),
+                "name": function.name,
+                "params": function.params.iter().map(|param| type_text(&param.ty)).collect::<Vec<_>>(),
+                "ret": type_text(&function.ret),
+            })
+        }
+        _ => json!({"kind": "Other", "name": item.name()}),
+    }
+}
+
 fn collect_loop_facts(block: &Block, loops: &mut Vec<Value>) {
     for statement in &block.stmts {
         match statement {
@@ -514,7 +627,8 @@ fn main() {
     let mode = env::args().nth(1).unwrap_or_default();
     if !matches!(
         mode.as_str(),
-        "ast-expressions"
+        "ast-adts"
+            | "ast-expressions"
             | "ast-operators"
             | "ast-statements"
             | "ast-types-spans"
@@ -533,7 +647,8 @@ fn main() {
         .expect("read syntax probe source");
     if matches!(
         mode.as_str(),
-        "ast-expressions"
+        "ast-adts"
+            | "ast-expressions"
             | "ast-operators"
             | "ast-statements"
             | "ast-types-spans"
@@ -543,6 +658,17 @@ fn main() {
             | "parse-items"
     ) {
         let result = parse(&source);
+        if mode == "ast-adts" {
+            let observation = json!({
+                "errors": errors_json(&result.errors),
+                "items": result.program.items.iter().map(adt_item_json).collect::<Vec<_>>(),
+            });
+            println!(
+                "{}",
+                serde_json::to_string(&observation).expect("serialize syntax probe observation")
+            );
+            return;
+        }
         if mode == "ast-types-spans" {
             let functions = result
                 .program
