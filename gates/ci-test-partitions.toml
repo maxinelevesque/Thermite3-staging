@@ -8255,3 +8255,11 @@ bucket = 7
 seconds = 0.007
 test = "thermite-lower::claim_closure_core type_lowering_is_observable"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# Focused local runtime rounds below nextest's useful resolution; keep the
+# reviewed floor until the next measured CI timing snapshot replaces it.
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::collections_conformance unsupported_vec_element_is_structured_error_not_panic"
+timing_provenance = "reviewed_local_estimate_after_baseline"

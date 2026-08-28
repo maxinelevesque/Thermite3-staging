@@ -208,6 +208,19 @@ fn vec_view_supports_spec_indexing_and_combinators() {
     }
 }
 
+#[test]
+fn unsupported_vec_element_is_structured_error_not_panic() {
+    let program = parse_src(
+        "fn bad(xs: Vec<()>) -> u64 ! pure requires true ensures true { 0 }",
+        "unsupported Vec element",
+    );
+    let result = thermite_lower::lower(&program);
+    assert!(
+        matches!(result, Err(thermite_lower::LowerError::Unsupported { .. })),
+        "an unsupported Vec element must return LowerError::Unsupported, got: {result:?}"
+    );
+}
+
 // ---- AC-1 cert oracle: checked_get → L3/pure, push_one → L3/alloc -----------
 //
 // The oracle (`conformance/collections/cases.json`, R-CHAR-3 — never edited)
