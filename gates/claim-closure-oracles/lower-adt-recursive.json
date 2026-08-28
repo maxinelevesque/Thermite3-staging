@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"adt-recursive-verifies","expected_exit":0},{"id":"adt-recursive-predicates-verify","expected_exit":0}]}

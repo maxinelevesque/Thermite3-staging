@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"adt-struct-verifies","expected_exit":0},{"id":"adt-struct-invariant-combinator","expected_exit":0}]}
