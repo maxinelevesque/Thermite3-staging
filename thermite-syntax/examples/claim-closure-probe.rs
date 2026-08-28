@@ -1042,6 +1042,8 @@ fn semantic_addresses_json(source: &str) -> Value {
         format!("{root}.loop#999"),
         format!("{root}.loop#1.dec"),
         format!("{root}.loop#1.measures#1"),
+        format!("{root}.?"),
+        format!("{root}.?x"),
         "no_such_item".to_string(),
     ]);
     let resolutions = queries
