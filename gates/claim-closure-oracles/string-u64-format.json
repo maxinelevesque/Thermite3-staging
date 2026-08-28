@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"string-format-roundtrip-certifies","expected_exit":0},{"id":"string-format-overclaim-rejected","expected_exit":0}]}
