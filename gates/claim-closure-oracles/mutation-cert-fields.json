@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"mutation-cert-fields-graduate","expected_exit":0},{"id":"mutation-cert-fields-reject","expected_exit":0}]}

@@ -1668,6 +1668,30 @@ mod tests {
         );
     }
 
+    // C10 / REQ-FORGE-MUTATION-MATCH-GUARD: a match-arm guard participates in
+    // the same frozen expression walk as the scrutinee and arm body. Keep the
+    // guard as the only `<` expression so this operator-flip witness cannot be
+    // satisfied by scanning some adjacent expression instead.
+    #[test]
+    fn match_guard_expression_is_in_mutation_walk() {
+        let f = parse_fn(
+            "fn guarded(x: u32) -> bool ! pure requires true ensures result == result { \
+             match x { n if n < 10 => true, _ => false } }",
+        );
+        let mutants = generate(&f, 0, &[]);
+        let guard_flips = mutants
+            .iter()
+            .filter(|m| m.desc == "flip binary operator <-><=")
+            .count();
+        assert_eq!(
+            guard_flips,
+            1,
+            "the guard's sole comparison must yield exactly one scoreable operator-flip \
+             mutant: {:?}",
+            mutants.iter().map(|m| &m.desc).collect::<Vec<_>>()
+        );
+    }
+
     // =======================================================================
     // REQ-11 (Target E) — the Verus-anchor for the mutation floor gate (#48 anti-
     // Goodhart, `.design/verified/self-verification.md` REQ-11 / AC-11c, mechanism
