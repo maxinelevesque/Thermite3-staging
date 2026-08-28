@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "golden-sum-verifies", "expected_exit": 0},
+    {"id": "golden-binary-search-verifies", "expected_exit": 0}
+  ]
+}

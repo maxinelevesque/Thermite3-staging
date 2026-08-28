@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "slice_id": "executable-lower-verus-core-22",
+  "entries": [
+    {
+      "requirement_id": "REQ-LOWER-VERUS-FRAME",
+      "witness_id": "W-EXEC-LOWER-VERUS-FRAME",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-frame.json","expected":["accepted"],"reviewed_summary_sha256":"a66138ea76a1a9fc80ef7fb8460922738ccf630ad2b1398fa15b8e9ce2b227cf"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-frame.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-frame.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","thermite-lower/tests/claim_closure_core.rs","conformance/sum.th","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-frame-observation","mutation":"replace_text","from":"frame-signatures","to":"frame-signatures-erased","expected_exit":4}]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-VERUS-TYPE-LOWERING",
+      "witness_id": "W-EXEC-LOWER-VERUS-TYPES",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-types.json","expected":["accepted"],"reviewed_summary_sha256":"044084d61fb5d8bf8a52da5776fef5e7242217e2dc8ca45728946a733d9c323c"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-types.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-types.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","thermite-lower/tests/claim_closure_core.rs","conformance/sum.th","conformance/binary_search.th","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-type-observation","mutation":"replace_text","from":"type-lowering","to":"type-lowering-erased","expected_exit":4}]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-VERUS-EXEC-EXPR",
+      "witness_id": "W-EXEC-LOWER-VERUS-EXEC-EXPR",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-exec-expressions.json","expected":["accepted"],"reviewed_summary_sha256":"45c1f05cecd5fcfc01b9b8fd325ccefd0369d03873a2115dac7d0c989f1310f5"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-exec-expressions.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-exec-expressions.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","thermite-lower/tests/claim_closure_core.rs","conformance/sum.th","conformance/binary_search.th","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-exec-expression-observation","mutation":"replace_text","from":"exec-expressions","to":"exec-expressions-erased","expected_exit":4}]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-VERUS-STMT-LOOP",
+      "witness_id": "W-EXEC-LOWER-VERUS-STMT-LOOP",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-statements-loops.json","expected":["accepted"],"reviewed_summary_sha256":"d77c85ffda00b9660bbc3b96bf5134d2da7c07fddea07212627669dc0c61c586"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-statements-loops.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-statements-loops.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","thermite-lower/tests/claim_closure_core.rs","conformance/sum.th","conformance/binary_search.th","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-loop-contract-observation","mutation":"replace_text","from":"statements-loops","to":"statements-loops-erased","expected_exit":4}]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-VERUS-SPEC-SEQ",
+      "witness_id": "W-EXEC-LOWER-VERUS-SPEC-SEQ",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-spec-seq.json","expected":["accepted"],"reviewed_summary_sha256":"847163f3edc6278327f704a94dc2522859d8cc000b4393f39cf0166cf76267e9"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-spec-seq.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-spec-seq.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","thermite-lower/tests/claim_closure_core.rs","conformance/sum.th","conformance/binary_search.th","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-spec-seq-observation","mutation":"replace_text","from":"spec-seq-views","to":"spec-seq-views-erased","expected_exit":4}]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-VERUS-COMBINATOR-DEFS",
+      "witness_id": "W-EXEC-LOWER-VERUS-COMBINATORS",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-combinators.json","expected":["accepted"],"reviewed_summary_sha256":"b6ccdb4d0272deb8ab26bbd8680fb06a54e71ca22fee30252e815f4a218744d9"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-combinators.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-combinators.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","thermite-spec/src/combinators.rs","thermite-lower/tests/claim_closure_core.rs","conformance/binary_search.th","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-combinator-definition-observation","mutation":"replace_text","from":"combinator-definitions","to":"combinator-definitions-erased","expected_exit":4}]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-VERUS-PROOF-AIDS",
+      "witness_id": "W-EXEC-LOWER-VERUS-PROOF-AIDS",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-proof-aids.json","expected":["accepted"],"reviewed_summary_sha256":"ca5e8abf45b3998e9e80cfffd9b35516e2c8533553a856e2287bb61524a42ad4"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-proof-aids.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-proof-aids.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","thermite-lower/tests/req_bounded_mul_aid.rs","thermite-lower/tests/divergence_lower.rs","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-bounded-multiply-proof-aid","mutation":"replace_text","from":"proof-aid-bounded-multiply","to":"proof-aid-bounded-multiply-erased","expected_exit":4}]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-VERUS-GOLDEN-VERIFY",
+      "witness_id": "W-EXEC-LOWER-VERUS-GOLDEN",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-golden.json","expected":["accepted"],"reviewed_summary_sha256":"3347b7372dbd9b0fd80650ca79adb97966c588cca2a83304b43c99e1a20f7c4a"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-golden.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-golden.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","thermite-lower/tests/lower_conformance.rs","conformance/sum.th","conformance/binary_search.th","tests/golden/lower/sum.verus.rs","tests/golden/lower/binary_search.verus.rs","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-sum-verification","mutation":"replace_text","from":"golden-sum-verifies","to":"golden-sum-unverified","expected_exit":4}]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-VERUS-ERRORS",
+      "witness_id": "W-EXEC-LOWER-VERUS-ERRORS",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-errors.json","expected":["accepted"],"reviewed_summary_sha256":"c9dae8021869574875f12c6f24e3198290e2130ece84fcc6d7cf2ec579f99a8c"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-errors.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-errors.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","gates/anti-pattern-gate.py","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-structured-error-observation","mutation":"replace_text","from":"structured-unsupported-error","to":"structured-unsupported-error-erased","expected_exit":4}]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-VERUS-EQUIV-OBLIGATION",
+      "witness_id": "W-EXEC-LOWER-VERUS-EQUIVALENCE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lower-verus-equivalence.json","expected":["accepted"],"reviewed_summary_sha256":"e9ad7a4de65deff937c8db70317a55f8e29224b60fa58daf87c5fd8e7cca3bd2"},
+      "closure": {
+        "verifier": ["uv","run","python","gates/claim-closure-lower.py"],
+        "tool_version_argv": ["uv","run","python","gates/claim-closure-lower.py","--version"],
+        "oracle": "gates/claim-closure-oracles/lower-verus-equivalence.json",
+        "artifacts": ["gates/claim-closure-oracles/lower-verus-equivalence.json","gates/claim-closure-lower.py","thermite-lower/src/lower.rs","thermite-lower/tests/equivalence_obligation.rs","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],
+        "counterfeit": [{"name":"erase-equivalent-mutant-observation","mutation":"replace_text","from":"equivalent-mutant-verifies","to":"equivalent-mutant-unverified","expected_exit":4}]
+      }
+    }
+  ]
+}

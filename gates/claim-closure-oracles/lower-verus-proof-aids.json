@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "proof-aid-bounded-multiply", "expected_exit": 0},
+    {"id": "proof-aid-renamed-fold", "expected_exit": 0},
+    {"id": "proof-aid-coverage-split", "expected_exit": 0}
+  ]
+}
