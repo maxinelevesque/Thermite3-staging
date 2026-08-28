@@ -122,6 +122,22 @@ CASES = {
     "adt-rejects-are-exact": package_integration(
         "thermite-spec", "adt_validate", "adt_reject_cases_yield_exact_error"
     ),
+    "scheme-spec-functions-verify": integration(
+        "adt_schemes_conformance", "list_fold_lowers_to_generated_schemes_and_verifies_l3"
+    ),
+    "scheme-induction-law-cited": integration(
+        "adt_schemes_conformance",
+        "multiplier_instance_cites_the_generated_law_no_fresh_induction",
+    ),
+    "scheme-induction-premise-load-bearing": integration(
+        "adt_schemes_conformance", "negative_control_premise_removed_fails_verus"
+    ),
+    "scheme-rejects-are-structured": package_integration(
+        "thermite-spec", "scheme_validate", "reject_cases_yield_the_oracle_error"
+    ),
+    "scheme-unsupported-lowering-is-error": integration(
+        "l1_conformance", "unsupported_construct_is_err_not_panic"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),
