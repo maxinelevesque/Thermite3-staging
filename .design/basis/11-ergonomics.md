@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 783f0c53f7a8390f42be3d41f18d633628e3b7207bf5f3144ecc1bf423e28a12 (re-pinned 2026-08-25 for issue #6 final bounded range traversal. prior: 37951784f6e75a06a1beceb34db3eaeb933161176a06b86fd58149dee5e41587)
+audited-content-sha256: 819bf846a9690f0d3523b6f953d971164da9dac0233a28044ce39466fd7137c2 (re-pinned 2026-08-28 for the focused match-guard mutation-walk witness. prior: 783f0c53f7a8390f42be3d41f18d633628e3b7207bf5f3144ecc1bf423e28a12)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

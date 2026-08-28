@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"mutation-order-is-deterministic","expected_exit":0},{"id":"mutation-live-ratio-deterministic","expected_exit":0}]}

@@ -47,6 +47,22 @@ def package_integration(package: str, test_target: str, test_name: str) -> list[
     ]
 
 
+def package_bin_unit(package: str, bin_target: str, test_name: str) -> list[str]:
+    return [
+        "cargo",
+        "test",
+        "--quiet",
+        "--locked",
+        "-p",
+        package,
+        "--bin",
+        bin_target,
+        test_name,
+        "--",
+        "--exact",
+    ]
+
+
 CASES = {
     "boundary-dispatch-matches-verified-predicate": integration(
         "boundary_gate_verified", "lower_fn_emits_external_body_iff_proved_predicate"
@@ -213,6 +229,51 @@ CASES = {
     ),
     "optres-payload-mutant-rejected": package_integration(
         "forge", "option_result_conformance", "ac3_broken_some_under_payload_ens_is_rejected"
+    ),
+    "mutation-frozen-set-observable": package_bin_unit(
+        "forge", "forge", "mutation::tests::frozen_set_and_order_for_small_fn"
+    ),
+    "mutation-order-is-deterministic": package_bin_unit(
+        "forge", "forge", "mutation::tests::generate_is_deterministic"
+    ),
+    "mutation-order-is-capped": package_bin_unit(
+        "forge", "forge", "mutation::tests::capped_at_mutant_cap"
+    ),
+    "mutation-preserves-contract": package_bin_unit(
+        "forge", "forge", "mutation::tests::mutant_keeps_contract_changes_only_body"
+    ),
+    "mutation-polarity-is-inverted": package_bin_unit(
+        "forge", "forge", "mutation::tests::classify_polarity_is_inverted"
+    ),
+    "mutation-floor-core": package_bin_unit(
+        "forge", "forge", "mutation::tests::score_ratio_floor_and_string"
+    ),
+    "mutation-floor-zero-backstop": package_bin_unit(
+        "forge", "forge", "mutation::tests::empty_score_is_below_floor"
+    ),
+    "mutation-floor-live-reject": package_integration(
+        "forge", "mutation_conformance", "reject_fixture_scores_below_floor_and_is_gated_weak_contract"
+    ),
+    "mutation-floor-configurable": package_integration(
+        "forge", "mutation_conformance", "floor_is_configurable_weak_fixture_certifies_under_low_floor"
+    ),
+    "mutation-cert-fields-graduate": package_bin_unit(
+        "forge", "forge", "manifest::tests::with_mutation_score_graduates_fields_and_stays_oracle_excluded"
+    ),
+    "mutation-cert-fields-reject": package_bin_unit(
+        "forge", "forge", "manifest::tests::rejected_weak_contract_carries_cause_ratio_and_survivor"
+    ),
+    "mutation-live-post-l3-score": package_integration(
+        "forge", "mutation_conformance", "accept_fixtures_score_at_or_above_floor_and_certify_l3"
+    ),
+    "mutation-cache-role-isolated": package_bin_unit(
+        "forge", "forge", "cache::tests::auxiliary_query_roles_cannot_alias_the_main_item_keyspace"
+    ),
+    "mutation-live-ratio-deterministic": package_integration(
+        "forge", "mutation_conformance", "kill_ratio_is_deterministic_across_two_runs"
+    ),
+    "mutation-match-guard-observable": package_bin_unit(
+        "forge", "forge", "mutation::tests::match_guard_expression_is_in_mutation_walk"
     ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"

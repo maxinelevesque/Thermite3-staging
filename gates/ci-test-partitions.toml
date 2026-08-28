@@ -7484,6 +7484,15 @@ bucket = 11
 seconds = 0.013
 test = "thermite-tv::teeth unsupported_construct_is_err_not_panic"
 
+# This focused unit test postdates timing_source. Its local runtime rounds below
+# nextest's useful resolution, so use the reviewed adjacent-unit estimate until
+# the next measured GitHub timing snapshot replaces it.
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "forge::bin/forge mutation::tests::match_guard_expression_is_in_mutation_walk"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
 [[assignment]]
 bucket = 12
 seconds = 4.994

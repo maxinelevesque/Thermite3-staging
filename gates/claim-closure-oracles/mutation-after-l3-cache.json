@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"mutation-live-post-l3-score","expected_exit":0},{"id":"mutation-cache-role-isolated","expected_exit":0}]}

@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"mutation-frozen-set-observable","expected_exit":0},{"id":"mutation-preserves-contract","expected_exit":0}]}

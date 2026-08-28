@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"mutation-match-guard-observable","expected_exit":0}]}
