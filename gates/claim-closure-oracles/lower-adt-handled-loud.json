@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"adt-accepted-programs-validate","expected_exit":0},{"id":"adt-enum-verifies","expected_exit":0},{"id":"adt-rejects-are-exact","expected_exit":0}]}

@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"adt-error-is-structured","expected_exit":0},{"id":"adt-validation-never-panics","expected_exit":0}]}

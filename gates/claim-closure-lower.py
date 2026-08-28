@@ -31,6 +31,22 @@ def integration(test_target: str, test_name: str) -> list[str]:
     ]
 
 
+def package_integration(package: str, test_target: str, test_name: str) -> list[str]:
+    return [
+        "cargo",
+        "test",
+        "--quiet",
+        "--locked",
+        "-p",
+        package,
+        "--test",
+        test_target,
+        test_name,
+        "--",
+        "--exact",
+    ]
+
+
 CASES = {
     "boundary-dispatch-matches-verified-predicate": integration(
         "boundary_gate_verified", "lower_fn_emits_external_body_iff_proved_predicate"
@@ -64,6 +80,48 @@ CASES = {
         "--",
         "--exact",
     ],
+    "adt-struct-verifies": integration(
+        "adt_lower_conformance", "bank_account_lowers_struct_invariant_and_verifies_l3"
+    ),
+    "adt-struct-invariant-combinator": integration(
+        "adt_lower_conformance", "struct_invariant_combinator_is_emitted_and_runs_at_l1"
+    ),
+    "invbind-unary-verifies": integration(
+        "adt_lower_conformance", "unary_struct_invariant_binds_fields_and_verifies_l3"
+    ),
+    "invbind-forge-check-battery": package_integration(
+        "forge", "struct_invariant_receiver", "check_and_battery_accept_unary_struct_invariant"
+    ),
+    "adt-enum-verifies": integration(
+        "adt_lower_conformance", "shape_lowers_enum_match_is_and_verifies_l3"
+    ),
+    "adt-recursive-verifies": integration(
+        "adt_lower_conformance", "list_sum_lowers_recursive_box_and_verifies_l3"
+    ),
+    "adt-recursive-predicates-verify": integration(
+        "divergence_adt_fold_generality", "adt_predicates_keep_their_declared_bool_return"
+    ),
+    "adt-error-is-structured": [
+        "cargo",
+        "test",
+        "--quiet",
+        "--locked",
+        "-p",
+        "thermite-lower",
+        "--lib",
+        "lower::tests::loop_body_is_err_not_silent",
+        "--",
+        "--exact",
+    ],
+    "adt-validation-never-panics": package_integration(
+        "thermite-spec", "adt_validate", "adt_validation_never_panics"
+    ),
+    "adt-accepted-programs-validate": package_integration(
+        "thermite-spec", "adt_validate", "adt_corpus_programs_validate_clean"
+    ),
+    "adt-rejects-are-exact": package_integration(
+        "thermite-spec", "adt_validate", "adt_reject_cases_yield_exact_error"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),
