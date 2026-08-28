@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"string-split-verifies","expected_exit":0},{"id":"string-split-mutant-fails","expected_exit":0}]}

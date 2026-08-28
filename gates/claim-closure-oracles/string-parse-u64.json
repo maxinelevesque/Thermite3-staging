@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"string-parse-u64-verifies","expected_exit":0},{"id":"string-parse-u64-mutant-fails","expected_exit":0}]}

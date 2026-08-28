@@ -166,6 +166,54 @@ CASES = {
         "divergence_bytes_eq_l1_empty_window",
         "bytes_eq_l1_twin_empty_window_matches_certified_spec_value",
     ),
+    "string-byte-builder-certifies": package_integration(
+        "forge", "string_format_conformance", "ac6_byte_builder_certifies_l3_alloc"
+    ),
+    "string-format-roundtrip-certifies": package_integration(
+        "forge", "string_format_conformance", "ac7_to_string_round_trip_certifies_l3"
+    ),
+    "string-format-overclaim-rejected": package_integration(
+        "forge", "string_format_conformance", "ac7_overclaimed_round_trip_is_rejected"
+    ),
+    "string-parse-u64-verifies": package_integration(
+        "forge", "option_result_conformance", "ac4_parse_u64_lowering_verifies_under_real_verus"
+    ),
+    "string-parse-u64-mutant-fails": package_integration(
+        "forge", "option_result_conformance", "ac4_broken_parse_u64_body_fails_real_verus"
+    ),
+    "string-substring-predicates-certify": package_integration(
+        "forge", "string_search_conformance", "ac9_predicates_certify_l3_pure"
+    ),
+    "string-substring-mutant-fails": package_integration(
+        "forge", "string_search_conformance", "ac9_broken_starts_with_fails_real_verus"
+    ),
+    "string-find-certifies": package_integration(
+        "forge", "string_search_conformance", "ac10_find_certifies_l3_with_pinned_some"
+    ),
+    "string-split-verifies": package_integration(
+        "forge", "string_search_conformance", "ac11_split_count_bound_verifies_under_real_verus"
+    ),
+    "string-split-mutant-fails": package_integration(
+        "forge", "string_search_conformance", "ac11_broken_split_fails_real_verus"
+    ),
+    "string-trim-verifies": package_integration(
+        "forge", "string_search_conformance", "ac12_trim_verifies_under_real_verus"
+    ),
+    "string-spec-scanning-certifies": package_integration(
+        "forge", "spec_fn_string_param", "string_scanning_spec_fn_lowers_and_certifies_l3"
+    ),
+    "string-spec-scanning-mutant-rejected": package_integration(
+        "forge", "spec_fn_string_param", "broken_scan_body_rejects_below_l3"
+    ),
+    "optres-option-builtins-certify": package_integration(
+        "forge", "option_result_conformance", "ac1_option_construct_payload_in_contract_certifies_l3"
+    ),
+    "optres-result-builtins-certify": package_integration(
+        "forge", "option_result_conformance", "ac2_result_two_arg_type_construct_payload_certifies_l3"
+    ),
+    "optres-payload-mutant-rejected": package_integration(
+        "forge", "option_result_conformance", "ac3_broken_some_under_payload_ens_is_rejected"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),
