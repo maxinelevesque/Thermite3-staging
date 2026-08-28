@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "probe": "req-registry-control-plane",
+  "cases": [
+    { "id": "undeclared-status-rejected", "expected_exit": 0 }
+  ]
+}

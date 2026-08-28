@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "probe": "req-registry-control-plane",
+  "cases": [
+    { "id": "unresolved-file-evidence-rejected", "expected_exit": 0 },
+    { "id": "blocked-status-requires-typed-blocker", "expected_exit": 0 },
+    { "id": "unresolved-command-evidence-rejected", "expected_exit": 0 },
+    { "id": "closed-live-blocker-rejected", "expected_exit": 0 }
+  ]
+}

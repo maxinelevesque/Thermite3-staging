@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "probe": "req-registry-control-plane",
+  "cases": [
+    { "id": "generated-view-round-trip", "expected_exit": 0 },
+    { "id": "stale-generated-view-rejected", "expected_exit": 0 }
+  ]
+}
