@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: e62717bb887a7070b67cade10f8e18ac29e56cf40cf2f157e134a1e01920a4a8 (re-pinned 2026-08-26 to require executable closures to content-bind file-backed requirement owners after formal observations were bound to the repository-pinned Lean toolchain. The known-red corpus covers owner unbinding. GAP-CLAIM-EVIDENCE-CLOSURE remains open. prior: dc190668645fe637a8dc9e1baafd3a74d4b2c461f23e0059fffb4370c18976c2)
+audited-content-sha256: 1529bc2337bb425ca063dea3e97d182e7ed0c38f4a0ed3ceb2d9de33f99975f0 (re-pinned 2026-08-27 after the registry source digest moved solely because REQ-SYNTAX-ADDRESS-DEC corrected the stale pre-RFC-6 `.dec` spelling to shipped `.measures`; claim inventory, gap dispositions, and stage classifications are unchanged. prior: e62717bb887a7070b67cade10f8e18ac29e56cf40cf2f157e134a1e01920a4a8)
 
 ## Summary
 

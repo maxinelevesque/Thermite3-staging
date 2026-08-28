@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 1955bd1ea7a9844a61fd5b58aa3c115dbf2c715af0ef854716fcfc696c47a884 (re-pinned 2026-08-25 for issue #41: invalid proof roots mint no semantic addresses. prior: a1958ec85604c100db56f26e416559bfe9125e0601a1ca36472ebec482e83113)
+audited-content-sha256: da4834fc550290fd8ea6dc533970e3d3b0ab57f3f12e4123af740d10a3ad9ed2 (re-pinned 2026-08-27 after completing RFC-6's address vocabulary migration in the governed comments: `.measures` is the shipped, conformance-pinned segment and legacy `.dec` is malformed. prior: 1955bd1ea7a9844a61fd5b58aa3c115dbf2c715af0ef854716fcfc696c47a884)
 governs: thermite-syntax/src/address.rs
 thesis-refs:
   - thermite-design.md §4.3
@@ -32,7 +32,7 @@ the REQ status table. Blocker #26 (OQ-1) is RESOLVED on the scheme reading:
 `keeps#3` = `forall_from` (asserted by `tests/conformance.rs`).
 
 > **AMENDMENT (#193, recorded at the #262 re-audit, 2026-06-12 — supersedes
-> REQ-1's `KIND ∈ {loop, inv, dec}` segment set).** The address grammar gained
+> REQ-1's original `KIND ∈ {loop, inv, dec}` segment set).** The address grammar gained
 > ONE post-pin segment kind: the open-body-hole address `<fn>.?N`
 > (`AddrKind::Hole` in `address.rs` — `addresses_of` emits one entry per
 > `FnItem.holes` member in document order; `validate_segments` accepts a `?N`
@@ -41,7 +41,7 @@ the REQ status table. Blocker #26 (OQ-1) is RESOLVED on the scheme reading:
 > owned by `.design/forge/goal-repl.md` REQ-4 — not re-owned here. Also
 > recorded against the current tree: `Item::Struct`/`Item::Enum` items are NOT
 > addressable today (`addresses_of` skips them — only `Fn`/`SpecFn` roots and
-> their loop/inv/dec/hole children are emitted).
+> their loop/keeps/measures/hole children are emitted).
 
 ## Requirements
 
@@ -66,7 +66,7 @@ the REQ status table. Blocker #26 (OQ-1) is RESOLVED on the scheme reading:
   `binary_search.loop#1.keeps#2` is pending blocker **#26** (OQ-1).
 
 - **REQ-4 (measures address — unique per loop):** Each loop's single `measures` clause is
-  addressed `<loop-addr>.dec` (no ordinal — exactly one `measures` per loop, §4.1).
+  addressed `<loop-addr>.measures` (no ordinal — exactly one `measures` per loop, §4.1).
   Derived from §4.3 + §4.1.
 
 - **REQ-5 (stability under unrelated edits — STRUCTURAL/POSITIONAL):** An address
@@ -97,7 +97,7 @@ the REQ status table. Blocker #26 (OQ-1) is RESOLVED on the scheme reading:
   - `binary_search.loop#1.keeps#1` → `lo <= hi && hi <= haystack.len()`
   - `binary_search.loop#1.keeps#2` → `forall_below(haystack, lo, |x| x < needle)`
   - `binary_search.loop#1.keeps#3` → `forall_from(haystack, hi, |x| x > needle)`
-  - `binary_search.loop#1.dec` → `hi - lo`
+  - `binary_search.loop#1.measures` → `hi - lo`
 
   **NOTE on the corpus oracle string `binary_search.loop#1.keeps#2` (blocker #26):**
   the task brief and `gates/routes.toml`
@@ -119,7 +119,7 @@ the REQ status table. Blocker #26 (OQ-1) is RESOLVED on the scheme reading:
   - `sum.loop#1.keeps#1` → `i <= xs.len()`
   - `sum.loop#1.keeps#2` → `acc == spec_sum(&xs[..i])`
   - `sum.loop#1.keeps#3` → `acc <= i as u64 * u32::MAX as u64`
-  - `sum.loop#1.dec` → `xs.len() - i`
+  - `sum.loop#1.measures` → `xs.len() - i`
   - `spec_sum` — the spec function (no addressable inner blocks; its `measures` is a
     spec-fn measure, NOT a loop `measures` — see OQ-2)
 
@@ -147,7 +147,7 @@ address(Item f)              = f.name
 address(Loop/While L in f)   = address(f) + ".loop#" + (1-based index of L
                                  among loop+while constructs in f, source order)
 address(keeps#M of L)          = address(L) + ".keeps#" + M        (1-based, source order)
-address(measures of L)            = address(L) + ".dec"
+address(measures of L)          = address(L) + ".measures"
 ```
 
 The index counters reset at each enclosing scope: loop indices count within a
@@ -189,7 +189,7 @@ the external oracle for the scheme; its exact resolution is pinned by blocker #2
 | REQ-1 (address grammar) | SHIPPED | `address.rs` segments = fn name + `loop#N`/`keeps#M`/`measures`; `validate_segments` + `AddressEntry`; address oracle passes. |
 | REQ-2 (loop numbering) | SHIPPED | `collect_block_loops` numbers loops 1-based source order, `while`+`loop` shared; `sum` `while` = `sum.loop#1` (sum address oracle). |
 | REQ-3 (keeps numbering) | SHIPPED | `emit_loop` numbers `keeps#M` 1-based source order; blocker #26 resolved — test asserts `keeps#2`=`forall_below`, `keeps#3`=`forall_from`. |
-| REQ-4 (measures address) | SHIPPED | `emit_loop` emits `<loop>.dec` (no ordinal); resolves to `hi - lo` / `xs.len() - i` (address oracle). |
+| REQ-4 (measures address) | SHIPPED | `emit_loop` emits `<loop>.measures` (no ordinal); resolves to `hi - lo` / `xs.len() - i` (address oracle). |
 | REQ-5 (stability under unrelated edits) | SHIPPED | numbering reads only the enclosing item; test `address_stability_under_unrelated_edit`. |
 | REQ-6 (deterministic + bidirectional) | SHIPPED | `addresses_of` (node→addr) + `resolve` (addr→node); `must_error` addresses → `AddressError`, never panic. |
 
@@ -212,7 +212,7 @@ the external oracle for the scheme; its exact resolution is pinned by blocker #2
 - **OQ-2 (spec-fn `measures` is not a loop `measures`):** `spec_sum` has a top-level
   `measures xs.len()` that is the SPEC-FUNCTION decreases-measure, not a loop `measures`.
   REQ-4 addresses only LOOP `measures`s. Whether a spec-fn measure needs its own
-  address (`spec_sum.dec`?) is unspecified by §4.3 (which only shows loop
+  address (`spec_sum.measures`?) is unspecified by §4.3 (which only shows loop
   addresses). AC-2 currently gives `spec_sum` no inner addresses. Recorded;
   resolvable when forge's edit surface needs it, not a v0.1-parser blocker.
 

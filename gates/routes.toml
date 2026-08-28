@@ -106,7 +106,7 @@ conformance_ops = ["checked_get", "push_one"]
 crate_pattern = "thermite-syntax/src/address.rs"
 design = ".design/syntax/semantic-addressing.md"
 reference = ["conformance/address"]
-conformance_ops = ["binary_search.loop#1.inv#2"]
+conformance_ops = ["binary_search.loop#1.keeps#2"]
 
 # ---------------------------------------------------------------------
 # thermite-spec — the SpecTherm combinator registry (issue #2)

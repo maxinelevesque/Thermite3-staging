@@ -77,7 +77,7 @@ pub enum AddrKind {
     ProofHole,
 }
 
-/// A computed address with the kind of node it names and, for `inv`/`dec`, the
+/// A computed address with the kind of node it names and, for `keeps`/`measures`, the
 /// verbatim source text the address resolves to (semantic-addressing.md AC-1).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AddressEntry {
@@ -85,7 +85,7 @@ pub struct AddressEntry {
     pub kind: AddrKind,
     /// The surface keyword for a loop (`loop`/`while`), else `None`.
     pub surface_keyword: Option<&'static str>,
-    /// The clause source text for `inv`/`dec`, else `None`.
+    /// The clause source text for `keeps`/`measures`, else `None`.
     pub text: Option<String>,
 }
 
@@ -140,8 +140,8 @@ pub fn addresses_of(program: &Program) -> Vec<AddressEntry> {
                 }
             }
             Item::SpecFn(s) => {
-                // A spec fn has no addressable inner blocks in v0.1 (its `dec`
-                // is a spec-fn measure, not a loop dec — OQ-2).
+                // A spec fn has no addressable inner blocks in v0.1 (its `measures`
+                // is a spec-fn measure, not a loop measure — OQ-2).
                 out.push(AddressEntry {
                     addr: s.name.clone(),
                     kind: AddrKind::SpecFn,
@@ -152,7 +152,7 @@ pub fn addresses_of(program: &Program) -> Vec<AddressEntry> {
             // A `struct`/`enum` type item (`.design/basis/01-adts.md` Stage 1a)
             // is not an addressable node: the addressing scheme
             // (`.design/syntax/semantic-addressing.md` REQ-1/REQ-2) roots only at
-            // function names and numbers their inner loops/`inv`/`dec`; a type
+            // function names and numbers their inner loops/`keeps`/`measures`; a type
             // declaration has no loops, no contract clauses, hence no address.
             // This additive no-op arm keeps the same-crate exhaustive `match`
             // compiling; types gain no `forge edit` address.
@@ -246,7 +246,7 @@ fn collect_forge_addresses(
     }
 }
 
-/// Walk a function body and address every loop (and its `inv`/`dec`) in source
+/// Walk a function body and address every loop (and its `keeps`/`measures`) in source
 /// order. The loop counter is scoped to the enclosing function (REQ-2/REQ-5).
 fn collect_block_loops(fn_name: &str, body: &Block, out: &mut Vec<AddressEntry>) {
     let mut loop_index = 0usize;
@@ -281,7 +281,7 @@ fn collect_in_block(
 }
 
 /// Emit the loop's own address plus its `keeps#M` (1-based, source order) and
-/// `dec` addresses (semantic-addressing.md REQ-3/REQ-4).
+/// `measures` addresses (semantic-addressing.md REQ-3/REQ-4).
 fn emit_loop(loop_addr: &str, lp: &LoopNode, out: &mut Vec<AddressEntry>) {
     out.push(AddressEntry {
         addr: loop_addr.to_string(),
@@ -321,8 +321,9 @@ pub fn resolve(program: &Program, addr: &str) -> Result<AddressEntry, AddressErr
 }
 
 /// Check that every segment after the root is a well-formed `loop#N`/`keeps#M`/
-/// `dec` (REQ-1) or a forge-tier segment — `proof`, a clause family `ens`/`req`/
-/// `inv` (optionally `#k`), or a proof hole `?pN` (`.design/stage1-forge-tier.md`
+/// `measures` (REQ-1) or a forge-tier segment — `proof`, a clause family
+/// `ensures`/`requires`/`keeps` (optionally `#k`), or a proof hole `?pN`
+/// (`.design/stage1-forge-tier.md`
 /// REQ-3). The root is a non-empty identifier (a fn/prop/lemma name) or the
 /// anonymous-witness form `witness#N`; an unknown name surfaces as `NotFound` from
 /// `resolve`.
@@ -341,7 +342,7 @@ fn validate_segments(addr: &str) -> Result<(), AddressError> {
         }
     }
     for seg in segs {
-        // Bare keyword segments: the loop `dec`, the proof-block `proof`, and an
+        // Bare keyword segments: the loop `measures`, the proof-block `proof`, and an
         // unindexed clause family (`f.proof.requires`).
         if matches!(seg, "measures" | "proof" | "ensures" | "requires" | "keeps") {
             continue;

@@ -22,6 +22,7 @@ PROBES = {
     "thermite-syntax-parse-expressions": "parse-expressions",
     "thermite-syntax-parse-fidelity": "parse-fidelity",
     "thermite-syntax-parse-items": "parse-items",
+    "thermite-syntax-semantic-addresses": "semantic-addresses",
     "thermite-syntax-token-stream": "tokens",
 }
 PROBE_ARGV = [

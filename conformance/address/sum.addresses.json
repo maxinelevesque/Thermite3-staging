@@ -1,6 +1,6 @@
 {
   "source": "conformance/sum.th",
-  "note": "Hand-derived from thermite-design.md §4.3 + the verbatim corpus (goal.md R-CHAR-3). The `while` is the first loop construct, so it is loop#1 (while and loop share the loop#N namespace). spec_sum has no addressable inner blocks in v0.1 (its top-level `dec` is a spec-fn measure, not a loop dec — semantic-addressing.md OQ-2).",
+  "note": "Hand-derived from thermite-design.md §4.3 + the verbatim corpus (goal.md R-CHAR-3). The `while` is the first loop construct, so it is loop#1 (while and loop share the loop#N namespace). spec_sum has no addressable inner blocks in v0.1 (its top-level `measures` is a spec-fn measure, not a loop measure — semantic-addressing.md OQ-2).",
   "addresses": [
     { "addr": "spec_sum", "kind": "spec fn" },
     { "addr": "sum", "kind": "fn" },
