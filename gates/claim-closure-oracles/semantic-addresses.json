@@ -127,6 +127,14 @@
             "status": "Malformed"
           },
           {
+            "addr": "binary_search.?",
+            "status": "Malformed"
+          },
+          {
+            "addr": "binary_search.?x",
+            "status": "Malformed"
+          },
+          {
             "addr": "no_such_item",
             "status": "NotFound"
           }
@@ -314,6 +322,14 @@
             "status": "Malformed"
           },
           {
+            "addr": "mixed.?",
+            "status": "Malformed"
+          },
+          {
+            "addr": "mixed.?x",
+            "status": "Malformed"
+          },
+          {
             "addr": "no_such_item",
             "status": "NotFound"
           }
@@ -361,6 +377,97 @@
             "kind": "measures",
             "surface_keyword": null,
             "text": "0"
+          }
+        ],
+        "stable_equal": true
+      }
+    },
+    {
+      "source": "fn incomplete(x: u64) -> u64 ! pure requires true ensures result == x { ?7 }\n",
+      "expected": {
+        "addresses": [
+          {
+            "addr": "incomplete",
+            "kind": "fn",
+            "surface_keyword": null,
+            "text": null
+          },
+          {
+            "addr": "incomplete.?7",
+            "kind": "hole",
+            "surface_keyword": null,
+            "text": null
+          }
+        ],
+        "errors": [],
+        "repeat_equal": true,
+        "resolutions": [
+          {
+            "addr": "incomplete",
+            "entry": {
+              "addr": "incomplete",
+              "kind": "fn",
+              "surface_keyword": null,
+              "text": null
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "incomplete.?7",
+            "entry": {
+              "addr": "incomplete.?7",
+              "kind": "hole",
+              "surface_keyword": null,
+              "text": null
+            },
+            "status": "resolved"
+          },
+          {
+            "addr": "",
+            "status": "Malformed"
+          },
+          {
+            "addr": "incomplete.loop#x",
+            "status": "Malformed"
+          },
+          {
+            "addr": "incomplete.loop#999",
+            "status": "NotFound"
+          },
+          {
+            "addr": "incomplete.loop#1.dec",
+            "status": "Malformed"
+          },
+          {
+            "addr": "incomplete.loop#1.measures#1",
+            "status": "Malformed"
+          },
+          {
+            "addr": "incomplete.?",
+            "status": "Malformed"
+          },
+          {
+            "addr": "incomplete.?x",
+            "status": "Malformed"
+          },
+          {
+            "addr": "no_such_item",
+            "status": "NotFound"
+          }
+        ],
+        "stability_errors": [],
+        "stable_addresses": [
+          {
+            "addr": "incomplete",
+            "kind": "fn",
+            "surface_keyword": null,
+            "text": null
+          },
+          {
+            "addr": "incomplete.?7",
+            "kind": "hole",
+            "surface_keyword": null,
+            "text": null
           }
         ],
         "stable_equal": true

@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "slice_id": "syntax-tail-20",
+  "entries": [
+    {
+      "requirement_id": "REQ-SYNTAX-ADDRESS-HOLES",
+      "witness_id": "W-EXEC-SEMANTIC-ADDRESSES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/semantic-addresses.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "900cbb494c312e7bd38fcd4593d4db41574a27cc21e969ab36787f798f5e12bb"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-exec.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-exec.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/semantic-addresses.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/semantic-addresses.json",
+          "gates/claim-closure-exec.py",
+          "thermite-syntax/examples/claim-closure-probe.rs",
+          "thermite-syntax/src/address.rs",
+          "thermite-syntax/src/parser.rs",
+          "forge/src/goal_repl.rs#fill_hole",
+          "forge/tests/goal_repl_fill.rs",
+          "thermite-syntax/tests/proof_hole_lex.rs",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "renumber-body-hole",
+            "mutation": "replace_text",
+            "from": "fn incomplete(x: u64) -> u64 ! pure requires true ensures result == x { ?7 }\\n",
+            "to": "fn incomplete(x: u64) -> u64 ! pure requires true ensures result == x { ?8 }\\n",
+            "expected_exit": 4
+          },
+          {
+            "name": "misclassify-malformed-hole",
+            "mutation": "replace_text",
+            "from": "\"addr\": \"incomplete.?x\",\n            \"status\": \"Malformed\"",
+            "to": "\"addr\": \"incomplete.?x\",\n            \"status\": \"NotFound\"",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SYNTAX-LEXER-TOKEN-SET",
+      "witness_id": "W-EXACT-LEXER-TOKEN-SET",
+      "claim": {
+        "kind": "exact_population",
+        "subject": "regex:thermite-syntax/src/lexer.rs#^    ([A-Z][A-Za-z]+|__claim_closure_counterfeit__)(?:,|\\([^\\n)]*\\),| \\{)(?:\\s*//.*)?$",
+        "expected": [
+          "Amp",
+          "AndAnd",
+          "Arrow",
+          "As",
+          "At",
+          "Bang",
+          "Bool",
+          "Break",
+          "Caret",
+          "Colon",
+          "ColonCol",
+          "Comma",
+          "Continue",
+          "Dot",
+          "DotDot",
+          "Effects",
+          "Else",
+          "Ensures",
+          "Enum",
+          "Eof",
+          "Eq",
+          "EqEq",
+          "Exists",
+          "FatArrow",
+          "Fn",
+          "Forall",
+          "Ge",
+          "Gt",
+          "Hash",
+          "HashBracket",
+          "Hole",
+          "Ident",
+          "If",
+          "Int",
+          "Is",
+          "Keeps",
+          "LBrace",
+          "LBracket",
+          "LParen",
+          "Le",
+          "Let",
+          "Loop",
+          "Lt",
+          "Match",
+          "Measures",
+          "Minus",
+          "Mut",
+          "Ne",
+          "OrOr",
+          "Percent",
+          "Pipe",
+          "Plus",
+          "Pure",
+          "RBrace",
+          "RBracket",
+          "RParen",
+          "Requires",
+          "Return",
+          "Semi",
+          "Shl",
+          "Shr",
+          "Slash",
+          "Spec",
+          "Star",
+          "Str",
+          "Struct",
+          "While"
+        ],
+        "reviewed_summary_sha256": "82a40af400fc30c077e336b3b22d3124c12a6f8007f36c719a6f848b9f38d928"
+      },
+      "closure": {
+        "population_semantics": "closed_enum",
+        "artifacts": [
+          "thermite-syntax/src/lexer.rs#TokKind",
+          "thermite-syntax/src/parser.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "extractor": {
+          "kind": "regex",
+          "path": "thermite-syntax/src/lexer.rs",
+          "pattern": "^    ([A-Z][A-Za-z]+|__claim_closure_counterfeit__)(?:,|\\([^\\n)]*\\),| \\{)(?:\\s*//.*)?$"
+        },
+        "counterfeit": [
+          {
+            "name": "addition"
+          },
+          {
+            "name": "duplication"
+          },
+          {
+            "name": "omission"
+          },
+          {
+            "name": "substitution"
+          }
+        ]
+      }
+    }
+  ]
+}
