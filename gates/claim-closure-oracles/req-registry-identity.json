@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "probe": "req-registry-control-plane",
+  "cases": [
+    { "id": "stable-id-duplicate-rejected", "expected_exit": 0 },
+    { "id": "live-registry-clean", "expected_exit": 0 }
+  ]
+}

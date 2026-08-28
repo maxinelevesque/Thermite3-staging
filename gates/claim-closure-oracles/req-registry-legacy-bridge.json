@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "probe": "req-registry-control-plane",
+  "cases": [
+    { "id": "legacy-conflict-tripwire", "expected_exit": 0 },
+    { "id": "legacy-inventory-normalized", "expected_exit": 0 },
+    { "id": "live-legacy-status-clean", "expected_exit": 0 }
+  ]
+}
