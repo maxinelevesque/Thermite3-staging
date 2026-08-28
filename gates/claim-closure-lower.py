@@ -32,6 +32,38 @@ def integration(test_target: str, test_name: str) -> list[str]:
 
 
 CASES = {
+    "boundary-dispatch-matches-verified-predicate": integration(
+        "boundary_gate_verified", "lower_fn_emits_external_body_iff_proved_predicate"
+    ),
+    "regular-function-never-external-body": integration(
+        "boundary_gate_verified", "regular_fn_is_fully_proved_never_external_body"
+    ),
+    "boundary-predicate-verifies-no-cheating": [
+        "cargo",
+        "test",
+        "--quiet",
+        "--locked",
+        "-p",
+        "thermite-verified",
+        "--test",
+        "verus_verify",
+        "verified_core_passes_verus_no_cheating",
+        "--",
+        "--exact",
+    ],
+    "boundary-true-mutation-fails": [
+        "cargo",
+        "test",
+        "--quiet",
+        "--locked",
+        "-p",
+        "thermite-verified",
+        "--test",
+        "verus_verify",
+        "broken_should_emit_external_body_true_fails",
+        "--",
+        "--exact",
+    ],
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),

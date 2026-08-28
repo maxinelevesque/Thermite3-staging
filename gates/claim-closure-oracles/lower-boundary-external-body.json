@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "boundary-dispatch-matches-verified-predicate", "expected_exit": 0},
+    {"id": "regular-function-never-external-body", "expected_exit": 0},
+    {"id": "boundary-predicate-verifies-no-cheating", "expected_exit": 0},
+    {"id": "boundary-true-mutation-fails", "expected_exit": 0}
+  ]
+}
