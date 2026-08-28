@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"bytes-eq-defs-and-citation","expected_exit":0},{"id":"bytes-eq-verifies","expected_exit":0},{"id":"bytes-eq-content-mutant-fails","expected_exit":0}]}

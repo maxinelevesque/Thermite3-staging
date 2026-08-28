@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"collections-unsupported-element-errors","expected_exit":0}]}

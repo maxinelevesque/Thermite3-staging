@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"bytes-eq-l1-twin-runs","expected_exit":0}]}

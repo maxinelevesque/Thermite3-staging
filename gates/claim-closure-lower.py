@@ -138,6 +138,34 @@ CASES = {
     "scheme-unsupported-lowering-is-error": integration(
         "l1_conformance", "unsupported_construct_is_err_not_panic"
     ),
+    "collections-vec-wrapper-verifies": integration(
+        "collections_conformance", "vec_demo_lowers_wrapper_and_verifies_l3"
+    ),
+    "collections-vec-view-verifies": integration(
+        "collections_conformance", "vec_view_supports_spec_indexing_and_combinators"
+    ),
+    "collections-vec-view-forge-certifies": package_integration(
+        "forge", "divergence_collections", "vec_view_index_and_combinator_certify_l3"
+    ),
+    "collections-unsupported-element-errors": integration(
+        "collections_conformance", "unsupported_vec_element_is_structured_error_not_panic"
+    ),
+    "bytes-eq-defs-and-citation": integration(
+        "bytes_eq_conformance", "bytes_eq_demo_emits_def_and_lemmas_and_citation"
+    ),
+    "bytes-eq-emission-gate": integration(
+        "bytes_eq_conformance", "non_bytes_eq_program_does_not_emit_bytes_eq"
+    ),
+    "bytes-eq-verifies": integration(
+        "bytes_eq_conformance", "bytes_eq_demo_verifies_l3_under_real_verus"
+    ),
+    "bytes-eq-content-mutant-fails": integration(
+        "bytes_eq_conformance", "bytes_eq_demo_content_mutant_fails_real_verus"
+    ),
+    "bytes-eq-l1-twin-runs": integration(
+        "divergence_bytes_eq_l1_empty_window",
+        "bytes_eq_l1_twin_empty_window_matches_certified_spec_value",
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),

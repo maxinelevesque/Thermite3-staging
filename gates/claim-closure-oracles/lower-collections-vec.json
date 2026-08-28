@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"collections-vec-wrapper-verifies","expected_exit":0},{"id":"collections-vec-view-verifies","expected_exit":0},{"id":"collections-vec-view-forge-certifies","expected_exit":0}]}
