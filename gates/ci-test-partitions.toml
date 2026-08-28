@@ -8217,3 +8217,41 @@ bucket = 8
 seconds = 45.000
 test = "forge::divergence_collections struct_invariant_combinator_certifies_l3"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# These focused claim observations ran together in 0.02s locally. The reviewed
+# 0.007s floor matches adjacent unit tests until the next measured CI snapshot.
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_core discovered_combinator_definitions_are_observable"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_core exec_expression_lowering_is_observable"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_core frame_and_function_signatures_are_observable"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_core spec_seq_views_are_observable"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_core statement_and_loop_contracts_are_observable"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_core type_lowering_is_observable"
+timing_provenance = "reviewed_local_estimate_after_baseline"
