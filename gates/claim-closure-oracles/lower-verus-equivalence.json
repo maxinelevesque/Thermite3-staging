@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "equivalent-mutant-verifies", "expected_exit": 0},
+    {"id": "distinguishing-mutant-fails", "expected_exit": 0},
+    {"id": "non-scalar-equivalence-unsupported", "expected_exit": 0}
+  ]
+}

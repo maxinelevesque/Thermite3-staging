@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+"""Run the closed core-L3-lowering claim oracle."""
+
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+VERSION = "thermite-claim-closure-lower 1"
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def integration(test_target: str, test_name: str) -> list[str]:
+    return [
+        "cargo",
+        "test",
+        "--quiet",
+        "--locked",
+        "-p",
+        "thermite-lower",
+        "--test",
+        test_target,
+        test_name,
+        "--",
+        "--exact",
+    ]
+
+
+CASES = {
+    "frame-signatures": integration(
+        "claim_closure_core", "frame_and_function_signatures_are_observable"
+    ),
+    "type-lowering": integration("claim_closure_core", "type_lowering_is_observable"),
+    "exec-expressions": integration(
+        "claim_closure_core", "exec_expression_lowering_is_observable"
+    ),
+    "statements-loops": integration(
+        "claim_closure_core", "statement_and_loop_contracts_are_observable"
+    ),
+    "spec-seq-views": integration(
+        "claim_closure_core", "spec_seq_views_are_observable"
+    ),
+    "combinator-definitions": integration(
+        "claim_closure_core", "discovered_combinator_definitions_are_observable"
+    ),
+    "proof-aid-bounded-multiply": integration(
+        "req_bounded_mul_aid", "sq_emits_req_bounded_mul_aid_with_hand_derived_bound"
+    ),
+    "proof-aid-renamed-fold": integration(
+        "divergence_lower", "divergence_push_lemma_shape_derives_new_specfn_name"
+    ),
+    "proof-aid-coverage-split": integration(
+        "divergence_lower", "divergence_coverage_split_shape_derives_new_names"
+    ),
+    "golden-sum-verifies": integration("lower_conformance", "sum_emitted_verifies"),
+    "golden-binary-search-verifies": integration(
+        "lower_conformance", "binary_search_emitted_verifies"
+    ),
+    "structured-unsupported-error": [
+        "cargo",
+        "test",
+        "--quiet",
+        "--locked",
+        "-p",
+        "thermite-lower",
+        "--lib",
+        "lower::tests::loop_body_is_err_not_silent",
+        "--",
+        "--exact",
+    ],
+    "equivalent-mutant-verifies": integration(
+        "equivalence_obligation", "equivalent_early_return_verifies"
+    ),
+    "distinguishing-mutant-fails": integration(
+        "equivalence_obligation", "distinguishing_offbyone_fails"
+    ),
+    "non-scalar-equivalence-unsupported": integration(
+        "equivalence_obligation", "non_scalar_return_is_unsupported"
+    ),
+}
+
+
+def tool_version() -> tuple[int, str]:
+    verus = os.environ.get("VERUS_BIN") or shutil.which("verus")
+    if not verus:
+        return 3, ""
+    try:
+        cargo = subprocess.run(
+            ["cargo", "--version"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+        verus_version = subprocess.run(
+            [verus, "--version"], capture_output=True, text=True, check=True
+        ).stdout.strip().replace("\n", " ")
+    except (OSError, subprocess.CalledProcessError):
+        return 3, ""
+    return 0, f"{VERSION}; {cargo}; {verus_version}"
+
+
+def main(argv: list[str]) -> int:
+    if argv == ["--version"]:
+        status, version = tool_version()
+        if status == 0:
+            print(version)
+        return status
+    if len(argv) != 1:
+        return 2
+    try:
+        oracle = json.loads(Path(argv[0]).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return 2
+    if not isinstance(oracle, dict) or set(oracle) != {"cases", "probe", "version"}:
+        return 2
+    if oracle.get("version") != 1 or oracle.get("probe") != "thermite-lower-core":
+        return 2
+    cases = oracle.get("cases")
+    if not isinstance(cases, list) or not cases:
+        return 2
+    seen: set[str] = set()
+    for case in cases:
+        if not isinstance(case, dict) or set(case) != {"expected_exit", "id"}:
+            return 2
+        case_id = case.get("id")
+        expected_exit = case.get("expected_exit")
+        if (
+            not isinstance(case_id, str)
+            or case_id not in CASES
+            or case_id in seen
+            or not isinstance(expected_exit, int)
+        ):
+            return 4
+        seen.add(case_id)
+        try:
+            result = subprocess.run(
+                CASES[case_id],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=180,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return 3
+        if result.returncode != expected_exit:
+            return 4
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
