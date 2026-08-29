@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-solver-vacuity-compile-error","expected_exit":0},{"id":"check-solver-vacuity-vir-error","expected_exit":0},{"id":"check-solver-vacuity-unparseable","expected_exit":0}]}

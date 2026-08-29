@@ -575,6 +575,54 @@ CASES = {
     "check-cache-changed-body-miss": package_integration(
         "forge", "cache_conformance", "changed_body_is_a_cache_miss"
     ),
+    "check-cache-version-inputs": package_bin_unit(
+        "forge", "forge", "cache::tests::key_changes_when_any_input_changes"
+    ),
+    "check-outcome-proved": package_bin_unit(
+        "forge", "forge", "check::tests::parseable_success_is_l3_cert"
+    ),
+    "check-outcome-counterexample": package_bin_unit(
+        "forge", "forge", "check::tests::parseable_failure_is_reported_cert_with_counterexample"
+    ),
+    "check-outcome-timeout": package_bin_unit(
+        "forge", "forge", "check::tests::failure_with_profile_report_classifies_as_timeout"
+    ),
+    "check-profile-live-timeout": package_integration(
+        "forge", "profile_conformance", "forced_low_rlimit_timeout_carries_profile_when_emitted"
+    ),
+    "check-timeout-distinct-counterexample": package_integration(
+        "forge", "profile_conformance", "broken_contract_is_counterexample_not_timeout"
+    ),
+    "check-solver-vacuity-reject": package_integration(
+        "forge", "solver_vacuity_conformance", "solver_rejects_match_oracle_cause_and_field"
+    ),
+    "check-solver-vacuity-clean": package_integration(
+        "forge", "solver_vacuity_conformance", "corpus_accepts_pass_both_checks_and_still_certify_l3"
+    ),
+    "check-solver-vacuity-compile-error": package_bin_unit(
+        "forge", "forge", "vacuity_solver::tests::compile_error_summary_is_forge_error_not_clean"
+    ),
+    "check-solver-vacuity-vir-error": package_bin_unit(
+        "forge", "forge", "vacuity_solver::tests::vir_error_is_handled_forge_error_not_clean"
+    ),
+    "check-solver-vacuity-unparseable": package_bin_unit(
+        "forge", "forge", "vacuity_solver::tests::unparseable_output_has_no_summary"
+    ),
+    "check-ergonomics-guard-deps": package_integration(
+        "forge", "ergonomics_conformance", "req3_guarded_match_certifies_l3"
+    ),
+    "check-ergonomics-or-pattern-deps": package_integration(
+        "forge", "ergonomics_conformance", "req4_or_pattern_certifies_l3"
+    ),
+    "cache-key-pure": package_bin_unit(
+        "forge", "forge", "cache::tests::cache_key_is_pure"
+    ),
+    "cache-key-all-inputs": package_bin_unit(
+        "forge", "forge", "cache::tests::key_changes_when_any_input_changes"
+    ),
+    "cache-key-boundaries": package_bin_unit(
+        "forge", "forge", "cache::tests::length_prefixing_prevents_boundary_collision"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),
