@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"audit-refusal-boundary","expected_exit":0},{"id":"audit-refusal-live","expected_exit":0}]}

@@ -329,6 +329,48 @@ CASES = {
     "degrade-audit-deterministic": package_integration(
         "forge", "audit_conformance", "audit_is_deterministic"
     ),
+    "audit-schema-v1": package_bin_unit(
+        "forge", "forge", "audit::tests::pure_project_has_empty_slag_and_boundary_tcb"
+    ),
+    "audit-command-json": package_integration(
+        "forge", "audit_conformance", "corpus_empty_tcb"
+    ),
+    "audit-pure-projection": package_bin_unit(
+        "forge", "forge", "audit::tests::same_assurance_different_trust_bases_survive_audit_projection"
+    ),
+    "audit-project-assurance": package_bin_unit(
+        "forge", "forge", "audit::tests::lowered_assurance_listed_in_project_section"
+    ),
+    "audit-deterministic-unit": package_bin_unit(
+        "forge", "forge", "audit::tests::manifest_is_deterministic"
+    ),
+    "audit-deterministic-live": package_integration(
+        "forge", "audit_conformance", "audit_is_deterministic"
+    ),
+    "audit-lean-membership-auto": package_bin_unit(
+        "forge", "forge", "audit::tests::probe_pure_int_tail_is_auto"
+    ),
+    "audit-lean-membership-live": package_integration(
+        "forge", "audit_conformance", "lean_fragment_tier_auto"
+    ),
+    "audit-lean-probe-agrees": package_bin_unit(
+        "forge", "forge", "audit::tests::probe_agrees_with_direct_export_item"
+    ),
+    "audit-lean-probe-no-lake": package_integration(
+        "forge", "audit_conformance", "lean_fragment_present_without_lake"
+    ),
+    "audit-refusal-boundary": package_bin_unit(
+        "forge", "forge", "audit::tests::probe_boundary_is_not_pure_contract"
+    ),
+    "audit-refusal-live": package_integration(
+        "forge", "audit_conformance", "lean_fragment_refusal_boundary"
+    ),
+    "audit-informational-compat-unit": package_bin_unit(
+        "forge", "forge", "audit::tests::pre_amendment_v1_deserializes_into_typed_manifest"
+    ),
+    "audit-informational-compat-live": package_integration(
+        "forge", "audit_conformance", "pre_amendment_v1_document_still_deserializes"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),
