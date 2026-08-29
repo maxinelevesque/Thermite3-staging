@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"degrade-l3-counterexample-hard-fails","expected_exit":0},{"id":"degrade-l2-counterexample-hard-fails","expected_exit":0}]}

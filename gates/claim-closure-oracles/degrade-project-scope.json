@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"degrade-scope-end-to-end","expected_exit":0},{"id":"degrade-scope-boundary","expected_exit":0},{"id":"degrade-scope-empty","expected_exit":0}]}

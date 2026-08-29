@@ -5454,6 +5454,15 @@ bucket = 8
 seconds = 0.633
 test = "thermite-tv::loop_teeth l2_broken_preservation_caught"
 
+# This focused unit test postdates timing_source. Its local runtime rounds below
+# nextest's useful resolution, so use the reviewed adjacent-unit estimate until
+# the next measured GitHub timing snapshot replaces it.
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "forge::bin/forge degrade::tests::l1_environment_error_is_not_a_degrade"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
 [[assignment]]
 bucket = 9
 seconds = 14.865

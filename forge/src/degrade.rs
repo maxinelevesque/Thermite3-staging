@@ -635,6 +635,29 @@ mod tests {
         );
     }
 
+    // REQ-8, symmetric L1 edge: after a classified L2 UnderBound selects the L1
+    // fallback, an L1 environment/I/O failure propagates unchanged. It must not
+    // be replaced with a synthetic lowered-assurance certificate.
+    #[test]
+    fn l1_environment_error_is_not_a_degrade() {
+        let r = run_ladder(
+            L3Verdict::Timeout {
+                reason: timeout_reason(),
+            },
+            || Ok(l2_attempt(L2Verdict::UnderBound)),
+            || {
+                Err(ForgeError::Io {
+                    path: "target/l1-artifact.rs".to_string(),
+                    source: std::io::Error::other("fixture L1 write failure"),
+                })
+            },
+        );
+        assert!(
+            matches!(r, Err(ForgeError::Io { .. })),
+            "an L1 environment failure is an Err, never a synthetic degraded cert: {r:?}"
+        );
+    }
+
     // REQ-7: the ladder is deterministic; the same verdict + closures yield the
     // same achieved level twice.
     #[test]

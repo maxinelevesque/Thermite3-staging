@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"degrade-ladder-deterministic","expected_exit":0},{"id":"degrade-audit-deterministic","expected_exit":0}]}
