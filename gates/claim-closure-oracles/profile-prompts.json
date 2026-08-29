@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"profile-render-prompts","expected_exit":0},{"id":"manifest-profile-suggested-move","expected_exit":0},{"id":"profile-render-deterministic","expected_exit":0}]}

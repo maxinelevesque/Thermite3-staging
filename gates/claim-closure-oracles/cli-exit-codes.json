@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-exit-success","expected_exit":0},{"id":"check-exit-failure","expected_exit":0},{"id":"cli-exit-code-classes","expected_exit":0},{"id":"cli-empty-l2-fails","expected_exit":0}]}

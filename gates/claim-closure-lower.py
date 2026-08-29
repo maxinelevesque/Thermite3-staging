@@ -578,6 +578,39 @@ CASES = {
     "check-cache-version-inputs": package_bin_unit(
         "forge", "forge", "cache::tests::key_changes_when_any_input_changes"
     ),
+    "cache-round-trip": package_bin_unit(
+        "forge", "forge", "cache::tests::round_trip_load_store"
+    ),
+    "cache-corrupt-miss": package_bin_unit(
+        "forge", "forge", "cache::tests::corrupt_entry_is_a_miss"
+    ),
+    "cache-default-location": package_bin_unit(
+        "forge", "forge", "cache::tests::default_cache_dir_is_under_target"
+    ),
+    "cache-item-locality": package_bin_unit(
+        "forge", "forge", "check::tests::cache_key_is_local_to_the_item"
+    ),
+    "profile-schema-parse": package_bin_unit(
+        "forge", "forge", "profile::tests::parse_profile_hand_derived_fields"
+    ),
+    "profile-trigger-parse": package_bin_unit(
+        "forge", "forge", "profile::tests::parse_profile_reconstructs_trigger_from_carets"
+    ),
+    "profile-render-prompts": package_bin_unit(
+        "forge", "forge", "profile::tests::render_prompts_names_bottleneck"
+    ),
+    "profile-render-deterministic": package_bin_unit(
+        "forge", "forge", "profile::tests::render_is_deterministic"
+    ),
+    "cli-output-stream-discipline": package_integration(
+        "forge", "check_conformance", "missing_file_is_usage_error_nonzero"
+    ),
+    "cli-exit-code-classes": package_bin_unit(
+        "forge", "forge", "cli::tests::errors_map_to_environment_exit_code"
+    ),
+    "cli-empty-l2-fails": package_integration(
+        "forge", "check_conformance", "explicit_l2_empty_certificate_array_is_not_success"
+    ),
     "check-outcome-proved": package_bin_unit(
         "forge", "forge", "check::tests::parseable_success_is_l3_cert"
     ),
