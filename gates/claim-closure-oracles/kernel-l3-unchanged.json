@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"kernel-l3-check-golden","expected_exit":0},{"id":"kernel-l3-std-default","expected_exit":0}]}

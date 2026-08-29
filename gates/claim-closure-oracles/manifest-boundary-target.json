@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"manifest-boundary-live","expected_exit":0},{"id":"manifest-boundary-target-substitution","expected_exit":0}]}

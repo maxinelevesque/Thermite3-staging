@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"audit-tcb-nonempty","expected_exit":0}]}

@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "slice_id": "executable-forge-trust-safety-triple-32",
+  "entries": [
+    {
+      "requirement_id": "REQ-FORGE-BUILD-KERNEL-FX-REJECT",
+      "witness_id": "W-EXEC-FORGE-BUILD-KERNEL-FX-REJECT",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/kernel-fx-reject.json","expected":["accepted"],"reviewed_summary_sha256":"54a1ec5a28ca3faad181ac3dcbca661231f18f8dccdfdeaabf17776365bee551"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/kernel-fx-reject.json","artifacts":["gates/claim-closure-oracles/kernel-fx-reject.json","gates/claim-closure-lower.py","forge/src/build.rs","forge/src/cli.rs","forge/tests/freestanding_target.rs","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"allow-hosted-effects","mutation":"replace_text","from":"kernel-fx-multi-reject","to":"kernel-fx-hosted-effects-allowed","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-BUILD-KERNEL-L1-CHECKS",
+      "witness_id": "W-EXEC-FORGE-BUILD-KERNEL-L1-CHECKS",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/kernel-l1-checks.json","expected":["accepted"],"reviewed_summary_sha256":"1b78f75bd09714d278c464452fb99b3054516a6ba48274167b8d82386ce55228"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/kernel-l1-checks.json","artifacts":["gates/claim-closure-oracles/kernel-l1-checks.json","gates/claim-closure-lower.py","forge/src/build.rs","thermite-lower/src/lower.rs","forge/tests/freestanding_target.rs","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"strip-kernel-checks","mutation":"replace_text","from":"kernel-l1-checks-live","to":"kernel-l1-checks-stripped","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-BUILD-KERNEL-L3-UNCHANGED",
+      "witness_id": "W-EXEC-FORGE-BUILD-KERNEL-L3-UNCHANGED",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/kernel-l3-unchanged.json","expected":["accepted"],"reviewed_summary_sha256":"5036de009d9165943865fee9a8ad27862fcd2a25882f424b4b1d5900a499d070"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/kernel-l3-unchanged.json","artifacts":["gates/claim-closure-oracles/kernel-l3-unchanged.json","gates/claim-closure-lower.py","forge/src/build.rs","forge/src/check.rs","forge/tests/check_conformance.rs","forge/tests/freestanding_target.rs","conformance/sum.cert.json","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"diverge-l3-path","mutation":"replace_text","from":"kernel-l3-check-golden","to":"kernel-l3-check-diverges","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-AUDIT-TCB",
+      "witness_id": "W-EXEC-FORGE-AUDIT-TCB",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/audit-tcb.json","expected":["accepted"],"reviewed_summary_sha256":"69ac8f4527524fd439fc52901e31a88d965e1c49f03125cd15ff4cb6bea5b79a"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/audit-tcb.json","artifacts":["gates/claim-closure-oracles/audit-tcb.json","gates/claim-closure-lower.py","forge/src/audit.rs","forge/src/manifest.rs","forge/tests/audit_conformance.rs","conformance/audit/cases.json","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-tcb-crossings","mutation":"replace_text","from":"audit-tcb-nonempty","to":"audit-tcb-omits-crossings","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-MANIFEST-ASSURANCE-AGGREGATE",
+      "witness_id": "W-EXEC-FORGE-MANIFEST-ASSURANCE-AGGREGATE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/manifest-assurance-aggregate.json","expected":["accepted"],"reviewed_summary_sha256":"f577f9cb01563c8e121e5393a3e3e6ad9c1133974659ffbeaba9fcbe6a3d9e06"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/manifest-assurance-aggregate.json","artifacts":["gates/claim-closure-oracles/manifest-assurance-aggregate.json","gates/claim-closure-lower.py","forge/src/manifest.rs","forge/src/degrade.rs","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"launder-project-failure","mutation":"replace_text","from":"manifest-assurance-hard-fail","to":"manifest-assurance-hard-fail-certifies","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-MANIFEST-ASSURANCE-SCOPE",
+      "witness_id": "W-EXEC-FORGE-MANIFEST-ASSURANCE-SCOPE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/manifest-assurance-scope.json","expected":["accepted"],"reviewed_summary_sha256":"bf3b113808164a5228a2097115f9ad397c06497c70415afff985cda01c1747e6"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/manifest-assurance-scope.json","artifacts":["gates/claim-closure-oracles/manifest-assurance-scope.json","gates/claim-closure-lower.py","forge/src/manifest.rs","forge/src/closure.rs","forge/tests/composition_basis_conformance.rs","conformance/composition-basis/cases.json","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"hide-scope-from-oracle","mutation":"replace_text","from":"manifest-scope-oracle-visible","to":"manifest-scope-oracle-hidden","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-MANIFEST-BOUNDARY-FLAG",
+      "witness_id": "W-EXEC-FORGE-MANIFEST-BOUNDARY-FLAG",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/manifest-boundary-flag.json","expected":["accepted"],"reviewed_summary_sha256":"0ab057721d3918e05194a4ca8861f49f0a01f23beb27a93ba95a0563f046b876"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/manifest-boundary-flag.json","artifacts":["gates/claim-closure-oracles/manifest-boundary-flag.json","gates/claim-closure-lower.py","forge/src/manifest.rs","forge/src/check.rs","forge/tests/boundary_conformance.rs","conformance/boundary/cases.json","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"clear-boundary-flag","mutation":"replace_text","from":"manifest-boundary-live","to":"manifest-boundary-flag-false","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-MANIFEST-BOUNDARY-L1",
+      "witness_id": "W-EXEC-FORGE-MANIFEST-BOUNDARY-L1",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/manifest-boundary-l1.json","expected":["accepted"],"reviewed_summary_sha256":"5ca568a444e53d4032b9140347d70cdd7a5df49a48babb68edb5a482b3ca9f74"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/manifest-boundary-l1.json","artifacts":["gates/claim-closure-oracles/manifest-boundary-l1.json","gates/claim-closure-lower.py","forge/src/manifest.rs","forge/src/check.rs","thermite-lower/src/lower.rs","forge/tests/boundary_conformance.rs","conformance/boundary/cases.json","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"promote-boundary-to-l3","mutation":"replace_text","from":"manifest-boundary-live","to":"manifest-boundary-certifies-l3","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-MANIFEST-BOUNDARY-TARGET",
+      "witness_id": "W-EXEC-FORGE-MANIFEST-BOUNDARY-TARGET",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/manifest-boundary-target.json","expected":["accepted"],"reviewed_summary_sha256":"017e153752c725534e1d0fb65e1b0e9afe29af060f5f5771f089be22a08dd338"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/manifest-boundary-target.json","artifacts":["gates/claim-closure-oracles/manifest-boundary-target.json","gates/claim-closure-lower.py","forge/src/manifest.rs","thermite-lower/src/lower.rs","forge/tests/boundary_conformance.rs","conformance/boundary/cases.json","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"accept-target-substitution","mutation":"replace_text","from":"manifest-boundary-target-substitution","to":"manifest-boundary-target-substitution-accepted","expected_exit":4}]}
+    }
+  ]
+}

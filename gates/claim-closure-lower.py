@@ -416,6 +416,45 @@ CASES = {
     "build-kernel-nostd-live": package_integration(
         "forge", "freestanding_target", "pure_fn_builds_no_std_freestanding_rlib"
     ),
+    "kernel-fx-read-reject": package_integration(
+        "forge", "freestanding_target", "ambient_read_fx_fn_is_refused"
+    ),
+    "kernel-fx-multi-reject": package_integration(
+        "forge", "freestanding_target", "ambient_write_net_term_fx_refuse_identically"
+    ),
+    "kernel-entry-reject": package_integration(
+        "forge", "freestanding_target", "freestanding_target_with_entry_is_usage_error"
+    ),
+    "kernel-l1-checks-live": package_integration(
+        "forge", "freestanding_target", "l1_checks_emitted_verbatim_in_kernel_source"
+    ),
+    "kernel-l3-check-golden": package_integration(
+        "forge", "check_conformance", "sum_cert_matches_golden_deterministic_subset"
+    ),
+    "kernel-l3-std-default": package_integration(
+        "forge", "freestanding_target", "default_target_source_is_byte_identical_to_no_target_flag"
+    ),
+    "audit-tcb-nonempty": package_integration(
+        "forge", "audit_conformance", "slag_boundary_tcb"
+    ),
+    "manifest-assurance-minimum": package_bin_unit(
+        "forge", "forge", "manifest::tests::aggregate_headline_is_min_over_functions"
+    ),
+    "manifest-assurance-hard-fail": package_bin_unit(
+        "forge", "forge", "manifest::tests::aggregate_hard_fail_is_project_failure"
+    ),
+    "manifest-scope-oracle-visible": package_bin_unit(
+        "forge", "forge", "manifest::tests::assurance_scope_is_additive_normalized_and_golden_stable"
+    ),
+    "manifest-scope-live": package_integration(
+        "forge", "composition_basis_conformance", "project_aggregation_is_the_honest_min_over_parts"
+    ),
+    "manifest-boundary-live": package_integration(
+        "forge", "boundary_conformance", "foreign_id_certifies_l1_boundary_not_l3"
+    ),
+    "manifest-boundary-target-substitution": package_bin_unit(
+        "forge", "forge", "manifest::tests::rfc3_coordinates::ffi_artifact_rejects_boundary_target_substitution"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),
