@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"cache-key-pure","expected_exit":0},{"id":"cache-round-trip","expected_exit":0},{"id":"check-cache-hit-equal","expected_exit":0}]}
