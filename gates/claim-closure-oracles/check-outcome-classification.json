@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-outcome-proved","expected_exit":0},{"id":"check-outcome-counterexample","expected_exit":0},{"id":"check-outcome-timeout","expected_exit":0}]}
