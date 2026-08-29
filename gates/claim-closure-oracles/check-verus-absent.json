@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-verus-absent-cold-cache","expected_exit":0}]}

@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-cache-hit-equal","expected_exit":0},{"id":"check-cache-solver-skip","expected_exit":0},{"id":"check-cache-changed-body-miss","expected_exit":0}]}

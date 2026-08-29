@@ -500,6 +500,81 @@ CASES = {
     "manifest-profile-suggested-move": package_bin_unit(
         "forge", "forge", "profile::tests::suggested_move_is_top_prompt"
     ),
+    "check-pipeline-success": package_integration(
+        "forge", "check_conformance", "sum_cert_matches_golden_deterministic_subset"
+    ),
+    "check-pipeline-failure": package_integration(
+        "forge", "check_conformance", "broken_contract_is_reported_failure_with_counterexample"
+    ),
+    "check-scratch-stem": package_bin_unit(
+        "forge", "forge", "check::tests::crate_stem_has_no_dot_and_is_valid"
+    ),
+    "check-scratch-success-cleanup": package_integration(
+        "forge", "scratch_cleanup", "success_path_leaves_no_scratch_orphan"
+    ),
+    "check-scratch-error-cleanup": package_integration(
+        "forge", "scratch_cleanup", "error_path_leaves_no_scratch_orphan"
+    ),
+    "check-exit-success": package_bin_unit(
+        "forge", "forge", "check::tests::parseable_success_is_l3_cert"
+    ),
+    "check-exit-failure": package_bin_unit(
+        "forge", "forge", "check::tests::parseable_failure_is_reported_cert_with_counterexample"
+    ),
+    "check-exit-unparseable": package_bin_unit(
+        "forge", "forge", "check::tests::unparseable_output_is_verus_output_error"
+    ),
+    "check-exit-vir-error": package_bin_unit(
+        "forge", "forge", "check::tests::vir_error_is_verus_output_error"
+    ),
+    "check-obligation-witness": package_bin_unit(
+        "forge", "forge", "check::tests::parseable_failure_is_reported_cert_with_counterexample"
+    ),
+    "check-level-success-failure": package_bin_unit(
+        "forge", "forge", "check::tests::verus_assembly_uses_pre_discharge_artifact_on_success_and_failure"
+    ),
+    "check-verus-absent-cold-cache": package_integration(
+        "forge", "cache_conformance", "cold_cache_with_verus_unavailable_is_environment_error"
+    ),
+    "check-deterministic-golden": package_integration(
+        "forge", "check_conformance", "sum_cert_matches_golden_deterministic_subset"
+    ),
+    "check-vacuity-reject": package_integration(
+        "forge", "vacuity_slag_conformance", "triage_rejects_match_oracle_cause"
+    ),
+    "check-vacuity-pass": package_integration(
+        "forge", "vacuity_slag_conformance", "triage_accepts_pass_triage"
+    ),
+    "check-slag-l1-live": package_integration(
+        "forge", "vacuity_slag_conformance", "slag_accepts_certify_l1_slag_true"
+    ),
+    "check-slag-reject-live": package_integration(
+        "forge", "vacuity_slag_conformance", "slag_rejects_match_oracle_cause"
+    ),
+    "check-boundary-l1-live": package_integration(
+        "forge", "boundary_conformance", "foreign_id_certifies_l1_boundary_not_l3"
+    ),
+    "check-boundary-vacuous-reject": package_integration(
+        "forge", "boundary_conformance", "boundary_vacuous_contract_is_rejected"
+    ),
+    "check-diverge-l1-unit": package_bin_unit(
+        "forge", "forge", "check::tests::production_l1_gate_preserves_runtime_route_classification"
+    ),
+    "check-diverge-l1-live": package_integration(
+        "forge", "break_continue_conformance", "diverge_loop_with_break_and_continue_caps_at_l1"
+    ),
+    "check-diverge-nondiverge-reject": package_integration(
+        "forge", "editor_runs", "non_diverge_weak_contract_still_rejects_l0_weakcontract"
+    ),
+    "check-cache-hit-equal": package_integration(
+        "forge", "cache_conformance", "second_run_is_a_cache_hit_with_equal_deterministic_fields"
+    ),
+    "check-cache-solver-skip": package_integration(
+        "forge", "cache_conformance", "cache_hit_serves_l3_with_verus_unavailable"
+    ),
+    "check-cache-changed-body-miss": package_integration(
+        "forge", "cache_conformance", "changed_body_is_a_cache_miss"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),

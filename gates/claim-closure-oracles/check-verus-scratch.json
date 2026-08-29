@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-scratch-stem","expected_exit":0},{"id":"check-scratch-success-cleanup","expected_exit":0},{"id":"check-scratch-error-cleanup","expected_exit":0}]}
