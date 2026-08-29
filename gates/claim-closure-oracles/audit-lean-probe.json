@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"audit-lean-probe-agrees","expected_exit":0},{"id":"audit-lean-probe-no-lake","expected_exit":0}]}
