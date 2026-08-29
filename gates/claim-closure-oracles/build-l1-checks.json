@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"build-l1-checks-structural","expected_exit":0},{"id":"build-l1-checks-runtime","expected_exit":0}]}

@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"build-artifact-library","expected_exit":0},{"id":"build-artifact-entry","expected_exit":0}]}

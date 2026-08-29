@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"build-kernel-target","expected_exit":0},{"id":"build-std-target-default","expected_exit":0}]}
