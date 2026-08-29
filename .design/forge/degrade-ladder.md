@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 9171f7fc260242151432300c3ce7ec7bd3000d6e (re-pinned 2026-06-16: forge runtime status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: a2db0d8a82ae573cd114387d903ab8f3093dc840 (bootstrap pin: decision 4 — doc-last-touch, NOT verified-current; backlog #262))
-audited-content-sha256: 529978efa07a07858bc50a17d545c92aac5b5add24d550c15be363d528fd39ac
+audited-content-sha256: 11e6a27a8ef9da754eac16f90c6d112bfb329380faa610ae6ac8a75ace61ab9d (re-pinned 2026-08-28 for the symmetric L1 degrade-error propagation witness. prior: 529978efa07a07858bc50a17d545c92aac5b5add24d550c15be363d528fd39ac)
 governs: forge/src/degrade.rs
 thesis-refs:
   - thermite-design.md §5.2

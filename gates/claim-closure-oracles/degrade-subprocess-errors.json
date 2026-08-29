@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"degrade-l2-environment-error-propagates","expected_exit":0},{"id":"degrade-l1-environment-error-propagates","expected_exit":0}]}

@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"degrade-manifest-minimum","expected_exit":0},{"id":"degrade-cli-assurance-headline","expected_exit":0},{"id":"degrade-audit-assurance-manifest","expected_exit":0}]}

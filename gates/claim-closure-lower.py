@@ -275,6 +275,60 @@ CASES = {
     "mutation-match-guard-observable": package_bin_unit(
         "forge", "forge", "mutation::tests::match_guard_expression_is_in_mutation_walk"
     ),
+    "degrade-proved-stays-l3": package_bin_unit(
+        "forge", "forge", "degrade::tests::proved_certifies_l3_no_lower_rung"
+    ),
+    "degrade-timeout-reaches-l2": package_bin_unit(
+        "forge", "forge", "degrade::tests::timeout_then_l2_verified_certifies_l2_degraded"
+    ),
+    "degrade-underbound-reaches-l1": package_bin_unit(
+        "forge", "forge", "degrade::tests::l2_under_bound_drops_to_l1"
+    ),
+    "degrade-lowered-fields": package_bin_unit(
+        "forge", "forge", "degrade::tests::degraded_l2_carries_flag_and_reason"
+    ),
+    "degrade-l3-counterexample-hard-fails": package_bin_unit(
+        "forge", "forge", "degrade::tests::counterexample_never_degrades"
+    ),
+    "degrade-l2-counterexample-hard-fails": package_bin_unit(
+        "forge", "forge", "degrade::tests::l2_counterexample_never_drops_to_l1"
+    ),
+    "degrade-l2-environment-error-propagates": package_bin_unit(
+        "forge", "forge", "degrade::tests::l2_environment_error_is_not_a_degrade"
+    ),
+    "degrade-l1-environment-error-propagates": package_bin_unit(
+        "forge", "forge", "degrade::tests::l1_environment_error_is_not_a_degrade"
+    ),
+    "degrade-ladder-deterministic": package_bin_unit(
+        "forge", "forge", "degrade::tests::ladder_is_deterministic"
+    ),
+    "degrade-manifest-minimum": package_bin_unit(
+        "forge", "forge", "degrade::tests::aggregate_is_min_over_functions"
+    ),
+    "degrade-manifest-hard-fail": package_bin_unit(
+        "forge", "forge", "degrade::tests::hard_fail_caps_project_at_failure"
+    ),
+    "degrade-manifest-all-l3": package_bin_unit(
+        "forge", "forge", "degrade::tests::all_l3_is_project_l3_no_lowering"
+    ),
+    "degrade-scope-end-to-end": package_bin_unit(
+        "forge", "forge", "degrade::tests::aggregate_project_scope_all_end_to_end"
+    ),
+    "degrade-scope-boundary": package_bin_unit(
+        "forge", "forge", "degrade::tests::aggregate_project_scope_any_to_boundary_lists_crossings"
+    ),
+    "degrade-scope-empty": package_bin_unit(
+        "forge", "forge", "degrade::tests::aggregate_project_scope_empty_is_end_to_end"
+    ),
+    "degrade-cli-assurance-headline": package_integration(
+        "forge", "degrade_conformance", "human_output_shows_project_assurance_headline"
+    ),
+    "degrade-audit-assurance-manifest": package_integration(
+        "forge", "audit_conformance", "corpus_empty_tcb"
+    ),
+    "degrade-audit-deterministic": package_integration(
+        "forge", "audit_conformance", "audit_is_deterministic"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),
