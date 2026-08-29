@@ -371,6 +371,51 @@ CASES = {
     "audit-informational-compat-live": package_integration(
         "forge", "audit_conformance", "pre_amendment_v1_document_still_deserializes"
     ),
+    "build-pipeline-library": package_integration(
+        "forge", "build_conformance", "sum_builds_as_library"
+    ),
+    "build-rustc-hard-fail": package_integration(
+        "forge", "build_conformance", "uncompilable_lowering_is_nonzero_exit"
+    ),
+    "build-artifact-library": package_integration(
+        "forge", "build_conformance", "sum_builds_as_library"
+    ),
+    "build-artifact-entry": package_integration(
+        "forge", "build_conformance", "sum_runs"
+    ),
+    "build-l1-checks-structural": package_integration(
+        "forge", "build_conformance", "checks_are_baked_in"
+    ),
+    "build-l1-checks-runtime": package_integration(
+        "forge", "build_conformance", "ens_violation_fires_at_runtime"
+    ),
+    "build-manifest-shape": package_integration(
+        "forge", "build_conformance", "sum_runs"
+    ),
+    "build-manifest-reproducible": package_integration(
+        "forge", "build_conformance", "rebuilt_library_is_byte_identical"
+    ),
+    "build-entry-sandbox": package_integration(
+        "forge", "sandbox_conformance", "pure_runs_clean"
+    ),
+    "build-out-runnable": package_integration(
+        "forge", "build_conformance", "out_places_runnable_binary"
+    ),
+    "build-out-error": package_integration(
+        "forge", "build_conformance", "out_bad_path_is_structured_error"
+    ),
+    "build-kernel-target": package_integration(
+        "forge", "freestanding_target", "pure_fn_builds_no_std_freestanding_rlib"
+    ),
+    "build-std-target-default": package_integration(
+        "forge", "freestanding_target", "default_target_source_is_byte_identical_to_no_target_flag"
+    ),
+    "build-kernel-nostd-unit": package_bin_unit(
+        "forge", "forge", "build::tests::kernel_emit_source_carries_no_std_prelude"
+    ),
+    "build-kernel-nostd-live": package_integration(
+        "forge", "freestanding_target", "pure_fn_builds_no_std_freestanding_rlib"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),
