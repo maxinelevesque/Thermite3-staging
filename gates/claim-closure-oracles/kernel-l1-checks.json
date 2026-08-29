@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"kernel-l1-checks-live","expected_exit":0}]}

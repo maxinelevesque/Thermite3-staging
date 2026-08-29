@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"kernel-fx-read-reject","expected_exit":0},{"id":"kernel-fx-multi-reject","expected_exit":0},{"id":"kernel-entry-reject","expected_exit":0}]}
