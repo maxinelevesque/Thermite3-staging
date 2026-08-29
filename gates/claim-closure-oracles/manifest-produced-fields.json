@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"manifest-produced-fields-shape","expected_exit":0},{"id":"manifest-produced-effects","expected_exit":0}]}

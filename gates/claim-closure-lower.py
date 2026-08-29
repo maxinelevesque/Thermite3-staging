@@ -455,6 +455,51 @@ CASES = {
     "manifest-boundary-target-substitution": package_bin_unit(
         "forge", "forge", "manifest::tests::rfc3_coordinates::ffi_artifact_rejects_boundary_target_substitution"
     ),
+    "manifest-schema-shape": package_bin_unit(
+        "forge", "forge", "manifest::tests::schema_matches_appendix_a"
+    ),
+    "manifest-produced-fields-shape": package_bin_unit(
+        "forge", "forge", "manifest::tests::schema_matches_appendix_a"
+    ),
+    "manifest-produced-effects": package_bin_unit(
+        "forge", "forge", "manifest::tests::effects_of_covers_every_variant"
+    ),
+    "manifest-forward-declared-oracle": package_bin_unit(
+        "forge", "forge", "manifest::tests::oracle_ignores_forward_declared_and_time"
+    ),
+    "manifest-suggested-move-reserved": package_bin_unit(
+        "forge", "forge", "manifest::tests::suggested_move_is_reserved_absence"
+    ),
+    "manifest-obligation-results": package_bin_unit(
+        "forge", "forge", "manifest::tests::obligation_results_present"
+    ),
+    "manifest-solver-time-excluded": package_bin_unit(
+        "forge", "forge", "manifest::tests::oracle_ignores_forward_declared_and_time"
+    ),
+    "manifest-serde-roundtrip": package_bin_unit(
+        "forge", "forge", "manifest::tests::golden_deterministic_subset_round_trips"
+    ),
+    "manifest-serde-deterministic": package_bin_unit(
+        "forge", "forge", "manifest::tests::serialization_is_deterministic"
+    ),
+    "manifest-slag-meta-live": package_bin_unit(
+        "forge", "forge", "manifest::tests::slag_l1_cert_shape"
+    ),
+    "manifest-reject-reason-live": package_bin_unit(
+        "forge", "forge", "manifest::tests::rejected_cert_carries_cause_and_is_not_l3"
+    ),
+    "manifest-cache-provenance-live": package_bin_unit(
+        "forge", "forge", "manifest::tests::cached_field_is_additive_and_oracle_excluded"
+    ),
+    "manifest-profile-classification": package_bin_unit(
+        "forge", "forge", "check::tests::failure_with_profile_report_classifies_as_timeout"
+    ),
+    "manifest-profile-parser": package_bin_unit(
+        "forge", "forge", "profile::tests::parse_profile_hand_derived_fields"
+    ),
+    "manifest-profile-suggested-move": package_bin_unit(
+        "forge", "forge", "profile::tests::suggested_move_is_top_prompt"
+    ),
     "frame-signatures": integration(
         "claim_closure_core", "frame_and_function_signatures_are_observable"
     ),
