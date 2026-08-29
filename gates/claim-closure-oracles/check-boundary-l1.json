@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-boundary-l1-live","expected_exit":0},{"id":"check-boundary-vacuous-reject","expected_exit":0}]}

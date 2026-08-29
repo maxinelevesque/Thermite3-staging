@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-exit-success","expected_exit":0},{"id":"check-exit-failure","expected_exit":0},{"id":"check-exit-unparseable","expected_exit":0},{"id":"check-exit-vir-error","expected_exit":0}]}

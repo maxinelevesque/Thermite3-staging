@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-diverge-l1-unit","expected_exit":0},{"id":"check-diverge-l1-live","expected_exit":0},{"id":"check-diverge-nondiverge-reject","expected_exit":0}]}
