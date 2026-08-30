@@ -474,6 +474,21 @@ jobs:
           echo "$(dirname "$VERUS_BIN_PATH")" >> "$GITHUB_PATH"
           "$VERUS_BIN_PATH" --version
 
+      # Claim-closure routes are executable witnesses, not metadata-only probes.
+      # G4 cache and automatic-routing closures therefore need the same pinned
+      # SAT/LRAT toolchain as the dedicated G4 children and duration buckets.
+      - name: Cache Stage 4 proof tools for executable claim probes
+        uses: actions/cache@v4
+        with:
+          path: target/g4-tools
+          key: g4-tools-${{ hashFiles('dev/g4-toolchain.env', 'dev/g4-tools/drat-trim') }}
+
+      - name: Install pinned CaDiCaL and drat-trim for executable claim probes
+        run: |
+          bash dev/install-g4-tools.sh
+          echo "THERMITE_EPR_CADICAL=$PWD/target/g4-tools/bin/cadical" >> "$GITHUB_ENV"
+          echo "THERMITE_EPR_DRAT_TRIM=$PWD/target/g4-tools/bin/drat-trim" >> "$GITHUB_ENV"
+
       - name: Claim-closure draft slices (tool-aware)
         run: uv run python gates/claim-closure-author.py --check-drafts
 

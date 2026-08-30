@@ -1712,6 +1712,12 @@ test = "forge::bin/forge verified_build::tests::verus_summary_distinguishes_repo
 
 [[assignment]]
 bucket = 3
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::kernel_vstd_model_schema_is_pinned"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
 seconds = 8.170
 test = "forge::break_continue_conformance diverge_loop_with_break_and_continue_caps_at_l1"
 
@@ -2329,6 +2335,12 @@ test = "forge::bin/forge vacuity::tests::unit_return_exempt_from_b"
 bucket = 4
 seconds = 0.007
 test = "forge::bin/forge verified_build::tests::verus_failure_detail_claims_only_structured_counts"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::kernel_byte_content_contracts_are_exact"
+timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 4
@@ -3035,6 +3047,12 @@ test = "forge::bin/forge vacuity_solver::tests::tautology_harness_weaves_spec_fn
 bucket = 5
 seconds = 0.007
 test = "forge::bin/forge verified_build::tests::export_plan_is_explicit_private_by_default_and_wraps_nontrivial_req"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::kernel_vstd_receipt_replay_binds_every_identity"
+timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 5

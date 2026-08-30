@@ -4448,4 +4448,84 @@ mod tests {
             assert_ne!(digest, changed.canonical_identity_sha256(), "field {field}");
         }
     }
+
+    #[test]
+    fn kernel_vstd_model_schema_is_pinned() {
+        let model = KernelVstdModelEvidence {
+            vir_path: "vstd.vir".to_string(),
+            vir_sha256: "1".repeat(64),
+            source_root: "vstd".to_string(),
+            source_file_count: 1,
+            source_total_bytes: 2,
+            source_sha256: "2".repeat(64),
+            link_source_name: KERNEL_VSTD_LINK_SOURCE_NAME.to_string(),
+            link_source_sha256: sha256(KERNEL_VSTD_LINK_SOURCE.as_bytes()),
+            link_build_args: kernel_vstd_link_build_args(),
+            link_rlib_sha256: "3".repeat(64),
+        };
+        let value = serde_json::to_value(&model).unwrap();
+        let object = value.as_object().unwrap();
+        assert_eq!(object.len(), 10);
+        for field in [
+            "vir_path",
+            "vir_sha256",
+            "source_root",
+            "source_file_count",
+            "source_total_bytes",
+            "source_sha256",
+            "link_source_name",
+            "link_source_sha256",
+            "link_build_args",
+            "link_rlib_sha256",
+        ] {
+            assert!(
+                object.contains_key(field),
+                "missing kernel model field {field}"
+            );
+        }
+        assert!(KERNEL_VSTD_LINK_SOURCE.contains("\n#![no_std]\n"));
+        assert_eq!(model.link_source_name, "kernel-vstd-link.rs");
+    }
+
+    #[test]
+    fn kernel_byte_content_contracts_are_exact() {
+        let source = include_str!("../../conformance/verified-composition/kernel_bytes_shell.rs");
+        for required in [
+            "spec_read_u32_le",
+            "spec_read_u64_le",
+            "pub fn read_u32_le(bytes: &[u8]",
+            "pub fn read_u64_le(bytes: &[u8]",
+            "result == spec_read_u32_le(bytes, offset as int)",
+            "result == spec_read_u64_le(bytes, offset as int)",
+        ] {
+            assert!(
+                source.contains(required),
+                "missing exact byte contract {required}"
+            );
+        }
+        for forbidden in ["external_body", "assume(", "admit(", "decreases *"] {
+            assert!(
+                !source.contains(forbidden),
+                "kernel byte shell contains {forbidden}"
+            );
+        }
+    }
+
+    #[test]
+    fn kernel_vstd_receipt_replay_binds_every_identity() {
+        let source = include_str!("verified_build.rs");
+        for required in [
+            "model.link_source_name != KERNEL_VSTD_LINK_SOURCE_NAME",
+            "model.link_source_sha256 != sha256(KERNEL_VSTD_LINK_SOURCE.as_bytes())",
+            "model.link_build_args != kernel_vstd_link_build_args()",
+            "model.link_rlib_sha256 != vstd_dependency.sha256",
+            "if Some(&rebuilt.2) != toolchain.kernel_vstd_model.as_ref()",
+            "replay kernel vstd model/source/link identity does not match the receipt",
+        ] {
+            assert!(
+                source.contains(required),
+                "missing receipt/replay identity pin {required}"
+            );
+        }
+    }
 }
