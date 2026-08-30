@@ -1233,6 +1233,51 @@ CASES = {
     "sandbox-probe-widened": package_integration(
         "forge", "sandbox_conformance", "probe_allowed_when_fx_widens"
     ),
+    "sandbox-syscall-map-pinned": package_bin_unit(
+        "forge", "forge", "sandbox::tests::widening_tokens_cover_the_family"
+    ),
+    "sandbox-term-ioctl-scoped": package_integration(
+        "forge", "sandbox_conformance", "term_grant_adds_ioctl_to_the_recorded_allowlist"
+    ),
+    "sandbox-transitive-fx-closure": package_bin_unit(
+        "forge", "forge", "sandbox::tests::transitive_fx_unions_callee_row"
+    ),
+    "slag-audit-metadata": package_bin_unit(
+        "forge", "forge", "audit::tests::slag_cert_enumerated_in_tcb"
+    ),
+    "slag-fields-validation": package_integration(
+        "forge", "vacuity_slag_conformance", "slag_rejects_match_oracle_cause"
+    ),
+    "slag-l1-cert": package_bin_unit(
+        "forge", "forge", "manifest::tests::slag_l1_cert_shape"
+    ),
+    "slag-maximal-fx": package_integration(
+        "forge", "vacuity_slag_conformance", "slag_accepts_certify_l1_slag_true"
+    ),
+    "slag-typed-integration": package_bin_unit(
+        "forge", "forge", "check::tests::production_l1_gate_preserves_runtime_route_classification"
+    ),
+    "strengthen-advisory-cert": package_integration(
+        "forge", "strengthening_conformance", "probe_never_changes_the_verdict"
+    ),
+    "strengthen-candidates-bounded": package_bin_unit(
+        "forge", "forge", "strengthen::tests::candidates_bounded_by_cap"
+    ),
+    "strengthen-determinism": package_bin_unit(
+        "forge", "forge", "strengthen::tests::generate_candidates_is_deterministic"
+    ),
+    "strengthen-mutation-input": package_bin_unit(
+        "forge", "forge", "strengthen::tests::binary_candidate_carries_survivor_kill_link"
+    ),
+    "strengthen-renderer-fallback": package_bin_unit(
+        "forge", "forge", "strengthen::tests::renderer_safely_falls_back_outside_frozen_family"
+    ),
+    "strengthen-stricter-filter": package_bin_unit(
+        "forge", "forge", "strengthen::tests::probe_surfaces_only_verifying_strictly_stronger_candidate"
+    ),
+    "strengthen-verify-real-body": package_bin_unit(
+        "forge", "forge", "strengthen::tests::non_verifying_candidate_is_not_suggested"
+    ),
     "cache-key-pure": package_bin_unit(
         "forge", "forge", "cache::tests::cache_key_is_pure"
     ),

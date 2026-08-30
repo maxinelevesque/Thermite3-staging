@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 2b4044a61adc502ec61c1ad7965ec78578756af702f37a62478075499d0fb1fb (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; Option/Result behavior is unchanged. prior: 9bb03fe37105e07097450430e8807864c372838b4bb395769c890fbd0ba9aedf)
+audited-content-sha256: 082a26fc09406414eb387027c5c85f2cec50acf4f6372d5ee098c09fb28bcadb (re-pinned 2026-08-30 for the executable strengthening-renderer fallback witness; Option/Result behavior is unchanged. prior: 2b4044a61adc502ec61c1ad7965ec78578756af702f37a62478075499d0fb1fb)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized
