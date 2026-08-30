@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 1529bc2337bb425ca063dea3e97d182e7ed0c38f4a0ed3ceb2d9de33f99975f0 (re-pinned 2026-08-27 after the registry source digest moved solely because REQ-SYNTAX-ADDRESS-DEC corrected the stale pre-RFC-6 `.dec` spelling to shipped `.measures`; claim inventory, gap dispositions, and stage classifications are unchanged. prior: e62717bb887a7070b67cade10f8e18ac29e56cf40cf2f157e134a1e01920a4a8)
+audited-content-sha256: 397c90b0c100a4e9391e0c9945a9ab428623a87e7fe20fc74ef4c23c39931b6a (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; language completeness is unchanged. prior: 1529bc2337bb425ca063dea3e97d182e7ed0c38f4a0ed3ceb2d9de33f99975f0)
 
 ## Summary
 

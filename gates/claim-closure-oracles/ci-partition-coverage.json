@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"ci-coverage-duplicate","expected_exit":0},{"id":"ci-coverage-catch-all","expected_exit":0}]}

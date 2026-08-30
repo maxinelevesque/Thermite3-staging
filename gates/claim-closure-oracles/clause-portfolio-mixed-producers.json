@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"clause-producer-total-prefix","expected_exit":0},{"id":"clause-producer-two-author","expected_exit":0}]}

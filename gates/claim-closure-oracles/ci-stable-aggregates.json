@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"ci-stable-aggregate-contract","expected_exit":0},{"id":"ci-stable-aggregate-fail-closed","expected_exit":0}]}

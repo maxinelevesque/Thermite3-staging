@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"clause-address-parser-overflow","expected_exit":0},{"id":"clause-address-selector-bound","expected_exit":0}]}

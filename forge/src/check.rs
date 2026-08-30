@@ -10979,6 +10979,18 @@ requires true\n\
         renamed.obligations[0].name = "forged::ens#99".into();
         assert!(renamed.clause_portfolio(true).is_err());
 
+        let audit = crate::audit::AuditManifest::from_certificates(
+            std::slice::from_ref(&cert),
+            &program,
+            crate::audit::Toolchain::new("verus-clause-portfolio-test"),
+        );
+        assert_eq!(audit.functions.len(), 1);
+        assert_eq!(
+            audit.functions[0].clause_portfolio.as_ref(),
+            Some(&portfolio),
+            "audit must expose the validated heterogeneous portfolio verbatim"
+        );
+
         let encoded = serde_json::to_value(&cert).unwrap();
         let decoded: Certificate = serde_json::from_value(encoded.clone()).unwrap();
         assert_eq!(serde_json::to_value(&decoded).unwrap(), encoded);

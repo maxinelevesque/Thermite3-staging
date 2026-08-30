@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "slice_id": "executable-ci-clause-portfolio-quintuple-41",
+  "entries": [
+    {
+      "requirement_id": "REQ-CI-BEFORE-AFTER-EVIDENCE",
+      "witness_id": "W-EXEC-CI-BEFORE-AFTER-EVIDENCE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-before-after-evidence.json","expected":["accepted"],"reviewed_summary_sha256":"b269c58cc63d41a4e0b2846456998fd918c0100d74c0541f24df018ca3ec8d65"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-before-after-evidence.json","artifacts":["gates/claim-closure-oracles/ci-before-after-evidence.json","gates/claim-closure-lower.py","gates/tests/test_ci_workflow_contract.py",".design/ci-duration-balanced-fanout.md",".github/workflows/ci.yml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-separated-before-after-metrics","mutation":"replace_text","from":"ci-before-after-metrics","to":"ci-before-after-metrics-conflated","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CI-DETERMINISTIC-BALANCE",
+      "witness_id": "W-EXEC-CI-DETERMINISTIC-BALANCE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-deterministic-balance.json","expected":["accepted"],"reviewed_summary_sha256":"3faec45b185e63bae278f4983b11b4bc1a721f41b342c1b59763f1af49578c2f"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-deterministic-balance.json","artifacts":["gates/claim-closure-oracles/ci-deterministic-balance.json","gates/claim-closure-lower.py","gates/ci-test-partitions.py","gates/ci-test-partitions.toml","gates/tests/test_ci_test_partitions.py",".design/ci-duration-balanced-fanout.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"defeat-deterministic-lpt","mutation":"replace_text","from":"ci-deterministic-lpt","to":"ci-nondeterministic-lpt","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CI-DURATION-PARTITIONS",
+      "witness_id": "W-EXEC-CI-DURATION-PARTITIONS",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-duration-partitions.json","expected":["accepted"],"reviewed_summary_sha256":"8b61364fa83af42caed2703c190395ca49521a1d458c5b57c772a34c9c7b7e83"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-duration-partitions.json","artifacts":["gates/claim-closure-oracles/ci-duration-partitions.json","gates/claim-closure-lower.py","gates/ci-test-partitions.toml","gates/tests/test_ci_workflow_contract.py",".github/workflows/ci.yml",".design/ci-duration-balanced-fanout.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"defeat-thirteen-bucket-topology","mutation":"replace_text","from":"ci-thirteen-buckets","to":"ci-twelve-buckets","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CI-GATE-FANOUT",
+      "witness_id": "W-EXEC-CI-GATE-FANOUT",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-gate-fanout.json","expected":["accepted"],"reviewed_summary_sha256":"ca49404131aae554726361603d97e97c23797af29bf72fd7198e6a9cb69ca228"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-gate-fanout.json","artifacts":["gates/claim-closure-oracles/ci-gate-fanout.json","gates/claim-closure-lower.py","gates/tests/test_ci_workflow_contract.py","gates/tests/test_ci_gate_segments.py","gates/g3.sh","gates/g4.sh",".github/workflows/ci.yml",".design/ci-duration-balanced-fanout.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"collapse-gate-fanout","mutation":"replace_text","from":"ci-gate-fanout","to":"ci-monolithic-gates","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CI-MATRIX-ATOMIZATION",
+      "witness_id": "W-EXEC-CI-MATRIX-ATOMIZATION",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-matrix-atomization.json","expected":["accepted"],"reviewed_summary_sha256":"99fb9901e0386d5325452d89a5841d8f0d8f16df447378dd0d49907ce4134c30"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-matrix-atomization.json","artifacts":["gates/claim-closure-oracles/ci-matrix-atomization.json","gates/claim-closure-lower.py","forge/tests/verified_build.rs","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml",".design/ci-duration-balanced-fanout.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-frozen-matrix-inventory","mutation":"replace_text","from":"ci-matrix-inventory","to":"ci-matrix-inventory-unchecked","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CI-PARTITION-COVERAGE",
+      "witness_id": "W-EXEC-CI-PARTITION-COVERAGE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-partition-coverage.json","expected":["accepted"],"reviewed_summary_sha256":"27f81a3f1909e4f5ce19e9d935a891b5c4bf8233254d7ef1040039c652c246a7"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-partition-coverage.json","artifacts":["gates/claim-closure-oracles/ci-partition-coverage.json","gates/claim-closure-lower.py","gates/ci-test-partitions.py","gates/ci-test-partitions.toml","gates/tests/test_ci_test_partitions.py",".github/workflows/ci.yml",".design/ci-duration-balanced-fanout.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"allow-duplicate-partition-members","mutation":"replace_text","from":"ci-coverage-duplicate","to":"ci-coverage-duplicate-allowed","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CI-PROOF-TOOL-PARITY",
+      "witness_id": "W-EXEC-CI-PROOF-TOOL-PARITY",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-proof-tool-parity.json","expected":["accepted"],"reviewed_summary_sha256":"172bfff151e6e501ba6127196b9209f10833d78ee8c662e5bdfec4390cc2b388"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-proof-tool-parity.json","artifacts":["gates/claim-closure-oracles/ci-proof-tool-parity.json","gates/claim-closure-lower.py","gates/tests/test_ci_workflow_contract.py",".github/workflows/ci.yml","gates/g4.sh","dev/g4-toolchain.env",".design/ci-duration-balanced-fanout.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"drop-partition-proof-tools","mutation":"replace_text","from":"ci-proof-tool-parity","to":"ci-proof-tools-skipped","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CI-SEPARATE-LANDING",
+      "witness_id": "W-EXEC-CI-SEPARATE-LANDING",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-separate-landing.json","expected":["accepted"],"reviewed_summary_sha256":"6bb9efd70d036162ac45e332cbfb5daa1ccd9963d4fa8eee2402ac4086ab7b68"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-separate-landing.json","artifacts":["gates/claim-closure-oracles/ci-separate-landing.json","gates/claim-closure-lower.py","gates/tests/test_ci_workflow_contract.py",".design/ci-duration-balanced-fanout.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-separate-landing-receipt","mutation":"replace_text","from":"ci-separate-landing","to":"ci-rfc10-rewrite","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CI-STABLE-AGGREGATES",
+      "witness_id": "W-EXEC-CI-STABLE-AGGREGATES",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-stable-aggregates.json","expected":["accepted"],"reviewed_summary_sha256":"3b305a108e8890fab55ff270188784afd889ed78a0bc8f14eeb950b8eb297c05"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-stable-aggregates.json","artifacts":["gates/claim-closure-oracles/ci-stable-aggregates.json","gates/claim-closure-lower.py","gates/tests/test_ci_workflow_contract.py","gates/tests/test_ci_aggregate.py","gates/ci-aggregate.py",".github/workflows/ci.yml",".design/ci-duration-balanced-fanout.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"make-aggregate-fail-open","mutation":"replace_text","from":"ci-stable-aggregate-fail-closed","to":"ci-stable-aggregate-fail-open","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CI-TIMING-ARTIFACTS",
+      "witness_id": "W-EXEC-CI-TIMING-ARTIFACTS",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/ci-timing-artifacts.json","expected":["accepted"],"reviewed_summary_sha256":"e2d585f7f96f20b9d52e9d65681a95c524b311095b4e9724ab8f9d7fa4d31611"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/ci-timing-artifacts.json","artifacts":["gates/claim-closure-oracles/ci-timing-artifacts.json","gates/claim-closure-lower.py","gates/tests/test_ci_workflow_contract.py","gates/tests/test_time_command.py","gates/time-command.py",".config/nextest.toml",".github/workflows/ci.yml",".design/ci-duration-balanced-fanout.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"drop-failure-timing-evidence","mutation":"replace_text","from":"ci-timing-status-preserved","to":"ci-timing-masks-status","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CLAUSE-PORTFOLIO-ADDRESS",
+      "witness_id": "W-EXEC-CLAUSE-PORTFOLIO-ADDRESS",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/clause-portfolio-address.json","expected":["accepted"],"reviewed_summary_sha256":"2d432c8f5f8285a0e8a2591af9051a05c0dbf3b8d7b092d3c657978a2637e5f5"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/clause-portfolio-address.json","artifacts":["gates/claim-closure-oracles/clause-portfolio-address.json","gates/claim-closure-lower.py","thermite-syntax/src/ast.rs","thermite-syntax/src/parser.rs","thermite-syntax/tests/forge_items.rs","forge/src/check.rs","forge/src/manifest.rs",".design/clause-coordinate-portfolios.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"allow-clause-ordinal-overflow","mutation":"replace_text","from":"clause-address-parser-overflow","to":"clause-address-parser-truncates","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CLAUSE-PORTFOLIO-AGGREGATION",
+      "witness_id": "W-EXEC-CLAUSE-PORTFOLIO-AGGREGATION",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/clause-portfolio-aggregation.json","expected":["accepted"],"reviewed_summary_sha256":"290be331d3e6b91472c2a07d813b40b6b1ee779fe5dc294f8ebd11a66f34f503"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/clause-portfolio-aggregation.json","artifacts":["gates/claim-closure-oracles/clause-portfolio-aggregation.json","gates/claim-closure-lower.py","forge/src/check.rs","forge/src/manifest.rs","forge/src/audit.rs",".design/clause-coordinate-portfolios.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"launder-heterogeneous-coordinates","mutation":"replace_text","from":"clause-aggregation-heterogeneous","to":"clause-aggregation-scalarized","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CLAUSE-PORTFOLIO-AUDIT-CACHE",
+      "witness_id": "W-EXEC-CLAUSE-PORTFOLIO-AUDIT-CACHE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/clause-portfolio-audit-cache.json","expected":["accepted"],"reviewed_summary_sha256":"118c0a17708ff9451559ebc0f96e38d3911b5274bcb39b862bf6b5da590b0a3d"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/clause-portfolio-audit-cache.json","artifacts":["gates/claim-closure-oracles/clause-portfolio-audit-cache.json","gates/claim-closure-lower.py","forge/src/check.rs","forge/src/manifest.rs","forge/src/audit.rs","forge/src/cache.rs","forge/src/result_arbiter.rs",".design/clause-coordinate-portfolios.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"restore-wire-portfolio-authority","mutation":"replace_text","from":"clause-audit-wire-authority","to":"clause-wire-portfolio-authoritative","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CLAUSE-PORTFOLIO-EVIDENCE",
+      "witness_id": "W-EXEC-CLAUSE-PORTFOLIO-EVIDENCE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/clause-portfolio-evidence.json","expected":["accepted"],"reviewed_summary_sha256":"e9f477983d7f4dfe4c708dbedd050b9025b569fc2c855400203b0edb65e18f89"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/clause-portfolio-evidence.json","artifacts":["gates/claim-closure-oracles/clause-portfolio-evidence.json","gates/claim-closure-lower.py","forge/src/check.rs","forge/src/manifest.rs",".design/clause-coordinate-portfolios.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"permit-atomic-evidence-splice","mutation":"replace_text","from":"clause-evidence-atomic-splice","to":"clause-evidence-splice-accepted","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-CLAUSE-PORTFOLIO-MIXED-PRODUCERS",
+      "witness_id": "W-EXEC-CLAUSE-PORTFOLIO-MIXED-PRODUCERS",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/clause-portfolio-mixed-producers.json","expected":["accepted"],"reviewed_summary_sha256":"53648d6cf1434e240231316d57eafbff6911fdfe043ecfa84c15a708c036ff65"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/clause-portfolio-mixed-producers.json","artifacts":["gates/claim-closure-oracles/clause-portfolio-mixed-producers.json","gates/claim-closure-lower.py","forge/src/check.rs","forge/src/manifest.rs",".design/clause-coordinate-portfolios.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-typed-attempted-prefix","mutation":"replace_text","from":"clause-producer-total-prefix","to":"clause-producer-prefix-dropped","expected_exit":4}]}
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: c407501248f0dbdd49b429993f4f3061475e012ba42e62817dfebe4773cbf291 (re-pinned 2026-08-25 for issue #6 final Map iteration form; mutual recursion unchanged. prior: e02dce23d2f2be4af6f4ee0e37a548c7247d6dbcdd1e217c8d2461b6f504dcc6)
+audited-content-sha256: 04cfbaebe5da3e77bf677b406d9479d60194c18fcefbfc219711cea1f12d1ade (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; mutual recursion is unchanged. prior: c407501248f0dbdd49b429993f4f3061475e012ba42e62817dfebe4773cbf291)
 governs: forge/src/check.rs
 governs: thermite-lower/src/lower.rs
 thesis-refs:

@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 9bb03fe37105e07097450430e8807864c372838b4bb395769c890fbd0ba9aedf (re-pinned 2026-08-29 for the focused vacuity match-guard result-mention witness. prior: 22104d730f47ef9f28d70775372f7a813872d17204d40ba2d23c3ec38c41977e, previously re-pinned 2026-08-29 for focused review and closure match-guard call witnesses plus review dual-emission coverage. prior: 819bf846a9690f0d3523b6f953d971164da9dac0233a28044ce39466fd7137c2)
+audited-content-sha256: 2b4044a61adc502ec61c1ad7965ec78578756af702f37a62478075499d0fb1fb (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; Option/Result behavior is unchanged. prior: 9bb03fe37105e07097450430e8807864c372838b4bb395769c890fbd0ba9aedf)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

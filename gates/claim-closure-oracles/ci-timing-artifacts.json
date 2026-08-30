@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"ci-timing-artifacts","expected_exit":0},{"id":"ci-timing-status-preserved","expected_exit":0}]}

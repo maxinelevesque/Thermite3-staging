@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"clause-audit-wire-authority","expected_exit":0},{"id":"clause-cache-verus-freshness","expected_exit":0}]}

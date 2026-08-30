@@ -63,6 +63,10 @@ def package_bin_unit(package: str, bin_target: str, test_name: str) -> list[str]
     ]
 
 
+def python_unittest(test_name: str) -> list[str]:
+    return [sys.executable, "-m", "unittest", test_name]
+
+
 CASES = {
     "boundary-dispatch-matches-verified-predicate": integration(
         "boundary_gate_verified", "lower_fn_emits_external_body_iff_proved_predicate"
@@ -925,6 +929,99 @@ CASES = {
     ),
     "goal-open-hole-reject": package_integration(
         "forge", "goal_repl_fill", "holed_item_never_certifies_open_hole_l0_no_verus"
+    ),
+    "ci-before-after-metrics": python_unittest(
+        "gates.tests.test_ci_workflow_contract.CiWorkflowContractTests."
+        "test_before_after_report_separates_live_metrics"
+    ),
+    "ci-deterministic-lpt": python_unittest(
+        "gates.tests.test_ci_test_partitions.PartitionTests."
+        "test_lpt_allocation_is_deterministic_and_complete"
+    ),
+    "ci-thirteen-buckets": python_unittest(
+        "gates.tests.test_ci_workflow_contract.CiWorkflowContractTests."
+        "test_thirteen_duration_buckets_match_the_manifest"
+    ),
+    "ci-gate-fanout": python_unittest(
+        "gates.tests.test_ci_workflow_contract.CiWorkflowContractTests."
+        "test_gate_fanout_and_stable_aggregates_are_closed"
+    ),
+    "ci-matrix-inventory": package_integration(
+        "forge", "verified_build", "parallelized_case_inventories_are_frozen"
+    ),
+    "ci-coverage-duplicate": python_unittest(
+        "gates.tests.test_ci_test_partitions.PartitionTests."
+        "test_duplicate_assignment_fails_closed"
+    ),
+    "ci-coverage-catch-all": python_unittest(
+        "gates.tests.test_ci_test_partitions.PartitionTests."
+        "test_deleted_assignment_enters_catch_all_and_fails_review_gate"
+    ),
+    "ci-proof-tool-parity": python_unittest(
+        "gates.tests.test_ci_workflow_contract.CiWorkflowContractTests."
+        "test_test_partitions_restore_every_required_proof_tool"
+    ),
+    "ci-separate-landing": python_unittest(
+        "gates.tests.test_ci_workflow_contract.CiWorkflowContractTests."
+        "test_ci_optimization_landed_after_rfc10_without_rewriting_it"
+    ),
+    "ci-stable-aggregate-contract": python_unittest(
+        "gates.tests.test_ci_workflow_contract.CiWorkflowContractTests."
+        "test_gate_fanout_and_stable_aggregates_are_closed"
+    ),
+    "ci-stable-aggregate-fail-closed": python_unittest(
+        "gates.tests.test_ci_aggregate.AggregateTests.test_failure_fails"
+    ),
+    "ci-timing-artifacts": python_unittest(
+        "gates.tests.test_ci_workflow_contract.CiWorkflowContractTests."
+        "test_timing_artifacts_are_published_even_on_failure"
+    ),
+    "ci-timing-status-preserved": python_unittest(
+        "gates.tests.test_time_command.TimeCommandTests."
+        "test_records_success_and_failure_without_masking_status"
+    ),
+    "clause-address-parser-overflow": package_integration(
+        "thermite-syntax",
+        "forge_items",
+        "proof_clause_ordinal_overflow_is_rejected_without_truncation",
+    ),
+    "clause-address-selector-bound": package_bin_unit(
+        "forge", "forge", "check::tests::clause_selector_conversion_is_checked_and_item_bound"
+    ),
+    "clause-aggregation-heterogeneous": package_bin_unit(
+        "forge",
+        "forge",
+        "check::tests::heterogeneous_clause_portfolio_preserves_coordinates_and_rejects_splicing",
+    ),
+    "clause-aggregation-homogeneous": package_bin_unit(
+        "forge",
+        "forge",
+        "check::tests::homogeneous_portfolio_derives_singular_coordinates_only_on_final_acceptance",
+    ),
+    "clause-audit-wire-authority": package_bin_unit(
+        "forge",
+        "forge",
+        "check::tests::heterogeneous_clause_portfolio_preserves_coordinates_and_rejects_splicing",
+    ),
+    "clause-cache-verus-freshness": package_bin_unit(
+        "forge",
+        "forge",
+        "manifest::tests::main_cache_replay_requires_the_fresh_artifact_without_restoring_authority",
+    ),
+    "clause-evidence-atomic-splice": package_bin_unit(
+        "forge",
+        "forge",
+        "check::tests::heterogeneous_clause_portfolio_preserves_coordinates_and_rejects_splicing",
+    ),
+    "clause-producer-total-prefix": package_bin_unit(
+        "forge",
+        "forge",
+        "check::tests::ac5_real_mixed_producer_preserves_typed_failures_and_exact_prefix",
+    ),
+    "clause-producer-two-author": package_bin_unit(
+        "forge",
+        "forge",
+        "check::tests::two_author_clauses_bind_each_proof_and_burn_only_to_its_address",
     ),
     "cache-key-pure": package_bin_unit(
         "forge", "forge", "cache::tests::cache_key_is_pure"
