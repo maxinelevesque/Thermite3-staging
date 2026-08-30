@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"nested-adt-root-forge","expected_exit":0},{"id":"nested-adt-root-lower","expected_exit":0}]}

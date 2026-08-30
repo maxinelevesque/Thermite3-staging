@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"sandbox-default-cli","expected_exit":0},{"id":"sandbox-default-runtime","expected_exit":0},{"id":"sandbox-explicit-opt-out","expected_exit":0}]}

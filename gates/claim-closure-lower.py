@@ -1152,6 +1152,87 @@ CASES = {
     "lean-mutation-outcome": package_bin_unit(
         "forge", "forge", "engine::tests::lean_mutant_outcome_follows_req9"
     ),
+    "lean-refusal-inventory": package_bin_unit(
+        "forge", "forge", "engine::tests::while_refusal_inventory_is_structured"
+    ),
+    "lean-refusal-matrix": package_integration(
+        "forge", "lean_while", "refusal_matrix_no_lean_certification"
+    ),
+    "lean-state-correspondence": package_bin_unit(
+        "forge", "forge", "engine::tests::live_straight_line_body_is_proven"
+    ),
+    "lean-structured-loop-refusal": package_bin_unit(
+        "forge", "forge", "engine::tests::while_body_item_refuses_export"
+    ),
+    "lean-structured-optres-refusal": package_bin_unit(
+        "forge", "forge", "engine::tests::optres_result_item_refuses_export"
+    ),
+    "lean-while-obligation-set": package_bin_unit(
+        "forge", "forge", "engine::tests::live_while_body_item_is_honest"
+    ),
+    "manifest-degrade-stamp": package_bin_unit(
+        "forge", "forge", "manifest::tests::into_degraded_stamps_flag_and_reason"
+    ),
+    "manifest-degrade-additive": package_bin_unit(
+        "forge", "forge", "manifest::tests::degrade_fields_are_additive"
+    ),
+    "manifest-degrade-live": package_integration(
+        "forge", "degrade_conformance", "forced_low_rlimit_degrade_is_certified_lower_rung_when_provoked"
+    ),
+    "manifest-solver-vacuity-reject": package_integration(
+        "forge", "solver_vacuity_conformance", "solver_rejects_match_oracle_cause_and_field"
+    ),
+    "metrics-dashboard-projection": package_bin_unit(
+        "forge", "forge", "metrics::tests::dashboard_aggregates_routing_and_verdicts"
+    ),
+    "metrics-dashboard-read-only": package_integration(
+        "forge", "metrics_dashboard", "audit_metrics_gates_nothing_on_failing_project"
+    ),
+    "metrics-dashboard-telemetry": package_integration(
+        "forge", "metrics_dashboard", "forge_engine_emits_routing_and_verdict_telemetry"
+    ),
+    "nested-adt-root-forge": package_integration(
+        "forge", "divergence_multi_adt_subprogram", "standalone_nested_adt_weaves_its_field_type"
+    ),
+    "nested-adt-root-lower": package_integration(
+        "thermite-lower", "adt_lower_conformance", "nested_adt_fields_and_is_invariant_lower_and_verify_l3"
+    ),
+    "obligation-neutral-content": package_bin_unit(
+        "forge", "forge", "obligation::tests::contract_obligation_is_neutral_content"
+    ),
+    "obligation-neutral-value": package_bin_unit(
+        "forge", "forge", "obligation::tests::obligation_is_a_comparable_neutral_value"
+    ),
+    "obligation-registry-termination": package_bin_unit(
+        "forge", "forge", "obligation::tests::registry_termination_minted_iff_called_spec_fns_nonempty"
+    ),
+    "obligation-full-position-closure": package_bin_unit(
+        "forge", "forge", "check::tests::dec_position_spec_fn_reaches_obligation_env"
+    ),
+    "sandbox-default-cli": package_bin_unit(
+        "forge", "forge", "cli::tests::parses_build_sandbox_flags"
+    ),
+    "sandbox-default-runtime": package_integration(
+        "forge", "sandbox_conformance", "pure_runs_clean"
+    ),
+    "sandbox-explicit-opt-out": package_integration(
+        "forge", "sandbox_conformance", "no_sandbox_omits_prelude"
+    ),
+    "sandbox-prelude-deterministic": package_bin_unit(
+        "forge", "forge", "sandbox::tests::prelude_installs_and_is_deterministic"
+    ),
+    "sandbox-manifest-allowlist": package_integration(
+        "forge", "sandbox_conformance", "term_grant_adds_ioctl_to_the_recorded_allowlist"
+    ),
+    "sandbox-probe-raw": package_bin_unit(
+        "forge", "forge", "sandbox::tests::probe_is_a_raw_openat"
+    ),
+    "sandbox-probe-killed": package_integration(
+        "forge", "sandbox_conformance", "probe_killed"
+    ),
+    "sandbox-probe-widened": package_integration(
+        "forge", "sandbox_conformance", "probe_allowed_when_fx_widens"
+    ),
     "cache-key-pure": package_bin_unit(
         "forge", "forge", "cache::tests::cache_key_is_pure"
     ),

@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"lean-structured-loop-refusal","expected_exit":0},{"id":"lean-structured-optres-refusal","expected_exit":0}]}

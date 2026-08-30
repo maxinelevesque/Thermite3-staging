@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"sandbox-probe-raw","expected_exit":0},{"id":"sandbox-probe-killed","expected_exit":0},{"id":"sandbox-probe-widened","expected_exit":0}]}

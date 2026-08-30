@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"lean-refusal-inventory","expected_exit":0},{"id":"lean-refusal-matrix","expected_exit":0}]}

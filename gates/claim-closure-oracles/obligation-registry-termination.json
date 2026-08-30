@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"obligation-registry-termination","expected_exit":0},{"id":"obligation-full-position-closure","expected_exit":0}]}

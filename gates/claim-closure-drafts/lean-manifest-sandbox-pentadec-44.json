@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "slice_id": "lean-manifest-sandbox-pentadec-44",
+  "entries": [
+    {
+      "requirement_id": "REQ-FORGE-LEAN-REFUSAL-INVENTORY",
+      "witness_id": "W-EXEC-FORGE-LEAN-REFUSAL-INVENTORY",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lean-refusal-inventory.json","expected":["accepted"],"reviewed_summary_sha256":"7f40303febe071d465845b1c7d6b497d6c2595766e29f45729f9802f0c9173b3"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/lean-refusal-inventory.json","artifacts":["gates/claim-closure-oracles/lean-refusal-inventory.json","gates/claim-closure-lower.py","forge/src/lean_export.rs","forge/src/engine.rs","forge/tests/lean_while.rs",".design/verified/proof-backends.md",".design/verified/loop-tv.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-while-refusal-inventory","mutation":"replace_text","from":"lean-refusal-inventory","to":"lean-refusal-inventory-silent","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-LEAN-STATE-CORRESPONDENCE",
+      "witness_id": "W-EXEC-FORGE-LEAN-STATE-CORRESPONDENCE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lean-state-correspondence.json","expected":["accepted"],"reviewed_summary_sha256":"a2df4b4b18f9d4193fe32835a623765ce5b085a063fefe6505e231a0bbf97f6f"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/lean-state-correspondence.json","artifacts":["gates/claim-closure-oracles/lean-state-correspondence.json","gates/claim-closure-lower.py","forge/src/lean_export.rs","forge/src/engine.rs",".design/verified/proof-backends.md",".design/verified/exporter-surface-correspondence.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-state-correspondence","mutation":"replace_text","from":"lean-state-correspondence","to":"lean-state-correspondence-omitted","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-LEAN-STRUCTURED-REFUSAL",
+      "witness_id": "W-EXEC-FORGE-LEAN-STRUCTURED-REFUSAL",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lean-structured-refusal.json","expected":["accepted"],"reviewed_summary_sha256":"1298b262c030735017338f9e1cba9523153840f427c74bf5f52b19efed3b2b61"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/lean-structured-refusal.json","artifacts":["gates/claim-closure-oracles/lean-structured-refusal.json","gates/claim-closure-lower.py","forge/src/lean_export.rs","forge/src/engine.rs","forge/tests/lean_engine.rs",".design/verified/proof-backends.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-structured-loop-refusal","mutation":"replace_text","from":"lean-structured-loop-refusal","to":"lean-loop-refusal-silent","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-LEAN-WHILE-BODY",
+      "witness_id": "W-EXEC-FORGE-LEAN-WHILE-BODY",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lean-while-body.json","expected":["accepted"],"reviewed_summary_sha256":"4069f37ec490e20dc3a9e434db867a97cb67bbfd278849dd9d1ba54e8ca5c5ee"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/lean-while-body.json","artifacts":["gates/claim-closure-oracles/lean-while-body.json","gates/claim-closure-lower.py","forge/src/lean_export.rs","forge/src/engine.rs","forge/tests/lean_while.rs",".design/verified/proof-backends.md",".design/verified/loop-tv.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-while-obligation-set","mutation":"replace_text","from":"lean-while-obligation-set","to":"lean-while-unchecked","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-MANIFEST-DEGRADE-FLAG",
+      "witness_id": "W-EXEC-FORGE-MANIFEST-DEGRADE-FLAG",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/manifest-degrade-flag.json","expected":["accepted"],"reviewed_summary_sha256":"e6c92be42fd41ae6fec67392cfb82e5384531e80d37dabe68d09003235886278"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/manifest-degrade-flag.json","artifacts":["gates/claim-closure-oracles/manifest-degrade-flag.json","gates/claim-closure-lower.py","forge/src/manifest.rs","forge/tests/degrade_conformance.rs",".design/forge/degrade-ladder.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-lowered-assurance-flag","mutation":"replace_text","from":"manifest-degrade-stamp","to":"manifest-degrade-direct-l3","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-MANIFEST-DEGRADE-REASON",
+      "witness_id": "W-EXEC-FORGE-MANIFEST-DEGRADE-REASON",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/manifest-degrade-reason.json","expected":["accepted"],"reviewed_summary_sha256":"11bbc7b94dd392176dd9c8d98b8f49bbca8163e3cc04fdb5a546b2ba413614c7"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/manifest-degrade-reason.json","artifacts":["gates/claim-closure-oracles/manifest-degrade-reason.json","gates/claim-closure-lower.py","forge/src/manifest.rs","forge/tests/degrade_conformance.rs",".design/forge/degrade-ladder.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-degrade-reason","mutation":"replace_text","from":"manifest-degrade-additive","to":"manifest-degrade-reason-omitted","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-MANIFEST-SOLVER-VACUITY-REJECT",
+      "witness_id": "W-EXEC-FORGE-MANIFEST-SOLVER-VACUITY-REJECT",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/manifest-solver-vacuity-reject.json","expected":["accepted"],"reviewed_summary_sha256":"0a4891d23600b610a59919674d1f62fd8724825d367c164ba38cceb1cc621aeb"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/manifest-solver-vacuity-reject.json","artifacts":["gates/claim-closure-oracles/manifest-solver-vacuity-reject.json","gates/claim-closure-lower.py","forge/src/manifest.rs","forge/tests/solver_vacuity_conformance.rs",".design/forge/solver-vacuity.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-solver-vacuity-reject","mutation":"replace_text","from":"manifest-solver-vacuity-reject","to":"manifest-solver-vacuity-certified","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-METRICS-DASHBOARD",
+      "witness_id": "W-EXEC-FORGE-METRICS-DASHBOARD",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/metrics-dashboard.json","expected":["accepted"],"reviewed_summary_sha256":"3bd9389ae95b3b5d3b68a54157f40d61199ed6c6a4066a29654203c6b5405238"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/metrics-dashboard.json","artifacts":["gates/claim-closure-oracles/metrics-dashboard.json","gates/claim-closure-lower.py","forge/src/metrics.rs","forge/tests/metrics_dashboard.rs","docs/v2/program.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-read-only-dashboard","mutation":"replace_text","from":"metrics-dashboard-read-only","to":"metrics-dashboard-gates-certification","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-NESTED-ADT-ROOT",
+      "witness_id": "W-EXEC-FORGE-NESTED-ADT-ROOT",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/nested-adt-root.json","expected":["accepted"],"reviewed_summary_sha256":"446c5a08545090e1464fb319d55c0e0360cffae00b6b2b4795dc43bf13ac92b8"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/nested-adt-root.json","artifacts":["gates/claim-closure-oracles/nested-adt-root.json","gates/claim-closure-lower.py",".design/forge/check.md","conformance/nested_adt.th","forge/tests/divergence_multi_adt_subprogram.rs","thermite-lower/tests/adt_lower_conformance.rs","forge/Cargo.toml","thermite-lower/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-nested-adt-root","mutation":"replace_text","from":"nested-adt-root-forge","to":"nested-adt-root-shallow","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-OBLIGATION-ARTIFACT",
+      "witness_id": "W-EXEC-FORGE-OBLIGATION-ARTIFACT",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/obligation-artifact.json","expected":["accepted"],"reviewed_summary_sha256":"c6345966e458b1a08c90e3637a9a7ad8e83d9578e0af341b2535b165a54a7d58"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/obligation-artifact.json","artifacts":["gates/claim-closure-oracles/obligation-artifact.json","gates/claim-closure-lower.py","forge/src/obligation.rs","forge/src/engine.rs",".design/verified/proof-backends.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-neutral-obligation-content","mutation":"replace_text","from":"obligation-neutral-content","to":"obligation-verus-string","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-OBLIGATION-REGISTRY-TERMINATION",
+      "witness_id": "W-EXEC-FORGE-OBLIGATION-REGISTRY-TERMINATION",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/obligation-registry-termination.json","expected":["accepted"],"reviewed_summary_sha256":"21b48d7b4d4296d4cce803db0934b48fc5987953104fe293fcf904df8012995c"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/obligation-registry-termination.json","artifacts":["gates/claim-closure-oracles/obligation-registry-termination.json","gates/claim-closure-lower.py","forge/src/obligation.rs","forge/src/check.rs",".design/verified/proof-backends.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-full-position-closure","mutation":"replace_text","from":"obligation-full-position-closure","to":"obligation-requires-only-closure","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-SANDBOX-DEFAULT-ON",
+      "witness_id": "W-EXEC-FORGE-SANDBOX-DEFAULT-ON",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/sandbox-default-on.json","expected":["accepted"],"reviewed_summary_sha256":"df0077eaebd814c3934e3aa45d855e3ffa148988f424dedf4890edbe424be5a1"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/sandbox-default-on.json","artifacts":["gates/claim-closure-oracles/sandbox-default-on.json","gates/claim-closure-lower.py","forge/src/sandbox.rs","forge/src/build.rs","forge/src/cli.rs","forge/tests/sandbox_conformance.rs",".design/forge/runtime-sandbox.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-sandbox-default","mutation":"replace_text","from":"sandbox-default-cli","to":"sandbox-default-off","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-SANDBOX-MANIFEST",
+      "witness_id": "W-EXEC-FORGE-SANDBOX-MANIFEST",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/sandbox-manifest.json","expected":["accepted"],"reviewed_summary_sha256":"5ad2933de2d6c66e67a97da0aeec06f58da9f4b7b2602da6d96ef137ed108cf4"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/sandbox-manifest.json","artifacts":["gates/claim-closure-oracles/sandbox-manifest.json","gates/claim-closure-lower.py","forge/src/sandbox.rs","forge/src/manifest.rs","forge/tests/sandbox_conformance.rs",".design/forge/runtime-sandbox.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-recorded-allowlist","mutation":"replace_text","from":"sandbox-manifest-allowlist","to":"sandbox-manifest-unrecorded","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-SANDBOX-PRELUDE",
+      "witness_id": "W-EXEC-FORGE-SANDBOX-PRELUDE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/sandbox-prelude.json","expected":["accepted"],"reviewed_summary_sha256":"ed29af7331ecfc725cab63ba6fa3f122e0f505e2e10ef196325cae8388a21ca9"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/sandbox-prelude.json","artifacts":["gates/claim-closure-oracles/sandbox-prelude.json","gates/claim-closure-lower.py","forge/src/sandbox.rs","forge/tests/sandbox_conformance.rs",".design/forge/runtime-sandbox.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-seccomp-prelude","mutation":"replace_text","from":"sandbox-prelude-deterministic","to":"sandbox-prelude-no-filter","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-SANDBOX-PROBE",
+      "witness_id": "W-EXEC-FORGE-SANDBOX-PROBE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/sandbox-probe.json","expected":["accepted"],"reviewed_summary_sha256":"54f377aff0064bfadbb0971ca3d9197470c34545b7ffc1fcb09a980fa9e8d030"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/sandbox-probe.json","artifacts":["gates/claim-closure-oracles/sandbox-probe.json","gates/claim-closure-lower.py","forge/src/sandbox.rs","forge/tests/sandbox_conformance.rs",".design/forge/runtime-sandbox.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-raw-denied-probe","mutation":"replace_text","from":"sandbox-probe-raw","to":"sandbox-probe-noop","expected_exit":4}]}
+    }
+  ]
+}
