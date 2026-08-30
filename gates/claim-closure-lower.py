@@ -1023,6 +1023,55 @@ CASES = {
         "forge",
         "check::tests::two_author_clauses_bind_each_proof_and_burn_only_to_its_address",
     ),
+    "clause-portfolio-validation-closed": package_bin_unit(
+        "forge",
+        "forge",
+        "check::tests::heterogeneous_clause_portfolio_preserves_coordinates_and_rejects_splicing",
+    ),
+    "clause-mutation-replay-addressed": package_bin_unit(
+        "forge",
+        "forge",
+        "check::tests::hybrid_two_author_clause_mutation_fold_is_addressed_and_order_invariant",
+    ),
+    "complete-finite-policy-boundaries": package_integration(
+        "forge",
+        "language_outcome_matrix",
+        "outcome_matrix::tests::finite_policy_boundary_mutations_are_pinned",
+    ),
+    "complete-gap-dispositions": python_unittest(
+        "gates.tests.test_language_completeness_inventory.AstInventoryTests."
+        "test_open_gap_requires_disposition_specific_evidence"
+    ),
+    "complete-language-inventory": python_unittest(
+        "gates.tests.test_language_completeness_inventory.AstInventoryTests."
+        "test_checked_support_matrix_is_generated_from_ledger"
+    ),
+    "complete-producer-refinement": package_integration(
+        "thermite-lower",
+        "traversal_witness",
+        "complete_current_inventory_matrix_uses_the_universal_lean_theorem",
+    ),
+    "complete-review-track": python_unittest(
+        "gates.tests.test_completeness_review.ReviewTrackTests."
+        "test_open_gap_and_backlog_agree_with_complete_closure"
+    ),
+    "complete-rfc-expansion-discipline": python_unittest(
+        "gates.tests.test_language_rfc_evolution.EvolutionGateTests."
+        "test_expansion_fails_for_each_omitted_artifact"
+    ),
+    "complete-solver-honesty": package_integration(
+        "forge",
+        "language_outcome_matrix",
+        "outcome_matrix::tests::solver_progress_cases_do_not_relabel_fragment_membership",
+    ),
+    "complete-total-classification": package_integration(
+        "forge",
+        "language_outcome_matrix",
+        "outcome_matrix::tests::generated_matrix_drives_the_total_classifier",
+    ),
+    "forge-body-tv-loop": package_integration(
+        "forge", "body_tv", "faithful_while_loop_body_is_faithful"
+    ),
     "cache-key-pure": package_bin_unit(
         "forge", "forge", "cache::tests::cache_key_is_pure"
     ),
