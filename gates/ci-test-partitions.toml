@@ -113,6 +113,12 @@ test = "forge::bin/forge closure::tests::unresolved_cross_file_callee_is_pure"
 
 [[assignment]]
 bucket = 1
+seconds = 0.008
+test = "forge::bin/forge closure::tests::match_guard_call_affects_scope_and_reachability"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
 seconds = 0.007
 test = "forge::bin/forge covenant_eval::tests::unsupported_construct_is_loud_not_silent"
 
@@ -265,6 +271,12 @@ test = "forge::bin/forge result_arbiter::tests::exhaustive_current_base_by_candi
 bucket = 1
 seconds = 0.007
 test = "forge::bin/forge review::tests::sum_intent_reviewable_no_bodies"
+
+[[assignment]]
+bucket = 1
+seconds = 0.008
+test = "forge::bin/forge review::tests::match_guard_callee_is_in_reviewed_spec_surface"
+timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 1

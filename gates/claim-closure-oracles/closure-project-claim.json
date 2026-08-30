@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"closure-project-end-to-end","expected_exit":0},{"id":"closure-project-boundary","expected_exit":0}]}

@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"review-command-shellout","expected_exit":0},{"id":"review-command-failure","expected_exit":0}]}

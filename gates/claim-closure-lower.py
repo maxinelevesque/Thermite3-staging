@@ -668,6 +668,63 @@ CASES = {
     "review-pre-screen": package_bin_unit(
         "forge", "forge", "review::tests::rejected_fn_flagged_not_surfaced"
     ),
+    "review-command-shellout": package_integration(
+        "forge", "review_conformance", "reviewer_shellout_attaches_verdict"
+    ),
+    "review-command-failure": package_integration(
+        "forge", "review_conformance", "reviewer_failure_is_error_not_panic"
+    ),
+    "review-deterministic": package_bin_unit(
+        "forge", "forge", "review::tests::artifact_is_deterministic"
+    ),
+    "review-dual-emission": package_integration(
+        "forge", "review_conformance", "corpus_sum_intent_reviewable_no_bodies"
+    ),
+    "review-intent-prompt": package_bin_unit(
+        "forge", "forge", "review::tests::sum_intent_reviewable_no_bodies"
+    ),
+    "review-match-guard": package_bin_unit(
+        "forge", "forge", "review::tests::match_guard_callee_is_in_reviewed_spec_surface"
+    ),
+    "review-verdict-record": package_bin_unit(
+        "forge", "forge", "review::tests::verdict_attaches_to_separate_record"
+    ),
+    "closure-callgraph-transitive": package_bin_unit(
+        "forge", "forge", "closure::tests::transitive_boundary_chain_is_to_boundary"
+    ),
+    "closure-callgraph-cycle": package_bin_unit(
+        "forge", "forge", "closure::tests::mutual_recursion_terminates_and_is_end_to_end"
+    ),
+    "closure-cert-field": package_bin_unit(
+        "forge", "forge", "manifest::tests::assurance_scope_is_additive_normalized_and_golden_stable"
+    ),
+    "closure-deterministic": package_bin_unit(
+        "forge", "forge", "closure::tests::classification_is_deterministic"
+    ),
+    "closure-reachable-deterministic": package_bin_unit(
+        "forge", "forge", "closure::tests::reachable_fns_is_deterministic"
+    ),
+    "closure-match-guard": package_bin_unit(
+        "forge", "forge", "closure::tests::match_guard_call_affects_scope_and_reachability"
+    ),
+    "closure-project-end-to-end": package_bin_unit(
+        "forge", "forge", "degrade::tests::aggregate_project_scope_all_end_to_end"
+    ),
+    "closure-project-boundary": package_bin_unit(
+        "forge", "forge", "degrade::tests::aggregate_project_scope_any_to_boundary_lists_crossings"
+    ),
+    "closure-scope-pure": package_bin_unit(
+        "forge", "forge", "closure::tests::pure_caller_of_spec_fn_is_end_to_end"
+    ),
+    "closure-scope-boundary": package_bin_unit(
+        "forge", "forge", "closure::tests::direct_boundary_caller_is_to_boundary"
+    ),
+    "closure-scope-slag": package_bin_unit(
+        "forge", "forge", "closure::tests::slag_in_closure_is_to_boundary"
+    ),
+    "manifest-level-ord": package_bin_unit(
+        "forge", "forge", "manifest::tests::level_ord_is_the_ladder_ordering"
+    ),
     "check-outcome-proved": package_bin_unit(
         "forge", "forge", "check::tests::parseable_success_is_l3_cert"
     ),

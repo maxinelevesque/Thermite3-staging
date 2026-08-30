@@ -952,6 +952,8 @@ mod tests {
         );
         let sum = &artifact.intent_reviewable[0];
         assert_eq!(sum.item, "sum");
+        assert!(sum.prompt.contains("sum"));
+        assert!(sum.prompt.contains("what you meant"));
         assert_eq!(sum.spec_layer.req, "xs.len() <= 1_000_000");
         assert_eq!(
             sum.spec_layer.ens,
@@ -1017,6 +1019,32 @@ mod tests {
         let ja = serde_json::to_string(&a).expect("a");
         let jb = serde_json::to_string(&b).expect("b");
         assert_eq!(ja, jb);
+    }
+
+    #[test]
+    fn match_guard_callee_is_in_reviewed_spec_surface() {
+        let program = parse_ok(
+            "spec fn guard(x: u32) -> bool measures 0 { x < 10 } \
+             fn f(x: u32) -> bool ! pure requires true ensures result == match x { n if guard(n) => true, _ => false } { x < 10 }",
+        );
+        let certs = vec![Certificate::new(
+            "f",
+            Level::L3,
+            vec!["pure".to_string()],
+            0,
+            vec![],
+        )];
+        let artifact = project_artifact(&certs, &program, None);
+        let reviewed = &artifact.intent_reviewable[0];
+        assert_eq!(
+            reviewed
+                .spec_layer
+                .referenced_spec_fns
+                .iter()
+                .map(|spec| spec.name.as_str())
+                .collect::<Vec<_>>(),
+            vec!["guard"]
+        );
     }
 
     // REQ-7: the reviewer verdict parser accepts a single object or an array.

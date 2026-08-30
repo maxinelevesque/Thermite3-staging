@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"closure-deterministic","expected_exit":0},{"id":"closure-reachable-deterministic","expected_exit":0}]}

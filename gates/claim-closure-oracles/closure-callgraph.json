@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"closure-callgraph-transitive","expected_exit":0},{"id":"closure-callgraph-cycle","expected_exit":0}]}

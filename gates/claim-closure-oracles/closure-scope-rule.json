@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"closure-scope-pure","expected_exit":0},{"id":"closure-scope-boundary","expected_exit":0},{"id":"closure-scope-slag","expected_exit":0}]}
