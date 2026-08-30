@@ -89,16 +89,16 @@ class CiWorkflowContractTests(unittest.TestCase):
             self.assertIn("if-no-files-found: error", job)
 
     def test_ci_optimization_landed_after_rfc10_without_rewriting_it(self) -> None:
-        design_commit = "506e741f"
+        merged_ci_pr = "92310867"
         post_rfc10_staging = "15d362df"
         ancestry = subprocess.run(
-            ["git", "merge-base", "--is-ancestor", post_rfc10_staging, design_commit],
+            ["git", "merge-base", "--is-ancestor", post_rfc10_staging, merged_ci_pr],
             cwd=ROOT,
             check=False,
         )
         self.assertEqual(ancestry.returncode, 0)
         changed = subprocess.run(
-            ["git", "diff", "--name-only", f"{post_rfc10_staging}..92310867"],
+            ["git", "diff", "--name-only", f"{post_rfc10_staging}..{merged_ci_pr}"],
             cwd=ROOT,
             check=True,
             capture_output=True,
