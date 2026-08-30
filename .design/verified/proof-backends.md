@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: 41b599102234729cb51e5d313f48d84f875b6267d2a7a6e6ded65f96b17ee63f (re-pinned 2026-08-25 for issue #41 certificate-path characterization; backend semantics are unchanged. prior: fb4e94889d1a19869a27e0af86baff6cf936f50ce74077ad4018b6dde51099dd)
+audited-content-sha256: 014323b66acc403cf81fc5d31963c4a774426c1c32ab8a4b8f921bf0a55ddf1f (re-pinned 2026-08-29 after adding the explicit default-engine ordering discriminator for REQ-FORGE-ENGINE-ORDERING; backend semantics are unchanged. prior: 41b599102234729cb51e5d313f48d84f875b6267d2a7a6e6ded65f96b17ee63f)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and

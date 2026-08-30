@@ -3088,6 +3088,14 @@ mod tests {
         }
     }
 
+    // REQ-FORGE-ENGINE-ORDERING: the automatic ladder is stable and starts with
+    // the Verus engine. Lean remains an explicit engine choice until a later
+    // increment deliberately appends it to this ordered list.
+    #[test]
+    fn default_engine_order_is_verus_only_and_lean_is_explicit() {
+        assert_eq!(default_engines(), vec![EngineName::Verus]);
+    }
+
     // REQ-2 / AC-5 (the shared certify-time axiom gate, hoisted onto every Lean discharge
     // path including the auto tiers): `certify_lean_axioms` accepts a clean report, and
     // refuses a fourth (Classical-adjacent) axiom by name, a surviving `sorry`, and a

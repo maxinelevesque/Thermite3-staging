@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"engine-interface-verus-slots","expected_exit":0},{"id":"engine-interface-lean-slots","expected_exit":0},{"id":"engine-interface-golden","expected_exit":0}]}

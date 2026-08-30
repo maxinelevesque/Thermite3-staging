@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"engine-disagreement-alarm","expected_exit":0},{"id":"engine-disagreement-benign","expected_exit":0}]}

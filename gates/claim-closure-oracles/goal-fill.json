@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"goal-fill-close","expected_exit":0},{"id":"goal-fill-next","expected_exit":0},{"id":"goal-fill-non-hole","expected_exit":0},{"id":"goal-dialogue","expected_exit":0}]}

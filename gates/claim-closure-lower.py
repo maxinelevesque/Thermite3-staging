@@ -809,6 +809,123 @@ CASES = {
     "check-ergonomics-or-pattern-deps": package_integration(
         "forge", "ergonomics_conformance", "req4_or_pattern_certifies_l3"
     ),
+    "engine-attribution-roundtrip": package_integration(
+        "forge", "engine_attribution", "engine_attribution_is_additive_and_round_trips"
+    ),
+    "engine-attribution-verus-golden": package_integration(
+        "forge", "engine_attribution", "engine_verus_flag_is_byte_identical_oracle"
+    ),
+    "engine-disagreement-alarm": package_bin_unit(
+        "forge", "forge", "engine::tests::proven_refuted_disagreement_halts"
+    ),
+    "engine-disagreement-benign": package_bin_unit(
+        "forge", "forge", "engine::tests::proven_unknown_is_benign"
+    ),
+    "engine-ladder-discipline": package_bin_unit(
+        "forge", "forge", "engine::tests::verdict_ladder_action_follows_req3"
+    ),
+    "engine-proved-map": package_bin_unit(
+        "forge", "forge", "engine::tests::proved_maps_to_proven"
+    ),
+    "engine-timeout-map": package_bin_unit(
+        "forge", "forge", "engine::tests::timeout_maps_to_unknown"
+    ),
+    "engine-fast-unknown": package_bin_unit(
+        "forge", "forge", "engine::tests::witnessless_counterexample_remaps_to_unknown"
+    ),
+    "engine-fast-unknown-narrow": package_bin_unit(
+        "forge", "forge", "engine::tests::incompleteness_discriminator_is_narrow"
+    ),
+    "engine-type-error-refuted": package_bin_unit(
+        "forge", "forge", "engine::tests::type_error_counterexample_stays_refuted"
+    ),
+    "engine-interactive-path": package_bin_unit(
+        "forge", "forge", "engine::tests::interactive_proof_path_is_beside_source"
+    ),
+    "engine-interactive-stale": package_bin_unit(
+        "forge", "forge", "engine::tests::interactive_stale_hash_is_unknown_never_reused"
+    ),
+    "engine-interactive-sorry": package_bin_unit(
+        "forge", "forge", "engine::tests::interactive_sorry_file_is_unknown_never_proven"
+    ),
+    "engine-interactive-filled": package_bin_unit(
+        "forge", "forge", "engine::tests::interactive_filled_valid_proof_replays_proven"
+    ),
+    "engine-interactive-command-token": package_bin_unit(
+        "forge", "forge", "engine::tests::proof_term_command_token_scans_position_independently"
+    ),
+    "engine-interface-verus-slots": package_bin_unit(
+        "forge", "forge", "engine::tests::verus_engine_fills_four_slots"
+    ),
+    "engine-interface-lean-slots": package_bin_unit(
+        "forge", "forge", "engine::tests::lean_engine_fills_trust_and_evidence_slots"
+    ),
+    "engine-interface-golden": package_integration(
+        "forge", "engine_interface", "sum_cert_oracle_identical_post_engine_refactor"
+    ),
+    "engine-lean-mutation-outcome": package_bin_unit(
+        "forge", "forge", "engine::tests::lean_mutant_outcome_follows_req9"
+    ),
+    "engine-lean-mutation-untested": package_bin_unit(
+        "forge", "forge", "engine::tests::lean_mutation_tally_does_not_inflate_on_untested"
+    ),
+    "engine-lean-mutation-floor": package_bin_unit(
+        "forge", "forge", "engine::tests::lean_tally_floor_gate"
+    ),
+    "engine-default-order": package_bin_unit(
+        "forge", "forge", "engine::tests::default_engine_order_is_verus_only_and_lean_is_explicit"
+    ),
+    "engine-explicit-flag": package_integration(
+        "forge", "engine_attribution", "engine_flag_parsing"
+    ),
+    "goal-battery-source": package_bin_unit(
+        "forge", "forge", "goal_repl::tests::battery_view_reads_contract_quality"
+    ),
+    "goal-battery-check": package_integration(
+        "forge", "goal_repl", "battery_view_matches_check_verdicts"
+    ),
+    "goal-deterministic-render": package_bin_unit(
+        "forge", "forge", "goal_repl::tests::goal_render_is_deterministic"
+    ),
+    "goal-structured-error": package_bin_unit(
+        "forge", "forge", "goal_repl::tests::edit_bad_address_is_structured_error"
+    ),
+    "goal-edit-splice": package_integration(
+        "forge", "goal_repl", "edit_splices_clause_and_rechecks"
+    ),
+    "goal-edit-address-error": package_integration(
+        "forge", "goal_repl", "edit_bad_address_is_honest_error"
+    ),
+    "goal-fill-close": package_integration(
+        "forge", "goal_repl_fill", "fill_closing_the_hole_certifies_l3"
+    ),
+    "goal-fill-next": package_integration(
+        "forge", "goal_repl_fill", "fill_introducing_new_holes_re_presents_them"
+    ),
+    "goal-fill-non-hole": package_integration(
+        "forge", "goal_repl_fill", "fill_on_a_non_hole_address_is_an_honest_error"
+    ),
+    "goal-dialogue": package_integration(
+        "forge", "goal_repl_fill", "ac6_binary_search_dialogue_structural_oracle"
+    ),
+    "goal-render-discharged": package_bin_unit(
+        "forge", "forge", "goal_repl::tests::goal_render_discharged"
+    ),
+    "goal-render-counterexample": package_bin_unit(
+        "forge", "forge", "goal_repl::tests::goal_render_counterexample"
+    ),
+    "goal-hole-parser": package_integration(
+        "forge", "goal_repl_fill", "fn_body_hole_parses_clean_and_records_the_hole"
+    ),
+    "goal-hole-address": package_integration(
+        "forge", "goal_repl_fill", "hole_address_resolves_and_bad_hole_address_is_structured_error"
+    ),
+    "goal-hole-order": package_integration(
+        "forge", "goal_repl_fill", "holes_in_nested_blocks_are_accepted_in_document_order"
+    ),
+    "goal-open-hole-reject": package_integration(
+        "forge", "goal_repl_fill", "holed_item_never_certifies_open_hole_l0_no_verus"
+    ),
     "cache-key-pure": package_bin_unit(
         "forge", "forge", "cache::tests::cache_key_is_pure"
     ),

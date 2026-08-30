@@ -1016,6 +1016,22 @@ mod tests {
         );
     }
 
+    // REQ-FORGE-GOAL-DETERMINISM: identical certificate and AST inputs produce
+    // byte-identical goal views; rendering has no hidden clock, iteration-order,
+    // or ambient-state dependency.
+    #[test]
+    fn goal_render_is_deterministic() {
+        let program =
+            parse_ok("fn f(n: u32) -> u32 ! pure requires n < 10 ensures result == n { n }");
+        let mut cert = sum_cert_l3();
+        cert.item = "f".to_string();
+
+        assert_eq!(
+            render_goal_item(&cert, &program),
+            render_goal_item(&cert, &program)
+        );
+    }
+
     // REQ-2 / AC-2: a clean L3 cert renders all goals discharged + the level + the
     // §7 battery line.
     #[test]

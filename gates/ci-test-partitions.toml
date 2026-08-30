@@ -8299,3 +8299,17 @@ bucket = 11
 seconds = 0.007
 test = "thermite-lower::collections_conformance unsupported_vec_element_is_structured_error_not_panic"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# These focused claim discriminators run below nextest's useful timing
+# resolution. Keep the reviewed unit-test floor until the next CI snapshot.
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "forge::bin/forge engine::tests::default_engine_order_is_verus_only_and_lean_is_explicit"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "forge::bin/forge goal_repl::tests::goal_render_is_deterministic"
+timing_provenance = "reviewed_local_estimate_after_baseline"
