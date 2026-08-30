@@ -605,6 +605,12 @@ mod tests {
         assert!(generate_candidates(&f, &[], &early_zero_survivor()).len() <= CANDIDATE_CAP);
     }
 
+    #[test]
+    fn renderer_safely_falls_back_outside_frozen_family() {
+        let outside_family = Expr::StrLit("not-a-candidate".to_string());
+        assert_eq!(render_expr(&outside_family), "<unsupported>");
+    }
+
     // REQ-1 family 1: a matching `spec fn` produces a `result == s(<params>)`
     // candidate. Fixture: a `spec fn s(a: u32, b: u32) -> u32` matches `f`'s
     // signature.
