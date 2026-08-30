@@ -581,6 +581,14 @@ mod tests {
         assert_ne!(cause_tag(&f).as_deref(), Some("EnsOmitsResult"));
     }
 
+    #[test]
+    fn match_guard_result_mention_passes_b() {
+        let f = fn_item(
+            "fn f(x: u32) -> bool ! pure requires true ensures match x { n if result => n > 0, _ => false } { x > 0 }",
+        );
+        assert_ne!(cause_tag(&f).as_deref(), Some("EnsOmitsResult"));
+    }
+
     // REQ-3 / AC-4: ens identical to req → (c).
     #[test]
     fn ens_eq_req_rejected_c() {

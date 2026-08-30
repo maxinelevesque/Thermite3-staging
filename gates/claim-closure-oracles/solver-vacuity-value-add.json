@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"check-solver-vacuity-reject","expected_exit":0},{"id":"solver-cause-tags","expected_exit":0}]}

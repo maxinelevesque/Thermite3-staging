@@ -725,6 +725,54 @@ CASES = {
     "manifest-level-ord": package_bin_unit(
         "forge", "forge", "manifest::tests::level_ord_is_the_ladder_ordering"
     ),
+    "vacuity-gate-reject": package_integration(
+        "forge", "vacuity_slag_conformance", "triage_rejects_match_oracle_cause"
+    ),
+    "vacuity-gate-accept": package_integration(
+        "forge", "vacuity_slag_conformance", "triage_accepts_pass_triage"
+    ),
+    "vacuity-ens-true": package_bin_unit(
+        "forge", "forge", "vacuity::tests::ens_literal_true_rejected_a"
+    ),
+    "vacuity-ens-identity": package_bin_unit(
+        "forge", "forge", "vacuity::tests::ens_identity_rejected_a"
+    ),
+    "vacuity-ens-omits-result": package_bin_unit(
+        "forge", "forge", "vacuity::tests::ens_omits_result_rejected_b"
+    ),
+    "vacuity-ens-equals-req": package_bin_unit(
+        "forge", "forge", "vacuity::tests::ens_eq_req_rejected_c"
+    ),
+    "vacuity-ens-req-conjunct": package_bin_unit(
+        "forge", "forge", "vacuity::tests::ens_conjunct_req_rejected_c"
+    ),
+    "vacuity-match-guard-result": package_bin_unit(
+        "forge", "forge", "vacuity::tests::match_guard_result_mention_passes_b"
+    ),
+    "vacuity-maximal-reject": package_bin_unit(
+        "forge", "forge", "vacuity::tests::maximal_fx_no_slag_rejected_d"
+    ),
+    "vacuity-maximal-slag": package_bin_unit(
+        "forge", "forge", "vacuity::tests::maximal_fx_with_slag_passes_d"
+    ),
+    "vacuity-slag-still-rejects": package_bin_unit(
+        "forge", "forge", "vacuity::tests::slag_does_not_excuse_vacuous_ens"
+    ),
+    "solver-vacuity-harness": package_bin_unit(
+        "forge", "forge", "vacuity_solver::tests::vacuity_harness_assumes_req_asserts_false"
+    ),
+    "solver-tautology-harness": package_bin_unit(
+        "forge", "forge", "vacuity_solver::tests::tautology_harness_reuses_lowered_contract"
+    ),
+    "solver-verdict-proved": package_bin_unit(
+        "forge", "forge", "vacuity_solver::tests::proved_summary_is_detected"
+    ),
+    "solver-verdict-failed": package_bin_unit(
+        "forge", "forge", "vacuity_solver::tests::failed_summary_is_clean"
+    ),
+    "solver-cause-tags": package_bin_unit(
+        "forge", "forge", "vacuity_solver::tests::cause_tags_are_the_solver_namespace"
+    ),
     "check-outcome-proved": package_bin_unit(
         "forge", "forge", "check::tests::parseable_success_is_l3_cert"
     ),
