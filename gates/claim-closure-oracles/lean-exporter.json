@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"lean-export-self-contained","expected_exit":0},{"id":"lean-export-hard-gate","expected_exit":0}]}

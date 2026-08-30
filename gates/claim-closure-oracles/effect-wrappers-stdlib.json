@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"effect-wrapper-stdlib-time","expected_exit":0},{"id":"effect-wrapper-stdlib-read","expected_exit":0},{"id":"effect-wrapper-stdlib-write","expected_exit":0}]}

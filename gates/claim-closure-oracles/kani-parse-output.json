@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"kani-parse-success","expected_exit":0},{"id":"kani-parse-counterexample","expected_exit":0},{"id":"kani-parse-contradiction","expected_exit":0}]}

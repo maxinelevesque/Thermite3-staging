@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "slice_id": "executable-proof-backends-pentadec-43",
+  "entries": [
+    {
+      "requirement_id": "REQ-FORGE-BODY-TV-PLUGIN",
+      "witness_id": "W-EXEC-FORGE-BODY-TV-PLUGIN",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/forge-body-tv-plugin.json","expected":["accepted"],"reviewed_summary_sha256":"faeb2b2a9f609d04341e4b711f0a49452513e97615495b6a1bc8579ad645d4d4"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/forge-body-tv-plugin.json","artifacts":["gates/claim-closure-oracles/forge-body-tv-plugin.json","gates/claim-closure-lower.py","forge/src/body_tv.rs","forge/tests/body_tv.rs",".design/verified/exec-stmt-tv.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-body-tv-plugin-discriminator","mutation":"replace_text","from":"body-tv-plugin-faithful","to":"body-tv-plugin-unchecked","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-CONTRACT-TV-PLUGIN",
+      "witness_id": "W-EXEC-FORGE-CONTRACT-TV-PLUGIN",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/forge-contract-tv-plugin.json","expected":["accepted"],"reviewed_summary_sha256":"3767d99444488ab427dfe998303133f03fcd62e84dd084bc63808e085dde5ddf"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/forge-contract-tv-plugin.json","artifacts":["gates/claim-closure-oracles/forge-contract-tv-plugin.json","gates/claim-closure-lower.py","forge/src/contract_tv.rs","forge/tests/contract_tv_conformance.rs",".design/verified/contract-tv.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-contract-tv-plugin-discriminator","mutation":"replace_text","from":"contract-tv-plugin-faithful","to":"contract-tv-plugin-unchecked","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-EFFECT-WRAPPERS-LINK",
+      "witness_id": "W-EXEC-FORGE-EFFECT-WRAPPERS-LINK",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/effect-wrappers-link.json","expected":["accepted"],"reviewed_summary_sha256":"c67c5a5d760088595ae16c7f500760b45aa39c7b536dac82272b5dae50c427dd"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/effect-wrappers-link.json","artifacts":["gates/claim-closure-oracles/effect-wrappers-link.json","gates/claim-closure-lower.py","forge/src/effect_wrappers.rs","forge/tests/effect_link_conformance.rs",".design/basis/08-runnable-effect-link.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-effect-link-selection","mutation":"replace_text","from":"effect-wrapper-link-selection","to":"effect-wrapper-link-unrestricted","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-EFFECT-WRAPPERS-RUNNABLE",
+      "witness_id": "W-EXEC-FORGE-EFFECT-WRAPPERS-RUNNABLE",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/effect-wrappers-runnable.json","expected":["accepted"],"reviewed_summary_sha256":"79fb736a6946d94e50dbfb5f5f0eca7312361068654cb81bd245601f79f9722c"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/effect-wrappers-runnable.json","artifacts":["gates/claim-closure-oracles/effect-wrappers-runnable.json","gates/claim-closure-lower.py","forge/src/effect_wrappers.rs","forge/tests/effect_link_conformance.rs",".design/basis/08-runnable-effect-link.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-runnable-link-proof","mutation":"replace_text","from":"effect-wrapper-runnable","to":"effect-wrapper-link-only","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-EFFECT-WRAPPERS-STDLIB",
+      "witness_id": "W-EXEC-FORGE-EFFECT-WRAPPERS-STDLIB",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/effect-wrappers-stdlib.json","expected":["accepted"],"reviewed_summary_sha256":"aa86930300a932afe4637bc9f5940473fe47554623ebfcc0518d397a3f0d621e"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/effect-wrappers-stdlib.json","artifacts":["gates/claim-closure-oracles/effect-wrappers-stdlib.json","gates/claim-closure-lower.py","forge/src/effect_wrappers.rs","forge/tests/effect_link_conformance.rs",".design/basis/08-runnable-effect-link.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-grounded-stdlib-probes","mutation":"replace_text","from":"effect-wrapper-stdlib-time","to":"effect-wrapper-stdlib-stub","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-KANI-ABSENT",
+      "witness_id": "W-EXEC-FORGE-KANI-ABSENT",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/kani-absent.json","expected":["accepted"],"reviewed_summary_sha256":"9cd0495ec7f5b219983fa4c35ba02f39128f03b8aeaa2d8230f5551532aa6fc5"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/kani-absent.json","artifacts":["gates/claim-closure-oracles/kani-absent.json","gates/claim-closure-lower.py","forge/src/kani.rs",".design/lower/l2-kani.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"collapse-kani-absence","mutation":"replace_text","from":"kani-absent-structured","to":"kani-absent-success","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-KANI-BOUND-CAVEAT",
+      "witness_id": "W-EXEC-FORGE-KANI-BOUND-CAVEAT",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/kani-bound-caveat.json","expected":["accepted"],"reviewed_summary_sha256":"b3321b7d66d2af7ee49b17a423fc6e72258a7083511dca4f13575fa1e8b9e4a6"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/kani-bound-caveat.json","artifacts":["gates/claim-closure-oracles/kani-bound-caveat.json","gates/claim-closure-lower.py","forge/src/kani.rs",".design/lower/l2-kani.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-kani-bound-caveat","mutation":"replace_text","from":"kani-bound-caveat","to":"kani-unbounded-proof","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-KANI-DEGRADE-SPLIT",
+      "witness_id": "W-EXEC-FORGE-KANI-DEGRADE-SPLIT",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/kani-degrade-split.json","expected":["accepted"],"reviewed_summary_sha256":"9e13e6af63d64d75c4f4f308ecba9155fcd6e8d7f3e7c1b55d5e37ac85a69772"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/kani-degrade-split.json","artifacts":["gates/claim-closure-oracles/kani-degrade-split.json","gates/claim-closure-lower.py","forge/src/kani.rs",".design/lower/l2-kani.md",".design/forge/degrade-ladder.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"collapse-under-bound-degradation","mutation":"replace_text","from":"kani-degrade-under-bound","to":"kani-degrade-as-proved","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-KANI-DETERMINISM",
+      "witness_id": "W-EXEC-FORGE-KANI-DETERMINISM",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/kani-determinism.json","expected":["accepted"],"reviewed_summary_sha256":"27fdf6d0eef5f92becb1b8ae611b504ca64494085a1fed853d9516886eec5c4f"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/kani-determinism.json","artifacts":["gates/claim-closure-oracles/kani-determinism.json","gates/claim-closure-lower.py","forge/src/kani.rs",".design/lower/l2-kani.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-pre-discharge-determinism","mutation":"replace_text","from":"kani-deterministic-pre-discharge","to":"kani-result-dependent-pre-discharge","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-KANI-PARSE-OUTPUT",
+      "witness_id": "W-EXEC-FORGE-KANI-PARSE-OUTPUT",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/kani-parse-output.json","expected":["accepted"],"reviewed_summary_sha256":"2d8b255fd699cdb13299702c11a0a6efd1e1284a833095b1efaecb07bb810abf"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/kani-parse-output.json","artifacts":["gates/claim-closure-oracles/kani-parse-output.json","gates/claim-closure-lower.py","forge/src/kani.rs",".design/lower/l2-kani.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-contradictory-output-rejection","mutation":"replace_text","from":"kani-parse-contradiction","to":"kani-parse-contradiction-accepted","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-KANI-RUNNER",
+      "witness_id": "W-EXEC-FORGE-KANI-RUNNER",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/kani-runner.json","expected":["accepted"],"reviewed_summary_sha256":"86f6f6ef4443834ea2363524ba515f023df8cb4c0353e90ea9833769297dd077"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/kani-runner.json","artifacts":["gates/claim-closure-oracles/kani-runner.json","gates/claim-closure-lower.py","forge/src/kani.rs",".design/lower/l2-kani.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-kani-runner-observation","mutation":"replace_text","from":"kani-runner-invocation","to":"kani-runner-never-invoked","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-LEAN-BODY-THEOREMS",
+      "witness_id": "W-EXEC-FORGE-LEAN-BODY-THEOREMS",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lean-body-theorems.json","expected":["accepted"],"reviewed_summary_sha256":"9fdb70e85edd6c9d73d99d53a5e3a3a1afa1b4ce9d7316c5c74649b4b92fcfb2"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/lean-body-theorems.json","artifacts":["gates/claim-closure-oracles/lean-body-theorems.json","gates/claim-closure-lower.py","forge/src/lean_export.rs","forge/src/engine.rs",".design/verified/proof-backends.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"relabel-overflow-body-proved","mutation":"replace_text","from":"lean-body-overflow-honest","to":"lean-body-overflow-proved","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-LEAN-DISCHARGE-MODES",
+      "witness_id": "W-EXEC-FORGE-LEAN-DISCHARGE-MODES",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lean-discharge-modes.json","expected":["accepted"],"reviewed_summary_sha256":"88bfb5bb9f46f6545f9c4ca265e262808468147d43fe58ff68ba65a6f0ad22bd"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/lean-discharge-modes.json","artifacts":["gates/claim-closure-oracles/lean-discharge-modes.json","gates/claim-closure-lower.py","forge/src/lean_export.rs","forge/src/engine.rs",".design/verified/proof-backends.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-tier-b-discharge","mutation":"replace_text","from":"lean-tier-b","to":"lean-tier-b-unchecked","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-LEAN-EXPORTER",
+      "witness_id": "W-EXEC-FORGE-LEAN-EXPORTER",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lean-exporter.json","expected":["accepted"],"reviewed_summary_sha256":"9c7f8b096b2c76f05203a23e918cbbef7d3747e3e654146467a657bc6fa7891e"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/lean-exporter.json","artifacts":["gates/claim-closure-oracles/lean-exporter.json","gates/claim-closure-lower.py","forge/src/lean_export.rs","forge/src/engine.rs",".design/verified/proof-backends.md",".design/verified/rust-lean-correspondence.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-export-hard-gate","mutation":"replace_text","from":"lean-export-hard-gate","to":"lean-export-soft-gate","expected_exit":4}]}
+    },
+    {
+      "requirement_id": "REQ-FORGE-LEAN-MUTATION-ACCOUNTING",
+      "witness_id": "W-EXEC-FORGE-LEAN-MUTATION-ACCOUNTING",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/lean-mutation-accounting.json","expected":["accepted"],"reviewed_summary_sha256":"83f01b272208bc1cd3c9e5302ab28a3f610e399242b89a68c9d88b5c91c5f518"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/lean-mutation-accounting.json","artifacts":["gates/claim-closure-oracles/lean-mutation-accounting.json","gates/claim-closure-lower.py","forge/src/lean_export.rs","forge/src/engine.rs",".design/verified/proof-backends.md","forge/Cargo.toml","Cargo.lock","rust-toolchain.toml","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"inflate-untested-mutation-tally","mutation":"replace_text","from":"lean-mutation-accounting","to":"lean-mutation-accounting-inflated","expected_exit":4}]}
+    }
+  ]
+}
