@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 7aed361682fa14e940a6e1ffdcec6685a80aeb829261d3c35a8768aaf892a5f9 (re-pinned 2026-08-30 for focused kernel-byte model-schema, content-contract, and receipt-replay closure witnesses; shipped behavior is unchanged. prior: ef62c718f496efa073764b392e547c2d617ffb68c05937ba5eff53c4efffa05b)
+audited-content-sha256: 4efce380371c518d1bccc78c915458a8071156b98717ace869407721b7e76a64 (re-pinned 2026-08-30 for focused kernel-byte negative-control and reproducible-consumption closure witnesses; shipped behavior is unchanged. prior: 7aed361682fa14e940a6e1ffdcec6685a80aeb829261d3c35a8768aaf892a5f9)
 decision: explicit pinned vstd proof-model import plus deterministic no_std erased link metadata
 issue: github:dollspace-gay/Thermite#108
 governs:

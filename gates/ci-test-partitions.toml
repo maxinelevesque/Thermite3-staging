@@ -8336,3 +8336,53 @@ bucket = 12
 seconds = 0.007
 test = "forge::bin/forge goal_repl::tests::goal_render_is_deterministic"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# These focused Wave 11 claim discriminators run below nextest's useful timing
+# resolution. Keep the reviewed unit-test floor until the next CI snapshot.
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge cli::tests::l1_default_and_explicit_l3_build_paths_are_disjoint"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::kernel_byte_consumption_matrix_is_replay_and_byte_reproducible"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::kernel_byte_negative_controls_are_publication_blocking"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::l3_assurance_aggregate_is_minimum_capped_and_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::l3_kernel_profile_is_freestanding_and_final_linked"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::l3_post_freeze_commitment_matrix_is_atomic_and_complete"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::l3_total_wrapper_has_result_abi_and_executable_precondition"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::l3_translation_validation_is_complete_and_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"

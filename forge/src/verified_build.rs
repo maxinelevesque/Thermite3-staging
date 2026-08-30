@@ -4528,4 +4528,191 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn kernel_byte_negative_controls_are_publication_blocking() {
+        let source = include_str!("../tests/kernel_byte_slice.rs");
+        for required in [
+            "kernel_bytes_wrong_content.rs",
+            "postcondition not satisfied",
+            "kernel_bytes_oob.rs",
+            "precondition not satisfied",
+            "!output.status.success()",
+            "!bundle.exists()",
+        ] {
+            assert!(
+                source.contains(required),
+                "missing kernel-byte negative-control pin {required}"
+            );
+        }
+    }
+
+    #[test]
+    fn kernel_byte_consumption_matrix_is_replay_and_byte_reproducible() {
+        let source = include_str!("../tests/kernel_byte_slice.rs");
+        for required in [
+            "verify-build",
+            "--replay",
+            "kernel_bytes_consumer.rs",
+            "kernel_bytes_freestanding.rs",
+            "--crate-type=rlib",
+            "link-arg=-nostartfiles",
+            "receipt.json",
+            "evidence/source.verus.rs",
+            "artifact/libthermite_kernel_bytes.rlib",
+            "artifact/deps/libvstd.rlib",
+            "fs::read(first.join(relative)).unwrap()",
+            "fs::read(second.join(relative)).unwrap()",
+        ] {
+            assert!(
+                source.contains(required),
+                "missing kernel-byte consumption/reproducibility pin {required}"
+            );
+        }
+    }
+
+    #[test]
+    fn l3_translation_validation_is_complete_and_fail_closed() {
+        for gate in [
+            "contract-tv-complete",
+            "exec-tv-complete",
+            "body-loop-tv-complete",
+            "total-export-wrappers",
+        ] {
+            assert!(
+                STRICT_GATES.contains(&gate),
+                "missing strict TV gate {gate}"
+            );
+        }
+        let source = include_str!("../tests/verified_build.rs");
+        for phase in ["contract", "exec", "body", "loop"] {
+            for verdict in ["divergent", "unsupported", "skipped", "unverifiable"] {
+                let row = format!("(\"{phase}\", \"{verdict}\"");
+                assert!(source.contains(&row), "missing TV refusal row {row}");
+            }
+        }
+        assert!(source.contains("assert!(!bundle.exists(), \"{fault} published a bundle\")"));
+    }
+
+    #[test]
+    fn l3_total_wrapper_has_result_abi_and_executable_precondition() {
+        let program =
+            parse("fn guarded(x: u64) -> u64 ! pure requires x < 100 ensures result == x { x }");
+        let exports = plan_exports(
+            &program,
+            &["guarded".to_string()],
+            "demo",
+            VerifiedTarget::Std,
+            "x86_64-unknown-linux-gnu",
+            "64",
+            "little",
+        )
+        .unwrap();
+        let export = &exports[0];
+        assert!(export.wrapped);
+        assert_eq!(export.public_name, "thermite_export_guarded_v1");
+        assert_eq!(export.return_type, "Result<u64,ThermiteContractError>");
+        assert!(export
+            .signature
+            .contains("Result<u64,ThermiteContractError>"));
+        assert_eq!(export.postcondition_ids, ["guarded.ensures#1"]);
+        assert_eq!(export.abi_sha256.len(), 64);
+    }
+
+    #[test]
+    fn l3_assurance_aggregate_is_minimum_capped_and_fail_closed() {
+        let implementation = include_str!("verified_build.rs");
+        for required in [
+            "minimum = minimum.min(certificate.level)",
+            "minimum = minimum.min(Level::L3)",
+            "if minimum < Level::L3",
+            "headline: \"L3\".to_string()",
+            "cap: \"L3\".to_string()",
+            "scope: \"end_to_end\".to_string()",
+        ] {
+            assert!(
+                implementation.contains(required),
+                "missing aggregate pin {required}"
+            );
+        }
+        let matrix = include_str!("../tests/verified_build.rs");
+        for refusal in [
+            "certificate-l1",
+            "certificate-l2",
+            "certificate-timeout",
+            "certificate-counterexample",
+            "certificate-rejected",
+            "certificate-failed-obligation",
+            "certificate-missing",
+        ] {
+            assert!(
+                matrix.contains(refusal),
+                "missing assurance refusal {refusal}"
+            );
+        }
+        assert!(matrix.contains("!bundle.exists()"));
+    }
+
+    #[test]
+    fn l3_kernel_profile_is_freestanding_and_final_linked() {
+        let args = expected_verus_args("kernel_demo", VerifiedTarget::Freestanding);
+        for required in [
+            "--no-vstd",
+            "vstd=<KERNEL_VSTD_VIR>",
+            "vstd=<KERNEL_VSTD_RLIB>",
+            "--no-cheating",
+            "--compile",
+            "panic=abort",
+        ] {
+            assert!(
+                args.iter().any(|arg| arg == required),
+                "missing kernel arg {required}"
+            );
+        }
+        let source = include_str!("../tests/verified_build.rs");
+        for required in [
+            "#![no_std]",
+            "kernel_consumer.rs",
+            "link-arg=-nostartfiles",
+            "assert!(consumer.is_file())",
+        ] {
+            assert!(
+                source.contains(required),
+                "missing final-link pin {required}"
+            );
+        }
+    }
+
+    #[test]
+    fn l3_post_freeze_commitment_matrix_is_atomic_and_complete() {
+        let source = include_str!("../tests/verified_build.rs");
+        for fault in [
+            "after-plan-source-mutation",
+            "after-plan-body-mutation",
+            "after-plan-helper-mutation",
+            "after-plan-wrapper-mutation",
+            "before-verus",
+            "after-verus",
+            "after-codegen",
+            "after-artifact-hash",
+            "after-plan-hash",
+            "after-evidence-hash",
+            "after-toolchain-hash",
+            "after-receipt-staging",
+        ] {
+            assert!(source.contains(fault), "missing post-freeze fault {fault}");
+        }
+        for atomicity_pin in [
+            "!output.status.success()",
+            "!bundle.exists()",
+            "starts_with(&stage_prefix)",
+            "assert!(!leaked",
+            "COMMITMENT_FAILURE_CASES.len(), 12",
+        ] {
+            assert!(
+                source.contains(atomicity_pin),
+                "missing atomicity pin {atomicity_pin}"
+            );
+        }
+    }
 }

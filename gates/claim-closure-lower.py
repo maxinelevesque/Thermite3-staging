@@ -1271,6 +1271,51 @@ CASES = {
     "kernel-bytes-receipt-replay": package_bin_unit(
         "forge", "forge", "verified_build::tests::kernel_vstd_receipt_replay_binds_every_identity"
     ),
+    "kernel-bytes-negative-controls": package_bin_unit(
+        "forge", "forge", "verified_build::tests::kernel_byte_negative_controls_are_publication_blocking"
+    ),
+    "kernel-bytes-reproducible-consumption": package_bin_unit(
+        "forge", "forge", "verified_build::tests::kernel_byte_consumption_matrix_is_replay_and_byte_reproducible"
+    ),
+    "l3build-explicit-mode": package_bin_unit(
+        "forge", "forge", "cli::tests::parses_strict_l3_build_and_verify_build_surfaces"
+    ),
+    "l3build-frozen-plan": package_bin_unit(
+        "forge", "forge", "verified_build::tests::canonical_plan_hash_is_json_whitespace_independent"
+    ),
+    "l3build-strict-closure": package_bin_unit(
+        "forge", "forge", "closure::tests::verified_closure_fails_closed_on_unknown_and_indirect_calls"
+    ),
+    "l3build-exact-source": package_bin_unit(
+        "forge", "forge", "verified_build::tests::l3_orchestrator_has_no_l1_lowering_call"
+    ),
+    "l3build-tv-coverage": package_bin_unit(
+        "forge", "forge", "verified_build::tests::l3_translation_validation_is_complete_and_fail_closed"
+    ),
+    "l3build-explicit-exports": package_bin_unit(
+        "forge", "forge", "verified_build::tests::export_plan_is_explicit_private_by_default_and_wraps_nontrivial_req"
+    ),
+    "l3build-total-wrapper": package_bin_unit(
+        "forge", "forge", "verified_build::tests::l3_total_wrapper_has_result_abi_and_executable_precondition"
+    ),
+    "l3build-bound-receipt": package_bin_unit(
+        "forge", "forge", "verified_build::tests::canonical_binding_changes_for_every_assurance_component"
+    ),
+    "l3build-assurance-aggregate": package_bin_unit(
+        "forge", "forge", "verified_build::tests::l3_assurance_aggregate_is_minimum_capped_and_fail_closed"
+    ),
+    "l3build-kernel-linkability": package_bin_unit(
+        "forge", "forge", "verified_build::tests::l3_kernel_profile_is_freestanding_and_final_linked"
+    ),
+    "l3build-post-freeze-rejection": package_bin_unit(
+        "forge", "forge", "verified_build::tests::l3_post_freeze_commitment_matrix_is_atomic_and_complete"
+    ),
+    "l3build-l1-separation": package_bin_unit(
+        "forge", "forge", "cli::tests::l1_default_and_explicit_l3_build_paths_are_disjoint"
+    ),
+    "l3build-codegen-toolchain": package_bin_unit(
+        "forge", "forge", "verified_build::tests::codegen_identity_ignores_install_prefix_and_binds_the_complete_closure"
+    ),
     "obligation-neutral-content": package_bin_unit(
         "forge", "forge", "obligation::tests::contract_obligation_is_neutral_content"
     ),

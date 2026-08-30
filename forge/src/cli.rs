@@ -4190,6 +4190,30 @@ mod tests {
     }
 
     #[test]
+    fn l1_default_and_explicit_l3_build_paths_are_disjoint() {
+        let level_of = |args: &[&str]| -> Option<BuildLevel> {
+            parse_args(&argv(args))
+                .ok()
+                .and_then(|command| match command {
+                    Command::Build { level, .. } => Some(level),
+                    _ => None,
+                })
+        };
+        assert_eq!(level_of(&["build", "a.th"]), Some(BuildLevel::L1));
+        assert_eq!(
+            level_of(&["build", "a.th", "--level", "l1"]),
+            Some(BuildLevel::L1)
+        );
+        assert_eq!(
+            level_of(&["build", "a.th", "--level", "l3", "--export", "f"]),
+            Some(BuildLevel::L3)
+        );
+        let source = include_str!("cli.rs");
+        assert!(source.contains("if matches!(level, BuildLevel::L1)"));
+        assert!(source.contains("crate::verified_build::build_file("));
+    }
+
+    #[test]
     fn parses_rich_state_composition_build_surface() {
         assert_eq!(
             parse_args(&argv(&[
