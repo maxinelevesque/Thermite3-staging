@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"vacuity-maximal-reject","expected_exit":0},{"id":"vacuity-maximal-slag","expected_exit":0}]}

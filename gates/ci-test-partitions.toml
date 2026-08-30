@@ -310,6 +310,12 @@ test = "forge::bin/forge vacuity::tests::corpus_passes_triage"
 
 [[assignment]]
 bucket = 1
+seconds = 0.007
+test = "forge::bin/forge vacuity::tests::match_guard_result_mention_passes_b"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
 seconds = 0.006
 test = "forge::bin/forge vacuity_solver::tests::extract_helpers_split_params_and_generic_return"
 
