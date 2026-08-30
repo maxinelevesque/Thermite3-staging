@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"metrics-dashboard-projection","expected_exit":0},{"id":"metrics-dashboard-read-only","expected_exit":0},{"id":"metrics-dashboard-telemetry","expected_exit":0}]}
