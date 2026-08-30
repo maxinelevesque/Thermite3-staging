@@ -52,9 +52,9 @@
     },
     {
       "requirement_id": "REQ-COMPLETE-PROVED-DISPLAY",
-      "witness_id": "W-FORMAL-LEAN-AXIOM-PROBE",
-      "claim": {"kind":"formal_theorem","subject":"lean/Thermite/AssurancePolicyV2.lean#Thermite.CertificationMetatheory.engineer_meaning_is_licensed","expected":["declaration:Thermite.CertificationMetatheory.engineer_meaning_is_licensed","type_sha256:c084a6f0732b89fc73de3df8edadde0c77c7842e4e90d826bf5597d6717ef446","axioms:Quot.sound,propext","tool:Lake version 5.0.0-src+98dc76e (Lean version 4.29.0)"],"reviewed_summary_sha256":"85cf80d8329d1350662222f81874f8c1a0256b1d5606f79cd33f5b7af0e1c15d"},
-      "closure": {"artifacts":["lean/Thermite/AssurancePolicyV2.lean#theorem engineer_meaning_is_licensed","gates/assurance-v2-replay.py",".design/versioned-language-completeness.md","gates/completeness-review.py","gates/claim_closure_schema.py"]}
+      "witness_id": "W-EXEC-COMPLETE-PROVED-DISPLAY",
+      "claim": {"kind":"executable_discriminator","subject":"oracle:gates/claim-closure-oracles/complete-proved-display.json","expected":["accepted"],"reviewed_summary_sha256":"85cf80d8329d1350662222f81874f8c1a0256b1d5606f79cd33f5b7af0e1c15d"},
+      "closure": {"verifier":["uv","run","python","gates/claim-closure-lower.py"],"tool_version_argv":["uv","run","python","gates/claim-closure-lower.py","--version"],"oracle":"gates/claim-closure-oracles/complete-proved-display.json","artifacts":["gates/claim-closure-oracles/complete-proved-display.json","gates/claim-closure-lower.py","gates/assurance-v2-replay.py","gates/assurance-v2-replay.json","gates/assurance-v2-issuers.json","lean/Thermite/AssuranceV2Replay.lean","lean/Thermite/AssurancePolicyV2.lean",".design/versioned-language-completeness.md","gates/completeness-review.py","gates/claim_closure_schema.py"],"counterfeit":[{"name":"erase-checked-display-replay","mutation":"replace_text","from":"complete-proved-display","to":"complete-proved-display-unchecked","expected_exit":4}]}
     },
     {
       "requirement_id": "REQ-COMPLETE-REVIEW-TRACK",

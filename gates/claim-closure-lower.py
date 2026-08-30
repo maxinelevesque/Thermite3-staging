@@ -1051,6 +1051,10 @@ CASES = {
         "traversal_witness",
         "complete_current_inventory_matrix_uses_the_universal_lean_theorem",
     ),
+    "complete-proved-display": python_unittest(
+        "gates.tests.test_assurance_v2_replay.AssuranceV2ReplayGateTests."
+        "test_checked_matrix_and_generated_lean_are_current"
+    ),
     "complete-review-track": python_unittest(
         "gates.tests.test_completeness_review.ReviewTrackTests."
         "test_open_gap_and_backlog_agree_with_complete_closure"
