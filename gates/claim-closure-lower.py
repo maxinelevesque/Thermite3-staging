@@ -63,6 +63,31 @@ def package_bin_unit(package: str, bin_target: str, test_name: str) -> list[str]
     ]
 
 
+def package_lib_unit(package: str, test_name: str) -> list[str]:
+    return [
+        "cargo",
+        "test",
+        "--quiet",
+        "--locked",
+        "-p",
+        package,
+        "--lib",
+        test_name,
+        "--",
+        "--exact",
+    ]
+
+
+def lean_build(*targets: str) -> list[str]:
+    return [
+        "bash",
+        "-c",
+        'cd lean && exec lake build "$@"',
+        "lean-build",
+        *targets,
+    ]
+
+
 def python_unittest(test_name: str) -> list[str]:
     return [sys.executable, "-m", "unittest", test_name]
 
@@ -1196,6 +1221,55 @@ CASES = {
     ),
     "nested-adt-root-lower": package_integration(
         "thermite-lower", "adt_lower_conformance", "nested_adt_fields_and_is_invariant_lower_and_verify_l3"
+    ),
+    "tv-signal-shared-rlimit": package_integration(
+        "forge",
+        "divergence_rlimit_phrase_drift",
+        "divergence_contract_tv_rlimit_phrases_drifted_from_body_tv",
+    ),
+    "g4-fragment-inventory": package_lib_unit(
+        "thermite-spec",
+        "s2_recon::tests::admitted_bridge_covers_the_complete_formula_relation_and_term_inventory",
+    ),
+    "g4-source-bridge": package_lib_unit(
+        "thermite-spec",
+        "s2_recon::tests::source_quantifier_preserves_values_domains_and_de_bruijn_indices",
+    ),
+    "g4-typed-model": lean_build("Thermite.Strat.TestModel"),
+    "g4-normalize-skolem": lean_build(
+        "Thermite.PinSubstitutionCapture", "Thermite.PinSkolemDependencies"
+    ),
+    "g4-grounding-instantiation": lean_build(
+        "Thermite.PinGroundingCompleteness", "Thermite.PinInstantiationOmission"
+    ),
+    "g4-ground-theory": lean_build("Thermite.Strat.GroundTheory"),
+    "g4-cnf-lrat": lean_build("Thermite.PinEprLrat", "Thermite.PropReconstruct"),
+    "g4-evidence-cache": package_bin_unit(
+        "forge",
+        "forge",
+        "epr_reconstruct::tests::cache_replays_warm_entries_and_rejects_every_tampered_boundary",
+    ),
+    "g4-automatic-routing": package_bin_unit(
+        "forge",
+        "forge",
+        "check::tests::automatic_route_kernel_reconstructs_an_admitted_array_clause",
+    ),
+    "g4-closed-gate": python_unittest(
+        "gates.tests.test_ci_gate_segments.GateSegmentTests.test_g4_segment_inventory_and_closed_selector"
+    ),
+    "invbind-variant-tests": package_integration(
+        "thermite-lower",
+        "adt_lower_conformance",
+        "nested_adt_fields_and_is_invariant_lower_and_verify_l3",
+    ),
+    "kernel-bytes-model-schema": package_bin_unit(
+        "forge", "forge", "verified_build::tests::kernel_vstd_model_schema_is_pinned"
+    ),
+    "kernel-bytes-content-contracts": package_bin_unit(
+        "forge", "forge", "verified_build::tests::kernel_byte_content_contracts_are_exact"
+    ),
+    "kernel-bytes-receipt-replay": package_bin_unit(
+        "forge", "forge", "verified_build::tests::kernel_vstd_receipt_replay_binds_every_identity"
     ),
     "obligation-neutral-content": package_bin_unit(
         "forge", "forge", "obligation::tests::contract_obligation_is_neutral_content"

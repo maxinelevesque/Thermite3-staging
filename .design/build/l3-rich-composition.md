@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 3f7fae9892a6c3618aa9f8ace796cef6f3685b9bf7e12a909f4cf1916070bc20 (re-pinned 2026-08-25 for issue #6 final Map iteration form. prior: 4cc2a547d130ffc158dcdd2538784e97cdbc8730509c789285d127c1c2ea8ce6)
+audited-content-sha256: 5d727ec7682e8a11392f62a856cfaacec0cc5c752399f92156465d5739e20d70 (re-pinned 2026-08-30 for focused kernel-byte model-schema, content-contract, and receipt-replay closure witnesses; shipped behavior is unchanged. prior: 3f7fae9892a6c3618aa9f8ace796cef6f3685b9bf7e12a909f4cf1916070bc20)
 decision: one canonical Verus crate with crate-visible rich Thermite roots and public shell exports
 issue: github:dollspace-gay/Thermite#104
 governs:
