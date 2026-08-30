@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"cli-hand-parser-rlimit","expected_exit":0},{"id":"cli-hand-parser-level","expected_exit":0}]}

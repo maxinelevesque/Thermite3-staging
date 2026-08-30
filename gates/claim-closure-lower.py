@@ -611,6 +611,63 @@ CASES = {
     "cli-empty-l2-fails": package_integration(
         "forge", "check_conformance", "explicit_l2_empty_certificate_array_is_not_success"
     ),
+    "cli-command-parses": package_bin_unit(
+        "forge", "forge", "cli::tests::parses_new_and_check"
+    ),
+    "cli-command-usage-errors": package_bin_unit(
+        "forge", "forge", "cli::tests::usage_errors"
+    ),
+    "cli-hand-parser-rlimit": package_bin_unit(
+        "forge", "forge", "cli::tests::parses_rlimit_flag"
+    ),
+    "cli-hand-parser-level": package_bin_unit(
+        "forge", "forge", "cli::tests::parses_level_flag"
+    ),
+    "cli-error-aggregation": package_bin_unit(
+        "forge", "forge", "cli::tests::aggregation_preserves_inner_diagnostics"
+    ),
+    "cli-assurance-headline": package_bin_unit(
+        "forge", "forge", "cli::tests::render_assurance_shows_headline_and_lowered_flags"
+    ),
+    "cli-assurance-failure": package_bin_unit(
+        "forge", "forge", "cli::tests::render_assurance_shows_failed_headline"
+    ),
+    "cli-new-scaffold": package_bin_unit(
+        "forge", "forge", "cli::tests::scaffold_writes_layout_and_refuses_clobber"
+    ),
+    "repair-upgrade-budget": package_bin_unit(
+        "forge", "forge", "repair::tests::escalation_upgrades_at_the_proving_budget"
+    ),
+    "repair-bounded-ladder": package_bin_unit(
+        "forge", "forge", "repair::tests::escalation_is_bounded_and_terminates"
+    ),
+    "repair-counterexample-no-retry": package_bin_unit(
+        "forge", "forge", "repair::tests::counterexample_is_never_retried"
+    ),
+    "repair-reject-no-retry": package_bin_unit(
+        "forge", "forge", "repair::tests::rejects_are_never_retried"
+    ),
+    "repair-classification": package_bin_unit(
+        "forge", "forge", "repair::tests::classify_routes_timeout_vs_falsity"
+    ),
+    "repair-deterministic": package_bin_unit(
+        "forge", "forge", "repair::tests::escalation_is_deterministic"
+    ),
+    "repair-environment-error": package_bin_unit(
+        "forge", "forge", "repair::tests::environment_error_propagates"
+    ),
+    "repair-report-noop": package_integration(
+        "forge", "repair_conformance", "corpus_sum_is_a_repair_noop"
+    ),
+    "repair-report-hard-fail": package_integration(
+        "forge", "repair_conformance", "counterexample_is_never_upgraded"
+    ),
+    "review-spec-layer": package_bin_unit(
+        "forge", "forge", "review::tests::sum_intent_reviewable_no_bodies"
+    ),
+    "review-pre-screen": package_bin_unit(
+        "forge", "forge", "review::tests::rejected_fn_flagged_not_surfaced"
+    ),
     "check-outcome-proved": package_bin_unit(
         "forge", "forge", "check::tests::parseable_success_is_l3_cert"
     ),

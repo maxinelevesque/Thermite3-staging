@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"repair-report-noop","expected_exit":0},{"id":"repair-report-hard-fail","expected_exit":0}]}
