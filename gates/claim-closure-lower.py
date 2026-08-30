@@ -1381,6 +1381,81 @@ CASES = {
     "lower-l1-check-emission": integration("l1_conformance", "sum_l1_compiles_and_runs"),
     "lower-l1-check-macro": integration("l1_conformance", "no_debug_assert_in_emission"),
     "lower-l1-combinators": integration("l1_conformance", "combinator_l1_forms_run"),
+    "lower-l1-dec-scope": integration(
+        "claim_closure_wave13", "l1_dec_scope_is_runtime_honest"
+    ),
+    "lower-l1-effect-scope": integration(
+        "claim_closure_wave13", "l1_effect_scope_stays_compile_time_only"
+    ),
+    "lower-l1-enum-match": integration(
+        "claim_closure_wave13", "l1_enum_match_and_is_have_plain_rust_lowering"
+    ),
+    "lower-l1-ergonomics-desugar": integration(
+        "claim_closure_wave13", "l1_ergonomic_desugars_use_existing_runtime_nodes"
+    ),
+    "lower-l1-errors": integration(
+        "claim_closure_wave13", "l1_errors_are_structured_not_toolchain_panics"
+    ),
+    "lower-l1-golden": integration(
+        "claim_closure_wave13", "l1_golden_runs_and_its_negative_contract_fires"
+    ),
+    "lower-l1-match-guard": integration(
+        "claim_closure_wave13", "l1_match_guards_are_emitted_and_walked"
+    ),
+    "lower-l1-or-pattern": integration(
+        "claim_closure_wave13", "l1_or_patterns_emit_native_alternatives"
+    ),
+    "lower-l1-recursive-box": integration(
+        "claim_closure_wave13", "l1_recursive_adts_emit_box_and_deref"
+    ),
+    "lower-l1-runtime-twins": integration(
+        "claim_closure_wave13", "l1_string_parse_and_vec_runtime_twins_are_present"
+    ),
+    "lower-l1-spec-fn": integration(
+        "claim_closure_wave13", "l1_spec_functions_have_executable_lowering"
+    ),
+    "lower-l1-struct-invariants": integration(
+        "claim_closure_wave13", "l1_struct_invariants_are_always_active"
+    ),
+    "lower-l2-bound-caveat": integration(
+        "claim_closure_wave13", "l2_bound_string_states_bounded_assurance"
+    ),
+    "lower-l2-determinism": integration(
+        "claim_closure_wave13", "l2_lowering_is_deterministic_by_construction_and_test"
+    ),
+    "lower-l2-ergonomics-mirror": integration(
+        "claim_closure_wave13", "l2_ergonomics_reuses_l1_after_desugaring"
+    ),
+    "lower-l2-errors": integration(
+        "claim_closure_wave13", "l2_errors_are_structured_not_panics"
+    ),
+    "lower-l2-harness": integration(
+        "claim_closure_wave13", "l2_emits_per_function_kani_harnesses"
+    ),
+    "lower-l2-type-bounds": integration(
+        "claim_closure_wave13", "l2_symbolic_inputs_are_type_driven"
+    ),
+    "lower-l2-unwind": integration(
+        "claim_closure_wave13", "l2_unwind_bounds_follow_loop_shape"
+    ),
+    "lower-map-errors": integration(
+        "claim_closure_wave13", "map_unsupported_shapes_return_lower_error"
+    ),
+    "lower-map-remove": integration(
+        "claim_closure_wave13", "map_remove_returns_prior_value_and_preserves_absence"
+    ),
+    "lower-map-ripple": integration(
+        "claim_closure_wave13", "map_type_ripples_through_l3_l1_and_consumers"
+    ),
+    "lower-map-traversal": integration(
+        "claim_closure_wave13", "map_bounded_traversal_has_checked_index_accessors"
+    ),
+    "lower-map-wrapper": integration(
+        "claim_closure_wave13", "map_wrapper_is_bounded_vec_of_pairs_with_full_surface"
+    ),
+    "lower-optres-parse": integration(
+        "claim_closure_wave13", "option_result_parse_emission_is_gated_and_verified"
+    ),
     "obligation-neutral-content": package_bin_unit(
         "forge", "forge", "obligation::tests::contract_obligation_is_neutral_content"
     ),

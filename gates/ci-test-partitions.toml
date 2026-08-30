@@ -8467,3 +8467,157 @@ bucket = 1
 seconds = 0.007
 test = "thermite-lower::claim_closure_wave12 every_holding_exit_normalizes_close_before_provider_release"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# Focused Wave 13 claim discriminators are source/model checks below nextest's
+# useful timing resolution. Keep the reviewed unit-test floor until CI refreshes
+# the partition snapshot.
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_dec_scope_is_runtime_honest"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_effect_scope_stays_compile_time_only"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_enum_match_and_is_have_plain_rust_lowering"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_ergonomic_desugars_use_existing_runtime_nodes"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_errors_are_structured_not_toolchain_panics"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_golden_runs_and_its_negative_contract_fires"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_match_guards_are_emitted_and_walked"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_or_patterns_emit_native_alternatives"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_recursive_adts_emit_box_and_deref"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_string_parse_and_vec_runtime_twins_are_present"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_spec_functions_have_executable_lowering"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l1_struct_invariants_are_always_active"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l2_bound_string_states_bounded_assurance"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l2_lowering_is_deterministic_by_construction_and_test"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l2_ergonomics_reuses_l1_after_desugaring"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l2_errors_are_structured_not_panics"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l2_emits_per_function_kani_harnesses"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l2_symbolic_inputs_are_type_driven"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 l2_unwind_bounds_follow_loop_shape"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 map_unsupported_shapes_return_lower_error"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 map_remove_returns_prior_value_and_preserves_absence"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 map_type_ripples_through_l3_l1_and_consumers"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 map_bounded_traversal_has_checked_index_accessors"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 map_wrapper_is_bounded_vec_of_pairs_with_full_surface"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave13 option_result_parse_emission_is_gated_and_verified"
+timing_provenance = "reviewed_local_estimate_after_baseline"

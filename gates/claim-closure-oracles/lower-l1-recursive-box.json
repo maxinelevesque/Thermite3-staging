@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"lower-l1-recursive-box","expected_exit":0}]}
