@@ -8386,3 +8386,84 @@ bucket = 8
 seconds = 0.007
 test = "forge::bin/forge verified_build::tests::l3_translation_validation_is_complete_and_fail_closed"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# Focused Wave 12 claim discriminators are source/model checks below nextest's
+# useful timing resolution. Keep the reviewed unit-test floor until CI refreshes
+# the partition snapshot.
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::l3_atomic_publication_self_validates_and_renames_once"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "forge::bin/forge verified_build::tests::composition_receipt_digest_binds_every_composition_component"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "forge::bin/forge verified_build::composition::tests::composition_visibility_is_crate_private_while_link_exports_stay_public"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "forge::bin/forge verified_build::composition::tests::composition_inventory_recursively_closes_rich_types_and_shell_items"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "forge::bin/forge verified_build::composition::tests::combined_source_is_one_exact_verus_block_with_ordered_shell_bytes"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "forge::bin/forge verified_build::composition::tests::rich_tv_completion_is_narrow_and_all_nonpass_rows_remain_blocking"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "forge::bin/forge verified_build::composition::tests::composition_publication_is_staged_reassembled_and_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "forge::bin/forge verified_build::composition::tests::composition_kernel_observation_keeps_platform_final_link_explicit"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "forge::bin/forge verified_build::composition::tests::composition_codegen_uses_the_bound_artifact_identity_end_to_end"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave12 maximal_row_policy_is_owned_by_forge_not_the_lowerer"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave12 effect_checker_has_no_runtime_sandbox_emission_surface"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave12 ergonomic_desugars_reach_existing_lowerer_nodes_without_new_runtime_forms"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave12 every_holding_exit_normalizes_close_before_provider_release"
+timing_provenance = "reviewed_local_estimate_after_baseline"

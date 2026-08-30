@@ -4715,4 +4715,99 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn l3_atomic_publication_self_validates_and_renames_once() {
+        let implementation = include_str!("verified_build.rs");
+        let production = implementation.split("#[cfg(test)]").next().unwrap();
+        for required in [
+            "sync_tree(&stage.path)?",
+            "validate_bundle(&stage.path, false)?",
+            "fs::rename(&stage.path, destination)",
+            "stage.disarm()",
+            "sync_dir(parent)?",
+        ] {
+            assert!(
+                implementation.contains(required),
+                "missing atomic publication pin {required}"
+            );
+        }
+        assert_eq!(
+            production
+                .matches("fs::rename(&stage.path, destination)")
+                .count(),
+            1,
+            "verified bundle publication must have exactly one visibility commit"
+        );
+        let faults = include_str!("../tests/verified_build.rs");
+        for required in [
+            "after-receipt-staging",
+            "!bundle.exists()",
+            "starts_with(&stage_prefix)",
+            "assert!(!leaked",
+        ] {
+            assert!(
+                faults.contains(required),
+                "missing atomic fault pin {required}"
+            );
+        }
+    }
+
+    #[test]
+    fn composition_receipt_digest_binds_every_composition_component() {
+        let composition = CompositionReceiptBindingV1 {
+            lowered_thermite_sha256: "a".repeat(64),
+            direct_verus_set_sha256: "b".repeat(64),
+            inventory_sha256: "c".repeat(64),
+            combined_source_sha256: "d".repeat(64),
+        };
+        let base = ReceiptBindingV1 {
+            schema: COMPOSITION_RECEIPT_SCHEMA.to_string(),
+            assurance: "L3".to_string(),
+            scope: "end_to_end".to_string(),
+            plan_sha256: "e".repeat(64),
+            raw_source_sha256: "f".repeat(64),
+            parsed_program_sha256: "1".repeat(64),
+            verus_source_sha256: "2".repeat(64),
+            certificate_set_sha256: "3".repeat(64),
+            translation_validation_sha256: "4".repeat(64),
+            whole_crate_verus_sha256: "5".repeat(64),
+            toolchain_sha256: "6".repeat(64),
+            crate_name: "composition".to_string(),
+            target: VerifiedTarget::Std,
+            artifact: BoundArtifact {
+                path: "artifact/libcomposition.rlib".to_string(),
+                kind: "rlib".to_string(),
+                length: 1,
+                sha256: "7".repeat(64),
+            },
+            assurance_aggregate: AssuranceAggregate {
+                headline: "L3".to_string(),
+                cap: "L3".to_string(),
+                minimum_reachable: "L3".to_string(),
+                scope: "end_to_end".to_string(),
+                members: Vec::new(),
+            },
+            exports: Vec::new(),
+            strict_gates: COMPOSITION_STRICT_GATES
+                .iter()
+                .map(|gate| (*gate).to_string())
+                .collect(),
+            files: Vec::new(),
+            composition: Some(composition),
+        };
+        let digest = base.canonical_sha256();
+        for field in 0..4 {
+            let mut changed = base.clone();
+            let binding = changed.composition.as_mut().unwrap();
+            match field {
+                0 => binding.lowered_thermite_sha256 = "9".repeat(64),
+                1 => binding.direct_verus_set_sha256 = "9".repeat(64),
+                2 => binding.inventory_sha256 = "9".repeat(64),
+                3 => binding.combined_source_sha256 = "9".repeat(64),
+                _ => unreachable!(),
+            }
+            assert_ne!(digest, changed.canonical_sha256(), "field {field}");
+        }
+    }
 }
