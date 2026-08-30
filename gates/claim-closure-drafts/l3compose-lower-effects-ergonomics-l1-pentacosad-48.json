@@ -1,0 +1,1267 @@
+{
+  "version": 1,
+  "slice_id": "l3compose-lower-effects-ergonomics-l1-pentacosad-48",
+  "entries": [
+    {
+      "requirement_id": "REQ-L3BUILD-9",
+      "witness_id": "W-EXEC-L3BUILD-9",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3build-atomic-publication.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "82271a5b877fd5a49fa4fda6fc69fa15d43333835e30d5962a4cd251855ce83b"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3build-atomic-publication.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3build-atomic-publication.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build.rs",
+          "forge/tests/verified_build.rs",
+          ".design/build/l3-verified-artifact.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3build-atomic-publication-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3build-atomic-publication",
+            "to": "l3build-atomic-publication-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-1",
+      "witness_id": "W-EXEC-L3COMPOSE-1",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-cli-surface.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "f12fb61375e065eb2d9658fdc6e17b95259f565262f76bbd7476795524dfb7c4"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-cli-surface.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-cli-surface.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/cli.rs",
+          "forge/src/verified_build.rs",
+          ".design/build/l3-rich-composition.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-cli-surface-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-cli-surface",
+            "to": "l3compose-cli-surface-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-10",
+      "witness_id": "W-EXEC-L3COMPOSE-10",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-codegen-binding.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "8eb9cae05c783483407a9d2054be465d951ce7c28e864f56a6d28bb5051faf71"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-codegen-binding.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-codegen-binding.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build/composition.rs",
+          "forge/src/verified_build.rs",
+          "forge/tests/verified_composition.rs",
+          ".design/build/l3-rich-composition.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-codegen-binding-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-codegen-binding",
+            "to": "l3compose-codegen-binding-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-11",
+      "witness_id": "W-EXEC-L3COMPOSE-11",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-rich-enum-determinism.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "570b6ef26e8c4d160d4f512e281965feb47d72e77e78b0b97cc72b91e83dde82"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-rich-enum-determinism.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-rich-enum-determinism.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/l3.rs",
+          "thermite-lower/tests/l3_library.rs",
+          "forge/tests/verified_composition.rs",
+          ".design/build/l3-rich-composition.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-rich-enum-determinism-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-rich-enum-determinism",
+            "to": "l3compose-rich-enum-determinism-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-2",
+      "witness_id": "W-EXEC-L3COMPOSE-2",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-visibility.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "eecef4763b0bffce26033eaf645e9dcf463d201bf0691ad046fb4c7eb736f87b"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-visibility.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-visibility.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build/composition.rs",
+          "thermite-lower/src/l3.rs",
+          "thermite-lower/tests/l3_library.rs",
+          "forge/tests/verified_composition.rs",
+          ".design/build/l3-rich-composition.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-visibility-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-visibility",
+            "to": "l3compose-visibility-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-3",
+      "witness_id": "W-EXEC-L3COMPOSE-3",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-closure-inventory.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "beb1fbac6872c035c5d8fd7affae469f75818ecb69650f88e29136f3d12612eb"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-closure-inventory.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-closure-inventory.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build/composition.rs",
+          "forge/src/verified_build.rs",
+          "forge/tests/verified_composition.rs",
+          ".design/build/l3-rich-composition.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-closure-inventory-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-closure-inventory",
+            "to": "l3compose-closure-inventory-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-4",
+      "witness_id": "W-EXEC-L3COMPOSE-4",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-shell-policy.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "b8cbdd1aad62681d67df4bbdbfeaa6644625172b2c8035ebdd3c6f27c9368bb3"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-shell-policy.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-shell-policy.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verified_composition.rs",
+          "conformance/verified-composition/probe_shell.rs",
+          ".design/build/l3-rich-composition.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-shell-policy-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-shell-policy",
+            "to": "l3compose-shell-policy-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-5",
+      "witness_id": "W-EXEC-L3COMPOSE-5",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-combined-source.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "887131caf5497b7e67cec74ee3fc414bee53f9d1cbd63cac012fdde727c3ff93"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-combined-source.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-combined-source.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verified_composition.rs",
+          ".design/build/l3-rich-composition.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-combined-source-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-combined-source",
+            "to": "l3compose-combined-source-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-6",
+      "witness_id": "W-EXEC-L3COMPOSE-6",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-rich-tv.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "3bf36a2ab3013f7c73445975eeaf3373a71569b08b8a026296fe1e3c2275b0ee"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-rich-tv.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-rich-tv.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build/composition.rs",
+          "forge/src/verified_build.rs",
+          "forge/tests/verified_composition.rs",
+          ".design/build/l3-rich-composition.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-rich-tv-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-rich-tv",
+            "to": "l3compose-rich-tv-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-7",
+      "witness_id": "W-EXEC-L3COMPOSE-7",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-receipt-binding.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "fd3332c82c3606a896a8512d0cf5039cc1cbce814e1fb793237928ebca860603"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-receipt-binding.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-receipt-binding.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verified_composition.rs",
+          ".design/build/l3-rich-composition.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-receipt-binding-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-receipt-binding",
+            "to": "l3compose-receipt-binding-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-8",
+      "witness_id": "W-EXEC-L3COMPOSE-8",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-atomic-publication.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "ebd080047fe51294d603612391c220b497f911fc55500f4c9203007933f6d58c"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-atomic-publication.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-atomic-publication.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build/composition.rs",
+          "forge/src/verified_build.rs",
+          "forge/tests/verified_composition.rs",
+          ".design/build/l3-rich-composition.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-atomic-publication-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-atomic-publication",
+            "to": "l3compose-atomic-publication-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-L3COMPOSE-9",
+      "witness_id": "W-EXEC-L3COMPOSE-9",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/l3compose-kernel-observation.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "8807c77fc98ca5f74ed7aa5b9364b6337dfd448dc2e06147d6bfaa31f02b2b6e"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/l3compose-kernel-observation.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/l3compose-kernel-observation.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verified_composition.rs",
+          "conformance/verified-composition/probe_shell.rs",
+          "conformance/verified-composition/probe_consumer.rs",
+          ".design/build/l3-rich-composition.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-l3compose-kernel-observation-counterfeit",
+            "mutation": "replace_text",
+            "from": "l3compose-kernel-observation",
+            "to": "l3compose-kernel-observation-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-EFFECTS-CHECK",
+      "witness_id": "W-EXEC-LOWER-EFFECTS-CHECK",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-effects-check.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "58ebd3a8713da5b6ec154f643f2cf15e09fb7037101c54bf7b6fd8247897d05c"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-effects-check.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-effects-check.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/tests/effects.rs",
+          ".design/lower/effect-subsumption.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-effects-check-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-effects-check",
+            "to": "lower-effects-check-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-EFFECTS-ERROR",
+      "witness_id": "W-EXEC-LOWER-EFFECTS-ERROR",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-effects-error.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "c68ce43b4e505bceffca761414c21d355c3ebedd09ac62b8044d2b9d517c00b8"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-effects-error.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-effects-error.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/tests/effects.rs",
+          ".design/lower/effect-subsumption.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-effects-error-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-effects-error",
+            "to": "lower-effects-error-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-EFFECTS-LATTICE",
+      "witness_id": "W-EXEC-LOWER-EFFECTS-LATTICE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-effects-lattice.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "ea29c0a5c4fe73d0641c38b70fa8c56e405f0fb7a2116e23ceb90b95533f050f"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-effects-lattice.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-effects-lattice.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/tests/effects.rs",
+          ".design/lower/effect-subsumption.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-effects-lattice-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-effects-lattice",
+            "to": "lower-effects-lattice-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-EFFECTS-MAXIMAL-ROW-BOUNDARY",
+      "witness_id": "W-EXEC-LOWER-EFFECTS-MAXIMAL-ROW-BOUNDARY",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-effects-maximal-row-boundary.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "944483c8d97317e2f3194ebd4f15d1643f4d0b2a3a16ab79d33b2b760eea4fc0"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-effects-maximal-row-boundary.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-effects-maximal-row-boundary.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave12.rs",
+          "thermite-lower/src/effects.rs",
+          "forge/src/vacuity.rs",
+          ".design/lower/effect-subsumption.md",
+          ".design/forge/vacuity-triage.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-effects-maximal-row-boundary-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-effects-maximal-row-boundary",
+            "to": "lower-effects-maximal-row-boundary-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-EFFECTS-SANDBOX-SCOPE",
+      "witness_id": "W-EXEC-LOWER-EFFECTS-SANDBOX-SCOPE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-effects-sandbox-scope.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "1ea6d53d64c90764c3badef525e1a5e3a30ac95892eb42241e6ef082ce395371"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-effects-sandbox-scope.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-effects-sandbox-scope.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave12.rs",
+          "thermite-lower/src/effects.rs",
+          "forge/src/sandbox.rs",
+          ".design/lower/effect-subsumption.md",
+          ".design/forge/runtime-sandbox.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-effects-sandbox-scope-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-effects-sandbox-scope",
+            "to": "lower-effects-sandbox-scope-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-EFFECTS-SUBSUMPTION",
+      "witness_id": "W-EXEC-LOWER-EFFECTS-SUBSUMPTION",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-effects-subsumption.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "fcbd1e8dfc8eecf6a3fc48e2f2de37e7239c9d39016fb502fd41b122b2327584"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-effects-subsumption.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-effects-subsumption.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-verified/src/lib.rs",
+          ".design/lower/effect-subsumption.md",
+          "thermite-lower/Cargo.toml",
+          "thermite-verified/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-effects-subsumption-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-effects-subsumption",
+            "to": "lower-effects-subsumption-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-ERGONOMICS-DESUGAR",
+      "witness_id": "W-EXEC-LOWER-ERGONOMICS-DESUGAR",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-ergonomics-desugar.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "e7cbdf5a776d05605caf17f152f05bd65116c5a59cfb5e1194a8388a57aa281d"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-ergonomics-desugar.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-ergonomics-desugar.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave12.rs",
+          "thermite-lower/src/lower.rs",
+          "forge/tests/ergonomics_conformance.rs",
+          ".design/basis/11-ergonomics.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-ergonomics-desugar-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-ergonomics-desugar",
+            "to": "lower-ergonomics-desugar-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-ERGONOMICS-GUARD",
+      "witness_id": "W-EXEC-LOWER-ERGONOMICS-GUARD",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-ergonomics-guard.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "6fe184978ff99b3fd43c988bf52138461f27056364b755e5f2b3ec93803d4b5a"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-ergonomics-guard.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-ergonomics-guard.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/lower.rs",
+          "forge/tests/ergonomics_conformance.rs",
+          ".design/basis/11-ergonomics.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-ergonomics-guard-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-ergonomics-guard",
+            "to": "lower-ergonomics-guard-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-ERGONOMICS-OR-PATTERN",
+      "witness_id": "W-EXEC-LOWER-ERGONOMICS-OR-PATTERN",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-ergonomics-or-pattern.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "ff57de3d7667c680bb779249790a95b484731c8f1060ec47612456f10a277a83"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-ergonomics-or-pattern.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-ergonomics-or-pattern.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/src/l1.rs",
+          "forge/tests/ergonomics_conformance.rs",
+          ".design/basis/11-ergonomics.md",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-ergonomics-or-pattern-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-ergonomics-or-pattern",
+            "to": "lower-ergonomics-or-pattern-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-HOLDING-CLOSE",
+      "witness_id": "W-EXEC-LOWER-HOLDING-CLOSE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-holding-close.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "051bddbba4d6e500e7f8262a043f3df9ebf90d729c875149a2322b792808e347"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-holding-close.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-holding-close.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave12.rs",
+          "thermite-lower/src/locks.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-holding-close-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-holding-close",
+            "to": "lower-holding-close-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-L1-CHECK-EMISSION",
+      "witness_id": "W-EXEC-LOWER-L1-CHECK-EMISSION",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-l1-check-emission.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "6897a2032b86d5bb52ac1ef9b5af898db3603bab844f81c54a342286213a09b5"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-l1-check-emission.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-l1-check-emission.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/l1.rs",
+          "thermite-lower/tests/l1_conformance.rs",
+          ".design/lower/l1-runtime-checks.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-l1-check-emission-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-l1-check-emission",
+            "to": "lower-l1-check-emission-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-L1-CHECK-MACRO",
+      "witness_id": "W-EXEC-LOWER-L1-CHECK-MACRO",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-l1-check-macro.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "80f998deca80980aead0c0d54b26033b21ffeef3e57c7b9d7084146fc3c2608e"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-l1-check-macro.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-l1-check-macro.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/l1.rs",
+          "thermite-lower/tests/l1_conformance.rs",
+          ".design/lower/l1-runtime-checks.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-l1-check-macro-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-l1-check-macro",
+            "to": "lower-l1-check-macro-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-LOWER-L1-COMBINATORS",
+      "witness_id": "W-EXEC-LOWER-L1-COMBINATORS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/lower-l1-combinators.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "c1c12775c9233430e5df87bb074fd7f89e982ca84acd0208c569962771a1cc10"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/lower-l1-combinators.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/lower-l1-combinators.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/src/l1.rs",
+          "thermite-lower/tests/l1_conformance.rs",
+          "thermite-lower/tests/adt_lower_conformance.rs",
+          ".design/lower/l1-runtime-checks.md",
+          ".design/spec/spectherm-combinators.md",
+          "thermite-lower/Cargo.toml",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-lower-l1-combinators-counterfeit",
+            "mutation": "replace_text",
+            "from": "lower-l1-combinators",
+            "to": "lower-l1-combinators-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1110,4 +1110,191 @@ mod tests {
         assert_eq!(plan.items[2].name, "related");
         assert!(plan.items.iter().all(|item| item.visibility == "public"));
     }
+
+    #[test]
+    fn composition_visibility_is_crate_private_while_link_exports_stay_public() {
+        let implementation = include_str!("composition.rs");
+        for required in [
+            "visibility: L3ExportVisibility::Public",
+            "visibility: L3ExportVisibility::Crate",
+            "visibility: \"crate\".to_string()",
+        ] {
+            assert!(
+                implementation.contains(required),
+                "missing composition visibility pin {required}"
+            );
+        }
+        let lowering = include_str!("../../../thermite-lower/tests/l3_library.rs");
+        assert!(lowering.contains("pub(crate) fn keep"));
+        assert!(lowering.contains("visibility: L3ExportVisibility::Crate"));
+    }
+
+    #[test]
+    fn composition_inventory_recursively_closes_rich_types_and_shell_items() {
+        let implementation = include_str!("composition.rs");
+        for required in [
+            "Type::Ref { inner, .. }",
+            "Type::Tuple(items)",
+            "Type::Named(name) if seen_named.insert(name.clone())",
+            "Some(Item::Struct(item))",
+            "Some(Item::Enum(item))",
+            "origin: \"direct-verus\".to_string()",
+            "origin: format!(\"direct-verus::{}\", shell.plan.name)",
+        ] {
+            assert!(
+                implementation.contains(required),
+                "missing recursive composition inventory pin {required}"
+            );
+        }
+        let conformance = include_str!("../../tests/verified_composition.rs");
+        for required in ["ProbeState", "Vec<u64>", "type_closure", "inventory"] {
+            assert!(
+                conformance.contains(required),
+                "missing rich inventory conformance pin {required}"
+            );
+        }
+    }
+
+    #[test]
+    fn combined_source_is_one_exact_verus_block_with_ordered_shell_bytes() {
+        let bytes = b"pub fn observe() -> u64 { 7 }\n".to_vec();
+        let plan = analyze_shell(
+            "probe_shell",
+            "evidence/direct-verus/00-probe_shell.rs",
+            &bytes,
+        )
+        .unwrap();
+        let source = combine_sources(
+            "verus! {\npub(crate) fn step() -> u64 { 1 }\n}\n",
+            &[DirectVerusSource {
+                plan,
+                bytes: bytes.clone(),
+            }],
+        )
+        .unwrap();
+        assert_eq!(source.matches("verus!").count(), 1);
+        assert!(source.contains("pub(crate) fn step() -> u64 { 1 }"));
+        assert!(source.contains("pub mod probe_shell {\n    use super::*;\n"));
+        assert!(source.contains(std::str::from_utf8(&bytes).unwrap()));
+        assert!(source.ends_with("}\n"));
+    }
+
+    #[test]
+    fn rich_tv_completion_is_narrow_and_all_nonpass_rows_remain_blocking() {
+        let implementation = include_str!("composition.rs");
+        for required in [
+            "row.phase == \"contract\" && row.verdict == \"skipped\"",
+            "matches!(row.phase.as_str(), \"exec\" | \"body\")",
+            "rich_frame_limit && closure.functions.contains(root)",
+            "row.verdict = \"faithful\".to_string()",
+            "closure lowering plus the bound L3 certificate",
+        ] {
+            assert!(
+                implementation.contains(required),
+                "missing rich-TV completion pin {required}"
+            );
+        }
+        for gate in [
+            "contract-tv-complete",
+            "exec-tv-complete",
+            "body-loop-tv-complete",
+            "whole-crate-no-cheating",
+        ] {
+            assert!(COMPOSITION_STRICT_GATES.contains(&gate));
+        }
+        let faults = include_str!("../../tests/verified_build.rs");
+        for verdict in ["divergent", "unsupported", "skipped", "unverifiable"] {
+            assert!(
+                faults.contains(verdict),
+                "missing composition TV refusal {verdict}"
+            );
+        }
+        assert!(
+            include_str!("../../tests/verified_composition.rs").contains("tv-contract-divergent")
+        );
+    }
+
+    #[test]
+    fn composition_publication_is_staged_reassembled_and_fail_closed() {
+        let implementation = include_str!("composition.rs");
+        for required in [
+            "let frozen_plan_sha = plan.canonical_sha256()",
+            "Re-open and independently reassemble all authored sources",
+            "fresh.combined_source != assembly.combined_source",
+            "stage_and_publish(StageInput",
+            "composition: Some(CompositionStageInput",
+        ] {
+            assert!(
+                implementation.contains(required),
+                "missing composition publication pin {required}"
+            );
+        }
+        let faults = include_str!("../../tests/verified_composition.rs");
+        for required in [
+            "composition-after-plan-shell-mutation",
+            "certificate-l2",
+            "tv-contract-divergent",
+            "assert!(!bundle.exists()",
+        ] {
+            assert!(
+                faults.contains(required),
+                "missing composition atomicity pin {required}"
+            );
+        }
+    }
+
+    #[test]
+    fn composition_kernel_observation_keeps_platform_final_link_explicit() {
+        let shell = include_str!("../../../conformance/verified-composition/probe_shell.rs");
+        for required in ["ProbeState", "spec", "ensures", "pub fn"] {
+            assert!(
+                shell.contains(required),
+                "missing kernel observation pin {required}"
+            );
+        }
+        let conformance = include_str!("../../tests/verified_composition.rs");
+        for required in [
+            "\"--target\".to_string()",
+            "\"freestanding\".to_string()",
+            "--no-vstd",
+            "artifact/libthermite_probe.rlib",
+            "probe_consumer.rs",
+            "private_step_consumer.rs",
+        ] {
+            assert!(
+                conformance.contains(required),
+                "missing final-link boundary pin {required}"
+            );
+        }
+    }
+
+    #[test]
+    fn composition_codegen_uses_the_bound_artifact_identity_end_to_end() {
+        let implementation = include_str!("composition.rs");
+        for required in [
+            "let collected_toolchain = collect_toolchain(target)?",
+            "&toolchain.artifact_codegen.canonical_identity_sha256()",
+            "toolchain,",
+            "dependency_paths: &collected_toolchain.dependency_paths",
+            "reconstruct_plan",
+        ] {
+            assert!(
+                implementation.contains(required),
+                "missing composition codegen binding pin {required}"
+            );
+        }
+        let conformance = include_str!("../../tests/verified_composition.rs");
+        for required in [
+            "evidence/toolchain.json",
+            "artifact_codegen",
+            "rustup_toolchain",
+            "verify-build",
+            "--replay",
+        ] {
+            assert!(
+                conformance.contains(required),
+                "missing codegen consumer/replay pin {required}"
+            );
+        }
+    }
 }

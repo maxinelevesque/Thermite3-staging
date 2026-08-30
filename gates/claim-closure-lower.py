@@ -1316,6 +1316,71 @@ CASES = {
     "l3build-codegen-toolchain": package_bin_unit(
         "forge", "forge", "verified_build::tests::codegen_identity_ignores_install_prefix_and_binds_the_complete_closure"
     ),
+    "l3build-atomic-publication": package_bin_unit(
+        "forge", "forge", "verified_build::tests::l3_atomic_publication_self_validates_and_renames_once"
+    ),
+    "l3compose-cli-surface": package_bin_unit(
+        "forge", "forge", "cli::tests::parses_rich_state_composition_build_surface"
+    ),
+    "l3compose-codegen-binding": package_bin_unit(
+        "forge", "forge", "verified_build::composition::tests::composition_codegen_uses_the_bound_artifact_identity_end_to_end"
+    ),
+    "l3compose-rich-enum-determinism": integration(
+        "l3_library", "composition_library_delays_enum_items_past_randomized_verus_helper_synthesis"
+    ),
+    "l3compose-visibility": package_bin_unit(
+        "forge", "forge", "verified_build::composition::tests::composition_visibility_is_crate_private_while_link_exports_stay_public"
+    ),
+    "l3compose-closure-inventory": package_bin_unit(
+        "forge", "forge", "verified_build::composition::tests::composition_inventory_recursively_closes_rich_types_and_shell_items"
+    ),
+    "l3compose-shell-policy": package_bin_unit(
+        "forge", "forge", "verified_build::composition::tests::direct_verus_policy_rejects_every_escape_class"
+    ),
+    "l3compose-combined-source": package_bin_unit(
+        "forge", "forge", "verified_build::composition::tests::combined_source_is_one_exact_verus_block_with_ordered_shell_bytes"
+    ),
+    "l3compose-rich-tv": package_bin_unit(
+        "forge", "forge", "verified_build::composition::tests::rich_tv_completion_is_narrow_and_all_nonpass_rows_remain_blocking"
+    ),
+    "l3compose-receipt-binding": package_bin_unit(
+        "forge", "forge", "verified_build::tests::composition_receipt_digest_binds_every_composition_component"
+    ),
+    "l3compose-atomic-publication": package_bin_unit(
+        "forge", "forge", "verified_build::composition::tests::composition_publication_is_staged_reassembled_and_fail_closed"
+    ),
+    "l3compose-kernel-observation": package_bin_unit(
+        "forge", "forge", "verified_build::composition::tests::composition_kernel_observation_keeps_platform_final_link_explicit"
+    ),
+    "lower-effects-check": integration("effects", "crafted_accepts"),
+    "lower-effects-error": integration(
+        "effects", "missing_net_diagnostic_names_basis_entry_and_frame"
+    ),
+    "lower-effects-lattice": integration("effects", "lattice_law_table"),
+    "lower-effects-maximal-row-boundary": integration(
+        "claim_closure_wave12", "maximal_row_policy_is_owned_by_forge_not_the_lowerer"
+    ),
+    "lower-effects-sandbox-scope": integration(
+        "claim_closure_wave12", "effect_checker_has_no_runtime_sandbox_emission_surface"
+    ),
+    "lower-effects-subsumption": integration(
+        "effects_verified", "subsumes_matches_verified_spec_exhaustively"
+    ),
+    "lower-ergonomics-desugar": integration(
+        "claim_closure_wave12", "ergonomic_desugars_reach_existing_lowerer_nodes_without_new_runtime_forms"
+    ),
+    "lower-ergonomics-guard": package_integration(
+        "forge", "ergonomics_conformance", "req3_guarded_match_certifies_l3"
+    ),
+    "lower-ergonomics-or-pattern": package_integration(
+        "forge", "ergonomics_conformance", "req4_or_pattern_certifies_l3"
+    ),
+    "lower-holding-close": integration(
+        "claim_closure_wave12", "every_holding_exit_normalizes_close_before_provider_release"
+    ),
+    "lower-l1-check-emission": integration("l1_conformance", "sum_l1_compiles_and_runs"),
+    "lower-l1-check-macro": integration("l1_conformance", "no_debug_assert_in_emission"),
+    "lower-l1-combinators": integration("l1_conformance", "combinator_l1_forms_run"),
     "obligation-neutral-content": package_bin_unit(
         "forge", "forge", "obligation::tests::contract_obligation_is_neutral_content"
     ),
