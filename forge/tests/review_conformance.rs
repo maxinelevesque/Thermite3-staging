@@ -208,6 +208,20 @@ fn corpus_sum_intent_reviewable_no_bodies() {
         stdout, stdout2,
         "the extraction is deterministic (byte-identical across runs)"
     );
+
+    // REQ-5: the same artifact also has a human review surface. It carries the
+    // reviewed item, contract clauses, and intent prompt without becoming JSON.
+    let (human_code, human, human_stderr) = run_review(&[&file_str]);
+    assert_eq!(
+        human_code,
+        Some(0),
+        "human review emission succeeds; stderr:\n{human_stderr}"
+    );
+    assert!(human.starts_with("spec-intent review:"));
+    assert!(human.contains("fn sum (battery-passing — spec layer):"));
+    assert!(human.contains("req xs.len() <= 1_000_000"));
+    assert!(human.contains("prompt:"));
+    assert!(serde_json::from_str::<Value>(&human).is_err());
 }
 
 // AC-3 (R-DEFER-9): the vacuous fixture's `f` (`ens true`) is flagged

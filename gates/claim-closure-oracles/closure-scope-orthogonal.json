@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"closure-cert-field","expected_exit":0},{"id":"manifest-level-ord","expected_exit":0}]}

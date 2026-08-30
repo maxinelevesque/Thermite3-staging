@@ -955,6 +955,25 @@ fn h(x: u32) -> u32 ! pure requires x < 100 ensures result == x { g(x) }";
         assert_eq!(a, b);
     }
 
+    #[test]
+    fn match_guard_call_affects_scope_and_reachability() {
+        let src = "\
+#[boundary(\"ext::guard\")] fn guard(x: u32) -> bool ! pure requires x < 100 ensures result == result ;
+fn caller(x: u32) -> u32 ! pure requires x < 100 ensures result == result { match x { n if guard(n) => n, _ => x } }";
+        let program = parse(src);
+        let scopes = classify(&program);
+        assert_eq!(
+            scopes.get("caller"),
+            Some(&AssuranceScope::ToBoundary {
+                via: "guard".to_string()
+            })
+        );
+        assert_eq!(
+            reachable_in_file_fns(&program, "caller"),
+            BTreeSet::from(["guard".to_string()])
+        );
+    }
+
     // OQ-1: an unresolved (cross-file) callee is pure and ignored, not a crossing.
     #[test]
     fn unresolved_cross_file_callee_is_pure() {

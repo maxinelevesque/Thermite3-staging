@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 819bf846a9690f0d3523b6f953d971164da9dac0233a28044ce39466fd7137c2 (re-pinned 2026-08-28 for the focused match-guard mutation-walk witness. prior: 783f0c53f7a8390f42be3d41f18d633628e3b7207bf5f3144ecc1bf423e28a12)
+audited-content-sha256: 22104d730f47ef9f28d70775372f7a813872d17204d40ba2d23c3ec38c41977e (re-pinned 2026-08-29 for focused review and closure match-guard call witnesses plus review dual-emission coverage. prior: 819bf846a9690f0d3523b6f953d971164da9dac0233a28044ce39466fd7137c2)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized
