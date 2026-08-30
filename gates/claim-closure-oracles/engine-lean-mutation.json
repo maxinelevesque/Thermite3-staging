@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"engine-lean-mutation-outcome","expected_exit":0},{"id":"engine-lean-mutation-untested","expected_exit":0},{"id":"engine-lean-mutation-floor","expected_exit":0}]}

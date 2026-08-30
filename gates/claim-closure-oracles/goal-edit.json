@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"goal-edit-splice","expected_exit":0},{"id":"goal-edit-address-error","expected_exit":0}]}

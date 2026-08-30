@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"goal-battery-source","expected_exit":0},{"id":"goal-battery-check","expected_exit":0}]}

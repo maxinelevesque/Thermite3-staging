@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"engine-interactive-path","expected_exit":0},{"id":"engine-interactive-stale","expected_exit":0},{"id":"engine-interactive-sorry","expected_exit":0},{"id":"engine-interactive-filled","expected_exit":0},{"id":"engine-interactive-command-token","expected_exit":0}]}

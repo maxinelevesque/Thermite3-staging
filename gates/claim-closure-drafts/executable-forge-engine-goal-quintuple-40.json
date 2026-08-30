@@ -1,0 +1,735 @@
+{
+  "version": 1,
+  "slice_id": "executable-forge-engine-goal-quintuple-40",
+  "entries": [
+    {
+      "requirement_id": "REQ-FORGE-ENGINE-ATTRIBUTION",
+      "witness_id": "W-EXEC-FORGE-ENGINE-ATTRIBUTION",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/engine-attribution.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "e7e3f6ba27927841287ac8fff2a9c790f9c43e7fb240c6374d5bd15d300a6f66"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/engine-attribution.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/engine-attribution.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/engine.rs",
+          "forge/src/manifest.rs",
+          "forge/tests/engine_attribution.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-engine-attribution",
+            "mutation": "replace_text",
+            "from": "engine-attribution-roundtrip",
+            "to": "engine-attribution-roundtrip-bypassed",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-ENGINE-DISAGREEMENT",
+      "witness_id": "W-EXEC-FORGE-ENGINE-DISAGREEMENT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/engine-disagreement.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "e674f11b3a45651d5b8ec7d38601b2baf08bec5aba90ba7c35a6abdb3d4ba0e6"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/engine-disagreement.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/engine-disagreement.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/engine.rs",
+          "forge/tests/engine_attribution.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-engine-disagreement",
+            "mutation": "replace_text",
+            "from": "engine-disagreement-alarm",
+            "to": "engine-disagreement-alarm-preferred",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-ENGINE-DISCHARGE-DISCIPLINE",
+      "witness_id": "W-EXEC-FORGE-ENGINE-DISCHARGE-DISCIPLINE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/engine-discharge-discipline.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "ca54a1906e3ceae71a351d9d3eda127863ad9d46956bd4fcacea2758188ba3e4"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/engine-discharge-discipline.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/engine-discharge-discipline.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/engine.rs",
+          "forge/src/degrade.rs",
+          "forge/tests/engine_interface.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-engine-discharge-discipline",
+            "mutation": "replace_text",
+            "from": "engine-ladder-discipline",
+            "to": "engine-ladder-discipline-collapsed",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-ENGINE-FAST-UNKNOWN",
+      "witness_id": "W-EXEC-FORGE-ENGINE-FAST-UNKNOWN",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/engine-fast-unknown.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "167ed24005aa56668e9b03f471aca1440b250bb561940af9b888b810888f2e59"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/engine-fast-unknown.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/engine-fast-unknown.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/engine.rs",
+          "forge/src/check.rs",
+          "forge/tests/engine_interface.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-engine-fast-unknown",
+            "mutation": "replace_text",
+          "from": "\"id\":\"engine-fast-unknown\"",
+          "to": "\"id\":\"engine-fast-unknown-unconditional\"",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-ENGINE-INTERACTIVE-REPLAY",
+      "witness_id": "W-EXEC-FORGE-ENGINE-INTERACTIVE-REPLAY",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/engine-interactive-replay.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "ed1d7109b0b26eba6471548d7e99cd8ebefc8a279fb6c05e38bdd9b6b2bd93c6"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/engine-interactive-replay.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/engine-interactive-replay.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/engine.rs",
+          "forge/tests/lean_engine.rs",
+          "forge/tests/divergence_252_indented_command_escape.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-engine-interactive-replay",
+            "mutation": "replace_text",
+            "from": "engine-interactive-stale",
+            "to": "engine-interactive-stale-reused",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-ENGINE-INTERFACE",
+      "witness_id": "W-EXEC-FORGE-ENGINE-INTERFACE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/engine-interface.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "09a6a055caad47924f2cec985436862cd0e8a247ff0057537e32a38ab3c1a63b"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/engine-interface.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/engine-interface.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/engine.rs",
+          "forge/tests/engine_interface.rs",
+          "forge/tests/engine_attribution.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-engine-interface",
+            "mutation": "replace_text",
+            "from": "engine-interface-verus-slots",
+            "to": "engine-interface-verus-slots-missing",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-ENGINE-LEAN-MUTATION",
+      "witness_id": "W-EXEC-FORGE-ENGINE-LEAN-MUTATION",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/engine-lean-mutation.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "faba0d29a35772f7eccf7840a7d1cc947d17921e9347bb3ca4772975a9a2c088"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/engine-lean-mutation.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/engine-lean-mutation.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/engine.rs",
+          "forge/src/check.rs",
+          "forge/tests/engine_attribution.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-engine-lean-mutation",
+            "mutation": "replace_text",
+            "from": "engine-lean-mutation-untested",
+            "to": "engine-lean-mutation-untested-inflated",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-ENGINE-ORDERING",
+      "witness_id": "W-EXEC-FORGE-ENGINE-ORDERING",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/engine-ordering.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "f734709f148f6d369160ed41d8a6d4be6f181c0f95411cdaac7d34b4696b0d72"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/engine-ordering.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/engine-ordering.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/engine.rs",
+          "forge/src/check.rs",
+          "forge/tests/engine_interface.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-engine-ordering",
+            "mutation": "replace_text",
+            "from": "engine-default-order",
+            "to": "engine-default-order-reversed",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-GOAL-BATTERY-VIEW",
+      "witness_id": "W-EXEC-FORGE-GOAL-BATTERY-VIEW",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/goal-battery-view.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "05da54a6dca40a8d87d7d973a08bd3e1ad50609dd8bc47b10e9cc2ce6d4b5d29"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/goal-battery-view.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/goal-battery-view.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/goal_repl.rs",
+          "forge/tests/goal_repl.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-goal-battery-view",
+            "mutation": "replace_text",
+            "from": "goal-battery-source",
+            "to": "goal-battery-source-rederived",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-GOAL-DETERMINISM",
+      "witness_id": "W-EXEC-FORGE-GOAL-DETERMINISM",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/goal-determinism.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "bf1426788325108d73a7b6d4ae05f07b20f5db753af2e8c6a1889b419d639db9"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/goal-determinism.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/goal-determinism.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/goal_repl.rs",
+          "forge/tests/goal_repl.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-goal-determinism",
+            "mutation": "replace_text",
+            "from": "goal-deterministic-render",
+            "to": "goal-deterministic-render-ambient",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-GOAL-EDIT",
+      "witness_id": "W-EXEC-FORGE-GOAL-EDIT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/goal-edit.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "4079f641cd87119b8fc1c3f424c5d4abdea0a306adab6570ddcdb3722d2c3cfe"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/goal-edit.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/goal-edit.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/goal_repl.rs",
+          "forge/tests/goal_repl.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-goal-edit",
+            "mutation": "replace_text",
+            "from": "goal-edit-splice",
+            "to": "goal-edit-splice-without-recheck",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-GOAL-FILL",
+      "witness_id": "W-EXEC-FORGE-GOAL-FILL",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/goal-fill.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "227972ca2bd446fd507ed39eece81e355cffcb1507613ad0d7b07135f450bd6e"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/goal-fill.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/goal-fill.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/goal_repl.rs",
+          "forge/tests/goal_repl_fill.rs",
+          "conformance/goal/binary_search.dialogue.json",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-goal-fill",
+            "mutation": "replace_text",
+            "from": "goal-fill-close",
+            "to": "goal-fill-close-without-certification",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-GOAL-GOAL-VIEW",
+      "witness_id": "W-EXEC-FORGE-GOAL-GOAL-VIEW",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/goal-goal-view.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "296de1c82a8cd87a9f054d598cb39220c4edd0ee2b7607979f2ddc8f33519b7a"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/goal-goal-view.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/goal-goal-view.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/goal_repl.rs",
+          "forge/tests/goal_repl.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-goal-goal-view",
+            "mutation": "replace_text",
+            "from": "goal-render-counterexample",
+            "to": "goal-render-counterexample-erased",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-GOAL-HOLE-PARSER-CONSUMER",
+      "witness_id": "W-EXEC-FORGE-GOAL-HOLE-PARSER-CONSUMER",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/goal-hole-parser-consumer.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "8539664171d548826776d30938b7533c1f2cee2db77a33162b99911dab4aec15"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/goal-hole-parser-consumer.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/goal-hole-parser-consumer.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/goal_repl.rs",
+          "forge/tests/goal_repl_fill.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-goal-hole-parser-consumer",
+            "mutation": "replace_text",
+            "from": "goal-hole-address",
+            "to": "goal-hole-address-ignored",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-FORGE-GOAL-OPEN-HOLE-VALIDATOR",
+      "witness_id": "W-EXEC-FORGE-GOAL-OPEN-HOLE-VALIDATOR",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/goal-open-hole-validator.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "846cfc08c4098d6c21ea2397d0f2277d2eb02aff273dade30a9bac8864d04189"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/goal-open-hole-validator.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/goal-open-hole-validator.json",
+          "gates/claim-closure-lower.py",
+          "forge/src/goal_repl.rs",
+          "forge/src/check.rs",
+          "forge/tests/goal_repl_fill.rs",
+          "forge/Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "defeat-goal-open-hole-validator",
+            "mutation": "replace_text",
+            "from": "goal-open-hole-reject",
+            "to": "goal-open-hole-reject-bypassed",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}
