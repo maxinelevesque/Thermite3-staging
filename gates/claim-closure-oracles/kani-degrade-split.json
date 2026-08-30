@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"kani-degrade-under-bound","expected_exit":0}]}

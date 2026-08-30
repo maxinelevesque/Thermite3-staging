@@ -1076,6 +1076,82 @@ CASES = {
     "forge-body-tv-loop": package_integration(
         "forge", "body_tv", "faithful_while_loop_body_is_faithful"
     ),
+    "body-tv-plugin-faithful": package_bin_unit(
+        "forge", "forge", "body_tv::divergent_teeth::faithful_production_classifies_faithful"
+    ),
+    "contract-tv-plugin-faithful": package_bin_unit(
+        "forge",
+        "forge",
+        "contract_tv::divergent_teeth::faithful_production_classifies_faithful",
+    ),
+    "effect-wrapper-link-selection": package_bin_unit(
+        "forge", "forge", "effect_wrappers::tests::emits_only_named_wrappers"
+    ),
+    "effect-wrapper-runnable": package_integration(
+        "forge", "effect_link_conformance", "elapsed_ok_builds_and_runs"
+    ),
+    "effect-wrapper-stdlib-time": package_bin_unit(
+        "forge",
+        "forge",
+        "effect_wrappers::tests::now_wrapper_is_the_grounded_clock_gettime_body",
+    ),
+    "effect-wrapper-stdlib-read": package_bin_unit(
+        "forge",
+        "forge",
+        "effect_wrappers::tests::read_file_wrapper_is_total_empty_on_error",
+    ),
+    "effect-wrapper-stdlib-write": package_bin_unit(
+        "forge",
+        "forge",
+        "effect_wrappers::tests::write_file_wrapper_is_total_status_arm",
+    ),
+    "kani-absent-structured": package_bin_unit(
+        "forge", "forge", "kani::tests::run_kani_with_absent_binary_is_kani_absent"
+    ),
+    "kani-bound-caveat": package_bin_unit(
+        "forge", "forge", "kani::tests::bound_recorded_on_l2_cert"
+    ),
+    "kani-degrade-under-bound": package_bin_unit(
+        "forge", "forge", "kani::tests::classify_l2_unwinding_assertion_is_under_bound"
+    ),
+    "kani-deterministic-pre-discharge": package_bin_unit(
+        "forge",
+        "forge",
+        "kani::tests::pre_discharge_classification_is_identical_on_success_and_failure",
+    ),
+    "kani-parse-success": package_bin_unit(
+        "forge", "forge", "kani::tests::success_terse_is_l2"
+    ),
+    "kani-parse-counterexample": package_bin_unit(
+        "forge", "forge", "kani::tests::failure_terse_is_counterexample"
+    ),
+    "kani-parse-contradiction": package_bin_unit(
+        "forge", "forge", "kani::tests::contradictory_summary_is_kani_output_error"
+    ),
+    "kani-runner-invocation": package_bin_unit(
+        "forge", "forge", "kani::tests::run_kani_with_absent_binary_is_kani_absent"
+    ),
+    "lean-body-overflow-honest": package_bin_unit(
+        "forge", "forge", "engine::tests::live_always_overflow_body_is_not_proven"
+    ),
+    "lean-tier-a": package_bin_unit(
+        "forge", "forge", "lean_export::tests::spec_call_free_is_tier_a"
+    ),
+    "lean-tier-b": package_bin_unit(
+        "forge", "forge", "engine::tests::live_tier_b_nonrecursive_spec_fn_is_proven"
+    ),
+    "lean-export-self-contained": package_bin_unit(
+        "forge", "forge", "lean_export::tests::full_export_scalar_item_is_self_contained"
+    ),
+    "lean-export-hard-gate": package_bin_unit(
+        "forge", "forge", "lean_export::tests::hard_gate_refuses_incomplete_registry"
+    ),
+    "lean-mutation-accounting": package_bin_unit(
+        "forge", "forge", "engine::tests::lean_mutation_tally_does_not_inflate_on_untested"
+    ),
+    "lean-mutation-outcome": package_bin_unit(
+        "forge", "forge", "engine::tests::lean_mutant_outcome_follows_req9"
+    ),
     "cache-key-pure": package_bin_unit(
         "forge", "forge", "cache::tests::cache_key_is_pure"
     ),

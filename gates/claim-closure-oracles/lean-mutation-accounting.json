@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"lean-mutation-accounting","expected_exit":0},{"id":"lean-mutation-outcome","expected_exit":0}]}
