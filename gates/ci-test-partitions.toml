@@ -8621,3 +8621,157 @@ bucket = 1
 seconds = 0.007
 test = "thermite-lower::claim_closure_wave13 option_result_parse_emission_is_gated_and_verified"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# Focused Wave 14 claim discriminators are source/model checks below nextest's
+# useful timing resolution. Keep the reviewed unit-test floor until CI refreshes
+# the partition snapshot.
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 option_result_types_are_native_and_conformant"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 recursive_fn_decreases_is_emitted"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 recursive_termination_has_positive_and_negative_teeth"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 vec_element_wrappers_are_woven_inner_first"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 vec_contract_method_cage_matches_emission"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 local_vec_new_reaches_wrapper_emission"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 noncopy_vec_elements_use_borrowed_access"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 vec_wrapper_has_tuple_free_complete_ops"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 rfc_frontmatter_schema_is_normative_and_parsed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 rfc_gate_rejects_each_malformed_class"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 rfc_introduces_resolves_against_registry"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 whole_program_backends_converge_on_checked_ir"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 canonical_children_have_stable_ids_and_one_inventory"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 checked_ir_binds_all_rfc10_facts_once"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 rfc10_conformance_matrix_crosses_all_positions_and_phases"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 rfc10_delta_and_residual_trust_are_explicit"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 rfc10_evidence_has_kernel_checked_completeness"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 semantic_traversal_is_iterative_and_resource_bounded"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 every_rfc10_derived_field_has_mutation_controls"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 lean_derives_semantics_from_neutral_canonical_facts"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 holding_semantics_are_uniform_across_executable_blocks"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 l3_requires_kernel_verified_rfc10_replay"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 rust_witness_is_deterministic_and_source_bound"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 stage1_certificate_vocabulary_is_closed_and_total"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave14 stage1_normative_governance_deliverables_are_present"
+timing_provenance = "reviewed_local_estimate_after_baseline"
