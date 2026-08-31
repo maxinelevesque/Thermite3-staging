@@ -1,0 +1,1732 @@
+{
+  "version": 1,
+  "slice_id": "skill-spec-pentacosad-53",
+  "entries": [
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-COMBINATOR-SECTION",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-COMBINATOR-SECTION",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-combinator-section.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "cdf83ada46b6a58fb21adab2d82a2712d89ac86d4f8a56387cfb784819cf8b0c"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-combinator-section.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-combinator-section.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-combinator-section-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-combinator-section",
+            "to": "skill-generator-combinator-section-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-COMMITTED-FRESH",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-COMMITTED-FRESH",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-committed-fresh.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "de20145db6d3f0e0794f06a5b47dd65c3b2060e8ac7fae6bc2ef9689d768214b"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-committed-fresh.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-committed-fresh.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-committed-fresh-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-committed-fresh",
+            "to": "skill-generator-committed-fresh-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-CURATED-PROSE",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-CURATED-PROSE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-curated-prose.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "0c008aaba686adfbdceb297d2f1dce23f8fada75f4dd675347ac58988e6c70e9"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-curated-prose.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-curated-prose.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-curated-prose-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-curated-prose",
+            "to": "skill-generator-curated-prose-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-GRAMMAR-EXHAUSTIVE",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-GRAMMAR-EXHAUSTIVE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-grammar-exhaustive.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "3f3d2959f55fd91f39cc840938d58a40f8feb30d4e5166f7d69cbdba925f7f2f"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-grammar-exhaustive.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-grammar-exhaustive.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-grammar-exhaustive-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-grammar-exhaustive",
+            "to": "skill-generator-grammar-exhaustive-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-NO-STALENESS",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-NO-STALENESS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-no-staleness.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "efa76b732b08be196b6d081316b1da1a25b7f6adfe763e65d14a3da2b717a1e1"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-no-staleness.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-no-staleness.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-no-staleness-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-no-staleness",
+            "to": "skill-generator-no-staleness-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-PROSE-FRESHNESS",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-PROSE-FRESHNESS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-prose-freshness.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "d40c885da93a54ea85976dab745b1462a20b04391c3170364e9aa0d5e3235ce5"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-prose-freshness.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-prose-freshness.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-prose-freshness-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-prose-freshness",
+            "to": "skill-generator-prose-freshness-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-SCHEMES",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-SCHEMES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-schemes.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "73c2bb79a5f00fb019e192e36f7bd25a85c30eff85480064480e8a8d5aeeeadf"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-schemes.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-schemes.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-schemes-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-schemes",
+            "to": "skill-generator-schemes-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-V2-FORGE-TIER",
+      "witness_id": "W-EXEC-SKILL-V2-FORGE-TIER",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-v2-forge-tier.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "692066f216023884cf05c3670fe42308abfe2bc534ddcd01650fb96ddc6449bd"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-v2-forge-tier.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-v2-forge-tier.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          "docs/v2/program.md",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-v2-forge-tier-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-v2-forge-tier",
+            "to": "skill-v2-forge-tier-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-COMBINATORS-L1",
+      "witness_id": "W-EXEC-SPEC-COMBINATORS-L1",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-combinators-l1.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "d5c7ec44b1368cf5f52e728e1ea228ffe7ac696a57214b50fb772e1170db8602"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-combinators-l1.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-combinators-l1.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-combinators-l1-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-combinators-l1",
+            "to": "spec-combinators-l1-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-COMBINATORS-SHAPE",
+      "witness_id": "W-EXEC-SPEC-COMBINATORS-SHAPE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-combinators-shape.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "835a748d47a8adf0a8c992bbeab4a5a4b2474d79bc69a12b8aed4a128f5d1b15"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-combinators-shape.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-combinators-shape.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-combinators-shape-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-combinators-shape",
+            "to": "spec-combinators-shape-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-COMBINATORS-VERUS-L3",
+      "witness_id": "W-EXEC-SPEC-COMBINATORS-VERUS-L3",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-combinators-verus-l3.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "35548e6bfd15532e85827319d5b7ff08ca004b73ae9a7eb9959ad38bd719c191"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-combinators-verus-l3.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-combinators-verus-l3.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-combinators-verus-l3-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-combinators-verus-l3",
+            "to": "spec-combinators-verus-l3-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-EFFECT-COMMUTATION",
+      "witness_id": "W-EXEC-SPEC-EFFECT-COMMUTATION",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-effect-commutation.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "15916e56c4626563bb70eb5e56e8cc752154f62801a8d709e6c8503893cedd5d"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-effect-commutation.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-effect-commutation.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-effect-commutation-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-effect-commutation",
+            "to": "spec-effect-commutation-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-EFFECT-CONFLICT",
+      "witness_id": "W-EXEC-SPEC-EFFECT-CONFLICT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-effect-conflict.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "64c298f0214c8d06a116c1dd1695770d7b5c25b0eb1fda5386d661db97a00bcf"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-effect-conflict.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-effect-conflict.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-effect-conflict-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-effect-conflict",
+            "to": "spec-effect-conflict-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-EFFECT-ROW-CHECKED",
+      "witness_id": "W-EXEC-SPEC-EFFECT-ROW-CHECKED",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-effect-row-checked.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "91553f5c3c81e73131278825ef6307b0f780dbfd7002e0ecaffbc9d737bc00bf"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-effect-row-checked.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-effect-row-checked.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-effect-row-checked-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-effect-row-checked",
+            "to": "spec-effect-row-checked-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-SCHEMES-FLAT-STEP",
+      "witness_id": "W-EXEC-SPEC-SCHEMES-FLAT-STEP",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-schemes-flat-step.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "3effb895efc3add5415a0abfe4fee7d19a54cdc03bb383379ffdfdd7f7837515"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-schemes-flat-step.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-schemes-flat-step.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-schemes-flat-step-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-schemes-flat-step",
+            "to": "spec-schemes-flat-step-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-SHARED-ESCAPE",
+      "witness_id": "W-EXEC-SPEC-SHARED-ESCAPE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-shared-escape.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "ff9edcb20c36523899cc5fa3581fbf2066a443fa2e1e39115602d0d9c463d66c"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-shared-escape.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-shared-escape.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-shared-escape-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-shared-escape",
+            "to": "spec-shared-escape-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-SHARED-LEXICAL-AUTHORITY",
+      "witness_id": "W-EXEC-SPEC-SHARED-LEXICAL-AUTHORITY",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-shared-lexical-authority.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "0115ec34b449c54fa825610ab382e6bb0484d34701f5a29c37f16ef81567ec5a"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-shared-lexical-authority.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-shared-lexical-authority.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-shared-lexical-authority-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-shared-lexical-authority",
+            "to": "spec-shared-lexical-authority-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-SHARED-PLACE",
+      "witness_id": "W-EXEC-SPEC-SHARED-PLACE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-shared-place.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "45adbd89c6278531e6acfe5217be6ffaceb6f6572b35293c853ae1d2d4665f9d"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-shared-place.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-shared-place.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-shared-place-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-shared-place",
+            "to": "spec-shared-place-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-VALIDATOR-ACCEPT",
+      "witness_id": "W-EXEC-SPEC-VALIDATOR-ACCEPT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-validator-accept.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "0bd15e5a27d2d0f295f7af280c1b64f8d2e05634e296517cd047641eced29a16"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-validator-accept.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-validator-accept.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-validator-accept-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-validator-accept",
+            "to": "spec-validator-accept-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-VALIDATOR-ADT-CAGE",
+      "witness_id": "W-EXEC-SPEC-VALIDATOR-ADT-CAGE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-validator-adt-cage.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "0742a48a9bc25e8b0110cb724f6ec7d55dcbe31f766f67dbf69f3d27822e3c31"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-validator-adt-cage.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-validator-adt-cage.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-validator-adt-cage-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-validator-adt-cage",
+            "to": "spec-validator-adt-cage-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-VALIDATOR-ADT-EXHAUSTIVENESS",
+      "witness_id": "W-EXEC-SPEC-VALIDATOR-ADT-EXHAUSTIVENESS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-validator-adt-exhaustiveness.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "63b4bd94701101bb8000b231c4bd633945120a0959c2b4bf3965fbf77e286d97"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-validator-adt-exhaustiveness.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-validator-adt-exhaustiveness.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-validator-adt-exhaustiveness-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-validator-adt-exhaustiveness",
+            "to": "spec-validator-adt-exhaustiveness-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-VALIDATOR-ADT-VARIANT-CASING",
+      "witness_id": "W-EXEC-SPEC-VALIDATOR-ADT-VARIANT-CASING",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-validator-adt-variant-casing.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "baf8b1dd91eb25896a998f94cc492f3c6d82db2f3489c7fd2952e40ae8d022d7"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-validator-adt-variant-casing.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-validator-adt-variant-casing.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-validator-adt-variant-casing-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-validator-adt-variant-casing",
+            "to": "spec-validator-adt-variant-casing-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-VALIDATOR-ADT-WELLFORMED",
+      "witness_id": "W-EXEC-SPEC-VALIDATOR-ADT-WELLFORMED",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-validator-adt-wellformed.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "dacf4427cd0c60bc4d5abfaa0b6bf5a2a4fe2073c1acbdcb352fc87c54367b97"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-validator-adt-wellformed.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-validator-adt-wellformed.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-validator-adt-wellformed-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-validator-adt-wellformed",
+            "to": "spec-validator-adt-wellformed-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-VALIDATOR-COLLECTIONS-CAGE",
+      "witness_id": "W-EXEC-SPEC-VALIDATOR-COLLECTIONS-CAGE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-validator-collections-cage.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "2f6c97ef8980680a6e766deac9901456d9609400a4af1e1102e25570401b67ca"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-validator-collections-cage.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-validator-collections-cage.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-validator-collections-cage-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-validator-collections-cage",
+            "to": "spec-validator-collections-cage-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SPEC-VALIDATOR-DEPTH",
+      "witness_id": "W-EXEC-SPEC-VALIDATOR-DEPTH",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/spec-validator-depth.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "65a13854fba928d4d3bb3aeb13bf038e884115d498c53e21d0d061b20a33a533"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/spec-validator-depth.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/spec-validator-depth.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave17.rs",
+          ".design/skill/skill-generator.md",
+          ".design/stage1-forge-tier.md",
+          ".design/spec/spectherm-combinators.md",
+          ".design/basis/01-adts.md",
+          ".design/basis/02-recursion-schemes.md",
+          ".design/basis/04-collections.md",
+          ".design/syntax/effect-algebra.md",
+          ".design/syntax/verified-effect-rows.md",
+          ".design/syntax/shared-state-invariants.md",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/tests/skill.rs",
+          "THERMITE.skill.md",
+          "thermite-spec/src/combinators.rs",
+          "thermite-spec/src/schemes.rs",
+          "thermite-spec/src/effect_commutation.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/tests/combinators_conformance.rs",
+          "thermite-spec/tests/adt_validate.rs",
+          "thermite-spec/tests/divergence_adt_validate.rs",
+          "thermite-spec/tests/verified_effect_rows.rs",
+          "thermite-lower/src/effects.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/tests/effects.rs",
+          "thermite-lower/tests/shared_state_invariants.rs",
+          "thermite-lower/tests/collections_conformance.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-spec-validator-depth-counterfeit",
+            "mutation": "replace_text",
+            "from": "spec-validator-depth",
+            "to": "spec-validator-depth-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}
