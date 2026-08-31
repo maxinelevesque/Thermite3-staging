@@ -8775,3 +8775,157 @@ bucket = 1
 seconds = 0.007
 test = "thermite-lower::claim_closure_wave14 stage1_normative_governance_deliverables_are_present"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# Focused Wave 15 claim discriminators are source/model checks below nextest's
+# useful timing resolution. Keep the reviewed unit-test floor until CI refreshes
+# the partition snapshot.
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s1_axiom_gate_is_shared_by_every_lean_discharge"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s1_covenant_executes_witnesses_before_burn"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s1_frozen_battery_refuses_unlisted_citations_and_reports_stuck"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s1_antigoodhart_gates_reelaborate_and_bound_meaning"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s1_goal_fill_and_burn_receipt_are_bound_to_committed_proof"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s1_relax_route_escalates_real_validity_to_l4"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s1_real_relaxation_lemmas_are_axiom_probed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s1_lemma_library_is_certified_deduplicated_and_cached"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s1_out_of_line_proofs_bind_only_to_executable_functions"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s2_foundation_has_finite_carriers_and_true_quantifier_folds"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s2_complete_pin_battery_guards_each_metatheory_boundary"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s2_substkit_preserves_binders_and_refutes_broken_lift"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s2_rust_classifier_matches_kernel_classifier"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s2_reference_encoder_is_sound_and_capture_free"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s2_all_combinators_have_derivations_and_offbyone_pin"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s2_restratification_requires_separately_discharged_side"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s2_faithfulness_and_two_phase_tv_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s2_g2_flip_requires_all_four_green_checks"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s3_bv_syntax_is_feature_gated_and_width_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s3_bitvector_engine_uses_direct_qf_bv_and_countermodels"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s3_bv_shadow_is_visible_in_certificates_and_audit"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s3_mutation_scoring_is_width_aware_and_equivalence_aware"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s3_nowrap_side_obligations_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s3_review_surfaces_fork_density_and_tower_depth"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave15 s3_lean_smt_export_covers_lia_and_literal_bv_surface"
+timing_provenance = "reviewed_local_estimate_after_baseline"
