@@ -8929,3 +8929,157 @@ bucket = 1
 seconds = 0.007
 test = "thermite-lower::claim_closure_wave15 s3_lean_smt_export_covers_lia_and_literal_bv_surface"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# Focused Wave 16 claim discriminators are source/model checks below nextest's
+# useful timing resolution. Keep the reviewed unit-test floor until CI refreshes
+# the partition snapshot.
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 s3_kernel_trust_binds_theorem_axioms_and_solver_input"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 s3_g3_is_one_fail_closed_feature_matrix"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_forge_compile_root_is_concrete"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_forge_dag_drives_every_library_phase"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_forge_result_is_typed_at_entrypoint"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_forge_workspace_materializes_binary"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_lower_compile_root_is_concrete"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_lower_dag_is_below_forge"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_lower_result_is_owned_and_reexported"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_lower_workspace_materializes_library"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_spec_compile_root_is_concrete"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_spec_dag_is_below_lower_and_forge"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_spec_result_is_owned_and_reexported"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_spec_workspace_materializes_registry_validator_library"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_syntax_compile_root_is_concrete"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_syntax_dag_is_internal_leaf"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_syntax_result_is_parser_owned"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 scaffold_syntax_workspace_materializes_leaf_library"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 skill_ergonomics_desugars_are_taught_together"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 skill_match_guard_documents_non_completeness"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 skill_or_pattern_is_rendered_and_inventoried"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 skill_generator_binary_dispatches_both_modes"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 skill_generator_budget_is_deterministic_and_fixed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 skill_generator_sections_have_canonical_order"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave16 skill_generator_budget_is_a_ci_gate"
+timing_provenance = "reviewed_local_estimate_after_baseline"

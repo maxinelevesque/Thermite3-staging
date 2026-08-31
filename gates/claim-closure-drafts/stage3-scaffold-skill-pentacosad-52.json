@@ -1,0 +1,1881 @@
+{
+  "version": 1,
+  "slice_id": "stage3-scaffold-skill-pentacosad-52",
+  "entries": [
+    {
+      "requirement_id": "REQ-S3-8",
+      "witness_id": "W-EXEC-S3-8",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/s3-8.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "82ce5b92ce4f38b18e7751855578c88f0ccd7e3c5a5bc7078695ea0a68e09702"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/s3-8.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/s3-8.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-s3-8-counterfeit",
+            "mutation": "replace_text",
+            "from": "s3-8",
+            "to": "s3-8-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-S3-9",
+      "witness_id": "W-EXEC-S3-9",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/s3-9.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "4caea81a7d1bf161075c8de37c9b4d388b8ccc3889ae818a3ef5465ce525b8a4"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/s3-9.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/s3-9.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-s3-9-counterfeit",
+            "mutation": "replace_text",
+            "from": "s3-9",
+            "to": "s3-9-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-FORGE-COMPILE",
+      "witness_id": "W-EXEC-SCAFFOLD-FORGE-COMPILE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-forge-compile.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "17c00072cf4e3081a7820d4e0d1a26c96f46c080d06ae1ad2aafd5853a03cde3"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-forge-compile.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-forge-compile.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-forge-compile-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-forge-compile",
+            "to": "scaffold-forge-compile-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-FORGE-DAG",
+      "witness_id": "W-EXEC-SCAFFOLD-FORGE-DAG",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-forge-dag.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "1f51980fc0b5bc428a883658f7153f5598d463ef90f8607e13f0b42ff88d0f44"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-forge-dag.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-forge-dag.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-forge-dag-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-forge-dag",
+            "to": "scaffold-forge-dag-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-FORGE-RESULT",
+      "witness_id": "W-EXEC-SCAFFOLD-FORGE-RESULT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-forge-result.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "07fc13feb9a7ba60782db99ec7b6e0affb3402705df3d26860205d136fb45083"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-forge-result.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-forge-result.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-forge-result-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-forge-result",
+            "to": "scaffold-forge-result-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-FORGE-WORKSPACE",
+      "witness_id": "W-EXEC-SCAFFOLD-FORGE-WORKSPACE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-forge-workspace.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "b5cedec37170accab3f93456504c5a94c9aa5bd29c78c88a3447bcef1055be2e"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-forge-workspace.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-forge-workspace.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-forge-workspace-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-forge-workspace",
+            "to": "scaffold-forge-workspace-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-LOWER-COMPILE",
+      "witness_id": "W-EXEC-SCAFFOLD-LOWER-COMPILE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-lower-compile.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "b25c9ae8c7eb85f5a018202ab00dc5a872a78a88194300bdcc71765496602f40"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-lower-compile.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-lower-compile.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-lower-compile-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-lower-compile",
+            "to": "scaffold-lower-compile-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-LOWER-DAG",
+      "witness_id": "W-EXEC-SCAFFOLD-LOWER-DAG",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-lower-dag.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "4ac5cca88fe57246d6120023c13066962d8f22f000ed8ace10c80cbe4da9c9a5"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-lower-dag.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-lower-dag.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-lower-dag-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-lower-dag",
+            "to": "scaffold-lower-dag-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-LOWER-RESULT",
+      "witness_id": "W-EXEC-SCAFFOLD-LOWER-RESULT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-lower-result.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "437ab164badcd0dde36db067ad1c5bd8e7000714c81b48f28d2bb375dcde4edd"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-lower-result.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-lower-result.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-lower-result-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-lower-result",
+            "to": "scaffold-lower-result-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-LOWER-WORKSPACE",
+      "witness_id": "W-EXEC-SCAFFOLD-LOWER-WORKSPACE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-lower-workspace.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "ebc09e3ea7bbc64886ad887b430039e0d102809ea5ee4e33b7961ef70cde1df3"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-lower-workspace.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-lower-workspace.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-lower-workspace-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-lower-workspace",
+            "to": "scaffold-lower-workspace-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-SPEC-COMPILE",
+      "witness_id": "W-EXEC-SCAFFOLD-SPEC-COMPILE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-spec-compile.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "83701fd166aeb6ed23d55879907c76f96e87c5f5e12fa650d8c936c0a0030c9a"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-spec-compile.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-spec-compile.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-spec-compile-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-spec-compile",
+            "to": "scaffold-spec-compile-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-SPEC-DAG",
+      "witness_id": "W-EXEC-SCAFFOLD-SPEC-DAG",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-spec-dag.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "a789b63456cc2e58ff77860fa7df6751bb8ebafca4354d478f6c701de7cd0f90"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-spec-dag.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-spec-dag.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-spec-dag-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-spec-dag",
+            "to": "scaffold-spec-dag-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-SPEC-RESULT",
+      "witness_id": "W-EXEC-SCAFFOLD-SPEC-RESULT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-spec-result.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "8f6190c784742e291bd92ca99035de9daaec6ce97641130f8fafb4be0a058314"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-spec-result.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-spec-result.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-spec-result-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-spec-result",
+            "to": "scaffold-spec-result-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-SPEC-WORKSPACE",
+      "witness_id": "W-EXEC-SCAFFOLD-SPEC-WORKSPACE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-spec-workspace.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "997ad0efac7574cb1197e9462b9a8284a503fe7a87bd13635bb0dbc242e93e16"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-spec-workspace.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-spec-workspace.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-spec-workspace-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-spec-workspace",
+            "to": "scaffold-spec-workspace-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-SYNTAX-COMPILE",
+      "witness_id": "W-EXEC-SCAFFOLD-SYNTAX-COMPILE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-syntax-compile.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "b7a94d5012c040fa774022c3240cdc8afa14965cd3dccbbd6e557edcd88f5228"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-syntax-compile.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-syntax-compile.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-syntax-compile-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-syntax-compile",
+            "to": "scaffold-syntax-compile-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-SYNTAX-DAG",
+      "witness_id": "W-EXEC-SCAFFOLD-SYNTAX-DAG",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-syntax-dag.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "8cbb944592f3ed3bf2f7fef244a33a623580c9839e325b873ab3ed1dd20db3bf"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-syntax-dag.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-syntax-dag.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-syntax-dag-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-syntax-dag",
+            "to": "scaffold-syntax-dag-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-SYNTAX-RESULT",
+      "witness_id": "W-EXEC-SCAFFOLD-SYNTAX-RESULT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-syntax-result.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "08b4255534c07de5c0f2f5c8967783d00aa392d4f8bc8304e3ce986bdfb47c92"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-syntax-result.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-syntax-result.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-syntax-result-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-syntax-result",
+            "to": "scaffold-syntax-result-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SCAFFOLD-SYNTAX-WORKSPACE",
+      "witness_id": "W-EXEC-SCAFFOLD-SYNTAX-WORKSPACE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/scaffold-syntax-workspace.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "d503e2a0bbc6b36d2a8da77e96ecd481028c65a781c6caecee96307890ad88ce"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/scaffold-syntax-workspace.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/scaffold-syntax-workspace.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-scaffold-syntax-workspace-counterfeit",
+            "mutation": "replace_text",
+            "from": "scaffold-syntax-workspace",
+            "to": "scaffold-syntax-workspace-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-ERGONOMICS-DESUGAR",
+      "witness_id": "W-EXEC-SKILL-ERGONOMICS-DESUGAR",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-ergonomics-desugar.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "f610c77571d7368661e7a2c0ce5a1aed06c7a8874622b6f747b03eac0d34a4e0"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-ergonomics-desugar.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-ergonomics-desugar.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-ergonomics-desugar-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-ergonomics-desugar",
+            "to": "skill-ergonomics-desugar-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-ERGONOMICS-MATCH-GUARD",
+      "witness_id": "W-EXEC-SKILL-ERGONOMICS-MATCH-GUARD",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-ergonomics-match-guard.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "dc113e42f2ee9745f4ed4bcf4f5964114413c23160e2ad56bc37139527d7652e"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-ergonomics-match-guard.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-ergonomics-match-guard.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-ergonomics-match-guard-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-ergonomics-match-guard",
+            "to": "skill-ergonomics-match-guard-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-ERGONOMICS-OR-PATTERN",
+      "witness_id": "W-EXEC-SKILL-ERGONOMICS-OR-PATTERN",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-ergonomics-or-pattern.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "eb43d8b520c30fb1ba7b3176157e078bc806ccb46ca46f82123a2e5ba13fa8f6"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-ergonomics-or-pattern.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-ergonomics-or-pattern.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-ergonomics-or-pattern-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-ergonomics-or-pattern",
+            "to": "skill-ergonomics-or-pattern-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-BIN",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-BIN",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-bin.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "d3b8af6c89b959c2442f8397480c42ecc0961c0559b87e80ac58afc91ccb4164"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-bin.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-bin.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-bin-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-bin",
+            "to": "skill-generator-bin-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-BUDGET",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-BUDGET",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-budget.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "817ab01ed844beec4083c2e60e78381db19abba1bd0570c18f9af188bf4f7edd"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-budget.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-budget.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-budget-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-budget",
+            "to": "skill-generator-budget-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-CANONICAL-SECTIONS",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-CANONICAL-SECTIONS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-canonical-sections.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "735efbefd088859ab8bd4b9fee7dca5980c6a2bc5aa255c6bafd258165c93209"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-canonical-sections.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-canonical-sections.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-canonical-sections-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-canonical-sections",
+            "to": "skill-generator-canonical-sections-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-SKILL-GENERATOR-CI-BUDGET",
+      "witness_id": "W-EXEC-SKILL-GENERATOR-CI-BUDGET",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/skill-generator-ci-budget.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "722f77168d3589d5f4dfd475742414fafdc1150cd0e751f4ae2315d8a0aa7f8f"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/skill-generator-ci-budget.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/skill-generator-ci-budget.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave16.rs",
+          ".design/stage3-bv-reconstruction.md",
+          ".design/scaffold/workspace.md",
+          ".design/skill/skill-generator.md",
+          ".design/basis/11-ergonomics.md",
+          "gates/g3.sh",
+          "gates/lean-axiom-probe.sh",
+          ".github/workflows/ci.yml",
+          "lean/Thermite/Reconstruct.lean",
+          "lean/Thermite/PinReconstruction.lean",
+          "forge/src/lean_smt_export.rs",
+          "forge/src/check.rs",
+          "forge/src/main.rs",
+          "forge/src/cli.rs",
+          "forge/Cargo.toml",
+          "thermite-lower/src/lib.rs",
+          "thermite-lower/src/lower.rs",
+          "thermite-lower/Cargo.toml",
+          "thermite-spec/src/lib.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/Cargo.toml",
+          "thermite-syntax/src/lib.rs",
+          "thermite-syntax/src/parser.rs",
+          "thermite-syntax/Cargo.toml",
+          "thermite-skill/src/generate.rs",
+          "thermite-skill/src/main.rs",
+          "thermite-skill/tests/skill.rs",
+          "thermite-skill/Cargo.toml",
+          "THERMITE.skill.md",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-skill-generator-ci-budget-counterfeit",
+            "mutation": "replace_text",
+            "from": "skill-generator-ci-budget",
+            "to": "skill-generator-ci-budget-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}
