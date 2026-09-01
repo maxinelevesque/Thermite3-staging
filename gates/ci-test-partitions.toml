@@ -9383,3 +9383,135 @@ bucket = 2
 seconds = 0.007
 test = "thermite-lower::claim_closure_wave18 tv_contract_teeth_verify_faithful_and_catch_infidel_clauses"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 tv_exec_reference_encoder_is_independent_bounded_and_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 tv_exec_obligation_wraps_production_in_an_exec_fn_equivalence_contract"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 tv_exec_generator_is_deterministic_typed_bounded_and_well_framed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 tv_exec_teeth_accept_faithful_and_catch_four_infidelity_classes"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 tv_exec_forge_plugin_joins_lowering_reference_discharge_and_total_verdicts"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 tv_loop_subset_recognizer_is_single_while_and_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 tv_loop_reference_computes_entry_preservation_and_exit_pieces"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 tv_loop_obligation_emitters_cover_entry_preservation_and_exit"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_self_verification_architecture_binds_verus_core_to_rust_mirrors"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_tier1_coverage_has_finite_targets_and_production_anchors"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_tier_boundaries_exclude_io_and_external_body_from_the_core"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_honesty_runs_no_cheating_and_has_mutation_teeth"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_effect_subsumption_is_proved_and_exhaustively_anchored"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_ci_gauntlet_invokes_the_real_verus_driver_and_requires_zero_errors"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_degrade_anti_cheat_maps_counterexamples_to_hard_failure"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_sandbox_allowlist_is_bounded_deny_by_default_and_anchored"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_boundary_honesty_never_launders_regular_functions"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_aggregate_level_is_the_attained_project_minimum"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verified_mutation_floor_rejects_zero_scored_and_matches_production"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verus_error_count_is_structured_optional_and_never_synthesized"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verus_failure_diagnostics_claim_only_known_numeric_counts"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::claim_closure_wave19 verus_unknown_counts_fail_closed_for_compile_publication_and_replay"
+timing_provenance = "reviewed_local_estimate_after_baseline"

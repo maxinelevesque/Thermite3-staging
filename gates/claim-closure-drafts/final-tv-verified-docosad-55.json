@@ -1,0 +1,1436 @@
+{
+  "version": 1,
+  "slice_id": "final-tv-verified-docosad-55",
+  "entries": [
+    {
+      "requirement_id": "REQ-TV-EXEC-REF-ENCODER",
+      "witness_id": "W-EXEC-TV-EXEC-REF-ENCODER",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/tv-exec-ref-encoder.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "1e0e96dda2c90116da9695eb0fd77a7ea3fdeed3a419c8299ad44d9d42b7521a"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/tv-exec-ref-encoder.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/tv-exec-ref-encoder.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-tv-exec-ref-encoder-counterfeit",
+            "mutation": "replace_text",
+            "from": "tv-exec-ref-encoder",
+            "to": "tv-exec-ref-encoder-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-TV-EXEC-OBLIGATION",
+      "witness_id": "W-EXEC-TV-EXEC-OBLIGATION",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/tv-exec-obligation.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "5c4a6feb2b30af36095bb0a6dfd493f19224423e5787b54e8bd729b6790ae718"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/tv-exec-obligation.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/tv-exec-obligation.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-tv-exec-obligation-counterfeit",
+            "mutation": "replace_text",
+            "from": "tv-exec-obligation",
+            "to": "tv-exec-obligation-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-TV-EXEC-GENERATOR",
+      "witness_id": "W-EXEC-TV-EXEC-GENERATOR",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/tv-exec-generator.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "0f44672b35a7874362fc4ad28440be0ba9c0d6fcbd7cd2937c41670bc935fb94"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/tv-exec-generator.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/tv-exec-generator.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-tv-exec-generator-counterfeit",
+            "mutation": "replace_text",
+            "from": "tv-exec-generator",
+            "to": "tv-exec-generator-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-TV-EXEC-TEETH",
+      "witness_id": "W-EXEC-TV-EXEC-TEETH",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/tv-exec-teeth.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "2d1df6813629f84defa496faae40e0c64ae6e95ab4e8b6709eb88f56c5fba901"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/tv-exec-teeth.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/tv-exec-teeth.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-tv-exec-teeth-counterfeit",
+            "mutation": "replace_text",
+            "from": "tv-exec-teeth",
+            "to": "tv-exec-teeth-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-TV-EXEC-FORGE-PLUGIN",
+      "witness_id": "W-EXEC-TV-EXEC-FORGE-PLUGIN",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/tv-exec-forge-plugin.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "ca7ea3715fe3dcf754d0af3869c4d832e4bc29f03af34c85739ea5c55f2d120b"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/tv-exec-forge-plugin.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/tv-exec-forge-plugin.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-tv-exec-forge-plugin-counterfeit",
+            "mutation": "replace_text",
+            "from": "tv-exec-forge-plugin",
+            "to": "tv-exec-forge-plugin-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-TV-LOOP-STMT-SUBSET",
+      "witness_id": "W-EXEC-TV-LOOP-STMT-SUBSET",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/tv-loop-stmt-subset.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "2c0e129ce0adf50a1feef63ee1107754f5028ada2dac12e0dd25c0afcb0b2b91"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/tv-loop-stmt-subset.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/tv-loop-stmt-subset.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-tv-loop-stmt-subset-counterfeit",
+            "mutation": "replace_text",
+            "from": "tv-loop-stmt-subset",
+            "to": "tv-loop-stmt-subset-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-TV-LOOP-REFERENCE-PIECES",
+      "witness_id": "W-EXEC-TV-LOOP-REFERENCE-PIECES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/tv-loop-reference-pieces.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "b9616f502434641a508205c2e0f39acbf91914e7fa86c359edf2faaf07c8194f"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/tv-loop-reference-pieces.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/tv-loop-reference-pieces.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-tv-loop-reference-pieces-counterfeit",
+            "mutation": "replace_text",
+            "from": "tv-loop-reference-pieces",
+            "to": "tv-loop-reference-pieces-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-TV-LOOP-OBLIGATIONS",
+      "witness_id": "W-EXEC-TV-LOOP-OBLIGATIONS",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/tv-loop-obligations.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "2d30bc4fcdea57596e8ccda5f9586f57a01250fea86eac48e51818bc3723d6cd"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/tv-loop-obligations.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/tv-loop-obligations.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-tv-loop-obligations-counterfeit",
+            "mutation": "replace_text",
+            "from": "tv-loop-obligations",
+            "to": "tv-loop-obligations-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-SELF-VERIFICATION-ARCHITECTURE",
+      "witness_id": "W-EXEC-VERIFIED-SELF-VERIFICATION-ARCHITECTURE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-self-verification-architecture.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "3d0a3b54ec1b6ce5313e4b5a416a0df95b52735a1f42a2b7bf287c35339c0060"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-self-verification-architecture.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-self-verification-architecture.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-self-verification-architecture-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-self-verification-architecture",
+            "to": "verified-self-verification-architecture-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-TIER1-COVERAGE",
+      "witness_id": "W-EXEC-VERIFIED-TIER1-COVERAGE",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-tier1-coverage.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "e6938daa5a91da0f7e3fd79863dfadd4ab7a29e9f59cd97591b9cf5bf58e8800"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-tier1-coverage.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-tier1-coverage.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-tier1-coverage-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-tier1-coverage",
+            "to": "verified-tier1-coverage-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-TIER-BOUNDARIES",
+      "witness_id": "W-EXEC-VERIFIED-TIER-BOUNDARIES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-tier-boundaries.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "eb0aeb53cc903444c6dc77f2fdff412482d98cb9179cd121fdb9f1d1b1a2c25a"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-tier-boundaries.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-tier-boundaries.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-tier-boundaries-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-tier-boundaries",
+            "to": "verified-tier-boundaries-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-HONESTY",
+      "witness_id": "W-EXEC-VERIFIED-HONESTY",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-honesty.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "99a9f0be474483337b168b21dfacd07f82f9e2a45660ddde72af3484dc4d9148"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-honesty.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-honesty.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-honesty-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-honesty",
+            "to": "verified-honesty-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-SUBSUMES",
+      "witness_id": "W-EXEC-VERIFIED-SUBSUMES",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-subsumes.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "74d5c73915d08c3ce9ce7bd799ecac5a6b2eebafa1f45937cf12159207fcb02d"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-subsumes.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-subsumes.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-subsumes-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-subsumes",
+            "to": "verified-subsumes-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-CI-GAUNTLET",
+      "witness_id": "W-EXEC-VERIFIED-CI-GAUNTLET",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-ci-gauntlet.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "d8fe5562dd892af34b3df8273fd3b8a664520286b7aeaefafc583181633c0bf9"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-ci-gauntlet.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-ci-gauntlet.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-ci-gauntlet-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-ci-gauntlet",
+            "to": "verified-ci-gauntlet-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-DEGRADE-ANTICHEAT",
+      "witness_id": "W-EXEC-VERIFIED-DEGRADE-ANTICHEAT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-degrade-anticheat.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "523a6eb76bd60a69207e615d5a18255e818f96367d9b4b706d3f2db741fabb01"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-degrade-anticheat.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-degrade-anticheat.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-degrade-anticheat-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-degrade-anticheat",
+            "to": "verified-degrade-anticheat-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-SANDBOX-ALLOWLIST",
+      "witness_id": "W-EXEC-VERIFIED-SANDBOX-ALLOWLIST",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-sandbox-allowlist.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "18c47c7634155fe9bb7e498180bfc2f7f5ebf35e2d2307d7b92aeceb4e19c2b1"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-sandbox-allowlist.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-sandbox-allowlist.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-sandbox-allowlist-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-sandbox-allowlist",
+            "to": "verified-sandbox-allowlist-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-BOUNDARY-HONESTY",
+      "witness_id": "W-EXEC-VERIFIED-BOUNDARY-HONESTY",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-boundary-honesty.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "ee166199ba46f3e764e035d2957b5fa16f06768a0129a5020880de40460580fe"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-boundary-honesty.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-boundary-honesty.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-boundary-honesty-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-boundary-honesty",
+            "to": "verified-boundary-honesty-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-AGGREGATE-LEVEL",
+      "witness_id": "W-EXEC-VERIFIED-AGGREGATE-LEVEL",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-aggregate-level.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "3189bbaa7a56e7a4f038f4fcb0384bdfa4bd3fb493eeb9ede3eb015357ec8572"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-aggregate-level.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-aggregate-level.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-aggregate-level-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-aggregate-level",
+            "to": "verified-aggregate-level-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERIFIED-MUTATION-FLOOR",
+      "witness_id": "W-EXEC-VERIFIED-MUTATION-FLOOR",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/verified-mutation-floor.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "0d7f556b599608819c9fb9733b69f706049dde11bc43eff997639738a0ae0a2e"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/verified-mutation-floor.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/verified-mutation-floor.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-verified-mutation-floor-counterfeit",
+            "mutation": "replace_text",
+            "from": "verified-mutation-floor",
+            "to": "verified-mutation-floor-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERUSERR-1",
+      "witness_id": "W-EXEC-VERUSERR-1",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/veruserr-structured-optional.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "14d19a3e1887929e974aa01b0faeb24dd675e91e928401af0db59b1fc7de9c1a"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/veruserr-structured-optional.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/veruserr-structured-optional.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-veruserr-structured-optional-counterfeit",
+            "mutation": "replace_text",
+            "from": "veruserr-structured-optional",
+            "to": "veruserr-structured-optional-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERUSERR-2",
+      "witness_id": "W-EXEC-VERUSERR-2",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/veruserr-honest-diagnostic.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "b06b325de66324dc7a9de659ab82cb9bdd2754291ad24cee6271db924fd75ab3"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/veruserr-honest-diagnostic.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/veruserr-honest-diagnostic.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-veruserr-honest-diagnostic-counterfeit",
+            "mutation": "replace_text",
+            "from": "veruserr-honest-diagnostic",
+            "to": "veruserr-honest-diagnostic-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    },
+    {
+      "requirement_id": "REQ-VERUSERR-3",
+      "witness_id": "W-EXEC-VERUSERR-3",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/veruserr-fail-closed.json",
+        "expected": [
+          "accepted"
+        ],
+        "reviewed_summary_sha256": "cbdd494dac8aded4892549ca207af9b984adef95ac23b3c091c2348cb706d048"
+      },
+      "closure": {
+        "verifier": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py"
+        ],
+        "tool_version_argv": [
+          "uv",
+          "run",
+          "python",
+          "gates/claim-closure-lower.py",
+          "--version"
+        ],
+        "oracle": "gates/claim-closure-oracles/veruserr-fail-closed.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/veruserr-fail-closed.json",
+          "gates/claim-closure-lower.py",
+          "thermite-lower/tests/claim_closure_wave19.rs",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py",
+          "thermite-tv/Cargo.toml",
+          "thermite-tv/src/exec_encode.rs",
+          "thermite-tv/src/exec_stmt_encode.rs",
+          "thermite-tv/src/gen.rs",
+          "thermite-tv/src/obligation.rs",
+          "thermite-tv/tests/exec_teeth.rs",
+          "thermite-tv/tests/loop_teeth.rs",
+          "forge/src/exec_tv.rs",
+          "forge/tests/exec_tv_conformance.rs",
+          "thermite-verified/src/lib.rs",
+          "thermite-verified/tests/verus_verify.rs",
+          "thermite-lower/tests/effects_verified.rs",
+          "thermite-lower/tests/boundary_gate_verified.rs",
+          "forge/src/degrade.rs",
+          "forge/src/sandbox.rs",
+          "forge/src/manifest.rs",
+          "forge/src/mutation.rs",
+          "forge/src/verified_build.rs",
+          "forge/src/verified_build/composition.rs",
+          "forge/tests/verus_error_accounting.rs",
+          ".design/build/verus-error-accounting.md"
+        ],
+        "counterfeit": [
+          {
+            "name": "reject-veruserr-fail-closed-counterfeit",
+            "mutation": "replace_text",
+            "from": "veruserr-fail-closed",
+            "to": "veruserr-fail-closed-counterfeit",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}
