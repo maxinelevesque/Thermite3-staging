@@ -2,6 +2,7 @@
 rfc: 11
 title: Resource types — linearity, contagion, and abandonment
 status: draft
+language-evolution: tracked
 supersedes: []
 introduces:
   - REQ-SYNTAX-RESOURCE-MODIFIER
@@ -14,8 +15,8 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | **Draft implementation contract approved; activation waits on issue #48's atomic claim-closure materialization.** |
-| **Fork implementation** | **Design complete; source implementation not started.** The current checked contract is [resource-types.md](../syntax/resource-types.md), tracked by issue #75. |
+| **Status** | **Implemented on the RFC-11 build branch; release activation waits on issue #48's atomic claim-closure materialization and final qualification.** |
+| **Fork implementation** | **Syntax, provenance, checked flow, effects, L1/L3 lowering, Lean replay, certificates, audit disclosure, inventories, and the production conformance anchor are implemented.** The checked contract is [resource-types.md](../syntax/resource-types.md), tracked by issue #75. |
 | **Baseline** | `maxinelevesque/Thermite3-staging @ 91c964db` (`3.0.0-alpha.7`) |
 | **Position** | step 7 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), [RFC-8](0008-effect-algebra.md), [RFC-9](0009-verified-effect-rows.md), [RFC-10](0010-shared-state-invariants.md); issue #48 is complete |
@@ -24,8 +25,9 @@ introduces:
 > direction. The approved implementation contract resolves its stale baseline, explicit
 > resource provenance, generic contagion, fail-closed slice boundaries, checked
 > flow witness, and residual-trust requirements in
-> [resource-types.md](../syntax/resource-types.md). Source activation remains
-> sequenced after issue #48's authoritative schema-v2 transition.
+> [resource-types.md](../syntax/resource-types.md). Merge and release activation
+> remain sequenced after issue #48's authoritative schema-v2 transition and the
+> cold adversarial review.
 
 Kind: surface an existing capability.
 

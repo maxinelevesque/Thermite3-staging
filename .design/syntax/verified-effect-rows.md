@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: e41979c65839521be215e02222192c29d9f4bb78f9c264f0ec15505402063fd8 (re-pinned 2026-08-27 after adding the effect-free recursion/tuple claim corpus; the RFC-9 inventory now tracks 68 `.th` files and effect semantics are unchanged. prior: 9daaee5d825e5b8a223ed6e9e360ccbb002766bf292e24ab281d66eebd85d180)
+audited-content-sha256: 28216e5190c5f36590cd6b25b0668731cc9954e496e33b60b98fec2fc01c4a00 (re-pinned 2026-08-27 after adding the effect-free recursion/tuple claim corpus; the RFC-9 inventory now tracks 68 `.th` files and effect semantics are unchanged. prior: 9daaee5d825e5b8a223ed6e9e360ccbb002766bf292e24ab281d66eebd85d180)
 -->
 
 ## Summary

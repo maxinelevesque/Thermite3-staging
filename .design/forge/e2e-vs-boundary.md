@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 1571d840d348fc0030b197479f0ad1e10eb42235d49cd2fe15a1de95c47b1ca9 (re-pinned 2026-08-29 for the focused match-guard boundary-crossing and reachability witness. prior: ad589e56490146b54f5b5afd4dd1e600819fcc8d5121c3c9ad8b5a14db6f5358)
+audited-content-sha256: 0f2b9bde244f22baa312051edc6a832dcbc6d61d212adf775cf75a52eb5bef2a (re-pinned 2026-08-29 for the focused match-guard boundary-crossing and reachability witness. prior: ad589e56490146b54f5b5afd4dd1e600819fcc8d5121c3c9ad8b5a14db6f5358)
 governs: forge/src/closure.rs
 thesis-refs:
   - thermite-design.md §9

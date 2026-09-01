@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: b7ccf2cd423b4cd400aad10b7827b3394fd0d4c55f9a11ea1b6f0bb3fcfc781e (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: d733b59acf94bb59f7fb0317cb14a7e147b8eaa721fd8c06b39d2aef96d768eb.)
+audited-content-sha256: 0f62030730e247cea992d4695df62d5c37fa5c426295c0004f2d3d0a79c38845 (re-pinned 2026-08-11 after RFC-8 effect declarations added an exhaustive Item::EffectDecl metadata classification to governed Rust surfaces; effect-algebra-owned files also carry the basis, declaration resolution, computed-but-unused commutation, and enriched diagnostic. Existing verified semantics and this document's non-effect behavior are unchanged. Prior digest: d733b59acf94bb59f7fb0317cb14a7e147b8eaa721fd8c06b39d2aef96d768eb.)
 governs: thermite-syntax/src/effect_basis.rs
 governs: thermite-spec/src/effect_commutation.rs
 thesis-refs:

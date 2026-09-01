@@ -30,6 +30,36 @@ fn sum(xs: &[u32]) -> u64
 }
 ```
 
+## Resource types
+
+`resource(region)` upgrades an affine struct or enum to a checked resource: an
+owned value must be transferred, returned, or deliberately abandoned on every
+path that returns. A bare `resource` declaration is contagious and derives its
+regions from resource-bearing fields or variants. Owning containers propagate
+the obligation; borrowed references do not.
+
+Deliberate abandonment is explicit and priced in the effect row:
+
+```thermite
+resource(heap) struct Grant { id: u64 }
+
+fn discard(g: Grant) -> u64
+  requires true
+  ensures result == 0
+  ! forgets(heap)
+{
+  forget(g);
+  0
+}
+```
+
+`forget(value)` consumes exactly one live owned resource and requires every
+region in that value's provenance as a `forgets(region)` effect. Certification
+binds the checked flow to the canonical program, replays returning paths,
+joins, loops, and abandonment footprints in Lean, and reports the remaining
+trust in parsing, provenance resolution, witness extraction, and target
+resource behavior.
+
 ## The specification language
 
 Contract-position expressions stay inside a small fragment: a fixed set of

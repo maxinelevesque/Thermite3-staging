@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: fc0a759433f03710979d23436c4feced6a8f51cfc7c29ab6fcf5602e9a3f39ad (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; EPR reconstruction is unchanged. prior: 6acf8d2cd690775a6e8b31620ecea61cfaea77c1ade5c6c43ab21c258bbcdce0)
+audited-content-sha256: ce27fea885a22e5f210e163b1c283b507780c23b238a02cd24a5bfde139a78ed (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; EPR reconstruction is unchanged. prior: 6acf8d2cd690775a6e8b31620ecea61cfaea77c1ade5c6c43ab21c258bbcdce0)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

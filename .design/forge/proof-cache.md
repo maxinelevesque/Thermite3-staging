@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (cache.rs) is the additive REQ-9 measures wf accessibility-proof cache (AccessibilityProof + accessibility_cache_key + load/store, a separate wf- on-disk namespace, CHECK_SCHEMA_VERSION-invalidated like the per-item cache); the per-item proof cache is byte-identical (REQ-S1-9). prior: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab)
-audited-content-sha256: 67ae2b39a480a45e1e7c811a3862c9af6621fbf95ce5b71193baf8ad85076c5f (re-pinned 2026-08-16 for schema 11 key/digest-bound private cache envelopes and fail-closed typed result decoding. prior: f460e5861b19c0d4f1cd2159987fb515c9de598e2587ce9f8ece67b8fbaf882c)
+audited-content-sha256: 1eace6d0305d111514bd4b255f60343182c642154db9e1dcd646496acc7e7f67 (re-pinned 2026-08-16 for schema 11 key/digest-bound private cache envelopes and fail-closed typed result decoding. prior: f460e5861b19c0d4f1cd2159987fb515c9de598e2587ce9f8ece67b8fbaf882c)
 governs: forge/src/cache.rs
 thesis-refs:
   - thermite-design.md §5.3

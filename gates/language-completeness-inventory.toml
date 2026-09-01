@@ -58,6 +58,7 @@ construct = [
   { id = "BvWidth::W8", profile = "current-language" },
   { id = "Effect::Alloc", profile = "current-language" },
   { id = "Effect::Diverge", profile = "current-language" },
+  { id = "Effect::Forgets", profile = "rfc11-resource" },
   { id = "Effect::Net", profile = "current-language" },
   { id = "Effect::Owns", profile = "current-language" },
   { id = "Effect::Panic", profile = "current-language" },
@@ -138,6 +139,7 @@ construct = [
   { id = "Stmt::Break", profile = "current-language" },
   { id = "Stmt::Continue", profile = "current-language" },
   { id = "Stmt::Expr", profile = "current-language" },
+  { id = "Stmt::Forget", profile = "rfc11-resource" },
   { id = "Stmt::Holding", profile = "current-language" },
   { id = "Stmt::If", profile = "current-language" },
   { id = "Stmt::Let", profile = "current-language" },
@@ -162,6 +164,27 @@ construct = [
   { id = "VariantShape::Unit", profile = "current-language" },
 ]
 
+[[profile]]
+id = "rfc11-resource"
+parser = "supported"
+validator = "supported"
+canonical_semantics = "supported"
+checked_ir = "supported"
+lowering = "supported"
+proof_route = "supported"
+policy = "supported"
+certification = "supported"
+evidence = [
+  "thermite-syntax/tests/resource_types_parse.rs",
+  "thermite-spec/tests/resource_provenance.rs",
+  "thermite-spec/tests/resource_flow.rs",
+  "thermite-lower/tests/resource_effects.rs",
+  "thermite-lower/tests/resource_types_fail_closed.rs",
+  "thermite-lower/tests/resource_witness.rs",
+  "lean/Thermite/ResourceFlow.lean",
+  "forge/src/check.rs",
+]
+
 # Claim groups are deliberately broader than individual prose sentences. Their
 # exact source anchors make deletion/renaming visible; evidence says what exists
 # now, while `gap` states where the prose outruns that evidence.
@@ -169,7 +192,7 @@ construct = [
 id = "CLAIM-LANGUAGE-THREE-PROMISES"
 profile = "current-language"
 source = "docs/language.md"
-source_sha256 = "f2cddabc16844255faec8d3416d28c22984967d645c40586858c71e5a474c1e2"
+source_sha256 = "32f34520f177480b2fc806101082f056d028d202fb2c0948d52a7fd6ee227123"
 anchor = "## Three promises"
 evidence = ["thermite-syntax/src/parser.rs", "thermite-spec/src/validator.rs"]
 gap = "GAP-LANGUAGE-WIDE-THEOREM"
@@ -178,10 +201,23 @@ gap = "GAP-LANGUAGE-WIDE-THEOREM"
 id = "CLAIM-LANGUAGE-SPEC-SOUNDNESS"
 profile = "current-language"
 source = "docs/language.md"
-source_sha256 = "f2cddabc16844255faec8d3416d28c22984967d645c40586858c71e5a474c1e2"
+source_sha256 = "32f34520f177480b2fc806101082f056d028d202fb2c0948d52a7fd6ee227123"
 anchor = "## The specification language"
 evidence = ["lean/Thermite/", "gates/lean-axiom-probe.sh"]
 gap = "GAP-LANGUAGE-WIDE-THEOREM"
+
+[[claim]]
+id = "CLAIM-LANGUAGE-RFC11-RESOURCE-FLOW"
+profile = "rfc11-resource"
+source = "docs/language.md"
+source_sha256 = "32f34520f177480b2fc806101082f056d028d202fb2c0948d52a7fd6ee227123"
+anchor = "## Resource types"
+evidence = [
+  "thermite-spec/src/resource_flow.rs",
+  "thermite-lower/src/resource_witness.rs",
+  "lean/Thermite/ResourceFlow.lean",
+  "forge/src/manifest.rs",
+]
 
 [[claim]]
 id = "CLAIM-DESIGN-TRUSTABLE"
@@ -250,7 +286,7 @@ gap = "GAP-RFC3-MIGRATION"
 id = "CLAIM-REGISTRY-SHIPPED-EVIDENCE"
 profile = "current-language"
 source = ".design/reqs/registry.toml"
-source_sha256 = "acda1d61d64c4984c236162f1d4043da6f119e458cf6cc7bbfba926cd5823866"
+source_sha256 = "22526eeb9358aad799c857b97395bdc7f91a33aa5885a60bd4460b19d5572fb3"
 anchor = "[[requirement]]"
 evidence = ["gates/req-registry.py", "gates/req-status.py"]
 gap = "GAP-CLAIM-EVIDENCE-CLOSURE"

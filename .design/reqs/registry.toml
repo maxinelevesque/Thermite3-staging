@@ -18634,66 +18634,90 @@ note = "REQ-19 and AC-20 define canonical receipt binding and stale-input reject
 [[requirement]]
 id = "REQ-SYNTAX-RESOURCE-MODIFIER"
 title = "`resource struct` marks a linear type"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/resource-types.md"
+status = "shipped"
 scope = "syntax"
 summary = "Thermite's declared types are already affine, so the modifier marks the no-drop upgrade: a resource is consumed exactly once on every path that returns."
-remaining_scope = "Parse the modifier. It is an adjective on an item, following pub/unsafe/const. Proposed by RFC-11; staged and not filed; tracked by issue #75."
-contributors = [".design/rfcs/0011-resource-types.md"]
+remaining_scope = ""
+contributors = [".design/rfcs/0011-resource-types.md", ".design/syntax/resource-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0011-resource-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-syntax/tests/resource_types_parse.rs"
+note = "contextual modifier parsing, spans, ordering, direct/bare/multi-region forms, and structured negatives"
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-syntax/src/ast.rs"
+note = "dedicated ResourceDecl on struct and enum items"
 
 [[requirement]]
 id = "REQ-SYNTAX-FORGET"
 title = "`forget(g)`, recorded as `forgets(r)`"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/resource-types.md"
+status = "shipped"
 scope = "syntax"
 summary = "Abandonment is an operation rather than a hole: it is counted in the effect row, so a release rule can refuse it the way TMK's refuses #[boundary]."
-remaining_scope = "Parse forget(g) and emit forgets(r) into the row. Proposed by RFC-11; staged and not filed; tracked by issue #75."
-contributors = [".design/rfcs/0011-resource-types.md"]
+remaining_scope = ""
+contributors = [".design/rfcs/0011-resource-types.md", ".design/syntax/resource-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0011-resource-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-syntax/tests/resource_types_parse.rs"
+note = "dedicated forget statement and forgets effect parsing, spans, and canonical paths"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/resource_effects.rs"
+note = "exact direct and transitive abandonment footprints"
 
 [[requirement]]
 id = "REQ-SPEC-RESOURCE-LINEARITY"
 title = "A resource is consumed on every returning path"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/resource-types.md"
+status = "shipped"
 scope = "spec"
 summary = "Affine types permit dropping; linear types do not. The obligation is scoped exactly as `ensures` is, so a path that diverges or panics owes nothing."
-remaining_scope = "Check consumption per path. This is the half Rust's move semantics does not already give. Proposed by RFC-11; staged and not filed; tracked by issue #75."
-contributors = [".design/rfcs/0011-resource-types.md"]
+remaining_scope = ""
+contributors = [".design/rfcs/0011-resource-types.md", ".design/syntax/resource-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0011-resource-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-spec/tests/resource_flow.rs"
+note = "path-sensitive transfer, return, destructuring, branch, loop, and rejection matrix"
+[[requirement.evidence]]
+kind = "file"
+target = "lean/Thermite/ResourceFlow.lean"
+note = "kernel replay checks returning paths, joins, loops, exact forget footprints, and unique disposition labels"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/resource_witness.rs"
+note = "source/digest binding plus hostile terminal, join, loop, footprint, and duplicate-disposition mutations"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "production certificate/audit replay, residual-trust disclosure, tamper rejection, and legacy fallback negative"
 
 [[requirement]]
 id = "REQ-SPEC-RESOURCE-CONTAGION"
 title = "Contagion is declared and checked"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/resource-types.md"
+status = "shipped"
 scope = "spec"
 summary = "A struct or enum reachable to a resource is itself a resource, which answers the contagion question in English rather than by a separate rule."
-remaining_scope = "Check reachability and require the modifier where it is implied. The composed declared-type case is now available. Proposed by RFC-11; staged and not filed; tracked by issue #75."
-contributors = [".design/rfcs/0011-resource-types.md"]
+remaining_scope = ""
+contributors = [".design/rfcs/0011-resource-types.md", ".design/syntax/resource-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0011-resource-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-spec/tests/resource_provenance.rs"
+note = "order-independent fixed point across every owning constructor, nested ADTs, generics, variants, and borrowed exclusions"
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-spec/src/resource.rs"
+note = "typed provenance environment and declaration consistency diagnostics"
 
 [[requirement]]
 id = "REQ-SYNTAX-INTERLEAVES-BLOCK"

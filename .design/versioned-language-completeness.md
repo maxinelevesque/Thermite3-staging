@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 397c90b0c100a4e9391e0c9945a9ab428623a87e7fe20fc74ef4c23c39931b6a (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; language completeness is unchanged. prior: 1529bc2337bb425ca063dea3e97d182e7ed0c38f4a0ed3ceb2d9de33f99975f0)
+audited-content-sha256: e2777414c66141eb4b260259399306cddee071bb24411f2be310fbbf611481e2 (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; language completeness is unchanged. prior: 1529bc2337bb425ca063dea3e97d182e7ed0c38f4a0ed3ceb2d9de33f99975f0)
 
 ## Summary
 
@@ -667,7 +667,10 @@ review necessary without allowing prose changes to rewrite a closed claim.
   inside #48.
 - RFC-10-specific cross-product expansion that remains after extracting the
   general producer-refinement framework from issue #49.
-- Implementing RFC-11 or RFC-12 language features.
+- Implementing RFC-12 language features. RFC-11 resource types now have an
+  explicit supported profile in the language inventory; its checked flow,
+  formal replay, certificate disclosure, and legacy-fallback negative are
+  versioned evidence rather than members of an older fragment.
 - Implementing RFC-13 protocol types.
 - Using natural-language inference to prove that a prose summary entails a
   typed claim.

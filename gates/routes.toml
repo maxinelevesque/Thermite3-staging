@@ -1689,3 +1689,48 @@ reference = [
   ".design/rfc10-evidence-completeness.md",
 ]
 conformance_ops = []
+
+# ---------------------------------------------------------------------
+# Resource types and checked abandonment (RFC-11)
+# ---------------------------------------------------------------------
+[[route]]
+crate_pattern = "thermite-spec/src/resource.rs"
+design = ".design/syntax/resource-types.md"
+reference = ["thermite-spec/tests/resource_provenance.rs"]
+conformance_ops = ["resource contagion", "region provenance"]
+
+[[route]]
+crate_pattern = "thermite-spec/src/resource_flow.rs"
+design = ".design/syntax/resource-types.md"
+reference = ["thermite-spec/tests/resource_flow.rs"]
+conformance_ops = ["path-sensitive transfer", "forget", "return", "branch", "loop"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/resource_witness.rs"
+design = ".design/syntax/resource-types.md"
+reference = ["thermite-lower/tests/resource_witness.rs", "lean/Thermite/ResourceFlow.lean"]
+conformance_ops = ["canonical witness", "Lean replay", "hostile mutation"]
+
+[[route]]
+crate_pattern = "lean/Thermite/ResourceFlow.lean"
+design = ".design/syntax/resource-types.md"
+reference = ["thermite-lower/tests/resource_witness.rs"]
+conformance_ops = ["returning paths", "joins", "loops", "forget footprints", "unique dispositions"]
+
+[[route]]
+crate_pattern = "forge/src/check.rs"
+design = ".design/syntax/resource-types.md"
+reference = ["thermite-lower/tests/resource_witness.rs", "lean/Thermite/ResourceFlow.lean"]
+conformance_ops = ["RFC-11 production replay", "legacy-certificate rejection"]
+
+[[route]]
+crate_pattern = "forge/src/manifest.rs"
+design = ".design/syntax/resource-types.md"
+reference = ["forge/src/check.rs"]
+conformance_ops = ["resource-flow evidence", "residual trust"]
+
+[[route]]
+crate_pattern = "forge/src/audit.rs"
+design = ".design/syntax/resource-types.md"
+reference = ["forge/src/manifest.rs"]
+conformance_ops = ["resource audit projection", "tamper rejection"]

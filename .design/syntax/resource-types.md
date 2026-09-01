@@ -1,5 +1,10 @@
 # Feature: RFC-11 resource types
 
+<!--
+status: approved
+audited-content-sha256: 4a95bcbe315b8b47fc78d1c64b79f453c5ddb659aa0d0d40adb580f719ddd176
+-->
+
 ## Summary
 
 RFC-11 upgrades selected owned values from affine to linear: a resource value

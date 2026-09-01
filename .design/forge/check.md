@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 4dcdcbc7b3f311f27ff2c9ba7eceba9d1086c253448372367f085ee1efdf06e4 (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; checking semantics are unchanged. prior: dc3f541496729913a125a3902e8f620cc9469fe83c3895871c88e31d3e6e7305)
+audited-content-sha256: ab7e82202f198fddc40383ed84c2b3903b56a530c91c4f007450ad29aa35243b (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; checking semantics are unchanged. prior: dc3f541496729913a125a3902e8f620cc9469fe83c3895871c88e31d3e6e7305)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
