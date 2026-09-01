@@ -58,6 +58,7 @@ pub struct WitnessResourceLoop {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WitnessResourceForget {
+    pub label: String,
     pub place: Option<String>,
     pub value_regions: Vec<String>,
     pub priced_regions: Vec<String>,
@@ -166,6 +167,7 @@ fn witness_functions(
                 .forgets
                 .iter()
                 .map(|forget| WitnessResourceForget {
+                    label: forget.label.clone(),
                     place: forget.place.clone(),
                     value_regions: forget
                         .value_regions
@@ -276,7 +278,8 @@ pub fn lean_resource_replay_source(
                             .map(|place| format!("some {}", string(place)))
                             .unwrap_or_else(|| "none".to_string());
                         format!(
-                            "⟨{}, {}, {}, {}⟩",
+                            "⟨{}, {}, {}, {}, {}⟩",
+                            string(&forget.label),
                             place,
                             strings(&forget.value_regions),
                             strings(&forget.priced_regions),

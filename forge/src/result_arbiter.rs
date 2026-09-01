@@ -832,7 +832,7 @@ fn render_replacement(
     // payload, but it must not erase that independent evidence.
     replacement.covenant_evidence = base.covenant_evidence;
     replacement.meaning_audit = base.meaning_audit.clone();
-    replacement
+    replacement.inherit_resource_flow_from(base)
 }
 
 fn render_policy_result(base: &Certificate, mut replacement: Certificate) -> Certificate {
@@ -847,7 +847,7 @@ fn render_policy_result(base: &Certificate, mut replacement: Certificate) -> Cer
     }
     replacement.covenant_evidence = base.covenant_evidence;
     replacement.meaning_audit = base.meaning_audit.clone();
-    replacement
+    replacement.inherit_resource_flow_from(base)
 }
 
 #[cfg(test)]

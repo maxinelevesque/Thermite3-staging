@@ -47,6 +47,7 @@ pub struct ResourceLoopFact {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceForgetFact {
+    pub label: String,
     pub place: Option<String>,
     pub value_regions: Vec<RegionPath>,
     pub priced_regions: Vec<RegionPath>,
@@ -136,6 +137,7 @@ struct Checker<'a> {
     return_index: usize,
     join_index: usize,
     loop_index: usize,
+    forget_index: usize,
 }
 
 pub fn check_resource_flow(
@@ -205,6 +207,7 @@ pub fn check_resource_flow(
         return_index: 0,
         join_index: 0,
         loop_index: 0,
+        forget_index: 0,
     };
     for item in &program.items {
         if let Item::Fn(function) = item {
@@ -229,6 +232,7 @@ impl Checker<'_> {
         self.return_index = 0;
         self.join_index = 0;
         self.loop_index = 0;
+        self.forget_index = 0;
         self.declared_effects = match &function.contract.effects {
             EffectRow::Pure => BTreeSet::new(),
             EffectRow::Set(effects) => effects.iter().cloned().collect(),
@@ -387,7 +391,10 @@ impl Checker<'_> {
                         })
                         .cloned()
                         .collect();
+                    let label = format!("forget#{}", self.forget_index);
+                    self.forget_index += 1;
                     self.current_flow_mut().forgets.push(ResourceForgetFact {
+                        label,
                         place: expr_place(value),
                         value_regions: provenance.iter().cloned().collect(),
                         priced_regions,

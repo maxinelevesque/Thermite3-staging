@@ -38,7 +38,7 @@ pub mod resource_witness;
 pub mod witness;
 
 pub use checked::{
-    check_program, AccessMode, CheckedCloseEdge, CheckedHolding, CheckedProgram,
+    check_program, contains_rfc11, AccessMode, CheckedCloseEdge, CheckedHolding, CheckedProgram,
     CheckedSharedPlace, CloseReason, DEFAULT_SEMANTIC_WORK_BUDGET,
 };
 pub use effects::{analyze_effects, check_effects, subsumes, EffectAnalysis, EffectWarning};

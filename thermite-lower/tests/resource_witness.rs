@@ -150,6 +150,17 @@ fn lean_rejects_semantically_invalid_but_structurally_matching_mutations() {
     forget.functions[0].forgets[0].priced_regions.pop();
     cases.push(forget);
 
+    let mut duplicate_disposition = cases[0].clone();
+    // Restore the returning edge changed in case 0, then duplicate a terminal
+    // abandonment while changing canonical and witness together. Digest/shape
+    // equality alone must not make this formally acceptable.
+    duplicate_disposition.functions[0].returning_edges[0]
+        .live
+        .clear();
+    let duplicate = duplicate_disposition.functions[0].forgets[0].clone();
+    duplicate_disposition.functions[0].forgets.push(duplicate);
+    cases.push(duplicate_disposition);
+
     for (index, witness) in cases.into_iter().enumerate() {
         let matching = CanonicalResourceProjection {
             canonical_ast_sha256: canonical.canonical_ast_sha256.clone(),

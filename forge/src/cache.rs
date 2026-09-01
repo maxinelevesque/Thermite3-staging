@@ -145,7 +145,10 @@ const DOMAIN: &[u8] = b"thermite.forge.proof-cache.v1";
 ///       digest are verified before any certificate is decoded as authority. A
 ///       damaged policy verdict therefore misses instead of being promoted by a
 ///       coherent-looking public-field edit.
-const CHECK_SCHEMA_VERSION: u32 = 11;
+/// 12 — RFC-11 resource certificates carry checked-flow and kernel-replay
+///      evidence. Schema-11 rows lack that mandatory authority and must miss
+///      rather than silently certifying a resource program as an older fragment.
+const CHECK_SCHEMA_VERSION: u32 = 12;
 
 thread_local! {
     static REUSE_SUPPRESSED: Cell<bool> = const { Cell::new(false) };

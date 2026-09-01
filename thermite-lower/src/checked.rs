@@ -169,6 +169,13 @@ pub(crate) fn first_rfc11_span(program: &Program) -> Option<thermite_syntax::Spa
     })
 }
 
+/// Whether the parsed program uses any RFC-11 surface. Forge uses this at the
+/// whole-program certification boundary so even non-L3 routes cannot omit the
+/// resource disclosure.
+pub fn contains_rfc11(program: &Program) -> bool {
+    first_rfc11_span(program).is_some()
+}
+
 fn first_forget_in_block(block: &thermite_syntax::Block) -> Option<thermite_syntax::Span> {
     block.stmts.iter().find_map(|stmt| match stmt {
         thermite_syntax::Stmt::Forget { span, .. } => Some(*span),

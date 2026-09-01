@@ -90,6 +90,10 @@ pub enum ForgeError {
     Rfc10ReplayUnavailable { detail: String },
     /// RFC-10 Lean replay ran and kernel-rejected the checked witness.
     Rfc10ReplayRejected { detail: String },
+    /// RFC-11 resource-flow replay could not be invoked or communicated with.
+    Rfc11ReplayUnavailable { detail: String },
+    /// RFC-11 resource-flow replay ran and kernel-rejected the checked witness.
+    Rfc11ReplayRejected { detail: String },
     /// The `cargo kani` / kani binary was not found on `PATH` — an environment
     /// error, not a verification failure (`.design/lower/l2-kani.md` REQ-8). The
     /// L2 parallel of `VerusAbsent`.
@@ -207,6 +211,12 @@ impl fmt::Display for ForgeError {
             ForgeError::Rfc10ReplayRejected { detail } => {
                 write!(f, "RFC-10 verified replay rejected: {detail}")
             }
+            ForgeError::Rfc11ReplayUnavailable { detail } => {
+                write!(f, "RFC-11 resource replay unavailable: {detail}")
+            }
+            ForgeError::Rfc11ReplayRejected { detail } => {
+                write!(f, "RFC-11 resource replay rejected: {detail}")
+            }
             ForgeError::KaniAbsent { binary } => write!(
                 f,
                 "the `{binary}` bounded model checker was not found on PATH (environment error, \
@@ -270,7 +280,9 @@ impl ForgeError {
     /// The exit code class for this error (REQ-5). Every `ForgeError` is an
     fn exit_code(&self) -> u8 {
         match self {
-            Self::Rfc10ReplayRejected { .. } => EXIT_VERIFICATION_FAILURE,
+            Self::Rfc10ReplayRejected { .. } | Self::Rfc11ReplayRejected { .. } => {
+                EXIT_VERIFICATION_FAILURE
+            }
             _ => EXIT_ENVIRONMENT,
         }
     }
@@ -3373,7 +3385,7 @@ fn render_repair_item(item: &RepairItem) -> String {
 /// `.design/forge/audit-manifest.md` REQ-2, OQ-1 — the human shape is a rendering
 /// detail; the `--json` document is the stable contract). Three sections: the
 /// per-fn table, the project assurance, and the §8/§9 greppable TCB inventory.
-fn render_audit(manifest: &AuditManifest) -> String {
+pub(crate) fn render_audit(manifest: &AuditManifest) -> String {
     let mut out = String::new();
     out.push_str(&format!(
         "audit manifest {} ({} function(s))\n",
@@ -3403,6 +3415,36 @@ fn render_audit(manifest: &AuditManifest) -> String {
             flags,
             scope
         ));
+        if let Some(resource) = &f.resource_flow {
+            out.push_str(&format!(
+                "    resource-flow: accepted; formal-replay={} checker={} checked-resource-sha256={}\n",
+                match resource.formal_replay.verdict {
+                    crate::manifest::ResourceFormalReplayVerdict::KernelAccepted => {
+                        "kernel-accepted"
+                    }
+                },
+                resource.formal_replay.checker,
+                resource.formal_replay.checked_resource_sha256,
+            ));
+            for forget in &resource.forgets {
+                out.push_str(&format!(
+                    "    forget: function={} disposition={} place={} regions=[{}]\n",
+                    forget.function,
+                    forget.disposition,
+                    forget.place.as_deref().unwrap_or("<expression>"),
+                    forget.regions.join(", ")
+                ));
+            }
+            out.push_str(&format!(
+                "    resource residual trust: {}\n",
+                resource
+                    .residual_trust
+                    .iter()
+                    .map(|entry| format!("{entry:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
     }
 
     // The project assurance headline + scope + lowered-assurance fns (REQ-5).
@@ -3556,7 +3598,7 @@ fn render_assurance(manifest: &AssuranceManifest) -> String {
 /// Render a [`Certificate`] as human-readable text (REQ-4, §5.1 "rendered to
 /// readable text"). The §5.1 structured JSON is the `--json` rendering; this is
 /// the default.
-fn render_human(cert: &Certificate) -> String {
+pub(crate) fn render_human(cert: &Certificate) -> String {
     // The deterministic oracle-stable subset (manifest::Certificate::oracle_subset):
     // item / level / effects / slag — the fields the cert-oracle compares — are
     // rendered first, then the non-deterministic `solver_time_ms` labelled as
@@ -3572,6 +3614,7 @@ fn render_human(cert: &Certificate) -> String {
         _meaning,
         _bv_shadows,
         _clause_certifications,
+        _resource_flow,
     ) = cert.oracle_subset();
     let mut out = String::new();
     out.push_str(&format!("item: {item}\n"));
@@ -3605,6 +3648,30 @@ fn render_human(cert: &Certificate) -> String {
     // #6: a triage / slag-validation reject names its structured cause.
     if let Some(reject) = &cert.reject {
         out.push_str(&format!("reject: {} — {}\n", reject.cause, reject.detail));
+    }
+    if let Some(resource) = &cert.resource_flow {
+        out.push_str(&format!(
+            "resource_flow: accepted (formal replay: kernel-accepted, checker={}, checked_resource_sha256={})\n",
+            resource.formal_replay.checker, resource.formal_replay.checked_resource_sha256
+        ));
+        for forget in &resource.forgets {
+            out.push_str(&format!(
+                "resource_forget: function={} disposition={} place={} regions=[{}]\n",
+                forget.function,
+                forget.disposition,
+                forget.place.as_deref().unwrap_or("<expression>"),
+                forget.regions.join(", ")
+            ));
+        }
+        out.push_str(&format!(
+            "resource_residual_trust: {}\n",
+            resource
+                .residual_trust
+                .iter()
+                .map(|entry| format!("{entry:?}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
     }
     out.push_str(&format!(
         "solver_time_ms: {} (non-deterministic; not part of the cert oracle)\n",

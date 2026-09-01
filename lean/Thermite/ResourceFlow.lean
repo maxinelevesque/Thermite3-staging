@@ -21,6 +21,7 @@ structure LoopFact where
 deriving DecidableEq, Repr
 
 structure ForgetFact where
+  label : String
   place : Option String
   valueRegions : List String
   pricedRegions : List String
@@ -66,11 +67,16 @@ def forgetSound (forget : ForgetFact) : Bool :=
     listSetEq forget.valueRegions forget.pricedRegions &&
     forget.pricedRegions.all forget.declaredRegions.contains
 
+def terminalDispositionsUnique (function : FunctionFlow) : Bool :=
+  let labels := function.forgets.map (·.label)
+  labels.eraseDups.length == labels.length
+
 def functionSound (function : FunctionFlow) : Bool :=
   function.returningEdges.all returningEdgeSound &&
     function.joins.all joinSound &&
     function.loops.all loopSound &&
-    function.forgets.all forgetSound
+    function.forgets.all forgetSound &&
+    terminalDispositionsUnique function
 
 def verify (canonical : Canonical) (witness : Witness) : Bool :=
   witness.version == 1 &&
@@ -107,11 +113,22 @@ theorem returning_paths_empty_of_verify {canonical : Canonical} {witness : Witne
   intro function member
   have function_sound := List.all_eq_true.mp sound function member
   simp only [functionSound, Bool.and_eq_true] at function_sound
-  exact function_sound.1.1.1
+  exact function_sound.1.1.1.1
 
 theorem joins_preserve_live_set_of_verify {canonical : Canonical} {witness : Witness}
     (accepted : verify canonical witness = true) :
     witness.functions.all (fun function => function.joins.all joinSound) = true := by
+  have supported := (verify_iff_supported (canonical := canonical) (witness := witness)).mp accepted
+  rcases supported with ⟨_, _, _, _, sound⟩
+  apply List.all_eq_true.mpr
+  intro function member
+  have function_sound := List.all_eq_true.mp sound function member
+  simp only [functionSound, Bool.and_eq_true] at function_sound
+  exact function_sound.1.1.1.2
+
+theorem loops_preserve_live_set_of_verify {canonical : Canonical} {witness : Witness}
+    (accepted : verify canonical witness = true) :
+    witness.functions.all (fun function => function.loops.all loopSound) = true := by
   have supported := (verify_iff_supported (canonical := canonical) (witness := witness)).mp accepted
   rcases supported with ⟨_, _, _, _, sound⟩
   apply List.all_eq_true.mpr
@@ -123,6 +140,17 @@ theorem joins_preserve_live_set_of_verify {canonical : Canonical} {witness : Wit
 theorem forget_footprints_exact_of_verify {canonical : Canonical} {witness : Witness}
     (accepted : verify canonical witness = true) :
     witness.functions.all (fun function => function.forgets.all forgetSound) = true := by
+  have supported := (verify_iff_supported (canonical := canonical) (witness := witness)).mp accepted
+  rcases supported with ⟨_, _, _, _, sound⟩
+  apply List.all_eq_true.mpr
+  intro function member
+  have function_sound := List.all_eq_true.mp sound function member
+  simp only [functionSound, Bool.and_eq_true] at function_sound
+  exact function_sound.1.2
+
+theorem terminal_dispositions_unique_of_verify {canonical : Canonical} {witness : Witness}
+    (accepted : verify canonical witness = true) :
+    witness.functions.all terminalDispositionsUnique = true := by
   have supported := (verify_iff_supported (canonical := canonical) (witness := witness)).mp accepted
   rcases supported with ⟨_, _, _, _, sound⟩
   apply List.all_eq_true.mpr

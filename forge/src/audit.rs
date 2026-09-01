@@ -293,6 +293,10 @@ pub struct FunctionRow {
     /// distinguishable when one was kernel-checked and another trusts a solver.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub engine_attribution: Option<crate::engine::EngineAttribution>,
+    /// RFC-11 checked-flow, abandonment, formal replay, and residual-trust
+    /// disclosure copied verbatim from the live certificate.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource_flow: Option<crate::manifest::ResourceFlowEvidence>,
     /// The §7 contract-quality battery block (presence/shape asserted by the
     /// oracle; the version-sensitive `mutants_killed`/`survivor` ratio is not —
     /// OQ-2). A copy of `Certificate::contract_quality`.
@@ -357,6 +361,8 @@ impl FunctionRow {
             cert.validate_verus_artifact_authority()
                 .expect("audit rejects persisted Verus provenance substitution");
         }
+        cert.validate_resource_flow_authority()
+            .expect("audit rejects RFC-11 evidence without live formal-replay authority");
         FunctionRow {
             name: cert.item.clone(),
             level: cert.level,
@@ -365,6 +371,7 @@ impl FunctionRow {
             clause_portfolio,
             assurance_scope: cert.assurance_scope.clone(),
             engine_attribution: cert.engine_attribution.clone(),
+            resource_flow: cert.resource_flow.clone(),
             contract_quality: cert.contract_quality.clone(),
             slag: cert.slag,
             boundary: cert.boundary,

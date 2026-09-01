@@ -705,10 +705,12 @@ impl<'a> Parser<'a> {
             None
         };
 
-        if resource.is_some() && !self.check(&TokKind::Struct) && !self.check(&TokKind::Enum) {
-            return Err(SyntaxError::ResourceModifierTarget {
-                span: resource.as_ref().expect("resource is present").span,
-            });
+        if !self.check(&TokKind::Struct) && !self.check(&TokKind::Enum) {
+            if let Some(resource) = &resource {
+                return Err(SyntaxError::ResourceModifierTarget {
+                    span: resource.span,
+                });
+            }
         }
 
         if matches!(self.peek(), TokKind::Ident(word) if word == "effect") {
