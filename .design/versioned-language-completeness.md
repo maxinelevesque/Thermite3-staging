@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 397c90b0c100a4e9391e0c9945a9ab428623a87e7fe20fc74ef4c23c39931b6a (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; language completeness is unchanged. prior: 1529bc2337bb425ca063dea3e97d182e7ed0c38f4a0ed3ceb2d9de33f99975f0)
+audited-content-sha256: a390570dff7e2defcda0ac951fef8077aa7c669bcd08d234d6acb61f0ab6e8d5 (re-pinned 2026-09-01 for atomic schema-v2 claim-closure activation: the completeness ledger now records authoritative typed closures and preserves the resolved issue-48 review linkage. Language coverage is unchanged. prior: 397c90b0c100a4e9391e0c9945a9ab428623a87e7fe20fc74ef4c23c39931b6a)
 
 ## Summary
 
