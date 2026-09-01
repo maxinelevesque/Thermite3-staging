@@ -399,6 +399,11 @@ pub enum SpecError {
     /// no live emitter in 1b; `construct` names the unsupported surface form for
     /// a crisp diagnostic, §2.4).
     UnsupportedAdt { construct: &'static str, span: Span },
+    /// RFC-11 resource syntax reached the specification boundary before the
+    /// provenance/flow consumer is implemented. This is the syntax-slice
+    /// fail-closed gate: a parsed resource declaration never validates as an
+    /// ordinary droppable ADT.
+    UnsupportedResourceTypes { span: Span },
     /// A `match` over a declared `enum` value whose arms do not cover every
     /// declared variant and is not closed by a `Wildcard` arm
     /// (`.design/basis/01-adts.md` REQ-5). `missing` is the set of uncovered
@@ -525,6 +530,7 @@ impl SpecError {
             | SpecError::NestedCombinator { span, .. }
             | SpecError::ExpressionTooDeep { span, .. }
             | SpecError::UnsupportedAdt { span, .. }
+            | SpecError::UnsupportedResourceTypes { span }
             | SpecError::NonExhaustiveMatch { span, .. }
             | SpecError::UnreachableArm { span, .. }
             | SpecError::UnknownField { span, .. }
@@ -594,6 +600,10 @@ impl fmt::Display for SpecError {
                 f,
                 "ADT construct `{construct}` is not yet checkable by the validator \
                  (`.design/basis/01-adts.md`)"
+            ),
+            SpecError::UnsupportedResourceTypes { .. } => write!(
+                f,
+                "RFC-11 resource types are parsed but not yet checkable by the provenance validator"
             ),
             SpecError::NonExhaustiveMatch { missing, .. } => write!(
                 f,
@@ -847,6 +857,9 @@ impl Validator {
         for item in &program.items {
             match item {
                 Item::Enum(e) => {
+                    if e.resource.is_some() {
+                        casing_errors.push(SpecError::UnsupportedResourceTypes { span: e.span });
+                    }
                     let mut variant_names = Vec::with_capacity(e.variants.len());
                     for variant in &e.variants {
                         // A variant name is uppercase-initial iff its first char
@@ -881,6 +894,9 @@ impl Validator {
                     enums.insert(e.name.clone(), variant_names);
                 }
                 Item::Struct(s) => {
+                    if s.resource.is_some() {
+                        casing_errors.push(SpecError::UnsupportedResourceTypes { span: s.span });
+                    }
                     for field in &s.fields {
                         struct_fields.insert(field.name.clone());
                     }

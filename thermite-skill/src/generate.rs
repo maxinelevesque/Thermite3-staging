@@ -989,11 +989,13 @@ fn item_inventory() -> Vec<Item> {
             fields: Vec::new(),
             keeps: None,
             sealed: false,
+            resource: None,
             span,
         }),
         Item::Enum(EnumItem {
             name: String::new(),
             variants: Vec::new(),
+            resource: None,
             span,
         }),
     ]

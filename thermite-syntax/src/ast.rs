@@ -143,6 +143,15 @@ pub struct RegionPath {
     pub segments: Vec<Ident>,
 }
 
+/// RFC-11's contextual resource modifier on an owning type declaration.
+/// An empty region set is a bare contagious declaration; a direct declaration
+/// carries one or more explicit region paths. The span covers the modifier.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceDecl {
+    pub regions: Vec<RegionPath>,
+    pub span: Span,
+}
+
 impl RegionPath {
     pub fn root(name: Ident) -> Self {
         Self {
@@ -467,6 +476,7 @@ pub struct StructItem {
     pub fields: Vec<FieldDef>,
     pub keeps: Option<Clause>,
     pub sealed: bool,
+    pub resource: Option<ResourceDecl>,
     pub span: Span,
 }
 
@@ -485,6 +495,7 @@ pub struct FieldDef {
 pub struct EnumItem {
     pub name: Ident,
     pub variants: Vec<VariantDef>,
+    pub resource: Option<ResourceDecl>,
     pub span: Span,
 }
 

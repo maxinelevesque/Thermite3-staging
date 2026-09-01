@@ -180,6 +180,12 @@ pub enum SyntaxError {
     BvWidthInvalid { found: String, span: Span },
     /// A declaration RHS named something outside RFC-8's closed basis.
     UnknownEffectPrimitive { found: String, span: Span },
+    /// `resource()` is invalid; bare contagion omits parentheses entirely.
+    EmptyResourceProvenance { span: Span },
+    /// One explicit region path appeared more than once in a modifier.
+    DuplicateResourceRegion { path: RegionPath, span: Span },
+    /// The contextual modifier was not followed by `struct` or `enum`.
+    ResourceModifierTarget { span: Span },
 }
 
 /// The maximum recursive-descent nesting depth the parser will follow before
@@ -237,7 +243,10 @@ impl SyntaxError {
             | SyntaxError::BvTagWithoutShadowPlumbing { span }
             | SyntaxError::BvTagOnPrecondition { span }
             | SyntaxError::BvWidthInvalid { span, .. }
-            | SyntaxError::UnknownEffectPrimitive { span, .. } => *span,
+            | SyntaxError::UnknownEffectPrimitive { span, .. }
+            | SyntaxError::EmptyResourceProvenance { span }
+            | SyntaxError::DuplicateResourceRegion { span, .. }
+            | SyntaxError::ResourceModifierTarget { span } => *span,
         }
     }
 }
@@ -332,6 +341,21 @@ impl std::fmt::Display for SyntaxError {
             SyntaxError::UnknownEffectPrimitive { found, span } => write!(
                 f,
                 "unknown effect primitive `{found}` at byte {}; expected one of state, accrues, exception, partiality, io",
+                span.start
+            ),
+            SyntaxError::EmptyResourceProvenance { span } => write!(
+                f,
+                "empty `resource()` at byte {}; use bare `resource` for contagious ownership",
+                span.start
+            ),
+            SyntaxError::DuplicateResourceRegion { path, span } => write!(
+                f,
+                "resource region `{path}` is declared more than once at byte {}",
+                span.start
+            ),
+            SyntaxError::ResourceModifierTarget { span } => write!(
+                f,
+                "`resource` at byte {} must modify a `struct` or `enum` item",
                 span.start
             ),
         }
@@ -651,7 +675,7 @@ impl<'a> Parser<'a> {
                     | TokKind::HashBracket
                     | TokKind::Struct
                     | TokKind::Enum
-            ) || matches!(self.peek(), TokKind::Ident(word) if matches!(word.as_str(), "effect" | "shared" | "concurrent" | "lock" | "handlers"))
+            ) || matches!(self.peek(), TokKind::Ident(word) if matches!(word.as_str(), "effect" | "shared" | "concurrent" | "lock" | "handlers" | "resource"))
             {
                 break;
             }
@@ -671,6 +695,21 @@ impl<'a> Parser<'a> {
         } else {
             None
         };
+
+        // RFC-11 keeps `resource` contextual: only item-head `resource`
+        // followed by a struct/enum is a modifier; every other occurrence
+        // remains an ordinary identifier.
+        let resource = if matches!(self.peek(), TokKind::Ident(word) if word == "resource") {
+            Some(self.parse_resource_decl()?)
+        } else {
+            None
+        };
+
+        if resource.is_some() && !self.check(&TokKind::Struct) && !self.check(&TokKind::Enum) {
+            return Err(SyntaxError::ResourceModifierTarget {
+                span: resource.as_ref().expect("resource is present").span,
+            });
+        }
 
         if matches!(self.peek(), TokKind::Ident(word) if word == "effect") {
             if attr.is_some() {
@@ -717,7 +756,7 @@ impl<'a> Parser<'a> {
                 }
                 None => false,
             };
-            return self.parse_struct(start_span, sealed);
+            return self.parse_struct(start_span, sealed, resource);
         }
         if self.check(&TokKind::Enum) {
             match &attr {
@@ -734,7 +773,7 @@ impl<'a> Parser<'a> {
                 }
                 None => {}
             }
-            return self.parse_enum(start_span);
+            return self.parse_enum(start_span, resource);
         }
 
         // Stage-1 forge-tier items (`.design/stage1-forge-tier.md` REQ-3), led by
@@ -801,6 +840,45 @@ impl<'a> Parser<'a> {
                 "`fn`, `spec fn`, `#[slag(...)]`, `#[boundary(\"...\")]`, or `#[sealed] struct`",
             ))
         }
+    }
+
+    fn parse_resource_decl(&mut self) -> PResult<ResourceDecl> {
+        let start = self.peek_span();
+        self.expect_contextual("resource")?;
+        if !self.eat(&TokKind::LParen) {
+            return Ok(ResourceDecl {
+                regions: Vec::new(),
+                span: start,
+            });
+        }
+        if self.check(&TokKind::RParen) {
+            let span = start.to(self.peek_span());
+            self.bump();
+            return Err(SyntaxError::EmptyResourceProvenance { span });
+        }
+        let mut regions = Vec::new();
+        loop {
+            let region_start = self.peek_span();
+            let path = self.parse_region_path()?;
+            if regions.contains(&path) {
+                return Err(SyntaxError::DuplicateResourceRegion {
+                    path,
+                    span: region_start.to(self.prev_span()),
+                });
+            }
+            regions.push(path);
+            if !self.eat(&TokKind::Comma) {
+                break;
+            }
+            if self.check(&TokKind::RParen) {
+                break;
+            }
+        }
+        self.consume(&TokKind::RParen, "`)`")?;
+        Ok(ResourceDecl {
+            regions,
+            span: start.to(self.prev_span()),
+        })
     }
 
     fn parse_effect_decl(&mut self, start_span: Span) -> PResult<Item> {
@@ -1145,7 +1223,12 @@ impl<'a> Parser<'a> {
     /// attribute (REQ-8). The validator rules (field well-formedness; the
     /// sealed-construction reject) are stage 1b / Stage 6; here we only parse the
     /// surface into the right AST.
-    fn parse_struct(&mut self, start_span: Span, sealed: bool) -> PResult<Item> {
+    fn parse_struct(
+        &mut self,
+        start_span: Span,
+        sealed: bool,
+        resource: Option<ResourceDecl>,
+    ) -> PResult<Item> {
         self.consume(&TokKind::Struct, "`struct`")?;
         let name = self.take_ident("a struct name")?;
         let fields = self.parse_field_defs()?;
@@ -1162,6 +1245,7 @@ impl<'a> Parser<'a> {
             fields,
             keeps: inv,
             sealed,
+            resource,
             span,
         }))
     }
@@ -1195,7 +1279,7 @@ impl<'a> Parser<'a> {
     /// name), `Tuple` (`(type, …)`), or `Struct` (`{ field: type, … }`). A
     /// trailing comma is permitted. Recursive `Box<List>` self-refs parse via
     /// `parse_type` (REQ-3).
-    fn parse_enum(&mut self, start_span: Span) -> PResult<Item> {
+    fn parse_enum(&mut self, start_span: Span, resource: Option<ResourceDecl>) -> PResult<Item> {
         self.consume(&TokKind::Enum, "`enum`")?;
         let name = self.take_ident("an enum name")?;
         self.consume(&TokKind::LBrace, "`{`")?;
@@ -1241,6 +1325,7 @@ impl<'a> Parser<'a> {
         Ok(Item::Enum(EnumItem {
             name,
             variants,
+            resource,
             span,
         }))
     }

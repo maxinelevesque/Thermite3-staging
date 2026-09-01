@@ -31,6 +31,9 @@ fn error_kind(error: &SyntaxError) -> &'static str {
         SyntaxError::BvTagOnPrecondition { .. } => "BvTagOnPrecondition",
         SyntaxError::BvWidthInvalid { .. } => "BvWidthInvalid",
         SyntaxError::UnknownEffectPrimitive { .. } => "UnknownEffectPrimitive",
+        SyntaxError::EmptyResourceProvenance { .. } => "EmptyResourceProvenance",
+        SyntaxError::DuplicateResourceRegion { .. } => "DuplicateResourceRegion",
+        SyntaxError::ResourceModifierTarget { .. } => "ResourceModifierTarget",
     }
 }
 
