@@ -18,6 +18,7 @@ pub struct L3Artifact {
     effect_row: Option<EffectRow>,
     query_identity: String,
     classifier_fragment: &'static str,
+    resource_witness: Option<crate::ResourceFlowWitness>,
 }
 
 impl L3Artifact {
@@ -42,6 +43,10 @@ impl L3Artifact {
     pub fn classifier_fragment(&self) -> &'static str {
         self.classifier_fragment
     }
+
+    pub fn resource_witness(&self) -> Option<&crate::ResourceFlowWitness> {
+        self.resource_witness.as_ref()
+    }
 }
 
 /// Lower one already-isolated item program and bind its Verus classifier and
@@ -63,11 +68,23 @@ pub fn lower_l3_artifact(program: &Program, item: &str) -> Result<L3Artifact, Lo
     };
     let source = crate::lower::lower(source_program)?;
     let digest = format!("{:x}", Sha256::digest(source.as_bytes()));
+    let resource_witness = crate::checked::first_rfc11_span(source_program)
+        .is_some()
+        .then(|| crate::emit_resource_witness(&checked));
+    let query_identity = if let Some(resource) = &resource_witness {
+        format!(
+            "thermite-verus-query-v1:{item}:sha256:{digest}:resource-sha256:{}",
+            resource.checked_resource_sha256
+        )
+    } else {
+        format!("thermite-verus-query-v1:{item}:sha256:{digest}")
+    };
     Ok(L3Artifact {
         source,
         item: item.to_string(),
         effect_row,
-        query_identity: format!("thermite-verus-query-v1:{item}:sha256:{digest}"),
+        query_identity,
         classifier_fragment: "thermite-verus-v1",
+        resource_witness,
     })
 }

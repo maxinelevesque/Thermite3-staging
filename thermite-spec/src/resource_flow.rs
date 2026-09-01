@@ -12,6 +12,45 @@ use crate::ResourceEnv;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceFlowReport {
     pub direct_forgets: BTreeMap<String, BTreeSet<RegionPath>>,
+    pub functions: BTreeMap<String, ResourceFunctionFlow>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ResourceFunctionFlow {
+    pub entry_live: Vec<String>,
+    pub returning_edges: Vec<ResourceReturningEdge>,
+    pub joins: Vec<ResourceJoinFact>,
+    pub loops: Vec<ResourceLoopFact>,
+    pub forgets: Vec<ResourceForgetFact>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceReturningEdge {
+    pub label: String,
+    pub live: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceJoinFact {
+    pub label: String,
+    pub incoming: Vec<Vec<String>>,
+    pub outgoing: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceLoopFact {
+    pub label: String,
+    pub header: Vec<String>,
+    pub back_edges: Vec<Vec<String>>,
+    pub exit_edges: Vec<Vec<String>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceForgetFact {
+    pub place: Option<String>,
+    pub value_regions: Vec<RegionPath>,
+    pub priced_regions: Vec<RegionPath>,
+    pub declared_regions: Vec<RegionPath>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,9 +129,13 @@ struct Checker<'a> {
     variants: BTreeMap<String, (String, VariantShape)>,
     errors: Vec<ResourceFlowError>,
     direct_forgets: BTreeMap<String, BTreeSet<RegionPath>>,
+    functions: BTreeMap<String, ResourceFunctionFlow>,
     function: String,
     function_span: Span,
     declared_effects: BTreeSet<Effect>,
+    return_index: usize,
+    join_index: usize,
+    loop_index: usize,
 }
 
 pub fn check_resource_flow(
@@ -155,9 +198,13 @@ pub fn check_resource_flow(
         variants,
         errors: Vec::new(),
         direct_forgets: BTreeMap::new(),
+        functions: BTreeMap::new(),
         function: String::new(),
         function_span: Span::new(0, 0),
         declared_effects: BTreeSet::new(),
+        return_index: 0,
+        join_index: 0,
+        loop_index: 0,
     };
     for item in &program.items {
         if let Item::Fn(function) = item {
@@ -167,6 +214,7 @@ pub fn check_resource_flow(
     if checker.errors.is_empty() {
         Ok(ResourceFlowReport {
             direct_forgets: checker.direct_forgets,
+            functions: checker.functions,
         })
     } else {
         Err(checker.errors)
@@ -178,6 +226,9 @@ impl Checker<'_> {
         let Some(body) = &function.body else { return };
         self.function.clone_from(&function.name);
         self.function_span = function.span;
+        self.return_index = 0;
+        self.join_index = 0;
+        self.loop_index = 0;
         self.declared_effects = match &function.contract.effects {
             EffectRow::Pure => BTreeSet::new(),
             EffectRow::Set(effects) => effects.iter().cloned().collect(),
@@ -192,6 +243,13 @@ impl Checker<'_> {
                 },
             );
         }
+        self.functions.insert(
+            function.name.clone(),
+            ResourceFunctionFlow {
+                entry_live: state.live_resources().into_iter().collect(),
+                ..ResourceFunctionFlow::default()
+            },
+        );
         let edges = self.check_block(body, state);
         for edge in edges {
             match edge.kind {
@@ -313,6 +371,28 @@ impl Checker<'_> {
                         *span,
                     );
                 } else {
+                    let declared_regions: Vec<RegionPath> = self
+                        .declared_effects
+                        .iter()
+                        .filter_map(|effect| match effect {
+                            Effect::Forgets(region) => Some(region.clone()),
+                            _ => None,
+                        })
+                        .collect();
+                    let priced_regions: Vec<RegionPath> = provenance
+                        .iter()
+                        .filter(|region| {
+                            self.declared_effects
+                                .contains(&Effect::Forgets((*region).clone()))
+                        })
+                        .cloned()
+                        .collect();
+                    self.current_flow_mut().forgets.push(ResourceForgetFact {
+                        place: expr_place(value),
+                        value_regions: provenance.iter().cloned().collect(),
+                        priced_regions,
+                        declared_regions,
+                    });
                     self.direct_forgets
                         .entry(self.function.clone())
                         .or_default()
@@ -361,10 +441,13 @@ impl Checker<'_> {
                 let header = state.live_resources();
                 let body_edges = self.check_scoped_block(&loop_.body, state.clone(), true);
                 let mut exits = Vec::new();
+                let mut back_edges = Vec::new();
+                let mut exit_edges = Vec::new();
                 for edge in body_edges {
                     match edge.kind {
                         EdgeKind::Return => exits.push(edge),
                         EdgeKind::Next | EdgeKind::Continue => {
+                            back_edges.push(edge.state.live_resources().into_iter().collect());
                             if edge.state.live_resources() != header {
                                 self.error(
                                     ResourceFlowErrorKind::LoopMismatch,
@@ -375,6 +458,7 @@ impl Checker<'_> {
                             }
                         }
                         EdgeKind::Break => {
+                            exit_edges.push(edge.state.live_resources().into_iter().collect());
                             if edge.state.live_resources() != header {
                                 self.error(
                                     ResourceFlowErrorKind::LoopMismatch,
@@ -392,11 +476,20 @@ impl Checker<'_> {
                     }
                 }
                 if matches!(loop_.kind, LoopKind::While(_)) || exits.is_empty() {
+                    exit_edges.push(header.iter().cloned().collect());
                     exits.push(Edge {
                         kind: EdgeKind::Next,
                         state,
                     });
                 }
+                let label = format!("loop#{}", self.loop_index);
+                self.loop_index += 1;
+                self.current_flow_mut().loops.push(ResourceLoopFact {
+                    label,
+                    header: header.into_iter().collect(),
+                    back_edges,
+                    exit_edges,
+                });
                 exits
             }
             Stmt::Holding { body, .. } => self.check_scoped_block(body, state, true),
@@ -487,6 +580,16 @@ impl Checker<'_> {
                         self.function_span,
                     );
                 }
+                let label = format!("join#{}:{kind:?}", self.join_index);
+                self.join_index += 1;
+                self.current_flow_mut().joins.push(ResourceJoinFact {
+                    label,
+                    incoming: matching
+                        .iter()
+                        .map(|edge| edge.state.live_resources().into_iter().collect())
+                        .collect(),
+                    outgoing: live.into_iter().collect(),
+                });
             }
             result.append(&mut matching);
         }
@@ -945,7 +1048,16 @@ impl Checker<'_> {
     }
 
     fn require_empty(&mut self, state: &State, edge: &str) {
-        for place in state.live_resources() {
+        let live = state.live_resources();
+        let label = format!("return#{}:{edge}", self.return_index);
+        self.return_index += 1;
+        self.current_flow_mut()
+            .returning_edges
+            .push(ResourceReturningEdge {
+                label,
+                live: live.iter().cloned().collect(),
+            });
+        for place in live {
             self.error(
                 ResourceFlowErrorKind::Unconsumed,
                 Some(place.clone()),
@@ -968,6 +1080,12 @@ impl Checker<'_> {
             detail,
             span,
         });
+    }
+
+    fn current_flow_mut(&mut self) -> &mut ResourceFunctionFlow {
+        self.functions
+            .get_mut(&self.function)
+            .expect("function flow is initialized before body traversal")
     }
 }
 

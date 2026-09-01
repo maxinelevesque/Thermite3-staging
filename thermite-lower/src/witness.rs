@@ -845,7 +845,7 @@ pub fn replay_witness(
     Ok(checked)
 }
 
-fn canonical_ast_sha256(program: &Program) -> String {
+pub(crate) fn canonical_ast_sha256(program: &Program) -> String {
     // Versioned by WITNESS_VERSION. Debug formatting is structural for these
     // repository-owned AST types and includes literal values, clauses, spans,
     // wrapper records, and source order; the digest binds the witness to that

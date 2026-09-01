@@ -1,33 +1,18 @@
 use std::process::Command;
-use thermite_lower::{check_program, lower, lower_l1, LowerError};
+use thermite_lower::{check_program, lower, lower_l1, lower_l3_artifact};
 use thermite_syntax::parse;
 
 #[test]
-fn l1_emits_explicit_abandonment_while_l3_remains_fail_closed() {
+fn l1_and_l3_emit_explicit_abandonment_with_a_bound_resource_witness() {
     let parsed = parse(
         "resource(heap) struct Grant { id: u64 }\n\
          fn discard(g: Grant) -> u64\n\
            ! forgets(heap)\n\
            requires true\n\
            ensures result == 0\n\
-         { forget(g); 0 }\n\
-         fn main() -> ()\n\
-           ! forgets(heap)\n\
-           requires true\n\
-           ensures true\n\
-         { let g: Grant = Grant { id: 1 }; discard(g); return; }",
+         { forget(g); 0 }",
     );
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
-
-    let assert_resource_refusal = |error: &LowerError| match error {
-        LowerError::Unsupported { what, .. } => {
-            assert!(
-                what.contains("ownership flow"),
-                "unexpected refusal: {what}"
-            )
-        }
-        other => panic!("unexpected refusal: {other:?}"),
-    };
 
     let checked = check_program(&parsed.program).expect("resource flow must check");
     assert_eq!(checked.resource_flow().direct_forgets["discard"].len(), 1);
@@ -41,7 +26,9 @@ fn l1_emits_explicit_abandonment_while_l3_remains_fail_closed() {
     std::fs::create_dir_all(&fixture).unwrap();
     let source = fixture.join("resource.rs");
     let binary = fixture.join("resource-bin");
-    std::fs::write(&source, &l1).unwrap();
+    let runnable =
+        format!("{l1}\nfn main() {{ let g = Grant {{ id: 1 }}; assert_eq!(discard(g), 0); }}\n");
+    std::fs::write(&source, runnable).unwrap();
     let output = Command::new("rustc")
         .arg("--edition=2021")
         .arg(&source)
@@ -55,6 +42,38 @@ fn l1_emits_explicit_abandonment_while_l3_remains_fail_closed() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(Command::new(&binary).status().unwrap().success());
+    let l3 = lower(&parsed.program).expect("L3 resource lowering is flow-witness gated");
+    assert!(
+        l3.contains("let _ = g; // RFC-11 checked forget"),
+        "explicit L3 forget sink absent: {l3}"
+    );
+    let verus_source = fixture.join("resource_verus.rs");
+    std::fs::write(&verus_source, &l3).unwrap();
+    if let Ok(verus) = Command::new("which").arg("verus").output() {
+        if verus.status.success() {
+            let binary = String::from_utf8_lossy(&verus.stdout).trim().to_string();
+            let output = Command::new(binary)
+                .arg(&verus_source)
+                .current_dir(&fixture)
+                .output()
+                .unwrap();
+            let combined = format!(
+                "{}{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+            assert!(
+                output.status.success() && combined.contains("verified, 0 errors"),
+                "Verus rejected RFC-11 L3:\n{combined}\n{l3}"
+            );
+        }
+    }
+    let artifact = lower_l3_artifact(&parsed.program, "discard").unwrap();
+    let witness = artifact
+        .resource_witness()
+        .expect("resource L3 artifact must bind its flow witness");
+    assert!(artifact
+        .query_identity()
+        .contains(&witness.checked_resource_sha256));
     std::fs::remove_dir_all(fixture).unwrap();
-    assert_resource_refusal(&lower(&parsed.program).unwrap_err());
 }
