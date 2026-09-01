@@ -1,0 +1,1 @@
+{"version":1,"probe":"thermite-lower-core","cases":[{"id":"veruserr-fail-closed","expected_exit":0}]}

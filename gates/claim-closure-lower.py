@@ -1721,6 +1721,28 @@ CASES = {
     "non-scalar-equivalence-unsupported": integration(
         "equivalence_obligation", "non_scalar_return_is_unsupported"
     ),
+    "tv-exec-ref-encoder": integration("claim_closure_wave19", "tv_exec_reference_encoder_is_independent_bounded_and_fail_closed"),
+    "tv-exec-obligation": integration("claim_closure_wave19", "tv_exec_obligation_wraps_production_in_an_exec_fn_equivalence_contract"),
+    "tv-exec-generator": integration("claim_closure_wave19", "tv_exec_generator_is_deterministic_typed_bounded_and_well_framed"),
+    "tv-exec-teeth": integration("claim_closure_wave19", "tv_exec_teeth_accept_faithful_and_catch_four_infidelity_classes"),
+    "tv-exec-forge-plugin": integration("claim_closure_wave19", "tv_exec_forge_plugin_joins_lowering_reference_discharge_and_total_verdicts"),
+    "tv-loop-stmt-subset": integration("claim_closure_wave19", "tv_loop_subset_recognizer_is_single_while_and_fail_closed"),
+    "tv-loop-reference-pieces": integration("claim_closure_wave19", "tv_loop_reference_computes_entry_preservation_and_exit_pieces"),
+    "tv-loop-obligations": integration("claim_closure_wave19", "tv_loop_obligation_emitters_cover_entry_preservation_and_exit"),
+    "verified-self-verification-architecture": integration("claim_closure_wave19", "verified_self_verification_architecture_binds_verus_core_to_rust_mirrors"),
+    "verified-tier1-coverage": integration("claim_closure_wave19", "verified_tier1_coverage_has_finite_targets_and_production_anchors"),
+    "verified-tier-boundaries": integration("claim_closure_wave19", "verified_tier_boundaries_exclude_io_and_external_body_from_the_core"),
+    "verified-honesty": integration("claim_closure_wave19", "verified_honesty_runs_no_cheating_and_has_mutation_teeth"),
+    "verified-subsumes": integration("claim_closure_wave19", "verified_effect_subsumption_is_proved_and_exhaustively_anchored"),
+    "verified-ci-gauntlet": integration("claim_closure_wave19", "verified_ci_gauntlet_invokes_the_real_verus_driver_and_requires_zero_errors"),
+    "verified-degrade-anticheat": integration("claim_closure_wave19", "verified_degrade_anti_cheat_maps_counterexamples_to_hard_failure"),
+    "verified-sandbox-allowlist": integration("claim_closure_wave19", "verified_sandbox_allowlist_is_bounded_deny_by_default_and_anchored"),
+    "verified-boundary-honesty": integration("claim_closure_wave19", "verified_boundary_honesty_never_launders_regular_functions"),
+    "verified-aggregate-level": integration("claim_closure_wave19", "verified_aggregate_level_is_the_attained_project_minimum"),
+    "verified-mutation-floor": integration("claim_closure_wave19", "verified_mutation_floor_rejects_zero_scored_and_matches_production"),
+    "veruserr-structured-optional": integration("claim_closure_wave19", "verus_error_count_is_structured_optional_and_never_synthesized"),
+    "veruserr-honest-diagnostic": integration("claim_closure_wave19", "verus_failure_diagnostics_claim_only_known_numeric_counts"),
+    "veruserr-fail-closed": integration("claim_closure_wave19", "verus_unknown_counts_fail_closed_for_compile_publication_and_replay"),
 }
 
 
