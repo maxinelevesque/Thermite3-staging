@@ -18502,7 +18502,7 @@ generated_to = ["status"]
 [[requirement.evidence]]
 kind = "file"
 target = "gates/completeness-review.toml"
-note = "durable backlog item CR-001 links the open semantic evidence-closure gap to issue 48"
+note = "durable closed backlog item CR-001 records the resolved semantic evidence-closure gap and issue 48"
 [[requirement.evidence]]
 kind = "file"
 target = "gates/completeness-review.py"

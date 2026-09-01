@@ -343,6 +343,8 @@ counterexample = "A shipped registry row citing an existing file whose contents 
 claimed = "Shipped requirement evidence identifies implemented behavior."
 observed = "Registry links are checked structurally, not as a proof that each prose claim follows from its evidence."
 trust_consequence = "A present evidence path can be mistaken for semantic entailment."
+issue = "https://github.com/maxinelevesque/Thermite3-staging/issues/48"
+review_item = "CR-001"
 evidence = ["gates/completeness-review.py", "gates/claim-closure-author.py"]
 resolution_evidence = ["gates/claim-closure-meta.py", "gates/claim-closure-oracles/self-governance.json", "gates/tests/test_claim_closure_author.py", "gates/tests/test_completeness_review.py"]
 
