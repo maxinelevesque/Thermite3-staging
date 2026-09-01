@@ -144,6 +144,27 @@ pub fn check_resource_flow(
     program: &Program,
     resources: &ResourceEnv,
 ) -> Result<ResourceFlowReport, Vec<ResourceFlowError>> {
+    // Keep RFC-11 out of the hot path for programs that cannot participate in
+    // resource flow. In particular, do not recursively traverse arbitrarily
+    // deep ordinary expressions before the lowerer's work-budget guard gets a
+    // chance to reject them. A lexical `forget` remains relevant even without
+    // resource declarations because it must fail as NonResourceForget.
+    if resources.is_resource_free() && !program_contains_forget(program) {
+        return Ok(ResourceFlowReport {
+            direct_forgets: BTreeMap::new(),
+            functions: program
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    Item::Fn(function) => {
+                        Some((function.name.clone(), ResourceFunctionFlow::default()))
+                    }
+                    _ => None,
+                })
+                .collect(),
+        });
+    }
+
     let signatures = program
         .items
         .iter()
@@ -222,6 +243,40 @@ pub fn check_resource_flow(
     } else {
         Err(checker.errors)
     }
+}
+
+fn program_contains_forget(program: &Program) -> bool {
+    let mut pending: Vec<&Block> = program
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Fn(function) => function.body.as_ref(),
+            _ => None,
+        })
+        .collect();
+
+    while let Some(block) = pending.pop() {
+        for stmt in &block.stmts {
+            match stmt {
+                Stmt::Forget { .. } => return true,
+                Stmt::If { then, else_, .. } => {
+                    pending.push(then);
+                    if let Some(else_) = else_ {
+                        pending.push(else_);
+                    }
+                }
+                Stmt::Loop(loop_) => pending.push(&loop_.body),
+                Stmt::Holding { body, .. } => pending.push(body),
+                Stmt::Let { .. }
+                | Stmt::Assign { .. }
+                | Stmt::Return(_)
+                | Stmt::Break
+                | Stmt::Continue
+                | Stmt::Expr(_) => {}
+            }
+        }
+    }
+    false
 }
 
 impl Checker<'_> {

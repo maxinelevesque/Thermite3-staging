@@ -2,7 +2,7 @@
 
 <!--
 status: approved
-audited-content-sha256: 6f25e8458bf72c488c498fcd4c1418b7db8f695f3df9542b55ab843c5dd1a8a8 (re-pinned 2026-09-01 after full-gauntlet integration preserved ordinary RFC-10 assignment while keeping resource assignment fail-closed. prior: bc2f66e9776b1fe50b316cbaa0afb2a746edd293678e671d6cd75c05b61131c5)
+audited-content-sha256: d149aebae66c9a63cf30236196cb9759bf5c0da6f7ad984f48ab4f08912c8a3b (re-pinned 2026-09-01 after bounding RFC-11 analysis away from resource-free programs while preserving fail-closed `forget` diagnostics. prior: 6f25e8458bf72c488c498fcd4c1418b7db8f695f3df9542b55ab843c5dd1a8a8)
 -->
 
 ## Summary

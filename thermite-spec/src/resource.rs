@@ -124,6 +124,11 @@ impl ResourceEnv {
     pub fn direct_declared(&self, name: &str) -> Option<&BTreeSet<RegionPath>> {
         self.direct.get(name)
     }
+
+    /// Whether any declared type carries owned resource provenance.
+    pub fn is_resource_free(&self) -> bool {
+        self.declared.values().all(BTreeSet::is_empty)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
