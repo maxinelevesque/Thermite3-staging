@@ -98,10 +98,19 @@ evidence = ["evidence.rs"]
 
     def test_open_gap_requires_disposition_specific_evidence(self):
         text = (self.ROOT / MODULE.INVENTORY).read_text(encoding="utf-8")
-        text = text.replace(
-            'disposition = "completeness_review"\nissue = "https://github.com/maxinelevesque/Thermite3-staging/issues/48"',
-            'disposition = "completeness_review"',
-        )
+        text += '''
+
+[[gap]]
+id = "GAP-MISSING-REVIEW-ISSUE-FIXTURE"
+status = "open"
+stages = ["certification"]
+counterexample = "A fixture semantic counterexample."
+claimed = "A fixture claim."
+observed = "A fixture observation."
+trust_consequence = "A fixture trust consequence."
+disposition = "completeness_review"
+evidence = []
+'''
         with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as handle:
             handle.write(text)
             path = Path(handle.name)

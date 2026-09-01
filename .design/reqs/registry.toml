@@ -18555,81 +18555,71 @@ note = "authority_and_presentation_digests_have_disjoint_mutation_domains pins d
 id = "REQ-COMPLETE-TYPED-CLAIM-AUTHORITY"
 title = "Typed requirement claims are closure authority"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "process"
 summary = "Every shipped requirement has a normalized typed claim; prose summaries remain non-authoritative presentation whose reviewed correspondence can drift visibly without rewriting the claim."
-remaining_scope = "Complete the schema-v2 registry migration and pass AC-16; tracked by issue #48."
-blockers = ["github:maxinelevesque/Thermite3-staging#48"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-15 and AC-16 define the typed authority and presentation-drift boundary"
+kind = "test"
+target = "gates/tests/test_req_registry.py"
+note = "typed-claim fixtures reject missing and malformed claims while proving summary-only drift leaves the authoritative claim digest unchanged"
 
 [[requirement]]
 id = "REQ-COMPLETE-CLAIM-CLOSURE-POPULATION"
 title = "Claim closure covers the exact shipped population"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "process"
 summary = "The frozen 566-ID baseline and every later shipped requirement have exactly one valid semantic closure, with no grandfathering, omission, duplicate, substitution, or unclosed addition."
-remaining_scope = "Migrate the complete baseline and live shipped set, then pass AC-17; tracked by issue #48."
-blockers = ["github:maxinelevesque/Thermite3-staging#48"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-16 and AC-17 define exact baseline and live-population closure"
+kind = "test"
+target = "gates/tests/test_claim_closure_author.py"
+note = "the activation fixture includes live shipped additions, refuses partial staging, and round-trips the complete population through schema v2"
 
 [[requirement]]
 id = "REQ-COMPLETE-CLOSED-WITNESS-MECHANISMS"
 title = "Semantic closure uses one of three checked mechanisms"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "tooling"
 summary = "A closure is either a bound Lean theorem and axiom profile, one deterministic verifier separating an oracle from a derived counterfeit, or an exact artifact population observed by a hostile-mutation-tested extractor."
-remaining_scope = "Finish the three fail-closed kernels and the corpus migration, then pass AC-18; tracked by issue #48."
-blockers = ["github:maxinelevesque/Thermite3-staging#48"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-17 and AC-18 define the closed witness vocabulary and hostile probes"
+kind = "test"
+target = "gates/tests/test_completeness_review.py"
+note = "formal, executable, and exact-population fixtures exercise the closed mechanisms and reject weakened semantic evidence"
 
 [[requirement]]
 id = "REQ-COMPLETE-SHARED-WITNESS-DISCRIMINATION"
 title = "Shared witnesses retain per-claim discrimination"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "tooling"
 summary = "A shared witness declares its exact requirement-ID membership and yields a distinct, content-derived observation for every member rather than accepting umbrella coverage."
-remaining_scope = "Bind witness identity, exact membership, and per-claim observed discriminators across the full migration, then pass AC-19; tracked by issue #48."
-blockers = ["github:maxinelevesque/Thermite3-staging#48"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-18 and AC-19 define exact shared-witness membership and attribution"
+kind = "test"
+target = "gates/tests/test_completeness_review.py"
+note = "shared-witness fixtures reject inexact membership and the live gate requires a distinct content-derived discriminator for every member"
 
 [[requirement]]
 id = "REQ-COMPLETE-CONTENT-BOUND-RECEIPTS"
 title = "Closure receipts invalidate every bound-input drift"
 owner = ".design/versioned-language-completeness.md"
-status = "not_started"
+status = "shipped"
 scope = "tooling"
 summary = "Reproducible receipts bind the typed claim, observed result, artifacts, verifier implementation and tool version, witness population, and mechanism inputs by content digest."
-remaining_scope = "Generate and reproduce receipts for the full migration, then pass AC-20; tracked by issue #48."
-blockers = ["github:maxinelevesque/Thermite3-staging#48"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/versioned-language-completeness.md"
-note = "REQ-19 and AC-20 define canonical receipt binding and stale-input rejection"
+kind = "test"
+target = "gates/tests/test_claim_closure_author.py"
+note = "the checked author computes deterministic receipts and the authoritative replay rejects stale receipt inputs"
 
 [[requirement]]
 id = "REQ-SYNTAX-RESOURCE-MODIFIER"

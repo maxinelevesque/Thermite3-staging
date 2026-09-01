@@ -68,6 +68,7 @@ status = "not_started"
         summary = "The closed modes are alpha and beta."
         (self.root / MODULE.REGISTRY).write_text(
             f'''
+# A comment preamble is part of the live registry format.
 schema_version = 1
 [[requirement]]
 id = "REQ-A"
@@ -157,13 +158,29 @@ summary = "A live shipped addition uses the same closed modes."
         self.assertEqual(problems, [])
         self.assertEqual(len(authored), 2)
         self.assertRegex(authored[0]["closure"]["receipt"], r"^[0-9a-f]{64}$")
-        MODULE.materialize(self.root, authored)
+        registry_sha = hashlib.sha256(
+            (self.root / MODULE.REGISTRY).read_bytes()
+        ).hexdigest()
+        (self.root / MODULE.INVENTORY).write_text(
+            "version = 1\n"
+            "[[claim]]\n"
+            'id = "CLAIM-REGISTRY-SHIPPED-EVIDENCE"\n'
+            f'source = "{MODULE.REGISTRY}"\n'
+            f'source_sha256 = "{registry_sha}"\n',
+            encoding="utf-8",
+        )
+        self.assertEqual(MODULE.coordinated_materialize(self.root), 2)
         registry = tomllib.loads((self.root / MODULE.REGISTRY).read_text())
         ledger = tomllib.loads((self.root / MODULE.LEDGER).read_text())
+        inventory = tomllib.loads((self.root / MODULE.INVENTORY).read_text())
         self.assertEqual(registry["schema_version"], 2)
         self.assertEqual(registry["requirement"][0]["claim"]["expected"], ["alpha", "beta"])
         self.assertEqual(ledger["version"], 2)
         self.assertEqual(ledger["witness"][0]["members"], ["REQ-A", "REQ-LIVE"])
+        self.assertEqual(
+            inventory["claim"][0]["source_sha256"],
+            hashlib.sha256((self.root / MODULE.REGISTRY).read_bytes()).hexdigest(),
+        )
 
     def test_executable_draft_round_trips_through_authoritative_gate(self):
         MODULE.BASELINE_SIZE = 1

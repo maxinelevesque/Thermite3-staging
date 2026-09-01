@@ -548,7 +548,12 @@ def check(
     witness_discriminators: dict[str, set[str]] = {}
     global_discriminators: dict[str, str] = {}
     witness_identity_owners: dict[str, str] = {}
-    verifier_cache: dict[tuple[str, ...], tuple[int, str]] = {}
+    verifier_cache: dict[
+        tuple[str, ...], tuple[tuple[int, str], tuple[int, str]]
+    ] = {}
+    counterfeit_cache: dict[
+        tuple[object, ...], tuple[tuple[int, str], tuple[int, str]]
+    ] = {}
 
     for closure in raw_closures:
         if not isinstance(closure, dict):
@@ -720,12 +725,15 @@ def check(
                     f"{req_id}: executable requirement owner must be content-bound"
                 )
             key = (*argv, str(oracle))
-            result = verifier_cache.get(key)
-            if result is None:
-                result = run_bound_verifier(root, argv, oracle)
-                verifier_cache[key] = result
+            pair = verifier_cache.get(key)
+            if pair is None:
+                pair = (
+                    run_bound_verifier(root, argv, oracle),
+                    run_bound_verifier(root, argv, oracle),
+                )
+                verifier_cache[key] = pair
+            result, repeated = pair
             returncode, observation_digest = result
-            repeated = run_bound_verifier(root, argv, oracle)
             if repeated != result:
                 problems.append(f"{req_id}: positive verifier is not deterministic")
             observed = ["accepted"] if returncode == 0 else [f"exit:{returncode}"]
@@ -768,12 +776,19 @@ def check(
                     ):
                         problems.append(f"{req_id}/{name}: counterfeit must expect rejection")
                         continue
-                    first_counterfeit = run_mutated_verifier(
-                        root, argv, oracle, counterfeit
+                    counterfeit_key = (
+                        *argv,
+                        str(oracle),
+                        canonical_json(counterfeit),
                     )
-                    repeated_counterfeit = run_mutated_verifier(
-                        root, argv, oracle, counterfeit
-                    )
+                    counterfeit_pair = counterfeit_cache.get(counterfeit_key)
+                    if counterfeit_pair is None:
+                        counterfeit_pair = (
+                            run_mutated_verifier(root, argv, oracle, counterfeit),
+                            run_mutated_verifier(root, argv, oracle, counterfeit),
+                        )
+                        counterfeit_cache[counterfeit_key] = counterfeit_pair
+                    first_counterfeit, repeated_counterfeit = counterfeit_pair
                     ccode, _ = first_counterfeit
                     if ccode != expected_exit:
                         problems.append(
