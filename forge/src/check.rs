@@ -1596,13 +1596,12 @@ fn run_rfc11_lean_replay(
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
-    let accepted = combined.lines().any(|line| line.trim() == ACCEPTANCE_TOKEN);
-    let axiom_report = combined.contains("rfc11_resource_flow_verified");
-    let forbidden_axiom = combined.contains("sorryAx");
-    if !output.status.success() || !accepted || !axiom_report || forbidden_axiom {
+    let (accepted, axiom_free, forbidden_axiom) =
+        rfc11_replay_output_evidence(&combined, ACCEPTANCE_TOKEN);
+    if !output.status.success() || !accepted || !axiom_free || forbidden_axiom {
         return Err(ForgeError::Rfc11ReplayRejected {
             detail: format!(
-                "exit={:?}, acceptance_token={accepted}, axiom_report={axiom_report}, \
+                "exit={:?}, acceptance_token={accepted}, axiom_free={axiom_free}, \
                  forbidden_sorryAx={forbidden_axiom}: {}",
                 output.status.code(),
                 combined.chars().take(1200).collect::<String>()
@@ -1643,6 +1642,14 @@ fn run_rfc11_lean_replay(
             ResourceResidualTrust::ExecutableTargetBehavior,
         ],
     })
+}
+
+fn rfc11_replay_output_evidence(combined: &str, token: &str) -> (bool, bool, bool) {
+    let accepted = combined.lines().any(|line| line.trim() == token);
+    let axiom_free = combined.contains("rfc11_resource_flow_verified")
+        && combined.contains("does not depend on any axioms");
+    let forbidden_axiom = combined.contains("sorryAx");
+    (accepted, axiom_free, forbidden_axiom)
 }
 
 fn attach_resource_evidence(
@@ -9414,6 +9421,33 @@ fn discard(b: Bundle) -> u64
         );
         assert_eq!(
             rfc10_replay_output_evidence(&(clean + "sorryAx\n"), token),
+            (true, true, true)
+        );
+    }
+
+    #[test]
+    fn rfc11_replay_requires_an_explicit_axiom_free_report() {
+        let token = "THERMITE_RFC11_RESOURCE_REPLAY_ACCEPTED_V1";
+        assert_eq!(
+            rfc11_replay_output_evidence(token, token),
+            (true, false, false),
+            "an acceptance token alone cannot mint formal replay evidence"
+        );
+        let named_but_axiomatized = format!(
+            "'rfc11_resource_flow_verified' depends on axioms: [Classical.choice]\n{token}\n"
+        );
+        assert_eq!(
+            rfc11_replay_output_evidence(&named_but_axiomatized, token),
+            (true, false, false)
+        );
+        let clean =
+            format!("'rfc11_resource_flow_verified' does not depend on any axioms\n{token}\n");
+        assert_eq!(
+            rfc11_replay_output_evidence(&clean, token),
+            (true, true, false)
+        );
+        assert_eq!(
+            rfc11_replay_output_evidence(&(clean + "sorryAx\n"), token),
             (true, true, true)
         );
     }

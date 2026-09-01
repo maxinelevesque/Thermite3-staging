@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: a3050b893a0c995cf5c4fbe6630915e332cf9014fab019227771ce17118b7391 (re-pinned 2026-08-30 for the executable strengthening-renderer fallback witness; Option/Result behavior is unchanged. prior: 2b4044a61adc502ec61c1ad7965ec78578756af702f37a62478075499d0fb1fb)
+audited-content-sha256: 5b388ba2f474fbae61c48245ea2a18b4f923fab210ca72ee6c39aabcebadd1d2 (re-pinned 2026-09-01 for the RFC-11 axiom-free replay gate; Option/Result behavior is unchanged. prior: a3050b893a0c995cf5c4fbe6630915e332cf9014fab019227771ce17118b7391)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

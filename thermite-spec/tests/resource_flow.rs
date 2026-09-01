@@ -139,6 +139,25 @@ fn early_returns_and_loop_edges_are_checked_independently() {
 }
 
 #[test]
+fn a_declared_diverging_loop_has_no_resource_post_obligation() {
+    validate_source(&format!(
+        "{GRANT}fn spin(g: Grant) -> u64 ! diverge requires true ensures result == 0 \
+         {{ loop keeps true measures 1 {{ continue; }} }}"
+    ))
+    .expect("a bare loop with no break has no returning resource edge");
+
+    let returning_edge = validate_source(&format!(
+        "{GRANT}fn maybe_spin(g: Grant, c: bool) -> u64 ! diverge requires true ensures result == 0 \
+         {{ loop keeps true measures 1 {{ if c {{ break; }} continue; }} 0 }}"
+    ))
+    .unwrap_err();
+    assert!(
+        has(&returning_edge, ResourceFlowErrorKind::Unconsumed),
+        "a reachable break remains an ordinary checked returning edge"
+    );
+}
+
+#[test]
 fn destructuring_replaces_containers_with_component_obligations() {
     validate_source(&format!(
         "{GRANT}\

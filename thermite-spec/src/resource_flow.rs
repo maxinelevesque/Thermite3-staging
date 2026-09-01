@@ -482,7 +482,13 @@ impl Checker<'_> {
                         }
                     }
                 }
-                if matches!(loop_.kind, LoopKind::While(_)) || exits.is_empty() {
+                // A `while` may execute zero times, so its entry state always
+                // contributes an ordinary fallthrough edge. A bare `loop`
+                // has no such edge: without a reachable `break`, its back-edge
+                // is a declared non-returning path and carries no resource
+                // post-obligation (resource-types REQ-11). Returns collected
+                // above remain checked returning edges.
+                if matches!(loop_.kind, LoopKind::While(_)) {
                     exit_edges.push(header.iter().cloned().collect());
                     exits.push(Edge {
                         kind: EdgeKind::Next,

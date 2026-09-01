@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 44f38d97813ce222719aef893f9a01233d10d7c882b30e9385da2eeb2f43a954 (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; boundary composition is unchanged. prior: c407501248f0dbdd49b429993f4f3061475e012ba42e62817dfebe4773cbf291)
+audited-content-sha256: 4623be1dc16357f20ee30fd741c1092186ee5ad1123933580e7673ce86151d08 (re-pinned 2026-09-01 for the RFC-11 axiom-free replay gate; boundary composition is unchanged. prior: 44f38d97813ce222719aef893f9a01233d10d7c882b30e9385da2eeb2f43a954)
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9

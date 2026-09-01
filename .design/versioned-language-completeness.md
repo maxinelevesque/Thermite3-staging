@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: e2777414c66141eb4b260259399306cddee071bb24411f2be310fbbf611481e2 (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; language completeness is unchanged. prior: 1529bc2337bb425ca063dea3e97d182e7ed0c38f4a0ed3ceb2d9de33f99975f0)
+audited-content-sha256: 3433a1ce3b06414a1c0f12b43e8f76c95befc413a4ebab7d87d9315dfe071041 (re-pinned 2026-09-01 for the RFC-11 axiom-free replay gate; language completeness is unchanged. prior: e2777414c66141eb4b260259399306cddee071bb24411f2be310fbbf611481e2)
 
 ## Summary
 
