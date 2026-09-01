@@ -176,15 +176,6 @@ pub fn check_resource_flow(
 impl Checker<'_> {
     fn check_function(&mut self, function: &FnItem) {
         let Some(body) = &function.body else { return };
-        let touches_resources = function
-            .params
-            .iter()
-            .any(|param| self.is_resource(&param.ty))
-            || self.is_resource(&function.ret)
-            || block_contains_forget(body);
-        if !touches_resources {
-            return;
-        }
         self.function.clone_from(&function.name);
         self.function_span = function.span;
         self.declared_effects = match &function.contract.effects {
@@ -992,18 +983,6 @@ fn expr_place(expr: &Expr) -> Option<String> {
         Expr::Path(path) if path.len() == 1 => Some(path[0].clone()),
         _ => None,
     }
-}
-
-fn block_contains_forget(block: &Block) -> bool {
-    block.stmts.iter().any(|stmt| match stmt {
-        Stmt::Forget { .. } => true,
-        Stmt::If { then, else_, .. } => {
-            block_contains_forget(then) || else_.as_ref().is_some_and(block_contains_forget)
-        }
-        Stmt::Loop(loop_) => block_contains_forget(&loop_.body),
-        Stmt::Holding { body, .. } => block_contains_forget(body),
-        _ => false,
-    })
 }
 
 fn index_exprs(index: &thermite_syntax::IndexArg) -> Vec<&Expr> {

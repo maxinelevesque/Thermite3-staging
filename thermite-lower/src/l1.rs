@@ -195,7 +195,6 @@ impl L1Artifact {
 pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, LowerError> {
     let checked = crate::checked::require_checked(program)?;
     let source_program = checked.source();
-    reject_resource_lowering(source_program)?;
     let function = source_program
         .items
         .iter()
@@ -282,7 +281,6 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
 pub fn lower_l1(program: &Program) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
     let program = checked.source();
-    reject_resource_lowering(program)?;
     if crate::program_uses_holding(program) {
         return Err(LowerError::Unsupported {
             what: "executable `holding` requires an explicit target lock provider".to_string(),
@@ -297,21 +295,8 @@ pub fn lower_l1_with_lock_provider(
     provider: &crate::LockProvider,
 ) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
-    reject_resource_lowering(checked.source())?;
     provider.validate()?;
     lower_l1_inner(checked.source(), Some(provider))
-}
-
-fn reject_resource_lowering(program: &Program) -> Result<(), LowerError> {
-    if let Some(span) = crate::checked::first_rfc11_span(program) {
-        return Err(LowerError::Unsupported {
-            what:
-                "RFC-11 ownership flow is checked, but explicit L1 resource lowering has not landed"
-                    .to_string(),
-            span,
-        });
-    }
-    Ok(())
 }
 
 fn lower_l1_inner(
@@ -1830,10 +1815,10 @@ fn lower_stmt_l1_with_provider(
             )?;
             Ok(format!("{pad}{{\n{pad}    {acquire}();\n{pad}    let __thermite_lock_guard = __ThermiteLockGuard {{ close: {close}, release: {release} }};\n{pad}    let __thermite_holding_result = {{\n{inner}{pad}    }};\n{pad}    drop(__thermite_lock_guard);\n{pad}    __thermite_holding_result\n{pad}}}\n"))
         }
-        Stmt::Forget { span, .. } => Err(LowerError::Unsupported {
-            what: "RFC-11 `forget` reached L1 before resource semantics validation".to_string(),
-            span: *span,
-        }),
+        Stmt::Forget { value, .. } => {
+            let value = lower_expr_exec(value, 0, zero_span(), variants)?;
+            Ok(format!("{pad}drop({value});\n"))
+        }
     }
 }
 
