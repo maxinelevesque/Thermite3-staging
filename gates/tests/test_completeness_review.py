@@ -329,6 +329,24 @@ class ReviewTrackTests(unittest.TestCase):
         self.write(self.open_gap(), self.open_item(), stale_receipt=True)
         self.assertTrue(any("receipt is missing or stale" in e for e in MODULE.check(self.root)))
 
+    def test_markdown_audit_pin_is_not_semantic_evidence(self):
+        path = self.root / "design.md"
+        path.write_text(
+            "audited-content-sha256: " + "1" * 64 + " (first pin)\nBody.\n",
+            encoding="utf-8",
+        )
+        first = MODULE.artifact_digest(self.root, "design.md")
+        path.write_text(
+            "audited-content-sha256: " + "2" * 64 + " (refreshed pin)\nBody.\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(first, MODULE.artifact_digest(self.root, "design.md"))
+        path.write_text(
+            "audited-content-sha256: " + "2" * 64 + " (refreshed pin)\nChanged.\n",
+            encoding="utf-8",
+        )
+        self.assertNotEqual(first, MODULE.artifact_digest(self.root, "design.md"))
+
     def test_executable_discriminator_runs_same_verifier_on_mutated_oracle(self):
         self.write_executable()
         self.assertEqual(MODULE.check(self.root), [])

@@ -182,6 +182,12 @@ summary = "A live shipped addition uses the same closed modes."
             hashlib.sha256((self.root / MODULE.REGISTRY).read_bytes()).hexdigest(),
         )
 
+        self.assertEqual(MODULE.coordinated_materialize(self.root), 2)
+        refreshed_registry = tomllib.loads((self.root / MODULE.REGISTRY).read_text())
+        refreshed_ledger = tomllib.loads((self.root / MODULE.LEDGER).read_text())
+        self.assertEqual(refreshed_registry["schema_version"], 2)
+        self.assertEqual(len(refreshed_ledger["closure"]), 2)
+
     def test_executable_draft_round_trips_through_authoritative_gate(self):
         MODULE.BASELINE_SIZE = 1
         MODULE.REVIEW.BASELINE_SHIPPED_COUNT = 1

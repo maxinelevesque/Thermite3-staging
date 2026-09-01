@@ -41,6 +41,9 @@ EXACT_POPULATION_MUTATIONS = {
     "substitution",
 }
 BASELINE_SHIPPED_COUNT = 566
+AUDIT_PIN_LINE = re.compile(
+    rb"(?m)^audited-(?:content-sha256|sha):[^\r\n]*(?:\r?\n|$)"
+)
 
 
 def resolves_evidence(root: Path, reference: object) -> bool:
@@ -71,7 +74,13 @@ def artifact_digest(root: Path, reference: object) -> tuple[str, str] | None:
         return None
     if not path.is_file():
         return None
-    return reference, hashlib.sha256(path.read_bytes()).hexdigest()
+    content = path.read_bytes()
+    if path.suffix == ".md":
+        # Audit pins are generated freshness metadata, not semantic evidence.
+        # Excluding their complete header lines prevents a closure ledger from
+        # becoming self-referential through a routed document's content pin.
+        content = AUDIT_PIN_LINE.sub(b"", content)
+    return reference, hashlib.sha256(content).hexdigest()
 
 
 def gate_version(root: Path) -> str | None:

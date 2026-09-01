@@ -501,15 +501,16 @@ def render_registry_activation(root: Path, authored: list[dict]) -> str:
 
     registry_path = root / REGISTRY
     registry_text = registry_path.read_text(encoding="utf-8")
-    registry_text, version_count = re.subn(
-        r"^schema_version = 1$",
-        "schema_version = 2",
-        registry_text,
-        count=1,
-        flags=re.MULTILINE,
-    )
-    if version_count != 1:
-        raise ValueError("registry must be schema version 1 before activation")
+    if re.search(r"^schema_version = 1$", registry_text, re.MULTILINE):
+        registry_text = re.sub(
+            r"^schema_version = 1$",
+            "schema_version = 2",
+            registry_text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    elif not re.search(r"^schema_version = 2$", registry_text, re.MULTILINE):
+        raise ValueError("registry must be schema version 1 or 2")
     parts = re.split(r"(?=^\[\[requirement\]\]$)", registry_text, flags=re.MULTILINE)
     rendered_parts = [parts[0]]
     for block in parts[1:]:
@@ -519,15 +520,24 @@ def render_registry_activation(root: Path, authored: list[dict]) -> str:
             continue
         claim = by_id[match.group(1)]["claim"]
         claim_line = "claim = " + toml_value(claim)
-        block, count = re.subn(
-            r'(^summary = .*?$)',
-            lambda summary: summary.group(1) + "\n" + claim_line,
-            block,
-            count=1,
-            flags=re.MULTILINE,
-        )
-        if count != 1:
-            raise ValueError(f"unable to place claim for {match.group(1)}")
+        if re.search(r"^claim = .*?$", block, re.MULTILINE):
+            block = re.sub(
+                r"^claim = .*?$",
+                lambda _match: claim_line,
+                block,
+                count=1,
+                flags=re.MULTILINE,
+            )
+        else:
+            block, count = re.subn(
+                r'(^summary = .*?$)',
+                lambda summary: summary.group(1) + "\n" + claim_line,
+                block,
+                count=1,
+                flags=re.MULTILINE,
+            )
+            if count != 1:
+                raise ValueError(f"unable to place claim for {match.group(1)}")
         rendered_parts.append(block)
     return "".join(rendered_parts)
 
@@ -570,9 +580,15 @@ def render_ledger_activation(
 
     ledger_path = root / LEDGER
     ledger_text = ledger_path.read_text(encoding="utf-8")
-    if not ledger_text.startswith("version = 1\n"):
-        raise ValueError("ledger must be version 1 before activation")
-    ledger_text = ledger_text.replace("version = 1", "version = 2", 1).rstrip() + "\n\n"
+    if ledger_text.startswith("version = 1\n"):
+        ledger_text = ledger_text.replace("version = 1", "version = 2", 1)
+    elif ledger_text.startswith("version = 2\n"):
+        generated = re.search(r"^\[\[(?:witness|closure)\]\]$", ledger_text, re.MULTILINE)
+        if generated is not None:
+            ledger_text = ledger_text[: generated.start()]
+    else:
+        raise ValueError("ledger must be version 1 or 2")
+    ledger_text = ledger_text.rstrip() + "\n\n"
     members: dict[tuple[str, str], list[str]] = defaultdict(list)
     for result in authored:
         closure = result["closure"]

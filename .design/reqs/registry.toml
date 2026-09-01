@@ -19039,7 +19039,7 @@ note = "fixture expansion fails for each omitted artifact and semantic narrowing
 [[requirement]]
 id = "REQ-COMPLETE-REVIEW-TRACK"
 title = "Gap inventory and completeness-review backlog agree"
-owner = ".design/versioned-language-completeness.md"
+owner = "gates/completeness-review.py"
 status = "shipped"
 scope = "process"
 summary = "The durable completeness-review issue track agrees bidirectionally with unresolved gap dispositions and closes items only with cited executable or formal evidence."
