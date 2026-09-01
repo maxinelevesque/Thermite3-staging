@@ -644,7 +644,7 @@ impl Checker<'_> {
                         .filter_map(|name| arm_state.bindings.get(name))
                         .flat_map(|binding| self.resources.provenance_of_type(&binding.ty))
                         .collect();
-                    let provenance = self.resources.provenance_of_type(&scrutinee_ty);
+                    let provenance = self.pattern_provenance(&arm.pattern, &scrutinee_ty);
                     if !matches!(arm.pattern, Pattern::Binding(_))
                         && !provenance.is_subset(&carried)
                     {
@@ -831,6 +831,74 @@ impl Checker<'_> {
             Pattern::Literal(_) | Pattern::Slice(_) | Pattern::Wildcard => {}
         }
         bound
+    }
+
+    fn pattern_provenance(&self, pattern: &Pattern, scrutinee_ty: &Type) -> BTreeSet<RegionPath> {
+        match pattern {
+            Pattern::Binding(_) => self.resources.provenance_of_type(scrutinee_ty),
+            Pattern::Enum { path, .. } => path
+                .last()
+                .and_then(|name| self.variants.get(name))
+                .map(|(owner, shape)| {
+                    let mut regions = self
+                        .resources
+                        .direct_declared(owner)
+                        .cloned()
+                        .unwrap_or_default();
+                    match shape {
+                        VariantShape::Unit => {}
+                        VariantShape::Tuple(types) => {
+                            for ty in types {
+                                regions.extend(self.resources.provenance_of_type(ty));
+                            }
+                        }
+                        VariantShape::Struct(fields) => {
+                            for field in fields {
+                                regions.extend(self.resources.provenance_of_type(&field.ty));
+                            }
+                        }
+                    }
+                    regions
+                })
+                .unwrap_or_else(|| self.resources.provenance_of_type(scrutinee_ty)),
+            Pattern::Struct { path, .. } => path
+                .last()
+                .map(|name| {
+                    if let Some((owner, shape)) = self.variants.get(name) {
+                        let mut regions = self
+                            .resources
+                            .direct_declared(owner)
+                            .cloned()
+                            .unwrap_or_default();
+                        if let VariantShape::Struct(fields) = shape {
+                            for field in fields {
+                                regions.extend(self.resources.provenance_of_type(&field.ty));
+                            }
+                        }
+                        regions
+                    } else {
+                        let mut regions = self
+                            .resources
+                            .direct_declared(name)
+                            .cloned()
+                            .unwrap_or_default();
+                        if let Some(fields) = self.structs.get(name) {
+                            for (_, ty) in fields {
+                                regions.extend(self.resources.provenance_of_type(ty));
+                            }
+                        }
+                        regions
+                    }
+                })
+                .unwrap_or_else(|| self.resources.provenance_of_type(scrutinee_ty)),
+            Pattern::Or(alternatives) => alternatives
+                .iter()
+                .flat_map(|pattern| self.pattern_provenance(pattern, scrutinee_ty))
+                .collect(),
+            Pattern::Wildcard | Pattern::Literal(_) | Pattern::Slice(_) => {
+                self.resources.provenance_of_type(scrutinee_ty)
+            }
+        }
     }
 
     fn walk_observed(&mut self, expr: &Expr, state: &mut State) {

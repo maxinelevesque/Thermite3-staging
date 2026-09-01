@@ -12,6 +12,7 @@ use thermite_syntax::{Item, Program, RegionPath, Span, Type, VariantShape};
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ResourceEnv {
     declared: BTreeMap<String, BTreeSet<RegionPath>>,
+    direct: BTreeMap<String, BTreeSet<RegionPath>>,
 }
 
 impl ResourceEnv {
@@ -47,8 +48,12 @@ impl ResourceEnv {
             }
         }
 
-        let env = Self { declared };
+        let env = Self {
+            declared,
+            direct: BTreeMap::new(),
+        };
         let mut errors = Vec::new();
+        let mut direct = BTreeMap::new();
         for (name, definition) in &definitions {
             let mut computed = BTreeSet::new();
             let mut sources: BTreeMap<RegionPath, String> = BTreeMap::new();
@@ -62,8 +67,8 @@ impl ResourceEnv {
             match &definition.marker {
                 None if !computed.is_empty() => errors.push(ResourceError::MissingMarker {
                     declaration: name.clone(),
-                    computed: computed.into_iter().collect(),
-                    sources: sources.into_values().collect(),
+                    computed: computed.iter().cloned().collect(),
+                    sources: sources.values().cloned().collect(),
                     span: definition.span,
                 }),
                 Some(declared) if declared.is_empty() && computed.is_empty() => {
@@ -78,18 +83,26 @@ impl ResourceEnv {
                         errors.push(ResourceError::ProvenanceMismatch {
                             declaration: name.clone(),
                             declared: explicit.into_iter().collect(),
-                            computed: computed.into_iter().collect(),
-                            sources: sources.into_values().collect(),
+                            computed: computed.iter().cloned().collect(),
+                            sources: sources.values().cloned().collect(),
                             span: definition.span,
                         });
                     }
                 }
                 None | Some(_) => {}
             }
+            let introduced = match &definition.marker {
+                Some(explicit) if computed.is_empty() => explicit.iter().cloned().collect(),
+                _ => BTreeSet::new(),
+            };
+            direct.insert(name.clone(), introduced);
         }
 
         if errors.is_empty() {
-            Ok(env)
+            Ok(Self {
+                declared: env.declared,
+                direct,
+            })
         } else {
             Err(errors)
         }
@@ -104,6 +117,12 @@ impl ResourceEnv {
     /// The canonical provenance of a declared type name.
     pub fn declared(&self, name: &str) -> Option<&BTreeSet<RegionPath>> {
         self.declared.get(name)
+    }
+
+    /// Provenance introduced by the declaration itself rather than carried by
+    /// one of its fields or variant payloads.
+    pub fn direct_declared(&self, name: &str) -> Option<&BTreeSet<RegionPath>> {
+        self.direct.get(name)
     }
 }
 

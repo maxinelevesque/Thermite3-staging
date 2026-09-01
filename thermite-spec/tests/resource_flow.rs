@@ -108,3 +108,79 @@ fn borrows_do_not_consume_but_by_value_calls_do() {
     ))
     .expect("an explicit borrow leaves the resource live for its final disposition");
 }
+
+#[test]
+fn early_returns_and_loop_edges_are_checked_independently() {
+    validate_source(&format!(
+        "{GRANT}fn early(g: Grant, c: bool) -> u64 ! forgets(heap) requires true ensures result == 0 \
+         {{ if c {{ forget(g); return 0; }} forget(g); 0 }}"
+    ))
+    .expect("each returning edge disposes its own obligation");
+
+    let early_leak = validate_source(&format!(
+        "{GRANT}fn early_leak(g: Grant, c: bool) -> u64 ! forgets(heap) requires true ensures result == 0 \
+         {{ if c {{ return 0; }} forget(g); 0 }}"
+    ))
+    .unwrap_err();
+    assert!(has(&early_leak, ResourceFlowErrorKind::Unconsumed));
+
+    validate_source(&format!(
+        "{GRANT}fn loop_ok(g: Grant, c: bool) -> u64 ! forgets(heap) requires true ensures result == 0 \
+         {{ while c keeps true measures 1 {{ break; }} forget(g); 0 }}"
+    ))
+    .expect("a loop preserving the header live set is accepted");
+
+    let loop_mismatch = validate_source(&format!(
+        "{GRANT}fn loop_bad(g: Grant, c: bool) -> u64 ! forgets(heap) requires true ensures result == 0 \
+         {{ while c keeps true measures 1 {{ forget(g); continue; }} 0 }}"
+    ))
+    .unwrap_err();
+    assert!(has(&loop_mismatch, ResourceFlowErrorKind::LoopMismatch));
+}
+
+#[test]
+fn destructuring_replaces_containers_with_component_obligations() {
+    validate_source(&format!(
+        "{GRANT}\
+         resource struct Envelope {{ grant: Grant }}\n\
+         resource enum Choice {{ A(Grant), B(Grant) }}\n\
+         resource enum OptionalGrant {{ Present(Grant), Absent }}\n\
+         fn dispose(g: Grant) -> u64 ! forgets(heap) requires true ensures result == 0 \
+         {{ forget(g); 0 }}\n\
+         fn open(e: Envelope) -> u64 ! forgets(heap) requires true ensures result == 0 \
+         {{ match e {{ Envelope {{ grant }} => dispose(grant) }} }}\n\
+         fn choose(c: Choice) -> u64 ! forgets(heap) requires true ensures result == 0 \
+         {{ match c {{ A(g) => dispose(g), B(g) => dispose(g) }} }}\n\
+         fn optional(c: OptionalGrant) -> u64 ! forgets(heap) requires true ensures true \
+         {{ match c {{ Present(g) => dispose(g), Absent => 0 }} }}\n\
+         fn rewrap(e: Envelope) -> Envelope ! pure requires true ensures true \
+         {{ match e {{ Envelope {{ grant }} => Envelope {{ grant: grant }} }} }}"
+    ))
+    .expect("destructuring must transfer every resource-bearing component");
+
+    let direct_drop = validate_source(&format!(
+        "{GRANT}fn crack(g: Grant) -> u64 ! pure requires true ensures result == 0 \
+         {{ match g {{ Grant {{ id }} => id }} }}"
+    ))
+    .unwrap_err();
+    assert!(has(&direct_drop, ResourceFlowErrorKind::ImplicitDrop));
+}
+
+#[test]
+fn multi_region_forget_prices_every_provenance_atom() {
+    let prefix = "resource(heap) struct HeapGrant { id: u64 }\n\
+                  resource(device.port) struct PortGrant { id: u64 }\n\
+                  resource struct Bundle { heap: HeapGrant, port: PortGrant }\n";
+    validate_source(&format!(
+        "{prefix}fn discard(b: Bundle) -> u64 ! forgets(heap), forgets(device.port) \
+         requires true ensures result == 0 {{ forget(b); 0 }}"
+    ))
+    .expect("the complete two-region footprint is priced");
+
+    let errors = validate_source(&format!(
+        "{prefix}fn discard(b: Bundle) -> u64 ! forgets(heap) \
+         requires true ensures result == 0 {{ forget(b); 0 }}"
+    ))
+    .unwrap_err();
+    assert!(has(&errors, ResourceFlowErrorKind::MissingForgetEffect));
+}
