@@ -48,7 +48,7 @@ dependencies = [
 
 [[package]]
 name = "forge"
-version = "3.0.0-alpha.6"
+version = "3.0.0-alpha.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -174,7 +174,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-lower"
-version = "3.0.0-alpha.6"
+version = "3.0.0-alpha.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -186,7 +186,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-skill"
-version = "3.0.0-alpha.6"
+version = "3.0.0-alpha.7"
 dependencies = [
  "thermite-spec",
  "thermite-syntax",
@@ -194,7 +194,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-spec"
-version = "3.0.0-alpha.6"
+version = "3.0.0-alpha.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -203,7 +203,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-syntax"
-version = "3.0.0-alpha.6"
+version = "3.0.0-alpha.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -211,7 +211,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-tv"
-version = "3.0.0-alpha.6"
+version = "3.0.0-alpha.7"
 dependencies = [
  "thermite-spec",
  "thermite-syntax",
@@ -219,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "thermite-verified"
-version = "3.0.0-alpha.6"
+version = "3.0.0-alpha.7"
 
 [[package]]
 name = "typenum"
