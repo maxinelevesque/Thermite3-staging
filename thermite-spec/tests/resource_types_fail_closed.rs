@@ -1,4 +1,4 @@
-use thermite_spec::{validate, SpecError};
+use thermite_spec::{validate, ResourceFlowErrorKind, SpecError};
 use thermite_syntax::parse;
 
 #[test]
@@ -14,7 +14,7 @@ fn parsed_resource_declaration_is_accepted_by_provenance_boundary() {
 }
 
 #[test]
-fn parsed_forget_surface_fails_closed_until_resource_semantics_land() {
+fn non_resource_forget_fails_at_the_flow_boundary() {
     let parsed = parse(
         "fn release(grant: Grant) -> u64\n\
          ! forgets(heap)\n\
@@ -28,8 +28,12 @@ fn parsed_forget_surface_fails_closed_until_resource_semantics_land() {
         parsed.errors
     );
 
-    let errors = validate(&parsed.program).expect_err("forget needs resource-flow validation");
-    assert!(errors
-        .iter()
-        .any(|error| matches!(error, SpecError::UnsupportedResourceTypes { .. })));
+    let errors = validate(&parsed.program).expect_err("forget must name an owned resource");
+    assert!(errors.iter().any(|error| matches!(
+        error,
+        SpecError::ResourceFlow {
+            kind: ResourceFlowErrorKind::NonResourceForget,
+            ..
+        }
+    )));
 }

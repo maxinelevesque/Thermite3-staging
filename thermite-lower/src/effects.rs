@@ -268,6 +268,11 @@ pub fn analyze_effects(program: &Program) -> Result<EffectAnalysis, Vec<LowerErr
 pub(crate) fn analyze_effects_unchecked(
     program: &Program,
 ) -> Result<EffectAnalysis, Vec<LowerError>> {
+    let resource_forgets = thermite_spec::ResourceEnv::build(program)
+        .ok()
+        .and_then(|resources| thermite_spec::check_resource_flow(program, &resources).ok())
+        .map(|report| report.direct_forgets)
+        .unwrap_or_default();
     // name → declared `fx` row, over the `FnItem`s. `SpecFnItem` names are noted
     // as pure (they carry no `fx`). On a duplicate name the first declaration
     // wins (deterministic; duplicate-name rejection is the #2 validator's job).
@@ -347,6 +352,11 @@ pub(crate) fn analyze_effects_unchecked(
                     return Err(errors);
                 }
                 collect_holding_effects(body, &mut direct.borrow_mut());
+                if let Some(regions) = resource_forgets.get(&f.name) {
+                    direct
+                        .borrow_mut()
+                        .extend(regions.iter().cloned().map(Effect::Forgets));
+                }
                 let shared_roots: BTreeSet<String> = program
                     .items
                     .iter()

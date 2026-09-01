@@ -506,6 +506,16 @@ pub fn canonical_ast_projection(source: &Program) -> Result<CanonicalAstProjecti
             }
         }
     }
+    if let Ok(resources) = thermite_spec::ResourceEnv::build(source) {
+        if let Ok(flow) = thermite_spec::check_resource_flow(source, &resources) {
+            for (function, regions) in flow.direct_forgets {
+                direct
+                    .entry(function)
+                    .or_default()
+                    .extend(regions.into_iter().map(Effect::Forgets));
+            }
+        }
+    }
     Ok(CanonicalAstProjection {
         digest: canonical_ast_sha256(source),
         node_kinds: inventory

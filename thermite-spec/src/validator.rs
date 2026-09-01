@@ -144,12 +144,12 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 use thermite_syntax::{
-    Block, Clause, Effect, EffectRow, Expr, IndexArg, Item, MatchArm, Pattern, Program, Span, Stmt,
-    VariantShape,
+    Block, Clause, Expr, IndexArg, Item, MatchArm, Pattern, Program, Span, Stmt, VariantShape,
 };
 
 use crate::combinators::{self, ArgKind, CombinatorSig};
 use crate::resource::{ResourceEnv, ResourceError};
+use crate::resource_flow::{check_resource_flow, ResourceFlowErrorKind};
 use crate::schemes::{self, SchemeSig};
 
 /// The maximum recursive-descent nesting depth the validator will follow before
@@ -423,6 +423,13 @@ pub enum SpecError {
         sources: Vec<String>,
         span: Span,
     },
+    /// A path-sensitive RFC-11 ownership-flow violation.
+    ResourceFlow {
+        kind: ResourceFlowErrorKind,
+        place: Option<String>,
+        detail: String,
+        span: Span,
+    },
     /// A `match` over a declared `enum` value whose arms do not cover every
     /// declared variant and is not closed by a `Wildcard` arm
     /// (`.design/basis/01-adts.md` REQ-5). `missing` is the set of uncovered
@@ -553,6 +560,7 @@ impl SpecError {
             | SpecError::MissingResourceMarker { span, .. }
             | SpecError::EmptyResourceMarker { span, .. }
             | SpecError::ResourceProvenanceMismatch { span, .. }
+            | SpecError::ResourceFlow { span, .. }
             | SpecError::NonExhaustiveMatch { span, .. }
             | SpecError::UnreachableArm { span, .. }
             | SpecError::UnknownField { span, .. }
@@ -684,6 +692,7 @@ impl fmt::Display for SpecError {
                 f,
                 "resource declaration `{declaration}` declares {declared:?}, but its fields or variants derive {computed:?} through {sources:?}"
             ),
+            SpecError::ResourceFlow { detail, .. } => write!(f, "{detail}"),
             SpecError::NonExhaustiveMatch { missing, .. } => write!(
                 f,
                 "non-exhaustive `match`: the variant(s) {missing:?} are neither handled by an arm \
@@ -777,6 +786,17 @@ impl std::error::Error for SpecError {}
 pub fn validate(program: &Program) -> Result<(), Vec<SpecError>> {
     let mut v = Validator::new(program);
     v.run(program);
+    if let Ok(resources) = ResourceEnv::build(program) {
+        if let Err(errors) = check_resource_flow(program, &resources) {
+            v.errors
+                .extend(errors.into_iter().map(|error| SpecError::ResourceFlow {
+                    kind: error.kind,
+                    place: error.place,
+                    detail: error.detail,
+                    span: error.span,
+                }));
+        }
+    }
     if v.errors.is_empty() {
         Ok(())
     } else {
@@ -1087,15 +1107,6 @@ impl Validator {
             }
             match item {
                 Item::Fn(f) => {
-                    let declares_forget = matches!(
-                        &f.contract.effects,
-                        EffectRow::Set(effects)
-                            if effects.iter().any(|effect| matches!(effect, Effect::Forgets(_)))
-                    );
-                    if declares_forget || f.body.as_ref().is_some_and(block_contains_forget) {
-                        self.errors
-                            .push(SpecError::UnsupportedResourceTypes { span: f.span });
-                    }
                     self.contract_bound = f.params.iter().map(|param| param.name.clone()).collect();
                     self.contract_position = Some("requires");
                     self.walk_clause(&f.contract.requires);
@@ -2173,23 +2184,6 @@ fn block_calls_name(block: &Block, name: &str) -> bool {
             .tail
             .as_ref()
             .is_some_and(|e| expr_calls_name(e, name))
-}
-
-fn block_contains_forget(block: &Block) -> bool {
-    block.stmts.iter().any(|stmt| match stmt {
-        Stmt::Forget { .. } => true,
-        Stmt::If { then, else_, .. } => {
-            block_contains_forget(then) || else_.as_ref().is_some_and(block_contains_forget)
-        }
-        Stmt::Loop(loop_) => block_contains_forget(&loop_.body),
-        Stmt::Holding { body, .. } => block_contains_forget(body),
-        Stmt::Let { .. }
-        | Stmt::Assign { .. }
-        | Stmt::Return(_)
-        | Stmt::Break
-        | Stmt::Continue
-        | Stmt::Expr(_) => false,
-    })
 }
 
 fn stmt_calls_name(stmt: &Stmt, name: &str) -> bool {

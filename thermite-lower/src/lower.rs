@@ -729,6 +729,7 @@ fn zero_span() -> Span {
 pub fn lower(program: &Program) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
     let program = checked.source();
+    reject_resource_lowering(program)?;
     if crate::program_uses_holding(program) {
         let prepared = crate::locks::prepare_l3_shared(program)?;
         let seam = crate::locks::verification_lock_provider_source(program)?;
@@ -750,6 +751,7 @@ pub fn lower_l3_library(
 ) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
     let program = checked.source();
+    reject_resource_lowering(program)?;
     if crate::program_uses_holding(program) {
         return Err(LowerError::Unsupported {
             what: "executable L3 `holding` requires a target provider integration; provider-free lowering is verification-only and must not produce an artifact".to_string(),
@@ -789,6 +791,7 @@ pub fn lower_l3_library_with_lock_provider(
 ) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
     let program = checked.source();
+    reject_resource_lowering(program)?;
     provider.validate_l3()?;
     let prepared = crate::locks::prepare_l3_shared(program)?;
     let mut by_source: BTreeMap<&str, &L3Export> = BTreeMap::new();
@@ -815,6 +818,17 @@ pub fn lower_l3_library_with_lock_provider(
         Some((by_source, target)),
         Some(&provider.verus_source),
     )
+}
+
+fn reject_resource_lowering(program: &Program) -> Result<(), LowerError> {
+    if let Some(span) = crate::checked::first_rfc11_span(program) {
+        return Err(LowerError::Unsupported {
+            what: "RFC-11 ownership flow is checked, but the L3 resource witness lowering has not landed"
+                .to_string(),
+            span,
+        });
+    }
+    Ok(())
 }
 
 fn lower_with_profile(

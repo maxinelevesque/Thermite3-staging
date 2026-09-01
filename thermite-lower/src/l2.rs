@@ -140,6 +140,14 @@ pub fn lower_l2(program: &Program) -> Result<String, LowerError> {
     }
     let checked = crate::checked::require_checked(program)?;
     let program = checked.source();
+    if let Some(span) = crate::checked::first_rfc11_span(program) {
+        return Err(LowerError::Unsupported {
+            what:
+                "RFC-11 ownership flow is checked, but explicit L2 resource lowering has not landed"
+                    .to_string(),
+            span,
+        });
+    }
     let mut out = String::new();
     out.push_str("// L2 Kani-harness lowering (.design/lower/l2-kani.md). Self-contained; the\n");
     out.push_str(

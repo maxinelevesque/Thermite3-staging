@@ -2,7 +2,7 @@ use thermite_lower::{check_program, lower, lower_l1, LowerError};
 use thermite_syntax::parse;
 
 #[test]
-fn checked_and_lowering_boundaries_reject_provenance_only_resource_programs() {
+fn checked_boundary_accepts_flow_while_lowering_remains_fail_closed() {
     let parsed = parse("resource(heap) struct Grant { id: u64 }");
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
 
@@ -16,8 +16,9 @@ fn checked_and_lowering_boundaries_reject_provenance_only_resource_programs() {
         other => panic!("unexpected refusal: {other:?}"),
     };
 
-    let errors = check_program(&parsed.program).unwrap_err();
-    assert_resource_refusal(&errors[0]);
+    let checked =
+        check_program(&parsed.program).expect("resource declaration and empty flow check");
+    assert!(checked.resource_flow().direct_forgets.is_empty());
     assert_resource_refusal(&lower(&parsed.program).unwrap_err());
     assert_resource_refusal(&lower_l1(&parsed.program).unwrap_err());
 }

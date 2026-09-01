@@ -20,6 +20,7 @@ pub struct CheckedProgram {
     inventory: SemanticInventory,
     regions: thermite_spec::RegionIndex,
     effects: EffectAnalysis,
+    resource_flow: thermite_spec::ResourceFlowReport,
     holdings: Vec<CheckedHolding>,
     shared_places: Vec<CheckedSharedPlace>,
 }
@@ -73,13 +74,25 @@ impl CheckedProgram {
         source: &Program,
         budget: WorkBudget,
     ) -> Result<Self, Vec<LowerError>> {
-        if let Some(span) = first_rfc11_span(source) {
-            return Err(vec![LowerError::Unsupported {
-                what: "RFC-11 provenance is checked, but executable ownership flow has not yet accepted this program"
-                    .to_string(),
-                span,
-            }]);
-        }
+        let resources = thermite_spec::ResourceEnv::build(source).map_err(|errors| {
+            errors
+                .into_iter()
+                .map(|error| LowerError::EffectAnalysis {
+                    detail: format!("resource provenance failed: {error:?}"),
+                    span: thermite_syntax::Span::new(0, 0),
+                })
+                .collect::<Vec<_>>()
+        })?;
+        let resource_flow =
+            thermite_spec::check_resource_flow(source, &resources).map_err(|errors| {
+                errors
+                    .into_iter()
+                    .map(|error| LowerError::EffectAnalysis {
+                        detail: error.detail,
+                        span: error.span,
+                    })
+                    .collect::<Vec<_>>()
+            })?;
         let inventory = semantic_inventory(source, budget).map_err(|limit| {
             vec![LowerError::ResourceLimit {
                 budget: limit.budget.0,
@@ -104,6 +117,7 @@ impl CheckedProgram {
             inventory,
             regions,
             effects,
+            resource_flow,
             holdings,
             shared_places,
         })
@@ -125,6 +139,10 @@ impl CheckedProgram {
         &self.effects
     }
 
+    pub fn resource_flow(&self) -> &thermite_spec::ResourceFlowReport {
+        &self.resource_flow
+    }
+
     pub fn holdings(&self) -> &[CheckedHolding] {
         &self.holdings
     }
@@ -134,7 +152,7 @@ impl CheckedProgram {
     }
 }
 
-fn first_rfc11_span(program: &Program) -> Option<thermite_syntax::Span> {
+pub(crate) fn first_rfc11_span(program: &Program) -> Option<thermite_syntax::Span> {
     program.items.iter().find_map(|item| match item {
         thermite_syntax::Item::Struct(item) if item.resource.is_some() => Some(item.span),
         thermite_syntax::Item::Enum(item) if item.resource.is_some() => Some(item.span),
