@@ -149,6 +149,7 @@ use thermite_syntax::{
 };
 
 use crate::combinators::{self, ArgKind, CombinatorSig};
+use crate::resource::{ResourceEnv, ResourceError};
 use crate::schemes::{self, SchemeSig};
 
 /// The maximum recursive-descent nesting depth the validator will follow before
@@ -405,6 +406,23 @@ pub enum SpecError {
     /// fail-closed gate: a parsed resource declaration never validates as an
     /// ordinary droppable ADT.
     UnsupportedResourceTypes { span: Span },
+    /// An unmarked ADT owns a resource-bearing field or variant payload.
+    MissingResourceMarker {
+        declaration: String,
+        computed: Vec<thermite_syntax::RegionPath>,
+        sources: Vec<String>,
+        span: Span,
+    },
+    /// A bare `resource` marker derived no provenance from its components.
+    EmptyResourceMarker { declaration: String, span: Span },
+    /// Explicit provenance disagrees with the resource-bearing component union.
+    ResourceProvenanceMismatch {
+        declaration: String,
+        declared: Vec<thermite_syntax::RegionPath>,
+        computed: Vec<thermite_syntax::RegionPath>,
+        sources: Vec<String>,
+        span: Span,
+    },
     /// A `match` over a declared `enum` value whose arms do not cover every
     /// declared variant and is not closed by a `Wildcard` arm
     /// (`.design/basis/01-adts.md` REQ-5). `missing` is the set of uncovered
@@ -532,6 +550,9 @@ impl SpecError {
             | SpecError::ExpressionTooDeep { span, .. }
             | SpecError::UnsupportedAdt { span, .. }
             | SpecError::UnsupportedResourceTypes { span }
+            | SpecError::MissingResourceMarker { span, .. }
+            | SpecError::EmptyResourceMarker { span, .. }
+            | SpecError::ResourceProvenanceMismatch { span, .. }
             | SpecError::NonExhaustiveMatch { span, .. }
             | SpecError::UnreachableArm { span, .. }
             | SpecError::UnknownField { span, .. }
@@ -544,6 +565,40 @@ impl SpecError {
             | SpecError::MissingDecreases { span, .. }
             | SpecError::ReservedName { span, .. }
             | SpecError::SharedStateInContract { span, .. } => *span,
+        }
+    }
+}
+
+impl From<ResourceError> for SpecError {
+    fn from(error: ResourceError) -> Self {
+        match error {
+            ResourceError::MissingMarker {
+                declaration,
+                computed,
+                sources,
+                span,
+            } => Self::MissingResourceMarker {
+                declaration,
+                computed,
+                sources,
+                span,
+            },
+            ResourceError::EmptyContagiousMarker { declaration, span } => {
+                Self::EmptyResourceMarker { declaration, span }
+            }
+            ResourceError::ProvenanceMismatch {
+                declaration,
+                declared,
+                computed,
+                sources,
+                span,
+            } => Self::ResourceProvenanceMismatch {
+                declaration,
+                declared,
+                computed,
+                sources,
+                span,
+            },
         }
     }
 }
@@ -604,7 +659,30 @@ impl fmt::Display for SpecError {
             ),
             SpecError::UnsupportedResourceTypes { .. } => write!(
                 f,
-                "RFC-11 resource types are parsed but not yet checkable by the provenance validator"
+                "RFC-11 executable resource flow is not yet checkable by the ownership validator"
+            ),
+            SpecError::MissingResourceMarker {
+                declaration,
+                computed,
+                sources,
+                ..
+            } => write!(
+                f,
+                "declaration `{declaration}` owns resource provenance {computed:?} through {sources:?} but lacks a `resource` modifier"
+            ),
+            SpecError::EmptyResourceMarker { declaration, .. } => write!(
+                f,
+                "bare resource declaration `{declaration}` derives no provenance from any field or variant"
+            ),
+            SpecError::ResourceProvenanceMismatch {
+                declaration,
+                declared,
+                computed,
+                sources,
+                ..
+            } => write!(
+                f,
+                "resource declaration `{declaration}` declares {declared:?}, but its fields or variants derive {computed:?} through {sources:?}"
             ),
             SpecError::NonExhaustiveMatch { missing, .. } => write!(
                 f,
@@ -854,13 +932,15 @@ impl Validator {
         // variants at the declaration makes that case-based split sound. These
         // casing diagnostics seed the validator's error list so a lowercase-
         // variant program never reaches the (now-sound) body/contract walk.
-        let mut casing_errors: Vec<SpecError> = Vec::new();
+        let mut casing_errors: Vec<SpecError> = ResourceEnv::build(program)
+            .err()
+            .unwrap_or_default()
+            .into_iter()
+            .map(SpecError::from)
+            .collect();
         for item in &program.items {
             match item {
                 Item::Enum(e) => {
-                    if e.resource.is_some() {
-                        casing_errors.push(SpecError::UnsupportedResourceTypes { span: e.span });
-                    }
                     let mut variant_names = Vec::with_capacity(e.variants.len());
                     for variant in &e.variants {
                         // A variant name is uppercase-initial iff its first char
@@ -895,9 +975,6 @@ impl Validator {
                     enums.insert(e.name.clone(), variant_names);
                 }
                 Item::Struct(s) => {
-                    if s.resource.is_some() {
-                        casing_errors.push(SpecError::UnsupportedResourceTypes { span: s.span });
-                    }
                     for field in &s.fields {
                         struct_fields.insert(field.name.clone());
                     }

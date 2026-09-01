@@ -73,6 +73,13 @@ impl CheckedProgram {
         source: &Program,
         budget: WorkBudget,
     ) -> Result<Self, Vec<LowerError>> {
+        if let Some(span) = first_rfc11_span(source) {
+            return Err(vec![LowerError::Unsupported {
+                what: "RFC-11 provenance is checked, but executable ownership flow has not yet accepted this program"
+                    .to_string(),
+                span,
+            }]);
+        }
         let inventory = semantic_inventory(source, budget).map_err(|limit| {
             vec![LowerError::ResourceLimit {
                 budget: limit.budget.0,
@@ -125,6 +132,35 @@ impl CheckedProgram {
     pub fn shared_places(&self) -> &[CheckedSharedPlace] {
         &self.shared_places
     }
+}
+
+fn first_rfc11_span(program: &Program) -> Option<thermite_syntax::Span> {
+    program.items.iter().find_map(|item| match item {
+        thermite_syntax::Item::Struct(item) if item.resource.is_some() => Some(item.span),
+        thermite_syntax::Item::Enum(item) if item.resource.is_some() => Some(item.span),
+        thermite_syntax::Item::Fn(item) => {
+            let effect_span = matches!(
+                &item.contract.effects,
+                thermite_syntax::EffectRow::Set(effects)
+                    if effects.iter().any(|effect| matches!(effect, thermite_syntax::Effect::Forgets(_)))
+            )
+            .then_some(item.span);
+            effect_span.or_else(|| item.body.as_ref().and_then(first_forget_in_block))
+        }
+        _ => None,
+    })
+}
+
+fn first_forget_in_block(block: &thermite_syntax::Block) -> Option<thermite_syntax::Span> {
+    block.stmts.iter().find_map(|stmt| match stmt {
+        thermite_syntax::Stmt::Forget { span, .. } => Some(*span),
+        thermite_syntax::Stmt::If { then, else_, .. } => {
+            first_forget_in_block(then).or_else(|| else_.as_ref().and_then(first_forget_in_block))
+        }
+        thermite_syntax::Stmt::Loop(loop_) => first_forget_in_block(&loop_.body),
+        thermite_syntax::Stmt::Holding { body, .. } => first_forget_in_block(body),
+        _ => None,
+    })
 }
 
 #[derive(Clone, Copy)]
