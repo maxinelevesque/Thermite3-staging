@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 28216e5190c5f36590cd6b25b0668731cc9954e496e33b60b98fec2fc01c4a00 (re-pinned 2026-08-27 after adding the effect-free recursion/tuple claim corpus; the RFC-9 inventory now tracks 68 `.th` files and effect semantics are unchanged. prior: 9daaee5d825e5b8a223ed6e9e360ccbb002766bf292e24ab281d66eebd85d180)
+audited-content-sha256: 8fc513a11f264b952c6a8818260558e4ee792d3e125a760476eb0a002ab3b602 (re-pinned 2026-09-01 after classifying RFC-11 resource-flow fixtures that intentionally contain RFC-9 region effect atoms; effect semantics are unchanged. prior: 28216e5190c5f36590cd6b25b0668731cc9954e496e33b60b98fec2fc01c4a00)
 -->
 
 ## Summary
