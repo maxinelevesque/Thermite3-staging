@@ -1,4 +1,4 @@
-use thermite_syntax::{parse, Item, RegionPath, SyntaxError};
+use thermite_syntax::{parse, Effect, EffectRow, Expr, Item, RegionPath, Stmt, SyntaxError};
 
 #[test]
 fn resource_structs_and_enums_preserve_explicit_and_bare_provenance() {
@@ -77,4 +77,40 @@ fn malformed_resource_modifiers_have_structured_diagnostics() {
         wrong_target.errors.first(),
         Some(SyntaxError::ResourceModifierTarget { .. })
     ));
+}
+
+#[test]
+fn forget_statement_and_forgets_effect_have_dedicated_canonical_nodes() {
+    let source = r#"
+resource(heap, device.port) struct Grant { value: u64 }
+fn abandon(g: Grant) -> u64
+  ! forgets(heap), forgets(heap), forgets(device.port)
+  requires true
+  ensures result == 0
+{
+  forget(g);
+  0
+}
+"#;
+    let parsed = parse(source);
+    assert!(parsed.is_clean(), "unexpected errors: {:?}", parsed.errors);
+    let Item::Fn(function) = &parsed.program.items[1] else {
+        panic!("expected function")
+    };
+    assert_eq!(
+        function.contract.effects,
+        EffectRow::Set(vec![
+            Effect::Forgets(RegionPath::root("heap".into())),
+            Effect::Forgets(RegionPath {
+                segments: vec!["device".into(), "port".into()]
+            })
+        ]),
+        "duplicate forget atoms normalize"
+    );
+    let body = function.body.as_ref().unwrap();
+    let Stmt::Forget { value, span } = &body.stmts[0] else {
+        panic!("forget must not use the call-expression fallback")
+    };
+    assert_eq!(value, &Expr::Path(vec!["g".into()]));
+    assert_eq!(&source[span.start..span.end()], "forget(g);");
 }

@@ -471,6 +471,11 @@ fn eval_stmts(
                     "holding block is outside the covenant scalar fragment".to_string(),
                 ));
             }
+            Stmt::Forget { .. } => {
+                return Err(CovenantEvalError::Unsupported(
+                    "RFC-11 `forget` is outside the covenant scalar fragment".to_string(),
+                ));
+            }
         }
     }
     Ok(None)

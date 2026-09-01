@@ -290,6 +290,7 @@ impl<'a> SemanticNode<'a> {
                     body,
                     span: _,
                 } => out.push((ChildRole::HoldingBody, Self::Block(body))),
+                Stmt::Forget { value, .. } => out.push((ChildRole::Value, Self::Expr(value))),
                 Stmt::Expr(expr) => out.push((ChildRole::Body, Self::Expr(expr))),
                 Stmt::Break | Stmt::Continue => {}
             },

@@ -1933,7 +1933,10 @@ impl<'a> Parser<'a> {
         }
         let mut effects = Vec::new();
         loop {
-            effects.push(self.parse_effect()?);
+            let effect = self.parse_effect()?;
+            if !matches!(effect, Effect::Forgets(_)) || !effects.contains(&effect) {
+                effects.push(effect);
+            }
             if !self.eat(&TokKind::Comma) {
                 break;
             }
@@ -1944,14 +1947,15 @@ impl<'a> Parser<'a> {
     fn parse_effect(&mut self) -> PResult<Effect> {
         let name = self.take_ident("an effect name")?;
         match name.as_str() {
-            "read" | "write" | "net" => {
+            "read" | "write" | "net" | "forgets" => {
                 self.consume(&TokKind::LParen, "`(`")?;
                 let arg = self.parse_region_path()?;
                 self.consume(&TokKind::RParen, "`)`")?;
                 Ok(match name.as_str() {
                     "read" => Effect::Read(arg),
                     "write" => Effect::Write(arg),
-                    _ => Effect::Net(arg),
+                    "net" => Effect::Net(arg),
+                    _ => Effect::Forgets(arg),
                 })
             }
             "owns" => {
@@ -1967,8 +1971,9 @@ impl<'a> Parser<'a> {
             "diverge" => Ok(Effect::Diverge),
             "term" => Ok(Effect::Term),
             _ => Err(SyntaxError::Unexpected {
-                expected: "an effect (read/write/net/owns/alloc/time/rand/panic/diverge/term)"
-                    .to_string(),
+                expected:
+                    "an effect (read/write/net/forgets/owns/alloc/time/rand/panic/diverge/term)"
+                        .to_string(),
                 found: format!("identifier `{name}`"),
                 span: self.prev_span(),
             }),
@@ -2005,6 +2010,11 @@ impl<'a> Parser<'a> {
                 }
                 TokKind::Ident(name) if name == "holding" => {
                     stmts.push(self.parse_holding()?);
+                }
+                TokKind::Ident(name)
+                    if name == "forget" && matches!(self.peek_nth(1), TokKind::LParen) =>
+                {
+                    stmts.push(self.parse_forget()?);
                 }
                 // `while` is the bare loop OR the C10 `while let P = e inv … { B }`
                 // ergonomic (REQ-5), distinguished by a `let` after `while`. The
@@ -2119,6 +2129,19 @@ impl<'a> Parser<'a> {
         }
         self.consume(&TokKind::RBrace, "`}`")?;
         Ok(Block { stmts, tail })
+    }
+
+    fn parse_forget(&mut self) -> PResult<Stmt> {
+        let start = self.peek_span();
+        self.expect_contextual("forget")?;
+        self.consume(&TokKind::LParen, "`(`")?;
+        let value = self.parse_expr()?;
+        self.consume(&TokKind::RParen, "`)`")?;
+        self.consume(&TokKind::Semi, "`;`")?;
+        Ok(Stmt::Forget {
+            value,
+            span: start.to(self.prev_span()),
+        })
     }
 
     fn parse_holding(&mut self) -> PResult<Stmt> {

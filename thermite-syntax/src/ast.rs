@@ -768,6 +768,8 @@ pub enum Effect {
     Read(RegionPath),
     Write(RegionPath),
     Net(RegionPath),
+    /// RFC-11's explicit abandonment footprint.
+    Forgets(RegionPath),
     /// Public, transitive acquisition footprint for an RFC-10 lock.
     Owns(Ident),
     Alloc,
@@ -816,6 +818,12 @@ pub enum Stmt {
     Holding {
         lock: Ident,
         body: Block,
+        span: Span,
+    },
+    /// `forget(value);` — RFC-11's explicit, effect-priced abandonment. This
+    /// is deliberately not represented as a name-based call.
+    Forget {
+        value: Expr,
         span: Span,
     },
     /// `break;` — the loop-control statement (ast.md REQ-12, #93). Payload-less

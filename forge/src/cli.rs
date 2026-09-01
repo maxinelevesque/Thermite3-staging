@@ -3732,6 +3732,7 @@ fn effect_spelling(effect: &thermite_syntax::Effect) -> String {
         thermite_syntax::Effect::Diverge => "diverge".into(),
         thermite_syntax::Effect::Term => "term".into(),
         thermite_syntax::Effect::Owns(lock) => format!("owns({lock})"),
+        thermite_syntax::Effect::Forgets(region) => format!("forgets({region})"),
     }
 }
 

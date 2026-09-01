@@ -1899,6 +1899,10 @@ fn encode_exec_stmt(stmt: &Stmt, ctx: &mut ExecCtx) -> Result<String, ExportRefu
         Stmt::Holding { .. } => Err(ExportRefusal::LoopBody(
             "holding block requires RFC-10 lock-provider semantics".to_string(),
         )),
+        Stmt::Forget { .. } => Err(ExportRefusal::LoopBody(
+            "RFC-11 `forget` requires resource semantics outside the v1 executable spine"
+                .to_string(),
+        )),
     }
 }
 
@@ -2928,6 +2932,9 @@ fn reject_out_of_while_subset_stmt(stmt: &Stmt) -> Result<(), ExportRefusal> {
         Stmt::Let { .. } | Stmt::Expr(_) => Ok(()),
         Stmt::Holding { .. } => Err(ExportRefusal::LoopBody(
             "holding block is outside the v1 while subset".to_string(),
+        )),
+        Stmt::Forget { .. } => Err(ExportRefusal::LoopBody(
+            "RFC-11 `forget` is outside the v1 while subset".to_string(),
         )),
     }
 }

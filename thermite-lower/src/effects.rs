@@ -78,6 +78,7 @@ pub enum EffectKind {
     Diverge,
     Term,
     Owns,
+    Forgets,
 }
 
 impl EffectKind {
@@ -101,6 +102,7 @@ impl EffectKind {
             EffectKind::Diverge => 7,
             EffectKind::Term => 8,
             EffectKind::Owns => 9,
+            EffectKind::Forgets => 10,
         };
         1u16 << index
     }
@@ -119,6 +121,7 @@ impl EffectKind {
             Effect::Diverge => EffectKind::Diverge,
             Effect::Term => EffectKind::Term,
             Effect::Owns(_) => EffectKind::Owns,
+            Effect::Forgets(_) => EffectKind::Forgets,
         }
     }
 }
@@ -700,18 +703,20 @@ fn collect_shared_place_effects(
                     errors,
                 );
             }
-            Stmt::Return(Some(expr)) | Stmt::Expr(expr) => collect_shared_expr(
-                expr,
-                false,
-                shared_roots,
-                regions,
-                locals,
-                held,
-                direct,
-                function,
-                span,
-                errors,
-            ),
+            Stmt::Return(Some(expr)) | Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                collect_shared_expr(
+                    expr,
+                    false,
+                    shared_roots,
+                    regions,
+                    locals,
+                    held,
+                    direct,
+                    function,
+                    span,
+                    errors,
+                )
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
             Stmt::If { cond, then, else_ } => {
                 collect_shared_expr(
@@ -1192,7 +1197,9 @@ fn collect_holding_effects(block: &Block, direct: &mut BTreeSet<Effect>) {
                 collect_holding_expr(target, direct);
                 collect_holding_expr(value, direct);
             }
-            Stmt::Return(Some(expr)) | Stmt::Expr(expr) => collect_holding_expr(expr, direct),
+            Stmt::Return(Some(expr)) | Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                collect_holding_expr(expr, direct)
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
         }
     }
@@ -1330,9 +1337,11 @@ fn check_holding_order(
                     check_holding_order(nested, regions, held, function, errors)
                 });
             }
-            Stmt::Return(Some(expr)) | Stmt::Expr(expr) => visit_expr_blocks(expr, &mut |nested| {
-                check_holding_order(nested, regions, held, function, errors)
-            }),
+            Stmt::Return(Some(expr)) | Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                visit_expr_blocks(expr, &mut |nested| {
+                    check_holding_order(nested, regions, held, function, errors)
+                })
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
         }
     }
@@ -1474,16 +1483,18 @@ fn check_holding_callees(
                     )
                 });
             }
-            Stmt::Return(Some(expr)) | Stmt::Expr(expr) => visit_expr_blocks(expr, &mut |nested| {
-                check_holding_callees(
-                    nested,
-                    function_names,
-                    footprints,
-                    regions,
-                    function,
-                    errors,
-                )
-            }),
+            Stmt::Return(Some(expr)) | Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                visit_expr_blocks(expr, &mut |nested| {
+                    check_holding_callees(
+                        nested,
+                        function_names,
+                        footprints,
+                        regions,
+                        function,
+                        errors,
+                    )
+                })
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
         }
     }
@@ -1674,7 +1685,7 @@ fn check_block(
                     errors,
                 );
             }
-            Stmt::Return(Some(e)) | Stmt::Expr(e) => {
+            Stmt::Return(Some(e)) | Stmt::Expr(e) | Stmt::Forget { value: e, .. } => {
                 check_expr(e, caller_fx, caller_name, caller_span, resolve, d, errors)
             }
             Stmt::Return(None) => {}

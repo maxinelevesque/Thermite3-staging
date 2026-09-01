@@ -479,6 +479,10 @@ fn reject_out_of_subset_stmt(stmt: &Stmt) -> Result<(), RefEncodeError> {
             "`holding` in the frozen v1 statement-TV subset (lock-provider semantics are outside this encoder)"
                 .to_string(),
         )),
+        Stmt::Forget { .. } => Err(RefEncodeError::Unsupported(
+            "`forget` requires RFC-11 resource semantics, outside the frozen v1 statement-TV subset"
+                .to_string(),
+        )),
         Stmt::Break => Err(RefEncodeError::Unsupported(
             "`break` in a v1 loop body (a `break` is a multi-exit form — the after-loop \
              characterization needs per-exit invariant conjuncts, a v2 extension; \
@@ -548,7 +552,7 @@ fn collect_assigned_cells_block(
             // A `let` introduces a fresh (branch-local or body-local) binding, not a
             // mutated outer cell; an `Expr`-stmt has no state effect. Neither
             // contributes a mutated loop cell.
-            Stmt::Let { .. } | Stmt::Expr(_) => {}
+            Stmt::Let { .. } | Stmt::Expr(_) | Stmt::Forget { .. } => {}
             // The multi-exit / nested forms are already rejected by
             // reject_out_of_subset_body before this is reached; kept exhaustive.
             Stmt::Loop(_) | Stmt::Break | Stmt::Continue | Stmt::Return(_) => {}
@@ -774,6 +778,10 @@ fn thread_stmt(stmt: &Stmt, env: &mut Env) -> Result<(), RefEncodeError> {
         )),
         Stmt::Holding { .. } => Err(RefEncodeError::Unsupported(
             "`holding` in a straight-line statement-TV body requires target lock semantics"
+                .to_string(),
+        )),
+        Stmt::Forget { .. } => Err(RefEncodeError::Unsupported(
+            "`forget` requires RFC-11 resource semantics, outside the frozen statement-TV subset"
                 .to_string(),
         )),
     }

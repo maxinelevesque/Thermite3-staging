@@ -555,6 +555,7 @@ fn collect_verified_block_calls(block: &Block, calls: &mut Vec<VerifiedCall>) {
                 collect_verified_block_calls(&node.body, calls);
             }
             Stmt::Expr(expr) => collect_verified_expr_calls(expr, calls),
+            Stmt::Forget { value, .. } => collect_verified_expr_calls(value, calls),
             Stmt::Break | Stmt::Continue => {}
             Stmt::Holding { .. } => {}
         }
@@ -708,6 +709,7 @@ fn walk_stmt(stmt: &Stmt, in_file: &BTreeSet<&str>, out: &mut Vec<String>) {
             walk_block(&node.body, in_file, out);
         }
         Stmt::Expr(e) => walk_expr(e, in_file, out),
+        Stmt::Forget { value, .. } => walk_expr(value, in_file, out),
         // break/continue carry no sub-expression and no callee (#93): no
         // call-graph edge (the layer-neutral leaf value).
         Stmt::Break | Stmt::Continue => {}

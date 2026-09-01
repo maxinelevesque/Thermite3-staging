@@ -3518,6 +3518,7 @@ fn effect_token(effect: &Effect) -> String {
         // runtime-sandbox.md REQ-7). A bare atom like `alloc`/`time`.
         Effect::Term => "term".to_string(),
         Effect::Owns(lock) => format!("owns({lock})"),
+        Effect::Forgets(region) => format!("forgets({region})"),
     }
 }
 

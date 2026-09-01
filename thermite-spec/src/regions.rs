@@ -368,6 +368,7 @@ impl RegionIndex {
 pub fn effect_path(effect: &Effect) -> Option<&RegionPath> {
     match effect {
         Effect::Read(path) | Effect::Write(path) | Effect::Net(path) => Some(path),
+        Effect::Forgets(_) => None,
         Effect::Alloc
         | Effect::Time
         | Effect::Rand

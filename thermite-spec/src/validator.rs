@@ -144,7 +144,8 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 use thermite_syntax::{
-    Block, Clause, Expr, IndexArg, Item, MatchArm, Pattern, Program, Span, Stmt, VariantShape,
+    Block, Clause, Effect, EffectRow, Expr, IndexArg, Item, MatchArm, Pattern, Program, Span, Stmt,
+    VariantShape,
 };
 
 use crate::combinators::{self, ArgKind, CombinatorSig};
@@ -1009,6 +1010,15 @@ impl Validator {
             }
             match item {
                 Item::Fn(f) => {
+                    let declares_forget = matches!(
+                        &f.contract.effects,
+                        EffectRow::Set(effects)
+                            if effects.iter().any(|effect| matches!(effect, Effect::Forgets(_)))
+                    );
+                    if declares_forget || f.body.as_ref().is_some_and(block_contains_forget) {
+                        self.errors
+                            .push(SpecError::UnsupportedResourceTypes { span: f.span });
+                    }
                     self.contract_bound = f.params.iter().map(|param| param.name.clone()).collect();
                     self.contract_position = Some("requires");
                     self.walk_clause(&f.contract.requires);
@@ -1169,6 +1179,7 @@ impl Validator {
                 self.scan_block_for_loops(&loop_node.body, loop_node.span);
             }
             Stmt::Holding { body, span, .. } => self.scan_block_for_loops(body, *span),
+            Stmt::Forget { value, .. } => self.scan_expr_for_loops(value, span),
             Stmt::Let { init, .. } => self.scan_expr_for_loops(init, span),
             Stmt::Assign { target, value } => {
                 self.scan_expr_for_loops(target, span);
@@ -1333,6 +1344,7 @@ impl Validator {
                 self.walk_block(&loop_node.body, loop_node.span);
             }
             Stmt::Holding { body, span, .. } => self.walk_block(body, *span),
+            Stmt::Forget { value, .. } => self.walk_expr(value, span),
             Stmt::Let { init, .. } => self.walk_expr(init, span),
             Stmt::Assign { target, value } => {
                 self.walk_expr(target, span);
@@ -2086,6 +2098,23 @@ fn block_calls_name(block: &Block, name: &str) -> bool {
             .is_some_and(|e| expr_calls_name(e, name))
 }
 
+fn block_contains_forget(block: &Block) -> bool {
+    block.stmts.iter().any(|stmt| match stmt {
+        Stmt::Forget { .. } => true,
+        Stmt::If { then, else_, .. } => {
+            block_contains_forget(then) || else_.as_ref().is_some_and(block_contains_forget)
+        }
+        Stmt::Loop(loop_) => block_contains_forget(&loop_.body),
+        Stmt::Holding { body, .. } => block_contains_forget(body),
+        Stmt::Let { .. }
+        | Stmt::Assign { .. }
+        | Stmt::Return(_)
+        | Stmt::Break
+        | Stmt::Continue
+        | Stmt::Expr(_) => false,
+    })
+}
+
 fn stmt_calls_name(stmt: &Stmt, name: &str) -> bool {
     match stmt {
         Stmt::Let { init, .. } => expr_calls_name(init, name),
@@ -2100,6 +2129,7 @@ fn stmt_calls_name(stmt: &Stmt, name: &str) -> bool {
         }
         Stmt::Loop(l) => block_calls_name(&l.body, name),
         Stmt::Holding { body, .. } => block_calls_name(body, name),
+        Stmt::Forget { value, .. } => expr_calls_name(value, name),
         Stmt::Break | Stmt::Continue => false,
         Stmt::Expr(e) => expr_calls_name(e, name),
     }

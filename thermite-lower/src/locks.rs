@@ -257,6 +257,10 @@ fn prepare_l3_block(
                 rewrite_bound_accesses(expr, held);
                 prepare_l3_expr(expr, regions, held, loop_depth, next_binding, next_temp)?;
             }
+            Stmt::Forget { value, .. } => {
+                rewrite_bound_accesses(value, held);
+                prepare_l3_expr(value, regions, held, loop_depth, next_binding, next_temp)?;
+            }
             Stmt::If { cond, then, else_ } => {
                 rewrite_bound_accesses(cond, held);
                 prepare_l3_expr(cond, regions, held, loop_depth, next_binding, next_temp)?;
@@ -574,7 +578,9 @@ fn rewrite_bound_block_only(block: &mut Block, held: &[L3Binding]) {
                 rewrite_bound_accesses(target, held);
                 rewrite_bound_accesses(value, held);
             }
-            Stmt::Return(Some(value)) | Stmt::Expr(value) => rewrite_bound_accesses(value, held),
+            Stmt::Return(Some(value)) | Stmt::Expr(value) | Stmt::Forget { value, .. } => {
+                rewrite_bound_accesses(value, held)
+            }
             Stmt::If { cond, then, else_ } => {
                 rewrite_bound_accesses(cond, held);
                 rewrite_bound_block_only(then, held);
@@ -632,7 +638,9 @@ fn normalize_close_block(
                 normalize_close_expr(target, held, loop_depth, next_temp);
                 normalize_close_expr(value, held, loop_depth, next_temp);
             }
-            Stmt::Expr(expr) => normalize_close_expr(expr, held, loop_depth, next_temp),
+            Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                normalize_close_expr(expr, held, loop_depth, next_temp)
+            }
         }
         normalized.push(stmt);
     }
@@ -764,7 +772,9 @@ fn rewrite_block(block: &mut Block, roots: &BTreeSet<String>, locals: &mut BTree
                 rewrite_expr(target, roots, locals);
                 rewrite_expr(value, roots, locals);
             }
-            Stmt::Return(Some(expr)) | Stmt::Expr(expr) => rewrite_expr(expr, roots, locals),
+            Stmt::Return(Some(expr)) | Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                rewrite_expr(expr, roots, locals)
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
             Stmt::If { cond, then, else_ } => {
                 rewrite_expr(cond, roots, locals);
@@ -964,9 +974,9 @@ fn block_uses_holding(block: &Block) -> bool {
                             pending.push(Node::Expr(target));
                             pending.push(Node::Expr(value));
                         }
-                        Stmt::Return(Some(expr)) | Stmt::Expr(expr) => {
-                            pending.push(Node::Expr(expr))
-                        }
+                        Stmt::Return(Some(expr))
+                        | Stmt::Expr(expr)
+                        | Stmt::Forget { value: expr, .. } => pending.push(Node::Expr(expr)),
                         Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
                     }
                 }
