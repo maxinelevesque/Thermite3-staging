@@ -158,6 +158,20 @@ fn a_declared_diverging_loop_has_no_resource_post_obligation() {
 }
 
 #[test]
+fn non_resource_projection_assignment_remains_owned_by_existing_checks() {
+    validate_source(
+        "struct State { n: u64 } keeps n < 10
+         shared state: State
+         lock gate guards state
+         fn update() -> u64 ! owns(gate), read(state.n), write(state.n)
+           requires true
+           ensures result < 10
+         { holding gate { state.n = 0; state.n } }",
+    )
+    .expect("RFC-11 flow must not reject an ordinary RFC-10 field assignment");
+}
+
+#[test]
 fn destructuring_replaces_containers_with_component_obligations() {
     validate_source(&format!(
         "{GRANT}\

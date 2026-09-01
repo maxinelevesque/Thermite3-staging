@@ -318,13 +318,23 @@ impl Checker<'_> {
             }
             Stmt::Assign { target, value } => {
                 let Expr::Path(path) = target else {
-                    self.error(
-                        ResourceFlowErrorKind::UnsupportedProjection,
-                        None,
-                        "resource flow supports assignment only to a semantic local place"
-                            .to_string(),
-                        self.function_span,
-                    );
+                    // RFC-11 owns only resource-bearing assignment. Preserve
+                    // existing field/index assignment for the RFC-10 and
+                    // ordinary-value validators, while still walking the
+                    // target so projecting through a resource is rejected and
+                    // consuming a resource into an unsupported place fails
+                    // closed.
+                    self.use_expr(target, UseMode::Borrow, &mut state);
+                    let inferred = self.use_expr(value, UseMode::Move, &mut state);
+                    if inferred.as_ref().is_some_and(|ty| self.is_resource(ty)) {
+                        self.error(
+                            ResourceFlowErrorKind::UnsupportedProjection,
+                            expr_place(value),
+                            "moving a resource requires assignment to a semantic local place"
+                                .to_string(),
+                            self.function_span,
+                        );
+                    }
                     return next(state);
                 };
                 let Some(name) = path.first().filter(|_| path.len() == 1).cloned() else {
