@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 535c8ba9fc025d298e32b1666fa2398b0129e122d355b0a04933b7e26281c75f (re-pinned 2026-09-01 after re-materializing all 576 typed closures against the corrected RFC-11 contract and implementation; structural replay, inventory, and registry gates are clean. prior: 2ddae85e6e3237f4c132bfdc156fde9f9391e4bfb638b80e4e403b9756ecc709)
+audited-content-sha256: a5919d8e4dc0af6a4ed0fa90d6f265d92f0da0b399f6728235d7a4c161ba66b1 (re-pinned 2026-09-01 after synchronizing the reviewed registry-source digest following the RFC-11 CI partition update; inventory, structural replay, and documentation drift are clean. prior: 535c8ba9fc025d298e32b1666fa2398b0129e122d355b0a04933b7e26281c75f)
 
 ## Summary
 
