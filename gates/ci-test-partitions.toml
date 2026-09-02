@@ -9515,3 +9515,190 @@ bucket = 12
 seconds = 0.007
 test = "thermite-lower::claim_closure_wave19 verus_unknown_counts_fail_closed_for_compile_publication_and_replay"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# RFC-11 resource-types tests measured locally after the frozen baseline.
+[[assignment]]
+bucket = 10
+seconds = 0.944
+test = "forge::bin/forge check::tests::rfc11_certificate_and_audit_disclose_checked_flow_and_reject_legacy_fallback"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.005
+test = "forge::bin/forge check::tests::rfc11_replay_requires_an_explicit_axiom_free_report"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 2.719
+test = "forge::resource_types_conformance resource_program_receives_only_a_resource_aware_certificate"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::resource_effects forget_footprints_are_inferred_directly_and_transitively"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::resource_effects transitive_forget_requires_the_caller_atom"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.018
+test = "thermite-lower::resource_types_fail_closed expression_nested_forget_is_detected_at_the_certification_boundary"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.590
+test = "thermite-lower::resource_types_fail_closed l1_and_l3_emit_explicit_abandonment_with_a_bound_resource_witness"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 5.205
+test = "thermite-lower::resource_witness lean_rejects_semantically_invalid_but_structurally_matching_mutations"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 1.863
+test = "thermite-lower::resource_witness resource_witness_is_deterministic_bound_and_replayed_by_lean"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.015
+test = "thermite-lower::resource_witness rust_replay_rejects_digest_and_flow_mutations_by_named_field"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-spec::resource_flow a_declared_diverging_loop_has_no_resource_post_obligation"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-spec::resource_flow borrows_do_not_consume_but_by_value_calls_do"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-spec::resource_flow branch_joins_require_the_same_live_set"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-spec::resource_flow destructuring_replaces_containers_with_component_obligations"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-spec::resource_flow early_returns_and_loop_edges_are_checked_independently"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-spec::resource_flow forget_and_transfer_discharge_live_resources"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-spec::resource_flow forget_requires_the_complete_declared_effect_footprint"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-spec::resource_flow leaks_double_consumption_copy_and_overwrite_are_rejected"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-spec::resource_flow multi_region_forget_prices_every_provenance_atom"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-spec::resource_flow non_resource_projection_assignment_remains_owned_by_existing_checks"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-spec::resource_provenance direct_and_contagious_provenance_is_order_independent_and_multi_region"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-spec::resource_provenance every_owning_constructor_is_contagious_but_borrows_are_not"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-spec::resource_provenance missing_empty_and_mismatched_markers_name_the_responsible_component"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-spec::resource_provenance recursive_and_variant_payload_contagion_reaches_a_fixed_point"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-spec::resource_types_fail_closed non_resource_forget_fails_at_the_flow_boundary"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-spec::resource_types_fail_closed non_resource_forget_nested_in_an_expression_fails_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-spec::resource_types_fail_closed parsed_resource_declaration_is_accepted_by_provenance_boundary"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-syntax::resource_types_parse forget_statement_and_forgets_effect_have_dedicated_canonical_nodes"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-syntax::resource_types_parse malformed_resource_modifiers_have_structured_diagnostics"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-syntax::resource_types_parse resource_remains_an_identifier_outside_item_modifier_position"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-syntax::resource_types_parse resource_structs_and_enums_preserve_explicit_and_bare_provenance"
+timing_provenance = "reviewed_local_estimate_after_baseline"

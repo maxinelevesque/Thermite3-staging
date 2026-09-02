@@ -19611,7 +19611,7 @@ note = "REQ-1 and architecture define the measured thirteen-partition topology"
 [[requirement.evidence]]
 kind = "file"
 target = "gates/ci-test-partitions.toml"
-note = "1533-test reviewed assignment across twelve explicit buckets plus catch-all metadata"
+note = "1878-test reviewed assignment across twelve explicit buckets plus catch-all metadata"
 [[requirement.evidence]]
 kind = "file"
 target = ".github/workflows/ci.yml"
