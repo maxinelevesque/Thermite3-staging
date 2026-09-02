@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 0a8837e57de065a5120bec38bfe1f4a1ebf9a8ee1db1ed89cd3259551d07f23e (re-pinned 2026-09-01 after the stable schema-v2 authority refresh: generated audit-pin metadata is excluded from semantic evidence digests, 572 typed closures are refreshed, and the resolved issue-48 linkage remains durable. Language coverage is unchanged. prior: 22012ce60203445e1e25a3ccfcce66d64d176f418a248d416fe6dba890b6e65c)
+audited-content-sha256: c3c7f609bad8fa897d6ce97673f50569d7708dc03a8674a2ff786afeac6266fe (re-pinned 2026-09-01 after separating dependency-free structural authority checks from the provisioned executable/formal replay lane. All 572 typed closures were refreshed under the new kernel; language coverage and the resolved issue-48 linkage are unchanged. prior: 0a8837e57de065a5120bec38bfe1f4a1ebf9a8ee1db1ed89cd3259551d07f23e)
 
 ## Summary
 

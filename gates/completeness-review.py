@@ -411,6 +411,7 @@ def check(
     *,
     backlog_document: dict | None = None,
     registry_document: dict | None = None,
+    execute: bool = True,
 ) -> list[str]:
     try:
         inventory = tomllib.loads((root / INVENTORY).read_text(encoding="utf-8"))
@@ -677,13 +678,14 @@ def check(
             formal_path = subject.split("#", 1)[0] if isinstance(subject, str) else ""
             if formal_path not in artifact_paths:
                 problems.append(f"{req_id}: theorem module must be a content-bound artifact")
-            formal_observed, detail = probe_lean_theorem(root, subject)
-            if formal_observed is None:
-                problems.append(f"{req_id}: {detail}")
-                continue
-            observed = formal_observed
-            if observed != expected:
-                problems.append(f"{req_id}: Lean theorem observation differs from expectation")
+            if execute:
+                formal_observed, detail = probe_lean_theorem(root, subject)
+                if formal_observed is None:
+                    problems.append(f"{req_id}: {detail}")
+                    continue
+                observed = formal_observed
+                if observed != expected:
+                    problems.append(f"{req_id}: Lean theorem observation differs from expectation")
         elif mechanism == "executable_discriminator":
             argv = closure.get("verifier")
             oracle = closure.get("oracle")
@@ -710,7 +712,7 @@ def check(
                 or version_argv[0] != argv[0]
             ):
                 problems.append(f"{req_id}: tool-version probe must share verifier identity")
-            elif command_version(root, version_argv) != closure.get("tool_version"):
+            elif execute and command_version(root, version_argv) != closure.get("tool_version"):
                 problems.append(f"{req_id}: executable verifier tool version is stale")
             repo_verifier_inputs = {
                 value
@@ -733,23 +735,26 @@ def check(
                 problems.append(
                     f"{req_id}: executable requirement owner must be content-bound"
                 )
-            key = (*argv, str(oracle))
-            pair = verifier_cache.get(key)
-            if pair is None:
-                pair = (
-                    run_bound_verifier(root, argv, oracle),
-                    run_bound_verifier(root, argv, oracle),
-                )
-                verifier_cache[key] = pair
-            result, repeated = pair
-            returncode, observation_digest = result
-            if repeated != result:
-                problems.append(f"{req_id}: positive verifier is not deterministic")
-            observed = ["accepted"] if returncode == 0 else [f"exit:{returncode}"]
-            if observed != expected:
-                problems.append(f"{req_id}: positive oracle observation differs from expectation")
-            if returncode != 0:
-                problems.append(f"{req_id}: positive oracle must exit 0")
+            returncode: int | None = None
+            observation_digest: str | None = None
+            if execute:
+                key = (*argv, str(oracle))
+                pair = verifier_cache.get(key)
+                if pair is None:
+                    pair = (
+                        run_bound_verifier(root, argv, oracle),
+                        run_bound_verifier(root, argv, oracle),
+                    )
+                    verifier_cache[key] = pair
+                result, repeated = pair
+                returncode, observation_digest = result
+                if repeated != result:
+                    problems.append(f"{req_id}: positive verifier is not deterministic")
+                result_observation = ["accepted"] if returncode == 0 else [f"exit:{returncode}"]
+                if result_observation != expected:
+                    problems.append(f"{req_id}: positive oracle observation differs from expectation")
+                if returncode != 0:
+                    problems.append(f"{req_id}: positive oracle must exit 0")
             counterfeits = closure.get("counterfeit")
             if not isinstance(counterfeits, list) or not counterfeits:
                 problems.append(f"{req_id}: executable discriminator needs named counterfeits")
@@ -785,29 +790,34 @@ def check(
                     ):
                         problems.append(f"{req_id}/{name}: counterfeit must expect rejection")
                         continue
-                    counterfeit_key = (
-                        *argv,
-                        str(oracle),
-                        canonical_json(counterfeit),
-                    )
-                    counterfeit_pair = counterfeit_cache.get(counterfeit_key)
-                    if counterfeit_pair is None:
-                        counterfeit_pair = (
-                            run_mutated_verifier(root, argv, oracle, counterfeit),
-                            run_mutated_verifier(root, argv, oracle, counterfeit),
+                    if execute:
+                        counterfeit_key = (
+                            *argv,
+                            str(oracle),
+                            canonical_json(counterfeit),
                         )
-                        counterfeit_cache[counterfeit_key] = counterfeit_pair
-                    first_counterfeit, repeated_counterfeit = counterfeit_pair
-                    ccode, _ = first_counterfeit
-                    if ccode != expected_exit:
-                        problems.append(
-                                f"{req_id}/{name}: counterfeit returned {ccode}, expected {expected_exit}"
+                        counterfeit_pair = counterfeit_cache.get(counterfeit_key)
+                        if counterfeit_pair is None:
+                            counterfeit_pair = (
+                                run_mutated_verifier(root, argv, oracle, counterfeit),
+                                run_mutated_verifier(root, argv, oracle, counterfeit),
                             )
-                    if ccode == returncode:
-                        problems.append(f"{req_id}/{name}: counterfeit did not discriminate")
-                    if first_counterfeit != repeated_counterfeit:
-                        problems.append(f"{req_id}/{name}: counterfeit verifier is not deterministic")
-            observed = {"result": observed, "output_digest": observation_digest}
+                            counterfeit_cache[counterfeit_key] = counterfeit_pair
+                        first_counterfeit, repeated_counterfeit = counterfeit_pair
+                        ccode, _ = first_counterfeit
+                        if ccode != expected_exit:
+                            problems.append(
+                                    f"{req_id}/{name}: counterfeit returned {ccode}, expected {expected_exit}"
+                                )
+                        if ccode == returncode:
+                            problems.append(f"{req_id}/{name}: counterfeit did not discriminate")
+                        if first_counterfeit != repeated_counterfeit:
+                            problems.append(f"{req_id}/{name}: counterfeit verifier is not deterministic")
+            if execute:
+                observed = {
+                    "result": ["accepted"] if returncode == 0 else [f"exit:{returncode}"],
+                    "output_digest": observation_digest,
+                }
         else:
             if closure.get("verifier") != ["builtin:exact_population"]:
                 problems.append(f"{req_id}: exact population must use the built-in verifier")
@@ -864,11 +874,17 @@ def check(
                         problems.append(f"{req_id}: hostile {name} mutation was not rejected")
             observed = extracted
 
-        expected_discriminator = discriminator_digest(root, closure, observed)
         discriminator = closure.get("discriminator")
-        if expected_discriminator is None or discriminator != expected_discriminator:
-            problems.append(f"{req_id}: per-claim discriminator is missing or stale")
-        elif discriminator in witness_discriminators.setdefault(witness_id, set()):
+        if observed is None and not execute:
+            if not isinstance(discriminator, str) or SHA256.fullmatch(discriminator) is None:
+                problems.append(f"{req_id}: per-claim discriminator is missing or malformed")
+        else:
+            expected_discriminator = discriminator_digest(root, closure, observed)
+            if expected_discriminator is None or discriminator != expected_discriminator:
+                problems.append(f"{req_id}: per-claim discriminator is missing or stale")
+        if not isinstance(discriminator, str):
+            continue
+        if discriminator in witness_discriminators.setdefault(witness_id, set()):
             problems.append(
                 f"{req_id}: discriminator result is reused within {witness_id}"
             )
@@ -909,11 +925,16 @@ def check(
             )
         witness_identity_owners[witness_identity] = witness_id
 
-        receipt = closure_receipt(root, closure, observed=observed)
-        if receipt is None:
-            problems.append(f"{req_id}: closure receipt inputs are incomplete")
-        elif closure.get("receipt") != receipt:
-            problems.append(f"{req_id}: closure receipt is missing or stale")
+        if observed is None and not execute:
+            receipt = closure.get("receipt")
+            if not isinstance(receipt, str) or SHA256.fullmatch(receipt) is None:
+                problems.append(f"{req_id}: closure receipt is missing or malformed")
+        else:
+            receipt = closure_receipt(root, closure, observed=observed)
+            if receipt is None:
+                problems.append(f"{req_id}: closure receipt inputs are incomplete")
+            elif closure.get("receipt") != receipt:
+                problems.append(f"{req_id}: closure receipt is missing or stale")
 
     expected_population = set(shipped) | set(baseline)
     missing_closures = sorted(expected_population - set(closures))
@@ -936,13 +957,19 @@ def check(
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
+    parser.add_argument(
+        "--structural",
+        action="store_true",
+        help="validate authority and content bindings without external tool replay",
+    )
     args = parser.parse_args(argv)
-    problems = check(Path(args.root).resolve())
+    problems = check(Path(args.root).resolve(), execute=not args.structural)
     if problems:
         for problem in problems:
             print(f"completeness-review: {problem}", file=sys.stderr)
         return 1
-    print("completeness review track: clean")
+    mode = "structural" if args.structural else "full replay"
+    print(f"completeness review track ({mode}): clean")
     return 0
 
 
