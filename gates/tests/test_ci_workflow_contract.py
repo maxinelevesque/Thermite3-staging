@@ -61,6 +61,10 @@ class CiWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(required, job)
 
+    def test_prepared_lean_build_includes_rfc11_resource_replay(self) -> None:
+        for job_name in ("lean-prepare", "test"):
+            self.assertIn("Thermite.ResourceFlow", self.job(job_name))
+
     def test_gate_fanout_and_stable_aggregates_are_closed(self) -> None:
         self.assertIn(
             "segment: [parser-lowering, checked-replay]", self.job("g3_children")

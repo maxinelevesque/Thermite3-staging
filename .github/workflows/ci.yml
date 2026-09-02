@@ -263,6 +263,7 @@ jobs:
           Thermite.Strat.EprReplay
           Thermite.Strat.TestModel
           Thermite.Reconstruct
+          Thermite.ResourceFlow
       - name: Publish prepared Lean build
         uses: actions/upload-artifact@v4
         with:
@@ -323,6 +324,7 @@ jobs:
           Thermite.Strat.EprReplay
           Thermite.Strat.TestModel
           Thermite.Reconstruct
+          Thermite.ResourceFlow
 
       - name: Install toolchain (pinned to rust-toolchain.toml channel)
         uses: dtolnay/rust-toolchain@1.95.0
