@@ -250,7 +250,7 @@ gap = "GAP-RFC3-MIGRATION"
 id = "CLAIM-REGISTRY-SHIPPED-EVIDENCE"
 profile = "current-language"
 source = ".design/reqs/registry.toml"
-source_sha256 = "acda1d61d64c4984c236162f1d4043da6f119e458cf6cc7bbfba926cd5823866"
+source_sha256 = "bda2b2aa4207cab2ce2e1f475c38c92e15af4e4fa31ac12d49b7fdbe0e351a5b"
 anchor = "[[requirement]]"
 evidence = ["gates/req-registry.py", "gates/req-status.py"]
 gap = "GAP-CLAIM-EVIDENCE-CLOSURE"
@@ -337,15 +337,16 @@ evidence = ["forge/src/manifest.rs", "forge/src/kani.rs", "forge/src/check.rs", 
 
 [[gap]]
 id = "GAP-CLAIM-EVIDENCE-CLOSURE"
-status = "open"
+status = "resolved"
 stages = ["certification"]
 counterexample = "A shipped registry row citing an existing file whose contents do not entail the requirement summary."
 claimed = "Shipped requirement evidence identifies implemented behavior."
 observed = "Registry links are checked structurally, not as a proof that each prose claim follows from its evidence."
 trust_consequence = "A present evidence path can be mistaken for semantic entailment."
-disposition = "completeness_review"
 issue = "https://github.com/maxinelevesque/Thermite3-staging/issues/48"
-evidence = ["gates/req-registry.py"]
+review_item = "CR-001"
+evidence = ["gates/completeness-review.py", "gates/claim-closure-author.py"]
+resolution_evidence = ["gates/claim-closure-meta.py", "gates/claim-closure-oracles/self-governance.json", "gates/tests/test_claim_closure_author.py", "gates/tests/test_completeness_review.py"]
 
 [[rfc3_increment]]
 id = "R2-1"

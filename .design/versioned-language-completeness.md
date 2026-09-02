@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 397c90b0c100a4e9391e0c9945a9ab428623a87e7fe20fc74ef4c23c39931b6a (re-pinned 2026-08-29 for the clause-portfolio audit exposure assertion; language completeness is unchanged. prior: 1529bc2337bb425ca063dea3e97d182e7ed0c38f4a0ed3ceb2d9de33f99975f0)
+audited-content-sha256: c3c7f609bad8fa897d6ce97673f50569d7708dc03a8674a2ff786afeac6266fe (re-pinned 2026-09-01 after separating dependency-free structural authority checks from the provisioned executable/formal replay lane. All 572 typed closures were refreshed under the new kernel; language coverage and the resolved issue-48 linkage are unchanged. prior: 0a8837e57de065a5120bec38bfe1f4a1ebf9a8ee1db1ed89cd3259551d07f23e)
 
 ## Summary
 
@@ -190,12 +190,12 @@ checker vocabulary as the language-wide ontology.
   tuple, frame, policy version, or display label either recompute consistently
   or reject. Repository search and structural tests demonstrate that gates and
   routing inspect formal data rather than display labels.
-- [ ] AC-16: (REQ-15) The requirement-registry gate rejects a shipped row with
+- [x] AC-16: (REQ-15) The requirement-registry gate rejects a shipped row with
   no well-typed claim and rejects a claim payload that does not match its
   declared claim kind. Mutating only the prose summary leaves the authoritative
   claim digest unchanged but produces a review-visible presentation-drift
   diagnostic when the registered correspondence check no longer holds.
-- [ ] AC-17: (REQ-16) A generated migration manifest contains exactly the 566
+- [x] AC-17: (REQ-16) A generated migration manifest contains exactly the 566
   baseline shipped IDs, and the live closure view contains every currently
   shipped ID. Removing, duplicating, substituting, or adding an unclosed ID
   fails the gate; the completeness-review item cannot close while either set is
@@ -203,7 +203,7 @@ checker vocabulary as the language-wide ontology.
   authoritative, but they cannot appear as claims, witnesses, or closures in
   either authoritative v1 document and materialization refuses any population
   smaller than the exact live baseline.
-- [ ] AC-18: (REQ-17) The closure schema rejects an unknown mechanism and any
+- [x] AC-18: (REQ-17) The closure schema rejects an unknown mechanism and any
   attempt to use a bare provenance link as semantic closure. Each accepted
   formal theorem is checked under its declared axiom profile, each executable
   discriminator accepts its named positive oracle and rejects every named
@@ -213,12 +213,12 @@ checker vocabulary as the language-wide ontology.
   whole-line extractors over at least two members and name their closed-set
   class, and the known-red policy corpus is rejected under every load-bearing
   inversion.
-- [ ] AC-19: (REQ-18) Shared-witness fixtures fail when a requirement is omitted
+- [x] AC-19: (REQ-18) Shared-witness fixtures fail when a requirement is omitted
   from or added to the declared membership, when a declared member has no
   per-claim discriminator, or when one member's discriminator is reused as
   proof of a different claim. The generated report exposes the exact witness
   set and the result for every requirement ID.
-- [ ] AC-20: (REQ-19) Closure receipts reproduce from canonical inputs. A
+- [x] AC-20: (REQ-19) Closure receipts reproduce from canonical inputs. A
   one-byte change to the typed claim, witness input, expected oracle, verifier
   implementation/version, or exact population changes the bound digest and
   makes the old receipt stale; a clean checkout can deterministically rebuild
@@ -250,6 +250,18 @@ semantic proof. Their migration baseline is the 566 rows already marked
 shipped at this design decision; later shipped rows enter the same live closure
 gate. This work is independent of AC-15's production certificate-authority
 migration, which remains owned by issue #56.
+
+### Implementation reconciliation — 2026-09-01
+
+AC-16 through AC-20 now activate together at schema v2. The frozen 566-row
+baseline, every later shipped row, and the five closure-system requirements
+themselves are materialized as one exact live population. The authoring gate
+derives typed claims, per-claim discriminators, exact witness membership, and
+content-bound receipts before either authoritative document changes; the
+authoritative replay then reproduces every observation and receipt. A dedicated
+self-governance oracle runs the typed-authority, population, mechanism,
+shared-witness, and receipt mutation suites, so the closure system receives no
+umbrella or grandfathered exemption from its own rules.
 
 ## Architecture
 

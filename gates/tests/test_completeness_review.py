@@ -329,9 +329,58 @@ class ReviewTrackTests(unittest.TestCase):
         self.write(self.open_gap(), self.open_item(), stale_receipt=True)
         self.assertTrue(any("receipt is missing or stale" in e for e in MODULE.check(self.root)))
 
+    def test_markdown_audit_pin_is_not_semantic_evidence(self):
+        path = self.root / "design.md"
+        path.write_text(
+            "audited-content-sha256: " + "1" * 64 + " (first pin)\nBody.\n",
+            encoding="utf-8",
+        )
+        first = MODULE.artifact_digest(self.root, "design.md")
+        path.write_text(
+            "audited-content-sha256: " + "2" * 64 + " (refreshed pin)\nBody.\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(first, MODULE.artifact_digest(self.root, "design.md"))
+        path.write_text(
+            "audited-content-sha256: " + "2" * 64 + " (refreshed pin)\nChanged.\n",
+            encoding="utf-8",
+        )
+        self.assertNotEqual(first, MODULE.artifact_digest(self.root, "design.md"))
+
     def test_executable_discriminator_runs_same_verifier_on_mutated_oracle(self):
         self.write_executable()
         self.assertEqual(MODULE.check(self.root), [])
+
+    def test_structural_mode_does_not_require_external_tool_replay(self):
+        self.write_executable()
+        with mock.patch.object(
+            MODULE,
+            "command_version",
+            side_effect=AssertionError("structural mode executed a tool"),
+        ), mock.patch.object(
+            MODULE,
+            "run_bound_verifier",
+            side_effect=AssertionError("structural mode executed a verifier"),
+        ), mock.patch.object(
+            MODULE,
+            "run_mutated_verifier",
+            side_effect=AssertionError("structural mode executed a counterfeit"),
+        ):
+            self.assertEqual(MODULE.check(self.root, execute=False), [])
+
+        ledger = self.root / MODULE.BACKLOG
+        ledger.write_text(
+            ledger.read_text(encoding="utf-8").replace(
+                'receipt = "', 'receipt = "not-a-digest', 1
+            ),
+            encoding="utf-8",
+        )
+        self.assertTrue(
+            any(
+                "receipt is missing or malformed" in problem
+                for problem in MODULE.check(self.root, execute=False)
+            )
+        )
 
     def test_executable_discriminator_binds_requirement_owner(self):
         self.write_executable()

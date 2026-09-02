@@ -164,7 +164,11 @@ jobs:
       - name: claim-closure frozen population
         run: uv run python gates/claim-closure-author.py --check-baseline
       - name: completeness-review backlog consistency
-        run: uv run python gates/completeness-review.py
+        # This early job intentionally has no Lean/Verus/proof-tool setup. It
+        # validates the complete authority graph and content bindings here;
+        # lean-probe performs the executable/formal draft replay below after
+        # installing the pinned toolchain.
+        run: uv run python gates/completeness-review.py --structural
 
       - name: Rust build cache
         uses: Swatinem/rust-cache@v2
