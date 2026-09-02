@@ -1,5 +1,5 @@
 use std::process::Command;
-use thermite_lower::{check_program, lower, lower_l1, lower_l3_artifact};
+use thermite_lower::{check_program, contains_rfc11, lower, lower_l1, lower_l3_artifact};
 use thermite_syntax::parse;
 
 #[test]
@@ -76,4 +76,24 @@ fn l1_and_l3_emit_explicit_abandonment_with_a_bound_resource_witness() {
         .query_identity()
         .contains(&witness.checked_resource_sha256));
     std::fs::remove_dir_all(fixture).unwrap();
+}
+
+#[test]
+fn expression_nested_forget_is_detected_at_the_certification_boundary() {
+    let parsed = parse(
+        "fn release(x: u64) -> u64\n\
+         ! forgets(heap)\n\
+         requires true\n\
+         ensures true\n\
+         { let y: u64 = if x > 0 { forget(x); x } else { x }; y }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    assert!(
+        contains_rfc11(&parsed.program),
+        "the whole-program certificate boundary must see expression-nested RFC-11 syntax"
+    );
+    assert!(
+        check_program(&parsed.program).is_err(),
+        "the unchecked forget must fail before lowering or certification"
+    );
 }

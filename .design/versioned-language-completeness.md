@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 4194f4fdc9cb866057e8ee280bc0e864f1509df03aeab61f62fb1bc223953013 (re-pinned 2026-09-01 for RFC-11 resource-types activation: all 576 typed closures replay under the schema-v2 kernel, and the checked inventory now covers 128 constructs and 11 claim groups. prior: c3c7f609bad8fa897d6ce97673f50569d7708dc03a8674a2ff786afeac6266fe)
+audited-content-sha256: 2ddae85e6e3237f4c132bfdc156fde9f9391e4bfb638b80e4e403b9756ecc709 (re-pinned 2026-09-01 after refreshing the registry-source digest for RFC-11's narrowed formal-replay evidence statement; the inventory remains clean at 128 constructs and 11 claim groups. prior: 4194f4fdc9cb866057e8ee280bc0e864f1509df03aeab61f62fb1bc223953013)
 
 ## Summary
 

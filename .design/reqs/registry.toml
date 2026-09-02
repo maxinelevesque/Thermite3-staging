@@ -19234,7 +19234,7 @@ note = "path-sensitive transfer, return, destructuring, branch, loop, and reject
 [[requirement.evidence]]
 kind = "file"
 target = "lean/Thermite/ResourceFlow.lean"
-note = "kernel replay checks returning paths, joins, loops, exact forget footprints, and unique disposition labels"
+note = "kernel replay checks transcribed returning-edge closure, stated join and loop equality, exact forget footprints, and unique disposition labels; Rust flow computation and witness extraction remain named residual trust"
 [[requirement.evidence]]
 kind = "test"
 target = "thermite-lower/tests/resource_witness.rs"

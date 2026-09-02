@@ -5,8 +5,8 @@
 //! region/lock resolution, and effect/holding analysis must all succeed.
 
 use thermite_syntax::{
-    is_lexically_shadowed, semantic_inventory, walk_semantic, NodeId, Program, RegionPath,
-    SemanticEvent, SemanticFact, SemanticInventory, WorkBudget,
+    is_lexically_shadowed, semantic_inventory, walk_semantic, Block, Expr, IndexArg, LoopKind,
+    NodeId, Program, RegionPath, SemanticEvent, SemanticFact, SemanticInventory, Stmt, WorkBudget,
 };
 
 use crate::effects::{analyze_effects_unchecked, EffectAnalysis};
@@ -176,16 +176,82 @@ pub fn contains_rfc11(program: &Program) -> bool {
     first_rfc11_span(program).is_some()
 }
 
-fn first_forget_in_block(block: &thermite_syntax::Block) -> Option<thermite_syntax::Span> {
-    block.stmts.iter().find_map(|stmt| match stmt {
-        thermite_syntax::Stmt::Forget { span, .. } => Some(*span),
-        thermite_syntax::Stmt::If { then, else_, .. } => {
-            first_forget_in_block(then).or_else(|| else_.as_ref().and_then(first_forget_in_block))
+fn first_forget_in_block(block: &Block) -> Option<thermite_syntax::Span> {
+    block
+        .stmts
+        .iter()
+        .find_map(|stmt| match stmt {
+            Stmt::Forget { span, .. } => Some(*span),
+            Stmt::Let { init, .. } => first_forget_in_expr(init),
+            Stmt::Assign { target, value } => {
+                first_forget_in_expr(target).or_else(|| first_forget_in_expr(value))
+            }
+            Stmt::Return(expr) => expr.as_ref().and_then(first_forget_in_expr),
+            Stmt::If { cond, then, else_ } => first_forget_in_expr(cond)
+                .or_else(|| first_forget_in_block(then))
+                .or_else(|| else_.as_ref().and_then(first_forget_in_block)),
+            Stmt::Loop(loop_) => match &loop_.kind {
+                LoopKind::While(cond) => first_forget_in_expr(cond),
+                LoopKind::Loop => None,
+            }
+            .or_else(|| first_forget_in_block(&loop_.body)),
+            Stmt::Holding { body, .. } => first_forget_in_block(body),
+            Stmt::Expr(expr) => first_forget_in_expr(expr),
+            Stmt::Break | Stmt::Continue => None,
+        })
+        .or_else(|| block.tail.as_deref().and_then(first_forget_in_expr))
+}
+
+fn first_forget_in_expr(expr: &Expr) -> Option<thermite_syntax::Span> {
+    match expr {
+        Expr::Call { callee, args } => {
+            first_forget_in_expr(callee).or_else(|| args.iter().find_map(first_forget_in_expr))
         }
-        thermite_syntax::Stmt::Loop(loop_) => first_forget_in_block(&loop_.body),
-        thermite_syntax::Stmt::Holding { body, .. } => first_forget_in_block(body),
-        _ => None,
-    })
+        Expr::MethodCall { receiver, args, .. } => {
+            first_forget_in_expr(receiver).or_else(|| args.iter().find_map(first_forget_in_expr))
+        }
+        Expr::Field { receiver, .. }
+        | Expr::Closure { body: receiver, .. }
+        | Expr::Unary { expr: receiver, .. }
+        | Expr::Cast { expr: receiver, .. }
+        | Expr::Ref { expr: receiver, .. }
+        | Expr::Deref(receiver)
+        | Expr::TupleProj { receiver, .. }
+        | Expr::Is {
+            scrutinee: receiver,
+            ..
+        } => first_forget_in_expr(receiver),
+        Expr::Match { scrutinee, arms } => first_forget_in_expr(scrutinee).or_else(|| {
+            arms.iter().find_map(|arm| {
+                arm.guard
+                    .as_ref()
+                    .and_then(first_forget_in_expr)
+                    .or_else(|| first_forget_in_expr(&arm.body))
+            })
+        }),
+        Expr::If { cond, then, else_ } => first_forget_in_expr(cond)
+            .or_else(|| first_forget_in_block(then))
+            .or_else(|| first_forget_in_block(else_)),
+        Expr::Binary { lhs, rhs, .. } => {
+            first_forget_in_expr(lhs).or_else(|| first_forget_in_expr(rhs))
+        }
+        Expr::Index { base, index } => first_forget_in_expr(base).or_else(|| match index {
+            IndexArg::Single(expr) | IndexArg::RangeTo(expr) | IndexArg::RangeFrom(expr) => {
+                first_forget_in_expr(expr)
+            }
+            IndexArg::Range(lo, hi) => {
+                first_forget_in_expr(lo).or_else(|| first_forget_in_expr(hi))
+            }
+        }),
+        Expr::StructLit { fields, .. } => fields
+            .iter()
+            .find_map(|(_, value)| first_forget_in_expr(value)),
+        Expr::Tuple(items) => items.iter().find_map(first_forget_in_expr),
+        Expr::Quantifier { domain, body, .. } => {
+            first_forget_in_expr(domain).or_else(|| first_forget_in_expr(body))
+        }
+        Expr::IntLit { .. } | Expr::BoolLit(_) | Expr::Path(_) | Expr::StrLit(_) => None,
+    }
 }
 
 #[derive(Clone, Copy)]

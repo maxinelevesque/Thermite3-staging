@@ -37,3 +37,25 @@ fn non_resource_forget_fails_at_the_flow_boundary() {
         }
     )));
 }
+
+#[test]
+fn non_resource_forget_nested_in_an_expression_fails_closed() {
+    let parsed = parse(
+        "fn release(x: u64) -> u64\n\
+         ! forgets(heap)\n\
+         requires true\n\
+         ensures true\n\
+         { let y: u64 = if x > 0 { forget(x); x } else { x }; y }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+
+    let errors = validate(&parsed.program)
+        .expect_err("an expression-nested forget must not bypass resource-flow validation");
+    assert!(errors.iter().any(|error| matches!(
+        error,
+        SpecError::ResourceFlow {
+            kind: ResourceFlowErrorKind::NonResourceForget,
+            ..
+        }
+    )));
+}

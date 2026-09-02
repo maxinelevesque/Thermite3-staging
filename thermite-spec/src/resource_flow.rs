@@ -246,37 +246,92 @@ pub fn check_resource_flow(
 }
 
 fn program_contains_forget(program: &Program) -> bool {
-    let mut pending: Vec<&Block> = program
-        .items
-        .iter()
-        .filter_map(|item| match item {
-            Item::Fn(function) => function.body.as_ref(),
-            _ => None,
-        })
-        .collect();
+    program.items.iter().any(|item| match item {
+        Item::Fn(function) => function.body.as_ref().is_some_and(block_contains_forget),
+        _ => false,
+    })
+}
 
-    while let Some(block) = pending.pop() {
-        for stmt in &block.stmts {
-            match stmt {
-                Stmt::Forget { .. } => return true,
-                Stmt::If { then, else_, .. } => {
-                    pending.push(then);
-                    if let Some(else_) = else_ {
-                        pending.push(else_);
+fn block_contains_forget(block: &Block) -> bool {
+    block.stmts.iter().any(stmt_contains_forget)
+        || block.tail.as_deref().is_some_and(expr_contains_forget)
+}
+
+fn stmt_contains_forget(stmt: &Stmt) -> bool {
+    match stmt {
+        Stmt::Forget { .. } => true,
+        Stmt::Let { init, .. } => expr_contains_forget(init),
+        Stmt::Assign { target, value } => {
+            expr_contains_forget(target) || expr_contains_forget(value)
+        }
+        Stmt::Return(expr) => expr.as_ref().is_some_and(expr_contains_forget),
+        Stmt::If { cond, then, else_ } => {
+            expr_contains_forget(cond)
+                || block_contains_forget(then)
+                || else_.as_ref().is_some_and(block_contains_forget)
+        }
+        Stmt::Loop(loop_) => {
+            matches!(&loop_.kind, LoopKind::While(cond) if expr_contains_forget(cond))
+                || block_contains_forget(&loop_.body)
+        }
+        Stmt::Holding { body, .. } => block_contains_forget(body),
+        Stmt::Expr(expr) => expr_contains_forget(expr),
+        Stmt::Break | Stmt::Continue => false,
+    }
+}
+
+fn expr_contains_forget(expr: &Expr) -> bool {
+    match expr {
+        Expr::Call { callee, args } => {
+            expr_contains_forget(callee) || args.iter().any(expr_contains_forget)
+        }
+        Expr::MethodCall { receiver, args, .. } => {
+            expr_contains_forget(receiver) || args.iter().any(expr_contains_forget)
+        }
+        Expr::Field { receiver, .. }
+        | Expr::Closure { body: receiver, .. }
+        | Expr::Unary { expr: receiver, .. }
+        | Expr::Cast { expr: receiver, .. }
+        | Expr::Ref { expr: receiver, .. }
+        | Expr::Deref(receiver)
+        | Expr::TupleProj { receiver, .. }
+        | Expr::Is {
+            scrutinee: receiver,
+            ..
+        } => expr_contains_forget(receiver),
+        Expr::Match { scrutinee, arms } => {
+            expr_contains_forget(scrutinee)
+                || arms.iter().any(|arm| {
+                    arm.guard.as_ref().is_some_and(expr_contains_forget)
+                        || expr_contains_forget(&arm.body)
+                })
+        }
+        Expr::If { cond, then, else_ } => {
+            expr_contains_forget(cond)
+                || block_contains_forget(then)
+                || block_contains_forget(else_)
+        }
+        Expr::Binary { lhs, rhs, .. } => expr_contains_forget(lhs) || expr_contains_forget(rhs),
+        Expr::Index { base, index } => {
+            expr_contains_forget(base)
+                || match index {
+                    thermite_syntax::IndexArg::Single(expr)
+                    | thermite_syntax::IndexArg::RangeTo(expr)
+                    | thermite_syntax::IndexArg::RangeFrom(expr) => expr_contains_forget(expr),
+                    thermite_syntax::IndexArg::Range(lo, hi) => {
+                        expr_contains_forget(lo) || expr_contains_forget(hi)
                     }
                 }
-                Stmt::Loop(loop_) => pending.push(&loop_.body),
-                Stmt::Holding { body, .. } => pending.push(body),
-                Stmt::Let { .. }
-                | Stmt::Assign { .. }
-                | Stmt::Return(_)
-                | Stmt::Break
-                | Stmt::Continue
-                | Stmt::Expr(_) => {}
-            }
         }
+        Expr::StructLit { fields, .. } => {
+            fields.iter().any(|(_, value)| expr_contains_forget(value))
+        }
+        Expr::Tuple(items) => items.iter().any(expr_contains_forget),
+        Expr::Quantifier { domain, body, .. } => {
+            expr_contains_forget(domain) || expr_contains_forget(body)
+        }
+        Expr::IntLit { .. } | Expr::BoolLit(_) | Expr::Path(_) | Expr::StrLit(_) => false,
     }
-    false
 }
 
 impl Checker<'_> {

@@ -34,10 +34,10 @@ fn verus_present() -> bool {
 
 #[test]
 fn resource_program_receives_only_a_resource_aware_certificate() {
-    if !verus_present() {
-        eprintln!("SKIP: verus absent — RFC-11 production certificate not run");
-        return;
-    }
+    assert!(
+        verus_present(),
+        "Verus is required: RFC-11 certificate conformance must fail closed when its producer is unavailable"
+    );
     let output = Command::new(forge_bin())
         .arg("check")
         .arg(fixture())

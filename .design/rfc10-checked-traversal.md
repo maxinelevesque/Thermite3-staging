@@ -1,7 +1,7 @@
 # Feature: RFC-10 checked traversal and proof-carrying interpretation
 
 <!--
-audited-content-sha256: 5d1c74e79a10b0f00422978d3886a98a9f70809a0508d2f2bbf2c47d02af3f39 (re-pinned 2026-08-24 after compacting definitionally inert replay events so large corpus programs retain kernel-only verification without timeout or stack overflow. prior: 683cb07363a1dc89ad4fbd1d525e404951d69555a57bcfb423afcad11e78bc94)
+audited-content-sha256: 007fa6d4ee1551e0efdfa514f5d59d749f03d59d68cfe474d630f294e3384f84 (re-pinned 2026-09-01 after making the whole-program RFC-11 surface detector exhaustively descend expression-embedded blocks; RFC-10 checked construction semantics are unchanged. prior: 5d1c74e79a10b0f00422978d3886a98a9f70809a0508d2f2bbf2c47d02af3f39)
 -->
 
 ## Summary

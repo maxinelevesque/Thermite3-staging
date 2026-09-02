@@ -2,7 +2,7 @@
 
 <!--
 status: approved
-audited-content-sha256: d149aebae66c9a63cf30236196cb9759bf5c0da6f7ad984f48ab4f08912c8a3b (re-pinned 2026-09-01 after bounding RFC-11 analysis away from resource-free programs while preserving fail-closed `forget` diagnostics. prior: 6f25e8458bf72c488c498fcd4c1418b7db8f695f3df9542b55ab843c5dd1a8a8)
+audited-content-sha256: d7e63308ff4d5f7018a0adc8b4ad772de63302b6081606aa62d580c5d289f0c8 (re-pinned 2026-09-01 after closing the expression-nested `forget` fast-path escape and stating the formal replay boundary precisely: Lean checks transcribed witness consistency while Rust flow computation and extraction remain named residual trust. prior: d149aebae66c9a63cf30236196cb9759bf5c0da6f7ad984f48ab4f08912c8a3b)
 -->
 
 ## Summary
@@ -94,11 +94,14 @@ consumer is present.
   resource-flow witness bound to the canonical program and replayed by an
   independent formal checker before resource-bearing code can receive a
   kernel-grounded assurance result.
-- REQ-16: The formal model shall prove that an accepted flow witness assigns
-  each resource obligation exactly one terminal disposition on every returning
-  path, that branch and loop joins preserve the live-obligation set, and that a
-  recorded forget footprint equals the value's computed provenance set. The
-  axiom probe shall remain within the repository's allowed axiom set.
+- REQ-16: The formal model shall independently kernel-check the consistency of
+  the transcribed flow witness: every recorded returning edge is closed, branch
+  and loop facts preserve their stated live-obligation sets, disposition labels
+  are unique, and each recorded forget footprint equals its transcribed
+  provenance set. The certificate shall name the Rust flow computation and
+  witness extraction as residual trust; the replay shall not claim to
+  reconstruct source-level obligation propagation. The axiom probe shall remain
+  within the repository's allowed axiom set.
 - REQ-17: The certificate and audit surfaces shall disclose resource-flow
   checking, every `forgets` footprint, the formal replay result, and the
   remaining trust in parsing, type/provenance resolution, and executable target
@@ -149,9 +152,10 @@ consumer is present.
   fixtures bind the complete flow witness to the source and checked-program
   digests and reject tampering with either.
 - [ ] AC-11: (REQ-15, REQ-16) The independent formal replay accepts canonical
-  positive programs and rejects mutations that delete a terminal disposition,
-  duplicate a disposition, alter a join set, or remove a forget region; the
-  repository axiom probe remains green.
+  transcribed witnesses and rejects mutations that leave a returning edge open,
+  duplicate a disposition label, alter a stated join or loop set, or remove a
+  forget region; the certificate names flow computation and witness extraction
+  as residual trust, and the repository axiom probe remains green.
 - [ ] AC-12: (REQ-17) A generated certificate and human audit report enumerate
   the resource-flow verdict, all abandonment regions, formal-replay identity,
   and residual trust without deriving authority from display strings.
@@ -240,10 +244,12 @@ L1 lowering makes abandonment explicit and never synthesizes it for ordinary
 scope exit. L3 does not claim that Rust moves or a trusted Verus token macro are
 the proof. Instead, the checked resource-flow graph and its terminal
 dispositions become a deterministic witness bound to the canonical source and
-checked-program identities. The independent formal replay proves the finite
-graph property used for certification: every obligation has exactly one
-terminal disposition on every returning path, joins preserve the live set, and
-forget footprints match computed provenance.
+checked-program identities. The independent formal replay kernel-checks the
+finite transcribed facts used for certification: recorded returning edges are
+closed, stated join and loop sets agree, disposition labels are unique, and
+forget footprints match their transcribed provenance. The Rust flow checker
+remains trusted to compute those facts and the witness extractor remains trusted
+to cover the source program; the certificate says so explicitly.
 
 The certificate names what remains trusted: parsing, type resolution, witness
 extraction, the target behavior behind a resource, and any substrate mechanism
@@ -261,10 +267,13 @@ checked control-flow graph presented to formal replay. Digest binding and
 hostile witness mutations detect accidental or adversarial substitution but do
 not prove those producers correct.
 
-The formal replay proves returning-path disposition only for the graph and
-provenance facts it receives. It does not prove that releasing or abandoning a
-resource has the intended physical effect, that a target allocator or device
-provider is correct, or that state survives panic, reset, or power loss. L1
+The formal replay checks returning-edge closure, join/loop equality, unique
+disposition labels, and forget-footprint equality only for the graph and
+provenance facts it receives. It does not reconstruct source-level dataflow or
+prove that witness extraction covered every obligation. Nor does it prove that
+releasing or abandoning a resource has the intended physical effect, that a
+target allocator or device provider is correct, or that state survives panic,
+reset, or power loss. L1
 execution remains ordinary compiled Rust beneath Thermite's checked source
 discipline. Any Verus tracked value, tokenized-state-machine macro, external
 solver, or target primitive used by lowering remains named according to its
