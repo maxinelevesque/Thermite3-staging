@@ -15,7 +15,7 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | **Implemented on the RFC-11 build branch; release activation waits on issue #48's atomic claim-closure materialization and final qualification.** |
+| **Status** | **Implemented and locally qualified on the RFC-11 build branch; ready for final review, CI, and merge.** |
 | **Fork implementation** | **Syntax, provenance, checked flow, effects, L1/L3 lowering, Lean replay, certificates, audit disclosure, inventories, and the production conformance anchor are implemented.** The checked contract is [resource-types.md](../syntax/resource-types.md), tracked by issue #75. |
 | **Baseline** | `maxinelevesque/Thermite3-staging @ 91c964db` (`3.0.0-alpha.7`) |
 | **Position** | step 7 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
@@ -25,9 +25,9 @@ introduces:
 > direction. The approved implementation contract resolves its stale baseline, explicit
 > resource provenance, generic contagion, fail-closed slice boundaries, checked
 > flow witness, and residual-trust requirements in
-> [resource-types.md](../syntax/resource-types.md). Merge and release activation
-> remain sequenced after issue #48's authoritative schema-v2 transition and the
-> cold adversarial review.
+> [resource-types.md](../syntax/resource-types.md). Issue #48's authoritative
+> schema-v2 transition is complete; merge and release activation now remain
+> sequenced only after the final cold adversarial review and CI.
 
 Kind: surface an existing capability.
 
