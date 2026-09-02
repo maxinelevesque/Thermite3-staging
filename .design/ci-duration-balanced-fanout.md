@@ -48,6 +48,15 @@ editor_content_pinned_ops_still_certify_l3` at 303.310s.
 - REQ-10: The optimization shall land in a separate pull request based on fresh
   `staging` after PR #50 merges; RFC-10 commits and assurance claims shall not be
   rewritten by this work.
+- REQ-11: Tool-aware claim-closure replay shall run in eight deterministic,
+  disjoint shards keyed by execution identity, so requirements sharing an oracle
+  or formal-verifier identity retain one execution cache and are never split.
+- REQ-12: A stable `claim-closure` aggregate shall fail unless all eight replay
+  shards succeed, while `lean-probe` shall own only the Lean spine build and
+  axiom boundary named by that job.
+- REQ-13: Every claim-closure shard shall publish machine-readable timing even
+  on failure, and the optimization shall be evaluated against the serial
+  47m54s claim-replay step from run `33686853981` rather than skipped work.
 
 ## Acceptance Criteria
 
@@ -83,6 +92,12 @@ editor_content_pinned_ops_still_certify_l3` at 303.310s.
   queue delay or skipped work.
 - [x] AC-9: (REQ-10) The implementation branch merge-base is the post-#50
   `staging` tip, and its pull request contains no RFC-10 implementation rewrite.
+- [ ] AC-10: (REQ-11, REQ-12) Eight green shard jobs jointly execute every one
+  of the 576 draft entries exactly once by stable execution identity, and the
+  aggregate rejects any missing or failed child.
+- [ ] AC-11: (REQ-12, REQ-13) A green live run shows the standalone
+  `lean-probe` completing independently of claim replay and records the longest
+  shard, aggregate runner time, queue delay, and end-to-end critical path.
 
 ## Architecture
 
@@ -161,6 +176,28 @@ Aggregate `g3` and `g4` jobs use `needs` and `if: always()` to inspect every chi
 result. They perform no proof work and succeed only when all children succeeded.
 This preserves branch-protection names while making failures source-specific.
 
+### Claim-closure fan-out
+
+`gates/claim-closure-author.py --check-draft-shard INDEX/COUNT` validates the
+complete draft population before selecting a shard. Selection hashes a canonical
+execution identity, not requirement order: executable claims bind verifier plus
+oracle, formal claims share their built-in axiom-verifier identity, and exact
+populations bind their extractor. This keeps every cache-sharing or
+identity-collision domain within one child while assigning every draft entry to
+exactly one child.
+
+The workflow runs eight children with `fail-fast: false`, the same pinned Lean,
+Rust, Verus, CaDiCaL, and drat-trim environment as the former serial job, and a
+per-shard Rust cache. A stable `claim-closure` aggregate inspects the matrix
+result with `if: always()` and fails closed. Each child publishes normalized
+timing JSON even when its replay fails.
+
+`lean-probe` retains the prepared Lean artifact, Mathlib cache, spine build, and
+axiom inspection, but no longer installs Rust, Verus, or Stage-4 tools and no
+longer serializes the complete draft replay ahead of its named responsibility.
+The claim and Lean jobs start from the same `lean-prepare` dependency and proceed
+in parallel.
+
 ### Measurement and maintenance
 
 The green workflow uploads nextest JUnit plus a normalized timing JSON artifact.
@@ -198,6 +235,13 @@ queue delay was 0..4s. Non-suite per-test-job time (checkout, Lean/tool restore,
 inventory, and upload) ranged from roughly 2m06s to 4m04s and is excluded from
 the execution-bound claim. G4 LRAT/cache, not a test partition, determined both
 selected-run critical paths at 470.618s and 615.460s of gate execution.
+
+The claim-closure follow-up baseline is green run `33686853981`. The step named
+`Claim-closure draft slices (tool-aware)` occupied 47m54s of the 51m47s
+`lean-probe` job; the actual Lean spine and axiom probe took 2m21s. Two preceding
+green runs spent 45m27s and 44m24s in the same serial claim step, establishing
+that the bottleneck is the closure replay rather than Lean. Live eight-shard
+results will be recorded here before AC-10 and AC-11 close.
 
 Thirteen wins the stated tradeoff: versus ten it reduces average critical path
 10.4% for 7.8% more runner time, satisfies the two-run bound, and leaves the

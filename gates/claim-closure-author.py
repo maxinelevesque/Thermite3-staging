@@ -137,6 +137,96 @@ def load_draft_entries(root: Path) -> tuple[list[dict], list[str]]:
     return entries, problems
 
 
+def draft_execution_identity(entry: dict) -> str:
+    """Return the stable unit that must not be split across CI shards."""
+    claim = entry.get("claim")
+    closure = entry.get("closure")
+    if not isinstance(claim, dict) or not isinstance(closure, dict):
+        return REVIEW.canonical_json(
+            {
+                "draft_path": entry.get("_draft_path"),
+                "requirement_id": entry.get("requirement_id"),
+            }
+        ).decode("utf-8")
+    kind = claim.get("kind")
+    if kind == "formal_theorem":
+        # Formal closures share one verifier identity and therefore stay in one
+        # shard, preserving the existing split-witness collision check.
+        payload = {"kind": kind, "verifier": ["builtin:lean_axioms"]}
+    elif kind == "executable_discriminator":
+        # Entries sharing an oracle also share expensive positive/counterfeit
+        # executions through the author cache. Never duplicate those across jobs.
+        payload = {
+            "kind": kind,
+            "oracle": closure.get("oracle"),
+            "verifier": closure.get("verifier"),
+        }
+    elif kind == "exact_population":
+        payload = {"kind": kind, "extractor": closure.get("extractor")}
+    else:
+        payload = {
+            "kind": kind,
+            "draft_path": entry.get("_draft_path"),
+            "requirement_id": entry.get("requirement_id"),
+        }
+    return REVIEW.canonical_json(payload).decode("utf-8")
+
+
+def draft_shard(entry: dict, shard_count: int) -> int:
+    if shard_count <= 0:
+        raise ValueError("draft shard count must be positive")
+    digest = hashlib.sha256(draft_execution_identity(entry).encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big") % shard_count
+
+
+def parse_shard_spec(value: str) -> tuple[int, int]:
+    match = re.fullmatch(r"([1-9][0-9]*)/([1-9][0-9]*)", value)
+    if match is None:
+        raise ValueError("draft shard must use one-based INDEX/COUNT syntax")
+    index = int(match.group(1))
+    count = int(match.group(2))
+    if index > count:
+        raise ValueError("draft shard index must not exceed its count")
+    return index - 1, count
+
+
+def draft_population(
+    root: Path,
+    entries: list[dict],
+    initial_problems: list[str],
+    *,
+    require_complete: bool = False,
+) -> tuple[dict[str, dict], set[str], list[str]]:
+    rows, _ = requirement_rows(root)
+    baseline = set(
+        tomllib.loads((root / LEDGER).read_text(encoding="utf-8")).get(
+            "baseline_shipped_ids", []
+        )
+    )
+    expected = baseline | {
+        req_id for req_id, row in rows.items() if row.get("status") == "shipped"
+    }
+    problems = list(initial_problems)
+    seen: set[str] = set()
+    for entry in entries:
+        req_id = entry.get("requirement_id")
+        if not isinstance(req_id, str) or req_id not in rows:
+            problems.append(f"{req_id!r}: draft requirement does not resolve")
+            continue
+        if req_id not in expected or rows[req_id].get("status") != "shipped":
+            problems.append(f"{req_id}: draft must name a live shipped requirement")
+        if req_id in seen:
+            problems.append(f"{req_id}: duplicate draft entry")
+        seen.add(req_id)
+    missing = sorted(expected - seen) if require_complete else []
+    extra = sorted(seen - expected)
+    if missing:
+        problems.append("draft population is missing: " + ", ".join(missing))
+    if extra:
+        problems.append("draft population has non-shipped IDs: " + ", ".join(extra))
+    return rows, expected, problems
+
+
 def _artifact_paths(closure: dict) -> set[str]:
     artifacts = closure.get("artifacts", [])
     if not isinstance(artifacts, list):
@@ -399,40 +489,8 @@ def author_entry(
     }, []
 
 
-def check_drafts(root: Path) -> tuple[list[dict], list[str]]:
-    rows, _ = requirement_rows(root)
-    baseline = set(
-        tomllib.loads((root / LEDGER).read_text(encoding="utf-8")).get(
-            "baseline_shipped_ids", []
-        )
-    )
-    live_shipped = {
-        req_id for req_id, row in rows.items() if row.get("status") == "shipped"
-    }
-    expected_population = baseline | live_shipped
-    entries, problems = load_draft_entries(root)
-    authored: list[dict] = []
-    seen: set[str] = set()
-    execution_cache: dict = {}
-    for entry in entries:
-        req_id = entry.get("requirement_id")
-        if not isinstance(req_id, str) or req_id not in rows:
-            problems.append(f"{req_id!r}: draft requirement does not resolve")
-            continue
-        if req_id not in expected_population or rows[req_id].get("status") != "shipped":
-            problems.append(f"{req_id}: draft must name a live shipped requirement")
-            continue
-        if req_id in seen:
-            problems.append(f"{req_id}: duplicate draft entry")
-            continue
-        seen.add(req_id)
-        result, entry_problems = author_entry(
-            root, entry, rows[req_id], execution_cache
-        )
-        problems.extend(entry_problems)
-        if result is not None:
-            authored.append(result)
-
+def authored_result_problems(authored: list[dict]) -> list[str]:
+    problems: list[str] = []
     discriminators: dict[str, str] = {}
     identities: dict[str, str] = {}
     for result in authored:
@@ -464,7 +522,67 @@ def check_drafts(root: Path) -> tuple[list[dict], list[str]]:
         if identity in identities and identities[identity] != witness_id:
             problems.append(f"{req_id}: equivalent witness identity is split")
         identities[identity] = witness_id
+    return problems
+
+
+def check_drafts(root: Path) -> tuple[list[dict], list[str]]:
+    entries, load_problems = load_draft_entries(root)
+    rows, expected_population, problems = draft_population(
+        root, entries, load_problems
+    )
+    authored: list[dict] = []
+    execution_cache: dict = {}
+    for entry in entries:
+        req_id = entry.get("requirement_id")
+        if (
+            not isinstance(req_id, str)
+            or req_id not in rows
+            or req_id not in expected_population
+            or rows[req_id].get("status") != "shipped"
+        ):
+            continue
+        result, entry_problems = author_entry(
+            root, entry, rows[req_id], execution_cache
+        )
+        problems.extend(entry_problems)
+        if result is not None:
+            authored.append(result)
+    problems.extend(authored_result_problems(authored))
     return authored, problems
+
+
+def check_draft_shard(
+    root: Path, shard_index: int, shard_count: int
+) -> tuple[list[dict], int, int, list[str]]:
+    if shard_count <= 0 or shard_index < 0 or shard_index >= shard_count:
+        raise ValueError("draft shard index/count is out of range")
+    entries, load_problems = load_draft_entries(root)
+    rows, expected_population, problems = draft_population(
+        root, entries, load_problems, require_complete=True
+    )
+    selected = [
+        entry for entry in entries if draft_shard(entry, shard_count) == shard_index
+    ]
+    authored: list[dict] = []
+    execution_cache: dict = {}
+    for entry in selected:
+        req_id = entry.get("requirement_id")
+        if (
+            not isinstance(req_id, str)
+            or req_id not in rows
+            or req_id not in expected_population
+            or rows[req_id].get("status") != "shipped"
+        ):
+            continue
+        result, entry_problems = author_entry(
+            root, entry, rows[req_id], execution_cache
+        )
+        problems.extend(entry_problems)
+        if result is not None:
+            authored.append(result)
+    problems.extend(authored_result_problems(authored))
+    group_count = len({draft_execution_identity(entry) for entry in selected})
+    return authored, len(selected), group_count, problems
 
 
 def toml_value(value: object) -> str:
@@ -749,6 +867,11 @@ def main(argv: list[str]) -> int:
     mode.add_argument("--freeze-baseline", action="store_true")
     mode.add_argument("--check-baseline", action="store_true")
     mode.add_argument("--check-drafts", action="store_true")
+    mode.add_argument(
+        "--check-draft-shard",
+        metavar="INDEX/COUNT",
+        help="execute one stable, one-based shard of the complete draft population",
+    )
     mode.add_argument("--materialize", action="store_true")
     args = parser.parse_args(argv)
     root = Path(args.root).resolve()
@@ -760,6 +883,26 @@ def main(argv: list[str]) -> int:
         if args.materialize:
             count = coordinated_materialize(root)
             print(f"materialized {count} typed claims and closures")
+            return 0
+        if args.check_draft_shard:
+            shard_index, shard_count = parse_shard_spec(args.check_draft_shard)
+            authored, selected, groups, problems = check_draft_shard(
+                root, shard_index, shard_count
+            )
+            if problems:
+                for problem in problems:
+                    print(f"claim-closure-author: {problem}", file=sys.stderr)
+                return 1
+            if len(authored) != selected:
+                print(
+                    "claim-closure-author: shard did not author every selected entry",
+                    file=sys.stderr,
+                )
+                return 1
+            print(
+                f"claim closure draft shard {shard_index + 1}/{shard_count}: "
+                f"{len(authored)} entries across {groups} execution groups, clean"
+            )
             return 0
         if args.check_drafts:
             authored, problems = check_drafts(root)

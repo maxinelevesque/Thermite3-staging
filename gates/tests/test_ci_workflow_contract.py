@@ -80,6 +80,31 @@ class CiWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"needs.{child}.result", job)
             self.assertIn("gates/ci-aggregate.py", job)
 
+    def test_claim_closure_replay_has_eight_closed_shards(self) -> None:
+        child = self.job("claim_closure_probe")
+        self.assertIn("shard: [1, 2, 3, 4, 5, 6, 7, 8]", child)
+        self.assertIn("--check-draft-shard ${{ matrix.shard }}/8", child)
+        self.assertIn("fail-fast: false", child)
+        self.assertIn("Install Verus for executable claim probes", child)
+        self.assertIn("Install pinned CaDiCaL and drat-trim", child)
+
+        aggregate = self.job("claim_closure")
+        self.assertIn("needs: [changes, claim_closure_probe]", aggregate)
+        self.assertIn("if: always()", aggregate)
+        self.assertIn("needs.claim_closure_probe.result", aggregate)
+        self.assertIn("gates/ci-aggregate.py", aggregate)
+
+    def test_lean_probe_owns_only_the_axiom_boundary(self) -> None:
+        job = self.job("lean-probe")
+        self.assertIn("gates/lean-axiom-probe.sh", job)
+        for displaced in (
+            "claim-closure-author.py",
+            "Install Rust toolchain",
+            "Install Verus",
+            "Install pinned CaDiCaL",
+        ):
+            self.assertNotIn(displaced, job)
+
     def test_timing_artifacts_are_published_even_on_failure(self) -> None:
         test_job = self.job("test")
         self.assertIn("Publish nextest timing report", test_job)
@@ -91,6 +116,11 @@ class CiWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"Publish {label} segment timing", job)
             self.assertIn("if: always()", job)
             self.assertIn("if-no-files-found: error", job)
+        claim_job = self.job("claim_closure_probe")
+        self.assertIn("gates/time-command.py", claim_job)
+        self.assertIn("Publish claim-closure shard timing", claim_job)
+        self.assertIn("if: always()", claim_job)
+        self.assertIn("claim-closure-${{ matrix.shard }}-timing", claim_job)
 
     def test_ci_optimization_landed_after_rfc10_without_rewriting_it(self) -> None:
         merged_ci_pr = "92310867"

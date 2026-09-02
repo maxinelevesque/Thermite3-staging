@@ -292,6 +292,75 @@ summary = "{summary}"
         MODULE.materialize(self.root, authored)
         self.assertEqual(MODULE.REVIEW.check(self.root), [])
 
+        sharded = []
+        for shard_index in range(3):
+            results, selected, groups, shard_problems = MODULE.check_draft_shard(
+                self.root, shard_index, 3
+            )
+            self.assertEqual(shard_problems, [])
+            self.assertEqual(len(results), selected)
+            self.assertLessEqual(groups, selected)
+            sharded.extend(result["requirement_id"] for result in results)
+        self.assertEqual(sharded, ["REQ-A"])
+
+    def test_draft_shards_are_stable_complete_and_keep_shared_oracles_together(self):
+        shared = {
+            "claim": {"kind": "executable_discriminator"},
+            "closure": {"verifier": ["python", "verify.py"], "oracle": "same.json"},
+        }
+        entries = [
+            {**shared, "requirement_id": "REQ-A"},
+            {**shared, "requirement_id": "REQ-B"},
+            {
+                "requirement_id": "REQ-C",
+                "claim": {"kind": "executable_discriminator"},
+                "closure": {
+                    "verifier": ["python", "verify.py"],
+                    "oracle": "other.json",
+                },
+            },
+            {
+                "requirement_id": "REQ-D",
+                "claim": {"kind": "formal_theorem"},
+                "closure": {},
+            },
+            {
+                "requirement_id": "REQ-E",
+                "claim": {"kind": "formal_theorem"},
+                "closure": {},
+            },
+        ]
+
+        assignments = [MODULE.draft_shard(entry, 8) for entry in entries]
+
+        self.assertEqual(assignments[0], assignments[1])
+        self.assertEqual(assignments[3], assignments[4])
+        self.assertEqual(assignments, [MODULE.draft_shard(entry, 8) for entry in entries])
+        covered = [
+            index
+            for shard_index in range(8)
+            for index, assignment in enumerate(assignments)
+            if assignment == shard_index
+        ]
+        self.assertEqual(sorted(covered), list(range(len(entries))))
+
+    def test_parse_shard_spec_is_one_based_and_fail_closed(self):
+        self.assertEqual(MODULE.parse_shard_spec("1/8"), (0, 8))
+        self.assertEqual(MODULE.parse_shard_spec("8/8"), (7, 8))
+        for value in ("0/8", "9/8", "1/0", "1", "1/2/3", "a/b"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                MODULE.parse_shard_spec(value)
+
+    def test_shard_refuses_an_incomplete_global_draft_population(self):
+        authored, selected, groups, problems = MODULE.check_draft_shard(
+            self.root, 0, 2
+        )
+
+        self.assertEqual(authored, [])
+        self.assertEqual(selected, 0)
+        self.assertEqual(groups, 0)
+        self.assertTrue(any("draft population is missing" in value for value in problems))
+
 
 if __name__ == "__main__":
     unittest.main()

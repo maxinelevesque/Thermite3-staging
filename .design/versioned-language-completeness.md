@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 73695d6f2b8d5eb868e13f963b7ddb735cb4e08018e6ef092732d5da7c909892 (re-pinned 2026-09-02 after regenerating the content-bound claim ledger for the RFC-11 residual-trust correction; completeness semantics are unchanged. prior: 7b5d553fdd56b8926ecb1a0d06eda1b1e0718ac4b38452279ef16dc04b8d81ee)
+audited-content-sha256: 15beb83ffc1fd77cb01e56e0be4949678eb2fc5ffb44a41148aa6a841d625d0a (re-pinned 2026-09-02 after adding fail-closed claim-closure CI sharding; language completeness semantics are unchanged. prior: 73695d6f2b8d5eb868e13f963b7ddb735cb4e08018e6ef092732d5da7c909892)
 
 ## Summary
 
