@@ -67,6 +67,7 @@ fn resource_program_receives_only_a_resource_aware_certificate() {
         serde_json::json!([
             "parser",
             "type_provenance_resolution",
+            "resource_flow_computation",
             "witness_extraction",
             "executable_target_behavior"
         ])

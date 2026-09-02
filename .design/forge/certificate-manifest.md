@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: 74bcf58435418157f8cf01a7ff7f878d7af9173ab6fe15025f12358c27780707 (re-pinned 2026-08-17 for the non-operative Assurance V2 predecessor annotation; manifest behavior is unchanged. prior: 353fa8ebcd57c6b901bca64f727764a338ccd98a7a1e7dab33eed731637afbef)
+audited-content-sha256: 2bcafd9cf31dda24593d1f164792c26946fea84c1b8b98e38c1f61c59a6fdace (re-pinned 2026-09-02 after the RFC-11 certificate explicitly named Rust resource-flow computation as residual trust. prior: 74bcf58435418157f8cf01a7ff7f878d7af9173ab6fe15025f12358c27780707)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1

@@ -1235,6 +1235,7 @@ pub enum ResourceFormalReplayVerdict {
 pub enum ResourceResidualTrust {
     Parser,
     TypeProvenanceResolution,
+    ResourceFlowComputation,
     WitnessExtraction,
     ExecutableTargetBehavior,
 }
@@ -2985,6 +2986,7 @@ impl Certificate {
         let expected_residual = vec![
             ResourceResidualTrust::Parser,
             ResourceResidualTrust::TypeProvenanceResolution,
+            ResourceResidualTrust::ResourceFlowComputation,
             ResourceResidualTrust::WitnessExtraction,
             ResourceResidualTrust::ExecutableTargetBehavior,
         ];

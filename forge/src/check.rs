@@ -1638,6 +1638,7 @@ fn run_rfc11_lean_replay(
         residual_trust: vec![
             ResourceResidualTrust::Parser,
             ResourceResidualTrust::TypeProvenanceResolution,
+            ResourceResidualTrust::ResourceFlowComputation,
             ResourceResidualTrust::WitnessExtraction,
             ResourceResidualTrust::ExecutableTargetBehavior,
         ],

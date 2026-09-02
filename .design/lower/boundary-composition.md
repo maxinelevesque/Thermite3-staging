@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 4623be1dc16357f20ee30fd741c1092186ee5ad1123933580e7673ce86151d08 (re-pinned 2026-09-01 for the RFC-11 axiom-free replay gate; boundary composition is unchanged. prior: 44f38d97813ce222719aef893f9a01233d10d7c882b30e9385da2eeb2f43a954)
+audited-content-sha256: 2924ebff77fd78cc4be9c056397e074663044756ca166940fb0b82b0fa384bfa (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; boundary composition is unchanged. prior: 4623be1dc16357f20ee30fd741c1092186ee5ad1123933580e7673ce86151d08)
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9
