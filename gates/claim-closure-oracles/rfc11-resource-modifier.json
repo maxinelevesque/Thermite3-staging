@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "rfc11-syntax-resource-positive", "expected_exit": 0},
+    {"id": "rfc11-syntax-resource-contextual", "expected_exit": 0},
+    {"id": "rfc11-syntax-resource-negative", "expected_exit": 0}
+  ]
+}

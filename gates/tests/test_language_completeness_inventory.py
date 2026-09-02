@@ -69,8 +69,8 @@ evidence = ["evidence.rs"]
             (self.ROOT / MODULE.MATRIX).read_text(encoding="utf-8"),
             MODULE.matrix_text(data),
         )
-        self.assertEqual(len(MODULE.support_matrix(data)["constructs"]), 126)
-        self.assertEqual(len(MODULE.support_matrix(data)["claims"]), 10)
+        self.assertEqual(len(MODULE.support_matrix(data)["constructs"]), 128)
+        self.assertEqual(len(MODULE.support_matrix(data)["claims"]), 11)
 
     def test_claim_without_stage_profile_fails_closed(self):
         text = (self.ROOT / MODULE.INVENTORY).read_text(encoding="utf-8")
@@ -98,10 +98,19 @@ evidence = ["evidence.rs"]
 
     def test_open_gap_requires_disposition_specific_evidence(self):
         text = (self.ROOT / MODULE.INVENTORY).read_text(encoding="utf-8")
-        text = text.replace(
-            'disposition = "completeness_review"\nissue = "https://github.com/maxinelevesque/Thermite3-staging/issues/48"',
-            'disposition = "completeness_review"',
-        )
+        text += '''
+
+[[gap]]
+id = "GAP-MISSING-REVIEW-ISSUE-FIXTURE"
+status = "open"
+stages = ["certification"]
+counterexample = "A fixture semantic counterexample."
+claimed = "A fixture claim."
+observed = "A fixture observation."
+trust_consequence = "A fixture trust consequence."
+disposition = "completeness_review"
+evidence = []
+'''
         with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as handle:
             handle.write(text)
             path = Path(handle.name)

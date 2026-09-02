@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "probe": "claim-closure-self-governance",
+  "cases": [
+    {"id": "typed-claim-authority", "expected_exit": 0},
+    {"id": "exact-live-population", "expected_exit": 0},
+    {"id": "closed-witness-mechanisms", "expected_exit": 0},
+    {"id": "shared-witness-discrimination", "expected_exit": 0},
+    {"id": "content-bound-receipts", "expected_exit": 0}
+  ]
+}

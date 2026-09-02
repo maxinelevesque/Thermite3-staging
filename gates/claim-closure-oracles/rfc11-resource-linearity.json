@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "rfc11-linearity-disposition", "expected_exit": 0},
+    {"id": "rfc11-linearity-rejections", "expected_exit": 0},
+    {"id": "rfc11-linearity-control-flow", "expected_exit": 0},
+    {"id": "rfc11-linearity-destructuring", "expected_exit": 0},
+    {"id": "rfc11-linearity-lean-replay", "expected_exit": 0},
+    {"id": "rfc11-linearity-mutation-rejection", "expected_exit": 0},
+    {"id": "rfc11-linearity-certificate", "expected_exit": 0}
+  ]
+}

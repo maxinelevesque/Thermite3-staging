@@ -23,6 +23,7 @@ from claim_closure_schema import (  # noqa: E402
 
 REGISTRY = ".design/reqs/registry.toml"
 LEDGER = "gates/completeness-review.toml"
+INVENTORY = "gates/language-completeness-inventory.toml"
 DRAFT_DIR = "gates/claim-closure-drafts"
 BASELINE_SIZE = 566
 
@@ -143,7 +144,13 @@ def _artifact_paths(closure: dict) -> set[str]:
     return {value.split("#", 1)[0] for value in artifacts if isinstance(value, str)}
 
 
-def author_entry(root: Path, entry: dict, row: dict) -> tuple[dict | None, list[str]]:
+def author_entry(
+    root: Path,
+    entry: dict,
+    row: dict,
+    execution_cache: dict | None = None,
+) -> tuple[dict | None, list[str]]:
+    cache = execution_cache if execution_cache is not None else {}
     req_id = entry.get("requirement_id")
     label = str(req_id or entry.get("_draft_path", "<draft>"))
     problems: list[str] = []
@@ -227,7 +234,10 @@ def author_entry(root: Path, entry: dict, row: dict) -> tuple[dict | None, list[
         version_argv = closure.get("tool_version_argv")
         owner = row.get("owner")
         owner_path = REVIEW.bound_input_path(root, owner)
-        closure["tool_version"] = REVIEW.command_version(root, version_argv)
+        version_key = ("version", tuple(version_argv or []))
+        if version_key not in cache:
+            cache[version_key] = REVIEW.command_version(root, version_argv)
+        closure["tool_version"] = cache[version_key]
         if claim.get("subject") != f"oracle:{oracle}":
             problems.append(f"{label}: executable claim does not bind its oracle")
         if claim.get("expected") != ["accepted"]:
@@ -265,8 +275,13 @@ def author_entry(root: Path, entry: dict, row: dict) -> tuple[dict | None, list[
         }
         if not repo_verifier_inputs.issubset(_artifact_paths(closure)):
             problems.append(f"{label}: verifier implementation must be content-bound")
-        first = REVIEW.run_bound_verifier(root, argv, oracle)
-        second = REVIEW.run_bound_verifier(root, argv, oracle)
+        positive_key = ("positive", tuple(argv or []), oracle)
+        if positive_key not in cache:
+            cache[positive_key] = (
+                REVIEW.run_bound_verifier(root, argv, oracle),
+                REVIEW.run_bound_verifier(root, argv, oracle),
+            )
+        first, second = cache[positive_key]
         if first != second:
             problems.append(f"{label}: positive verifier is not deterministic")
         if first[0] != 0:
@@ -296,8 +311,18 @@ def author_entry(root: Path, entry: dict, row: dict) -> tuple[dict | None, list[
                     or expected_exit >= 127
                 ):
                     problems.append(f"{label}: counterfeit exit must be 1..126")
-                negative = REVIEW.run_mutated_verifier(root, argv, oracle, counterfeit)
-                repeated = REVIEW.run_mutated_verifier(root, argv, oracle, counterfeit)
+                counterfeit_key = (
+                    "counterfeit",
+                    tuple(argv or []),
+                    oracle,
+                    REVIEW.canonical_json(counterfeit),
+                )
+                if counterfeit_key not in cache:
+                    cache[counterfeit_key] = (
+                        REVIEW.run_mutated_verifier(root, argv, oracle, counterfeit),
+                        REVIEW.run_mutated_verifier(root, argv, oracle, counterfeit),
+                    )
+                negative, repeated = cache[counterfeit_key]
                 if negative != repeated:
                     problems.append(f"{label}: counterfeit is not deterministic")
                 if negative[0] != counterfeit.get("expected_exit"):
@@ -332,14 +357,28 @@ def author_entry(root: Path, entry: dict, row: dict) -> tuple[dict | None, list[
         }
         if counterfeit_names != REVIEW.EXACT_POPULATION_MUTATIONS:
             problems.append(f"{label}: exact population mutations are incomplete")
-        extracted, detail = REVIEW.extract_population(root, closure.get("extractor"))
+        population_key = (
+            "population",
+            REVIEW.canonical_json(closure.get("extractor")),
+        )
+        if population_key not in cache:
+            cache[population_key] = REVIEW.extract_population(
+                root, closure.get("extractor")
+            )
+        extracted, detail = cache[population_key]
         if extracted is None:
             problems.append(f"{label}: {detail}")
         elif extracted != claim.get("expected"):
             problems.append(f"{label}: extracted population differs")
-        hostile, detail = REVIEW.hostile_extractor_populations(
-            root, closure.get("extractor")
+        hostile_key = (
+            "hostile-population",
+            REVIEW.canonical_json(closure.get("extractor")),
         )
+        if hostile_key not in cache:
+            cache[hostile_key] = REVIEW.hostile_extractor_populations(
+                root, closure.get("extractor")
+            )
+        hostile, detail = cache[hostile_key]
         if hostile is None:
             problems.append(f"{label}: {detail}")
         elif any(values == claim.get("expected") for values in hostile.values()):
@@ -374,6 +413,7 @@ def check_drafts(root: Path) -> tuple[list[dict], list[str]]:
     entries, problems = load_draft_entries(root)
     authored: list[dict] = []
     seen: set[str] = set()
+    execution_cache: dict = {}
     for entry in entries:
         req_id = entry.get("requirement_id")
         if not isinstance(req_id, str) or req_id not in rows:
@@ -386,7 +426,9 @@ def check_drafts(root: Path) -> tuple[list[dict], list[str]]:
             problems.append(f"{req_id}: duplicate draft entry")
             continue
         seen.add(req_id)
-        result, entry_problems = author_entry(root, entry, rows[req_id])
+        result, entry_problems = author_entry(
+            root, entry, rows[req_id], execution_cache
+        )
         problems.extend(entry_problems)
         if result is not None:
             authored.append(result)
@@ -441,7 +483,7 @@ def toml_value(value: object) -> str:
     raise TypeError(f"cannot render TOML value: {value!r}")
 
 
-def render_materialization(root: Path, authored: list[dict]) -> tuple[str, str]:
+def render_registry_activation(root: Path, authored: list[dict]) -> str:
     by_id = {result["requirement_id"]: result for result in authored}
     baseline = set(
         tomllib.loads((root / LEDGER).read_text(encoding="utf-8")).get(
@@ -459,9 +501,16 @@ def render_materialization(root: Path, authored: list[dict]) -> tuple[str, str]:
 
     registry_path = root / REGISTRY
     registry_text = registry_path.read_text(encoding="utf-8")
-    if not registry_text.startswith("schema_version = 1\n"):
-        raise ValueError("registry must be schema version 1 before activation")
-    registry_text = registry_text.replace("schema_version = 1", "schema_version = 2", 1)
+    if re.search(r"^schema_version = 1$", registry_text, re.MULTILINE):
+        registry_text = re.sub(
+            r"^schema_version = 1$",
+            "schema_version = 2",
+            registry_text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    elif not re.search(r"^schema_version = 2$", registry_text, re.MULTILINE):
+        raise ValueError("registry must be schema version 1 or 2")
     parts = re.split(r"(?=^\[\[requirement\]\]$)", registry_text, flags=re.MULTILINE)
     rendered_parts = [parts[0]]
     for block in parts[1:]:
@@ -471,23 +520,75 @@ def render_materialization(root: Path, authored: list[dict]) -> tuple[str, str]:
             continue
         claim = by_id[match.group(1)]["claim"]
         claim_line = "claim = " + toml_value(claim)
-        block, count = re.subn(
-            r'(^summary = .*?$)',
-            lambda summary: summary.group(1) + "\n" + claim_line,
-            block,
-            count=1,
-            flags=re.MULTILINE,
-        )
-        if count != 1:
-            raise ValueError(f"unable to place claim for {match.group(1)}")
+        if re.search(r"^claim = .*?$", block, re.MULTILINE):
+            block = re.sub(
+                r"^claim = .*?$",
+                lambda _match: claim_line,
+                block,
+                count=1,
+                flags=re.MULTILINE,
+            )
+        else:
+            block, count = re.subn(
+                r'(^summary = .*?$)',
+                lambda summary: summary.group(1) + "\n" + claim_line,
+                block,
+                count=1,
+                flags=re.MULTILINE,
+            )
+            if count != 1:
+                raise ValueError(f"unable to place claim for {match.group(1)}")
         rendered_parts.append(block)
-    rendered_registry = "".join(rendered_parts)
+    return "".join(rendered_parts)
+
+
+def render_inventory_activation(root: Path, rendered_registry: str) -> str:
+    path = root / INVENTORY
+    text = path.read_text(encoding="utf-8")
+    target_digest = hashlib.sha256(rendered_registry.encode("utf-8")).hexdigest()
+    parts = re.split(r"(?=^\[\[claim\]\]$)", text, flags=re.MULTILINE)
+    rendered_parts = [parts[0]]
+    updated = 0
+    for block in parts[1:]:
+        ident = re.search(r'^id = "([^"]+)"$', block, re.MULTILINE)
+        source = re.search(r'^source = "([^"]+)"$', block, re.MULTILINE)
+        if (
+            ident is not None
+            and ident.group(1) == "CLAIM-REGISTRY-SHIPPED-EVIDENCE"
+            and source is not None
+            and source.group(1) == REGISTRY
+        ):
+            block, count = re.subn(
+                r'^source_sha256 = "[0-9a-f]{64}"$',
+                f'source_sha256 = "{target_digest}"',
+                block,
+                count=1,
+                flags=re.MULTILINE,
+            )
+            if count != 1:
+                raise ValueError("unable to update registry source digest for activation")
+            updated += 1
+        rendered_parts.append(block)
+    if updated != 1:
+        raise ValueError("expected one registry source claim for activation")
+    return "".join(rendered_parts)
+
+
+def render_ledger_activation(
+    root: Path, authored: list[dict], *, registry_document: dict
+) -> str:
 
     ledger_path = root / LEDGER
     ledger_text = ledger_path.read_text(encoding="utf-8")
-    if not ledger_text.startswith("version = 1\n"):
-        raise ValueError("ledger must be version 1 before activation")
-    ledger_text = ledger_text.replace("version = 1", "version = 2", 1).rstrip() + "\n\n"
+    if ledger_text.startswith("version = 1\n"):
+        ledger_text = ledger_text.replace("version = 1", "version = 2", 1)
+    elif ledger_text.startswith("version = 2\n"):
+        generated = re.search(r"^\[\[(?:witness|closure)\]\]$", ledger_text, re.MULTILINE)
+        if generated is not None:
+            ledger_text = ledger_text[: generated.start()]
+    else:
+        raise ValueError("ledger must be version 1 or 2")
+    ledger_text = ledger_text.rstrip() + "\n\n"
     members: dict[tuple[str, str], list[str]] = defaultdict(list)
     for result in authored:
         closure = result["closure"]
@@ -535,13 +636,23 @@ def render_materialization(root: Path, authored: list[dict]) -> tuple[str, str]:
     authoritative_problems = REVIEW.check(
         root,
         backlog_document=tomllib.loads(rendered_ledger),
-        registry_document=tomllib.loads(rendered_registry),
+        registry_document=registry_document,
     )
     if authoritative_problems:
         raise ValueError(
             "authoritative gate rejects rendered activation: "
             + "; ".join(authoritative_problems)
         )
+    return rendered_ledger
+
+
+def render_materialization(root: Path, authored: list[dict]) -> tuple[str, str]:
+    rendered_registry = render_registry_activation(root, authored)
+    rendered_ledger = render_ledger_activation(
+        root,
+        authored,
+        registry_document=tomllib.loads(rendered_registry),
+    )
     return rendered_registry, rendered_ledger
 
 
@@ -572,6 +683,65 @@ def materialize(root: Path, authored: list[dict]) -> None:
         raise
 
 
+def coordinated_materialize(root: Path) -> int:
+    """Activate the registry, its source pin, and the ledger as one transaction."""
+    rows, _ = requirement_rows(root)
+    baseline = set(
+        tomllib.loads((root / LEDGER).read_text(encoding="utf-8")).get(
+            "baseline_shipped_ids", []
+        )
+    )
+    expected_population = baseline | {
+        req_id for req_id, row in rows.items() if row.get("status") == "shipped"
+    }
+    entries, problems = load_draft_entries(root)
+    seen: set[str] = set()
+    provisional: list[dict] = []
+    for entry in entries:
+        req_id = entry.get("requirement_id")
+        claim = entry.get("claim")
+        if not isinstance(req_id, str) or req_id in seen or not isinstance(claim, dict):
+            problems.append(f"{req_id!r}: activation draft identity is invalid")
+            continue
+        seen.add(req_id)
+        provisional.append({"requirement_id": req_id, "claim": claim})
+    if seen != expected_population:
+        problems.append("activation draft population differs from frozen+live set")
+    if problems:
+        raise ValueError("; ".join(problems))
+
+    rendered_registry = render_registry_activation(root, provisional)
+    rendered_inventory = render_inventory_activation(root, rendered_registry)
+    registry_path = root / REGISTRY
+    inventory_path = root / INVENTORY
+    ledger_path = root / LEDGER
+    previous_registry = registry_path.read_bytes()
+    previous_inventory = inventory_path.read_bytes()
+    registry_replaced = False
+    inventory_replaced = False
+    try:
+        _replace_with_rollback(registry_path, rendered_registry)
+        registry_replaced = True
+        _replace_with_rollback(inventory_path, rendered_inventory)
+        inventory_replaced = True
+        authored, activation_problems = check_drafts(root)
+        if activation_problems:
+            raise ValueError("; ".join(activation_problems))
+        rendered_ledger = render_ledger_activation(
+            root,
+            authored,
+            registry_document=tomllib.loads(rendered_registry),
+        )
+        _replace_with_rollback(ledger_path, rendered_ledger)
+        return len(authored)
+    except BaseException:
+        if inventory_replaced:
+            inventory_path.write_bytes(previous_inventory)
+        if registry_replaced:
+            registry_path.write_bytes(previous_registry)
+        raise
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
@@ -587,28 +757,28 @@ def main(argv: list[str]) -> int:
             freeze_baseline(root)
             print(f"froze {BASELINE_SIZE} shipped requirement IDs")
             return 0
-        if args.check_drafts or args.materialize:
+        if args.materialize:
+            count = coordinated_materialize(root)
+            print(f"materialized {count} typed claims and closures")
+            return 0
+        if args.check_drafts:
             authored, problems = check_drafts(root)
             if problems:
                 for problem in problems:
                     print(f"claim-closure-author: {problem}", file=sys.stderr)
                 return 1
-            if args.materialize:
-                materialize(root, authored)
-                print(f"materialized {len(authored)} typed claims and closures")
-            else:
-                rows, _ = requirement_rows(root)
-                ledger = tomllib.loads((root / LEDGER).read_text(encoding="utf-8"))
-                target = set(ledger.get("baseline_shipped_ids", [])) | {
-                    req_id
-                    for req_id, row in rows.items()
-                    if row.get("status") == "shipped"
-                }
-                missing = len(target) - len(authored)
-                print(
-                    f"claim closure drafts: {len(authored)}/{len(target)} valid; "
-                    f"{missing} remaining"
-                )
+            rows, _ = requirement_rows(root)
+            ledger = tomllib.loads((root / LEDGER).read_text(encoding="utf-8"))
+            target = set(ledger.get("baseline_shipped_ids", [])) | {
+                req_id
+                for req_id, row in rows.items()
+                if row.get("status") == "shipped"
+            }
+            missing = len(target) - len(authored)
+            print(
+                f"claim closure drafts: {len(authored)}/{len(target)} valid; "
+                f"{missing} remaining"
+            )
             return 0
         problems = check_baseline(root)
     except (OSError, KeyError, ValueError, tomllib.TOMLDecodeError) as error:

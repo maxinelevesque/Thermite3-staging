@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "rfc11-syntax-forget", "expected_exit": 0},
+    {"id": "rfc11-effects-direct-transitive", "expected_exit": 0},
+    {"id": "rfc11-effects-missing-atom", "expected_exit": 0}
+  ]
+}
