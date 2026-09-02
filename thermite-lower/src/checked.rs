@@ -5,8 +5,8 @@
 //! region/lock resolution, and effect/holding analysis must all succeed.
 
 use thermite_syntax::{
-    is_lexically_shadowed, semantic_inventory, walk_semantic, NodeId, Program, RegionPath,
-    SemanticEvent, SemanticFact, SemanticInventory, WorkBudget,
+    is_lexically_shadowed, semantic_inventory, walk_semantic, Block, Expr, IndexArg, LoopKind,
+    NodeId, Program, RegionPath, SemanticEvent, SemanticFact, SemanticInventory, Stmt, WorkBudget,
 };
 
 use crate::effects::{analyze_effects_unchecked, EffectAnalysis};
@@ -20,6 +20,7 @@ pub struct CheckedProgram {
     inventory: SemanticInventory,
     regions: thermite_spec::RegionIndex,
     effects: EffectAnalysis,
+    resource_flow: thermite_spec::ResourceFlowReport,
     holdings: Vec<CheckedHolding>,
     shared_places: Vec<CheckedSharedPlace>,
 }
@@ -73,6 +74,25 @@ impl CheckedProgram {
         source: &Program,
         budget: WorkBudget,
     ) -> Result<Self, Vec<LowerError>> {
+        let resources = thermite_spec::ResourceEnv::build(source).map_err(|errors| {
+            errors
+                .into_iter()
+                .map(|error| LowerError::EffectAnalysis {
+                    detail: format!("resource provenance failed: {error:?}"),
+                    span: thermite_syntax::Span::new(0, 0),
+                })
+                .collect::<Vec<_>>()
+        })?;
+        let resource_flow =
+            thermite_spec::check_resource_flow(source, &resources).map_err(|errors| {
+                errors
+                    .into_iter()
+                    .map(|error| LowerError::EffectAnalysis {
+                        detail: error.detail,
+                        span: error.span,
+                    })
+                    .collect::<Vec<_>>()
+            })?;
         let inventory = semantic_inventory(source, budget).map_err(|limit| {
             vec![LowerError::ResourceLimit {
                 budget: limit.budget.0,
@@ -97,6 +117,7 @@ impl CheckedProgram {
             inventory,
             regions,
             effects,
+            resource_flow,
             holdings,
             shared_places,
         })
@@ -118,12 +139,118 @@ impl CheckedProgram {
         &self.effects
     }
 
+    pub fn resource_flow(&self) -> &thermite_spec::ResourceFlowReport {
+        &self.resource_flow
+    }
+
     pub fn holdings(&self) -> &[CheckedHolding] {
         &self.holdings
     }
 
     pub fn shared_places(&self) -> &[CheckedSharedPlace] {
         &self.shared_places
+    }
+}
+
+pub(crate) fn first_rfc11_span(program: &Program) -> Option<thermite_syntax::Span> {
+    program.items.iter().find_map(|item| match item {
+        thermite_syntax::Item::Struct(item) if item.resource.is_some() => Some(item.span),
+        thermite_syntax::Item::Enum(item) if item.resource.is_some() => Some(item.span),
+        thermite_syntax::Item::Fn(item) => {
+            let effect_span = matches!(
+                &item.contract.effects,
+                thermite_syntax::EffectRow::Set(effects)
+                    if effects.iter().any(|effect| matches!(effect, thermite_syntax::Effect::Forgets(_)))
+            )
+            .then_some(item.span);
+            effect_span.or_else(|| item.body.as_ref().and_then(first_forget_in_block))
+        }
+        _ => None,
+    })
+}
+
+/// Whether the parsed program uses any RFC-11 surface. Forge uses this at the
+/// whole-program certification boundary so even non-L3 routes cannot omit the
+/// resource disclosure.
+pub fn contains_rfc11(program: &Program) -> bool {
+    first_rfc11_span(program).is_some()
+}
+
+fn first_forget_in_block(block: &Block) -> Option<thermite_syntax::Span> {
+    block
+        .stmts
+        .iter()
+        .find_map(|stmt| match stmt {
+            Stmt::Forget { span, .. } => Some(*span),
+            Stmt::Let { init, .. } => first_forget_in_expr(init),
+            Stmt::Assign { target, value } => {
+                first_forget_in_expr(target).or_else(|| first_forget_in_expr(value))
+            }
+            Stmt::Return(expr) => expr.as_ref().and_then(first_forget_in_expr),
+            Stmt::If { cond, then, else_ } => first_forget_in_expr(cond)
+                .or_else(|| first_forget_in_block(then))
+                .or_else(|| else_.as_ref().and_then(first_forget_in_block)),
+            Stmt::Loop(loop_) => match &loop_.kind {
+                LoopKind::While(cond) => first_forget_in_expr(cond),
+                LoopKind::Loop => None,
+            }
+            .or_else(|| first_forget_in_block(&loop_.body)),
+            Stmt::Holding { body, .. } => first_forget_in_block(body),
+            Stmt::Expr(expr) => first_forget_in_expr(expr),
+            Stmt::Break | Stmt::Continue => None,
+        })
+        .or_else(|| block.tail.as_deref().and_then(first_forget_in_expr))
+}
+
+fn first_forget_in_expr(expr: &Expr) -> Option<thermite_syntax::Span> {
+    match expr {
+        Expr::Call { callee, args } => {
+            first_forget_in_expr(callee).or_else(|| args.iter().find_map(first_forget_in_expr))
+        }
+        Expr::MethodCall { receiver, args, .. } => {
+            first_forget_in_expr(receiver).or_else(|| args.iter().find_map(first_forget_in_expr))
+        }
+        Expr::Field { receiver, .. }
+        | Expr::Closure { body: receiver, .. }
+        | Expr::Unary { expr: receiver, .. }
+        | Expr::Cast { expr: receiver, .. }
+        | Expr::Ref { expr: receiver, .. }
+        | Expr::Deref(receiver)
+        | Expr::TupleProj { receiver, .. }
+        | Expr::Is {
+            scrutinee: receiver,
+            ..
+        } => first_forget_in_expr(receiver),
+        Expr::Match { scrutinee, arms } => first_forget_in_expr(scrutinee).or_else(|| {
+            arms.iter().find_map(|arm| {
+                arm.guard
+                    .as_ref()
+                    .and_then(first_forget_in_expr)
+                    .or_else(|| first_forget_in_expr(&arm.body))
+            })
+        }),
+        Expr::If { cond, then, else_ } => first_forget_in_expr(cond)
+            .or_else(|| first_forget_in_block(then))
+            .or_else(|| first_forget_in_block(else_)),
+        Expr::Binary { lhs, rhs, .. } => {
+            first_forget_in_expr(lhs).or_else(|| first_forget_in_expr(rhs))
+        }
+        Expr::Index { base, index } => first_forget_in_expr(base).or_else(|| match index {
+            IndexArg::Single(expr) | IndexArg::RangeTo(expr) | IndexArg::RangeFrom(expr) => {
+                first_forget_in_expr(expr)
+            }
+            IndexArg::Range(lo, hi) => {
+                first_forget_in_expr(lo).or_else(|| first_forget_in_expr(hi))
+            }
+        }),
+        Expr::StructLit { fields, .. } => fields
+            .iter()
+            .find_map(|(_, value)| first_forget_in_expr(value)),
+        Expr::Tuple(items) => items.iter().find_map(first_forget_in_expr),
+        Expr::Quantifier { domain, body, .. } => {
+            first_forget_in_expr(domain).or_else(|| first_forget_in_expr(body))
+        }
+        Expr::IntLit { .. } | Expr::BoolLit(_) | Expr::Path(_) | Expr::StrLit(_) => None,
     }
 }
 

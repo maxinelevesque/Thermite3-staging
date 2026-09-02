@@ -52,6 +52,7 @@ RUST_REVIEW = {
     "thermite-skill/src/generate.rs": "generated language documentation tokens",
     "thermite-skill/tests/skill.rs": "generated language documentation expectations",
     "thermite-spec/tests/sealed_validate.rs": "migrated program fixtures",
+    "thermite-spec/tests/resource_flow.rs": "RFC-11 resource-flow fixtures with RFC-9 region effect atoms",
     "thermite-spec/tests/shared_contract_validate.rs": "RFC-10 shared-contract validation fixtures",
     "thermite-spec/tests/verified_effect_rows.rs": "RFC-9 program fixtures and expected diagnostics",
     "thermite-syntax/tests/conformance.rs": "parser token fixtures; not complete programs",

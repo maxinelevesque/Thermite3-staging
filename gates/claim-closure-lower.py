@@ -1479,6 +1479,57 @@ CASES = {
     "rfc10-uniform-holding": integration("claim_closure_wave14", "holding_semantics_are_uniform_across_executable_blocks"),
     "rfc10-verified-replay": integration("claim_closure_wave14", "l3_requires_kernel_verified_rfc10_replay"),
     "rfc10-witness-producer": integration("claim_closure_wave14", "rust_witness_is_deterministic_and_source_bound"),
+    "rfc11-syntax-resource-positive": package_integration(
+        "thermite-syntax", "resource_types_parse", "resource_structs_and_enums_preserve_explicit_and_bare_provenance"
+    ),
+    "rfc11-syntax-resource-contextual": package_integration(
+        "thermite-syntax", "resource_types_parse", "resource_remains_an_identifier_outside_item_modifier_position"
+    ),
+    "rfc11-syntax-resource-negative": package_integration(
+        "thermite-syntax", "resource_types_parse", "malformed_resource_modifiers_have_structured_diagnostics"
+    ),
+    "rfc11-syntax-forget": package_integration(
+        "thermite-syntax", "resource_types_parse", "forget_statement_and_forgets_effect_have_dedicated_canonical_nodes"
+    ),
+    "rfc11-effects-direct-transitive": integration(
+        "resource_effects", "forget_footprints_are_inferred_directly_and_transitively"
+    ),
+    "rfc11-effects-missing-atom": integration(
+        "resource_effects", "transitive_forget_requires_the_caller_atom"
+    ),
+    "rfc11-contagion-direct": package_integration(
+        "thermite-spec", "resource_provenance", "direct_and_contagious_provenance_is_order_independent_and_multi_region"
+    ),
+    "rfc11-contagion-constructors": package_integration(
+        "thermite-spec", "resource_provenance", "every_owning_constructor_is_contagious_but_borrows_are_not"
+    ),
+    "rfc11-contagion-fixed-point": package_integration(
+        "thermite-spec", "resource_provenance", "recursive_and_variant_payload_contagion_reaches_a_fixed_point"
+    ),
+    "rfc11-contagion-negative": package_integration(
+        "thermite-spec", "resource_provenance", "missing_empty_and_mismatched_markers_name_the_responsible_component"
+    ),
+    "rfc11-linearity-disposition": package_integration(
+        "thermite-spec", "resource_flow", "forget_and_transfer_discharge_live_resources"
+    ),
+    "rfc11-linearity-rejections": package_integration(
+        "thermite-spec", "resource_flow", "leaks_double_consumption_copy_and_overwrite_are_rejected"
+    ),
+    "rfc11-linearity-control-flow": package_integration(
+        "thermite-spec", "resource_flow", "early_returns_and_loop_edges_are_checked_independently"
+    ),
+    "rfc11-linearity-destructuring": package_integration(
+        "thermite-spec", "resource_flow", "destructuring_replaces_containers_with_component_obligations"
+    ),
+    "rfc11-linearity-lean-replay": integration(
+        "resource_witness", "resource_witness_is_deterministic_bound_and_replayed_by_lean"
+    ),
+    "rfc11-linearity-mutation-rejection": integration(
+        "resource_witness", "lean_rejects_semantically_invalid_but_structurally_matching_mutations"
+    ),
+    "rfc11-linearity-certificate": package_integration(
+        "forge", "resource_types_conformance", "resource_program_receives_only_a_resource_aware_certificate"
+    ),
     "s1-1": integration("claim_closure_wave14", "stage1_certificate_vocabulary_is_closed_and_total"),
     "s1-11": integration("claim_closure_wave14", "stage1_normative_governance_deliverables_are_present"),
     "s1-2": integration("claim_closure_wave15", "s1_axiom_gate_is_shared_by_every_lean_discharge"),

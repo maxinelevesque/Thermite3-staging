@@ -276,6 +276,17 @@
       "certification": "partial"
     },
     {
+      "id": "Effect::Forgets",
+      "parser": "supported",
+      "validator": "supported",
+      "canonical_semantics": "supported",
+      "checked_ir": "supported",
+      "lowering": "supported",
+      "proof_route": "supported",
+      "policy": "supported",
+      "certification": "supported"
+    },
+    {
       "id": "Effect::Net",
       "parser": "supported",
       "validator": "partial",
@@ -1156,6 +1167,17 @@
       "certification": "partial"
     },
     {
+      "id": "Stmt::Forget",
+      "parser": "supported",
+      "validator": "supported",
+      "canonical_semantics": "supported",
+      "checked_ir": "supported",
+      "lowering": "supported",
+      "proof_route": "supported",
+      "policy": "supported",
+      "certification": "supported"
+    },
+    {
       "id": "Stmt::Holding",
       "parser": "supported",
       "validator": "partial",
@@ -1434,6 +1456,18 @@
       "proof_route": "partial",
       "policy": "partial",
       "certification": "partial"
+    },
+    {
+      "id": "CLAIM-LANGUAGE-RFC11-RESOURCE-FLOW",
+      "source": "docs/language.md",
+      "parser": "supported",
+      "validator": "supported",
+      "canonical_semantics": "supported",
+      "checked_ir": "supported",
+      "lowering": "supported",
+      "proof_route": "supported",
+      "policy": "supported",
+      "certification": "supported"
     },
     {
       "id": "CLAIM-LANGUAGE-SPEC-SOUNDNESS",

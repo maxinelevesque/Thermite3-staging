@@ -778,6 +778,7 @@ impl MutantSink {
                 self.scan_block(&l.body, ctr);
             }
             Stmt::Expr(e) => self.scan_expr(e, ctr),
+            Stmt::Forget { value, .. } => self.scan_expr(value, ctr),
             // break/continue carry no sub-expression and are not a mutation
             // target in v0.1 (#93, verus-lowering.md OQ-4): the scan produces no
             // mutant for them (a leaf, like `Return(None)`).
@@ -1038,6 +1039,10 @@ impl Applier<'_> {
                 Stmt::Loop(l)
             }
             Stmt::Expr(e) => Stmt::Expr(self.apply_expr(e)),
+            Stmt::Forget { value, span } => Stmt::Forget {
+                value: self.apply_expr(value),
+                span: *span,
+            },
             // break/continue have no sub-expression to rewrite (#93): copied
             // verbatim (not a mutation target — OQ-4).
             Stmt::Break => Stmt::Break,

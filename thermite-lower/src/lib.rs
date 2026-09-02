@@ -34,10 +34,11 @@ pub mod l2;
 pub mod l3;
 pub mod locks;
 pub mod lower;
+pub mod resource_witness;
 pub mod witness;
 
 pub use checked::{
-    check_program, AccessMode, CheckedCloseEdge, CheckedHolding, CheckedProgram,
+    check_program, contains_rfc11, AccessMode, CheckedCloseEdge, CheckedHolding, CheckedProgram,
     CheckedSharedPlace, CloseReason, DEFAULT_SEMANTIC_WORK_BUDGET,
 };
 pub use effects::{analyze_effects, check_effects, subsumes, EffectAnalysis, EffectWarning};
@@ -50,6 +51,12 @@ pub use lower::{
     lower_equivalence_obligation_with_shared, lower_exec_body, lower_exec_expr, lower_l3_library,
     lower_l3_library_with_lock_provider, spec_fn_param_type_map, L3Export, L3ExportVisibility,
     L3LibraryTarget, LowerError,
+};
+pub use resource_witness::{
+    canonical_resource_projection, emit_resource_witness, lean_resource_replay_source,
+    replay_resource_witness, CanonicalResourceProjection, ResourceFlowWitness,
+    WitnessResourceForget, WitnessResourceFunction, WitnessResourceJoin, WitnessResourceLoop,
+    WitnessResourceReturningEdge, RESOURCE_WITNESS_VERSION,
 };
 pub use witness::{
     canonical_ast_projection, emit_witness, equivalence_shared_observations, lean_replay_source,

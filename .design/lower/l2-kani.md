@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 29d66c3ac5c96ef93b48c8ac4b3840f0b125f2aa1a1e04657e6e82236a7dbb83 (re-pinned 2026-08-17 for the non-operative Assurance V2 bounded characterization; Kani behavior is unchanged. prior: aaf635b68301351fc36fc3023580ade0aa1a6b28dd1df8f26151022fc5c7f800)
+audited-content-sha256: 17a76e1c8c530c3addf53657270ffd8f1016be2d1d1b07ea4d81374a166704f2 (re-pinned 2026-08-17 for the non-operative Assurance V2 bounded characterization; Kani behavior is unchanged. prior: aaf635b68301351fc36fc3023580ade0aa1a6b28dd1df8f26151022fc5c7f800)
 governs: thermite-lower/src/l2.rs, forge/src/kani.rs
 thesis-refs:
   - thermite-design.md §6

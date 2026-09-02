@@ -1404,6 +1404,7 @@ fn block_references_ident(block: &Block, ident: &str) -> bool {
                     .is_some_and(|b| block_references_ident(b, ident))
         }
         Stmt::Expr(e) => expr_references_ident(e, ident),
+        Stmt::Forget { value, .. } => expr_references_ident(value, ident),
         Stmt::Loop(l) => block_references_ident(&l.body, ident),
         Stmt::Holding { body, .. } => block_references_ident(body, ident),
         // break/continue carry no sub-expression (#93): reference nothing.
@@ -1813,6 +1814,10 @@ fn lower_stmt_l1_with_provider(
                 lock_provider,
             )?;
             Ok(format!("{pad}{{\n{pad}    {acquire}();\n{pad}    let __thermite_lock_guard = __ThermiteLockGuard {{ close: {close}, release: {release} }};\n{pad}    let __thermite_holding_result = {{\n{inner}{pad}    }};\n{pad}    drop(__thermite_lock_guard);\n{pad}    __thermite_holding_result\n{pad}}}\n"))
+        }
+        Stmt::Forget { value, .. } => {
+            let value = lower_expr_exec(value, 0, zero_span(), variants)?;
+            Ok(format!("{pad}drop({value});\n"))
         }
     }
 }
@@ -2565,6 +2570,7 @@ fn stmt_has_str_lit_l1(stmt: &Stmt) -> bool {
         Stmt::Loop(l) => block_has_str_lit_l1(&l.body),
         Stmt::Holding { body, .. } => block_has_str_lit_l1(body),
         Stmt::Expr(e) => expr_has_str_lit_l1(e),
+        Stmt::Forget { value, .. } => expr_has_str_lit_l1(value),
         // break/continue carry no sub-expression (#93): no string literal.
         Stmt::Break | Stmt::Continue => false,
     }
@@ -3323,6 +3329,7 @@ fn stmt_has_to_string(stmt: &Stmt) -> bool {
         Stmt::Loop(l) => block_has_to_string(&l.body),
         Stmt::Holding { body, .. } => block_has_to_string(body),
         Stmt::Expr(e) => expr_has_to_string(e),
+        Stmt::Forget { value, .. } => expr_has_to_string(value),
         Stmt::Break | Stmt::Continue => false,
     }
 }

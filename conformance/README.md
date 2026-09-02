@@ -31,6 +31,13 @@ Not every source program has every kind of fixture. For example,
 `binary_search.th` is useful to the parser and lowerer without a committed
 certificate for every toolchain stage.
 
+`resource_types.th` is the RFC-11 release anchor. Its expected certificate is
+asserted structurally by `forge/tests/resource_types_conformance.rs`: L3 may be
+reported only with the source-bound resource-flow block, the exact heap/device
+abandonment footprint, a kernel-accepted replay, and the four named residual
+trust categories. The test deliberately does not regenerate a golden from the
+implementation.
+
 ## Consumers
 
 - `thermite-syntax` uses source programs, parse facts, and address fixtures.

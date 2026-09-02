@@ -1131,6 +1131,7 @@ fn walk_block(block: &Block, f: &mut impl FnMut(&Expr)) {
                 walk_block(&loop_.body, f);
             }
             Stmt::Holding { body, .. } => walk_block(body, f),
+            Stmt::Forget { value, .. } => walk_expr(value, f),
         }
     }
     if let Some(tail) = &block.tail {
@@ -1565,6 +1566,11 @@ fn write_stmt(stmt: &Stmt, out: &mut String) {
             push_name(out, lock);
             out.push(' ');
             write_block(body, out);
+            out.push(')');
+        }
+        Stmt::Forget { value, .. } => {
+            out.push_str("(forget ");
+            write_expr(value, out);
             out.push(')');
         }
         Stmt::Break => out.push_str("(break)"),

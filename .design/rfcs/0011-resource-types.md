@@ -2,6 +2,7 @@
 rfc: 11
 title: Resource types — linearity, contagion, and abandonment
 status: draft
+language-evolution: tracked
 supersedes: []
 introduces:
   - REQ-SYNTAX-RESOURCE-MODIFIER
@@ -14,17 +15,19 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
-| **Fork implementation** | **Not started; tracked by issue #75.** This is the next capability RFC after issue #48 is dispositioned. |
-| **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
+| **Status** | **Implemented and locally qualified on the RFC-11 build branch; ready for final review, CI, and merge.** |
+| **Fork implementation** | **Syntax, provenance, checked flow, effects, L1/L3 lowering, Lean replay, certificates, audit disclosure, inventories, and the production conformance anchor are implemented.** The checked contract is [resource-types.md](../syntax/resource-types.md), tracked by issue #75. |
+| **Baseline** | `maxinelevesque/Thermite3-staging @ 91c964db` (`3.0.0-alpha.7`) |
 | **Position** | step 7 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
-| **Depends on** | [RFC-6](0006-full-words.md) |
+| **Depends on** | [RFC-6](0006-full-words.md), [RFC-8](0008-effect-algebra.md), [RFC-9](0009-verified-effect-rows.md), [RFC-10](0010-shared-state-invariants.md); issue #48 is complete |
 
-> **Not proposed yet.** This document is written so the work is not blocked on a
-> reply, and it stays unfiled until [RFC-6](0006-full-words.md) lands and the
-> direction in [RFC-7](0007-thermite-3.md) is answered. Filing six capability
-> proposals against a surface nobody has adopted is the failure RFC-7's own
-> sequencing rule exists to prevent.
+> **Prepared 2026-09-01.** The proposal remains the rationale and language-level
+> direction. The approved implementation contract resolves its stale baseline, explicit
+> resource provenance, generic contagion, fail-closed slice boundaries, checked
+> flow witness, and residual-trust requirements in
+> [resource-types.md](../syntax/resource-types.md). Issue #48's authoritative
+> schema-v2 transition is complete; merge and release activation now remain
+> sequenced only after the final cold adversarial review and CI.
 
 Kind: surface an existing capability.
 

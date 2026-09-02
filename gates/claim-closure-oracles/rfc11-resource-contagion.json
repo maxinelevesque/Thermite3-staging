@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "rfc11-contagion-direct", "expected_exit": 0},
+    {"id": "rfc11-contagion-constructors", "expected_exit": 0},
+    {"id": "rfc11-contagion-fixed-point", "expected_exit": 0},
+    {"id": "rfc11-contagion-negative", "expected_exit": 0}
+  ]
+}

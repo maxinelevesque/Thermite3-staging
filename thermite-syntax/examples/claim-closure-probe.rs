@@ -31,6 +31,9 @@ fn error_kind(error: &SyntaxError) -> &'static str {
         SyntaxError::BvTagOnPrecondition { .. } => "BvTagOnPrecondition",
         SyntaxError::BvWidthInvalid { .. } => "BvWidthInvalid",
         SyntaxError::UnknownEffectPrimitive { .. } => "UnknownEffectPrimitive",
+        SyntaxError::EmptyResourceProvenance { .. } => "EmptyResourceProvenance",
+        SyntaxError::DuplicateResourceRegion { .. } => "DuplicateResourceRegion",
+        SyntaxError::ResourceModifierTarget { .. } => "ResourceModifierTarget",
     }
 }
 
@@ -242,6 +245,7 @@ fn collect_block_expr_kinds(block: &Block, kinds: &mut BTreeSet<&'static str>) {
                 collect_block_expr_kinds(&loop_node.body, kinds);
             }
             Stmt::Holding { body, .. } => collect_block_expr_kinds(body, kinds),
+            Stmt::Forget { value, .. } => collect_expr_kinds(value, kinds),
             Stmt::Expr(expr) => collect_expr_kinds(expr, kinds),
             Stmt::Break | Stmt::Continue => {}
         }
@@ -443,6 +447,9 @@ fn collect_basis_block(
             }
             Stmt::Holding { body, .. } => {
                 collect_basis_block(body, methods, tuple_arities, tuple_projections)
+            }
+            Stmt::Forget { value, .. } => {
+                collect_basis_expr(value, methods, tuple_arities, tuple_projections)
             }
             Stmt::Expr(expr) => collect_basis_expr(expr, methods, tuple_arities, tuple_projections),
             Stmt::Break | Stmt::Continue => {}
@@ -699,6 +706,10 @@ fn ergonomics_stmt_json(statement: &Stmt) -> Value {
             "kind": "Holding",
             "lock": lock,
         }),
+        Stmt::Forget { value, .. } => json!({
+            "kind": "Forget",
+            "value": ergonomics_expr_json(value),
+        }),
         Stmt::Break => json!({"kind": "Break"}),
         Stmt::Continue => json!({"kind": "Continue"}),
         Stmt::Expr(expr) => json!({"expr": ergonomics_expr_json(expr), "kind": "Expr"}),
@@ -721,6 +732,7 @@ fn effect_text(effect: &Effect) -> String {
         Effect::Read(path) => format!("read({path})"),
         Effect::Write(path) => format!("write({path})"),
         Effect::Net(path) => format!("net({path})"),
+        Effect::Forgets(path) => format!("forgets({path})"),
         Effect::Owns(lock) => format!("owns({lock})"),
         Effect::Alloc => "alloc".to_string(),
         Effect::Time => "time".to_string(),
@@ -925,6 +937,7 @@ fn stmt_kind(statement: &Stmt) -> &'static str {
         Stmt::If { .. } => "If",
         Stmt::Loop(_) => "Loop",
         Stmt::Holding { .. } => "Holding",
+        Stmt::Forget { .. } => "Forget",
         Stmt::Break => "Break",
         Stmt::Continue => "Continue",
         Stmt::Expr(_) => "Expr",
@@ -946,6 +959,7 @@ fn collect_stmt_kinds(block: &Block, kinds: &mut BTreeSet<&'static str>) {
             Stmt::Let { .. }
             | Stmt::Assign { .. }
             | Stmt::Return(_)
+            | Stmt::Forget { .. }
             | Stmt::Break
             | Stmt::Continue
             | Stmt::Expr(_) => {}

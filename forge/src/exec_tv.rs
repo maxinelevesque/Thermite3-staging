@@ -533,6 +533,12 @@ fn exec_tv_fn(
             }),
             Stmt::Expr(_) | Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
             Stmt::Holding { .. } => {}
+            Stmt::Forget { .. } => report.results.push(ExecResult {
+                label: format!("{}.forget", f.name),
+                verdict: ExecVerdict::Skipped {
+                    reason: "RFC-11 resource forgetting is outside exec-expr TV".to_string(),
+                },
+            }),
         }
     }
 

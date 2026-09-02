@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: e41979c65839521be215e02222192c29d9f4bb78f9c264f0ec15505402063fd8 (re-pinned 2026-08-27 after adding the effect-free recursion/tuple claim corpus; the RFC-9 inventory now tracks 68 `.th` files and effect semantics are unchanged. prior: 9daaee5d825e5b8a223ed6e9e360ccbb002766bf292e24ab281d66eebd85d180)
+audited-content-sha256: be9374aeba9a0fbbf541be555e6dc30de8edfef2c0629ab66067016114fcc702 (re-pinned 2026-09-01 after extending the shared effect-subsumption proof domain through the existing Owns and Forgets atoms; region-sensitive RFC-9 checking remains unchanged. prior: 8fc513a11f264b952c6a8818260558e4ee792d3e125a760476eb0a002ab3b602)
 -->
 
 ## Summary

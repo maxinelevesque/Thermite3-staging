@@ -1,0 +1,14 @@
+// RFC-11 release anchor: contagious multi-region ownership, deliberate
+// abandonment, exact effect pricing, checked flow, and formal replay.
+resource(heap) struct HeapGrant { id: u64 }
+resource(device.port) struct PortGrant { id: u64 }
+resource struct Bundle { heap: HeapGrant, port: PortGrant }
+
+fn discard(b: Bundle) -> u64
+  ! forgets(heap), forgets(device.port)
+  requires true
+  ensures result == 0
+{
+  forget(b);
+  0
+}

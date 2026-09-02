@@ -643,6 +643,7 @@ pub fn validate_freestanding_effects_with(
                 thermite_syntax::Effect::Diverge => "diverge",
                 thermite_syntax::Effect::Term => "term",
                 thermite_syntax::Effect::Owns(_) => "owns",
+                thermite_syntax::Effect::Forgets(_) => "forgets",
             };
             let basis = thermite_syntax::effect_basis::entry_for_effect(&effect).footprint();
             for instance in basis.reads.iter().chain(&basis.writes) {

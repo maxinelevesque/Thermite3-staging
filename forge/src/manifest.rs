@@ -1187,6 +1187,58 @@ pub struct RejectReason {
     pub detail: String,
 }
 
+/// RFC-11 resource-flow evidence attached only after the independent Lean replay
+/// accepts the checked witness. This is deterministic, verdict-relevant evidence:
+/// changing the source, checked flow, or abandonment footprint changes the block.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResourceFlowEvidence {
+    pub verdict: ResourceFlowVerdict,
+    pub forgets: Vec<ResourceForgetFootprint>,
+    pub formal_replay: ResourceFormalReplay,
+    pub residual_trust: Vec<ResourceResidualTrust>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResourceFlowVerdict {
+    Accepted,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResourceForgetFootprint {
+    pub function: String,
+    pub disposition: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub place: Option<String>,
+    pub regions: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResourceFormalReplay {
+    pub checker: String,
+    pub checker_sha256: String,
+    pub witness_version: u32,
+    pub canonical_ast_sha256: String,
+    pub checked_resource_sha256: String,
+    pub verdict: ResourceFormalReplayVerdict,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResourceFormalReplayVerdict {
+    KernelAccepted,
+}
+
+/// The exact boundary left outside RFC-11's finite-graph replay.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResourceResidualTrust {
+    Parser,
+    TypeProvenanceResolution,
+    WitnessExtraction,
+    ExecutableTargetBehavior,
+}
+
 /// The certificate `forge check` emits for one item (`thermite-design.md` §5.1,
 /// Appendix A). Field declaration order is the deterministic serialization order
 /// (REQ-7) and mirrors Appendix A: `item`, `level`, `solver_time_ms`,
@@ -1196,6 +1248,7 @@ pub struct RejectReason {
 struct AuditAdmission {
     live: bool,
     verus: Option<VerusAuditAuthority>,
+    resource: Option<ResourceAuditAuthority>,
     clause_policy_digest: Option<String>,
 }
 
@@ -1207,11 +1260,17 @@ struct VerusAuditAuthority {
     succeeded: bool,
 }
 
+#[derive(Debug, Clone)]
+struct ResourceAuditAuthority {
+    evidence: ResourceFlowEvidence,
+}
+
 impl AuditAdmission {
     fn live() -> Self {
         Self {
             live: true,
             verus: None,
+            resource: None,
             clause_policy_digest: None,
         }
     }
@@ -1450,6 +1509,12 @@ pub struct Certificate {
     /// the `meaning_audit`/`covenant_evidence` additive precedents.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub burn: Option<crate::burn::BurnReceipt>,
+    /// RFC-11 checked resource-flow and independent formal-replay disclosure.
+    /// Absent for programs outside the resource fragment. A resource-bearing
+    /// current producer must carry this block; historical rows cannot acquire
+    /// authority merely by deserializing a compatible-looking JSON value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource_flow: Option<ResourceFlowEvidence>,
     /// Process-local typed result provenance. This is deliberately absent from
     /// the public certificate wire format: live proof/policy producers stamp it
     /// so later backend arbitration never has to rediscover authority from
@@ -2305,6 +2370,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            resource_flow: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -2358,6 +2424,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            resource_flow: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -2432,6 +2499,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            resource_flow: None,
             live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
@@ -2478,6 +2546,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            resource_flow: None,
             live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
@@ -2523,6 +2592,7 @@ impl Certificate {
             covenant_evidence: None,
             meaning_audit: None,
             burn: None,
+            resource_flow: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -2836,6 +2906,102 @@ impl Certificate {
         });
         attached.validate_verus_artifact_authority()?;
         Ok(attached)
+    }
+
+    /// Attach RFC-11 evidence produced by the typed Lean-replay path. The
+    /// public block is checked against the pre-execution L3 artifact before a
+    /// private audit capability is minted, so display text cannot manufacture
+    /// resource authority.
+    pub(crate) fn with_resource_flow_evidence_for_witness(
+        mut self,
+        witness: &thermite_lower::ResourceFlowWitness,
+        evidence: ResourceFlowEvidence,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        self.validate_resource_evidence_against(witness, &evidence)?;
+        self.resource_flow = Some(evidence.clone());
+        self.audit_admission.resource = Some(ResourceAuditAuthority { evidence });
+        Ok(self)
+    }
+
+    pub(crate) fn validate_resource_flow_authority(
+        &self,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        match (&self.resource_flow, &self.audit_admission.resource) {
+            (None, None) => Ok(()),
+            (Some(public), Some(authority)) if public == &authority.evidence => Ok(()),
+            (Some(_), None) => Err(IncoherentCertificationPosition {
+                reason: "RFC-11 evidence requires live formal-replay authority",
+            }),
+            (None, Some(_)) => Err(IncoherentCertificationPosition {
+                reason: "RFC-11 live authority requires a public evidence block",
+            }),
+            _ => Err(IncoherentCertificationPosition {
+                reason: "RFC-11 public evidence differs from live replay authority",
+            }),
+        }
+    }
+
+    pub(crate) fn inherit_resource_flow_from(mut self, source: &Certificate) -> Self {
+        self.resource_flow = source.resource_flow.clone();
+        self.audit_admission.resource = source.audit_admission.resource.clone();
+        self
+    }
+
+    pub(crate) fn persisted_resource_evidence_matches(
+        &self,
+        artifact: &thermite_lower::L3Artifact,
+        expected: Option<&ResourceFlowEvidence>,
+    ) -> bool {
+        match (&self.resource_flow, expected) {
+            (None, None) => artifact.resource_witness().is_none(),
+            (Some(actual), Some(expected)) => {
+                artifact.resource_witness().is_some() && actual == expected
+            }
+            _ => false,
+        }
+    }
+
+    fn validate_resource_evidence_against(
+        &self,
+        witness: &thermite_lower::ResourceFlowWitness,
+        evidence: &ResourceFlowEvidence,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        let expected_forgets: Vec<_> = witness
+            .functions
+            .iter()
+            .flat_map(|function| {
+                function
+                    .forgets
+                    .iter()
+                    .map(|forget| ResourceForgetFootprint {
+                        function: function.function.clone(),
+                        disposition: forget.label.clone(),
+                        place: forget.place.clone(),
+                        regions: forget.priced_regions.clone(),
+                    })
+            })
+            .collect();
+        let replay = &evidence.formal_replay;
+        let expected_residual = vec![
+            ResourceResidualTrust::Parser,
+            ResourceResidualTrust::TypeProvenanceResolution,
+            ResourceResidualTrust::WitnessExtraction,
+            ResourceResidualTrust::ExecutableTargetBehavior,
+        ];
+        if evidence.verdict != ResourceFlowVerdict::Accepted
+            || evidence.forgets != expected_forgets
+            || replay.checker != "Thermite.ResourceFlow/v1"
+            || replay.witness_version != witness.version
+            || replay.canonical_ast_sha256 != witness.canonical_ast_sha256
+            || replay.checked_resource_sha256 != witness.checked_resource_sha256
+            || replay.verdict != ResourceFormalReplayVerdict::KernelAccepted
+            || evidence.residual_trust != expected_residual
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "RFC-11 evidence does not match the checked resource artifact",
+            });
+        }
+        Ok(())
     }
 
     /// Revalidate the persisted general-Verus coordinates against the private
@@ -3225,6 +3391,7 @@ impl Certificate {
             covenant_evidence: Some(evidence),
             meaning_audit: None,
             burn: None,
+            resource_flow: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -3295,6 +3462,7 @@ impl Certificate {
         Option<crate::meaning::MeaningAudit>,
         Vec<BvShadow>,
         Option<ClauseOraclePortfolio>,
+        Option<ResourceFlowEvidence>,
     ) {
         let clause_entries: Vec<_> = self
             .obligations
@@ -3335,6 +3503,7 @@ impl Certificate {
                 .filter_map(|o| o.bv_shadow.clone())
                 .collect(),
             clause_portfolio,
+            self.resource_flow.clone(),
         )
     }
 }
@@ -3518,6 +3687,7 @@ fn effect_token(effect: &Effect) -> String {
         // runtime-sandbox.md REQ-7). A bare atom like `alloc`/`time`.
         Effect::Term => "term".to_string(),
         Effect::Owns(lock) => format!("owns({lock})"),
+        Effect::Forgets(region) => format!("forgets({region})"),
     }
 }
 

@@ -309,6 +309,15 @@
     },
     {
       "atoms": [
+        "read(state.n)",
+        "write(state.n)"
+      ],
+      "classification": "RFC-11 resource-flow fixtures with RFC-9 region effect atoms",
+      "path": "thermite-spec/tests/resource_flow.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
         "net(db)"
       ],
       "classification": "migrated program fixtures",
@@ -365,11 +374,11 @@
   "summary": {
     "json_missing_shared": 0,
     "json_program_fields_with_state_effects": 5,
-    "rust_files_reviewed": 32,
-    "rust_reviewed_sites": 185,
+    "rust_files_reviewed": 33,
+    "rust_reviewed_sites": 187,
     "th_missing_shared": 0,
     "th_programs_with_state_effects": 5,
-    "tracked_th_files": 68
+    "tracked_th_files": 69
   },
   "thermite_programs": [
     {

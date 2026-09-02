@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: c3c7f609bad8fa897d6ce97673f50569d7708dc03a8674a2ff786afeac6266fe (re-pinned 2026-09-01 after separating dependency-free structural authority checks from the provisioned executable/formal replay lane. All 572 typed closures were refreshed under the new kernel; language coverage and the resolved issue-48 linkage are unchanged. prior: 0a8837e57de065a5120bec38bfe1f4a1ebf9a8ee1db1ed89cd3259551d07f23e)
+audited-content-sha256: a5919d8e4dc0af6a4ed0fa90d6f265d92f0da0b399f6728235d7a4c161ba66b1 (re-pinned 2026-09-01 after synchronizing the reviewed registry-source digest following the RFC-11 CI partition update; inventory, structural replay, and documentation drift are clean. prior: 535c8ba9fc025d298e32b1666fa2398b0129e122d355b0a04933b7e26281c75f)
 
 ## Summary
 
@@ -679,7 +679,10 @@ review necessary without allowing prose changes to rewrite a closed claim.
   inside #48.
 - RFC-10-specific cross-product expansion that remains after extracting the
   general producer-refinement framework from issue #49.
-- Implementing RFC-11 or RFC-12 language features.
+- Implementing RFC-12 language features. RFC-11 resource types now have an
+  explicit supported profile in the language inventory; its checked flow,
+  formal replay, certificate disclosure, and legacy-fallback negative are
+  versioned evidence rather than members of an older fragment.
 - Implementing RFC-13 protocol types.
 - Using natural-language inference to prove that a prose summary entails a
   typed claim.

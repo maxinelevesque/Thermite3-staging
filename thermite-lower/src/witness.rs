@@ -506,6 +506,16 @@ pub fn canonical_ast_projection(source: &Program) -> Result<CanonicalAstProjecti
             }
         }
     }
+    if let Ok(resources) = thermite_spec::ResourceEnv::build(source) {
+        if let Ok(flow) = thermite_spec::check_resource_flow(source, &resources) {
+            for (function, regions) in flow.direct_forgets {
+                direct
+                    .entry(function)
+                    .or_default()
+                    .extend(regions.into_iter().map(Effect::Forgets));
+            }
+        }
+    }
     Ok(CanonicalAstProjection {
         digest: canonical_ast_sha256(source),
         node_kinds: inventory
@@ -835,7 +845,7 @@ pub fn replay_witness(
     Ok(checked)
 }
 
-fn canonical_ast_sha256(program: &Program) -> String {
+pub(crate) fn canonical_ast_sha256(program: &Program) -> String {
     // Versioned by WITNESS_VERSION. Debug formatting is structural for these
     // repository-owned AST types and includes literal values, clauses, spans,
     // wrapper records, and source order; the digest binds the witness to that

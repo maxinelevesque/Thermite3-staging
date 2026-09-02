@@ -148,6 +148,8 @@ use thermite_syntax::{
 };
 
 use crate::combinators::{self, ArgKind, CombinatorSig};
+use crate::resource::{ResourceEnv, ResourceError};
+use crate::resource_flow::{check_resource_flow, ResourceFlowErrorKind};
 use crate::schemes::{self, SchemeSig};
 
 /// The maximum recursive-descent nesting depth the validator will follow before
@@ -399,6 +401,35 @@ pub enum SpecError {
     /// no live emitter in 1b; `construct` names the unsupported surface form for
     /// a crisp diagnostic, §2.4).
     UnsupportedAdt { construct: &'static str, span: Span },
+    /// RFC-11 resource syntax reached the specification boundary before the
+    /// provenance/flow consumer is implemented. This is the syntax-slice
+    /// fail-closed gate: a parsed resource declaration never validates as an
+    /// ordinary droppable ADT.
+    UnsupportedResourceTypes { span: Span },
+    /// An unmarked ADT owns a resource-bearing field or variant payload.
+    MissingResourceMarker {
+        declaration: String,
+        computed: Vec<thermite_syntax::RegionPath>,
+        sources: Vec<String>,
+        span: Span,
+    },
+    /// A bare `resource` marker derived no provenance from its components.
+    EmptyResourceMarker { declaration: String, span: Span },
+    /// Explicit provenance disagrees with the resource-bearing component union.
+    ResourceProvenanceMismatch {
+        declaration: String,
+        declared: Vec<thermite_syntax::RegionPath>,
+        computed: Vec<thermite_syntax::RegionPath>,
+        sources: Vec<String>,
+        span: Span,
+    },
+    /// A path-sensitive RFC-11 ownership-flow violation.
+    ResourceFlow {
+        kind: ResourceFlowErrorKind,
+        place: Option<String>,
+        detail: String,
+        span: Span,
+    },
     /// A `match` over a declared `enum` value whose arms do not cover every
     /// declared variant and is not closed by a `Wildcard` arm
     /// (`.design/basis/01-adts.md` REQ-5). `missing` is the set of uncovered
@@ -525,6 +556,11 @@ impl SpecError {
             | SpecError::NestedCombinator { span, .. }
             | SpecError::ExpressionTooDeep { span, .. }
             | SpecError::UnsupportedAdt { span, .. }
+            | SpecError::UnsupportedResourceTypes { span }
+            | SpecError::MissingResourceMarker { span, .. }
+            | SpecError::EmptyResourceMarker { span, .. }
+            | SpecError::ResourceProvenanceMismatch { span, .. }
+            | SpecError::ResourceFlow { span, .. }
             | SpecError::NonExhaustiveMatch { span, .. }
             | SpecError::UnreachableArm { span, .. }
             | SpecError::UnknownField { span, .. }
@@ -537,6 +573,40 @@ impl SpecError {
             | SpecError::MissingDecreases { span, .. }
             | SpecError::ReservedName { span, .. }
             | SpecError::SharedStateInContract { span, .. } => *span,
+        }
+    }
+}
+
+impl From<ResourceError> for SpecError {
+    fn from(error: ResourceError) -> Self {
+        match error {
+            ResourceError::MissingMarker {
+                declaration,
+                computed,
+                sources,
+                span,
+            } => Self::MissingResourceMarker {
+                declaration,
+                computed,
+                sources,
+                span,
+            },
+            ResourceError::EmptyContagiousMarker { declaration, span } => {
+                Self::EmptyResourceMarker { declaration, span }
+            }
+            ResourceError::ProvenanceMismatch {
+                declaration,
+                declared,
+                computed,
+                sources,
+                span,
+            } => Self::ResourceProvenanceMismatch {
+                declaration,
+                declared,
+                computed,
+                sources,
+                span,
+            },
         }
     }
 }
@@ -595,6 +665,34 @@ impl fmt::Display for SpecError {
                 "ADT construct `{construct}` is not yet checkable by the validator \
                  (`.design/basis/01-adts.md`)"
             ),
+            SpecError::UnsupportedResourceTypes { .. } => write!(
+                f,
+                "RFC-11 executable resource flow is not yet checkable by the ownership validator"
+            ),
+            SpecError::MissingResourceMarker {
+                declaration,
+                computed,
+                sources,
+                ..
+            } => write!(
+                f,
+                "declaration `{declaration}` owns resource provenance {computed:?} through {sources:?} but lacks a `resource` modifier"
+            ),
+            SpecError::EmptyResourceMarker { declaration, .. } => write!(
+                f,
+                "bare resource declaration `{declaration}` derives no provenance from any field or variant"
+            ),
+            SpecError::ResourceProvenanceMismatch {
+                declaration,
+                declared,
+                computed,
+                sources,
+                ..
+            } => write!(
+                f,
+                "resource declaration `{declaration}` declares {declared:?}, but its fields or variants derive {computed:?} through {sources:?}"
+            ),
+            SpecError::ResourceFlow { detail, .. } => write!(f, "{detail}"),
             SpecError::NonExhaustiveMatch { missing, .. } => write!(
                 f,
                 "non-exhaustive `match`: the variant(s) {missing:?} are neither handled by an arm \
@@ -688,6 +786,17 @@ impl std::error::Error for SpecError {}
 pub fn validate(program: &Program) -> Result<(), Vec<SpecError>> {
     let mut v = Validator::new(program);
     v.run(program);
+    if let Ok(resources) = ResourceEnv::build(program) {
+        if let Err(errors) = check_resource_flow(program, &resources) {
+            v.errors
+                .extend(errors.into_iter().map(|error| SpecError::ResourceFlow {
+                    kind: error.kind,
+                    place: error.place,
+                    detail: error.detail,
+                    span: error.span,
+                }));
+        }
+    }
     if v.errors.is_empty() {
         Ok(())
     } else {
@@ -843,7 +952,12 @@ impl Validator {
         // variants at the declaration makes that case-based split sound. These
         // casing diagnostics seed the validator's error list so a lowercase-
         // variant program never reaches the (now-sound) body/contract walk.
-        let mut casing_errors: Vec<SpecError> = Vec::new();
+        let mut casing_errors: Vec<SpecError> = ResourceEnv::build(program)
+            .err()
+            .unwrap_or_default()
+            .into_iter()
+            .map(SpecError::from)
+            .collect();
         for item in &program.items {
             match item {
                 Item::Enum(e) => {
@@ -1153,6 +1267,7 @@ impl Validator {
                 self.scan_block_for_loops(&loop_node.body, loop_node.span);
             }
             Stmt::Holding { body, span, .. } => self.scan_block_for_loops(body, *span),
+            Stmt::Forget { value, .. } => self.scan_expr_for_loops(value, span),
             Stmt::Let { init, .. } => self.scan_expr_for_loops(init, span),
             Stmt::Assign { target, value } => {
                 self.scan_expr_for_loops(target, span);
@@ -1317,6 +1432,7 @@ impl Validator {
                 self.walk_block(&loop_node.body, loop_node.span);
             }
             Stmt::Holding { body, span, .. } => self.walk_block(body, *span),
+            Stmt::Forget { value, .. } => self.walk_expr(value, span),
             Stmt::Let { init, .. } => self.walk_expr(init, span),
             Stmt::Assign { target, value } => {
                 self.walk_expr(target, span);
@@ -2084,6 +2200,7 @@ fn stmt_calls_name(stmt: &Stmt, name: &str) -> bool {
         }
         Stmt::Loop(l) => block_calls_name(&l.body, name),
         Stmt::Holding { body, .. } => block_calls_name(body, name),
+        Stmt::Forget { value, .. } => expr_calls_name(value, name),
         Stmt::Break | Stmt::Continue => false,
         Stmt::Expr(e) => expr_calls_name(e, name),
     }

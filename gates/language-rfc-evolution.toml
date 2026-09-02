@@ -13,7 +13,6 @@ baseline_rfc = [
   "0008-effect-algebra.md",
   "0009-verified-effect-rows.md",
   "0010-shared-state-invariants.md",
-  "0011-resource-types.md",
   "0012-interference-clauses.md",
   "0013-protocol-types.md",
   "0014-crash-clause.md",
@@ -24,3 +23,12 @@ baseline_rfc = [
   "0019-the-proof-layer.md",
   "0020-rfc-template.md",
 ]
+
+[[evolution]]
+rfc = "0011-resource-types.md"
+fragment = "rfc11-resource-v1"
+change = "expand"
+classifier = "gates/language-completeness-inventory.toml#id = \"rfc11-resource\""
+inclusion = ".design/versioned-language-completeness.md#RFC-11 resource types now have"
+support_matrix = "gates/language-support-matrix.json#\"id\": \"Effect::Forgets\""
+negative_witness = "forge/src/check.rs#a pre-RFC-11/non-resource certificate must miss"

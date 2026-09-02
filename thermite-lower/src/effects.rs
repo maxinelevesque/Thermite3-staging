@@ -14,9 +14,9 @@
 //!
 //! ## The lattice (REQ-1)
 //!
-//! The effects form a lattice over the powerset of the nine atoms in
+//! The effects form a lattice over the powerset of the eleven atoms in
 //! `thermite_syntax::ast::Effect` (`Read`/`Write`/`Net`/`Alloc`/`Time`/`Rand`/
-//! `Panic`/`Diverge`/`Term`), ordered by subset inclusion. `EffectRow::Pure` ≡ the empty
+//! `Panic`/`Diverge`/`Term`/`Owns`/`Forgets`), ordered by subset inclusion. `EffectRow::Pure` ≡ the empty
 //! set `{}` is the bottom: it permits nothing and is subsumed by everything. The
 //! join of two rows is set union. v0.1 subsumption is atom-kind level
 //! (path-insensitive): a `Write(_)` caller subsumes any `Write(_)` callee (OQ-1;
@@ -58,11 +58,12 @@ use crate::lower::LowerError;
 /// Fixed constant (determinism, `goal.md` R-CODE-5).
 const MAX_WALK_DEPTH: usize = 256;
 
-/// The nine atomic effect kinds (REQ-1), the carriers of subsumption. This is
+/// The eleven atomic effect kinds (REQ-1), the carriers of subsumption. This is
 /// the path-insensitive projection of `thermite_syntax::ast::Effect`: `Read(p)`,
 /// `Write(p)`, `Net(d)` collapse to `Read`/`Write`/`Net` regardless of the path/
 /// domain argument (OQ-1; v0.1 subsumption is atom-kind level). The remaining
-/// six atoms (`Alloc`/`Time`/`Rand`/`Panic`/`Diverge`/`Term`) are argument-free.
+/// six atoms (`Alloc`/`Time`/`Rand`/`Panic`/`Diverge`/`Term`) are argument-free;
+/// `Owns` and `Forgets` retain region paths before this kind projection.
 /// `Term` is the #106 terminal-control atom (`fx term` → the `ioctl` seccomp
 /// grant, runtime-sandbox.md REQ-7), the 9th atom that widened the proved bitset
 /// from `u8` to `u16`.
@@ -78,10 +79,11 @@ pub enum EffectKind {
     Diverge,
     Term,
     Owns,
+    Forgets,
 }
 
 impl EffectKind {
-    /// The bit position of this atom kind in the 9-atom `u16` bitset shared with
+    /// The bit position of this atom kind in the 11-atom `u16` bitset shared with
     /// the Verus-verified core (`thermite_verified`, epic #60 / #106): Read=0,
     /// Write=1, Net=2, Alloc=3, Time=4, Rand=5, Panic=6, Diverge=7, Term=8. This
     /// is the representation port of `.design/verified/self-verification.md`
@@ -101,6 +103,7 @@ impl EffectKind {
             EffectKind::Diverge => 7,
             EffectKind::Term => 8,
             EffectKind::Owns => 9,
+            EffectKind::Forgets => 10,
         };
         1u16 << index
     }
@@ -119,11 +122,12 @@ impl EffectKind {
             Effect::Diverge => EffectKind::Diverge,
             Effect::Term => EffectKind::Term,
             Effect::Owns(_) => EffectKind::Owns,
+            Effect::Forgets(_) => EffectKind::Forgets,
         }
     }
 }
 
-/// The 9-atom `u16` bitset of an effect row (one bit per `EffectKind`, see
+/// The 11-atom `u16` bitset of an effect row (one bit per `EffectKind`, see
 /// `EffectKind::bit`): the representation port shared with the Verus-verified
 /// core (`.design/verified/self-verification.md` REQ-5). `mask(Pure) = 0`;
 /// `mask(Set(v))` ORs in `EffectKind::of(e).bit()` for each `e`. Path-insensitive
@@ -146,8 +150,8 @@ fn mask(row: &EffectRow) -> u16 {
 /// the bit-level subset decision is delegated to
 /// `thermite_verified::subsumes_masks`, the plain-Rust mirror of the
 /// `verus`-proved exec body (`(callee & !caller) == 0`). This function projects
-/// each `EffectRow` to its 8-atom mask (`mask`) and hands the masks to the
-/// verified core; the exhaustive 262144-pair (512×512) equivalence test
+/// each `EffectRow` to its 11-atom mask (`mask`) and hands the masks to the
+/// verified core; the exhaustive 4194304-pair (2048×2048) equivalence test
 /// (`tests/effects_verified.rs`) anchors this projection to the proved subset
 /// relation `thermite_verified::spec_subsumes_mask`. Behavior matches the
 /// former set-membership form (the masks encode the same atom-kind sets).
@@ -265,6 +269,11 @@ pub fn analyze_effects(program: &Program) -> Result<EffectAnalysis, Vec<LowerErr
 pub(crate) fn analyze_effects_unchecked(
     program: &Program,
 ) -> Result<EffectAnalysis, Vec<LowerError>> {
+    let resource_forgets = thermite_spec::ResourceEnv::build(program)
+        .ok()
+        .and_then(|resources| thermite_spec::check_resource_flow(program, &resources).ok())
+        .map(|report| report.direct_forgets)
+        .unwrap_or_default();
     // name → declared `fx` row, over the `FnItem`s. `SpecFnItem` names are noted
     // as pure (they carry no `fx`). On a duplicate name the first declaration
     // wins (deterministic; duplicate-name rejection is the #2 validator's job).
@@ -344,6 +353,11 @@ pub(crate) fn analyze_effects_unchecked(
                     return Err(errors);
                 }
                 collect_holding_effects(body, &mut direct.borrow_mut());
+                if let Some(regions) = resource_forgets.get(&f.name) {
+                    direct
+                        .borrow_mut()
+                        .extend(regions.iter().cloned().map(Effect::Forgets));
+                }
                 let shared_roots: BTreeSet<String> = program
                     .items
                     .iter()
@@ -700,18 +714,20 @@ fn collect_shared_place_effects(
                     errors,
                 );
             }
-            Stmt::Return(Some(expr)) | Stmt::Expr(expr) => collect_shared_expr(
-                expr,
-                false,
-                shared_roots,
-                regions,
-                locals,
-                held,
-                direct,
-                function,
-                span,
-                errors,
-            ),
+            Stmt::Return(Some(expr)) | Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                collect_shared_expr(
+                    expr,
+                    false,
+                    shared_roots,
+                    regions,
+                    locals,
+                    held,
+                    direct,
+                    function,
+                    span,
+                    errors,
+                )
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
             Stmt::If { cond, then, else_ } => {
                 collect_shared_expr(
@@ -1192,7 +1208,9 @@ fn collect_holding_effects(block: &Block, direct: &mut BTreeSet<Effect>) {
                 collect_holding_expr(target, direct);
                 collect_holding_expr(value, direct);
             }
-            Stmt::Return(Some(expr)) | Stmt::Expr(expr) => collect_holding_expr(expr, direct),
+            Stmt::Return(Some(expr)) | Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                collect_holding_expr(expr, direct)
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
         }
     }
@@ -1330,9 +1348,11 @@ fn check_holding_order(
                     check_holding_order(nested, regions, held, function, errors)
                 });
             }
-            Stmt::Return(Some(expr)) | Stmt::Expr(expr) => visit_expr_blocks(expr, &mut |nested| {
-                check_holding_order(nested, regions, held, function, errors)
-            }),
+            Stmt::Return(Some(expr)) | Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                visit_expr_blocks(expr, &mut |nested| {
+                    check_holding_order(nested, regions, held, function, errors)
+                })
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
         }
     }
@@ -1474,16 +1494,18 @@ fn check_holding_callees(
                     )
                 });
             }
-            Stmt::Return(Some(expr)) | Stmt::Expr(expr) => visit_expr_blocks(expr, &mut |nested| {
-                check_holding_callees(
-                    nested,
-                    function_names,
-                    footprints,
-                    regions,
-                    function,
-                    errors,
-                )
-            }),
+            Stmt::Return(Some(expr)) | Stmt::Expr(expr) | Stmt::Forget { value: expr, .. } => {
+                visit_expr_blocks(expr, &mut |nested| {
+                    check_holding_callees(
+                        nested,
+                        function_names,
+                        footprints,
+                        regions,
+                        function,
+                        errors,
+                    )
+                })
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
         }
     }
@@ -1674,7 +1696,7 @@ fn check_block(
                     errors,
                 );
             }
-            Stmt::Return(Some(e)) | Stmt::Expr(e) => {
+            Stmt::Return(Some(e)) | Stmt::Expr(e) | Stmt::Forget { value: e, .. } => {
                 check_expr(e, caller_fx, caller_name, caller_span, resolve, d, errors)
             }
             Stmt::Return(None) => {}

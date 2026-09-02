@@ -216,6 +216,12 @@ pub fn entry_for_effect(effect: &Effect) -> BasisEntry {
             state_write(&domain.display()),
             Entry::io(&format!("sigma_{domain}")),
         ]),
+        // The provenance/flow layer owns the final RFC-11 interpretation. The
+        // syntax basis keeps the atom distinct and stateful; thermite-spec
+        // rejects it until that consumer lands.
+        Effect::Forgets(region) => {
+            BasisEntry::Primitive(state_write(&format!("rfc11:forget:{region}")))
+        }
         // Acquisition is a checked stateful effect over the symbolic lock
         // instance. RFC-10's compatibility consumer distinguishes holder/holder
         // serialization from ordinary state writes.
@@ -268,6 +274,7 @@ pub const fn route_for_effect(effect: &Effect) -> ObligationRoute {
         Effect::Read(_)
         | Effect::Write(_)
         | Effect::Net(_)
+        | Effect::Forgets(_)
         | Effect::Owns(_)
         | Effect::Alloc
         | Effect::Time

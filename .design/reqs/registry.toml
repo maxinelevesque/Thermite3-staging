@@ -5071,7 +5071,7 @@ owner = "thermite-syntax/src/parser.rs"
 status = "shipped"
 scope = "syntax"
 summary = "The parser is a hand-written recursive-descent implementation with one fallible parser family per surface grammar area."
-claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/parser.rs#^(?s:    fn ([a-z_][a-z0-9_]*)\\s*\\([^)]*\\)\\s*->\\s*PResult<[^{]+>\\s*\\{)$", expected = ["block_into_arm_body", "consume", "expect_contextual", "parse_add", "parse_and", "parse_attribute", "parse_bitand", "parse_bitor", "parse_bitxor", "parse_block", "parse_boundary_body", "parse_break_continue", "parse_bv_tag", "parse_bv_width", "parse_call_args", "parse_cast", "parse_clause", "parse_clause_selector", "parse_closure", "parse_cmp", "parse_concurrent", "parse_contract", "parse_dec_clause", "parse_effect", "parse_effect_decl", "parse_effect_primitive", "parse_effect_row", "parse_enum", "parse_expr", "parse_field_defs", "parse_fn", "parse_for", "parse_handlers", "parse_holding", "parse_hole", "parse_if_expr", "parse_if_let", "parse_if_parts", "parse_if_parts_inner", "parse_index_arg", "parse_index_arg_inner", "parse_is", "parse_item", "parse_lemma", "parse_let", "parse_let_tuple_destructure", "parse_lock_decl", "parse_loop", "parse_loop_inner", "parse_match", "parse_mul", "parse_or", "parse_params", "parse_params_inner", "parse_path_expr", "parse_path_pattern", "parse_pattern", "parse_pattern_inner", "parse_postfix", "parse_primary", "parse_proof_item", "parse_prop_fn", "parse_quantifier", "parse_ref", "parse_refinement_clause", "parse_region_path", "parse_return", "parse_shared_decl", "parse_shift", "parse_slag_body", "parse_slice_pattern", "parse_spec_fn", "parse_struct", "parse_struct_lit", "parse_struct_pattern", "parse_type", "parse_type_inner", "parse_unary", "parse_while_let", "parse_witness", "scan_proof_block", "take_ident", "take_string"], reviewed_summary_sha256 = "d9bc6f58ae9273641347526c4eb9f717acebfa7b46a6b695e381d82eef60b401" }
+claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/parser.rs#^(?s:    fn ([a-z_][a-z0-9_]*)\\s*\\([^)]*\\)\\s*->\\s*PResult<[^{]+>\\s*\\{)$", expected = ["block_into_arm_body", "consume", "expect_contextual", "parse_add", "parse_and", "parse_attribute", "parse_bitand", "parse_bitor", "parse_bitxor", "parse_block", "parse_boundary_body", "parse_break_continue", "parse_bv_tag", "parse_bv_width", "parse_call_args", "parse_cast", "parse_clause", "parse_clause_selector", "parse_closure", "parse_cmp", "parse_concurrent", "parse_contract", "parse_dec_clause", "parse_effect", "parse_effect_decl", "parse_effect_primitive", "parse_effect_row", "parse_enum", "parse_expr", "parse_field_defs", "parse_fn", "parse_for", "parse_forget", "parse_handlers", "parse_holding", "parse_hole", "parse_if_expr", "parse_if_let", "parse_if_parts", "parse_if_parts_inner", "parse_index_arg", "parse_index_arg_inner", "parse_is", "parse_item", "parse_lemma", "parse_let", "parse_let_tuple_destructure", "parse_lock_decl", "parse_loop", "parse_loop_inner", "parse_match", "parse_mul", "parse_or", "parse_params", "parse_params_inner", "parse_path_expr", "parse_path_pattern", "parse_pattern", "parse_pattern_inner", "parse_postfix", "parse_primary", "parse_proof_item", "parse_prop_fn", "parse_quantifier", "parse_ref", "parse_refinement_clause", "parse_region_path", "parse_resource_decl", "parse_return", "parse_shared_decl", "parse_shift", "parse_slag_body", "parse_slice_pattern", "parse_spec_fn", "parse_struct", "parse_struct_lit", "parse_struct_pattern", "parse_type", "parse_type_inner", "parse_unary", "parse_while_let", "parse_witness", "scan_proof_block", "take_ident", "take_string"], reviewed_summary_sha256 = "d9bc6f58ae9273641347526c4eb9f717acebfa7b46a6b695e381d82eef60b401" }
 aliases = ["thermite-syntax/src/parser.rs REQ-1 (recursive descent)"]
 contributors = [".design/syntax/parser.md", "thermite-syntax/tests/conformance.rs"]
 generated_to = ["status", "thermite-syntax-parser-core-status"]
@@ -19176,66 +19176,94 @@ note = "the checked author computes deterministic receipts and the authoritative
 [[requirement]]
 id = "REQ-SYNTAX-RESOURCE-MODIFIER"
 title = "`resource struct` marks a linear type"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/resource-types.md"
+status = "shipped"
 scope = "syntax"
 summary = "Thermite's declared types are already affine, so the modifier marks the no-drop upgrade: a resource is consumed exactly once on every path that returns."
-remaining_scope = "Parse the modifier. It is an adjective on an item, following pub/unsafe/const. Proposed by RFC-11; staged and not filed; tracked by issue #75."
-contributors = [".design/rfcs/0011-resource-types.md"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc11-resource-modifier.json", expected = ["accepted"], reviewed_summary_sha256 = "92105f2dc7a3272b8db4c8d92826cf845f85ae1dc7584ff440559c472851c377" }
+remaining_scope = ""
+contributors = [".design/rfcs/0011-resource-types.md", ".design/syntax/resource-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0011-resource-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-syntax/tests/resource_types_parse.rs"
+note = "contextual modifier parsing, spans, ordering, direct/bare/multi-region forms, and structured negatives"
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-syntax/src/ast.rs"
+note = "dedicated ResourceDecl on struct and enum items"
 
 [[requirement]]
 id = "REQ-SYNTAX-FORGET"
 title = "`forget(g)`, recorded as `forgets(r)`"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/resource-types.md"
+status = "shipped"
 scope = "syntax"
 summary = "Abandonment is an operation rather than a hole: it is counted in the effect row, so a release rule can refuse it the way TMK's refuses #[boundary]."
-remaining_scope = "Parse forget(g) and emit forgets(r) into the row. Proposed by RFC-11; staged and not filed; tracked by issue #75."
-contributors = [".design/rfcs/0011-resource-types.md"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc11-forget-effects.json", expected = ["accepted"], reviewed_summary_sha256 = "6e6f28fc92cd5e913feecbb9305fd5e4c0799f038d4d6c1d309a91422ba5cfc7" }
+remaining_scope = ""
+contributors = [".design/rfcs/0011-resource-types.md", ".design/syntax/resource-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0011-resource-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-syntax/tests/resource_types_parse.rs"
+note = "dedicated forget statement and forgets effect parsing, spans, and canonical paths"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/resource_effects.rs"
+note = "exact direct and transitive abandonment footprints"
 
 [[requirement]]
 id = "REQ-SPEC-RESOURCE-LINEARITY"
 title = "A resource is consumed on every returning path"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/resource-types.md"
+status = "shipped"
 scope = "spec"
 summary = "Affine types permit dropping; linear types do not. The obligation is scoped exactly as `ensures` is, so a path that diverges or panics owes nothing."
-remaining_scope = "Check consumption per path. This is the half Rust's move semantics does not already give. Proposed by RFC-11; staged and not filed; tracked by issue #75."
-contributors = [".design/rfcs/0011-resource-types.md"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc11-resource-linearity.json", expected = ["accepted"], reviewed_summary_sha256 = "b63756172f9f8061ac8f1d2d5960908b59a0e44751c84902d6b7b9332cfb1344" }
+remaining_scope = ""
+contributors = [".design/rfcs/0011-resource-types.md", ".design/syntax/resource-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0011-resource-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-spec/tests/resource_flow.rs"
+note = "path-sensitive transfer, return, destructuring, branch, loop, and rejection matrix"
+[[requirement.evidence]]
+kind = "file"
+target = "lean/Thermite/ResourceFlow.lean"
+note = "kernel replay checks transcribed returning-edge closure, stated join and loop equality, exact forget footprints, and unique disposition labels; Rust flow computation and witness extraction remain named residual trust"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/resource_witness.rs"
+note = "source/digest binding plus hostile terminal, join, loop, footprint, and duplicate-disposition mutations"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "production certificate/audit replay, residual-trust disclosure, tamper rejection, and legacy fallback negative"
 
 [[requirement]]
 id = "REQ-SPEC-RESOURCE-CONTAGION"
 title = "Contagion is declared and checked"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/resource-types.md"
+status = "shipped"
 scope = "spec"
 summary = "A struct or enum reachable to a resource is itself a resource, which answers the contagion question in English rather than by a separate rule."
-remaining_scope = "Check reachability and require the modifier where it is implied. The composed declared-type case is now available. Proposed by RFC-11; staged and not filed; tracked by issue #75."
-contributors = [".design/rfcs/0011-resource-types.md"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc11-resource-contagion.json", expected = ["accepted"], reviewed_summary_sha256 = "f42b3db3f01da916e7d0860d157782a82a4fc392142aad7d461f292d6116ecac" }
+remaining_scope = ""
+contributors = [".design/rfcs/0011-resource-types.md", ".design/syntax/resource-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0011-resource-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-spec/tests/resource_provenance.rs"
+note = "order-independent fixed point across every owning constructor, nested ADTs, generics, variants, and borrowed exclusions"
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-spec/src/resource.rs"
+note = "typed provenance environment and declaration consistency diagnostics"
 
 [[requirement]]
 id = "REQ-SYNTAX-INTERLEAVES-BLOCK"
@@ -19583,7 +19611,7 @@ note = "REQ-1 and architecture define the measured thirteen-partition topology"
 [[requirement.evidence]]
 kind = "file"
 target = "gates/ci-test-partitions.toml"
-note = "1533-test reviewed assignment across twelve explicit buckets plus catch-all metadata"
+note = "1878-test reviewed assignment across twelve explicit buckets plus catch-all metadata"
 [[requirement.evidence]]
 kind = "file"
 target = ".github/workflows/ci.yml"

@@ -848,6 +848,11 @@ fn render_effect_arm(effect: &Effect) -> SkillFragment {
             description: "takes a declared lock through a lexical holding block",
             example: "! owns(scheduler_lock)",
         },
+        Effect::Forgets(_) => SkillFragment {
+            fragment: "forgets(region)",
+            description: "explicitly discards a resource rooted in a declared region",
+            example: "! forgets(heap)",
+        },
         Effect::Alloc => SkillFragment {
             fragment: "alloc",
             description: "allocates on the heap (Box/Vec/String construction)",
@@ -989,11 +994,13 @@ fn item_inventory() -> Vec<Item> {
             fields: Vec::new(),
             keeps: None,
             sealed: false,
+            resource: None,
             span,
         }),
         Item::Enum(EnumItem {
             name: String::new(),
             variants: Vec::new(),
+            resource: None,
             span,
         }),
     ]

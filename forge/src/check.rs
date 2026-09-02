@@ -137,7 +137,11 @@ use thermite_syntax::{Item, Program};
 use crate::cache;
 use crate::cli::ForgeError;
 use crate::covenant::CovenantRecord;
-use crate::manifest::{effects_of, Certificate, Level, ObligationResult, RejectReason};
+use crate::manifest::{
+    effects_of, Certificate, Level, ObligationResult, RejectReason, ResourceFlowEvidence,
+    ResourceFlowVerdict, ResourceForgetFootprint, ResourceFormalReplay,
+    ResourceFormalReplayVerdict, ResourceResidualTrust,
+};
 use crate::profile::{self, SolverProfile};
 
 /// Opaque per-clause authority, issued only at an observed mixed-route result.
@@ -588,6 +592,12 @@ pub fn check_file_with_options(
             }
         })?;
     run_rfc10_lean_replay(&canonical_ast, &traversal_witness)?;
+    let resource_witness = thermite_lower::contains_rfc11(&parsed.program)
+        .then(|| thermite_lower::emit_resource_witness(&checked));
+    let resource_evidence = match &resource_witness {
+        Some(witness) => Some(run_rfc11_lean_replay(&parsed.program, witness)?),
+        None => None,
+    };
 
     // 4/5/6/7. Per-item certification (`thermite-design.md` §5.3 — "proof
     // results content-addressed and cached per item"; "an edit to `f` cannot
@@ -964,6 +974,7 @@ pub fn check_file_with_options(
         );
         let l3_artifact =
             thermite_lower::lower_l3_artifact(&sub, item.name()).map_err(ForgeError::Lower)?;
+        let item_resource_evidence = resource_evidence.clone();
         let lowered = l3_artifact.source();
 
         // #8 proof cache (`.design/forge/proof-cache.md` REQ-1/REQ-3): the lowered
@@ -1008,7 +1019,12 @@ pub fn check_file_with_options(
                 // main-item hit only when its persisted pair matches the fresh
                 // pre-execution artifact. Validation never restores private
                 // audit authority across the serialization boundary.
-                if stored.persisted_verus_artifact_matches(&l3_artifact) {
+                if stored.persisted_verus_artifact_matches(&l3_artifact)
+                    && stored.persisted_resource_evidence_matches(
+                        &l3_artifact,
+                        item_resource_evidence.as_ref(),
+                    )
+                {
                     let stored = crate::result_arbiter::ItemOutcome::from_persisted_certificate(
                         issue_persisted_certificate(stored),
                     )
@@ -1086,6 +1102,11 @@ pub fn check_file_with_options(
                 )
                 .with_verus_artifact(&l3_artifact, false)
                 .expect("the pre-Verus policy gate retains checked classification");
+                let cert = attach_resource_evidence(
+                    cert,
+                    resource_witness.as_ref(),
+                    item_resource_evidence.clone(),
+                );
                 let cert = crate::result_arbiter::ItemOutcome::from_policy(
                     issue_policy_decision(IssuedPolicyDecision::Rejected {
                         kind,
@@ -1113,6 +1134,8 @@ pub fn check_file_with_options(
         // non-cached path always has.
         let verus = run_verus(lowered, item.name(), seed, rlimit)?;
         let cert = assemble_certificate(item, &verus, Some(&l3_artifact)).into_certificate();
+        let cert =
+            attach_resource_evidence(cert, resource_witness.as_ref(), item_resource_evidence);
 
         // #10 automatic degrade ladder (`.design/forge/degrade-ladder.md`, the
         // default `forge check` path). On a `VerusOutcome::Timeout` (verus could
@@ -1343,6 +1366,11 @@ pub fn check_file_with_options(
     let certs = certs
         .into_iter()
         .map(|cert| {
+            let cert = if cert.resource_flow.is_none() {
+                attach_resource_evidence(cert, resource_witness.as_ref(), resource_evidence.clone())
+            } else {
+                cert
+            };
             let cert = match scopes.get(&cert.item) {
                 Some(scope) => cert.with_assurance_scope(scope.clone()),
                 // A cert whose item has no node keeps its `None` scope, which
@@ -1468,6 +1496,174 @@ fn rfc10_replay_output_evidence(combined: &str, token: &str) -> (bool, bool, boo
         combined.contains("rfc10_artifact_refines") && combined.contains("rfc10_artifact_verified");
     let forbidden_axiom = combined.contains("sorryAx");
     (accepted, axiom_reports_present, forbidden_axiom)
+}
+
+/// Replay RFC-11's checked resource-flow witness in Lean before either a cache
+/// hit or Verus result may become a certificate. The return type is the only
+/// route that can mint the public evidence block; later audit projection relies
+/// on the corresponding private capability rather than parsing display text.
+fn run_rfc11_lean_replay(
+    program: &Program,
+    witness: &thermite_lower::ResourceFlowWitness,
+) -> Result<ResourceFlowEvidence, ForgeError> {
+    const CHECKER_SOURCE: &str = include_str!("../../lean/Thermite/ResourceFlow.lean");
+    const ACCEPTANCE_TOKEN: &str = "THERMITE_RFC11_RESOURCE_REPLAY_ACCEPTED_V1";
+    const REPLAY_TIMEOUT: Duration = Duration::from_secs(60);
+
+    let canonical = thermite_lower::canonical_resource_projection(program).map_err(|error| {
+        ForgeError::Rfc11ReplayRejected {
+            detail: format!("could not reconstruct the canonical resource projection: {error:?}"),
+        }
+    })?;
+    thermite_lower::replay_resource_witness(program, witness).map_err(|error| {
+        ForgeError::Rfc11ReplayRejected {
+            detail: format!("resource witness failed checked digest replay: {error:?}"),
+        }
+    })?;
+
+    let checker_path = lean_package_root().join("Thermite/ResourceFlow.lean");
+    let runtime_checker =
+        std::fs::read(&checker_path).map_err(|error| ForgeError::Rfc11ReplayUnavailable {
+            detail: format!(
+                "could not read RFC-11 checker `{}`: {error}",
+                checker_path.display()
+            ),
+        })?;
+    let compiled_hash = format!("{:x}", Sha256::digest(CHECKER_SOURCE.as_bytes()));
+    let runtime_hash = format!("{:x}", Sha256::digest(&runtime_checker));
+    if compiled_hash != runtime_hash {
+        return Err(ForgeError::Rfc11ReplayUnavailable {
+            detail: format!(
+                "RFC-11 checker differs from the checker embedded in forge \
+                 (compiled {compiled_hash}, runtime {runtime_hash})"
+            ),
+        });
+    }
+
+    let source = thermite_lower::lean_resource_replay_source(&canonical, witness);
+    let lake = std::env::var_os("THERMITE_LEAN_LAKE").unwrap_or_else(|| "lake".into());
+    let mut child = Command::new(lake)
+        .args(["env", "lean", "--stdin", "--threads=1"])
+        .current_dir(lean_package_root())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| ForgeError::Rfc11ReplayUnavailable {
+            detail: format!("could not invoke `lake env lean`: {error}"),
+        })?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| ForgeError::Rfc11ReplayUnavailable {
+            detail: "Lean process did not expose stdin".to_string(),
+        })?
+        .write_all(source.as_bytes())
+        .map_err(|error| ForgeError::Rfc11ReplayUnavailable {
+            detail: format!("could not write Lean input: {error}"),
+        })?;
+    let started = Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if started.elapsed() < REPLAY_TIMEOUT => {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(ForgeError::Rfc11ReplayUnavailable {
+                    detail: format!(
+                        "RFC-11 Lean replay exceeded the {} second timeout",
+                        REPLAY_TIMEOUT.as_secs()
+                    ),
+                });
+            }
+            Err(error) => {
+                return Err(ForgeError::Rfc11ReplayUnavailable {
+                    detail: format!("could not poll Lean replay: {error}"),
+                });
+            }
+        }
+    }
+    let output = child
+        .wait_with_output()
+        .map_err(|error| ForgeError::Rfc11ReplayUnavailable {
+            detail: format!("could not collect Lean output: {error}"),
+        })?;
+    let combined = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let (accepted, axiom_free, forbidden_axiom) =
+        rfc11_replay_output_evidence(&combined, ACCEPTANCE_TOKEN);
+    if !output.status.success() || !accepted || !axiom_free || forbidden_axiom {
+        return Err(ForgeError::Rfc11ReplayRejected {
+            detail: format!(
+                "exit={:?}, acceptance_token={accepted}, axiom_free={axiom_free}, \
+                 forbidden_sorryAx={forbidden_axiom}: {}",
+                output.status.code(),
+                combined.chars().take(1200).collect::<String>()
+            ),
+        });
+    }
+
+    let forgets = witness
+        .functions
+        .iter()
+        .flat_map(|function| {
+            function
+                .forgets
+                .iter()
+                .map(|forget| ResourceForgetFootprint {
+                    function: function.function.clone(),
+                    disposition: forget.label.clone(),
+                    place: forget.place.clone(),
+                    regions: forget.priced_regions.clone(),
+                })
+        })
+        .collect();
+    Ok(ResourceFlowEvidence {
+        verdict: ResourceFlowVerdict::Accepted,
+        forgets,
+        formal_replay: ResourceFormalReplay {
+            checker: "Thermite.ResourceFlow/v1".to_string(),
+            checker_sha256: compiled_hash,
+            witness_version: witness.version,
+            canonical_ast_sha256: witness.canonical_ast_sha256.clone(),
+            checked_resource_sha256: witness.checked_resource_sha256.clone(),
+            verdict: ResourceFormalReplayVerdict::KernelAccepted,
+        },
+        residual_trust: vec![
+            ResourceResidualTrust::Parser,
+            ResourceResidualTrust::TypeProvenanceResolution,
+            ResourceResidualTrust::WitnessExtraction,
+            ResourceResidualTrust::ExecutableTargetBehavior,
+        ],
+    })
+}
+
+fn rfc11_replay_output_evidence(combined: &str, token: &str) -> (bool, bool, bool) {
+    let accepted = combined.lines().any(|line| line.trim() == token);
+    let axiom_free = combined.contains("rfc11_resource_flow_verified")
+        && combined.contains("does not depend on any axioms");
+    let forbidden_axiom = combined.contains("sorryAx");
+    (accepted, axiom_free, forbidden_axiom)
+}
+
+fn attach_resource_evidence(
+    cert: Certificate,
+    witness: Option<&thermite_lower::ResourceFlowWitness>,
+    evidence: Option<ResourceFlowEvidence>,
+) -> Certificate {
+    match (witness, evidence) {
+        (Some(witness), Some(evidence)) => cert
+            .with_resource_flow_evidence_for_witness(witness, evidence)
+            .expect("typed RFC-11 replay evidence matches its checked L3 artifact"),
+        (None, None) => cert,
+        _ => panic!("RFC-11 witness and replay evidence must be present together"),
+    }
 }
 
 /// Run a non-legacy proof route. [`check_file_with_options`] supplies the
@@ -7292,6 +7488,7 @@ fn collect_stmt_spec_fn_calls(
             collect_block_spec_fn_calls(&node.body, spec_decls, out);
         }
         Stmt::Expr(e) => collect_expr_spec_fn_calls(e, spec_decls, out),
+        Stmt::Forget { value, .. } => collect_expr_spec_fn_calls(value, spec_decls, out),
         // break/continue carry no sub-expression (#93): no spec-fn call.
         Stmt::Break | Stmt::Continue => {}
         Stmt::Holding { body, .. } => collect_block_spec_fn_calls(body, spec_decls, out),
@@ -7801,6 +7998,7 @@ fn collect_stmt_adt_refs(
             collect_block_adt_refs(&node.body, adt_decls, out);
         }
         Stmt::Expr(e) => collect_expr_adt_refs(e, adt_decls, out),
+        Stmt::Forget { value, .. } => collect_expr_adt_refs(value, adt_decls, out),
         // break/continue carry no type and no sub-expression (#93): no ADT ref.
         Stmt::Break | Stmt::Continue => {}
         Stmt::Holding { body, .. } => collect_block_adt_refs(body, adt_decls, out),
@@ -9052,6 +9250,84 @@ mod tests {
     use super::*;
     use crate::manifest::ObligationStatus;
 
+    const RFC11_CERT_SOURCE: &str = "
+resource(heap) struct HeapGrant { id: u64 }
+resource(device.port) struct PortGrant { id: u64 }
+resource struct Bundle { heap: HeapGrant, port: PortGrant }
+fn discard(b: Bundle) -> u64
+  ! forgets(heap), forgets(device.port)
+  requires true
+  ensures result == 0
+{ forget(b); 0 }";
+
+    #[test]
+    fn rfc11_certificate_and_audit_disclose_checked_flow_and_reject_legacy_fallback() {
+        let parsed = thermite_syntax::parse(RFC11_CERT_SOURCE);
+        assert!(parsed.is_clean(), "fixture parse: {:?}", parsed.errors);
+        thermite_spec::validate(&parsed.program).expect("resource fixture validates");
+        let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "discard").unwrap();
+        let witness = thermite_lower::emit_resource_witness(
+            &thermite_lower::check_program(&parsed.program).unwrap(),
+        );
+        let evidence =
+            run_rfc11_lean_replay(&parsed.program, &witness).expect("RFC-11 replay runs");
+        assert_eq!(
+            evidence.forgets[0].regions,
+            vec!["device.port".to_string(), "heap".to_string()]
+        );
+
+        let legacy = Certificate::new(
+            "discard",
+            Level::L3,
+            vec!["forgets(heap)".into(), "forgets(device.port)".into()],
+            0,
+            vec![ObligationResult::discharged("fixture proof")],
+        )
+        .with_verus_artifact(&artifact, true)
+        .unwrap();
+        assert!(
+            !legacy.persisted_resource_evidence_matches(&artifact, Some(&evidence)),
+            "a pre-RFC-11/non-resource certificate must miss rather than fall back"
+        );
+
+        let cert = legacy
+            .with_resource_flow_evidence_for_witness(&witness, evidence.clone())
+            .unwrap();
+        let cert = live_accepted(cert, "verus").into_certificate();
+        let audit = crate::audit::AuditManifest::from_certificates(
+            std::slice::from_ref(&cert),
+            &parsed.program,
+            crate::audit::Toolchain::new("fixture-verus"),
+        );
+        assert_eq!(audit.functions[0].resource_flow, Some(evidence));
+
+        let mut tampered = cert.clone();
+        tampered.resource_flow.as_mut().unwrap().forgets[0]
+            .regions
+            .pop();
+        assert!(
+            std::panic::catch_unwind(|| {
+                crate::audit::AuditManifest::from_certificates(
+                    &[tampered],
+                    &parsed.program,
+                    crate::audit::Toolchain::new("fixture-verus"),
+                )
+            })
+            .is_err(),
+            "public display fields cannot manufacture RFC-11 audit authority"
+        );
+
+        let cert_text = crate::cli::render_human(&cert);
+        let audit_text = crate::cli::render_audit(&audit);
+        for text in [&cert_text, &audit_text] {
+            assert!(text.contains("resource-flow") || text.contains("resource_flow"));
+            assert!(text.contains("device.port"));
+            assert!(text.contains("heap"));
+            assert!(text.contains("kernel-accepted"));
+            assert!(text.contains("residual trust") || text.contains("residual_trust"));
+        }
+    }
+
     fn l1_gate_certificate(source: &str) -> Certificate {
         let parsed = thermite_syntax::parse(source);
         assert!(parsed.is_clean(), "fixture parse: {:?}", parsed.errors);
@@ -9145,6 +9421,33 @@ mod tests {
         );
         assert_eq!(
             rfc10_replay_output_evidence(&(clean + "sorryAx\n"), token),
+            (true, true, true)
+        );
+    }
+
+    #[test]
+    fn rfc11_replay_requires_an_explicit_axiom_free_report() {
+        let token = "THERMITE_RFC11_RESOURCE_REPLAY_ACCEPTED_V1";
+        assert_eq!(
+            rfc11_replay_output_evidence(token, token),
+            (true, false, false),
+            "an acceptance token alone cannot mint formal replay evidence"
+        );
+        let named_but_axiomatized = format!(
+            "'rfc11_resource_flow_verified' depends on axioms: [Classical.choice]\n{token}\n"
+        );
+        assert_eq!(
+            rfc11_replay_output_evidence(&named_but_axiomatized, token),
+            (true, false, false)
+        );
+        let clean =
+            format!("'rfc11_resource_flow_verified' does not depend on any axioms\n{token}\n");
+        assert_eq!(
+            rfc11_replay_output_evidence(&clean, token),
+            (true, true, false)
+        );
+        assert_eq!(
+            rfc11_replay_output_evidence(&(clean + "sorryAx\n"), token),
             (true, true, true)
         );
     }

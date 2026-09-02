@@ -366,6 +366,7 @@ fn effect_atom_name(effect: &thermite_syntax::ast::Effect) -> &'static str {
         Effect::Diverge => "diverge",
         Effect::Term => "term",
         Effect::Owns(_) => "owns",
+        Effect::Forgets(_) => "forgets",
     }
 }
 
@@ -4360,6 +4361,7 @@ fn stmt_kind(stmt: &Stmt) -> &'static str {
         Stmt::Continue => "a `continue`",
         Stmt::Expr(_) => "an expression statement",
         Stmt::Holding { .. } => "a `holding` statement",
+        Stmt::Forget { .. } => "a `forget` statement",
     }
 }
 
@@ -5368,7 +5370,12 @@ fn note_stmt_vec_elems(stmt: &Stmt, elems: &mut Vec<Type>) {
         }
         Stmt::Loop(l) => note_block_vec_elems(&l.body, elems),
         Stmt::Holding { body, .. } => note_block_vec_elems(body, elems),
-        Stmt::Assign { .. } | Stmt::Return(_) | Stmt::Expr(_) | Stmt::Break | Stmt::Continue => {}
+        Stmt::Assign { .. }
+        | Stmt::Return(_)
+        | Stmt::Expr(_)
+        | Stmt::Forget { .. }
+        | Stmt::Break
+        | Stmt::Continue => {}
     }
 }
 
@@ -5750,7 +5757,12 @@ fn note_stmt_map_kv(stmt: &Stmt, pairs: &mut Vec<(Type, Type)>) {
         }
         Stmt::Loop(l) => note_block_map_kv(&l.body, pairs),
         Stmt::Holding { body, .. } => note_block_map_kv(body, pairs),
-        Stmt::Assign { .. } | Stmt::Return(_) | Stmt::Expr(_) | Stmt::Break | Stmt::Continue => {}
+        Stmt::Assign { .. }
+        | Stmt::Return(_)
+        | Stmt::Expr(_)
+        | Stmt::Forget { .. }
+        | Stmt::Break
+        | Stmt::Continue => {}
     }
 }
 
@@ -6214,9 +6226,12 @@ fn stmt_has_string_local(stmt: &Stmt) -> bool {
         Stmt::Loop(l) => block_has_string_local(&l.body),
         Stmt::Holding { body, .. } => block_has_string_local(body),
         // break/continue declare no local (#93): no string-typed binding.
-        Stmt::Assign { .. } | Stmt::Return(_) | Stmt::Expr(_) | Stmt::Break | Stmt::Continue => {
-            false
-        }
+        Stmt::Assign { .. }
+        | Stmt::Return(_)
+        | Stmt::Expr(_)
+        | Stmt::Forget { .. }
+        | Stmt::Break
+        | Stmt::Continue => false,
     }
 }
 
@@ -6243,6 +6258,7 @@ fn stmt_has_str_lit(stmt: &Stmt) -> bool {
         Stmt::Loop(l) => block_has_str_lit(&l.body),
         Stmt::Holding { body, .. } => block_has_str_lit(body),
         Stmt::Expr(e) => expr_has_str_lit(e),
+        Stmt::Forget { value, .. } => expr_has_str_lit(value),
         // break/continue carry no sub-expression (#93): no string literal.
         Stmt::Break | Stmt::Continue => false,
     }
@@ -6890,6 +6906,7 @@ fn stmt_uses_string_search(stmt: &Stmt, shadow: &[&str]) -> bool {
         Stmt::Loop(l) => block_uses_string_search(&l.body, shadow),
         Stmt::Holding { body, .. } => block_uses_string_search(body, shadow),
         Stmt::Expr(e) => expr_uses_string_search(e, shadow),
+        Stmt::Forget { value, .. } => expr_uses_string_search(value, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
 }
@@ -7081,6 +7098,7 @@ fn stmt_uses_numfmt(stmt: &Stmt, shadow: &[&str]) -> bool {
         Stmt::Loop(l) => block_uses_numfmt(&l.body, shadow),
         Stmt::Holding { body, .. } => block_uses_numfmt(body, shadow),
         Stmt::Expr(e) => expr_uses_numfmt(e, shadow),
+        Stmt::Forget { value, .. } => expr_uses_numfmt(value, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
 }
@@ -7656,6 +7674,7 @@ fn stmt_uses_parse(stmt: &Stmt, shadow: &[&str]) -> bool {
         Stmt::Loop(l) => block_uses_parse(&l.body, shadow),
         Stmt::Holding { body, .. } => block_uses_parse(body, shadow),
         Stmt::Expr(e) => expr_uses_parse(e, shadow),
+        Stmt::Forget { value, .. } => expr_uses_parse(value, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
 }
@@ -7923,6 +7942,7 @@ fn stmt_uses_bytes_eq(stmt: &Stmt, shadow: &[&str]) -> bool {
         Stmt::Loop(l) => block_uses_bytes_eq(&l.body, shadow),
         Stmt::Holding { body, .. } => block_uses_bytes_eq(body, shadow),
         Stmt::Expr(e) => expr_uses_bytes_eq(e, shadow),
+        Stmt::Forget { value, .. } => expr_uses_bytes_eq(value, shadow),
         Stmt::Break | Stmt::Continue => false,
     }
 }
@@ -9718,7 +9738,9 @@ fn collect_block_local_muls(block: &Block, muls: &mut Vec<Expr>) {
                 walk_expr(target, muls);
                 walk_expr(value, muls);
             }
-            Stmt::Return(Some(e)) | Stmt::Expr(e) => walk_expr(e, muls),
+            Stmt::Return(Some(e)) | Stmt::Expr(e) | Stmt::Forget { value: e, .. } => {
+                walk_expr(e, muls)
+            }
             Stmt::Return(None) | Stmt::Break | Stmt::Continue => {}
             Stmt::If { cond, then, else_ } => {
                 walk_expr(cond, muls);
@@ -9914,6 +9936,10 @@ fn lower_stmt(stmt: &Stmt, ctx: Ctx, indent: usize) -> Result<String, LowerError
         Stmt::Holding { body, .. } => {
             let inner = lower_block_inner(body, ctx, indent + 1, zero_span())?;
             Ok(format!("{pad}{{\n{inner}{pad}}}\n"))
+        }
+        Stmt::Forget { value, .. } => {
+            let value = lower_expr(value, ctx, 0, zero_span())?;
+            Ok(format!("{pad}let _ = {value}; // RFC-11 checked forget\n"))
         }
     }
 }

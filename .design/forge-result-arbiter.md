@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 02227a1be13c05ee88a08e503a7032b0c83b507872131b93c00e863c1cadcb95 (re-pinned 2026-08-17 after aligning typed WeakContract validation with ambiguous legacy 0/0 rendering. prior: f536872cdaee474f37961fa4d2fdd192df85e7cfd5c76f107bc0be372275b522)
+audited-content-sha256: 4a22d5e15b682a28e3546547551efae4ee07e26f1016a6c3db7cdce4958ec033 (re-pinned 2026-08-17 after aligning typed WeakContract validation with ambiguous legacy 0/0 rendering. prior: f536872cdaee474f37961fa4d2fdd192df85e7cfd5c76f107bc0be372275b522)
 pin-extract: forge/src/result_arbiter.rs=code-normalized
 governs: forge/src/result_arbiter.rs
 -->

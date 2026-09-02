@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 80074948185b77b95006d034e461a338b1ce6b37 (re-pinned 2026-06-16: forge quality status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (re-pinned: the #269/#270 coordinated arc — the touched-file changes are exactly this doc's designed REQs / reviewed as claim-neutral)  (re-audited 2026-06-12: amended — shipped-status Summary; #48/#74/#80 early-return synthesis + 0/0 backstop, the #101 equivalence-excluded denominator, golden-anchored ratios, and the #247 Lean-battery consumer, #262. Amended 2026-06-12 (#269): the TWO MISSING early-return families F-IDENT (identity return) + F-STRUCT-ZERO (named-struct field-zeros) are specced REQ-9..REQ-13, NOT-STARTED — the outside review's item 5, the `move_up` weak-contract escape.))
-audited-content-sha256: 9ee91402b7b8e7a59fdc1bfb81adf7fcdaf41264e63fda419e4b98017163616a (re-pinned 2026-08-28 for the focused match-guard mutation-walk witness. prior: 9a1bbdfd895f222ca51ef31dc19dff7bb6ee72756de27f56454c113f83d45752)
+audited-content-sha256: 6dcbb34fbbc20728fcd30ee8643451819dc332d1722f64c03cde2b35c7db2eff (re-pinned 2026-08-28 for the focused match-guard mutation-walk witness. prior: 9a1bbdfd895f222ca51ef31dc19dff7bb6ee72756de27f56454c113f83d45752)
 governs: forge/src/mutation.rs
 thesis-refs:
   - thermite-design.md §7
