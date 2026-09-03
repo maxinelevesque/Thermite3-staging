@@ -405,18 +405,20 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # The Lean spine + axiom probe (trust-audit finding F4: until now `lake build` and the
-  # `#print axioms` gate ran only in a local `make audit`, so a commit breaking the Lean
-  # build or a relax-spine lemma acquiring a disallowed axiom would go unseen in CI).
-  # `lean-prepare` owns the shared module build. The consumers below restore that
-  # same-run artifact, then fan out: the workspace shards are the sole owner of
-  # the complete Forge test suite, lean-probe owns the axiom boundary, and G2 owns
-  # its two whole-corpus commands. This removes the former second four-way run of
-  # every Forge test without selecting tests by a drift-prone name pattern.
-  lean-probe:
+  # Draft closure replay is intentionally exhaustive and tool-aware. Keep every
+  # shared execution identity (notably repeated oracle users) on one shard so its
+  # deterministic positive/counterfeit cache is preserved, while running eight
+  # disjoint shards in parallel. The stable aggregate below fails closed unless
+  # every matrix child succeeds.
+  claim_closure_probe:
+    name: claim-closure-probe (${{ matrix.shard }}/8)
     needs: [changes, lean-prepare]
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -438,6 +440,11 @@ jobs:
 
       - name: Install Rust toolchain for executable claim probes
         uses: dtolnay/rust-toolchain@1.95.0
+
+      - name: Rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: claim-closure-${{ matrix.shard }}
 
       - name: Cache Lean dependencies
         uses: actions/cache@v4
@@ -495,8 +502,72 @@ jobs:
           echo "THERMITE_EPR_CADICAL=$PWD/target/g4-tools/bin/cadical" >> "$GITHUB_ENV"
           echo "THERMITE_EPR_DRAT_TRIM=$PWD/target/g4-tools/bin/drat-trim" >> "$GITHUB_ENV"
 
-      - name: Claim-closure draft slices (tool-aware)
-        run: uv run python gates/claim-closure-author.py --check-drafts
+      - name: Claim-closure draft shard ${{ matrix.shard }}/8 (tool-aware)
+        run: >-
+          python3 gates/time-command.py
+          --out claim-closure-${{ matrix.shard }}-timing.json
+          --label claim-closure-${{ matrix.shard }} --
+          uv run python gates/claim-closure-author.py
+          --check-draft-shard ${{ matrix.shard }}/8
+
+      - name: Publish claim-closure shard timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claim-closure-${{ matrix.shard }}-timing
+          path: claim-closure-${{ matrix.shard }}-timing.json
+          if-no-files-found: error
+          retention-days: 14
+
+  claim_closure:
+    name: claim-closure
+    needs: [changes, claim_closure_probe]
+    if: always() && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Require every claim-closure shard
+        env:
+          CHILD_RESULT: ${{ needs.claim_closure_probe.result }}
+        run: python3 gates/ci-aggregate.py claim-closure "$CHILD_RESULT"
+
+  # The Lean spine + axiom probe (trust-audit finding F4: `lake build` and the
+  # `#print axioms` gate must remain visible in CI). Claim-closure replay now has
+  # its own fan-out above, so this job owns only the axiom boundary its name says.
+  lean-probe:
+    needs: [changes, lean-prepare]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install elan (Lean toolchain manager)
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          bash /tmp/elan-init.sh -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Lean dependencies
+        uses: actions/cache@v4
+        with:
+          path: lean/.lake/packages
+          key: lean-packages-${{ hashFiles('lean/lake-manifest.json', 'lean/lean-toolchain') }}
+          restore-keys: lean-packages-
+
+      - name: Fetch prebuilt Mathlib cache (oleans)
+        working-directory: lean
+        run: lake exe cache get
+
+      - name: Restore prepared Lean build
+        uses: actions/download-artifact@v4
+        with:
+          name: lean-build-${{ github.sha }}
+          path: lean/.lake/build
 
       - name: Lean spine build + axiom probe (lake build + #print axioms gate)
         run: bash gates/lean-axiom-probe.sh
