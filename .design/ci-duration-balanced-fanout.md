@@ -92,10 +92,10 @@ editor_content_pinned_ops_still_certify_l3` at 303.310s.
   queue delay or skipped work.
 - [x] AC-9: (REQ-10) The implementation branch merge-base is the post-#50
   `staging` tip, and its pull request contains no RFC-10 implementation rewrite.
-- [ ] AC-10: (REQ-11, REQ-12) Eight green shard jobs jointly execute every one
+- [x] AC-10: (REQ-11, REQ-12) Eight green shard jobs jointly execute every one
   of the 576 draft entries exactly once by stable execution identity, and the
   aggregate rejects any missing or failed child.
-- [ ] AC-11: (REQ-12, REQ-13) A green live run shows the standalone
+- [x] AC-11: (REQ-12, REQ-13) A green live run shows the standalone
   `lean-probe` completing independently of claim replay and records the longest
   shard, aggregate runner time, queue delay, and end-to-end critical path.
 
@@ -240,8 +240,33 @@ The claim-closure follow-up baseline is green run `33686853981`. The step named
 `Claim-closure draft slices (tool-aware)` occupied 47m54s of the 51m47s
 `lean-probe` job; the actual Lean spine and axiom probe took 2m21s. Two preceding
 green runs spent 45m27s and 44m24s in the same serial claim step, establishing
-that the bottleneck is the closure replay rather than Lean. Live eight-shard
-results will be recorded here before AC-10 and AC-11 close.
+that the bottleneck is the closure replay rather than Lean.
+
+The eight-shard measurement is pull-request run `33695198542` at exact head
+`ec22ea71f2745be45933f128e55f589db4ad91ba`. All eight shard jobs and the stable
+`claim-closure` aggregate were green. Their summaries reported respectively
+77, 62, 76, 82, 64, 64, 72, and 79 entries (576 total) across 68, 55, 71, 64,
+64, 63, 69, and 74 execution groups (528 total). The globally validated stable
+identity partition and pairwise-disjoint assignment tests establish that those
+576 entries were covered exactly once.
+
+The measured replay times were 274.616s, 154.330s, 370.703s, 404.338s,
+331.549s, 580.196s, 205.710s, and 400.612s. Thus the longest replay shard was
+shard 6 at 9m40.196s, while summed replay runner time was 45m22.054s. Including
+setup and cleanup, the eight shard jobs consumed 59m18s of runner time and the
+longest shard job occupied 11m16s. The independent `lean-probe` job occupied
+3m47s, including a 2m28s Lean spine/axiom step, and the aggregate occupied 6s;
+the fan-out therefore used 63m11s of post-prepare runner time in total. Every
+fan-out job started 2..3s after creation, so queue delay was negligible and is
+not counted as an execution improvement.
+
+From workflow creation at 23:27:59Z through the aggregate completing at
+23:41:57Z, the end-to-end claim-closure critical path was 13m58s. This is
+37m49s shorter than the baseline monolithic `lean-probe` job, while preserving
+all replay work and making the real Lean probe independently green. The run's
+unrelated `checks` job rejected the intentionally stale content audit pin; the
+pin is refreshed only after this live measurement is recorded so the expensive
+content-bound receipts need be materialized once on the final head.
 
 Thirteen wins the stated tradeoff: versus ten it reduces average critical path
 10.4% for 7.8% more runner time, satisfies the two-run bound, and leaves the

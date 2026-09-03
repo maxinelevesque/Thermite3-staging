@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 15beb83ffc1fd77cb01e56e0be4949678eb2fc5ffb44a41148aa6a841d625d0a (re-pinned 2026-09-02 after adding fail-closed claim-closure CI sharding; language completeness semantics are unchanged. prior: 73695d6f2b8d5eb868e13f963b7ddb735cb4e08018e6ef092732d5da7c909892)
+audited-content-sha256: 070f1cf958d0db523bafe3091a56b64b1395d51255c8c444f2686bde452f6660 (re-pinned 2026-09-02 after recording live shard measurements and rematerializing content-bound claim receipts; language completeness semantics are unchanged. prior: 15beb83ffc1fd77cb01e56e0be4949678eb2fc5ffb44a41148aa6a841d625d0a)
 
 ## Summary
 
