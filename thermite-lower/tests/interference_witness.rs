@@ -11,10 +11,10 @@ fn fixture() -> thermite_syntax::Program {
     let parsed = parse(
         "shared counter: u64\n\
          concurrent pair { left, right }\n\
-         fn left(a: &mut u64) -> u64 ! write(counter) requires true ensures final(a) >= 0 \
-           interleaves { asks final(a) >= a; promises final(a) >= a; } { 0 }\n\
-         fn right(b: &mut u64) -> u64 ! write(counter) requires true ensures final(b) >= 0 \
-           interleaves { asks final(b) >= b; promises final(b) >= b; } { 0 }",
+         #[boundary(\"ext::left\")] fn left(a: &mut u64) -> u64 ! write(counter) requires true ensures final(a) >= 0 \
+           interleaves { asks final(a) >= a; promises final(a) >= a; };\n\
+         #[boundary(\"ext::right\")] fn right(b: &mut u64) -> u64 ! write(counter) requires true ensures final(b) >= 0 \
+           interleaves { asks final(b) >= b; promises final(b) >= b; };",
     );
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
     parsed.program

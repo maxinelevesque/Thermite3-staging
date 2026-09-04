@@ -576,6 +576,57 @@ fn production_analysis_rejects_concurrent_ancestry_conflict() {
 }
 
 #[test]
+fn production_analysis_allows_an_rfc12_covered_shared_conflict() {
+    let parsed = thermite_syntax::parse(
+        "shared counter: u64\n\
+         #[boundary(\"ext::left\")] fn left(a: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(a) >= a; promises final(a) >= a; };\n\
+         #[boundary(\"ext::right\")] fn right(b: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(b) >= b; promises final(b) >= b; };\n\
+         concurrent pair { left, right }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+
+    let checked = thermite_lower::check_program(&parsed.program)
+        .expect("complete RFC-12 evidence may discharge an RFC-9 conflict");
+    assert_eq!(checked.interference().obligations.len(), 2);
+}
+
+#[test]
+fn production_analysis_requires_relations_to_cover_the_conflicting_place() {
+    let parsed = thermite_syntax::parse(
+        "shared counter: u64\nshared other: u64\n\
+         #[boundary(\"ext::left\")] fn left(a: &mut u64) -> u64 ! write(counter), read(other) requires true ensures true \
+           interleaves { asks final(other) >= other; promises final(other) >= other; };\n\
+         #[boundary(\"ext::right\")] fn right(b: &mut u64) -> u64 ! write(counter), read(other) requires true ensures true \
+           interleaves { asks final(other) >= other; promises final(other) >= other; };\n\
+         concurrent pair { left, right }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+
+    let errors = thermite_lower::check_program(&parsed.program)
+        .expect_err("an unrelated monotone relation cannot excuse the conflict");
+    assert!(errors.iter().any(|error| matches!(
+        error,
+        LowerError::EffectAnalysis { detail, .. }
+            if detail.contains("do not both cover conflicting shared place `counter`")
+    )));
+}
+
+#[test]
+fn production_analysis_does_not_require_rfc12_for_disjoint_concurrency() {
+    let parsed = thermite_syntax::parse(
+        "shared left_state: u64\nshared right_state: u64\n\
+         #[boundary(\"ext::left\")] fn left() -> u64 ! write(left_state) requires nothing ensures result == 0;\n\
+         #[boundary(\"ext::right\")] fn right() -> u64 ! write(right_state) requires nothing ensures result == 0;\n\
+         concurrent pair { left, right }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    thermite_lower::check_program(&parsed.program)
+        .expect("legacy disjoint concurrency remains source-compatible");
+}
+
+#[test]
 fn shared_metadata_enables_global_region_resolution_without_concurrency() {
     let parsed = thermite_syntax::parse(
         "shared known: u8\n\

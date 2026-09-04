@@ -75,15 +75,6 @@ impl CheckedProgram {
         source: &Program,
         budget: WorkBudget,
     ) -> Result<Self, Vec<LowerError>> {
-        let interference = thermite_spec::check_interference(source).map_err(|errors| {
-            errors
-                .into_iter()
-                .map(|error| LowerError::EffectAnalysis {
-                    detail: error.detail,
-                    span: error.span,
-                })
-                .collect::<Vec<_>>()
-        })?;
         let resources = thermite_spec::ResourceEnv::build(source).map_err(|errors| {
             errors
                 .into_iter()
@@ -118,7 +109,7 @@ impl CheckedProgram {
                 })
                 .collect::<Vec<_>>()
         })?;
-        let effects = analyze_effects_unchecked(source)?;
+        let (effects, interference) = analyze_effects_unchecked(source)?;
         let holdings = build_checked_holdings(&inventory, &regions).map_err(|error| vec![error])?;
         let shared_places =
             build_checked_shared_places(&inventory, &regions).map_err(|error| vec![error])?;

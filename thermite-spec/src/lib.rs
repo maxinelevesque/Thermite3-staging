@@ -69,8 +69,9 @@ pub mod validator;
 pub use classifier::{admitted, classify, parse_frm, to_wire, Frm, RejectReason, Sort2, Verdict};
 pub use combinators::{all, lookup, ArgKind, CombinatorSig, ResultKind};
 pub use interference::{
-    check_interference, CheckedInterference, CheckedRelation, CompositionObligation,
-    InterferenceError, InterferenceErrorKind, InterferenceReport, MonotoneAtom, MonotoneKind,
+    check_interference, check_interference_for_conflicts, CheckedInterference, CheckedRelation,
+    CompositionObligation, InterferenceError, InterferenceErrorKind, InterferenceReport,
+    InterferenceRequirement, MonotoneAtom, MonotoneKind,
 };
 pub use regions::{effect_path, RegionError, RegionIndex};
 pub use resource::{ResourceEnv, ResourceError};

@@ -3,8 +3,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use thermite_syntax::{
-    BinOp, Clause, Effect, EffectRow, Expr, FnItem, Item, Program, Span, Type, UnaryOp,
+    BinOp, Clause, Effect, EffectRow, Expr, FnItem, Item, Program, RegionPath, Span, Type, UnaryOp,
 };
+
+use crate::RegionIndex;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MonotoneKind {
@@ -53,6 +55,7 @@ pub enum InterferenceErrorKind {
     IncompatiblePeer,
     InvalidHandlerPriority,
     UnresolvedStateIdentity,
+    IncompleteConflictCoverage,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -63,6 +66,17 @@ pub struct InterferenceError {
     pub span: Span,
 }
 
+/// One unordered RFC-9 conflict that may be discharged by RFC-12. Multiple
+/// conflicting effect pairs for the same roots are deliberately retained here:
+/// every overlapping shared-place identity must be covered by the relations.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct InterferenceRequirement {
+    pub composition: String,
+    pub left_root: String,
+    pub right_root: String,
+    pub overlap: Option<RegionPath>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Phase {
     Initial,
@@ -70,6 +84,25 @@ enum Phase {
 }
 
 pub fn check_interference(program: &Program) -> Result<InterferenceReport, Vec<InterferenceError>> {
+    check_interference_inner(program, None, None)
+}
+
+/// Check all RFC-12 clauses while generating composition obligations only for
+/// the supplied RFC-9 conflicts. This is the production seam: disjoint and
+/// already-commuting compositions do not acquire a new mandatory contract.
+pub fn check_interference_for_conflicts(
+    program: &Program,
+    requirements: &[InterferenceRequirement],
+    regions: &RegionIndex,
+) -> Result<InterferenceReport, Vec<InterferenceError>> {
+    check_interference_inner(program, Some(requirements), Some(regions))
+}
+
+fn check_interference_inner(
+    program: &Program,
+    requirements: Option<&[InterferenceRequirement]>,
+    regions: Option<&RegionIndex>,
+) -> Result<InterferenceReport, Vec<InterferenceError>> {
     let mut functions = BTreeMap::new();
     let mut errors = Vec::new();
 
@@ -152,7 +185,14 @@ pub fn check_interference(program: &Program) -> Result<InterferenceReport, Vec<I
             }
             for high in 0..composition.roots.len() {
                 for low in 0..composition.roots.len() {
-                    if priorities[high] > priorities[low] {
+                    if priorities[high] > priorities[low]
+                        && pair_is_required(
+                            requirements,
+                            &composition.name,
+                            &composition.roots[high],
+                            &composition.roots[low],
+                        )
+                    {
                         add_obligation(
                             composition,
                             &composition.roots[high],
@@ -160,6 +200,13 @@ pub fn check_interference(program: &Program) -> Result<InterferenceReport, Vec<I
                             &functions,
                             &mut obligations,
                             &mut errors,
+                            required_overlaps(
+                                requirements,
+                                &composition.name,
+                                &composition.roots[high],
+                                &composition.roots[low],
+                            ),
+                            regions,
                         );
                     }
                 }
@@ -167,6 +214,14 @@ pub fn check_interference(program: &Program) -> Result<InterferenceReport, Vec<I
         } else {
             for left in 0..composition.roots.len() {
                 for right in left + 1..composition.roots.len() {
+                    if !pair_is_required(
+                        requirements,
+                        &composition.name,
+                        &composition.roots[left],
+                        &composition.roots[right],
+                    ) {
+                        continue;
+                    }
                     add_obligation(
                         composition,
                         &composition.roots[left],
@@ -174,6 +229,13 @@ pub fn check_interference(program: &Program) -> Result<InterferenceReport, Vec<I
                         &functions,
                         &mut obligations,
                         &mut errors,
+                        required_overlaps(
+                            requirements,
+                            &composition.name,
+                            &composition.roots[left],
+                            &composition.roots[right],
+                        ),
+                        regions,
                     );
                     add_obligation(
                         composition,
@@ -182,6 +244,13 @@ pub fn check_interference(program: &Program) -> Result<InterferenceReport, Vec<I
                         &functions,
                         &mut obligations,
                         &mut errors,
+                        required_overlaps(
+                            requirements,
+                            &composition.name,
+                            &composition.roots[left],
+                            &composition.roots[right],
+                        ),
+                        regions,
                     );
                 }
             }
@@ -198,6 +267,40 @@ pub fn check_interference(program: &Program) -> Result<InterferenceReport, Vec<I
     }
 }
 
+fn pair_is_required(
+    requirements: Option<&[InterferenceRequirement]>,
+    composition: &str,
+    left: &str,
+    right: &str,
+) -> bool {
+    requirements.is_none_or(|requirements| {
+        requirements.iter().any(|required| {
+            required.composition == composition
+                && ((required.left_root == left && required.right_root == right)
+                    || (required.left_root == right && required.right_root == left))
+        })
+    })
+}
+
+fn required_overlaps<'a>(
+    requirements: Option<&'a [InterferenceRequirement]>,
+    composition: &str,
+    left: &str,
+    right: &str,
+) -> Vec<&'a RegionPath> {
+    requirements
+        .into_iter()
+        .flatten()
+        .filter(|required| {
+            required.composition == composition
+                && ((required.left_root == left && required.right_root == right)
+                    || (required.left_root == right && required.right_root == left))
+        })
+        .filter_map(|required| required.overlap.as_ref())
+        .collect()
+}
+
+#[allow(clippy::too_many_arguments)]
 fn add_obligation(
     composition: &thermite_syntax::ConcurrentItem,
     guarantor: &str,
@@ -205,6 +308,8 @@ fn add_obligation(
     functions: &BTreeMap<String, CheckedInterference>,
     obligations: &mut Vec<CompositionObligation>,
     errors: &mut Vec<InterferenceError>,
+    overlaps: Vec<&RegionPath>,
+    regions: Option<&RegionIndex>,
 ) {
     let (Some(guarantee), Some(rely)) = (functions.get(guarantor), functions.get(relying)) else {
         let missing = if !functions.contains_key(guarantor) {
@@ -216,8 +321,8 @@ fn add_obligation(
             kind: InterferenceErrorKind::MissingContract,
             function: Some(missing.to_string()),
             detail: format!(
-                "composition `{}` needs an interference contract for `{missing}`",
-                composition.name
+                "concurrent `{}` roots `{guarantor}` and `{relying}` have an overlapping conflict at {:?} and need an interference contract for `{missing}`",
+                composition.name, overlaps
             ),
             span: composition.span,
         });
@@ -241,11 +346,40 @@ fn add_obligation(
         });
         return;
     }
+    if let Some(regions) = regions {
+        for overlap in overlaps {
+            let guarantee_covers = relation_covers(&guarantee.promises, overlap, regions);
+            let rely_covers = relation_covers(&rely.asks, overlap, regions);
+            if !guarantee_covers || !rely_covers {
+                errors.push(InterferenceError {
+                    kind: InterferenceErrorKind::IncompleteConflictCoverage,
+                    function: Some(relying.to_string()),
+                    detail: format!(
+                        "in `{}`, promises({guarantor}) and asks({relying}) do not both cover conflicting shared place `{overlap}`",
+                        composition.name
+                    ),
+                    span: composition.span,
+                });
+                return;
+            }
+        }
+    }
     obligations.push(CompositionObligation {
         composition: composition.name.clone(),
         guarantor: guarantor.to_string(),
         relying: relying.to_string(),
     });
+}
+
+fn relation_covers(
+    relation: &CheckedRelation,
+    overlap: &RegionPath,
+    regions: &RegionIndex,
+) -> bool {
+    relation
+        .atoms
+        .iter()
+        .any(|atom| regions.overlaps(&RegionPath::from(atom.place.as_str()), overlap))
 }
 
 fn classify_relation(
