@@ -12,17 +12,16 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
-| **Fork implementation** | **Not started; tracked by issue #76.** Sequenced after RFC-11 resource types (issue #75). |
+| **Status** | Draft, **active for fork implementation**. The RFC-7 direction and RFC-12 v1 boundary were approved by the maintainer. |
+| **Fork implementation** | **Design approved; tracked by issue #76.** The checked build contract is [interference-clauses.md](../syntax/interference-clauses.md). RFC-11 resource types (issue #75) is shipped. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 8 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), RFC-9, RFC-10 |
 
-> **Not proposed yet.** This document is written so the work is not blocked on a
-> reply, and it stays unfiled until [RFC-6](0006-full-words.md) lands and the
-> direction in [RFC-7](0007-thermite-3.md) is answered. Filing six capability
-> proposals against a surface nobody has adopted is the failure RFC-7's own
-> sequencing rule exists to prevent.
+> **Activated 2026-09-04 for the fork build.** This RFC remains the proposal and
+> rationale. The implementation contract fixes v1 to monotone lock-free state
+> backed by persistent set/bool/count evidence, requires postcondition stability
+> under the rely, and defers protocol-round stability such as epochs to RFC-13.
 
 Kind: two new clauses, shaped like `requires` and `ensures`.
 
@@ -212,7 +211,7 @@ lock-free, arbitrary" out of reach as needing full CSL or Iris. The persistent
 shardings cover the monotone fragment and nothing more, so the boundary drawn on
 taste turns out to be the boundary the substrate draws.
 
-**One gap the check found.** The worked example's rely has two conjuncts and only
+**One boundary the check found.** The worked example's rely has two conjuncts and only
 one of them maps:
 
 ```thermite
@@ -229,11 +228,10 @@ field. `#[sharding(constant)]` covers a field that never changes at all, and the
 epoch is not that either — it is constant *for the duration of one shootdown* and
 changes between them.
 
-So a stability conjunct is a protocol-scoped fact rather than a field-level one,
-and it needs a different treatment: either an instance per round, so the epoch is
-genuinely `constant` within it, or a mechanism this document does not yet have.
-That is the one part of the lowering that is not settled, and it is narrower than
-the original hypothesis feared.
+So a stability conjunct is a protocol-scoped fact rather than a field-level one.
+RFC-12 v1 does not admit it: epoch-like state is represented by an instance per
+round, where it is genuinely constant, and is deferred to RFC-13. This keeps the
+confirmed RFC-12 scope identical to the persistent-sharding substrate.
 
 ## Sequencing
 

@@ -507,8 +507,8 @@ churn.
 4. the effect algebra         SHIPPED — RFC-8
 5. verified effect rows       SHIPPED — RFC-9
 6. shared-state invariants    SHIPPED — RFC-10, issue #49
-7. resource types             TRACKED — RFC-11, issue #75
-8. interference clauses       TRACKED — RFC-12, issue #76
+7. resource types             SHIPPED — RFC-11, issue #75
+8. interference clauses       ACTIVE — RFC-12, issue #76
 9. protocol types             TRACKED — RFC-13, issue #77
 ```
 
