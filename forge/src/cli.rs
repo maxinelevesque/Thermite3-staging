@@ -94,6 +94,10 @@ pub enum ForgeError {
     Rfc11ReplayUnavailable { detail: String },
     /// RFC-11 resource-flow replay ran and kernel-rejected the checked witness.
     Rfc11ReplayRejected { detail: String },
+    /// RFC-12 interference replay could not be invoked or communicated with.
+    Rfc12ReplayUnavailable { detail: String },
+    /// RFC-12 interference replay ran and kernel-rejected the checked witness.
+    Rfc12ReplayRejected { detail: String },
     /// The `cargo kani` / kani binary was not found on `PATH` — an environment
     /// error, not a verification failure (`.design/lower/l2-kani.md` REQ-8). The
     /// L2 parallel of `VerusAbsent`.
@@ -217,6 +221,12 @@ impl fmt::Display for ForgeError {
             ForgeError::Rfc11ReplayRejected { detail } => {
                 write!(f, "RFC-11 resource replay rejected: {detail}")
             }
+            ForgeError::Rfc12ReplayUnavailable { detail } => {
+                write!(f, "RFC-12 interference replay unavailable: {detail}")
+            }
+            ForgeError::Rfc12ReplayRejected { detail } => {
+                write!(f, "RFC-12 interference replay rejected: {detail}")
+            }
             ForgeError::KaniAbsent { binary } => write!(
                 f,
                 "the `{binary}` bounded model checker was not found on PATH (environment error, \
@@ -280,9 +290,9 @@ impl ForgeError {
     /// The exit code class for this error (REQ-5). Every `ForgeError` is an
     fn exit_code(&self) -> u8 {
         match self {
-            Self::Rfc10ReplayRejected { .. } | Self::Rfc11ReplayRejected { .. } => {
-                EXIT_VERIFICATION_FAILURE
-            }
+            Self::Rfc10ReplayRejected { .. }
+            | Self::Rfc11ReplayRejected { .. }
+            | Self::Rfc12ReplayRejected { .. } => EXIT_VERIFICATION_FAILURE,
             _ => EXIT_ENVIRONMENT,
         }
     }
@@ -3445,6 +3455,24 @@ pub(crate) fn render_audit(manifest: &AuditManifest) -> String {
                     .join(", ")
             ));
         }
+        if let Some(interference) = &f.interference {
+            out.push_str(&format!(
+                "    interference: accepted; functions={} requirements={} obligations={} checked-interference-sha256={}\n",
+                interference.functions.len(),
+                interference.requirements.len(),
+                interference.obligations.len(),
+                interference.formal_replay.checked_interference_sha256,
+            ));
+            out.push_str(&format!(
+                "    interference residual trust: {}\n",
+                interference
+                    .residual_trust
+                    .iter()
+                    .map(|entry| format!("{entry:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
     }
 
     // The project assurance headline + scope + lowered-assurance fns (REQ-5).
@@ -3615,6 +3643,7 @@ pub(crate) fn render_human(cert: &Certificate) -> String {
         _bv_shadows,
         _clause_certifications,
         _resource_flow,
+        _interference,
     ) = cert.oracle_subset();
     let mut out = String::new();
     out.push_str(&format!("item: {item}\n"));
@@ -3671,6 +3700,26 @@ pub(crate) fn render_human(cert: &Certificate) -> String {
                 .map(|entry| format!("{entry:?}"))
                 .collect::<Vec<_>>()
                 .join(", ")
+        ));
+    }
+    if let Some(interference) = &cert.interference {
+        out.push_str(&format!(
+            "interference: accepted (formal replay: kernel-accepted, checker={}, functions={}, requirements={}, obligations={}, checked_interference_sha256={})\n",
+            interference.formal_replay.checker,
+            interference.functions.len(),
+            interference.requirements.len(),
+            interference.obligations.len(),
+            interference.formal_replay.checked_interference_sha256,
+        ));
+        out.push_str(&format!(
+            "interference_residual_trust: {}\ninterference_body_mutation_scoring: {:?}\n",
+            interference
+                .residual_trust
+                .iter()
+                .map(|entry| format!("{entry:?}"))
+                .collect::<Vec<_>>()
+                .join(", "),
+            interference.body_mutation_scoring,
         ));
     }
     out.push_str(&format!(

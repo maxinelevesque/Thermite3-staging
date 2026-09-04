@@ -1240,6 +1240,92 @@ pub enum ResourceResidualTrust {
     ExecutableTargetBehavior,
 }
 
+/// RFC-12 relation, composition, replay, and residual-trust disclosure.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InterferenceEvidence {
+    pub verdict: InterferenceVerdict,
+    pub functions: Vec<InterferenceFunctionEvidence>,
+    pub requirements: Vec<InterferenceRequirementEvidence>,
+    pub obligations: Vec<InterferenceObligationEvidence>,
+    pub formal_replay: InterferenceFormalReplay,
+    pub residual_trust: Vec<InterferenceResidualTrust>,
+    pub body_mutation_scoring: InterferenceBodyMutationScoring,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InterferenceVerdict {
+    Accepted,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InterferenceFunctionEvidence {
+    pub function: String,
+    pub asks: Vec<InterferenceAtomEvidence>,
+    pub promises: Vec<InterferenceAtomEvidence>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InterferenceAtomEvidence {
+    pub place: String,
+    pub kind: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InterferenceRequirementEvidence {
+    pub composition: String,
+    pub left_root: String,
+    pub right_root: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub left_priority: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub right_priority: Option<u64>,
+    pub overlaps: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InterferenceObligationEvidence {
+    pub composition: String,
+    pub guarantor: String,
+    pub relying: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InterferenceFormalReplay {
+    pub checker: String,
+    pub checker_sha256: String,
+    pub witness_version: u32,
+    pub canonical_ast_sha256: String,
+    pub checked_interference_sha256: String,
+    pub verdict: InterferenceFormalReplayVerdict,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InterferenceFormalReplayVerdict {
+    KernelAccepted,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InterferenceResidualTrust {
+    Parser,
+    SharedStateClassification,
+    RelationClassifier,
+    SolverEncoding,
+    BackendCorrespondence,
+    WitnessExtraction,
+    PersistentTokenImplementation,
+    ExecutableTargetBehavior,
+    PlatformPreemption,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InterferenceBodyMutationScoring {
+    UnavailableUntilEffectTraceObservables,
+}
+
 /// The certificate `forge check` emits for one item (`thermite-design.md` §5.1,
 /// Appendix A). Field declaration order is the deterministic serialization order
 /// (REQ-7) and mirrors Appendix A: `item`, `level`, `solver_time_ms`,
@@ -1250,6 +1336,7 @@ struct AuditAdmission {
     live: bool,
     verus: Option<VerusAuditAuthority>,
     resource: Option<ResourceAuditAuthority>,
+    interference: Option<InterferenceAuditAuthority>,
     clause_policy_digest: Option<String>,
 }
 
@@ -1266,12 +1353,18 @@ struct ResourceAuditAuthority {
     evidence: ResourceFlowEvidence,
 }
 
+#[derive(Debug, Clone)]
+struct InterferenceAuditAuthority {
+    evidence: InterferenceEvidence,
+}
+
 impl AuditAdmission {
     fn live() -> Self {
         Self {
             live: true,
             verus: None,
             resource: None,
+            interference: None,
             clause_policy_digest: None,
         }
     }
@@ -1516,6 +1609,9 @@ pub struct Certificate {
     /// authority merely by deserializing a compatible-looking JSON value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource_flow: Option<ResourceFlowEvidence>,
+    /// RFC-12 checked interference graph and independent Lean replay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interference: Option<InterferenceEvidence>,
     /// Process-local typed result provenance. This is deliberately absent from
     /// the public certificate wire format: live proof/policy producers stamp it
     /// so later backend arbitration never has to rediscover authority from
@@ -2372,6 +2468,7 @@ impl Certificate {
             meaning_audit: None,
             burn: None,
             resource_flow: None,
+            interference: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -2426,6 +2523,7 @@ impl Certificate {
             meaning_audit: None,
             burn: None,
             resource_flow: None,
+            interference: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -2501,6 +2599,7 @@ impl Certificate {
             meaning_audit: None,
             burn: None,
             resource_flow: None,
+            interference: None,
             live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
@@ -2548,6 +2647,7 @@ impl Certificate {
             meaning_audit: None,
             burn: None,
             resource_flow: None,
+            interference: None,
             live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
@@ -2594,6 +2694,7 @@ impl Certificate {
             meaning_audit: None,
             burn: None,
             resource_flow: None,
+            interference: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -3006,6 +3107,116 @@ impl Certificate {
         Ok(())
     }
 
+    pub(crate) fn with_interference_evidence_for_witness(
+        mut self,
+        witness: &thermite_lower::InterferenceWitness,
+        evidence: InterferenceEvidence,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        self.validate_interference_evidence_against(witness, &evidence)?;
+        self.interference = Some(evidence.clone());
+        self.audit_admission.interference = Some(InterferenceAuditAuthority { evidence });
+        Ok(self)
+    }
+
+    pub(crate) fn validate_interference_authority(
+        &self,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        match (&self.interference, &self.audit_admission.interference) {
+            (None, None) => Ok(()),
+            (Some(public), Some(authority)) if public == &authority.evidence => Ok(()),
+            (Some(_), None) => Err(IncoherentCertificationPosition {
+                reason: "RFC-12 evidence requires live formal-replay authority",
+            }),
+            (None, Some(_)) => Err(IncoherentCertificationPosition {
+                reason: "RFC-12 live authority requires a public evidence block",
+            }),
+            _ => Err(IncoherentCertificationPosition {
+                reason: "RFC-12 public evidence differs from live replay authority",
+            }),
+        }
+    }
+
+    fn validate_interference_evidence_against(
+        &self,
+        witness: &thermite_lower::InterferenceWitness,
+        evidence: &InterferenceEvidence,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        let functions = witness
+            .functions
+            .iter()
+            .map(|function| InterferenceFunctionEvidence {
+                function: function.function.clone(),
+                asks: function
+                    .asks
+                    .iter()
+                    .map(|atom| InterferenceAtomEvidence {
+                        place: atom.place.clone(),
+                        kind: atom.kind.clone(),
+                    })
+                    .collect(),
+                promises: function
+                    .promises
+                    .iter()
+                    .map(|atom| InterferenceAtomEvidence {
+                        place: atom.place.clone(),
+                        kind: atom.kind.clone(),
+                    })
+                    .collect(),
+            })
+            .collect::<Vec<_>>();
+        let requirements = witness
+            .requirements
+            .iter()
+            .map(|requirement| InterferenceRequirementEvidence {
+                composition: requirement.composition.clone(),
+                left_root: requirement.left_root.clone(),
+                right_root: requirement.right_root.clone(),
+                left_priority: requirement.left_priority,
+                right_priority: requirement.right_priority,
+                overlaps: requirement.overlaps.clone(),
+            })
+            .collect::<Vec<_>>();
+        let obligations = witness
+            .obligations
+            .iter()
+            .map(|obligation| InterferenceObligationEvidence {
+                composition: obligation.composition.clone(),
+                guarantor: obligation.guarantor.clone(),
+                relying: obligation.relying.clone(),
+            })
+            .collect::<Vec<_>>();
+        let expected_residual = vec![
+            InterferenceResidualTrust::Parser,
+            InterferenceResidualTrust::SharedStateClassification,
+            InterferenceResidualTrust::RelationClassifier,
+            InterferenceResidualTrust::SolverEncoding,
+            InterferenceResidualTrust::BackendCorrespondence,
+            InterferenceResidualTrust::WitnessExtraction,
+            InterferenceResidualTrust::PersistentTokenImplementation,
+            InterferenceResidualTrust::ExecutableTargetBehavior,
+            InterferenceResidualTrust::PlatformPreemption,
+        ];
+        let replay = &evidence.formal_replay;
+        if evidence.verdict != InterferenceVerdict::Accepted
+            || evidence.functions != functions
+            || evidence.requirements != requirements
+            || evidence.obligations != obligations
+            || replay.checker != "Thermite.Interference/v1"
+            || replay.witness_version != witness.version
+            || replay.canonical_ast_sha256 != witness.canonical_ast_sha256
+            || replay.checked_interference_sha256 != witness.checked_interference_sha256
+            || replay.verdict != InterferenceFormalReplayVerdict::KernelAccepted
+            || evidence.residual_trust != expected_residual
+            || evidence.body_mutation_scoring
+                != InterferenceBodyMutationScoring::UnavailableUntilEffectTraceObservables
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "RFC-12 evidence does not match the checked interference artifact",
+            });
+        }
+        Ok(())
+    }
+
     /// Revalidate the persisted general-Verus coordinates against the private
     /// live-producer facts retained across certificate transformations.
     pub(crate) fn validate_verus_artifact_authority(
@@ -3394,6 +3605,7 @@ impl Certificate {
             meaning_audit: None,
             burn: None,
             resource_flow: None,
+            interference: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -3465,6 +3677,7 @@ impl Certificate {
         Vec<BvShadow>,
         Option<ClauseOraclePortfolio>,
         Option<ResourceFlowEvidence>,
+        Option<InterferenceEvidence>,
     ) {
         let clause_entries: Vec<_> = self
             .obligations
@@ -3506,6 +3719,7 @@ impl Certificate {
                 .collect(),
             clause_portfolio,
             self.resource_flow.clone(),
+            self.interference.clone(),
         )
     }
 }

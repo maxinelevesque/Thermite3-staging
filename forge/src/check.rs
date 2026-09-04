@@ -138,8 +138,11 @@ use crate::cache;
 use crate::cli::ForgeError;
 use crate::covenant::CovenantRecord;
 use crate::manifest::{
-    effects_of, Certificate, Level, ObligationResult, RejectReason, ResourceFlowEvidence,
-    ResourceFlowVerdict, ResourceForgetFootprint, ResourceFormalReplay,
+    effects_of, Certificate, InterferenceAtomEvidence, InterferenceBodyMutationScoring,
+    InterferenceEvidence, InterferenceFormalReplay, InterferenceFormalReplayVerdict,
+    InterferenceFunctionEvidence, InterferenceObligationEvidence, InterferenceRequirementEvidence,
+    InterferenceResidualTrust, InterferenceVerdict, Level, ObligationResult, RejectReason,
+    ResourceFlowEvidence, ResourceFlowVerdict, ResourceForgetFootprint, ResourceFormalReplay,
     ResourceFormalReplayVerdict, ResourceResidualTrust,
 };
 use crate::profile::{self, SolverProfile};
@@ -596,6 +599,12 @@ pub fn check_file_with_options(
         .then(|| thermite_lower::emit_resource_witness(&checked));
     let resource_evidence = match &resource_witness {
         Some(witness) => Some(run_rfc11_lean_replay(&parsed.program, witness)?),
+        None => None,
+    };
+    let interference_witness = thermite_lower::contains_rfc12(&parsed.program)
+        .then(|| thermite_lower::emit_interference_witness(&checked));
+    let interference_evidence = match &interference_witness {
+        Some(witness) => Some(run_rfc12_lean_replay(&parsed.program, witness)?),
         None => None,
     };
 
@@ -1371,6 +1380,11 @@ pub fn check_file_with_options(
             } else {
                 cert
             };
+            let cert = attach_interference_evidence(
+                cert,
+                interference_witness.as_ref(),
+                interference_evidence.clone(),
+            );
             let cert = match scopes.get(&cert.item) {
                 Some(scope) => cert.with_assurance_scope(scope.clone()),
                 // A cert whose item has no node keeps its `None` scope, which
@@ -1664,6 +1678,194 @@ fn attach_resource_evidence(
             .expect("typed RFC-11 replay evidence matches its checked L3 artifact"),
         (None, None) => cert,
         _ => panic!("RFC-11 witness and replay evidence must be present together"),
+    }
+}
+
+fn run_rfc12_lean_replay(
+    program: &Program,
+    witness: &thermite_lower::InterferenceWitness,
+) -> Result<InterferenceEvidence, ForgeError> {
+    const CHECKER_SOURCE: &str = include_str!("../../lean/Thermite/Interference.lean");
+    const ACCEPTANCE_TOKEN: &str = "THERMITE_RFC12_INTERFERENCE_REPLAY_ACCEPTED_V1";
+    const REPLAY_TIMEOUT: Duration = Duration::from_secs(60);
+
+    let canonical =
+        thermite_lower::canonical_interference_projection(program).map_err(|error| {
+            ForgeError::Rfc12ReplayRejected {
+                detail: format!("could not reconstruct canonical interference: {error:?}"),
+            }
+        })?;
+    thermite_lower::replay_interference_witness(program, witness).map_err(|error| {
+        ForgeError::Rfc12ReplayRejected {
+            detail: format!("interference witness failed checked digest replay: {error:?}"),
+        }
+    })?;
+    let checker_path = lean_package_root().join("Thermite/Interference.lean");
+    let runtime_checker =
+        std::fs::read(&checker_path).map_err(|error| ForgeError::Rfc12ReplayUnavailable {
+            detail: format!("could not read `{}`: {error}", checker_path.display()),
+        })?;
+    let compiled_hash = format!("{:x}", Sha256::digest(CHECKER_SOURCE.as_bytes()));
+    let runtime_hash = format!("{:x}", Sha256::digest(&runtime_checker));
+    if compiled_hash != runtime_hash {
+        return Err(ForgeError::Rfc12ReplayUnavailable {
+            detail: format!(
+                "RFC-12 checker differs from embedded checker (compiled {compiled_hash}, runtime {runtime_hash})"
+            ),
+        });
+    }
+
+    let source = thermite_lower::lean_interference_replay_source(&canonical, witness);
+    let lake = std::env::var_os("THERMITE_LEAN_LAKE").unwrap_or_else(|| "lake".into());
+    let mut child = Command::new(lake)
+        .args(["env", "lean", "--stdin", "--threads=1"])
+        .current_dir(lean_package_root())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| ForgeError::Rfc12ReplayUnavailable {
+            detail: format!("could not invoke `lake env lean`: {error}"),
+        })?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| ForgeError::Rfc12ReplayUnavailable {
+            detail: "Lean process did not expose stdin".into(),
+        })?
+        .write_all(source.as_bytes())
+        .map_err(|error| ForgeError::Rfc12ReplayUnavailable {
+            detail: format!("could not write Lean input: {error}"),
+        })?;
+    let started = Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if started.elapsed() < REPLAY_TIMEOUT => {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(ForgeError::Rfc12ReplayUnavailable {
+                    detail: "RFC-12 Lean replay exceeded 60 seconds".into(),
+                });
+            }
+            Err(error) => {
+                return Err(ForgeError::Rfc12ReplayUnavailable {
+                    detail: format!("could not poll Lean replay: {error}"),
+                });
+            }
+        }
+    }
+    let output = child
+        .wait_with_output()
+        .map_err(|error| ForgeError::Rfc12ReplayUnavailable {
+            detail: format!("could not collect Lean output: {error}"),
+        })?;
+    let combined = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let accepted = combined.lines().any(|line| line.trim() == ACCEPTANCE_TOKEN);
+    let allowed_axioms = combined.lines().any(|line| {
+        line.contains("rfc12_interference_verified")
+            && (line.contains("does not depend on any axioms")
+                || line.contains("depends on axioms: [propext]"))
+    });
+    let forbidden_axiom = combined.contains("sorryAx");
+    if !output.status.success() || !accepted || !allowed_axioms || forbidden_axiom {
+        return Err(ForgeError::Rfc12ReplayRejected {
+            detail: format!(
+                "exit={:?}, acceptance_token={accepted}, allowed_axioms={allowed_axioms}, forbidden_sorryAx={forbidden_axiom}: {}",
+                output.status.code(),
+                combined.chars().take(1200).collect::<String>()
+            ),
+        });
+    }
+
+    Ok(InterferenceEvidence {
+        verdict: InterferenceVerdict::Accepted,
+        functions: witness
+            .functions
+            .iter()
+            .map(|function| InterferenceFunctionEvidence {
+                function: function.function.clone(),
+                asks: function
+                    .asks
+                    .iter()
+                    .map(|atom| InterferenceAtomEvidence {
+                        place: atom.place.clone(),
+                        kind: atom.kind.clone(),
+                    })
+                    .collect(),
+                promises: function
+                    .promises
+                    .iter()
+                    .map(|atom| InterferenceAtomEvidence {
+                        place: atom.place.clone(),
+                        kind: atom.kind.clone(),
+                    })
+                    .collect(),
+            })
+            .collect(),
+        requirements: witness
+            .requirements
+            .iter()
+            .map(|requirement| InterferenceRequirementEvidence {
+                composition: requirement.composition.clone(),
+                left_root: requirement.left_root.clone(),
+                right_root: requirement.right_root.clone(),
+                left_priority: requirement.left_priority,
+                right_priority: requirement.right_priority,
+                overlaps: requirement.overlaps.clone(),
+            })
+            .collect(),
+        obligations: witness
+            .obligations
+            .iter()
+            .map(|obligation| InterferenceObligationEvidence {
+                composition: obligation.composition.clone(),
+                guarantor: obligation.guarantor.clone(),
+                relying: obligation.relying.clone(),
+            })
+            .collect(),
+        formal_replay: InterferenceFormalReplay {
+            checker: "Thermite.Interference/v1".into(),
+            checker_sha256: compiled_hash,
+            witness_version: witness.version,
+            canonical_ast_sha256: witness.canonical_ast_sha256.clone(),
+            checked_interference_sha256: witness.checked_interference_sha256.clone(),
+            verdict: InterferenceFormalReplayVerdict::KernelAccepted,
+        },
+        residual_trust: vec![
+            InterferenceResidualTrust::Parser,
+            InterferenceResidualTrust::SharedStateClassification,
+            InterferenceResidualTrust::RelationClassifier,
+            InterferenceResidualTrust::SolverEncoding,
+            InterferenceResidualTrust::BackendCorrespondence,
+            InterferenceResidualTrust::WitnessExtraction,
+            InterferenceResidualTrust::PersistentTokenImplementation,
+            InterferenceResidualTrust::ExecutableTargetBehavior,
+            InterferenceResidualTrust::PlatformPreemption,
+        ],
+        body_mutation_scoring:
+            InterferenceBodyMutationScoring::UnavailableUntilEffectTraceObservables,
+    })
+}
+
+fn attach_interference_evidence(
+    cert: Certificate,
+    witness: Option<&thermite_lower::InterferenceWitness>,
+    evidence: Option<InterferenceEvidence>,
+) -> Certificate {
+    match (witness, evidence) {
+        (Some(witness), Some(evidence)) => cert
+            .with_interference_evidence_for_witness(witness, evidence)
+            .expect("typed RFC-12 replay evidence matches its checked artifact"),
+        (None, None) => cert,
+        _ => panic!("RFC-12 witness and replay evidence must be present together"),
     }
 }
 
@@ -9325,6 +9527,64 @@ fn discard(b: Bundle) -> u64
             assert!(text.contains("device.port"));
             assert!(text.contains("heap"));
             assert!(text.contains("kernel-accepted"));
+            assert!(text.contains("residual trust") || text.contains("residual_trust"));
+        }
+    }
+
+    #[test]
+    fn rfc12_certificate_and_audit_disclose_relations_edges_and_residual_trust() {
+        let parsed = thermite_syntax::parse(
+            "shared counter: u64\n\
+             #[boundary(\"ext::left\")] fn left(a: &mut u64) -> u64 ! write(counter) requires true ensures true \
+               interleaves { asks final(a) >= a; promises final(a) >= a; };\n\
+             #[boundary(\"ext::right\")] fn right(b: &mut u64) -> u64 ! write(counter) requires true ensures true \
+               interleaves { asks final(b) >= b; promises final(b) >= b; };\n\
+             concurrent pair { left, right }",
+        );
+        assert!(parsed.is_clean(), "fixture parse: {:?}", parsed.errors);
+        let checked = thermite_lower::check_program(&parsed.program).unwrap();
+        let witness = thermite_lower::emit_interference_witness(&checked);
+        let evidence = run_rfc12_lean_replay(&parsed.program, &witness).unwrap();
+        assert_eq!(evidence.functions.len(), 2);
+        assert_eq!(evidence.requirements.len(), 1);
+        assert_eq!(evidence.obligations.len(), 2);
+
+        let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "left").unwrap();
+        let cert = Certificate::new(
+            "left",
+            Level::L3,
+            vec!["write(counter)".into()],
+            0,
+            vec![ObligationResult::discharged("fixture proof")],
+        )
+        .with_verus_artifact(&artifact, true)
+        .unwrap()
+        .with_interference_evidence_for_witness(&witness, evidence.clone())
+        .unwrap();
+        let cert = live_accepted(cert, "verus").into_certificate();
+        let audit = crate::audit::AuditManifest::from_certificates(
+            std::slice::from_ref(&cert),
+            &parsed.program,
+            crate::audit::Toolchain::new("fixture-verus"),
+        );
+        assert_eq!(audit.functions[0].interference, Some(evidence));
+
+        let mut tampered = cert.clone();
+        tampered.interference.as_mut().unwrap().obligations.pop();
+        assert!(
+            std::panic::catch_unwind(|| crate::audit::AuditManifest::from_certificates(
+                &[tampered],
+                &parsed.program,
+                crate::audit::Toolchain::new("fixture-verus"),
+            ))
+            .is_err(),
+            "display-shaped data cannot manufacture RFC-12 audit authority"
+        );
+        let cert_text = crate::cli::render_human(&cert);
+        let audit_text = crate::cli::render_audit(&audit);
+        for text in [&cert_text, &audit_text] {
+            assert!(text.contains("interference"));
+            assert!(text.contains("obligations=2"));
             assert!(text.contains("residual trust") || text.contains("residual_trust"));
         }
     }
