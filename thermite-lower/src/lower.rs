@@ -728,7 +728,6 @@ fn zero_span() -> Span {
 /// `fn main() {}`.
 pub fn lower(program: &Program) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
-    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let program = checked.source();
     if crate::program_uses_holding(program) {
         let prepared = crate::locks::prepare_l3_shared(program)?;
@@ -750,7 +749,6 @@ pub fn lower_l3_library(
     target: L3LibraryTarget,
 ) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
-    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let program = checked.source();
     if crate::program_uses_holding(program) {
         return Err(LowerError::Unsupported {
@@ -790,7 +788,6 @@ pub fn lower_l3_library_with_lock_provider(
     provider: &crate::LockProvider,
 ) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
-    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let program = checked.source();
     provider.validate_l3()?;
     let prepared = crate::locks::prepare_l3_shared(program)?;

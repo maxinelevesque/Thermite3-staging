@@ -593,6 +593,29 @@ fn production_analysis_allows_an_rfc12_covered_shared_conflict() {
 }
 
 #[test]
+fn production_analysis_preserves_handler_direction_for_conflicts() {
+    let parsed = thermite_syntax::parse(
+        "shared counter: u64\n\
+         #[boundary(\"ext::low\")] fn low(a: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(a) >= a; promises final(a) >= a; };\n\
+         #[boundary(\"ext::high\")] fn high(b: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(b) >= b; promises final(b) >= b; };\n\
+         handlers { low at 1, high at 2 }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+
+    let checked = thermite_lower::check_program(&parsed.program)
+        .expect("the high-priority guarantee discharges the low-priority rely");
+    let report = checked.interference();
+    assert_eq!(report.obligations.len(), 1);
+    assert_eq!(report.obligations[0].guarantor, "high");
+    assert_eq!(report.obligations[0].relying, "low");
+    assert_eq!(report.requirements.len(), 1);
+    assert_eq!(report.requirements[0].left_priority, Some(2));
+    assert_eq!(report.requirements[0].right_priority, Some(1));
+}
+
+#[test]
 fn production_analysis_requires_relations_to_cover_the_conflicting_place() {
     let parsed = thermite_syntax::parse(
         "shared counter: u64\nshared other: u64\n\

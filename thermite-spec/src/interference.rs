@@ -36,7 +36,18 @@ pub struct CheckedInterference {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterferenceReport {
     pub functions: BTreeMap<String, CheckedInterference>,
+    pub requirements: Vec<CheckedCompositionRequirement>,
     pub obligations: Vec<CompositionObligation>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CheckedCompositionRequirement {
+    pub composition: String,
+    pub left_root: String,
+    pub right_root: String,
+    pub left_priority: Option<u64>,
+    pub right_priority: Option<u64>,
+    pub overlaps: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -149,6 +160,7 @@ fn check_interference_inner(
         }
     }
 
+    let mut checked_requirements = Vec::new();
     let mut obligations = Vec::new();
     for item in &program.items {
         let Item::Concurrent(composition) = item else {
@@ -193,6 +205,13 @@ fn check_interference_inner(
                             &composition.roots[low],
                         )
                     {
+                        record_requirement(
+                            composition,
+                            high,
+                            low,
+                            requirements,
+                            &mut checked_requirements,
+                        );
                         add_obligation(
                             composition,
                             &composition.roots[high],
@@ -222,6 +241,13 @@ fn check_interference_inner(
                     ) {
                         continue;
                     }
+                    record_requirement(
+                        composition,
+                        left,
+                        right,
+                        requirements,
+                        &mut checked_requirements,
+                    );
                     add_obligation(
                         composition,
                         &composition.roots[left],
@@ -260,10 +286,43 @@ fn check_interference_inner(
     if errors.is_empty() {
         Ok(InterferenceReport {
             functions,
+            requirements: checked_requirements,
             obligations,
         })
     } else {
         Err(errors)
+    }
+}
+
+fn record_requirement(
+    composition: &thermite_syntax::ConcurrentItem,
+    left: usize,
+    right: usize,
+    requirements: Option<&[InterferenceRequirement]>,
+    out: &mut Vec<CheckedCompositionRequirement>,
+) {
+    let mut overlaps = required_overlaps(
+        requirements,
+        &composition.name,
+        &composition.roots[left],
+        &composition.roots[right],
+    )
+    .into_iter()
+    .map(ToString::to_string)
+    .collect::<Vec<_>>();
+    overlaps.sort();
+    overlaps.dedup();
+    let priorities = composition.handler_priorities.as_deref();
+    let requirement = CheckedCompositionRequirement {
+        composition: composition.name.clone(),
+        left_root: composition.roots[left].clone(),
+        right_root: composition.roots[right].clone(),
+        left_priority: priorities.map(|values| values[left]),
+        right_priority: priorities.map(|values| values[right]),
+        overlaps,
+    };
+    if !out.contains(&requirement) {
+        out.push(requirement);
     }
 }
 
@@ -374,12 +433,12 @@ fn add_obligation(
 fn relation_covers(
     relation: &CheckedRelation,
     overlap: &RegionPath,
-    regions: &RegionIndex,
+    _regions: &RegionIndex,
 ) -> bool {
     relation
         .atoms
         .iter()
-        .any(|atom| regions.overlaps(&RegionPath::from(atom.place.as_str()), overlap))
+        .any(|atom| atom.place == overlap.to_string())
 }
 
 fn classify_relation(

@@ -19,10 +19,20 @@ structure Obligation where
   relying : String
 deriving DecidableEq, Repr
 
+structure Requirement where
+  composition : String
+  leftRoot : String
+  rightRoot : String
+  leftPriority : Option Nat
+  rightPriority : Option Nat
+  overlaps : List String
+deriving DecidableEq, Repr
+
 structure Canonical where
   sourceDigest : String
   checkedDigest : String
   functions : List FunctionContract
+  requirements : List Requirement
   obligations : List Obligation
 deriving DecidableEq, Repr
 
@@ -31,6 +41,7 @@ structure Witness where
   sourceDigest : String
   checkedDigest : String
   functions : List FunctionContract
+  requirements : List Requirement
   obligations : List Obligation
 deriving DecidableEq, Repr
 
@@ -56,6 +67,41 @@ def obligationSound (functions : List FunctionContract) (obligation : Obligation
     | some guarantor, some relying => relationImplies guarantor.promises relying.asks
     | _, _ => false
 
+def expectedObligations (requirement : Requirement) : List Obligation :=
+  match requirement.leftPriority, requirement.rightPriority with
+  | none, none =>
+      [⟨requirement.composition, requirement.leftRoot, requirement.rightRoot⟩,
+       ⟨requirement.composition, requirement.rightRoot, requirement.leftRoot⟩]
+  | some left, some right =>
+      if left > right then
+        [⟨requirement.composition, requirement.leftRoot, requirement.rightRoot⟩]
+      else if right > left then
+        [⟨requirement.composition, requirement.rightRoot, requirement.leftRoot⟩]
+      else []
+  | _, _ => []
+
+def expectedGraph (requirements : List Requirement) : List Obligation :=
+  requirements.flatMap expectedObligations
+
+def relationCovers (atoms : List Atom) (place : String) : Bool :=
+  atoms.any (fun atom => atom.place == place)
+
+def obligationCovers
+    (functions : List FunctionContract) (overlaps : List String) (obligation : Obligation) : Bool :=
+  match findFunction functions obligation.guarantor, findFunction functions obligation.relying with
+  | some guarantor, some relying =>
+      overlaps.all (fun place =>
+        relationCovers guarantor.promises place && relationCovers relying.asks place)
+  | _, _ => false
+
+def requirementSound (functions : List FunctionContract) (requirement : Requirement) : Bool :=
+  !requirement.composition.isEmpty && requirement.leftRoot != requirement.rightRoot &&
+    !requirement.overlaps.isEmpty &&
+    requirement.overlaps.eraseDups.length == requirement.overlaps.length &&
+    let expected := expectedObligations requirement
+    !expected.isEmpty && expected.all (fun obligation =>
+      obligationSound functions obligation && obligationCovers functions requirement.overlaps obligation)
+
 def uniqueFunctions (functions : List FunctionContract) : Bool :=
   let names := functions.map (·.function)
   names.eraseDups.length == names.length
@@ -68,9 +114,13 @@ def verify (canonical : Canonical) (witness : Witness) : Bool :=
     witness.sourceDigest == canonical.sourceDigest &&
     witness.checkedDigest == canonical.checkedDigest &&
     witness.functions == canonical.functions &&
+    witness.requirements == canonical.requirements &&
     witness.obligations == canonical.obligations &&
     uniqueFunctions witness.functions &&
     witness.functions.all functionSound &&
+    witness.requirements.eraseDups.length == witness.requirements.length &&
+    witness.requirements.all (requirementSound witness.functions) &&
+    expectedGraph witness.requirements == witness.obligations &&
     uniqueObligations witness.obligations &&
     witness.obligations.all (obligationSound witness.functions)
 

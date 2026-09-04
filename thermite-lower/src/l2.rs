@@ -128,6 +128,13 @@ pub fn lower_l2_artifact(program: &Program) -> Result<L2Artifact, LowerError> {
 /// plain `rustc` (kani injects the `kani` cfg + the `kani` crate). The body and
 /// spec fns are not cfg-gated (kani compiles and reasons over them).
 pub fn lower_l2(program: &Program) -> Result<String, LowerError> {
+    if let Some(span) = crate::checked::first_rfc12_span(program) {
+        return Err(LowerError::Unsupported {
+            what: "RFC-12 interference evidence has no L2 Kani consumer; use the L1 disclosure or L3 formal route"
+                .to_string(),
+            span,
+        });
+    }
     if let Some(span) = program.items.iter().find_map(|item| match item {
         Item::SharedDecl(item) => Some(item.span),
         Item::LockDecl(item) => Some(item.span),

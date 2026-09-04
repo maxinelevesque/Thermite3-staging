@@ -573,6 +573,33 @@ pub(crate) fn analyze_effects_unchecked(
                     span: Span::new(0, 0),
                 }]
             })?;
+            let undischargeable = conflicts
+                .iter()
+                .filter(|conflict| conflict.overlap.is_none())
+                .map(|conflict| LowerError::EffectAnalysis {
+                    span: program
+                        .items
+                        .iter()
+                        .find_map(|item| match item {
+                            Item::Concurrent(item) if item.name == conflict.composition => {
+                                Some(item.span)
+                            }
+                            _ => None,
+                        })
+                        .unwrap_or(Span::new(0, 0)),
+                    detail: format!(
+                        "concurrent `{}` roots `{}` and `{}` conflict outside RFC-12 shared-state coverage: {:?} versus {:?}",
+                        conflict.composition,
+                        conflict.left_root,
+                        conflict.right_root,
+                        conflict.left_effect,
+                        conflict.right_effect,
+                    ),
+                })
+                .collect::<Vec<_>>();
+            if !undischargeable.is_empty() {
+                return Err(undischargeable);
+            }
             let requirements = conflicts
                 .iter()
                 .map(|conflict| thermite_spec::InterferenceRequirement {

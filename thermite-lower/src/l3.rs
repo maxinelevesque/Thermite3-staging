@@ -19,6 +19,7 @@ pub struct L3Artifact {
     query_identity: String,
     classifier_fragment: &'static str,
     resource_witness: Option<crate::ResourceFlowWitness>,
+    interference_witness: Option<crate::InterferenceWitness>,
 }
 
 impl L3Artifact {
@@ -47,13 +48,16 @@ impl L3Artifact {
     pub fn resource_witness(&self) -> Option<&crate::ResourceFlowWitness> {
         self.resource_witness.as_ref()
     }
+
+    pub fn interference_witness(&self) -> Option<&crate::InterferenceWitness> {
+        self.interference_witness.as_ref()
+    }
 }
 
 /// Lower one already-isolated item program and bind its Verus classifier and
 /// query identity before execution.
 pub fn lower_l3_artifact(program: &Program, item: &str) -> Result<L3Artifact, LowerError> {
     let checked = crate::checked::require_checked(program)?;
-    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let source_program = checked.source();
     let routed = source_program
         .items
@@ -72,14 +76,21 @@ pub fn lower_l3_artifact(program: &Program, item: &str) -> Result<L3Artifact, Lo
     let resource_witness = crate::checked::first_rfc11_span(source_program)
         .is_some()
         .then(|| crate::emit_resource_witness(&checked));
-    let query_identity = if let Some(resource) = &resource_witness {
-        format!(
-            "thermite-verus-query-v1:{item}:sha256:{digest}:resource-sha256:{}",
+    let interference_witness = (!checked.interference().functions.is_empty())
+        .then(|| crate::emit_interference_witness(&checked));
+    let mut query_identity = format!("thermite-verus-query-v1:{item}:sha256:{digest}");
+    if let Some(resource) = &resource_witness {
+        query_identity.push_str(&format!(
+            ":resource-sha256:{}",
             resource.checked_resource_sha256
-        )
-    } else {
-        format!("thermite-verus-query-v1:{item}:sha256:{digest}")
-    };
+        ));
+    }
+    if let Some(interference) = &interference_witness {
+        query_identity.push_str(&format!(
+            ":interference-sha256:{}",
+            interference.checked_interference_sha256
+        ));
+    }
     Ok(L3Artifact {
         source,
         item: item.to_string(),
@@ -87,5 +98,6 @@ pub fn lower_l3_artifact(program: &Program, item: &str) -> Result<L3Artifact, Lo
         query_identity,
         classifier_fragment: "thermite-verus-v1",
         resource_witness,
+        interference_witness,
     })
 }

@@ -46,8 +46,8 @@ pub use effects::{analyze_effects, check_effects, subsumes, EffectAnalysis, Effe
 pub use interference_witness::{
     canonical_interference_projection, emit_interference_witness, lean_interference_replay_source,
     replay_interference_witness, CanonicalInterferenceProjection, InterferenceWitness,
-    WitnessInterferenceFunction, WitnessInterferenceObligation, WitnessMonotoneAtom,
-    INTERFERENCE_WITNESS_VERSION,
+    WitnessCompositionRequirement, WitnessInterferenceFunction, WitnessInterferenceObligation,
+    WitnessMonotoneAtom, INTERFERENCE_WITNESS_VERSION,
 };
 pub use l1::{lower_l1, lower_l1_artifact, lower_l1_with_lock_provider, L1Artifact, L1Route};
 pub use l2::{bound_string, lower_l2, lower_l2_artifact, L2Artifact};

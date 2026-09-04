@@ -20,6 +20,19 @@ fn fixture() -> thermite_syntax::Program {
     parsed.program
 }
 
+fn handler_fixture() -> thermite_syntax::Program {
+    let parsed = parse(
+        "shared counter: u64\n\
+         handlers { low at 1, high at 2 }\n\
+         #[boundary(\"ext::low\")] fn low(a: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(a) >= a; promises final(a) >= a; };\n\
+         #[boundary(\"ext::high\")] fn high(b: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(b) >= b; promises final(b) >= b; };",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    parsed.program
+}
+
 fn lean_output(
     canonical: &thermite_lower::CanonicalInterferenceProjection,
     witness: &InterferenceWitness,
@@ -86,11 +99,56 @@ fn lean_rejects_a_peer_implication_mutation_even_when_shapes_match() {
         canonical_ast_sha256: forged.canonical_ast_sha256.clone(),
         checked_interference_sha256: forged.checked_interference_sha256.clone(),
         functions: forged.functions.clone(),
+        requirements: forged.requirements.clone(),
         obligations: forged.obligations.clone(),
     };
     assert!(
         !lean_output(&canonical, &forged).status.success(),
         "Lean accepted a guarantee that no longer implies its peer rely"
+    );
+}
+
+#[test]
+fn lean_derives_graph_completeness_and_rejects_a_reversed_edge() {
+    let program = fixture();
+    let mut forged = emit_interference_witness(&check_program(&program).unwrap());
+    forged.obligations[0] = forged.obligations[1].clone();
+    let canonical = thermite_lower::CanonicalInterferenceProjection {
+        canonical_ast_sha256: forged.canonical_ast_sha256.clone(),
+        checked_interference_sha256: forged.checked_interference_sha256.clone(),
+        functions: forged.functions.clone(),
+        requirements: forged.requirements.clone(),
+        obligations: forged.obligations.clone(),
+    };
+    assert!(
+        !lean_output(&canonical, &forged).status.success(),
+        "Lean accepted an obligation graph with a reversed/duplicated edge"
+    );
+}
+
+#[test]
+fn lean_derives_handler_direction_from_priorities() {
+    let program = handler_fixture();
+    let original = emit_interference_witness(&check_program(&program).unwrap());
+    let canonical = canonical_interference_projection(&program).unwrap();
+    assert!(lean_output(&canonical, &original).status.success());
+    assert_eq!(original.obligations.len(), 1);
+    assert_eq!(original.obligations[0].guarantor, "high");
+
+    let mut forged = original;
+    let guarantor = forged.obligations[0].guarantor.clone();
+    forged.obligations[0].guarantor = forged.obligations[0].relying.clone();
+    forged.obligations[0].relying = guarantor;
+    let forged_canonical = thermite_lower::CanonicalInterferenceProjection {
+        canonical_ast_sha256: forged.canonical_ast_sha256.clone(),
+        checked_interference_sha256: forged.checked_interference_sha256.clone(),
+        functions: forged.functions.clone(),
+        requirements: forged.requirements.clone(),
+        obligations: forged.obligations.clone(),
+    };
+    assert!(
+        !lean_output(&forged_canonical, &forged).status.success(),
+        "Lean accepted the impossible low-priority-to-high-priority edge"
     );
 }
 
@@ -123,6 +181,15 @@ fn replay_rejects_digest_relation_and_edge_tampering() {
         replay_interference_witness(&program, &relation).unwrap_err(),
         WitnessError::Mismatch {
             field: "interference_functions"
+        }
+    );
+
+    let mut requirement = original.clone();
+    requirement.requirements[0].left_priority = Some(9);
+    assert_eq!(
+        replay_interference_witness(&program, &requirement).unwrap_err(),
+        WitnessError::Mismatch {
+            field: "interference_requirements"
         }
     );
 

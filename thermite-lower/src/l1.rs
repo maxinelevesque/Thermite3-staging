@@ -144,6 +144,7 @@ pub struct L1Artifact {
     wrapper_identity: String,
     classifier_fragment: &'static str,
     route: L1Route,
+    interference_witness: Option<crate::InterferenceWitness>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -187,6 +188,13 @@ impl L1Artifact {
     pub fn route(&self) -> &L1Route {
         &self.route
     }
+
+    /// RFC-12 relational evidence is disclosure, not runtime authority: L1
+    /// preserves executable behavior and cannot observe arbitrary environment
+    /// steps between calls.
+    pub fn interference_witness(&self) -> Option<&crate::InterferenceWitness> {
+        self.interference_witness.as_ref()
+    }
 }
 
 /// Produce runnable L1 source and its route/classifier evidence atomically from
@@ -194,7 +202,6 @@ impl L1Artifact {
 /// wrapper identity persisted by the RFC-3 certificate producer.
 pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, LowerError> {
     let checked = crate::checked::require_checked(program)?;
-    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let source_program = checked.source();
     let function = source_program
         .items
@@ -260,7 +267,16 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
     }
     let source = lower_l1_inner(source_program, None)?;
     let digest = format!("{:x}", Sha256::digest(source.as_bytes()));
-    let wrapper_identity = format!("thermite-l1-wrapper-v1:{item}:sha256:{digest}");
+    let interference_witness = (!checked.interference().functions.is_empty())
+        .then(|| crate::emit_interference_witness(&checked));
+    let wrapper_identity = if let Some(interference) = &interference_witness {
+        format!(
+            "thermite-l1-wrapper-v1:{item}:sha256:{digest}:interference-sha256:{}",
+            interference.checked_interference_sha256
+        )
+    } else {
+        format!("thermite-l1-wrapper-v1:{item}:sha256:{digest}")
+    };
     Ok(L1Artifact {
         source,
         item: item.to_string(),
@@ -269,6 +285,7 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
         wrapper_identity,
         classifier_fragment,
         route,
+        interference_witness,
     })
 }
 
@@ -281,7 +298,6 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
 /// and runs under `rustc` (REQ-6).
 pub fn lower_l1(program: &Program) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
-    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let program = checked.source();
     if crate::program_uses_holding(program) {
         return Err(LowerError::Unsupported {
@@ -297,7 +313,6 @@ pub fn lower_l1_with_lock_provider(
     provider: &crate::LockProvider,
 ) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
-    crate::checked::refuse_unlowered_rfc12(&checked)?;
     provider.validate()?;
     lower_l1_inner(checked.source(), Some(provider))
 }

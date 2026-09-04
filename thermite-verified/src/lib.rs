@@ -881,5 +881,78 @@ mod verus_core {
         assert(forall|k: nat| !(#[trigger] spec_meets_floor_60(k, 0nat)));
     }
 
+    // =======================================================================
+    // RFC-12 — algebraic core for persistent count, bit-set, and bool facts.
+    // Rust-to-Verus classification and target atomic implementations remain
+    // named correspondence assumptions; these lemmas prove the relations the
+    // classifier is permitted to select.
+    // =======================================================================
+
+    pub open spec fn count_grows(before: nat, after: nat) -> bool {
+        before <= after
+    }
+
+    pub open spec fn bits_grow(before: u64, after: u64) -> bool {
+        (before & after) == before
+    }
+
+    pub open spec fn bool_grows(before: bool, after: bool) -> bool {
+        !before || after
+    }
+
+    proof fn count_grows_reflexive(value: nat)
+        ensures count_grows(value, value),
+    {}
+
+    proof fn count_grows_transitive(first: nat, second: nat, third: nat)
+        requires count_grows(first, second), count_grows(second, third),
+        ensures count_grows(first, third),
+    {}
+
+    proof fn count_lower_bound_persists(bound: nat, before: nat, after: nat)
+        requires bound <= before, count_grows(before, after),
+        ensures bound <= after,
+    {}
+
+    proof fn bits_grow_reflexive(value: u64)
+        ensures bits_grow(value, value),
+    {
+        assert((value & value) == value) by (bit_vector);
+    }
+
+    proof fn bits_grow_transitive(first: u64, second: u64, third: u64)
+        requires bits_grow(first, second), bits_grow(second, third),
+        ensures bits_grow(first, third),
+    {
+        assert(
+            (first & second) == first && (second & third) == second
+                ==> (first & third) == first
+        ) by (bit_vector);
+    }
+
+    proof fn set_bit_persists(bit: u64, before: u64, after: u64)
+        requires (before & bit) == bit, bits_grow(before, after),
+        ensures (after & bit) == bit,
+    {
+        assert(
+            (before & bit) == bit && (before & after) == before
+                ==> (after & bit) == bit
+        ) by (bit_vector);
+    }
+
+    proof fn bool_grows_reflexive(value: bool)
+        ensures bool_grows(value, value),
+    {}
+
+    proof fn bool_grows_transitive(first: bool, second: bool, third: bool)
+        requires bool_grows(first, second), bool_grows(second, third),
+        ensures bool_grows(first, third),
+    {}
+
+    proof fn true_persists(before: bool, after: bool)
+        requires before, bool_grows(before, after),
+        ensures after,
+    {}
+
     }
 }

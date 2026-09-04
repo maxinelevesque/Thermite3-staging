@@ -14,6 +14,7 @@ pub struct InterferenceWitness {
     pub canonical_ast_sha256: String,
     pub checked_interference_sha256: String,
     pub functions: Vec<WitnessInterferenceFunction>,
+    pub requirements: Vec<WitnessCompositionRequirement>,
     pub obligations: Vec<WitnessInterferenceObligation>,
 }
 
@@ -22,6 +23,7 @@ pub struct CanonicalInterferenceProjection {
     pub canonical_ast_sha256: String,
     pub checked_interference_sha256: String,
     pub functions: Vec<WitnessInterferenceFunction>,
+    pub requirements: Vec<WitnessCompositionRequirement>,
     pub obligations: Vec<WitnessInterferenceObligation>,
 }
 
@@ -43,6 +45,16 @@ pub struct WitnessInterferenceObligation {
     pub composition: String,
     pub guarantor: String,
     pub relying: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WitnessCompositionRequirement {
+    pub composition: String,
+    pub left_root: String,
+    pub right_root: String,
+    pub left_priority: Option<u64>,
+    pub right_priority: Option<u64>,
+    pub overlaps: Vec<String>,
 }
 
 impl InterferenceWitness {
@@ -77,13 +89,31 @@ pub fn emit_interference_witness(checked: &CheckedProgram) -> InterferenceWitnes
             relying: obligation.relying.clone(),
         })
         .collect::<Vec<_>>();
-    let checked_interference_sha256 =
-        checked_digest(&canonical_ast_sha256, &functions, &obligations);
+    let requirements = checked
+        .interference()
+        .requirements
+        .iter()
+        .map(|requirement| WitnessCompositionRequirement {
+            composition: requirement.composition.clone(),
+            left_root: requirement.left_root.clone(),
+            right_root: requirement.right_root.clone(),
+            left_priority: requirement.left_priority,
+            right_priority: requirement.right_priority,
+            overlaps: requirement.overlaps.clone(),
+        })
+        .collect::<Vec<_>>();
+    let checked_interference_sha256 = checked_digest(
+        &canonical_ast_sha256,
+        &functions,
+        &requirements,
+        &obligations,
+    );
     InterferenceWitness {
         version: INTERFERENCE_WITNESS_VERSION,
         canonical_ast_sha256,
         checked_interference_sha256,
         functions,
+        requirements,
         obligations,
     }
 }
@@ -97,6 +127,7 @@ pub fn canonical_interference_projection(
         canonical_ast_sha256: witness.canonical_ast_sha256,
         checked_interference_sha256: witness.checked_interference_sha256,
         functions: witness.functions,
+        requirements: witness.requirements,
         obligations: witness.obligations,
     })
 }
@@ -127,6 +158,11 @@ pub fn replay_interference_witness(
             field: "interference_functions",
         });
     }
+    if witness.requirements != expected.requirements {
+        return Err(WitnessError::Mismatch {
+            field: "interference_requirements",
+        });
+    }
     if witness.obligations != expected.obligations {
         return Err(WitnessError::Mismatch {
             field: "interference_obligations",
@@ -154,9 +190,10 @@ fn witness_atoms(relation: &thermite_spec::CheckedRelation) -> Vec<WitnessMonoto
 fn checked_digest(
     canonical_ast_sha256: &str,
     functions: &[WitnessInterferenceFunction],
+    requirements: &[WitnessCompositionRequirement],
     obligations: &[WitnessInterferenceObligation],
 ) -> String {
-    let body = serde_json::to_string(&(functions, obligations))
+    let body = serde_json::to_string(&(functions, requirements, obligations))
         .expect("interference witness structures serialize");
     format!(
         "{:x}",
@@ -209,16 +246,44 @@ pub fn lean_interference_replay_source(
             .collect::<Vec<_>>()
             .join(", ")
     }
+    fn priority(value: Option<u64>) -> String {
+        value.map_or_else(|| "none".to_string(), |value| format!("some {value}"))
+    }
+    fn requirements(values: &[WitnessCompositionRequirement]) -> String {
+        values
+            .iter()
+            .map(|requirement| {
+                let overlaps = requirement
+                    .overlaps
+                    .iter()
+                    .map(|overlap| string(overlap))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!(
+                    "⟨{}, {}, {}, {}, {}, [{}]⟩",
+                    string(&requirement.composition),
+                    string(&requirement.left_root),
+                    string(&requirement.right_root),
+                    priority(requirement.left_priority),
+                    priority(requirement.right_priority),
+                    overlaps,
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
     format!(
-        "import Thermite.Interference\nopen Thermite.Interference\n\ndef canonical : Canonical := ⟨{}, {}, [{}], [{}]⟩\ndef witness : Witness := ⟨{}, {}, {}, [{}], [{}]⟩\ntheorem rfc12_interference_verified : verify canonical witness = true := by rfl\n#print axioms rfc12_interference_verified\n#eval IO.println \"THERMITE_RFC12_INTERFERENCE_REPLAY_ACCEPTED_V1\"\n",
+        "import Thermite.Interference\nopen Thermite.Interference\n\ndef canonical : Canonical := ⟨{}, {}, [{}], [{}], [{}]⟩\ndef witness : Witness := ⟨{}, {}, {}, [{}], [{}], [{}]⟩\ntheorem rfc12_interference_verified : verify canonical witness = true := by rfl\n#print axioms rfc12_interference_verified\n#eval IO.println \"THERMITE_RFC12_INTERFERENCE_REPLAY_ACCEPTED_V1\"\n",
         string(&canonical.canonical_ast_sha256),
         string(&canonical.checked_interference_sha256),
         functions(&canonical.functions),
+        requirements(&canonical.requirements),
         obligations(&canonical.obligations),
         witness.version,
         string(&witness.canonical_ast_sha256),
         string(&witness.checked_interference_sha256),
         functions(&witness.functions),
+        requirements(&witness.requirements),
         obligations(&witness.obligations),
     )
 }
