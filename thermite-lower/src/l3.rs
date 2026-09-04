@@ -53,6 +53,7 @@ impl L3Artifact {
 /// query identity before execution.
 pub fn lower_l3_artifact(program: &Program, item: &str) -> Result<L3Artifact, LowerError> {
     let checked = crate::checked::require_checked(program)?;
+    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let source_program = checked.source();
     let routed = source_program
         .items

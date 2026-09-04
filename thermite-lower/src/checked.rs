@@ -21,6 +21,7 @@ pub struct CheckedProgram {
     regions: thermite_spec::RegionIndex,
     effects: EffectAnalysis,
     resource_flow: thermite_spec::ResourceFlowReport,
+    interference: thermite_spec::InterferenceReport,
     holdings: Vec<CheckedHolding>,
     shared_places: Vec<CheckedSharedPlace>,
 }
@@ -74,37 +75,15 @@ impl CheckedProgram {
         source: &Program,
         budget: WorkBudget,
     ) -> Result<Self, Vec<LowerError>> {
-        match thermite_spec::check_interference(source) {
-            Err(errors) => {
-                return Err(errors
-                    .into_iter()
-                    .map(|error| LowerError::EffectAnalysis {
-                        detail: error.detail,
-                        span: error.span,
-                    })
-                    .collect());
-            }
-            Ok(report) if !report.functions.is_empty() => {
-                let span = source
-                    .items
-                    .iter()
-                    .find_map(|item| match item {
-                        thermite_syntax::Item::Fn(function) => function
-                            .contract
-                            .interference
-                            .as_ref()
-                            .map(|contract| contract.span),
-                        _ => None,
-                    })
-                    .unwrap_or_else(|| thermite_syntax::Span::new(0, 0));
-                return Err(vec![LowerError::Unsupported {
-                    what: "RFC-12 relations are validated, but L1/L3 relational evidence lowering is not implemented; refusing fallback to a pre-RFC-12 artifact"
-                        .to_string(),
-                    span,
-                }]);
-            }
-            Ok(_) => {}
-        }
+        let interference = thermite_spec::check_interference(source).map_err(|errors| {
+            errors
+                .into_iter()
+                .map(|error| LowerError::EffectAnalysis {
+                    detail: error.detail,
+                    span: error.span,
+                })
+                .collect::<Vec<_>>()
+        })?;
         let resources = thermite_spec::ResourceEnv::build(source).map_err(|errors| {
             errors
                 .into_iter()
@@ -149,6 +128,7 @@ impl CheckedProgram {
             regions,
             effects,
             resource_flow,
+            interference,
             holdings,
             shared_places,
         })
@@ -172,6 +152,10 @@ impl CheckedProgram {
 
     pub fn resource_flow(&self) -> &thermite_spec::ResourceFlowReport {
         &self.resource_flow
+    }
+
+    pub fn interference(&self) -> &thermite_spec::InterferenceReport {
+        &self.interference
     }
 
     pub fn holdings(&self) -> &[CheckedHolding] {
@@ -205,6 +189,33 @@ pub(crate) fn first_rfc11_span(program: &Program) -> Option<thermite_syntax::Spa
 /// resource disclosure.
 pub fn contains_rfc11(program: &Program) -> bool {
     first_rfc11_span(program).is_some()
+}
+
+pub fn contains_rfc12(program: &Program) -> bool {
+    first_rfc12_span(program).is_some()
+}
+
+pub(crate) fn first_rfc12_span(program: &Program) -> Option<thermite_syntax::Span> {
+    program.items.iter().find_map(|item| match item {
+        thermite_syntax::Item::Fn(function) => function
+            .contract
+            .interference
+            .as_ref()
+            .map(|contract| contract.span),
+        _ => None,
+    })
+}
+
+pub(crate) fn refuse_unlowered_rfc12(checked: &CheckedProgram) -> Result<(), LowerError> {
+    if checked.interference().functions.is_empty() {
+        return Ok(());
+    }
+    Err(LowerError::Unsupported {
+        what: "RFC-12 relations are checked, but L1/L3 relational evidence lowering is not implemented; refusing fallback to a pre-RFC-12 artifact"
+            .to_string(),
+        span: first_rfc12_span(checked.source())
+            .unwrap_or_else(|| thermite_syntax::Span::new(0, 0)),
+    })
 }
 
 fn first_forget_in_block(block: &Block) -> Option<thermite_syntax::Span> {

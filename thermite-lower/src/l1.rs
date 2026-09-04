@@ -194,6 +194,7 @@ impl L1Artifact {
 /// wrapper identity persisted by the RFC-3 certificate producer.
 pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, LowerError> {
     let checked = crate::checked::require_checked(program)?;
+    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let source_program = checked.source();
     let function = source_program
         .items
@@ -280,6 +281,7 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
 /// and runs under `rustc` (REQ-6).
 pub fn lower_l1(program: &Program) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
+    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let program = checked.source();
     if crate::program_uses_holding(program) {
         return Err(LowerError::Unsupported {
@@ -295,6 +297,7 @@ pub fn lower_l1_with_lock_provider(
     provider: &crate::LockProvider,
 ) -> Result<String, LowerError> {
     let checked = crate::checked::require_checked(program)?;
+    crate::checked::refuse_unlowered_rfc12(&checked)?;
     provider.validate()?;
     lower_l1_inner(checked.source(), Some(provider))
 }

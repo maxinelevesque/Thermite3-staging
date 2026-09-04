@@ -139,6 +139,7 @@ pub fn lower_l2(program: &Program) -> Result<String, LowerError> {
         });
     }
     let checked = crate::checked::require_checked(program)?;
+    crate::checked::refuse_unlowered_rfc12(&checked)?;
     let program = checked.source();
     if let Some(span) = crate::checked::first_rfc11_span(program) {
         return Err(LowerError::Unsupported {
