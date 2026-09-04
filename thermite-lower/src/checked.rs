@@ -74,6 +74,37 @@ impl CheckedProgram {
         source: &Program,
         budget: WorkBudget,
     ) -> Result<Self, Vec<LowerError>> {
+        match thermite_spec::check_interference(source) {
+            Err(errors) => {
+                return Err(errors
+                    .into_iter()
+                    .map(|error| LowerError::EffectAnalysis {
+                        detail: error.detail,
+                        span: error.span,
+                    })
+                    .collect());
+            }
+            Ok(report) if !report.functions.is_empty() => {
+                let span = source
+                    .items
+                    .iter()
+                    .find_map(|item| match item {
+                        thermite_syntax::Item::Fn(function) => function
+                            .contract
+                            .interference
+                            .as_ref()
+                            .map(|contract| contract.span),
+                        _ => None,
+                    })
+                    .unwrap_or_else(|| thermite_syntax::Span::new(0, 0));
+                return Err(vec![LowerError::Unsupported {
+                    what: "RFC-12 relations are validated, but L1/L3 relational evidence lowering is not implemented; refusing fallback to a pre-RFC-12 artifact"
+                        .to_string(),
+                    span,
+                }]);
+            }
+            Ok(_) => {}
+        }
         let resources = thermite_spec::ResourceEnv::build(source).map_err(|errors| {
             errors
                 .into_iter()

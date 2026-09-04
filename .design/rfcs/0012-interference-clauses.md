@@ -55,8 +55,7 @@ fn ack(s: &mut Shoot, cpu: u64) -> ()
       final(s).acked | s.acked == final(s).acked;          // what may come at me
     }
     promises {
-      final(s).epoch == s.epoch;
-      final(s).acked == s.acked | (1 << cpu);              // what I put out
+      final(s).acked | s.acked == final(s).acked;          // envelope of my steps
     }
   }
 ```
@@ -65,6 +64,11 @@ fn ack(s: &mut Shoot, cpu: u64) -> ()
 `asks`/`promises` are **relations** between two states — duration. The verb says
 who acts: this function asks something of its peers and promises something to
 them.
+
+The relation clauses describe **reflexive-transitive interference envelopes**,
+not one exact call step. An exact update such as
+`final(s).acked == s.acked | (1 << cpu)` belongs in `ensures`; putting it in
+`promises` would contradict the required stuttering/reflexivity law.
 
 An earlier draft used `<~` and `~>` for the two directions. Those were glyphs
 invented to dodge a collision that abbreviation had caused, and

@@ -151,6 +151,7 @@ use crate::combinators::{self, ArgKind, CombinatorSig};
 use crate::resource::{ResourceEnv, ResourceError};
 use crate::resource_flow::{check_resource_flow, ResourceFlowErrorKind};
 use crate::schemes::{self, SchemeSig};
+use crate::{check_interference, InterferenceErrorKind};
 
 /// The maximum recursive-descent nesting depth the validator will follow before
 /// returning an `ExpressionTooDeep` diagnostic. A fixed constant for determinism
@@ -406,10 +407,13 @@ pub enum SpecError {
     /// fail-closed gate: a parsed resource declaration never validates as an
     /// ordinary droppable ADT.
     UnsupportedResourceTypes { span: Span },
-    /// RFC-12 syntax reached the specification boundary before relational
-    /// validation and composition are implemented. The syntax slice therefore
-    /// fails closed instead of treating `asks` as a free assumption.
-    UnsupportedInterferenceClauses { function: String, span: Span },
+    /// A checked RFC-12 relation, stability, or composition failure.
+    Interference {
+        kind: InterferenceErrorKind,
+        function: Option<String>,
+        detail: String,
+        span: Span,
+    },
     /// An unmarked ADT owns a resource-bearing field or variant payload.
     MissingResourceMarker {
         declaration: String,
@@ -561,7 +565,7 @@ impl SpecError {
             | SpecError::ExpressionTooDeep { span, .. }
             | SpecError::UnsupportedAdt { span, .. }
             | SpecError::UnsupportedResourceTypes { span }
-            | SpecError::UnsupportedInterferenceClauses { span, .. }
+            | SpecError::Interference { span, .. }
             | SpecError::MissingResourceMarker { span, .. }
             | SpecError::EmptyResourceMarker { span, .. }
             | SpecError::ResourceProvenanceMismatch { span, .. }
@@ -674,10 +678,7 @@ impl fmt::Display for SpecError {
                 f,
                 "RFC-11 executable resource flow is not yet checkable by the ownership validator"
             ),
-            SpecError::UnsupportedInterferenceClauses { function, .. } => write!(
-                f,
-                "RFC-12 interference clauses on `{function}` are parsed but relational validation is not implemented; refusing unchecked rely-guarantee assumptions"
-            ),
+            SpecError::Interference { detail, .. } => write!(f, "{detail}"),
             SpecError::MissingResourceMarker {
                 declaration,
                 computed,
@@ -795,6 +796,15 @@ impl std::error::Error for SpecError {}
 pub fn validate(program: &Program) -> Result<(), Vec<SpecError>> {
     let mut v = Validator::new(program);
     v.run(program);
+    if let Err(errors) = check_interference(program) {
+        v.errors
+            .extend(errors.into_iter().map(|error| SpecError::Interference {
+                kind: error.kind,
+                function: error.function,
+                detail: error.detail,
+                span: error.span,
+            }));
+    }
     if let Ok(resources) = ResourceEnv::build(program) {
         if let Err(errors) = check_resource_flow(program, &resources) {
             v.errors
@@ -1116,18 +1126,18 @@ impl Validator {
             }
             match item {
                 Item::Fn(f) => {
-                    if let Some(interference) = &f.contract.interference {
-                        self.errors.push(SpecError::UnsupportedInterferenceClauses {
-                            function: f.name.clone(),
-                            span: interference.span,
-                        });
-                    }
                     self.contract_bound = f.params.iter().map(|param| param.name.clone()).collect();
                     self.contract_position = Some("requires");
                     self.walk_clause(&f.contract.requires);
                     self.contract_position = Some("ensures");
                     for clause in &f.contract.ensures {
                         self.walk_clause(clause);
+                    }
+                    if let Some(interference) = &f.contract.interference {
+                        self.contract_position = Some("asks");
+                        self.walk_clause(&interference.asks);
+                        self.contract_position = Some("promises");
+                        self.walk_clause(&interference.promises);
                     }
                     self.contract_position = None;
                     self.contract_bound.clear();
@@ -1483,7 +1493,10 @@ impl Validator {
             // — e.g. the editor case `s == "needle"`; no sub-expression to walk.
             Expr::Path(path) => {
                 if let (Some(position), Some(root)) = (self.contract_position, path.first()) {
-                    if self.shared_roots.contains(root) && !self.contract_bound.contains(root) {
+                    if self.shared_roots.contains(root)
+                        && !self.contract_bound.contains(root)
+                        && !matches!(position, "asks" | "promises")
+                    {
                         self.errors.push(SpecError::SharedStateInContract {
                             root: root.clone(),
                             position,

@@ -47,6 +47,8 @@ are present, the next unsupported boundary fails closed.
 - REQ-6: Both relations shall denote preorders on the admitted state: reflexive
   and transitive. The checker shall discharge these as explicit obligations and
   reject a relation whose no-op or multi-step closure is not established.
+  Relations are interference envelopes: an exact single-call update belongs in
+  `ensures`, not `promises`.
 - REQ-7: Every ordinary postcondition shall be stable under `asks`: for
   postcondition `Q` and rely `R`, `Q(s) && R(s,s')` must imply `Q(s')`. Stability
   shall be checked independently of body correctness and peer compatibility.
@@ -203,4 +205,6 @@ residual trust rather than calling the replay a source-semantics proof.
 
 - None. The maintainer approved the v1 persistent-state boundary, mandatory
   postcondition stability, pairwise composition, and RFC-13 deferral on
-  2026-09-04.
+  2026-09-04, and resolved the preorder/example tension by making both relation
+  clauses reflexive-transitive envelopes while exact call steps stay in
+  `ensures`.
