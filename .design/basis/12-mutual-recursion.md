@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 2924ebff77fd78cc4be9c056397e074663044756ca166940fb0b82b0fa384bfa (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; mutual recursion is unchanged. prior: 4623be1dc16357f20ee30fd741c1092186ee5ad1123933580e7673ce86151d08)
+audited-content-sha256: 35c6006a94888206f6b72b6597b4e79e0d5914aeb9db0540ac31624fb8a0c994 (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; mutual recursion is unchanged. prior: 4623be1dc16357f20ee30fd741c1092186ee5ad1123933580e7673ce86151d08)
 governs: forge/src/check.rs
 governs: thermite-lower/src/lower.rs
 thesis-refs:

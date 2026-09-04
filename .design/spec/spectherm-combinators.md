@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 0cabd75d419465e4db2a6a286988c328eedf8050db153780a2497d9c62466032 (re-pinned 2026-08-25 for issue #6 Map cage accessors; combinator semantics are unchanged. prior: 523d8e491a42d931a2e46bbe5677f10dfe516209f875ca78e36feedf77f5e220)
+audited-content-sha256: 2ee4cd65232e8aa3386d7fea47b7b1ed4e38e29dcd4dce6d55ecea98e16e1d31 (re-pinned 2026-08-25 for issue #6 Map cage accessors; combinator semantics are unchanged. prior: 523d8e491a42d931a2e46bbe5677f10dfe516209f875ca78e36feedf77f5e220)
 governs: thermite-spec/src/combinators.rs, thermite-spec/src/validator.rs
 thesis-refs:
   - thermite-design.md §4.1

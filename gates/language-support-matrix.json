@@ -1470,6 +1470,18 @@
       "certification": "supported"
     },
     {
+      "id": "CLAIM-LANGUAGE-RFC12-INTERFERENCE",
+      "source": "docs/language.md",
+      "parser": "supported",
+      "validator": "supported",
+      "canonical_semantics": "supported",
+      "checked_ir": "supported",
+      "lowering": "supported",
+      "proof_route": "supported",
+      "policy": "supported",
+      "certification": "supported"
+    },
+    {
       "id": "CLAIM-LANGUAGE-SPEC-SOUNDNESS",
       "source": "docs/language.md",
       "parser": "supported",

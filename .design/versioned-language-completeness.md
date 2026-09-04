@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 070f1cf958d0db523bafe3091a56b64b1395d51255c8c444f2686bde452f6660 (re-pinned 2026-09-02 after recording live shard measurements and rematerializing content-bound claim receipts; language completeness semantics are unchanged. prior: 15beb83ffc1fd77cb01e56e0be4949678eb2fc5ffb44a41148aa6a841d625d0a)
+audited-content-sha256: cebb15f83bc1c99d2bb8043c9f9315b7593532649550f99348229dc9d96018ce (re-pinned 2026-09-02 after recording live shard measurements and rematerializing content-bound claim receipts; language completeness semantics are unchanged. prior: 15beb83ffc1fd77cb01e56e0be4949678eb2fc5ffb44a41148aa6a841d625d0a)
 
 ## Summary
 
@@ -595,6 +595,19 @@ fragment completeness. Adversarial review focuses on omitted inventory cases,
 unproved stage composition, trust-profile laundering, and compatibility
 narrowing.
 
+## Shipped language evolutions
+
+RFC-11 resource types now have an explicit supported profile covering syntax,
+provenance, path-sensitive flow, lowering, formal replay, and certificate
+disclosure.
+
+RFC-12 interference clauses now have an explicit supported profile covering
+the ordered block, the persistent count/bit-set/bool classifier, stability,
+RFC-9 conflict composition, priority-directed handler edges, L1/L3 evidence,
+Lean graph replay, Verus algebraic facts, and certificate/audit disclosure. L2
+remains an explicit unsupported boundary, and protocol-round epochs remain
+outside this fragment for RFC-13.
+
 ## Open Questions
 
 - None.
@@ -679,10 +692,6 @@ review necessary without allowing prose changes to rewrite a closed claim.
   inside #48.
 - RFC-10-specific cross-product expansion that remains after extracting the
   general producer-refinement framework from issue #49.
-- Implementing RFC-12 language features. RFC-11 resource types now have an
-  explicit supported profile in the language inventory; its checked flow,
-  formal replay, certificate disclosure, and legacy-fallback negative are
-  versioned evidence rather than members of an older fragment.
 - Implementing RFC-13 protocol types.
 - Using natural-language inference to prove that a prose summary entails a
   typed claim.

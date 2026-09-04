@@ -60,6 +60,42 @@ joins, loops, and abandonment footprints in Lean, and reports the remaining
 trust in parsing, provenance resolution, witness extraction, and target
 resource behavior.
 
+## Interference clauses
+
+Lock-free shared state uses an `interleaves` contract. `asks` describes the
+environment steps a function tolerates; `promises` describes the steps it may
+expose to peers. Both are reflexive-transitive envelopes. Exact changes made by
+one call still belong in `ensures`.
+
+```thermite
+shared counter: u64
+
+fn grow(counter_ref: &mut u64) -> u64
+  ! write(counter)
+  requires true
+  ensures final(counter_ref) >= 1
+  interleaves {
+    asks final(counter_ref) >= counter_ref;
+    promises final(counter_ref) >= counter_ref;
+  }
+{ 1 }
+```
+
+RFC-12 v1 admits only persistent count growth, bit-set growth, and false-to-true
+boolean growth. At an ordinary `concurrent` site, every conflicting pair owes
+both promise-to-ask implications. A `handlers` site owes only the feasible
+higher-priority-to-lower-priority edge. Postconditions must remain true under
+the declared `asks` relation. Resets, subtraction, arbitrary mutation, and
+values stable only for one protocol round fail closed; protocol-round epochs
+belong to RFC-13.
+
+L1 preserves executable behavior and discloses that environment steps are not
+fully runtime-observable. L3 binds the checked graph to the source, replays its
+completeness and direction in Lean, and uses Verus-checked algebraic lemmas for
+the three persistent relation kinds. Certificates enumerate the clauses,
+conflicting places, directed obligations, formal replay, unavailable body
+mutation scoring, and the remaining correspondence and platform trust.
+
 ## The specification language
 
 Contract-position expressions stay inside a small fragment: a fixed set of

@@ -63,6 +63,39 @@ fn exact_step_and_epoch_equality_are_not_preorder_envelopes() {
 }
 
 #[test]
+fn persistent_bit_bool_and_count_relations_are_closed_while_other_mutations_reject() {
+    for source in [
+        count_fn("count", "final(s) >= s", "final(s) >= s"),
+        "shared bits: u64\nfn grow_bits(s: &mut u64) -> u64 ! write(bits) requires true ensures true \
+         interleaves { asks final(s) | s == final(s); promises final(s) | s == final(s); } { 0 }"
+            .to_string(),
+        "shared flag: bool\nfn raise(s: &mut bool) -> bool ! write(flag) requires true ensures true \
+         interleaves { asks !s || final(s); promises !s || final(s); } { true }"
+            .to_string(),
+    ] {
+        let parsed = parse(&source);
+        assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+        check_interference(&parsed.program).expect("closed persistent relation must validate");
+    }
+
+    for relation in ["final(s) == 0", "final(s) + 1 >= s", "final(s) != s"] {
+        let parsed = parse(&count_fn("bad", relation, "final(s) >= s"));
+        assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+        let errors = check_interference(&parsed.program).expect_err("mutation is outside v1");
+        assert!(errors
+            .iter()
+            .any(|error| error.kind == InterferenceErrorKind::UnsupportedRelation));
+    }
+
+    let parsed = parse(
+        "shared counter: u64\nfn bad(owned: u64) -> u64 ! write(counter) requires true ensures true \
+         interleaves { asks final(owned) >= owned; promises final(owned) >= owned; } { 0 }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    assert!(check_interference(&parsed.program).is_err());
+}
+
+#[test]
 fn incompatible_peers_and_missing_contracts_fail_closed() {
     let incompatible = format!(
         "shared counter: u64\nconcurrent pair {{ count, bits }}\n{}\n{}",

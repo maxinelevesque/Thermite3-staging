@@ -70,7 +70,7 @@ evidence = ["evidence.rs"]
             MODULE.matrix_text(data),
         )
         self.assertEqual(len(MODULE.support_matrix(data)["constructs"]), 128)
-        self.assertEqual(len(MODULE.support_matrix(data)["claims"]), 11)
+        self.assertEqual(len(MODULE.support_matrix(data)["claims"]), 12)
 
     def test_claim_without_stage_profile_fails_closed(self):
         text = (self.ROOT / MODULE.INVENTORY).read_text(encoding="utf-8")

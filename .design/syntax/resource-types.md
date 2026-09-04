@@ -2,7 +2,7 @@
 
 <!--
 status: approved
-audited-content-sha256: a71b5be1493be48dbc9f76e7297e22325154337935298200d1d99150aea1a50e (re-pinned 2026-09-02 after the certificate enum and conformance test made `resource_flow_computation` explicit residual trust. prior: d7e63308ff4d5f7018a0adc8b4ad772de63302b6081606aa62d580c5d289f0c8)
+audited-content-sha256: 95a5ed47c77b3d009ed68ab0abc57e730843c54e5a3527ce2f5ad66dfd528d40 (re-pinned 2026-09-02 after the certificate enum and conformance test made `resource_flow_computation` explicit residual trust. prior: d7e63308ff4d5f7018a0adc8b4ad772de63302b6081606aa62d580c5d289f0c8)
 -->
 
 ## Summary

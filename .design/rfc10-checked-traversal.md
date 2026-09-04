@@ -1,7 +1,7 @@
 # Feature: RFC-10 checked traversal and proof-carrying interpretation
 
 <!--
-audited-content-sha256: 007fa6d4ee1551e0efdfa514f5d59d749f03d59d68cfe474d630f294e3384f84 (re-pinned 2026-09-01 after making the whole-program RFC-11 surface detector exhaustively descend expression-embedded blocks; RFC-10 checked construction semantics are unchanged. prior: 5d1c74e79a10b0f00422978d3886a98a9f70809a0508d2f2bbf2c47d02af3f39)
+audited-content-sha256: 55d26a2c2218ecfe4ccd1cff6c577f83e1e6c21c17c18c3548e841d156faf39e (re-pinned 2026-09-01 after making the whole-program RFC-11 surface detector exhaustively descend expression-embedded blocks; RFC-10 checked construction semantics are unchanged. prior: 5d1c74e79a10b0f00422978d3886a98a9f70809a0508d2f2bbf2c47d02af3f39)
 -->
 
 ## Summary

@@ -185,6 +185,29 @@ evidence = [
   "forge/src/check.rs",
 ]
 
+[[profile]]
+id = "rfc12-interference"
+parser = "supported"
+validator = "supported"
+canonical_semantics = "supported"
+checked_ir = "supported"
+lowering = "supported"
+proof_route = "supported"
+policy = "supported"
+certification = "supported"
+evidence = [
+  "thermite-syntax/tests/interference_clauses.rs",
+  "thermite-spec/src/interference.rs",
+  "thermite-spec/tests/interference_validate.rs",
+  "thermite-lower/tests/effects.rs",
+  "thermite-lower/src/interference_witness.rs",
+  "thermite-lower/tests/interference_witness.rs",
+  "lean/Thermite/Interference.lean",
+  "thermite-verified/src/lib.rs",
+  "thermite-verified/tests/verus_verify.rs",
+  "forge/src/check.rs",
+]
+
 # Claim groups are deliberately broader than individual prose sentences. Their
 # exact source anchors make deletion/renaming visible; evidence says what exists
 # now, while `gap` states where the prose outruns that evidence.
@@ -192,7 +215,7 @@ evidence = [
 id = "CLAIM-LANGUAGE-THREE-PROMISES"
 profile = "current-language"
 source = "docs/language.md"
-source_sha256 = "32f34520f177480b2fc806101082f056d028d202fb2c0948d52a7fd6ee227123"
+source_sha256 = "ab15d99a22929e0315465780688c83adacac0b55eca1e295816973cdb5703fb3"
 anchor = "## Three promises"
 evidence = ["thermite-syntax/src/parser.rs", "thermite-spec/src/validator.rs"]
 gap = "GAP-LANGUAGE-WIDE-THEOREM"
@@ -201,7 +224,7 @@ gap = "GAP-LANGUAGE-WIDE-THEOREM"
 id = "CLAIM-LANGUAGE-SPEC-SOUNDNESS"
 profile = "current-language"
 source = "docs/language.md"
-source_sha256 = "32f34520f177480b2fc806101082f056d028d202fb2c0948d52a7fd6ee227123"
+source_sha256 = "ab15d99a22929e0315465780688c83adacac0b55eca1e295816973cdb5703fb3"
 anchor = "## The specification language"
 evidence = ["lean/Thermite/", "gates/lean-axiom-probe.sh"]
 gap = "GAP-LANGUAGE-WIDE-THEOREM"
@@ -210,12 +233,26 @@ gap = "GAP-LANGUAGE-WIDE-THEOREM"
 id = "CLAIM-LANGUAGE-RFC11-RESOURCE-FLOW"
 profile = "rfc11-resource"
 source = "docs/language.md"
-source_sha256 = "32f34520f177480b2fc806101082f056d028d202fb2c0948d52a7fd6ee227123"
+source_sha256 = "ab15d99a22929e0315465780688c83adacac0b55eca1e295816973cdb5703fb3"
 anchor = "## Resource types"
 evidence = [
   "thermite-spec/src/resource_flow.rs",
   "thermite-lower/src/resource_witness.rs",
   "lean/Thermite/ResourceFlow.lean",
+  "forge/src/manifest.rs",
+]
+
+[[claim]]
+id = "CLAIM-LANGUAGE-RFC12-INTERFERENCE"
+profile = "rfc12-interference"
+source = "docs/language.md"
+source_sha256 = "ab15d99a22929e0315465780688c83adacac0b55eca1e295816973cdb5703fb3"
+anchor = "## Interference clauses"
+evidence = [
+  "thermite-spec/src/interference.rs",
+  "thermite-lower/src/interference_witness.rs",
+  "lean/Thermite/Interference.lean",
+  "thermite-verified/src/lib.rs",
   "forge/src/manifest.rs",
 ]
 
@@ -286,7 +323,7 @@ gap = "GAP-RFC3-MIGRATION"
 id = "CLAIM-REGISTRY-SHIPPED-EVIDENCE"
 profile = "current-language"
 source = ".design/reqs/registry.toml"
-source_sha256 = "29a19a575d1b5cd9cefa85d2f11093a7fefe9a54484965386eea599a66489531"
+source_sha256 = "81b7adcfe0f9d1b15a784ff52c1652327259903675941c618429004b5fa60242"
 anchor = "[[requirement]]"
 evidence = ["gates/req-registry.py", "gates/req-status.py"]
 gap = "GAP-CLAIM-EVIDENCE-CLOSURE"

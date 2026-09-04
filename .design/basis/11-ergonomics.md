@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 256e2bd9f1a8adfe35a078362eecdc99e40f5930130bc71cd732ea3d0a0ad450 (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; ergonomics behavior is unchanged. prior: 5b388ba2f474fbae61c48245ea2a18b4f923fab210ca72ee6c39aabcebadd1d2)
+audited-content-sha256: 4641b7246d3bffd82642eddf0b1f15f665c376c591c326dbe392eb45446e9f9c (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; ergonomics behavior is unchanged. prior: 5b388ba2f474fbae61c48245ea2a18b4f923fab210ca72ee6c39aabcebadd1d2)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

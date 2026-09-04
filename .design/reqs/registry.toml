@@ -5071,7 +5071,7 @@ owner = "thermite-syntax/src/parser.rs"
 status = "shipped"
 scope = "syntax"
 summary = "The parser is a hand-written recursive-descent implementation with one fallible parser family per surface grammar area."
-claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/parser.rs#^(?s:    fn ([a-z_][a-z0-9_]*)\\s*\\([^)]*\\)\\s*->\\s*PResult<[^{]+>\\s*\\{)$", expected = ["block_into_arm_body", "consume", "expect_contextual", "parse_add", "parse_and", "parse_attribute", "parse_bitand", "parse_bitor", "parse_bitxor", "parse_block", "parse_boundary_body", "parse_break_continue", "parse_bv_tag", "parse_bv_width", "parse_call_args", "parse_cast", "parse_clause", "parse_clause_selector", "parse_closure", "parse_cmp", "parse_concurrent", "parse_contract", "parse_dec_clause", "parse_effect", "parse_effect_decl", "parse_effect_primitive", "parse_effect_row", "parse_enum", "parse_expr", "parse_field_defs", "parse_fn", "parse_for", "parse_forget", "parse_handlers", "parse_holding", "parse_hole", "parse_if_expr", "parse_if_let", "parse_if_parts", "parse_if_parts_inner", "parse_index_arg", "parse_index_arg_inner", "parse_is", "parse_item", "parse_lemma", "parse_let", "parse_let_tuple_destructure", "parse_lock_decl", "parse_loop", "parse_loop_inner", "parse_match", "parse_mul", "parse_or", "parse_params", "parse_params_inner", "parse_path_expr", "parse_path_pattern", "parse_pattern", "parse_pattern_inner", "parse_postfix", "parse_primary", "parse_proof_item", "parse_prop_fn", "parse_quantifier", "parse_ref", "parse_refinement_clause", "parse_region_path", "parse_resource_decl", "parse_return", "parse_shared_decl", "parse_shift", "parse_slag_body", "parse_slice_pattern", "parse_spec_fn", "parse_struct", "parse_struct_lit", "parse_struct_pattern", "parse_type", "parse_type_inner", "parse_unary", "parse_while_let", "parse_witness", "scan_proof_block", "take_ident", "take_string"], reviewed_summary_sha256 = "d9bc6f58ae9273641347526c4eb9f717acebfa7b46a6b695e381d82eef60b401" }
+claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/parser.rs#^(?s:    fn ([a-z_][a-z0-9_]*)\\s*\\([^)]*\\)\\s*->\\s*PResult<[^{]+>\\s*\\{)$", expected = ["block_into_arm_body", "consume", "expect_contextual", "parse_add", "parse_and", "parse_attribute", "parse_bitand", "parse_bitor", "parse_bitxor", "parse_block", "parse_boundary_body", "parse_break_continue", "parse_bv_tag", "parse_bv_width", "parse_call_args", "parse_cast", "parse_clause", "parse_clause_selector", "parse_closure", "parse_cmp", "parse_concurrent", "parse_contract", "parse_dec_clause", "parse_effect", "parse_effect_decl", "parse_effect_primitive", "parse_effect_row", "parse_enum", "parse_expr", "parse_field_defs", "parse_fn", "parse_for", "parse_forget", "parse_handlers", "parse_holding", "parse_hole", "parse_if_expr", "parse_if_let", "parse_if_parts", "parse_if_parts_inner", "parse_index_arg", "parse_index_arg_inner", "parse_interference_contract", "parse_is", "parse_item", "parse_lemma", "parse_let", "parse_let_tuple_destructure", "parse_lock_decl", "parse_loop", "parse_loop_inner", "parse_match", "parse_mul", "parse_or", "parse_params", "parse_params_inner", "parse_path_expr", "parse_path_pattern", "parse_pattern", "parse_pattern_inner", "parse_postfix", "parse_primary", "parse_proof_item", "parse_prop_fn", "parse_quantifier", "parse_ref", "parse_refinement_clause", "parse_region_path", "parse_resource_decl", "parse_return", "parse_shared_decl", "parse_shift", "parse_slag_body", "parse_slice_pattern", "parse_spec_fn", "parse_struct", "parse_struct_lit", "parse_struct_pattern", "parse_type", "parse_type_inner", "parse_unary", "parse_while_let", "parse_witness", "scan_proof_block", "take_ident", "take_string"], reviewed_summary_sha256 = "d9bc6f58ae9273641347526c4eb9f717acebfa7b46a6b695e381d82eef60b401" }
 aliases = ["thermite-syntax/src/parser.rs REQ-1 (recursive descent)"]
 contributors = [".design/syntax/parser.md", "thermite-syntax/tests/conformance.rs"]
 generated_to = ["status", "thermite-syntax-parser-core-status"]
@@ -11254,7 +11254,7 @@ owner = "thermite-syntax/src/lexer.rs"
 status = "shipped"
 scope = "syntax"
 summary = "`TokKind` enumerates the closed token vocabulary consumed by the parser, including keywords, identifiers, literals, punctuation, slag markers, holes, and EOF."
-claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/lexer.rs#^    ([A-Z][A-Za-z]+|__claim_closure_counterfeit__)(?:,|\\([^\\n)]*\\),| \\{)(?:\\s*//.*)?$", expected = ["Amp", "AndAnd", "Arrow", "As", "At", "Bang", "Bool", "Break", "Caret", "Colon", "ColonCol", "Comma", "Continue", "Dot", "DotDot", "Effects", "Else", "Ensures", "Enum", "Eof", "Eq", "EqEq", "Exists", "FatArrow", "Fn", "Forall", "Ge", "Gt", "Hash", "HashBracket", "Hole", "Ident", "If", "Int", "Is", "Keeps", "LBrace", "LBracket", "LParen", "Le", "Let", "Loop", "Lt", "Match", "Measures", "Minus", "Mut", "Ne", "OrOr", "Percent", "Pipe", "Plus", "Pure", "RBrace", "RBracket", "RParen", "Requires", "Return", "Semi", "Shl", "Shr", "Slash", "Spec", "Star", "Str", "Struct", "While"], reviewed_summary_sha256 = "82a40af400fc30c077e336b3b22d3124c12a6f8007f36c719a6f848b9f38d928" }
+claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/lexer.rs#^    ([A-Z][A-Za-z]+|__claim_closure_counterfeit__)(?:,|\\([^\\n)]*\\),| \\{)(?:\\s*//.*)?$", expected = ["Amp", "AndAnd", "Arrow", "As", "Asks", "At", "Bang", "Bool", "Break", "Caret", "Colon", "ColonCol", "Comma", "Continue", "Dot", "DotDot", "Effects", "Else", "Ensures", "Enum", "Eof", "Eq", "EqEq", "Exists", "FatArrow", "Fn", "Forall", "Ge", "Gt", "Hash", "HashBracket", "Hole", "Ident", "If", "Int", "Interleaves", "Is", "Keeps", "LBrace", "LBracket", "LParen", "Le", "Let", "Loop", "Lt", "Match", "Measures", "Minus", "Mut", "Ne", "OrOr", "Percent", "Pipe", "Plus", "Promises", "Pure", "RBrace", "RBracket", "RParen", "Requires", "Return", "Semi", "Shl", "Shr", "Slash", "Spec", "Star", "Str", "Struct", "While"], reviewed_summary_sha256 = "82a40af400fc30c077e336b3b22d3124c12a6f8007f36c719a6f848b9f38d928" }
 aliases = ["thermite-syntax/src/lexer.rs REQ-1 (token set)"]
 contributors = [".design/syntax/lexer.md", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/conformance.rs"]
 generated_to = ["status", "thermite-syntax-lexer-status"]
@@ -11281,7 +11281,7 @@ owner = "thermite-syntax/src/lexer.rs"
 status = "shipped"
 scope = "syntax"
 summary = "`keyword_kind` maps the reserved keyword set while leaving effect names, slag fields, and contextual type names as identifiers where required."
-claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/lexer.rs#^        \"([^\"]+)\" => TokKind::[A-Za-z]+(?:\\((?:true|false)\\))?,$", expected = ["as", "break", "continue", "else", "ensures", "enum", "exists", "false", "fn", "forall", "if", "is", "keeps", "let", "loop", "match", "measures", "mut", "pure", "requires", "return", "spec", "struct", "true", "while"], reviewed_summary_sha256 = "8357b9e961cdf96cdd4187ce691baef966a8a72f072b5911598463cf4fa348c3" }
+claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/lexer.rs#^        \"([^\"]+)\" => TokKind::[A-Za-z]+(?:\\((?:true|false)\\))?,$", expected = ["as", "asks", "break", "continue", "else", "ensures", "enum", "exists", "false", "fn", "forall", "if", "interleaves", "is", "keeps", "let", "loop", "match", "measures", "mut", "promises", "pure", "requires", "return", "spec", "struct", "true", "while"], reviewed_summary_sha256 = "8357b9e961cdf96cdd4187ce691baef966a8a72f072b5911598463cf4fa348c3" }
 aliases = ["thermite-syntax/src/lexer.rs REQ-2 (keywords closed set)"]
 contributors = [".design/syntax/lexer.md", ".design/basis/01-adts.md", "thermite-syntax/src/parser.rs"]
 generated_to = ["status", "thermite-syntax-lexer-status"]
@@ -19268,34 +19268,60 @@ note = "typed provenance environment and declaration consistency diagnostics"
 [[requirement]]
 id = "REQ-SYNTAX-INTERLEAVES-BLOCK"
 title = "`interleaves { asks …; promises …; }`"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/interference-clauses.md"
+status = "shipped"
 scope = "syntax"
 summary = "Both clauses are mandatory inside the block, and the words are reserved so that `asks` outside it reaches the unexpected-token arm rather than parsing."
-remaining_scope = "Add the block production and a dedicated diagnostic beside MissingClause and ClauseOrder, so the message names the cause. Proposed by RFC-12; staged and not filed; tracked by issue #76."
-contributors = [".design/rfcs/0012-interference-clauses.md"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc12-interference-syntax.json", expected = ["accepted"], reviewed_summary_sha256 = "5f3105301faa1eff5405963795f1faca48cb95d21afcd07af95c2b9ece6c48a7" }
+remaining_scope = ""
+contributors = [".design/rfcs/0012-interference-clauses.md", ".design/syntax/interference-clauses.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0012-interference-clauses.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-syntax/tests/interference_clauses.rs"
+note = "ordered typed block, dedicated diagnostics, contextual rejection, priorities, and legacy absence"
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-syntax/src/parser.rs"
+note = "reserved-word grammar and typed clause construction"
 
 [[requirement]]
 id = "REQ-SPEC-RELY-GUARANTEE"
 title = "The pairwise interference obligation"
-owner = ".design/rfcs"
-status = "not_started"
+owner = ".design/syntax/interference-clauses.md"
+status = "shipped"
 scope = "spec"
 summary = "For each pair that may overlap, the guarantee of one must imply the rely of the other. For interrupt handlers the obligation is generated in one direction only, from the declared preemption order."
-remaining_scope = "Generate and discharge the pairwise obligation. The stability conjunct does not map to persistent sharding and is the one part of the lowering that is not settled. Proposed by RFC-12; staged and not filed; tracked by issue #76."
-contributors = [".design/rfcs/0012-interference-clauses.md"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc12-rely-guarantee.json", expected = ["accepted"], reviewed_summary_sha256 = "acf4a20ad7956e08c82e535a4ac2f26af18b00cf0b69ac3e45ab585a929adcbc" }
+remaining_scope = ""
+contributors = [".design/rfcs/0012-interference-clauses.md", ".design/syntax/interference-clauses.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0012-interference-clauses.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-spec/tests/interference_validate.rs"
+note = "preorder envelope classification, stability, identity, compatibility, and handler direction"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/effects.rs"
+note = "RFC-9 conflict-first production integration and exact shared-place coverage"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/interference_witness.rs"
+note = "source binding plus Lean graph, relation, edge, and direction mutations"
+[[requirement.evidence]]
+kind = "file"
+target = "lean/Thermite/Interference.lean"
+note = "kernel replay derives obligation completeness and priority direction from composition requirements"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-verified/tests/verus_verify.rs"
+note = "no-cheating count, bit-set, and boolean preorder/persistence proofs with biting mutants"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "production formal replay, certificate and audit disclosure, residual trust, and tamper rejection"
 
 [[requirement]]
 id = "REQ-SYNTAX-PROTOCOL-DECL"

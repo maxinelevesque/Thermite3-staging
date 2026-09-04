@@ -29,3 +29,19 @@ fn validated_relations_are_bound_into_l1_and_l3_but_not_silently_accepted_by_l2(
         LowerError::Unsupported { what, .. } if what.contains("RFC-12")
     ));
 }
+
+#[test]
+fn undischarged_rely_cannot_reach_a_release_artifact() {
+    let parsed = parse(
+        "shared counter: u64\n\
+         #[boundary(\"ext::covered\")] fn covered(s: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(s) >= s; promises final(s) >= s; };\n\
+         #[boundary(\"ext::uncovered\")] fn uncovered(s: &mut u64) -> u64 ! write(counter) requires true ensures true;\n\
+         concurrent pair { covered, uncovered }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+
+    let error = lower_l3_artifact(&parsed.program, "covered")
+        .expect_err("missing peer rely evidence must stop before an L3 release artifact exists");
+    assert!(matches!(error, LowerError::EffectAnalysis { .. }));
+}

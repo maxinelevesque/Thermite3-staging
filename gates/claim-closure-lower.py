@@ -1530,6 +1530,70 @@ CASES = {
     "rfc11-linearity-certificate": package_integration(
         "forge", "resource_types_conformance", "resource_program_receives_only_a_resource_aware_certificate"
     ),
+    "rfc12-syntax-positive": package_integration(
+        "thermite-syntax", "interference_clauses", "reserved_words_and_ordered_block_parse_to_typed_relations"
+    ),
+    "rfc12-syntax-negative": package_integration(
+        "thermite-syntax", "interference_clauses", "missing_and_misordered_relations_are_structured_errors"
+    ),
+    "rfc12-syntax-context": package_integration(
+        "thermite-syntax", "interference_clauses", "relation_words_have_no_production_outside_the_block"
+    ),
+    "rfc12-spec-preorder": package_integration(
+        "thermite-spec", "interference_validate", "monotone_preorder_peers_discharge_both_ordered_obligations"
+    ),
+    "rfc12-spec-rejections": package_integration(
+        "thermite-spec", "interference_validate", "incompatible_peers_and_missing_contracts_fail_closed"
+    ),
+    "rfc12-spec-exact-step-negative": package_integration(
+        "thermite-spec", "interference_validate", "exact_step_and_epoch_equality_are_not_preorder_envelopes"
+    ),
+    "rfc12-spec-closed-fragment": package_integration(
+        "thermite-spec", "interference_validate", "persistent_bit_bool_and_count_relations_are_closed_while_other_mutations_reject"
+    ),
+    "rfc12-stability-negative": package_integration(
+        "thermite-spec", "interference_fail_closed", "an_unstable_postcondition_fails_closed"
+    ),
+    "rfc12-effect-conflict": integration(
+        "effects", "production_analysis_allows_an_rfc12_covered_shared_conflict"
+    ),
+    "rfc12-effect-coverage-negative": integration(
+        "effects", "production_analysis_requires_relations_to_cover_the_conflicting_place"
+    ),
+    "rfc12-handler-direction": integration(
+        "effects", "production_analysis_preserves_handler_direction_for_conflicts"
+    ),
+    "rfc12-lean-graph": integration(
+        "interference_witness", "interference_witness_is_deterministic_and_source_bound"
+    ),
+    "rfc12-lean-mutations": integration(
+        "interference_witness", "lean_derives_graph_completeness_and_rejects_a_reversed_edge"
+    ),
+    "rfc12-lean-handler": integration(
+        "interference_witness", "lean_derives_handler_direction_from_priorities"
+    ),
+    "rfc12-lean-axioms": ["bash", "gates/lean-axiom-probe.sh"],
+    "rfc12-lowering-boundaries": integration(
+        "interference_fail_closed", "validated_relations_are_bound_into_l1_and_l3_but_not_silently_accepted_by_l2"
+    ),
+    "rfc12-release-negative": integration(
+        "interference_fail_closed", "undischarged_rely_cannot_reach_a_release_artifact"
+    ),
+    "rfc12-verus-core": package_integration(
+        "thermite-verified", "verus_verify", "verified_core_passes_verus_no_cheating"
+    ),
+    "rfc12-verus-count-negative": package_integration(
+        "thermite-verified", "verus_verify", "broken_rfc12_count_reset_fails_persistence"
+    ),
+    "rfc12-verus-bit-negative": package_integration(
+        "thermite-verified", "verus_verify", "broken_rfc12_bit_toggle_fails_preorder"
+    ),
+    "rfc12-verus-bool-negative": package_integration(
+        "thermite-verified", "verus_verify", "broken_rfc12_bool_relation_fails_preorder"
+    ),
+    "rfc12-certificate": package_bin_unit(
+        "forge", "forge", "check::tests::rfc12_certificate_and_audit_disclose_relations_edges_and_residual_trust"
+    ),
     "s1-1": integration("claim_closure_wave14", "stage1_certificate_vocabulary_is_closed_and_total"),
     "s1-11": integration("claim_closure_wave14", "stage1_normative_governance_deliverables_are_present"),
     "s1-2": integration("claim_closure_wave15", "s1_axiom_gate_is_shared_by_every_lean_discharge"),

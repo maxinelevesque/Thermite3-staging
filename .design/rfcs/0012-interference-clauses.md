@@ -2,6 +2,7 @@
 rfc: 12
 title: Interference clauses — rely-guarantee where a lock is too strong
 status: draft
+language-evolution: tracked
 supersedes: []
 introduces:
   - REQ-SYNTAX-INTERLEAVES-BLOCK
@@ -12,13 +13,13 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | Draft, **active for fork implementation**. The RFC-7 direction and RFC-12 v1 boundary were approved by the maintainer. |
-| **Fork implementation** | **Design approved; tracked by issue #76.** The checked build contract is [interference-clauses.md](../syntax/interference-clauses.md). RFC-11 resource types (issue #75) is shipped. |
+| **Status** | **Shipped on `main`.** |
+| **Fork implementation** | **Complete.** Syntax, relational validation, RFC-9 conflict composition, L1/L3 lowering, Verus evidence, Lean replay, certificates, audit disclosure, inventories, and the production release-negative are implemented. The checked contract is [interference-clauses.md](../syntax/interference-clauses.md); issue #76 is closed. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 8 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), RFC-9, RFC-10 |
 
-> **Activated 2026-09-04 for the fork build.** This RFC remains the proposal and
+> **Shipped 2026-09-04.** This RFC remains the proposal and
 > rationale. The implementation contract fixes v1 to monotone lock-free state
 > backed by persistent set/bool/count evidence, requires postcondition stability
 > under the rely, and defers protocol-round stability such as epochs to RFC-13.

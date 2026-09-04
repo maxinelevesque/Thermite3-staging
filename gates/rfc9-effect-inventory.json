@@ -58,11 +58,12 @@
     },
     {
       "atoms": [
-        "read(state.n)"
+        "read(state.n)",
+        "write(counter)"
       ],
       "classification": "RFC-10 shared-state invariant program fixtures",
       "path": "forge/src/check.rs",
-      "sites": 2
+      "sites": 5
     },
     {
       "atoms": [
@@ -235,14 +236,18 @@
       "atoms": [
         "net(d)",
         "read(missing)",
+        "read(other)",
         "read(state.child)",
         "read(x)",
+        "write(counter)",
+        "write(left_state)",
+        "write(right_state)",
         "write(state)",
         "write(y)"
       ],
       "classification": "migrated programs plus intentional undeclared-root rejection fixture",
       "path": "thermite-lower/tests/effects.rs",
-      "sites": 9
+      "sites": 19
     },
     {
       "atoms": [
@@ -251,6 +256,22 @@
       "classification": "RFC-10 equivalence-obligation fixtures",
       "path": "thermite-lower/tests/equivalence_obligation.rs",
       "sites": 2
+    },
+    {
+      "atoms": [
+        "write(counter)"
+      ],
+      "classification": "RFC-12 release-boundary fixtures with RFC-9 region effect atoms",
+      "path": "thermite-lower/tests/interference_fail_closed.rs",
+      "sites": 3
+    },
+    {
+      "atoms": [
+        "write(counter)"
+      ],
+      "classification": "RFC-12 relational-witness fixtures with RFC-9 region effect atoms",
+      "path": "thermite-lower/tests/interference_witness.rs",
+      "sites": 4
     },
     {
       "atoms": [
@@ -306,6 +327,24 @@
       "classification": "generated language documentation expectations",
       "path": "thermite-skill/tests/skill.rs",
       "sites": 3
+    },
+    {
+      "atoms": [
+        "write(counter)"
+      ],
+      "classification": "RFC-12 fail-closed fixtures with RFC-9 region effect atoms",
+      "path": "thermite-spec/tests/interference_fail_closed.rs",
+      "sites": 1
+    },
+    {
+      "atoms": [
+        "write(bits)",
+        "write(counter)",
+        "write(flag)"
+      ],
+      "classification": "RFC-12 relation-validation fixtures with RFC-9 region effect atoms",
+      "path": "thermite-spec/tests/interference_validate.rs",
+      "sites": 7
     },
     {
       "atoms": [
@@ -374,8 +413,8 @@
   "summary": {
     "json_missing_shared": 0,
     "json_program_fields_with_state_effects": 5,
-    "rust_files_reviewed": 33,
-    "rust_reviewed_sites": 187,
+    "rust_files_reviewed": 37,
+    "rust_reviewed_sites": 215,
     "th_missing_shared": 0,
     "th_programs_with_state_effects": 5,
     "tracked_th_files": 69

@@ -2,6 +2,7 @@
 
 <!--
 status: approved
+audited-content-sha256: a2427a86b19ac2cb1ba74c6aea1501492f24c8dea2b5c8a9a3eff3d6b0471571
 -->
 
 ## Summary
@@ -105,42 +106,42 @@ are present, the next unsupported boundary fails closed.
 
 ## Acceptance Criteria
 
-- [ ] AC-1: (REQ-1, REQ-2, REQ-3) Parser, round-trip, address, and semantic traversal
+- [x] AC-1: (REQ-1, REQ-2, REQ-3) Parser, round-trip, address, and semantic traversal
   tests accept the exact ordered block and reject missing, repeated, misplaced,
   or swapped clauses with stable diagnostics; the old corpus is unchanged.
-- [ ] AC-2: (REQ-4, REQ-5) Relational validation accepts persistent set/bool/count
+- [x] AC-2: (REQ-4, REQ-5) Relational validation accepts persistent set/bool/count
   examples and rejects invalid `final` places, reset/subtractive transitions,
   arbitrary lock-free mutation, and epoch-like per-round stability as named
   unsupported language.
-- [ ] AC-3: (REQ-6, REQ-7) Independent positive and negative fixtures establish
+- [x] AC-3: (REQ-6, REQ-7) Independent positive and negative fixtures establish
   reflexivity, transitivity, and `ensures` stability; mutants removing any one
   obligation are caught.
-- [ ] AC-4: (REQ-8, REQ-10, REQ-11) Concurrent compositions generate every
+- [x] AC-4: (REQ-8, REQ-10, REQ-11) Concurrent compositions generate every
   ordered pair exactly once, accept compatible monotone peers, and reject a
   missing, incompatible, duplicated, or identity-mismatched participant without
   bypassing RFC-9's existing checks.
-- [ ] AC-5: (REQ-9) Handler priorities survive parsing and canonicalization;
+- [x] AC-5: (REQ-9) Handler priorities survive parsing and canonicalization;
   tests cover normal-to-handler and nested-handler edges and prove that the
   impossible reverse edge is not generated.
-- [ ] AC-6: (REQ-12) Every incremental slice contains a downstream refusal test,
+- [x] AC-6: (REQ-12) Every incremental slice contains a downstream refusal test,
   and no syntax-only or partially checked RFC-12 program receives an older
   certificate.
-- [ ] AC-7: (REQ-13, REQ-14) L1 behavior remains equivalent for accepted
+- [x] AC-7: (REQ-13, REQ-14) L1 behavior remains equivalent for accepted
   programs, while L3 obligations are deterministic, source-bound, complete,
   and reject clause, participant, edge, or shared-place tampering.
-- [ ] AC-8: (REQ-15) Verus evidence covers persistent set, bool, and count
+- [x] AC-8: (REQ-15) Verus evidence covers persistent set, bool, and count
   monotonicity; Lean replay accepts the canonical obligation graph and rejects
   preorder, stability, pairwise, and directionality mutations within the
   repository's allowed axiom set.
-- [ ] AC-9: (REQ-16) Generated certificates and human audit output expose every
+- [x] AC-9: (REQ-16) Generated certificates and human audit output expose every
   conditional rely and its discharge state, with residual trust named and no
   authority derived from prose.
-- [ ] AC-10: (REQ-17) Structural and semantic mutation suites catch all listed
+- [x] AC-10: (REQ-17) Structural and semantic mutation suites catch all listed
   mutants, and reports explicitly distinguish unimplemented effect-trace body
   scoring from a passing score.
-- [ ] AC-11: (REQ-18) Registry, inventory, completeness, conformance, routes,
+- [x] AC-11: (REQ-18) Registry, inventory, completeness, conformance, routes,
   status, doc-drift, formatting, lint, workspace, and frozen-corpus gates pass.
-- [ ] AC-12: (REQ-12, REQ-18) A production release-negative fixture proves that
+- [x] AC-12: (REQ-12, REQ-18) A production release-negative fixture proves that
   an RFC-12 program cannot silently fall back to a pre-RFC-12 fragment or reach
   full assurance with an undischarged rely.
 

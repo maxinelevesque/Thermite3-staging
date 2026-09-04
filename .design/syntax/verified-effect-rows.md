@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: be9374aeba9a0fbbf541be555e6dc30de8edfef2c0629ab66067016114fcc702 (re-pinned 2026-09-01 after extending the shared effect-subsumption proof domain through the existing Owns and Forgets atoms; region-sensitive RFC-9 checking remains unchanged. prior: 8fc513a11f264b952c6a8818260558e4ee792d3e125a760476eb0a002ab3b602)
+audited-content-sha256: 5a460bb24bc0825ba5bee3c0cac7f377b3af957124fa36f9202483a1e563d397 (re-pinned 2026-09-01 after extending the shared effect-subsumption proof domain through the existing Owns and Forgets atoms; region-sensitive RFC-9 checking remains unchanged. prior: 8fc513a11f264b952c6a8818260558e4ee792d3e125a760476eb0a002ab3b602)
 -->
 
 ## Summary
