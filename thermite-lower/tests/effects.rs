@@ -58,6 +58,7 @@ fn fn_calling(name: &str, effects: EffectRow, calls: &[&str]) -> Item {
             requires: true_clause(),
             ensures: vec![true_clause()],
             effects,
+            interference: None,
         },
         measures: None,
         body: (!is_effectful_leaf).then_some(Block { stmts, tail: None }),
@@ -678,6 +679,7 @@ fn deeply_nested_body_returns_result_not_panic() {
             requires: true_clause(),
             ensures: vec![true_clause()],
             effects: pure(),
+            interference: None,
         },
         measures: None,
         body: Some(Block {

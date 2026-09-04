@@ -776,6 +776,7 @@ mod tests {
                 },
                 ensures: Vec::new(),
                 effects: thermite_syntax::EffectRow::Pure,
+                interference: None,
             },
             measures: None,
             body: Some(thermite_syntax::Block {

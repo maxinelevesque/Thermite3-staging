@@ -406,6 +406,10 @@ pub enum SpecError {
     /// fail-closed gate: a parsed resource declaration never validates as an
     /// ordinary droppable ADT.
     UnsupportedResourceTypes { span: Span },
+    /// RFC-12 syntax reached the specification boundary before relational
+    /// validation and composition are implemented. The syntax slice therefore
+    /// fails closed instead of treating `asks` as a free assumption.
+    UnsupportedInterferenceClauses { function: String, span: Span },
     /// An unmarked ADT owns a resource-bearing field or variant payload.
     MissingResourceMarker {
         declaration: String,
@@ -557,6 +561,7 @@ impl SpecError {
             | SpecError::ExpressionTooDeep { span, .. }
             | SpecError::UnsupportedAdt { span, .. }
             | SpecError::UnsupportedResourceTypes { span }
+            | SpecError::UnsupportedInterferenceClauses { span, .. }
             | SpecError::MissingResourceMarker { span, .. }
             | SpecError::EmptyResourceMarker { span, .. }
             | SpecError::ResourceProvenanceMismatch { span, .. }
@@ -668,6 +673,10 @@ impl fmt::Display for SpecError {
             SpecError::UnsupportedResourceTypes { .. } => write!(
                 f,
                 "RFC-11 executable resource flow is not yet checkable by the ownership validator"
+            ),
+            SpecError::UnsupportedInterferenceClauses { function, .. } => write!(
+                f,
+                "RFC-12 interference clauses on `{function}` are parsed but relational validation is not implemented; refusing unchecked rely-guarantee assumptions"
             ),
             SpecError::MissingResourceMarker {
                 declaration,
@@ -1107,6 +1116,12 @@ impl Validator {
             }
             match item {
                 Item::Fn(f) => {
+                    if let Some(interference) = &f.contract.interference {
+                        self.errors.push(SpecError::UnsupportedInterferenceClauses {
+                            function: f.name.clone(),
+                            span: interference.span,
+                        });
+                    }
                     self.contract_bound = f.params.iter().map(|param| param.name.clone()).collect();
                     self.contract_position = Some("requires");
                     self.walk_clause(&f.contract.requires);

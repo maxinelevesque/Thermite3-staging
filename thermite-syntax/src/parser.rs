@@ -130,6 +130,19 @@ pub enum SyntaxError {
         clause: String,
         span: Span,
     },
+    /// An RFC-12 interference block is present but lacks one of its two
+    /// structurally mandatory relation clauses.
+    MissingInterferenceClause {
+        item: String,
+        clause: String,
+        span: Span,
+    },
+    /// `asks` and `promises` have a fixed order inside `interleaves`.
+    InterferenceClauseOrder {
+        item: String,
+        clause: String,
+        span: Span,
+    },
     /// A proof-clause ordinal cannot be represented by the stable u32 address schema.
     ClauseOrdinalOverflow { value: u128, span: Span },
     /// Unexpected end of input while a production was still open.
@@ -233,6 +246,8 @@ impl SyntaxError {
             | SyntaxError::Unexpected { span, .. }
             | SyntaxError::MissingClause { span, .. }
             | SyntaxError::ClauseOrder { span, .. }
+            | SyntaxError::MissingInterferenceClause { span, .. }
+            | SyntaxError::InterferenceClauseOrder { span, .. }
             | SyntaxError::ClauseOrdinalOverflow { span, .. }
             | SyntaxError::UnexpectedEof { span, .. }
             | SyntaxError::ExpressionTooDeep { span, .. }
@@ -277,6 +292,16 @@ impl std::fmt::Display for SyntaxError {
             SyntaxError::ClauseOrder { item, clause, span } => write!(
                 f,
                 "clause `{clause}` is out of order in `{item}` (byte {})",
+                span.start
+            ),
+            SyntaxError::MissingInterferenceClause { item, clause, span } => write!(
+                f,
+                "function `{item}` has an `interleaves` block missing mandatory `{clause}` (byte {})",
+                span.start
+            ),
+            SyntaxError::InterferenceClauseOrder { item, clause, span } => write!(
+                f,
+                "interference clause `{clause}` is out of order in `{item}` (byte {})",
                 span.start
             ),
             SyntaxError::ClauseOrdinalOverflow { value, span } => write!(
@@ -931,7 +956,12 @@ impl<'a> Parser<'a> {
         }
         self.consume(&TokKind::RBrace, "`}`")?;
         let span = start_span.to(self.prev_span());
-        Ok(Item::Concurrent(ConcurrentItem { name, roots, span }))
+        Ok(Item::Concurrent(ConcurrentItem {
+            name,
+            roots,
+            handler_priorities: None,
+            span,
+        }))
     }
 
     fn parse_lock_decl(&mut self, start_span: Span) -> PResult<Item> {
@@ -959,11 +989,13 @@ impl<'a> Parser<'a> {
         self.expect_contextual("handlers")?;
         self.consume(&TokKind::LBrace, "`{`")?;
         let mut roots = Vec::new();
+        let mut priorities = Vec::new();
         while !self.check(&TokKind::RBrace) {
             roots.push(self.take_ident("a handler function name")?);
             self.expect_contextual("at")?;
             match self.peek() {
-                TokKind::Int { .. } => {
+                TokKind::Int { value, .. } if *value <= u64::MAX as u128 => {
+                    priorities.push(*value as u64);
                     self.bump();
                 }
                 _ => return Err(self.unexpected("an integer handler priority")),
@@ -976,6 +1008,7 @@ impl<'a> Parser<'a> {
         Ok(Item::Concurrent(ConcurrentItem {
             name: "__handlers".to_string(),
             roots,
+            handler_priorities: Some(priorities),
             span: start_span.to(self.prev_span()),
         }))
     }
@@ -1731,10 +1764,65 @@ impl<'a> Parser<'a> {
             });
         }
 
+        let interference = if self.check(&TokKind::Interleaves) {
+            Some(self.parse_interference_contract(fn_name)?)
+        } else {
+            None
+        };
+
         Ok(Contract {
             requires: req,
             ensures: ens,
             effects: fx,
+            interference,
+        })
+    }
+
+    fn parse_interference_contract(&mut self, fn_name: &str) -> PResult<InterferenceContract> {
+        let start = self.peek_span();
+        self.consume(&TokKind::Interleaves, "`interleaves`")?;
+        self.consume(&TokKind::LBrace, "`{`")?;
+
+        if !self.check(&TokKind::Asks) {
+            if self.check(&TokKind::Promises) {
+                return Err(SyntaxError::InterferenceClauseOrder {
+                    item: fn_name.to_string(),
+                    clause: "asks".to_string(),
+                    span: self.peek_span(),
+                });
+            }
+            return Err(SyntaxError::MissingInterferenceClause {
+                item: fn_name.to_string(),
+                clause: "asks".to_string(),
+                span: self.peek_span(),
+            });
+        }
+        let asks = self.parse_clause(&TokKind::Asks)?;
+        self.eat(&TokKind::Semi);
+
+        if !self.check(&TokKind::Promises) {
+            return Err(SyntaxError::MissingInterferenceClause {
+                item: fn_name.to_string(),
+                clause: "promises".to_string(),
+                span: self.peek_span(),
+            });
+        }
+        let promises = self.parse_clause(&TokKind::Promises)?;
+        self.eat(&TokKind::Semi);
+
+        if self.check(&TokKind::Asks) || self.check(&TokKind::Promises) {
+            return Err(SyntaxError::InterferenceClauseOrder {
+                item: fn_name.to_string(),
+                clause: describe(self.peek()).to_string(),
+                span: self.peek_span(),
+            });
+        }
+        let end = self.peek_span();
+        self.consume(&TokKind::RBrace, "`}`")?;
+        Ok(InterferenceContract {
+            asks,
+            promises,
+            span: start.to(end),
         })
     }
 
@@ -3701,6 +3789,9 @@ fn token_text(kind: &TokKind) -> &'static str {
         TokKind::Spec => "spec",
         TokKind::Requires => "req",
         TokKind::Ensures => "ens",
+        TokKind::Interleaves => "interleaves",
+        TokKind::Asks => "asks",
+        TokKind::Promises => "promises",
         TokKind::Effects => "!",
         TokKind::Keeps => "keeps",
         TokKind::Measures => "measures",

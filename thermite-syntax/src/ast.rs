@@ -273,6 +273,10 @@ pub struct SharedDeclItem {
 pub struct ConcurrentItem {
     pub name: Ident,
     pub roots: Vec<Ident>,
+    /// `None` for an ordinary symmetric `concurrent` composition. For the
+    /// reserved `__handlers` composition, one priority per root in source
+    /// order; normal context is priority zero.
+    pub handler_priorities: Option<Vec<u64>>,
     pub span: Span,
 }
 
@@ -693,6 +697,16 @@ pub struct Contract {
     pub requires: Clause,
     pub ensures: Vec<Clause>,
     pub effects: EffectRow,
+    pub interference: Option<InterferenceContract>,
+}
+
+/// The optional RFC-12 environment relation attached to an executable
+/// function. Both fields are structurally mandatory whenever the block exists.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterferenceContract {
+    pub asks: Clause,
+    pub promises: Clause,
+    pub span: Span,
 }
 
 /// The fixed bit-width of a `@bv` machine-semantics clause tag

@@ -54,6 +54,7 @@ fn fn_with_body(name: &str, effects: EffectRow, body: Block) -> Item {
             requires: true_clause(),
             ensures: vec![true_clause()],
             effects,
+            interference: None,
         },
         measures: None,
         body: Some(body),
