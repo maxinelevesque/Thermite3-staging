@@ -13,14 +13,15 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | **Shipped on `main`.** |
-| **Fork implementation** | **Complete.** Syntax, relational validation, RFC-9 conflict composition, L1/L3 lowering, Verus evidence, Lean replay, certificates, audit disclosure, inventories, and the production release-negative are implemented. The checked contract is [interference-clauses.md](../syntax/interference-clauses.md); issue #76 is closed. |
+| **Status** | **Implementation complete on `codex/rfc12-interference-clauses`; pending review, merge to `main`, and issue #76 closure.** |
+| **Fork implementation** | **Complete on the feature branch.** Syntax, relational validation, RFC-9 conflict composition, L1/L3 lowering, Verus evidence, Lean replay, certificates, audit disclosure, inventories, and the production release-negative are implemented. The checked contract is [interference-clauses.md](../syntax/interference-clauses.md); landing status is deliberately not inferred from this proposal. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 8 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), RFC-9, RFC-10 |
 
-> **Shipped 2026-09-04.** This RFC remains the proposal and
-> rationale. The implementation contract fixes v1 to monotone lock-free state
+> **Implementation candidate completed 2026-09-04.** This RFC remains the
+> proposal and rationale; Git and the issue tracker remain authoritative for
+> landing status. The implementation contract fixes v1 to monotone lock-free state
 > backed by persistent set/bool/count evidence, requires postcondition stability
 > under the rely, and defers protocol-round stability such as epochs to RFC-13.
 
