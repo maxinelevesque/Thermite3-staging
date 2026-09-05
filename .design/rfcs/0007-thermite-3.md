@@ -508,7 +508,7 @@ churn.
 5. verified effect rows       SHIPPED — RFC-9
 6. shared-state invariants    SHIPPED — RFC-10, issue #49
 7. resource types             SHIPPED — RFC-11, issue #75
-8. interference clauses       ACTIVE — RFC-12, issue #76
+8. interference clauses       SHIPPED — RFC-12, issue #76, PR #144
 9. protocol types             TRACKED — RFC-13, issue #77
 ```
 
