@@ -13,7 +13,7 @@ introduces:
 | | |
 |---|---|
 | **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
-| **Fork implementation** | **Not started; tracked by issue #77.** RFC-11 resource types (issue #75) is shipped; this follows active RFC-12 (issue #76) and owns protocol-round state such as per-round constant epochs. |
+| **Fork implementation** | **Not started; tracked by issue #77.** RFC-11 resource types and RFC-12 interference clauses are shipped; this is the next tracked core capability and owns protocol-round state such as per-round constant epochs. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 9 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), RFC-11 |
