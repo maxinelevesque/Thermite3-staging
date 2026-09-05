@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 5a460bb24bc0825ba5bee3c0cac7f377b3af957124fa36f9202483a1e563d397 (re-pinned 2026-09-01 after extending the shared effect-subsumption proof domain through the existing Owns and Forgets atoms; region-sensitive RFC-9 checking remains unchanged. prior: 8fc513a11f264b952c6a8818260558e4ee792d3e125a760476eb0a002ab3b602)
+audited-content-sha256: 4eb3853075eef90d96e7c1d5b0f72af5ba84d274e7da0fd8894a9a744181ffe1 (re-pinned 2026-09-05 after refreshing the RFC-9 inventory for RFC-12 interference fixture coverage; region-sensitive RFC-9 checking remains unchanged. prior: 5a460bb24bc0825ba5bee3c0cac7f377b3af957124fa36f9202483a1e563d397)
 -->
 
 ## Summary
