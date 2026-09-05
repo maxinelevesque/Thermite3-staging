@@ -19327,9 +19327,10 @@ note = "production formal replay, certificate and audit disclosure, residual tru
 id = "REQ-SYNTAX-PROTOCOL-DECL"
 title = "`protocol P { Role { … }, end }`"
 owner = ".design/rfcs"
-status = "partial"
+status = "shipped"
 scope = "syntax"
 summary = "A sequence of turns, each labelled with whose turn it is. Roles are names rather than keywords, so a protocol names its own and an endpoint is a path to a role."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc13-protocol-syntax.json", expected = ["accepted"], reviewed_summary_sha256 = "144d28c28f97b8a5fccf3895bf218894e8efcfdcaa934772f5cacc89a264218e" }
 remaining_scope = "Multiparty roles, general labelled choice, and path-sensitive branch witnesses are deferred beyond binary v1. Issue #77 remains open until landing."
 contributors = [".design/rfcs/0013-protocol-types.md"]
 generated_to = ["status"]
@@ -19347,9 +19348,10 @@ note = "protocol declaration and endpoint-type grammar"
 id = "REQ-SPEC-PROTOCOL-ENDPOINT"
 title = "An endpoint is a resource, and `end` consumes it"
 owner = ".design/rfcs"
-status = "partial"
+status = "shipped"
 scope = "spec"
 summary = "Termination is load-bearing: running the protocol to completion is what consumes the endpoint, so an endpoint that can be dropped abandons its peer mid-session."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc13-protocol-endpoints.json", expected = ["accepted"], reviewed_summary_sha256 = "fb69f966f3d651eeaea31d3fc1cf9b74990ff419b6feb440ed9de85017cd9b75" }
 remaining_scope = "Transport, peer identity, wakeup, failure/cancellation, multiparty progress, and path-sensitive branch witnesses remain explicit residual/deferred scope. Issue #77 remains open until landing."
 contributors = [".design/rfcs/0013-protocol-types.md"]
 generated_to = ["status"]

@@ -1600,6 +1600,48 @@ CASES = {
     "rfc12-certificate": package_bin_unit(
         "forge", "forge", "check::tests::rfc12_certificate_and_audit_disclose_relations_edges_and_residual_trust"
     ),
+    "rfc13-syntax-declaration": package_integration(
+        "thermite-syntax", "protocol_types_parse", "protocol_declaration_preserves_turns_payloads_and_end"
+    ),
+    "rfc13-syntax-repeat": package_integration(
+        "thermite-syntax", "protocol_types_parse", "protocol_repeat_tail_is_explicit"
+    ),
+    "rfc13-syntax-recovery": package_integration(
+        "thermite-syntax", "protocol_types_parse", "malformed_protocols_recover_to_the_next_item"
+    ),
+    "rfc13-spec-accepted": package_integration(
+        "thermite-spec", "protocol_conformance", "accepted_protocol_cases_complete"
+    ),
+    "rfc13-spec-rejected": package_integration(
+        "thermite-spec", "protocol_conformance", "rejected_protocol_cases_have_the_expected_structured_kind"
+    ),
+    "rfc13-spec-control-flow": package_integration(
+        "thermite-spec", "protocol_flow", "rejects_protocol_actions_in_unmodeled_control_flow"
+    ),
+    "rfc13-spec-payload": package_integration(
+        "thermite-spec", "protocol_flow", "receive_payload_requires_and_checks_an_explicit_projected_type"
+    ),
+    "rfc13-spec-repeat": package_integration(
+        "thermite-spec", "protocol_flow", "repeat_tail_distinguishes_chooser_from_peer"
+    ),
+    "rfc13-lower-carriers": integration(
+        "protocol_types", "l3_protocol_carriers_expose_the_platform_boundary"
+    ),
+    "rfc13-lower-witness": integration(
+        "protocol_types", "protocol_witness_replay_rejects_tampering"
+    ),
+    "rfc13-lean-replay": integration(
+        "protocol_types", "lean_replays_duality_and_completion_without_sorry"
+    ),
+    "rfc13-lean-negative": integration(
+        "protocol_types", "lean_rejects_non_dual_projections_even_when_columns_match"
+    ),
+    "rfc13-certificate": package_bin_unit(
+        "forge", "forge", "check::tests::rfc13_protocol_replay_gates_certificate_minting"
+    ),
+    "rfc13-production": package_integration(
+        "forge", "protocol_types_conformance", "protocol_program_certifies_only_after_formal_replay"
+    ),
     "s1-1": integration("claim_closure_wave14", "stage1_certificate_vocabulary_is_closed_and_total"),
     "s1-11": integration("claim_closure_wave14", "stage1_normative_governance_deliverables_are_present"),
     "s1-2": integration("claim_closure_wave15", "s1_axiom_gate_is_shared_by_every_lean_discharge"),

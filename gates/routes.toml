@@ -1755,3 +1755,24 @@ crate_pattern = "lean/Thermite/Interference.lean"
 design = ".design/syntax/interference-clauses.md"
 reference = ["thermite-lower/tests/interference_witness.rs"]
 conformance_ops = ["relation compatibility", "composition completeness", "priority direction"]
+
+# ---------------------------------------------------------------------
+# Binary protocol types and checked endpoint completion (RFC-13)
+# ---------------------------------------------------------------------
+[[route]]
+crate_pattern = "thermite-spec/src/protocol.rs"
+design = ".design/rfcs/0013-protocol-types.md"
+reference = ["thermite-spec/tests/protocol_conformance.rs", "thermite-spec/tests/protocol_flow.rs"]
+conformance_ops = ["binary projection", "payload typing", "endpoint completion", "repeat exit"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/protocol_witness.rs"
+design = ".design/rfcs/0013-protocol-types.md"
+reference = ["thermite-lower/tests/protocol_types.rs", "lean/Thermite/Protocol.lean"]
+conformance_ops = ["canonical projection", "endpoint-flow witness", "digest replay", "hostile mutation"]
+
+[[route]]
+crate_pattern = "lean/Thermite/Protocol.lean"
+design = ".design/rfcs/0013-protocol-types.md"
+reference = ["thermite-lower/tests/protocol_types.rs", "forge/tests/protocol_types_conformance.rs"]
+conformance_ops = ["projection complementarity", "transition order", "repeat rounds", "completion"]

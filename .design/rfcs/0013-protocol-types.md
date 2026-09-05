@@ -52,7 +52,12 @@ session calculus features explicit:
 The checked Rust report is content-bound into a versioned witness. Lean
 independently reconstructs binary projections and checks complementarity,
 transition order, repeat rounds, and endpoint completion before Forge may issue
-any certificate for a protocol-bearing file.
+any certificate for a protocol-bearing file. Each resulting certificate and
+audit row carries the checked protocol definitions and endpoint flows, the
+content-bound replay digests, the kernel-accepted verdict, and the residual
+trust list as typed public evidence. Audit construction requires the matching
+live replay authority, so editing the displayed evidence cannot manufacture an
+accepted audit row.
 
 The theorem stops at the channel boundary. Generated L1/L3 endpoint carriers
 reserve the protocol operations, while the platform supplies transport,
