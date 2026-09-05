@@ -2,7 +2,7 @@
 
 <!--
 status: approved
-audited-content-sha256: a2427a86b19ac2cb1ba74c6aea1501492f24c8dea2b5c8a9a3eff3d6b0471571
+audited-content-sha256: fcd59726a5a6e53b649765ea2e896ded4dda367b9aed6c1e917832e1c4626ef8 (re-pinned 2026-09-04 after correcting RFC-12 clause-local validation, overlap coverage, and the Rust/Lean trust boundary. prior: a2427a86b19ac2cb1ba74c6aea1501492f24c8dea2b5c8a9a3eff3d6b0471571)
 -->
 
 ## Summary
@@ -46,10 +46,10 @@ are present, the next unsupported boundary fails closed.
   outside the fragment and shall produce an unsupported-language result rather
   than a proof failure or silent weakening.
 - REQ-6: Both relations shall denote preorders on the admitted state: reflexive
-  and transitive. The checker shall discharge these as explicit obligations and
-  reject a relation whose no-op or multi-step closure is not established.
-  Relations are interference envelopes: an exact single-call update belongs in
-  `ensures`, not `promises`.
+  and transitive. The Rust checker shall admit only a closed family whose generic
+  reflexivity and transitivity laws are proved in Verus, and reject a relation
+  outside that family. Relations are interference envelopes: an exact
+  single-call update belongs in `ensures`, not `promises`.
 - REQ-7: Every ordinary postcondition shall be stable under `asks`: for
   postcondition `Q` and rely `R`, `Q(s) && R(s,s')` must imply `Q(s')`. Stability
   shall be checked independently of body correctness and peer compatibility.
@@ -79,19 +79,22 @@ are present, the next unsupported boundary fails closed.
 - REQ-13: L1 lowering shall preserve executable behavior while materializing
   runtime-checkable boundary portions only; it shall not pretend to observe all
   environment steps. An unsupported relational construct shall fail closed.
-- REQ-14: L3 lowering shall emit deterministic obligations for relation shape,
-  preorder, postcondition stability, pairwise compatibility, and handler
+- REQ-14: L3 lowering shall emit a deterministic graph of admitted relation
+  shapes, composition requirements, pairwise compatibility, and handler
   directionality, bound to canonical program, function, clause, composition,
-  and shared-place identities.
+  and shared-place identities. Preorder-family membership and postcondition
+  stability are fail-closed Rust pre-witness gates rather than serialized Lean
+  obligations, and that boundary shall be named as residual trust.
 - REQ-15: The Verus path shall map accepted v1 state to persistent set, bool, or
   count mechanisms and prove the relevant monotonicity/weakening facts. The
   independent Lean replay shall check the transcribed relational graph and
   obligation outcomes without claiming to reconstruct Verus semantics.
-- REQ-16: Certificates and audit reports shall enumerate each interference
-  clause, composition edge, discharged obligation, unsupported fragment, and
-  residual trust in parsing, state classification, solver encoding, backend
-  correspondence, persistent-token implementation, and platform preemption.
-  An undischarged `asks` shall never receive the full boundary coordinate.
+- REQ-16: Certificates and audit reports shall enumerate each admitted
+  interference relation, composition edge, discharged pairwise obligation,
+  unsupported fragment, and residual trust in parsing, state classification,
+  Rust-side preorder/stability acceptance, solver encoding, backend
+  correspondence, persistent-token implementation, and platform preemption. An
+  undischarged pairwise `asks` shall never receive the full boundary coordinate.
 - REQ-17: Mutation and negative evidence shall target structure and semantics:
   deleted or swapped clauses, weakened/strengthened relations, reversed handler
   edges, omitted peers, broken stability, reset/non-monotone transitions, and
@@ -131,8 +134,9 @@ are present, the next unsupported boundary fails closed.
   and reject clause, participant, edge, or shared-place tampering.
 - [x] AC-8: (REQ-15) Verus evidence covers persistent set, bool, and count
   monotonicity; Lean replay accepts the canonical obligation graph and rejects
-  preorder, stability, pairwise, and directionality mutations within the
-  repository's allowed axiom set.
+  relation-graph, pairwise, and directionality mutations within the repository's
+  allowed axiom set. Focused Rust negatives reject unsupported preorder shapes
+  and unstable postconditions before a witness can exist.
 - [x] AC-9: (REQ-16) Generated certificates and human audit output expose every
   conditional rely and its discharge state, with residual trust named and no
   authority derived from prose.
@@ -160,13 +164,15 @@ RFC-12 implication generation.
 
 ### Relational checker
 
-A specification pre-pass in `thermite-spec/src/validator.rs` resolves every relation to canonical shared-place
-identities and classifies its transition into the closed v1 persistent fragment.
-It emits separate preorder and postcondition-stability obligations. Composition
-then joins these checked function contracts with RFC-9 concurrency metadata:
-ordinary concurrent groups generate both directions; handler groups generate
-only feasible priority edges. Missing evidence is an error, never an empty
-relation or a full-assurance conditional proof.
+A clause-local specification pre-pass in `thermite-spec/src/validator.rs`
+resolves every relation to canonical shared-place identities, classifies its
+transition into the closed v1 persistent fragment, and rejects unstable
+postconditions. It deliberately does not invent pairwise requirements without
+RFC-9's inferred transitive footprints. The conflict-aware lowering seam joins
+those checked function contracts with RFC-9 concurrency metadata: ordinary
+concurrent groups generate both directions; handler groups generate only
+feasible priority edges. Missing evidence is an error, never an empty relation
+or a full-assurance conditional proof.
 
 ### Lowering and evidence
 

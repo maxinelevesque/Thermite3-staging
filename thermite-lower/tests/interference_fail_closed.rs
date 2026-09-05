@@ -45,3 +45,26 @@ fn undischarged_rely_cannot_reach_a_release_artifact() {
         .expect_err("missing peer rely evidence must stop before an L3 release artifact exists");
     assert!(matches!(error, LowerError::EffectAnalysis { .. }));
 }
+
+#[test]
+fn empty_relations_cannot_discharge_a_real_shared_place_conflict() {
+    let parsed = parse(
+        "shared counter: u64\n\
+         #[boundary(\"ext::left\")] fn left(s: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks true; promises true; };\n\
+         #[boundary(\"ext::right\")] fn right(s: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks true; promises true; };\n\
+         concurrent pair { left, right }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+
+    thermite_spec::validate(&parsed.program)
+        .expect("clause-local validation does not fabricate RFC-9 conflict context");
+    let errors = check_program(&parsed.program)
+        .expect_err("empty relations cannot cover the inferred shared-place conflict");
+    assert!(errors.iter().any(|error| matches!(
+        error,
+        LowerError::EffectAnalysis { detail, .. }
+            if detail.contains("do not both cover conflicting shared place `counter`")
+    )));
+}

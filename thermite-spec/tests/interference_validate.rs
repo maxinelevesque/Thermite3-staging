@@ -1,5 +1,8 @@
-use thermite_spec::{check_interference, validate, InterferenceErrorKind};
-use thermite_syntax::parse;
+use thermite_spec::{
+    check_interference, check_interference_for_conflicts, validate, InterferenceError,
+    InterferenceErrorKind, InterferenceReport, InterferenceRequirement, RegionIndex,
+};
+use thermite_syntax::{parse, Item, Program, RegionPath};
 
 fn count_fn(name: &str, asks: &str, promises: &str) -> String {
     format!(
@@ -7,6 +10,27 @@ fn count_fn(name: &str, asks: &str, promises: &str) -> String {
          ! write(counter) requires true ensures final(s) >= 0 \
          interleaves {{ asks {asks}; promises {promises}; }} {{ 0 }}"
     )
+}
+
+fn check_declared_pairs(program: &Program) -> Result<InterferenceReport, Vec<InterferenceError>> {
+    let regions = RegionIndex::build(program).expect("test shared-state metadata resolves");
+    let mut requirements = Vec::new();
+    for item in &program.items {
+        let Item::Concurrent(composition) = item else {
+            continue;
+        };
+        for left in 0..composition.roots.len() {
+            for right in left + 1..composition.roots.len() {
+                requirements.push(InterferenceRequirement {
+                    composition: composition.name.clone(),
+                    left_root: composition.roots[left].clone(),
+                    right_root: composition.roots[right].clone(),
+                    overlap: Some(RegionPath::from("counter")),
+                });
+            }
+        }
+    }
+    check_interference_for_conflicts(program, &requirements, &regions)
 }
 
 #[test]
@@ -19,7 +43,7 @@ fn monotone_preorder_peers_discharge_both_ordered_obligations() {
     let parsed = parse(&source);
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
     validate(&parsed.program).expect("compatible monotone peers validate");
-    let report = check_interference(&parsed.program).expect("checked report");
+    let report = check_declared_pairs(&parsed.program).expect("checked report");
     assert_eq!(report.functions.len(), 2);
     assert_eq!(report.obligations.len(), 2);
     assert_eq!(report.obligations[0].guarantor, "left");
@@ -39,7 +63,7 @@ fn participant_local_parameter_names_resolve_to_the_same_shared_identity() {
            interleaves { asks final(b) >= b; promises final(b) >= b; } { 0 }",
     );
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
-    let report = check_interference(&parsed.program).expect("aliases resolve to shared identity");
+    let report = check_declared_pairs(&parsed.program).expect("aliases resolve to shared identity");
     assert_eq!(report.obligations.len(), 2);
     for contract in report.functions.values() {
         assert!(contract
@@ -92,7 +116,24 @@ fn persistent_bit_bool_and_count_relations_are_closed_while_other_mutations_reje
          interleaves { asks final(owned) >= owned; promises final(owned) >= owned; } { 0 }",
     );
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
-    assert!(check_interference(&parsed.program).is_err());
+    let errors = check_interference(&parsed.program).expect_err("owned state must not resolve");
+    assert!(errors
+        .iter()
+        .any(|error| error.kind == InterferenceErrorKind::UnresolvedStateIdentity));
+}
+
+#[test]
+fn clause_local_validator_does_not_invent_conflicts_for_disjoint_composition() {
+    let parsed = parse(
+        "shared left_state: u64\n\
+         shared right_state: u64\n\
+         #[boundary(\"ext::left\")] fn left() -> u64 ! write(left_state) requires true ensures true;\n\
+         #[boundary(\"ext::right\")] fn right() -> u64 ! write(right_state) requires true ensures true;\n\
+         concurrent pair { left, right }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    validate(&parsed.program)
+        .expect("SpecTherm pre-validation must preserve disjoint RFC-9 compositions");
 }
 
 #[test]
@@ -108,7 +149,7 @@ fn incompatible_peers_and_missing_contracts_fail_closed() {
     );
     let parsed = parse(&incompatible);
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
-    let errors = check_interference(&parsed.program).expect_err("peers must be incompatible");
+    let errors = check_declared_pairs(&parsed.program).expect_err("peers must be incompatible");
     assert!(errors
         .iter()
         .any(|error| error.kind == InterferenceErrorKind::IncompatiblePeer));
@@ -119,7 +160,7 @@ fn incompatible_peers_and_missing_contracts_fail_closed() {
     );
     let parsed = parse(&missing);
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
-    let errors = check_interference(&parsed.program).expect_err("missing contract must fail");
+    let errors = check_declared_pairs(&parsed.program).expect_err("missing contract must fail");
     assert!(errors
         .iter()
         .any(|error| error.kind == InterferenceErrorKind::MissingContract));
@@ -134,7 +175,7 @@ fn handler_obligations_follow_priority_in_one_direction() {
     );
     let parsed = parse(&source);
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
-    let report = check_interference(&parsed.program).expect("handler relations validate");
+    let report = check_declared_pairs(&parsed.program).expect("handler relations validate");
     assert_eq!(report.obligations.len(), 1);
     assert_eq!(report.obligations[0].guarantor, "high");
     assert_eq!(report.obligations[0].relying, "low");

@@ -56,6 +56,12 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 8
+seconds = 0.007
+test = "thermite-lower::interference_fail_closed empty_relations_cannot_discharge_a_real_shared_place_conflict"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
 seconds = 0.500
 test = "thermite-lower::interference_witness interference_witness_is_deterministic_and_source_bound"
 timing_provenance = "reviewed_local_estimate_after_baseline"
@@ -124,6 +130,12 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 bucket = 7
 seconds = 0.007
 test = "thermite-spec::interference_validate participant_local_parameter_names_resolve_to_the_same_shared_identity"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-spec::interference_validate clause_local_validator_does_not_invent_conflicts_for_disjoint_composition"
 timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]

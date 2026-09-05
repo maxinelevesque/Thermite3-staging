@@ -50,6 +50,8 @@
           "gates/claim-closure-lower.py",
           ".design/syntax/interference-clauses.md",
           "thermite-spec/src/interference.rs",
+          "thermite-spec/src/validator.rs",
+          "thermite-spec/src/lib.rs",
           "thermite-spec/tests/interference_validate.rs",
           "thermite-lower/src/effects.rs",
           "thermite-lower/src/interference_witness.rs",

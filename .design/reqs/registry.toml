@@ -19301,7 +19301,7 @@ generated_to = ["status"]
 [[requirement.evidence]]
 kind = "test"
 target = "thermite-spec/tests/interference_validate.rs"
-note = "preorder envelope classification, stability, identity, compatibility, and handler direction"
+note = "Rust-local preorder/stability/identity checks plus RFC-9 conflict-aware compatibility and handler direction"
 [[requirement.evidence]]
 kind = "test"
 target = "thermite-lower/tests/effects.rs"

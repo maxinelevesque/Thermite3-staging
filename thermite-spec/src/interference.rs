@@ -94,8 +94,13 @@ enum Phase {
     Final,
 }
 
+/// Check clause-local RFC-12 semantics without inventing composition
+/// requirements. This validates relation shape, canonical identity, preorder
+/// membership, postcondition stability, and composition metadata. Pairwise
+/// rely-guarantee discharge requires RFC-9's inferred footprints and therefore
+/// belongs to [`check_interference_for_conflicts`].
 pub fn check_interference(program: &Program) -> Result<InterferenceReport, Vec<InterferenceError>> {
-    check_interference_inner(program, None, None)
+    check_interference_inner(program, Some(&[]), None)
 }
 
 /// Check all RFC-12 clauses while generating composition obligations only for
@@ -433,12 +438,12 @@ fn add_obligation(
 fn relation_covers(
     relation: &CheckedRelation,
     overlap: &RegionPath,
-    _regions: &RegionIndex,
+    regions: &RegionIndex,
 ) -> bool {
     relation
         .atoms
         .iter()
-        .any(|atom| atom.place == overlap.to_string())
+        .any(|atom| regions.overlaps(&RegionPath::from(atom.place.as_str()), overlap))
 }
 
 fn classify_relation(
@@ -558,7 +563,20 @@ fn canonicalize_relation(
             kind: atom.kind,
         });
     }
-    (canonical.len() == expected).then_some(CheckedRelation { atoms: canonical })
+    if canonical.len() != expected {
+        errors.push(InterferenceError {
+            kind: InterferenceErrorKind::UnresolvedStateIdentity,
+            function: Some(function.name.clone()),
+            detail: format!(
+                "multiple relation atoms in `{}` collapse to the same canonical shared-place identity",
+                function.name
+            ),
+            span,
+        });
+        None
+    } else {
+        Some(CheckedRelation { atoms: canonical })
+    }
 }
 
 fn classify_atom(expr: &Expr) -> Option<MonotoneAtom> {

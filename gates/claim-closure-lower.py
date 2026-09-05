@@ -1554,6 +1554,9 @@ CASES = {
     "rfc12-stability-negative": package_integration(
         "thermite-spec", "interference_fail_closed", "an_unstable_postcondition_fails_closed"
     ),
+    "rfc12-validator-disjoint": package_integration(
+        "thermite-spec", "interference_validate", "clause_local_validator_does_not_invent_conflicts_for_disjoint_composition"
+    ),
     "rfc12-effect-conflict": integration(
         "effects", "production_analysis_allows_an_rfc12_covered_shared_conflict"
     ),
@@ -1578,6 +1581,9 @@ CASES = {
     ),
     "rfc12-release-negative": integration(
         "interference_fail_closed", "undischarged_rely_cannot_reach_a_release_artifact"
+    ),
+    "rfc12-empty-coverage-negative": integration(
+        "interference_fail_closed", "empty_relations_cannot_discharge_a_real_shared_place_conflict"
     ),
     "rfc12-verus-core": package_integration(
         "thermite-verified", "verus_verify", "verified_core_passes_verus_no_cheating"

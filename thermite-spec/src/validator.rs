@@ -789,10 +789,12 @@ impl std::error::Error for SpecError {}
 /// `Err` with one `SpecError` per violation (accumulated, not first-stop, for
 /// crisp feedback, §2.4). Never panics (REQ-4/REQ-5).
 ///
-/// This is `thermite-spec`'s boundary API: the validator is the registry's first
-/// production consumer (AC-5, via `combinators::lookup`), and is the gate
-/// `thermite-lower` (#4) and `forge` (#6) call before lowering / the vacuity
-/// battery.
+/// This is `thermite-spec`'s clause-local boundary API: the validator is the
+/// registry's first production consumer (AC-5, via `combinators::lookup`) and
+/// checks RFC-12 relation shape and stability, but it does not invent pairwise
+/// interference requirements without RFC-9's inferred transitive footprints.
+/// `thermite-lower` owns that conflict-aware composition gate, and `forge`
+/// requires both this pre-pass and the checked lowering boundary.
 pub fn validate(program: &Program) -> Result<(), Vec<SpecError>> {
     let mut v = Validator::new(program);
     v.run(program);
