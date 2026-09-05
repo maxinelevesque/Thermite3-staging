@@ -10234,7 +10234,7 @@ receipt = "85c363304ebc5fe948a695bf77e0ee89f9697c9b1c6508af8aa193f48dff5f63"
 requirement_id = "REQ-SPEC-PROTOCOL-ENDPOINT"
 witness_id = "W-RFC13-PROTOCOL-ENDPOINT"
 mechanism = "executable_discriminator"
-discriminator = "8606326cd41c1645dd954971d227743001772e1f6dc6163b03ca7226c3057bcd"
+discriminator = "5b1983fefca79705b7cb3b299763af5e04a1910b5619017005050e3195bada31"
 claim_digest = "9a435b1d5568dbe31d6c49c906685064b5647525d80d7543babde4d8c2b1c196"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -10244,7 +10244,7 @@ oracle = "gates/claim-closure-oracles/rfc13-protocol-endpoints.json"
 artifacts = ["gates/claim-closure-oracles/rfc13-protocol-endpoints.json", "gates/claim-closure-lower.py", ".design/rfcs/0013-protocol-types.md", "conformance/protocol-types/cases.json", "conformance/protocol_types.th", "thermite-spec/src/protocol.rs", "thermite-spec/src/validator.rs", "thermite-spec/tests/protocol_conformance.rs", "thermite-spec/tests/protocol_flow.rs", "thermite-lower/src/protocol_witness.rs", "thermite-lower/src/l1.rs", "thermite-lower/src/l3.rs", "thermite-lower/tests/protocol_types.rs", "lean/Thermite/Protocol.lean", "forge/src/check.rs", "forge/src/manifest.rs", "forge/src/audit.rs", "forge/tests/protocol_types_conformance.rs", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-protocol-witness-mutation", mutation = "replace_text", from = "rfc13-lower-witness", to = "rfc13-lower-witness-erased", expected_exit = 4 }]
-receipt = "e548d6415e62a1c1db80ed5d962741354d2274904a9b1cf4506738a06c2813cd"
+receipt = "3aa9c00e4971df6d5b62eb12b0f67ca92fa06ee384157ef3a2922a3578996d43"
 
 [[closure]]
 requirement_id = "REQ-SPEC-RELY-GUARANTEE"

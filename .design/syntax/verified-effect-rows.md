@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 6ca5b6de2dcbf25c52ba298cae4858dc6ef1fffed624648cef95803dc454c89f (re-pinned 2026-09-05 after refreshing the RFC-9 inventory for RFC-12 interference fixture coverage; region-sensitive RFC-9 checking remains unchanged. prior: 5a460bb24bc0825ba5bee3c0cac7f377b3af957124fa36f9202483a1e563d397)
+audited-content-sha256: 57413193a95bf3143c8ec665ae6a8d68951b23ff35edddab659c979fe28324c1 (re-pinned after RFC-13 review made endpoint ownership infer Blocks consistently; stable effect atom assignments are unchanged. prior: 6ca5b6de2dcbf25c52ba298cae4858dc6ef1fffed624648cef95803dc454c89f)
 -->
 
 ## Summary

@@ -111,6 +111,30 @@ fn bad(c: P::A, choose: bool) -> () ! blocks requires true ensures true
 }
 
 #[test]
+fn rejects_receive_payload_bindings_in_unmodeled_control_flow() {
+    let parsed = parse(
+        r#"
+protocol P { A { value: u32 }, B { reply: u32 }, end }
+fn bad(c: P::A, choose: bool) -> () ! blocks requires true ensures true
+{
+  c.send(0);
+  if choose {
+    let reply: u32 = c.receive_payload();
+  } else {
+    let reply: u32 = c.receive_payload();
+  }
+}
+"#,
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    let errors = check_protocols(&parsed.program)
+        .expect_err("v1 must reject receive bindings inside conditional paths");
+    assert!(errors
+        .iter()
+        .any(|error| error.kind == ProtocolErrorKind::UnsupportedControlFlow));
+}
+
+#[test]
 fn receive_payload_requires_and_checks_an_explicit_projected_type() {
     let valid = program(
         "let request: (u32, u64) = c.receive_payload(); c.send(0, 0);",

@@ -359,6 +359,15 @@ pub(crate) fn analyze_effects_unchecked(
                     return Err(errors);
                 }
                 collect_holding_effects(body, &mut direct.borrow_mut());
+                // RFC-13 endpoint operations may wait for their peer. Owning an
+                // endpoint therefore justifies the mandatory `fx blocks` atom,
+                // even though the carrier methods are not ordinary named callees.
+                if f.params
+                    .iter()
+                    .any(|param| matches!(param.ty, Type::ProtocolEndpoint { .. }))
+                {
+                    direct.borrow_mut().insert(Effect::Blocks);
+                }
                 if let Some(regions) = resource_forgets.get(&f.name) {
                     direct
                         .borrow_mut()

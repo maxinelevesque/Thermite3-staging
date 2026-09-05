@@ -63,6 +63,10 @@ fn checked_program_binds_protocol_flow_evidence() {
         2
     );
     assert_eq!(checked.protocol_flow().functions["app"].completed, ["c"]);
+    assert!(
+        checked.effects().warnings.is_empty(),
+        "endpoint operations must justify their required `blocks` effect"
+    );
 }
 
 #[test]

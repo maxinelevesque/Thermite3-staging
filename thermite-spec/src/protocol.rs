@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use thermite_syntax::{Block, Expr, FnItem, Item, PrimType, Program, Span, Stmt, Type};
+use thermite_syntax::{Block, Expr, FnItem, IndexArg, Item, PrimType, Program, Span, Stmt, Type};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProtocolErrorKind {
@@ -524,19 +524,77 @@ fn check_block(
 
 fn block_has_protocol_action(block: &Block, state: &State) -> bool {
     block.stmts.iter().any(|stmt| match stmt {
-        Stmt::Expr(Expr::MethodCall { receiver, .. }) => {
-            matches!(receiver.as_ref(), Expr::Path(path) if path.len() == 1 && state.contains_key(&path[0]))
+        Stmt::Let { init, .. } | Stmt::Expr(init) | Stmt::Forget { value: init, .. } => {
+            expr_has_protocol_action(init, state)
         }
-        Stmt::If { then, else_, .. } => {
-            block_has_protocol_action(then, state)
+        Stmt::Assign { target, value } => {
+            expr_has_protocol_action(target, state) || expr_has_protocol_action(value, state)
+        }
+        Stmt::Return(value) => value
+            .as_ref()
+            .is_some_and(|value| expr_has_protocol_action(value, state)),
+        Stmt::If { cond, then, else_ } => {
+            expr_has_protocol_action(cond, state)
+                || block_has_protocol_action(then, state)
                 || else_
                     .as_ref()
                     .is_some_and(|else_| block_has_protocol_action(else_, state))
         }
         Stmt::Loop(loop_) => block_has_protocol_action(&loop_.body, state),
         Stmt::Holding { body, .. } => block_has_protocol_action(body, state),
-        _ => false,
-    })
+        Stmt::Break | Stmt::Continue => false,
+    }) || block
+        .tail
+        .as_ref()
+        .is_some_and(|tail| expr_has_protocol_action(tail, state))
+}
+
+fn expr_has_protocol_action(expr: &Expr, state: &State) -> bool {
+    let visit = |expr: &Expr| expr_has_protocol_action(expr, state);
+    match expr {
+        Expr::MethodCall { receiver, args, .. } => {
+            matches!(receiver.as_ref(), Expr::Path(path) if path.len() == 1 && state.contains_key(&path[0]))
+                || visit(receiver)
+                || args.iter().any(visit)
+        }
+        Expr::Call { callee, args } => visit(callee) || args.iter().any(visit),
+        Expr::Field { receiver, .. }
+        | Expr::Cast { expr: receiver, .. }
+        | Expr::Ref { expr: receiver, .. }
+        | Expr::Deref(receiver)
+        | Expr::TupleProj { receiver, .. }
+        | Expr::Unary { expr: receiver, .. }
+        | Expr::Closure { body: receiver, .. }
+        | Expr::Is {
+            scrutinee: receiver,
+            ..
+        } => visit(receiver),
+        Expr::Match { scrutinee, arms } => {
+            visit(scrutinee)
+                || arms
+                    .iter()
+                    .any(|arm| arm.guard.as_ref().is_some_and(visit) || visit(&arm.body))
+        }
+        Expr::If { cond, then, else_ } => {
+            visit(cond)
+                || block_has_protocol_action(then, state)
+                || block_has_protocol_action(else_, state)
+        }
+        Expr::Binary { lhs, rhs, .. } => visit(lhs) || visit(rhs),
+        Expr::Index { base, index } => {
+            visit(base)
+                || match index {
+                    IndexArg::Single(expr)
+                    | IndexArg::RangeTo(expr)
+                    | IndexArg::RangeFrom(expr) => visit(expr),
+                    IndexArg::Range(lo, hi) => visit(lo) || visit(hi),
+                }
+        }
+        Expr::StructLit { fields, .. } => fields.iter().any(|(_, value)| visit(value)),
+        Expr::Tuple(items) => items.iter().any(visit),
+        Expr::Quantifier { domain, body, .. } => visit(domain) || visit(body),
+        Expr::Path(_) | Expr::IntLit { .. } | Expr::BoolLit(_) | Expr::StrLit(_) => false,
+    }
 }
 
 fn check_expr(
