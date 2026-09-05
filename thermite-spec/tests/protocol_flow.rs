@@ -111,6 +111,25 @@ fn bad(c: P::A, choose: bool) -> () ! blocks requires true ensures true
 }
 
 #[test]
+fn receive_payload_requires_and_checks_an_explicit_projected_type() {
+    let valid = program(
+        "let request: (u32, u64) = c.receive_payload(); c.send(0, 0);",
+        "blocks",
+    );
+    check_protocols(&valid).expect("the receiver may bind its projected payload tuple");
+
+    let invalid = program(
+        "let request: bool = c.receive_payload(); c.send(0, 0);",
+        "blocks",
+    );
+    let errors =
+        check_protocols(&invalid).expect_err("a receive binding cannot lie about payload type");
+    assert!(errors
+        .iter()
+        .any(|error| error.kind == ProtocolErrorKind::PayloadMismatch));
+}
+
+#[test]
 fn rejects_endpoint_in_shared_state() {
     let parsed = parse("protocol P { A { x: u32 }, B { y: u32 }, end } shared channel: P::A");
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);

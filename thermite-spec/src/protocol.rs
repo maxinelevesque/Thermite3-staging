@@ -361,6 +361,39 @@ fn check_block(
                 errors,
             ),
             Stmt::Let { name, ty, init, .. } => {
+                if let Some((binding, expected)) = receive_payload_binding(init, &state, protocols)
+                {
+                    match ty {
+                        Some(found) if found == &expected => {}
+                        Some(found) => errors.push(error(
+                            ProtocolErrorKind::PayloadMismatch,
+                            Some(function.name.clone()),
+                            Some(binding),
+                            format!(
+                                "received protocol payload expects local type {expected:?}, found {found:?}"
+                            ),
+                            function.span,
+                        )),
+                        None => errors.push(error(
+                            ProtocolErrorKind::PayloadMismatch,
+                            Some(function.name.clone()),
+                            Some(binding),
+                            "a `receive_payload()` binding requires an explicit payload type"
+                                .into(),
+                            function.span,
+                        )),
+                    }
+                    check_expr(
+                        init,
+                        &mut state,
+                        function,
+                        protocols,
+                        value_types,
+                        flow,
+                        errors,
+                    );
+                    continue;
+                }
                 reject_endpoint_value_use(init, &state, function, errors);
                 if matches!(ty, Some(Type::ProtocolEndpoint { .. })) {
                     errors.push(error(
@@ -616,7 +649,9 @@ fn check_expr(
     } else {
         "receive"
     };
-    if action != expected {
+    let action_matches =
+        action == expected || (expected == "receive" && action == "receive_payload");
+    if !action_matches {
         errors.push(error(
             ProtocolErrorKind::WrongTurn,
             Some(function.name.clone()),
@@ -672,6 +707,43 @@ fn check_expr(
             endpoint.complete = true;
         }
     }
+}
+
+fn receive_payload_binding(
+    expr: &Expr,
+    state: &State,
+    protocols: &BTreeMap<String, Protocol>,
+) -> Option<(String, Type)> {
+    let Expr::MethodCall {
+        receiver,
+        name,
+        args,
+    } = expr
+    else {
+        return None;
+    };
+    if name != "receive_payload" || !args.is_empty() {
+        return None;
+    }
+    let Expr::Path(path) = receiver.as_ref() else {
+        return None;
+    };
+    let [binding] = path.as_slice() else {
+        return None;
+    };
+    let endpoint = state.get(binding)?;
+    let protocol = protocols.get(&endpoint.protocol)?;
+    let sender = protocol.senders.get(endpoint.step)?;
+    if sender == &endpoint.role {
+        return None;
+    }
+    let payload = protocol.payload_types.get(endpoint.step)?;
+    let ty = match payload.as_slice() {
+        [] => Type::Unit,
+        [single] => single.clone(),
+        many => Type::Tuple(many.to_vec()),
+    };
+    Some((binding.clone(), ty))
 }
 
 fn infer_expr_type(expr: &Expr, value_types: &BTreeMap<String, Type>) -> Option<Type> {

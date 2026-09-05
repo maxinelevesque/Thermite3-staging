@@ -1969,7 +1969,13 @@ pub(crate) fn lower_expr_exec(
             let r = lower_expr_exec(receiver, d, span, variants)?;
             if matches!(
                 name.as_str(),
-                "send" | "receive" | "repeat" | "end" | "receive_repeat" | "receive_end"
+                "send"
+                    | "receive"
+                    | "receive_payload"
+                    | "repeat"
+                    | "end"
+                    | "receive_repeat"
+                    | "receive_end"
             ) {
                 let lowered_name = if name == "send" {
                     format!("__thermite_protocol_send_{}", args.len())
@@ -2426,6 +2432,9 @@ fn lower_protocol_l1(protocol: &thermite_syntax::ProtocolItem) -> String {
                 ));
             }
             emitted.push_str("    pub fn __thermite_protocol_receive(&self) {}\n");
+            emitted.push_str(
+                "    pub fn __thermite_protocol_receive_payload<T>(&self) -> T { unimplemented!(\"platform protocol transport must supply the received payload\") }\n",
+            );
             if protocol.repeat {
                 emitted.push_str("    pub fn __thermite_protocol_repeat(&self) {}\n");
                 emitted.push_str("    pub fn __thermite_protocol_end(self) {}\n");

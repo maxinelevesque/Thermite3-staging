@@ -194,3 +194,19 @@ fn lowering_fails_closed_on_wrong_turn() {
     let error = lower_l1(&parsed.program).expect_err("invalid projection must not lower");
     assert!(error.to_string().contains("must `receive`"), "{error}");
 }
+
+#[test]
+fn received_payload_can_be_bound_at_its_projected_type() {
+    let parsed = parse(
+        "protocol P { A { x: u32, y: u64 }, B { z: u32 }, end } \
+         fn b(c: P::B) -> () ! blocks requires true ensures true \
+         { let request: (u32, u64) = c.receive_payload(); c.send(0); }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    let emitted = lower_l1(&parsed.program).expect("typed receive must lower");
+    assert!(emitted.contains("__thermite_protocol_receive_payload"));
+    assert!(
+        emitted.contains("c.__thermite_protocol_receive_payload()"),
+        "{emitted}"
+    );
+}

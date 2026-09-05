@@ -4969,6 +4969,9 @@ fn lower_protocol(protocol: &thermite_syntax::ProtocolItem) -> Result<String, Lo
         out.push_str(
             "    #[verifier::external_body]\n    pub fn __thermite_protocol_receive(&self) {}\n",
         );
+        out.push_str(
+            "    #[verifier::external_body]\n    pub fn __thermite_protocol_receive_payload<T>(&self) -> T { unimplemented!(\"platform protocol transport must supply the received payload\") }\n",
+        );
         if protocol.repeat {
             out.push_str(
                 "    #[verifier::external_body]\n    pub fn __thermite_protocol_repeat(&self) {}\n",
@@ -8537,7 +8540,13 @@ fn lower_expr(expr: &Expr, ctx: Ctx, depth: usize, span: Span) -> Result<String,
             if !ctx.is_spec()
                 && matches!(
                     name.as_str(),
-                    "send" | "receive" | "repeat" | "end" | "receive_repeat" | "receive_end"
+                    "send"
+                        | "receive"
+                        | "receive_payload"
+                        | "repeat"
+                        | "end"
+                        | "receive_repeat"
+                        | "receive_end"
                 )
             {
                 let lowered_name = if name == "send" {

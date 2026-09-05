@@ -7294,7 +7294,11 @@ fn with_shared_state_metadata(program: &Program, mut sub: Program) -> Program {
         .filter(|candidate| {
             matches!(
                 candidate,
-                Item::Struct(_) | Item::Enum(_) | Item::SharedDecl(_) | Item::LockDecl(_)
+                Item::Struct(_)
+                    | Item::Enum(_)
+                    | Item::SharedDecl(_)
+                    | Item::LockDecl(_)
+                    | Item::Protocol(_)
             ) && !present.contains(candidate.name())
         })
         .cloned()

@@ -2,6 +2,7 @@
 rfc: 13
 title: Protocol types — sessions whose endpoints cannot be abandoned
 status: draft
+language-evolution: tracked
 supersedes: []
 introduces:
   - REQ-SYNTAX-PROTOCOL-DECL
@@ -12,20 +13,54 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
-| **Fork implementation** | **Not started; tracked by issue #77.** RFC-11 resource types and RFC-12 interference clauses are shipped; this is the next tracked core capability and owns protocol-round state such as per-round constant epochs. |
-| **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
+| **Status** | **Implemented on the RFC-13 feature branch; not yet landed on `main`.** Issue #77 remains open until the reviewed PR merges. |
+| **Fork implementation** | **Complete pending final qualification and landing.** The parser, binary projection checker, endpoint completion discipline, L1/L3 carriers, versioned witness, Lean replay, Forge replay gate, and conformance anchors are implemented. |
+| **Baseline** | `maxinelevesque/Thermite3-staging @ 69475aaa` (`3.0.0-alpha.8`) |
 | **Position** | step 9 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), RFC-11 |
 
-> **Not proposed yet.** This document is written so the work is not blocked on a
-> reply, and it stays unfiled until [RFC-6](0006-full-words.md) lands and the
-> direction in [RFC-7](0007-thermite-3.md) is answered. Filing six capability
-> proposals against a surface nobody has adopted is the failure RFC-7's own
-> sequencing rule exists to prevent.
+> **Implementation candidate, 2026-09-04.** The RFC-7 direction and dependency
+> sequence are resolved. This document remains the rationale and records the
+> exact v1 surface now implemented; landing and issue closure still require the
+> normal review and CI sequence.
 
 Kind: new item form. Orthogonal to the effect-rows RFC through the
 interference-clauses RFC.
+
+## Implemented v1 contract
+
+The v1 implementation deliberately closes the binary core and leaves broader
+session calculus features explicit:
+
+- `protocol P { Role { field: T, ... }, ..., end }` and the terminal
+  `repeat | end` form parse as global declarations. Exactly two sender roles are
+  admitted; multiparty projection remains deferred.
+- `P::Role` endpoints may enter a function only as owned parameters, may not be
+  stored in `shared` state, and require `! blocks`.
+- `c.send(...)` and `c.receive()` advance the inferred local projection.
+  `let payload: T = c.receive_payload()` exposes a received payload, requiring
+  `T` to equal the declared scalar or tuple payload type.
+- A repeating protocol's first sender chooses `repeat()` or `end()`; its peer
+  receives that discriminant with `receive_repeat()` or `receive_end()`.
+- Every return and fallthrough must reach `end`. Endpoint aliasing, wrong-role
+  actions, skipped turns, payload mismatches, invalid repeat exits, and
+  abandonment are structured compile-time errors.
+- General control-flow paths containing protocol actions are rejected in v1.
+  This prevents a branch-flattened proof witness; path-sensitive session-flow
+  witnesses are a future additive extension.
+
+The checked Rust report is content-bound into a versioned witness. Lean
+independently reconstructs binary projections and checks complementarity,
+transition order, repeat rounds, and endpoint completion before Forge may issue
+any certificate for a protocol-bearing file.
+
+The theorem stops at the channel boundary. Generated L1/L3 endpoint carriers
+reserve the protocol operations, while the platform supplies transport,
+blocking/wakeup behavior, peer identity, failure/cancellation, and received
+payload bytes. L3 marks those carrier methods `external_body`; L1's typed
+`receive_payload` stub cannot run without a platform replacement. These are
+residual platform assumptions, not consequences of Lean's duality/completion
+replay.
 
 ## Summary
 

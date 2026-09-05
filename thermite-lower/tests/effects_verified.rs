@@ -157,12 +157,16 @@ fn verified_spec_is_not_vacuous() {
         "a term caller subsumes a term callee (reflexive on the new atom)"
     );
     assert!(
-        thermite_verified::spec_subsumes_mask(0x7FF, 0x7FF),
-        "top (all 11 atoms) subsumes top (sanity)"
+        thermite_verified::spec_subsumes_mask(0xFFF, 0xFFF),
+        "top (all 12 atoms) subsumes top (sanity)"
     );
     assert!(
         !thermite_verified::spec_subsumes_mask(0, 1 << 10),
         "Pure must NOT subsume the RFC-11 Forgets atom"
+    );
+    assert!(
+        !thermite_verified::spec_subsumes_mask(0, 1 << 11),
+        "Pure must NOT subsume the RFC-13 Blocks atom"
     );
     assert!(
         thermite_verified::spec_subsumes_mask(0, 0),

@@ -19327,33 +19327,53 @@ note = "production formal replay, certificate and audit disclosure, residual tru
 id = "REQ-SYNTAX-PROTOCOL-DECL"
 title = "`protocol P { Role { … }, end }`"
 owner = ".design/rfcs"
-status = "not_started"
+status = "partial"
 scope = "syntax"
 summary = "A sequence of turns, each labelled with whose turn it is. Roles are names rather than keywords, so a protocol names its own and an endpoint is a path to a role."
-remaining_scope = "Parse the declaration, the role sequence, `end`, and the `repeat | end` branch. Proposed by RFC-13; staged and not filed; tracked by issue #77."
+remaining_scope = "Multiparty roles, general labelled choice, and path-sensitive branch witnesses are deferred beyond binary v1. Issue #77 remains open until landing."
 contributors = [".design/rfcs/0013-protocol-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0013-protocol-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-syntax/tests/protocol_types_parse.rs"
+note = "declaration, endpoint path, blocks, end, and repeat/end parser coverage"
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-syntax/src/parser.rs"
+note = "protocol declaration and endpoint-type grammar"
 
 [[requirement]]
 id = "REQ-SPEC-PROTOCOL-ENDPOINT"
 title = "An endpoint is a resource, and `end` consumes it"
 owner = ".design/rfcs"
-status = "not_started"
+status = "partial"
 scope = "spec"
 summary = "Termination is load-bearing: running the protocol to completion is what consumes the endpoint, so an endpoint that can be dropped abandons its peer mid-session."
-remaining_scope = "Check endpoint linearity and session progress. Depends on resource types landing first in issue #75. Proposed by RFC-13; staged and not filed; tracked by issue #77."
+remaining_scope = "Transport, peer identity, wakeup, failure/cancellation, multiparty progress, and path-sensitive branch witnesses remain explicit residual/deferred scope. Issue #77 remains open until landing."
 contributors = [".design/rfcs/0013-protocol-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0013-protocol-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-spec/tests/protocol_conformance.rs"
+note = "hand-derived accept/reject oracle for dual completion and all required negative classes"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/protocol_types.rs"
+note = "L1/L3 carriers, content-bound witness, Lean replay, and adversarial witness mutations"
+[[requirement.evidence]]
+kind = "file"
+target = "lean/Thermite/Protocol.lean"
+note = "kernel replay of projection compatibility, transition order, repeat rounds, and endpoint completion"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "production Lean replay gate before certificate minting"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/protocol_types_conformance.rs"
+note = "production binary protocol certification anchor"
 
 [[requirement]]
 id = "REQ-SYNTAX-SURVIVES-CLAUSE"
