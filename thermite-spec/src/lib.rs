@@ -58,6 +58,7 @@ pub mod classifier;
 pub mod combinators;
 pub mod effect_commutation;
 pub mod interference;
+pub mod protocol;
 pub mod regions;
 pub mod resource;
 pub mod resource_flow;
@@ -72,6 +73,10 @@ pub use interference::{
     check_interference, check_interference_for_conflicts, CheckedCompositionRequirement,
     CheckedInterference, CheckedRelation, CompositionObligation, InterferenceError,
     InterferenceErrorKind, InterferenceReport, InterferenceRequirement, MonotoneAtom, MonotoneKind,
+};
+pub use protocol::{
+    check_protocols, ProtocolAction, ProtocolDefinition, ProtocolEndpointBinding, ProtocolError,
+    ProtocolErrorKind, ProtocolFunctionFlow, ProtocolReport, ProtocolTransition,
 };
 pub use regions::{effect_path, RegionError, RegionIndex};
 pub use resource::{ResourceEnv, ResourceError};

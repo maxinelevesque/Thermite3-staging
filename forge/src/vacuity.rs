@@ -443,6 +443,7 @@ fn effect_row_is_maximal(fx: &EffectRow) -> bool {
             Effect::Alloc => alloc = true,
             Effect::Time => time = true,
             Effect::Rand => rand = true,
+            Effect::Blocks => {}
             Effect::Panic => panic = true,
             Effect::Diverge => diverge = true,
             // `Term` (#106) is not part of the broad maximal set: a narrow

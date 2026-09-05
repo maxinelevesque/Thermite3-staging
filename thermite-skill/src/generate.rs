@@ -419,6 +419,11 @@ fn render_type_arm(ty: &Type) -> SkillFragment {
             description: "a bare user-declared struct/enum type name",
             example: "fn area(s: Shape) -> u64",
         },
+        Type::ProtocolEndpoint { .. } => SkillFragment {
+            fragment: "Protocol::Role",
+            description: "a linear RFC-13 endpoint projected for one protocol role",
+            example: "fn serve(c: Request::Provider) -> ()",
+        },
         Type::Box(_) => SkillFragment {
             fragment: "Box<T>",
             description: "heap indirection for a recursive enum (carries ! alloc)",
@@ -534,6 +539,11 @@ fn render_item_arm(item: &Item) -> SkillFragment {
             fragment: "lock NAME guards REGION [after LOCK]",
             description: "a symbolic lock guarding an RFC-9 shared region",
             example: "lock scheduler_lock guards scheduler",
+        },
+        Item::Protocol(_) => SkillFragment {
+            fragment: "protocol NAME { Role { field: T, .. }, .., end }",
+            description: "a binary global conversation projected into linear role endpoints",
+            example: "protocol Ping { Client { nonce: u64 }, Server { nonce: u64 }, end }",
         },
     }
 }
@@ -868,6 +878,11 @@ fn render_effect_arm(effect: &Effect) -> SkillFragment {
             description: "draws randomness",
             example: "! rand",
         },
+        Effect::Blocks => SkillFragment {
+            fragment: "blocks",
+            description: "may wait for the peer while advancing a checked protocol endpoint",
+            example: "! blocks",
+        },
         Effect::Panic => SkillFragment {
             fragment: "panic",
             description: "may panic / abort",
@@ -906,6 +921,10 @@ fn type_inventory() -> Vec<Type> {
             arg: Box::new(Type::Unit),
         },
         Type::Named(String::new()),
+        Type::ProtocolEndpoint {
+            protocol: String::new(),
+            role: String::new(),
+        },
         Type::Box(Box::new(Type::Unit)),
         Type::Vec(Box::new(Type::Unit)),
         Type::String,
@@ -1002,6 +1021,12 @@ fn item_inventory() -> Vec<Item> {
             name: String::new(),
             variants: Vec::new(),
             resource: None,
+            span,
+        }),
+        Item::Protocol(thermite_syntax::ProtocolItem {
+            name: String::new(),
+            turns: Vec::new(),
+            repeat: false,
             span,
         }),
     ]
@@ -1146,6 +1171,7 @@ fn effect_inventory() -> Vec<Effect> {
         Effect::Alloc,
         Effect::Time,
         Effect::Rand,
+        Effect::Blocks,
         Effect::Panic,
         Effect::Diverge,
         Effect::Term,

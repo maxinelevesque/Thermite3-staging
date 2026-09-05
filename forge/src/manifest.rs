@@ -3897,6 +3897,7 @@ fn effect_token(effect: &Effect) -> String {
         Effect::Alloc => "alloc".to_string(),
         Effect::Time => "time".to_string(),
         Effect::Rand => "rand".to_string(),
+        Effect::Blocks => "blocks".to_string(),
         Effect::Panic => "panic".to_string(),
         Effect::Diverge => "diverge".to_string(),
         // The #106 terminal-control atom (`fx term` → the `ioctl` seccomp grant,

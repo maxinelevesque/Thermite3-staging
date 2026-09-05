@@ -238,6 +238,11 @@ pub enum Item {
     Concurrent(ConcurrentItem),
     /// An RFC-10 lock guarding one RFC-9 shared-state region.
     LockDecl(LockDeclItem),
+    /// An RFC-13 binary global protocol declaration. Each turn names the role
+    /// that sends a record-shaped payload; the other declared role receives it.
+    /// `repeat` records the bounded `repeat | end` tail, while `false` is a
+    /// terminal `end`.
+    Protocol(ProtocolItem),
 }
 
 impl Item {
@@ -256,8 +261,27 @@ impl Item {
             Item::SharedDecl(shared) => &shared.name,
             Item::Concurrent(composition) => &composition.name,
             Item::LockDecl(lock) => &lock.name,
+            Item::Protocol(protocol) => &protocol.name,
         }
     }
+}
+
+/// A binary RFC-13 global protocol and its source-ordered conversation turns.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProtocolItem {
+    pub name: Ident,
+    pub turns: Vec<ProtocolTurn>,
+    pub repeat: bool,
+    pub span: Span,
+}
+
+/// One message turn in a global protocol. The named role is the sender; the
+/// payload uses the same named-field representation as structs.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProtocolTurn {
+    pub role: Ident,
+    pub fields: Vec<FieldDef>,
+    pub span: Span,
 }
 
 /// `shared NAME: TYPE` — the root of a field-derived region tree.
@@ -789,6 +813,9 @@ pub enum Effect {
     Alloc,
     Time,
     Rand,
+    /// RFC-13's control effect for an endpoint operation that may wait for its
+    /// peer. Protocol duality discharges its characteristic obligation.
+    Blocks,
     Panic,
     Diverge,
     /// Terminal-control effect (`fx term`, issue #106): the boundary issues the
@@ -1194,6 +1221,13 @@ pub enum Type {
     /// would parse); it is the type-side complement of the `struct`/`enum` items.
     /// Distinct from `Generic` (which requires `<arg>`, e.g. `Option<usize>`).
     Named(Ident),
+    /// A role-qualified RFC-13 endpoint type such as
+    /// `PageRequest::Provider`. The protocol checker resolves both segments
+    /// against a [`ProtocolItem`] before any lowering route is selected.
+    ProtocolEndpoint {
+        protocol: Ident,
+        role: Ident,
+    },
     /// The heap-indirection primitive `Box<T>` (`.design/basis/01-adts.md`
     /// REQ-3, OQ-1 resolved: a dedicated first-class `Type` node, not a
     /// `Generic { name: "Box", .. }`, so the effect-subsumption check keys on the

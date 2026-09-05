@@ -151,7 +151,7 @@ use crate::combinators::{self, ArgKind, CombinatorSig};
 use crate::resource::{ResourceEnv, ResourceError};
 use crate::resource_flow::{check_resource_flow, ResourceFlowErrorKind};
 use crate::schemes::{self, SchemeSig};
-use crate::{check_interference, InterferenceErrorKind};
+use crate::{check_interference, check_protocols, InterferenceErrorKind, ProtocolErrorKind};
 
 /// The maximum recursive-descent nesting depth the validator will follow before
 /// returning an `ExpressionTooDeep` diagnostic. A fixed constant for determinism
@@ -414,6 +414,15 @@ pub enum SpecError {
         detail: String,
         span: Span,
     },
+    /// An RFC-13 protocol declaration, endpoint reference, or projected-flow
+    /// violation.
+    Protocol {
+        kind: ProtocolErrorKind,
+        function: Option<String>,
+        endpoint: Option<String>,
+        detail: String,
+        span: Span,
+    },
     /// An unmarked ADT owns a resource-bearing field or variant payload.
     MissingResourceMarker {
         declaration: String,
@@ -566,6 +575,7 @@ impl SpecError {
             | SpecError::UnsupportedAdt { span, .. }
             | SpecError::UnsupportedResourceTypes { span }
             | SpecError::Interference { span, .. }
+            | SpecError::Protocol { span, .. }
             | SpecError::MissingResourceMarker { span, .. }
             | SpecError::EmptyResourceMarker { span, .. }
             | SpecError::ResourceProvenanceMismatch { span, .. }
@@ -679,6 +689,7 @@ impl fmt::Display for SpecError {
                 "RFC-11 executable resource flow is not yet checkable by the ownership validator"
             ),
             SpecError::Interference { detail, .. } => write!(f, "{detail}"),
+            SpecError::Protocol { detail, .. } => write!(f, "{detail}"),
             SpecError::MissingResourceMarker {
                 declaration,
                 computed,
@@ -818,6 +829,16 @@ pub fn validate(program: &Program) -> Result<(), Vec<SpecError>> {
                 }));
         }
     }
+    if let Err(errors) = check_protocols(program) {
+        v.errors
+            .extend(errors.into_iter().map(|error| SpecError::Protocol {
+                kind: error.kind,
+                function: error.function,
+                endpoint: error.endpoint,
+                detail: error.detail,
+                span: error.span,
+            }));
+    }
     if v.errors.is_empty() {
         Ok(())
     } else {
@@ -913,6 +934,7 @@ impl Validator {
                 Item::SharedDecl(item) => Some((item.name.clone(), "shared declaration")),
                 Item::Concurrent(item) => Some((item.name.clone(), "concurrent declaration")),
                 Item::LockDecl(item) => Some((item.name.clone(), "lock declaration")),
+                Item::Protocol(item) => Some((item.name.clone(), "protocol declaration")),
             })
             .collect();
         // Collect every declared `spec fn` name first so a forward reference in
@@ -936,7 +958,8 @@ impl Validator {
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
                 | Item::Concurrent(_)
-                | Item::LockDecl(_) => None,
+                | Item::LockDecl(_)
+                | Item::Protocol(_) => None,
             })
             .collect();
         // Cluster C4 strings (`.design/basis/07-strings.md` REQ-8, issue #94): seed
@@ -1032,7 +1055,8 @@ impl Validator {
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
                 | Item::Concurrent(_)
-                | Item::LockDecl(_) => {}
+                | Item::LockDecl(_)
+                | Item::Protocol(_) => {}
             }
         }
 
@@ -1116,7 +1140,8 @@ impl Validator {
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
                 | Item::Concurrent(_)
-                | Item::LockDecl(_) => None,
+                | Item::LockDecl(_)
+                | Item::Protocol(_) => None,
             };
             if let Some((name, span)) = declared {
                 if name.starts_with(THERMITE_RESERVED_PREFIX) {
@@ -1229,7 +1254,10 @@ impl Validator {
                 Item::EffectDecl(declaration) => {
                     let _resolved = thermite_syntax::effect_basis::resolve_declaration(declaration);
                 }
-                Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => {}
+                Item::SharedDecl(_)
+                | Item::Concurrent(_)
+                | Item::LockDecl(_)
+                | Item::Protocol(_) => {}
             }
         }
     }

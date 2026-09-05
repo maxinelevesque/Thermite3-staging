@@ -75,6 +75,7 @@ pub enum EffectKind {
     Alloc,
     Time,
     Rand,
+    Blocks,
     Panic,
     Diverge,
     Term,
@@ -99,11 +100,12 @@ impl EffectKind {
             EffectKind::Alloc => 3,
             EffectKind::Time => 4,
             EffectKind::Rand => 5,
-            EffectKind::Panic => 6,
-            EffectKind::Diverge => 7,
-            EffectKind::Term => 8,
-            EffectKind::Owns => 9,
-            EffectKind::Forgets => 10,
+            EffectKind::Blocks => 6,
+            EffectKind::Panic => 7,
+            EffectKind::Diverge => 8,
+            EffectKind::Term => 9,
+            EffectKind::Owns => 10,
+            EffectKind::Forgets => 11,
         };
         1u16 << index
     }
@@ -118,6 +120,7 @@ impl EffectKind {
             Effect::Alloc => EffectKind::Alloc,
             Effect::Time => EffectKind::Time,
             Effect::Rand => EffectKind::Rand,
+            Effect::Blocks => EffectKind::Blocks,
             Effect::Panic => EffectKind::Panic,
             Effect::Diverge => EffectKind::Diverge,
             Effect::Term => EffectKind::Term,
@@ -301,7 +304,8 @@ pub(crate) fn analyze_effects_unchecked(
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
 
@@ -1144,7 +1148,8 @@ fn shared_read_is_copy(ty: &Type) -> bool {
         | Type::Box(_)
         | Type::Option(_)
         | Type::Result(_, _)
-        | Type::Generic { .. } => false,
+        | Type::Generic { .. }
+        | Type::ProtocolEndpoint { .. } => false,
     }
 }
 

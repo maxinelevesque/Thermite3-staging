@@ -20,6 +20,7 @@ pub struct L3Artifact {
     classifier_fragment: &'static str,
     resource_witness: Option<crate::ResourceFlowWitness>,
     interference_witness: Option<crate::InterferenceWitness>,
+    protocol_witness: Option<crate::ProtocolWitness>,
 }
 
 impl L3Artifact {
@@ -52,6 +53,10 @@ impl L3Artifact {
     pub fn interference_witness(&self) -> Option<&crate::InterferenceWitness> {
         self.interference_witness.as_ref()
     }
+
+    pub fn protocol_witness(&self) -> Option<&crate::ProtocolWitness> {
+        self.protocol_witness.as_ref()
+    }
 }
 
 /// Lower one already-isolated item program and bind its Verus classifier and
@@ -78,6 +83,8 @@ pub fn lower_l3_artifact(program: &Program, item: &str) -> Result<L3Artifact, Lo
         .then(|| crate::emit_resource_witness(&checked));
     let interference_witness = (!checked.interference().functions.is_empty())
         .then(|| crate::emit_interference_witness(&checked));
+    let protocol_witness = (!checked.protocol_flow().definitions.is_empty())
+        .then(|| crate::emit_protocol_witness(&checked));
     let mut query_identity = format!("thermite-verus-query-v1:{item}:sha256:{digest}");
     if let Some(resource) = &resource_witness {
         query_identity.push_str(&format!(
@@ -91,6 +98,12 @@ pub fn lower_l3_artifact(program: &Program, item: &str) -> Result<L3Artifact, Lo
             interference.checked_interference_sha256
         ));
     }
+    if let Some(protocol) = &protocol_witness {
+        query_identity.push_str(&format!(
+            ":protocol-sha256:{}",
+            protocol.checked_protocol_sha256
+        ));
+    }
     Ok(L3Artifact {
         source,
         item: item.to_string(),
@@ -99,5 +112,6 @@ pub fn lower_l3_artifact(program: &Program, item: &str) -> Result<L3Artifact, Lo
         classifier_fragment: "thermite-verus-v1",
         resource_witness,
         interference_witness,
+        protocol_witness,
     })
 }

@@ -372,6 +372,7 @@ pub fn effect_path(effect: &Effect) -> Option<&RegionPath> {
         Effect::Alloc
         | Effect::Time
         | Effect::Rand
+        | Effect::Blocks
         | Effect::Panic
         | Effect::Diverge
         | Effect::Term

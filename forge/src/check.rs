@@ -7155,6 +7155,9 @@ fn item_subprogram(
         Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => Program {
             items: vec![item.clone()],
         },
+        Item::Protocol(_) => Program {
+            items: vec![item.clone()],
+        },
     }
 }
 
@@ -7440,7 +7443,8 @@ fn mint_item_obligations(program: &Program, item: &Item) -> ItemObligations {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => (
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => (
             Obligation {
                 item: item.name().to_string(),
                 class: crate::obligation::ObligationClass::Contract,
@@ -7915,7 +7919,8 @@ fn collect_item_adt_refs(
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => {}
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => {}
     }
 }
 
@@ -7959,7 +7964,8 @@ fn collect_decl_field_adt_refs(
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => {}
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => {}
     }
 }
 
@@ -8026,7 +8032,8 @@ fn collect_type_adt_refs(
         // arm alongside `Prim`/`Unit`).
         thermite_syntax::Type::Prim(_)
         | thermite_syntax::Type::Unit
-        | thermite_syntax::Type::String => {}
+        | thermite_syntax::Type::String
+        | thermite_syntax::Type::ProtocolEndpoint { .. } => {}
     }
 }
 
@@ -8756,7 +8763,8 @@ pub(crate) fn item_effects(item: &Item) -> Vec<String> {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => {
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => {
             vec!["pure".to_string()]
         }
     }

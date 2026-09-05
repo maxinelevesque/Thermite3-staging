@@ -700,7 +700,7 @@ impl<'a> Parser<'a> {
                     | TokKind::HashBracket
                     | TokKind::Struct
                     | TokKind::Enum
-            ) || matches!(self.peek(), TokKind::Ident(word) if matches!(word.as_str(), "effect" | "shared" | "concurrent" | "lock" | "handlers" | "resource"))
+            ) || matches!(self.peek(), TokKind::Ident(word) if matches!(word.as_str(), "effect" | "shared" | "concurrent" | "lock" | "handlers" | "resource" | "protocol"))
             {
                 break;
             }
@@ -767,6 +767,12 @@ impl<'a> Parser<'a> {
                 return Err(self.unexpected("a handlers declaration takes no attribute"));
             }
             return self.parse_handlers(start_span);
+        }
+        if matches!(self.peek(), TokKind::Ident(word) if word == "protocol") {
+            if attr.is_some() {
+                return Err(self.unexpected("a protocol declaration takes no attribute"));
+            }
+            return self.parse_protocol(start_span);
         }
 
         // A `struct` item (`.design/basis/01-adts.md` REQ-1) accepts the
@@ -867,6 +873,55 @@ impl<'a> Parser<'a> {
                 "`fn`, `spec fn`, `#[slag(...)]`, `#[boundary(\"...\")]`, or `#[sealed] struct`",
             ))
         }
+    }
+
+    /// Parse RFC-13's binary global protocol surface:
+    /// `protocol P { Role { field: T, ... }, ..., end }` with the optional
+    /// bounded tail `repeat | end` in place of `end`.
+    fn parse_protocol(&mut self, start: Span) -> PResult<Item> {
+        self.expect_contextual("protocol")?;
+        let name = self.take_ident("a protocol name")?;
+        self.consume(&TokKind::LBrace, "`{` after protocol name")?;
+        let mut turns = Vec::new();
+        let repeat = loop {
+            if matches!(self.peek(), TokKind::Ident(word) if word == "end") {
+                self.bump();
+                break false;
+            }
+            if matches!(self.peek(), TokKind::Ident(word) if word == "repeat") {
+                self.bump();
+                self.consume(&TokKind::Pipe, "`|` in `repeat | end`")?;
+                self.expect_contextual("end")?;
+                break true;
+            }
+            let turn_start = self.peek_span();
+            let role = self.take_ident("a protocol role or `end`")?;
+            self.consume(&TokKind::LBrace, "`{` after protocol role")?;
+            let mut fields = Vec::new();
+            while !self.check(&TokKind::RBrace) {
+                let field = self.take_ident("a protocol payload field")?;
+                self.consume(&TokKind::Colon, "`:` after protocol payload field")?;
+                let ty = self.parse_type()?;
+                fields.push(FieldDef { name: field, ty });
+                if !self.eat(&TokKind::Comma) {
+                    break;
+                }
+            }
+            self.consume(&TokKind::RBrace, "`}` after protocol payload")?;
+            turns.push(ProtocolTurn {
+                role,
+                fields,
+                span: turn_start.to(self.prev_span()),
+            });
+            self.consume(&TokKind::Comma, "`,` after protocol turn")?;
+        };
+        self.consume(&TokKind::RBrace, "`}` after protocol terminator")?;
+        Ok(Item::Protocol(ProtocolItem {
+            name,
+            turns,
+            repeat,
+            span: start.to(self.prev_span()),
+        }))
     }
 
     fn parse_resource_decl(&mut self) -> PResult<ResourceDecl> {
@@ -2057,12 +2112,13 @@ impl<'a> Parser<'a> {
             "alloc" => Ok(Effect::Alloc),
             "time" => Ok(Effect::Time),
             "rand" => Ok(Effect::Rand),
+            "blocks" => Ok(Effect::Blocks),
             "panic" => Ok(Effect::Panic),
             "diverge" => Ok(Effect::Diverge),
             "term" => Ok(Effect::Term),
             _ => Err(SyntaxError::Unexpected {
                 expected:
-                    "an effect (read/write/net/forgets/owns/alloc/time/rand/panic/diverge/term)"
+                    "an effect (read/write/net/forgets/owns/alloc/time/rand/blocks/panic/diverge/term)"
                         .to_string(),
                 found: format!("identifier `{name}`"),
                 span: self.prev_span(),
@@ -3614,6 +3670,13 @@ impl<'a> Parser<'a> {
             }
             TokKind::Ident(name) => {
                 self.bump();
+                if self.eat(&TokKind::ColonCol) {
+                    let role = self.take_ident("a role after `::`")?;
+                    return Ok(Type::ProtocolEndpoint {
+                        protocol: name,
+                        role,
+                    });
+                }
                 match name.as_str() {
                     "u8" => Ok(Type::Prim(PrimType::U8)),
                     "u16" => Ok(Type::Prim(PrimType::U16)),

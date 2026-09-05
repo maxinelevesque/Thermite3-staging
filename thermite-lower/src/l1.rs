@@ -145,6 +145,7 @@ pub struct L1Artifact {
     classifier_fragment: &'static str,
     route: L1Route,
     interference_witness: Option<crate::InterferenceWitness>,
+    protocol_witness: Option<crate::ProtocolWitness>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -194,6 +195,10 @@ impl L1Artifact {
     /// steps between calls.
     pub fn interference_witness(&self) -> Option<&crate::InterferenceWitness> {
         self.interference_witness.as_ref()
+    }
+
+    pub fn protocol_witness(&self) -> Option<&crate::ProtocolWitness> {
+        self.protocol_witness.as_ref()
     }
 }
 
@@ -269,14 +274,21 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
     let digest = format!("{:x}", Sha256::digest(source.as_bytes()));
     let interference_witness = (!checked.interference().functions.is_empty())
         .then(|| crate::emit_interference_witness(&checked));
-    let wrapper_identity = if let Some(interference) = &interference_witness {
-        format!(
-            "thermite-l1-wrapper-v1:{item}:sha256:{digest}:interference-sha256:{}",
+    let protocol_witness = (!checked.protocol_flow().definitions.is_empty())
+        .then(|| crate::emit_protocol_witness(&checked));
+    let mut wrapper_identity = format!("thermite-l1-wrapper-v1:{item}:sha256:{digest}");
+    if let Some(interference) = &interference_witness {
+        wrapper_identity.push_str(&format!(
+            ":interference-sha256:{}",
             interference.checked_interference_sha256
-        )
-    } else {
-        format!("thermite-l1-wrapper-v1:{item}:sha256:{digest}")
-    };
+        ));
+    }
+    if let Some(protocol) = &protocol_witness {
+        wrapper_identity.push_str(&format!(
+            ":protocol-sha256:{}",
+            protocol.checked_protocol_sha256
+        ));
+    }
     Ok(L1Artifact {
         source,
         item: item.to_string(),
@@ -286,6 +298,7 @@ pub fn lower_l1_artifact(program: &Program, item: &str) -> Result<L1Artifact, Lo
         classifier_fragment,
         route,
         interference_witness,
+        protocol_witness,
     })
 }
 
@@ -405,6 +418,7 @@ fn lower_l1_inner(
             // always-active invariant predicate); an `enum` to a plain Rust `enum`.
             Item::Struct(s) => lower_struct_l1(s, &variants)?,
             Item::Enum(e) => lower_enum_l1(e)?,
+            Item::Protocol(protocol) => lower_protocol_l1(protocol),
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering consumer
             // yet (increments 2b-3); emit nothing, mirroring the inert ADT-decl arms.
             Item::Forge(_)
@@ -784,7 +798,8 @@ pub(crate) fn emit_combinator_l1_defs(program: &Program) -> Result<String, Lower
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
 
@@ -1952,6 +1967,21 @@ pub(crate) fn lower_expr_exec(
             args,
         } => {
             let r = lower_expr_exec(receiver, d, span, variants)?;
+            if matches!(
+                name.as_str(),
+                "send" | "receive" | "repeat" | "end" | "receive_repeat" | "receive_end"
+            ) {
+                let lowered_name = if name == "send" {
+                    format!("__thermite_protocol_send_{}", args.len())
+                } else {
+                    format!("__thermite_protocol_{name}")
+                };
+                let parts = args
+                    .iter()
+                    .map(|arg| lower_expr_exec(arg, d, span, variants))
+                    .collect::<Result<Vec<_>, _>>()?;
+                return Ok(format!("{r}.{lowered_name}({})", parts.join(", ")));
+            }
             // Cluster C4 (`.design/basis/07-strings.md` REQ-8, issue #94): the
             // `u64`→decimal-`String` method `n.to_string()` lowers to a call of the
             // generated free fn `u64_to_string(n)` (emitted by
@@ -2360,6 +2390,55 @@ fn precedence(op: BinOp) -> u8 {
 
 /// Lower a `Type` to its Rust spelling (exec). No `Seq` — every type is its
 /// plain Rust form. Mirrors `lower.rs::lower_type`.
+fn lower_protocol_l1(protocol: &thermite_syntax::ProtocolItem) -> String {
+    let mut roles = std::collections::BTreeSet::new();
+    for turn in &protocol.turns {
+        roles.insert(turn.role.as_str());
+    }
+    let arities: std::collections::BTreeSet<usize> = protocol
+        .turns
+        .iter()
+        .map(|turn| turn.fields.len())
+        .collect();
+    roles
+        .into_iter()
+        .map(|role| {
+            let ty = format!("{}_{}_Endpoint", protocol.name, role);
+            let mut emitted = format!(
+                "#[derive(Debug)]\npub struct {}_{}_Endpoint {{ pub step: usize }}",
+                protocol.name, role
+            );
+            emitted.push_str(&format!("\nimpl {ty} {{\n"));
+            for arity in &arities {
+                let generics = (0..*arity).map(|i| format!("T{i}")).collect::<Vec<_>>();
+                let params = (0..*arity)
+                    .map(|i| format!("_payload{i}: T{i}"))
+                    .collect::<Vec<_>>();
+                let generic_clause = if generics.is_empty() {
+                    String::new()
+                } else {
+                    format!("<{}>", generics.join(", "))
+                };
+                emitted.push_str(&format!(
+                    "    pub fn __thermite_protocol_send_{arity}{generic_clause}(&self{}{}) {{}}\n",
+                    if params.is_empty() { "" } else { ", " },
+                    params.join(", ")
+                ));
+            }
+            emitted.push_str("    pub fn __thermite_protocol_receive(&self) {}\n");
+            if protocol.repeat {
+                emitted.push_str("    pub fn __thermite_protocol_repeat(&self) {}\n");
+                emitted.push_str("    pub fn __thermite_protocol_end(self) {}\n");
+                emitted.push_str("    pub fn __thermite_protocol_receive_repeat(&self) {}\n");
+                emitted.push_str("    pub fn __thermite_protocol_receive_end(self) {}\n");
+            }
+            emitted.push('}');
+            emitted
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 pub(crate) fn lower_type(ty: &Type) -> Result<String, LowerError> {
     match ty {
         Type::Prim(PrimType::U8) => Ok("u8".to_string()),
@@ -2389,6 +2468,7 @@ pub(crate) fn lower_type(ty: &Type) -> Result<String, LowerError> {
         // `struct`/`enum` type is its bare name; `Box<T>` is a real heap box (the
         // L1 mirror of `lower.rs::lower_type` — plain Rust, no `Seq`).
         Type::Named(name) => Ok(name.clone()),
+        Type::ProtocolEndpoint { protocol, role } => Ok(format!("{protocol}_{role}_Endpoint")),
         Type::Box(inner) => {
             let i = lower_type(inner)?;
             Ok(format!("Box<{i}>"))
@@ -2511,7 +2591,7 @@ fn program_uses_string_l1(program: &Program) -> bool {
             // Cluster C9-B (`.design/basis/10-recursion-tuples.md` REQ-8, #109): a
             // `String` nested in any tuple element is reached through the element.
             Type::Tuple(tys) => tys.iter().any(ty_is_string),
-            Type::Prim(_) | Type::Unit | Type::Named(_) => false,
+            Type::Prim(_) | Type::Unit | Type::Named(_) | Type::ProtocolEndpoint { .. } => false,
         }
     }
     for item in &program.items {
@@ -2556,7 +2636,8 @@ fn program_uses_string_l1(program: &Program) -> bool {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
     false
@@ -3317,7 +3398,8 @@ fn program_uses_numfmt_l1(program: &Program) -> bool {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => false,
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => false,
     })
 }
 

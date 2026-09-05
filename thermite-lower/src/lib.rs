@@ -35,6 +35,7 @@ pub mod l2;
 pub mod l3;
 pub mod locks;
 pub mod lower;
+pub mod protocol_witness;
 pub mod resource_witness;
 pub mod witness;
 
@@ -58,6 +59,12 @@ pub use lower::{
     lower_equivalence_obligation_with_shared, lower_exec_body, lower_exec_expr, lower_l3_library,
     lower_l3_library_with_lock_provider, spec_fn_param_type_map, L3Export, L3ExportVisibility,
     L3LibraryTarget, LowerError,
+};
+pub use protocol_witness::{
+    canonical_protocol_projection, emit_protocol_witness, replay_protocol_witness,
+    CanonicalProtocolProjection, ProtocolWitness, WitnessProtocolAction, WitnessProtocolDefinition,
+    WitnessProtocolEndpoint, WitnessProtocolFunction, WitnessProtocolTransition,
+    WitnessRoleProjection, PROTOCOL_WITNESS_VERSION,
 };
 pub use resource_witness::{
     canonical_resource_projection, emit_resource_witness, lean_resource_replay_source,

@@ -929,7 +929,8 @@ impl OpaqueSorts {
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
                 | Item::Concurrent(_)
-                | Item::LockDecl(_) => {}
+                | Item::LockDecl(_)
+                | Item::Protocol(_) => {}
             }
         }
         for clause in clauses {
@@ -1008,6 +1009,9 @@ fn collect_type_names(ty: &Type, out: &mut BTreeSet<String>) {
             for ty in types {
                 collect_type_names(ty, out);
             }
+        }
+        Type::ProtocolEndpoint { protocol, role } => {
+            out.insert(format!("{protocol}::{role}"));
         }
         Type::Prim(_) | Type::Unit | Type::String => {}
     }
@@ -1610,6 +1614,13 @@ fn write_type(ty: &Type, out: &mut String) {
         Type::Named(name) => {
             out.push_str("(named ");
             push_name(out, name);
+            out.push(')');
+        }
+        Type::ProtocolEndpoint { protocol, role } => {
+            out.push_str("(protocol-endpoint ");
+            push_name(out, protocol);
+            out.push(' ');
+            push_name(out, role);
             out.push(')');
         }
         Type::Box(inner) => write_unary_type("box", inner, out),

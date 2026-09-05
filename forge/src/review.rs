@@ -407,7 +407,8 @@ fn project_artifact(
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => None,
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => None,
         })
         .collect();
 
@@ -764,6 +765,7 @@ fn render_type(ty: &Type) -> String {
         // `Box<List>`). The neutral value for an infallible surface renderer.
         // Dead-in-1a (an ADT cert is never reviewed — it dies at the validator).
         Type::Named(name) => name.clone(),
+        Type::ProtocolEndpoint { protocol, role } => format!("{protocol}::{role}"),
         Type::Box(inner) => format!("Box<{}>", render_type(inner)),
         // Basis Stage 4 (`.design/basis/04-collections.md`): the surface rendering
         // of a bounded `Vec<T>` is its surface text `Vec<T>` — the declaration a

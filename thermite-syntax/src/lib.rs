@@ -52,9 +52,9 @@ pub use ast::{
     Effect, EffectDeclItem, EffectPrimitive, EffectRow, EnumItem, Expr, Falsify, FieldDef, FnItem,
     ForgeItem, Hole, HoleContext, IndexArg, Inhabit, InterferenceContract, Item, LemmaItem,
     LoopKind, LoopNode, MatchArm, Param, Pattern, PrimType, Program, ProofBlock, ProofItem,
-    ProofObligation, PropFnItem, Quant, Refinement, RefinementTarget, RegionPath, ResourceDecl,
-    SharedDeclItem, SlagAttr, SlicePat, SpecFnItem, Stmt, StructItem, Type, UnaryOp, VariantDef,
-    VariantShape, WitnessBlock,
+    ProofObligation, PropFnItem, ProtocolItem, ProtocolTurn, Quant, Refinement, RefinementTarget,
+    RegionPath, ResourceDecl, SharedDeclItem, SlagAttr, SlicePat, SpecFnItem, Stmt, StructItem,
+    Type, UnaryOp, VariantDef, VariantShape, WitnessBlock,
 };
 pub use lexer::{tokenize, Span, TokKind, Token};
 pub use parser::{parse, ParseResult, SyntaxError};

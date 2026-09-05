@@ -3844,6 +3844,7 @@ fn effect_spelling(effect: &thermite_syntax::Effect) -> String {
         thermite_syntax::Effect::Alloc => "alloc".into(),
         thermite_syntax::Effect::Time => "time".into(),
         thermite_syntax::Effect::Rand => "rand".into(),
+        thermite_syntax::Effect::Blocks => "blocks".into(),
         thermite_syntax::Effect::Panic => "panic".into(),
         thermite_syntax::Effect::Diverge => "diverge".into(),
         thermite_syntax::Effect::Term => "term".into(),
