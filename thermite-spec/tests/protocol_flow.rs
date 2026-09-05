@@ -94,6 +94,23 @@ fn bad(c: P::A, value: bool) -> () ! blocks requires true ensures true
 }
 
 #[test]
+fn rejects_send_payload_whose_type_is_not_statically_inferrable() {
+    let parsed = parse(
+        r#"
+protocol P { A { value: u32 }, B { reply: u32 }, end }
+fn bad(c: P::A, left: u32, right: u32) -> () ! blocks requires true ensures true
+{ c.send(left > right); c.receive(); }
+"#,
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    let errors = check_protocols(&parsed.program)
+        .expect_err("unknown send expression types must fail closed in RFC-13 v1");
+    assert!(errors.iter().any(|error| {
+        error.kind == ProtocolErrorKind::PayloadMismatch && error.detail.contains("cannot infer")
+    }));
+}
+
+#[test]
 fn rejects_protocol_actions_in_unmodeled_control_flow() {
     let parsed = parse(
         r#"

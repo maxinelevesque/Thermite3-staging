@@ -9,7 +9,7 @@ introduces:
   - REQ-SPEC-PROTOCOL-ENDPOINT
 ---
 
-audited-content-sha256: 1b213f0e91e506024c3790a9be0456379c0c40a8e2ac2e53d0f51581aabd865c (RFC-13 post-review implementation pin; exhaustive protocol-action branch detection added. prior: 97bfb9ad3857bb6bf5b48f97e0a476f1f2c732f52ecdc92314bd9a0bb298f870)
+audited-content-sha256: 277fdd2b88f6af460a94944dfff2e5e968088426ff1db51d01bc741d48af6eed (RFC-13 final review-fix pin; exhaustive branch detection and fail-closed send-payload inference added. prior: 1b213f0e91e506024c3790a9be0456379c0c40a8e2ac2e53d0f51581aabd865c)
 
 # RFC-13: Protocol types — sessions whose endpoints cannot be abandoned
 
@@ -41,7 +41,10 @@ session calculus features explicit:
   stored in `shared` state, and require `! blocks`.
 - `c.send(...)` and `c.receive()` advance the inferred local projection.
   `let payload: T = c.receive_payload()` exposes a received payload, requiring
-  `T` to equal the declared scalar or tuple payload type.
+  `T` to equal the declared scalar or tuple payload type. Send payloads must be
+  literals, typed locals, explicit casts, or tuples of those forms whose type
+  the v1 checker can establish; bind more complex expressions to an explicitly
+  typed local before sending. An uninferrable send payload fails closed.
 - A repeating protocol's first sender chooses `repeat()` or `end()`; its peer
   receives that discriminant with `receive_repeat()` or `receive_end()`.
 - Every return and fallthrough must reach `end`. Endpoint aliasing, wrong-role

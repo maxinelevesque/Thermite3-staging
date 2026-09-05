@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: daa2319413d80dc0ad4b77705d453da5a6710071831c99c1bb725fac4e7a65aa (re-pinned after the final scoped RFC-13 endpoint receipt refresh and Blocks-warning regression; language completeness semantics are unchanged. prior: 6fe19d12e06b13be47d12cb2d6126231881ea68d17002957c3798c2c8789d444)
+audited-content-sha256: 36e0a46e92b3ca74642a52c29b3fa35b93435c36e600e3f78ce9e749e6cef086 (re-pinned after the scoped RFC-13 blocker receipt refresh; language completeness semantics are unchanged. prior: 5d9b669f395aa9dce88c884450ebc086347e2321bcfc52a9a813cc4d82fc5ed6)
 
 ## Summary
 

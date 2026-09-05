@@ -732,20 +732,31 @@ fn check_expr(
         return;
     }
     for (index, (arg, expected_ty)) in args.iter().zip(expected_types).enumerate() {
-        if let Some(found_ty) = infer_expr_type(arg, value_types) {
-            if !type_compatible(expected_ty, &found_ty, matches!(arg, Expr::IntLit { .. })) {
-                errors.push(error(
-                    ProtocolErrorKind::PayloadMismatch,
-                    Some(function.name.clone()),
-                    Some(binding.clone()),
-                    format!(
-                        "endpoint `{binding}` payload {index} at step {} expects {expected_ty:?}, found {found_ty:?}",
-                        endpoint.step
-                    ),
-                    function.span,
-                ));
-                return;
-            }
+        let Some(found_ty) = infer_expr_type(arg, value_types) else {
+            errors.push(error(
+                ProtocolErrorKind::PayloadMismatch,
+                Some(function.name.clone()),
+                Some(binding.clone()),
+                format!(
+                    "endpoint `{binding}` payload {index} at step {} has a type the RFC-13 v1 checker cannot infer; bind it to an explicitly typed local before sending",
+                    endpoint.step
+                ),
+                function.span,
+            ));
+            return;
+        };
+        if !type_compatible(expected_ty, &found_ty, matches!(arg, Expr::IntLit { .. })) {
+            errors.push(error(
+                ProtocolErrorKind::PayloadMismatch,
+                Some(function.name.clone()),
+                Some(binding.clone()),
+                format!(
+                    "endpoint `{binding}` payload {index} at step {} expects {expected_ty:?}, found {found_ty:?}",
+                    endpoint.step
+                ),
+                function.span,
+            ));
+            return;
         }
     }
     flow.transitions.push(ProtocolTransition {
