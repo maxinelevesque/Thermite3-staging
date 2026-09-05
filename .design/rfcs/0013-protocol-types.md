@@ -9,7 +9,7 @@ introduces:
   - REQ-SPEC-PROTOCOL-ENDPOINT
 ---
 
-audited-content-sha256: 277fdd2b88f6af460a94944dfff2e5e968088426ff1db51d01bc741d48af6eed (RFC-13 final review-fix pin; exhaustive branch detection and fail-closed send-payload inference added. prior: 1b213f0e91e506024c3790a9be0456379c0c40a8e2ac2e53d0f51581aabd865c)
+audited-content-sha256: ee2d0b66d9d8291cbc198fb456f3a40925ac85b7b7673c46ecab73331c536efa (RFC-13 final review-fix pin; exhaustive branch detection plus statement-ordered, fail-closed payload typing added. prior: 277fdd2b88f6af460a94944dfff2e5e968088426ff1db51d01bc741d48af6eed)
 
 # RFC-13: Protocol types — sessions whose endpoints cannot be abandoned
 

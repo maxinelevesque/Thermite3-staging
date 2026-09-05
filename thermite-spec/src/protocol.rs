@@ -250,14 +250,11 @@ fn check_function(
     report: &mut ProtocolReport,
     errors: &mut Vec<ProtocolError>,
 ) {
-    let mut value_types = function
+    let value_types = function
         .params
         .iter()
         .map(|param| (param.name.clone(), param.ty.clone()))
         .collect::<BTreeMap<_, _>>();
-    if let Some(body) = &function.body {
-        collect_declared_types(body, &mut value_types);
-    }
     let mut state = State::new();
     for param in &function.params {
         let Type::ProtocolEndpoint { protocol, role } = &param.ty else {
@@ -349,6 +346,10 @@ fn check_block(
     flow: &mut ProtocolFunctionFlow,
     errors: &mut Vec<ProtocolError>,
 ) -> (State, bool) {
+    // Track lexical value types in statement order. A whole-body pre-pass is
+    // unsound under shadowing: an untyped `let x = ...` could otherwise leave a
+    // stale parameter or earlier-local type attached to the new `x` binding.
+    let mut value_types = value_types.clone();
     for stmt in &block.stmts {
         match stmt {
             Stmt::Expr(expr) => check_expr(
@@ -356,7 +357,7 @@ fn check_block(
                 &mut state,
                 function,
                 protocols,
-                value_types,
+                &value_types,
                 flow,
                 errors,
             ),
@@ -388,10 +389,15 @@ fn check_block(
                         &mut state,
                         function,
                         protocols,
-                        value_types,
+                        &value_types,
                         flow,
                         errors,
                     );
+                    if let Some(ty) = ty {
+                        value_types.insert(name.clone(), ty.clone());
+                    } else {
+                        value_types.remove(name);
+                    }
                     continue;
                 }
                 reject_endpoint_value_use(init, &state, function, errors);
@@ -403,6 +409,13 @@ fn check_block(
                         "protocol endpoints may enter a function only as owned parameters; a local binding cannot mint or alias one".into(),
                         function.span,
                     ));
+                }
+                if let Some(ty) = ty {
+                    value_types.insert(name.clone(), ty.clone());
+                } else if let Some(inferred) = infer_expr_type(init, &value_types) {
+                    value_types.insert(name.clone(), inferred);
+                } else {
+                    value_types.remove(name);
                 }
             }
             Stmt::Return(value) => {
@@ -433,7 +446,7 @@ fn check_block(
                     state.clone(),
                     function,
                     protocols,
-                    value_types,
+                    &value_types,
                     flow,
                     errors,
                 );
@@ -443,7 +456,7 @@ fn check_block(
                         state.clone(),
                         function,
                         protocols,
-                        value_types,
+                        &value_types,
                         flow,
                         errors,
                     )
@@ -470,7 +483,7 @@ fn check_block(
                     state.clone(),
                     function,
                     protocols,
-                    value_types,
+                    &value_types,
                     flow,
                     errors,
                 );
@@ -495,7 +508,7 @@ fn check_block(
                     state.clone(),
                     function,
                     protocols,
-                    value_types,
+                    &value_types,
                     flow,
                     errors,
                 );
@@ -509,6 +522,24 @@ fn check_block(
             Stmt::Assign { target, value } => {
                 reject_endpoint_value_use(target, &state, function, errors);
                 reject_endpoint_value_use(value, &state, function, errors);
+                if let Expr::Path(path) = target {
+                    if let [name] = path.as_slice() {
+                        let assigned = infer_expr_type(value, &value_types);
+                        match (value_types.get(name), assigned) {
+                            (Some(previous), Some(found))
+                                if type_compatible(
+                                    previous,
+                                    &found,
+                                    matches!(value, Expr::IntLit { .. }),
+                                ) => {}
+                            _ => {
+                                // Do not let a later protocol send rely on a
+                                // stale or unproved type after reassignment.
+                                value_types.remove(name);
+                            }
+                        }
+                    }
+                }
             }
             Stmt::Forget { value, .. } => {
                 reject_endpoint_value_use(value, &state, function, errors)
@@ -827,27 +858,6 @@ fn infer_expr_type(expr: &Expr, value_types: &BTreeMap<String, Type>) -> Option<
             .collect::<Option<Vec<_>>>()
             .map(Type::Tuple),
         _ => None,
-    }
-}
-
-fn collect_declared_types(block: &Block, value_types: &mut BTreeMap<String, Type>) {
-    for stmt in &block.stmts {
-        match stmt {
-            Stmt::Let {
-                name, ty: Some(ty), ..
-            } => {
-                value_types.insert(name.clone(), ty.clone());
-            }
-            Stmt::If { then, else_, .. } => {
-                collect_declared_types(then, value_types);
-                if let Some(else_) = else_ {
-                    collect_declared_types(else_, value_types);
-                }
-            }
-            Stmt::Loop(loop_) => collect_declared_types(&loop_.body, value_types),
-            Stmt::Holding { body, .. } => collect_declared_types(body, value_types),
-            _ => {}
-        }
     }
 }
 

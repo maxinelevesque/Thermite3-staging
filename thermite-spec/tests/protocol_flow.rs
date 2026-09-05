@@ -111,6 +111,45 @@ fn bad(c: P::A, left: u32, right: u32) -> () ! blocks requires true ensures true
 }
 
 #[test]
+fn rejects_send_payload_after_untyped_shadowing() {
+    for body in [
+        "let value = left > right; c.send(value); c.receive();",
+        "let value: u32 = 5; let value = left > right; c.send(value); c.receive();",
+    ] {
+        let parsed = parse(&format!(
+            r#"
+protocol P {{ A {{ value: u32 }}, B {{ reply: u32 }}, end }}
+fn bad(c: P::A, value: u32, left: u32, right: u32) -> () ! blocks requires true ensures true
+{{ {body} }}
+"#
+        ));
+        assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+        let errors = check_protocols(&parsed.program)
+            .expect_err("an untyped shadow must not retain the prior binding type");
+        assert!(errors
+            .iter()
+            .any(|error| error.kind == ProtocolErrorKind::PayloadMismatch));
+    }
+}
+
+#[test]
+fn rejects_send_payload_after_unproved_reassignment() {
+    let parsed = parse(
+        r#"
+protocol P { A { value: u32 }, B { reply: u32 }, end }
+fn bad(c: P::A, value: u32, left: u32, right: u32) -> () ! blocks requires true ensures true
+{ value = left > right; c.send(value); c.receive(); }
+"#,
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    let errors = check_protocols(&parsed.program)
+        .expect_err("a reassignment must invalidate an unproved payload type");
+    assert!(errors
+        .iter()
+        .any(|error| error.kind == ProtocolErrorKind::PayloadMismatch));
+}
+
+#[test]
 fn rejects_protocol_actions_in_unmodeled_control_flow() {
     let parsed = parse(
         r#"
