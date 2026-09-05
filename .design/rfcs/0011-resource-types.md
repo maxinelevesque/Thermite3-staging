@@ -15,19 +15,18 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | **Implemented and locally qualified on the RFC-11 build branch; ready for final review, CI, and merge.** |
-| **Fork implementation** | **Syntax, provenance, checked flow, effects, L1/L3 lowering, Lean replay, certificates, audit disclosure, inventories, and the production conformance anchor are implemented.** The checked contract is [resource-types.md](../syntax/resource-types.md), tracked by issue #75. |
+| **Status** | **Shipped on `main`.** |
+| **Fork implementation** | **Complete.** Syntax, provenance, checked flow, effects, L1/L3 lowering, Lean replay, certificates, audit disclosure, inventories, and the production conformance anchor are implemented. The checked contract is [resource-types.md](../syntax/resource-types.md); issue #75 is closed. |
 | **Baseline** | `maxinelevesque/Thermite3-staging @ 91c964db` (`3.0.0-alpha.7`) |
 | **Position** | step 7 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), [RFC-8](0008-effect-algebra.md), [RFC-9](0009-verified-effect-rows.md), [RFC-10](0010-shared-state-invariants.md); issue #48 is complete |
 
-> **Prepared 2026-09-01.** The proposal remains the rationale and language-level
-> direction. The approved implementation contract resolves its stale baseline, explicit
-> resource provenance, generic contagion, fail-closed slice boundaries, checked
-> flow witness, and residual-trust requirements in
-> [resource-types.md](../syntax/resource-types.md). Issue #48's authoritative
-> schema-v2 transition is complete; merge and release activation now remain
-> sequenced only after the final cold adversarial review and CI.
+> **Shipped 2026-09-02.** The proposal remains the rationale and language-level
+> direction. The approved implementation contract resolves explicit resource
+> provenance, generic contagion, fail-closed slice boundaries, checked flow
+> witnesses, and residual-trust requirements in
+> [resource-types.md](../syntax/resource-types.md). The final implementation and
+> residual-trust correction passed cold review and CI before merge.
 
 Kind: surface an existing capability.
 

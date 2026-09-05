@@ -1,0 +1,70 @@
+use thermite_lower::{
+    check_program, lower, lower_l1_artifact, lower_l2, lower_l3_artifact, LowerError,
+};
+use thermite_syntax::parse;
+
+#[test]
+fn validated_relations_are_bound_into_l1_and_l3_but_not_silently_accepted_by_l2() {
+    let parsed = parse(
+        "shared counter: u64\nfn grow(s: &mut u64) -> u64 \
+         ! write(counter) requires true ensures final(s) >= 0 \
+         interleaves { asks final(s) >= s; promises final(s) >= s; } \
+         { 0 }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    let checked =
+        check_program(&parsed.program).expect("relational report enters checked boundary");
+    assert_eq!(checked.interference().functions.len(), 1);
+    lower(&parsed.program).expect("L3 source emission preserves executable behavior");
+    let l1 = lower_l1_artifact(&parsed.program, "grow").expect("checked L1 artifact");
+    assert!(l1.interference_witness().is_some());
+    assert!(l1.wrapper_identity().contains(":interference-sha256:"));
+    let l3 = lower_l3_artifact(&parsed.program, "grow").expect("checked L3 artifact");
+    assert!(l3.interference_witness().is_some());
+    assert!(l3.query_identity().contains(":interference-sha256:"));
+
+    let error = lower_l2(&parsed.program).expect_err("L2 has no RFC-12 evidence consumer");
+    assert!(matches!(
+        error,
+        LowerError::Unsupported { what, .. } if what.contains("RFC-12")
+    ));
+}
+
+#[test]
+fn undischarged_rely_cannot_reach_a_release_artifact() {
+    let parsed = parse(
+        "shared counter: u64\n\
+         #[boundary(\"ext::covered\")] fn covered(s: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(s) >= s; promises final(s) >= s; };\n\
+         #[boundary(\"ext::uncovered\")] fn uncovered(s: &mut u64) -> u64 ! write(counter) requires true ensures true;\n\
+         concurrent pair { covered, uncovered }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+
+    let error = lower_l3_artifact(&parsed.program, "covered")
+        .expect_err("missing peer rely evidence must stop before an L3 release artifact exists");
+    assert!(matches!(error, LowerError::EffectAnalysis { .. }));
+}
+
+#[test]
+fn empty_relations_cannot_discharge_a_real_shared_place_conflict() {
+    let parsed = parse(
+        "shared counter: u64\n\
+         #[boundary(\"ext::left\")] fn left(s: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks true; promises true; };\n\
+         #[boundary(\"ext::right\")] fn right(s: &mut u64) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks true; promises true; };\n\
+         concurrent pair { left, right }",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+
+    thermite_spec::validate(&parsed.program)
+        .expect("clause-local validation does not fabricate RFC-9 conflict context");
+    let errors = check_program(&parsed.program)
+        .expect_err("empty relations cannot cover the inferred shared-place conflict");
+    assert!(errors.iter().any(|error| matches!(
+        error,
+        LowerError::EffectAnalysis { detail, .. }
+            if detail.contains("do not both cover conflicting shared place `counter`")
+    )));
+}

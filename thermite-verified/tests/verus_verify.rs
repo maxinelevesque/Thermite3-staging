@@ -251,3 +251,30 @@ fn broken_meets_floor_drops_scored_guard_fails() {
         "        scored == 0 ==> !r,\n    {\n        killed * 100 >= scored * 60\n    }",
     );
 }
+
+#[test]
+fn broken_rfc12_count_reset_fails_persistence() {
+    assert_mutation_fails(
+        "rfc12_count_reset",
+        "    pub open spec fn count_grows(before: nat, after: nat) -> bool {\n        before <= after\n    }",
+        "    pub open spec fn count_grows(before: nat, after: nat) -> bool {\n        after <= before\n    }",
+    );
+}
+
+#[test]
+fn broken_rfc12_bit_toggle_fails_preorder() {
+    assert_mutation_fails(
+        "rfc12_bit_toggle",
+        "    pub open spec fn bits_grow(before: u64, after: u64) -> bool {\n        (before & after) == before\n    }",
+        "    pub open spec fn bits_grow(before: u64, after: u64) -> bool {\n        (before ^ after) == before\n    }",
+    );
+}
+
+#[test]
+fn broken_rfc12_bool_relation_fails_preorder() {
+    assert_mutation_fails(
+        "rfc12_bool_relation",
+        "    pub open spec fn bool_grows(before: bool, after: bool) -> bool {\n        !before || after\n    }",
+        "    pub open spec fn bool_grows(before: bool, after: bool) -> bool {\n        before || after\n    }",
+    );
+}

@@ -65,6 +65,7 @@ IMPORTS=(
   "Thermite.CertificationReplaySemantics"
   "Thermite.AssurancePolicyV2"
   "Thermite.AssuranceV2Replay"
+  "Thermite.Interference"
 )
 
 # Universal soundness theorems and the permanent reconstruction probe.
@@ -214,6 +215,8 @@ THEOREMS=(
   "Thermite.CertificationMetatheory.predecessor_bounded_empirical_edge_crosses_v2_population"
   "Thermite.CertificationMetatheory.predecessor_disposition_is_exact"
   "Thermite.CertificationMetatheory.predecessor_disposition_matrix_covers_all_sixteen_pairs"
+  "Thermite.Interference.verify_iff_supported"
+  "Thermite.Interference.obligations_compatible_of_verify"
 )
 ALLOWED="propext Classical.choice Quot.sound"
 

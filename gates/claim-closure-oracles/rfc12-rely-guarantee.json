@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "rfc12-spec-preorder", "expected_exit": 0},
+    {"id": "rfc12-spec-rejections", "expected_exit": 0},
+    {"id": "rfc12-spec-exact-step-negative", "expected_exit": 0},
+    {"id": "rfc12-spec-closed-fragment", "expected_exit": 0},
+    {"id": "rfc12-stability-negative", "expected_exit": 0},
+    {"id": "rfc12-validator-disjoint", "expected_exit": 0},
+    {"id": "rfc12-effect-conflict", "expected_exit": 0},
+    {"id": "rfc12-effect-coverage-negative", "expected_exit": 0},
+    {"id": "rfc12-handler-direction", "expected_exit": 0},
+    {"id": "rfc12-lean-graph", "expected_exit": 0},
+    {"id": "rfc12-lean-mutations", "expected_exit": 0},
+    {"id": "rfc12-lean-handler", "expected_exit": 0},
+    {"id": "rfc12-lean-axioms", "expected_exit": 0},
+    {"id": "rfc12-lowering-boundaries", "expected_exit": 0},
+    {"id": "rfc12-release-negative", "expected_exit": 0},
+    {"id": "rfc12-empty-coverage-negative", "expected_exit": 0},
+    {"id": "rfc12-verus-core", "expected_exit": 0},
+    {"id": "rfc12-verus-count-negative", "expected_exit": 0},
+    {"id": "rfc12-verus-bit-negative", "expected_exit": 0},
+    {"id": "rfc12-verus-bool-negative", "expected_exit": 0},
+    {"id": "rfc12-certificate", "expected_exit": 0}
+  ]
+}

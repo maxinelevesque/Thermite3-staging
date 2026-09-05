@@ -20,6 +20,8 @@ fn error_kind(error: &SyntaxError) -> &'static str {
         SyntaxError::Unexpected { .. } => "Unexpected",
         SyntaxError::MissingClause { .. } => "MissingClause",
         SyntaxError::ClauseOrder { .. } => "ClauseOrder",
+        SyntaxError::MissingInterferenceClause { .. } => "MissingInterferenceClause",
+        SyntaxError::InterferenceClauseOrder { .. } => "InterferenceClauseOrder",
         SyntaxError::ClauseOrdinalOverflow { .. } => "ClauseOrdinalOverflow",
         SyntaxError::UnexpectedEof { .. } => "UnexpectedEof",
         SyntaxError::ExpressionTooDeep { .. } => "ExpressionTooDeep",

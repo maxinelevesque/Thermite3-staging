@@ -269,6 +269,7 @@ fn validate_never_panics_on_deep_nesting() {
                 requires: clause(expr),
                 ensures: vec![clause(Expr::BoolLit(true))],
                 effects: EffectRow::Pure,
+                interference: None,
             },
             measures: None,
             body: Some(Block {

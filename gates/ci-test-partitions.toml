@@ -8,6 +8,190 @@ effective_parallelism = 2.17
 longest_indivisible_seconds = 367.125
 timing_source = "gates/fixtures/ci-test-timings-run-31837152080-attempt2.tsv"
 
+# RFC-12 tests postdate timing_source. Fast in-process checks use the adjacent
+# 0.007s reviewed estimate; Lean subprocess checks use 0.500s and Verus
+# negative checks use 1.500s until the next measured timing snapshot.
+
+[[assignment]]
+bucket = 1
+seconds = 0.500
+test = "forge::bin/forge check::tests::rfc12_certificate_and_audit_disclose_relations_edges_and_residual_trust"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::effects production_analysis_allows_an_rfc12_covered_shared_conflict"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::effects production_analysis_does_not_require_rfc12_for_disjoint_concurrency"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower::effects production_analysis_preserves_handler_direction_for_conflicts"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::effects production_analysis_requires_relations_to_cover_the_conflicting_place"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::interference_fail_closed undischarged_rely_cannot_reach_a_release_artifact"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower::interference_fail_closed validated_relations_are_bound_into_l1_and_l3_but_not_silently_accepted_by_l2"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower::interference_fail_closed empty_relations_cannot_discharge_a_real_shared_place_conflict"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.500
+test = "thermite-lower::interference_witness interference_witness_is_deterministic_and_source_bound"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.500
+test = "thermite-lower::interference_witness lean_derives_graph_completeness_and_rejects_a_reversed_edge"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.500
+test = "thermite-lower::interference_witness lean_derives_handler_direction_from_priorities"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.500
+test = "thermite-lower::interference_witness lean_rejects_a_peer_implication_mutation_even_when_shapes_match"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::interference_witness replay_rejects_digest_relation_and_edge_tampering"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-spec::interference_fail_closed an_unstable_postcondition_fails_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-spec::interference_validate duplicate_participants_and_ambiguous_handler_priorities_fail"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-spec::interference_validate exact_step_and_epoch_equality_are_not_preorder_envelopes"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-spec::interference_validate handler_obligations_follow_priority_in_one_direction"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-spec::interference_validate incompatible_peers_and_missing_contracts_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-spec::interference_validate monotone_preorder_peers_discharge_both_ordered_obligations"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-spec::interference_validate participant_local_parameter_names_resolve_to_the_same_shared_identity"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-spec::interference_validate clause_local_validator_does_not_invent_conflicts_for_disjoint_composition"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-syntax::interference_clauses functions_without_interference_keep_none"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-syntax::interference_clauses handler_priorities_are_preserved_but_concurrent_groups_are_symmetric"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-syntax::interference_clauses missing_and_misordered_relations_are_structured_errors"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-syntax::interference_clauses relation_words_have_no_production_outside_the_block"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-syntax::interference_clauses reserved_words_and_ordered_block_parse_to_typed_relations"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 1.500
+test = "thermite-verified::verus_verify broken_rfc12_bit_toggle_fails_preorder"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 1.500
+test = "thermite-verified::verus_verify broken_rfc12_bool_relation_fails_preorder"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 1.500
+test = "thermite-verified::verus_verify broken_rfc12_count_reset_fails_persistence"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-spec::interference_validate persistent_bit_bool_and_count_relations_are_closed_while_other_mutations_reject"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
 [[assignment]]
 bucket = 1
 seconds = 15.914

@@ -268,7 +268,7 @@ pub fn analyze_effects(program: &Program) -> Result<EffectAnalysis, Vec<LowerErr
 
 pub(crate) fn analyze_effects_unchecked(
     program: &Program,
-) -> Result<EffectAnalysis, Vec<LowerError>> {
+) -> Result<(EffectAnalysis, thermite_spec::InterferenceReport), Vec<LowerError>> {
     let resource_forgets = thermite_spec::ResourceEnv::build(program)
         .ok()
         .and_then(|resources| thermite_spec::check_resource_flow(program, &resources).ok())
@@ -557,7 +557,7 @@ pub(crate) fn analyze_effects_unchecked(
         if !errors.is_empty() {
             return Err(errors);
         }
-        if program
+        let interference = if program
             .items
             .iter()
             .any(|item| matches!(item, Item::Concurrent(_)))
@@ -573,32 +573,55 @@ pub(crate) fn analyze_effects_unchecked(
                     span: Span::new(0, 0),
                 }]
             })?;
-            if !conflicts.is_empty() {
-                return Err(conflicts
-                    .into_iter()
-                    .map(|conflict| LowerError::EffectAnalysis {
-                        span: program
-                            .items
-                            .iter()
-                            .find_map(|item| match item {
-                                Item::Concurrent(item)
-                                    if item.name == conflict.composition => Some(item.span),
-                                _ => None,
-                            })
-                            .unwrap_or(Span::new(0, 0)),
-                        detail: format!(
-                            "concurrent `{}` roots `{}` and `{}` conflict: {:?} versus {:?}; overlap {:?}",
-                            conflict.composition,
-                            conflict.left_root,
-                            conflict.right_root,
-                            conflict.left_effect,
-                            conflict.right_effect,
-                            conflict.overlap
-                        ),
-                    })
-                    .collect());
+            let undischargeable = conflicts
+                .iter()
+                .filter(|conflict| conflict.overlap.is_none())
+                .map(|conflict| LowerError::EffectAnalysis {
+                    span: program
+                        .items
+                        .iter()
+                        .find_map(|item| match item {
+                            Item::Concurrent(item) if item.name == conflict.composition => {
+                                Some(item.span)
+                            }
+                            _ => None,
+                        })
+                        .unwrap_or(Span::new(0, 0)),
+                    detail: format!(
+                        "concurrent `{}` roots `{}` and `{}` conflict outside RFC-12 shared-state coverage: {:?} versus {:?}",
+                        conflict.composition,
+                        conflict.left_root,
+                        conflict.right_root,
+                        conflict.left_effect,
+                        conflict.right_effect,
+                    ),
+                })
+                .collect::<Vec<_>>();
+            if !undischargeable.is_empty() {
+                return Err(undischargeable);
             }
+            let requirements = conflicts
+                .iter()
+                .map(|conflict| thermite_spec::InterferenceRequirement {
+                    composition: conflict.composition.clone(),
+                    left_root: conflict.left_root.clone(),
+                    right_root: conflict.right_root.clone(),
+                    overlap: conflict.overlap.clone(),
+                })
+                .collect::<Vec<_>>();
+            thermite_spec::check_interference_for_conflicts(program, &requirements, &regions)
+        } else {
+            thermite_spec::check_interference_for_conflicts(program, &[], &regions)
         }
+        .map_err(|interference_errors| {
+            interference_errors
+                .into_iter()
+                .map(|error| LowerError::EffectAnalysis {
+                    detail: error.detail,
+                    span: error.span,
+                })
+                .collect::<Vec<_>>()
+        })?;
         // Revision-2 differential seam: the optimized recursive analysis and
         // the canonical semantic-inventory interpretation must agree before a
         // CheckedProgram exists. This keeps two derivations only while making
@@ -630,12 +653,15 @@ pub(crate) fn analyze_effects_unchecked(
             &canonical.calls,
         )
         .map_err(|error| vec![error])?;
-        Ok(EffectAnalysis {
-            direct_footprints,
-            calls,
-            footprints,
-            warnings,
-        })
+        Ok((
+            EffectAnalysis {
+                direct_footprints,
+                calls,
+                footprints,
+                warnings,
+            },
+            interference,
+        ))
     } else {
         Err(errors)
     }

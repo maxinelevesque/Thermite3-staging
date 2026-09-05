@@ -10,6 +10,7 @@
         "subject": "regex:thermite-syntax/src/lexer.rs#^        \"([^\"]+)\" => TokKind::[A-Za-z]+(?:\\((?:true|false)\\))?,$",
         "expected": [
           "as",
+          "asks",
           "break",
           "continue",
           "else",
@@ -20,6 +21,7 @@
           "fn",
           "forall",
           "if",
+          "interleaves",
           "is",
           "keeps",
           "let",
@@ -27,6 +29,7 @@
           "match",
           "measures",
           "mut",
+          "promises",
           "pure",
           "requires",
           "return",

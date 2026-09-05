@@ -51,6 +51,7 @@
           "parse_if_parts_inner",
           "parse_index_arg",
           "parse_index_arg_inner",
+          "parse_interference_contract",
           "parse_is",
           "parse_item",
           "parse_lemma",

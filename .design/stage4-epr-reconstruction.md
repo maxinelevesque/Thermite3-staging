@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: a0539258ac35d12e52bc25d299b983d7f04ba750c8919738892e9027941a7e4b (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; EPR reconstruction is unchanged. prior: 356f8bb67b47e96ded0b063313748e23354cf5353a2a2165f409d46797b3eee1)
+audited-content-sha256: c8161ba9c635d1f2fab5b5f4e297ecfd75a4729320a7045e5bb3e5322b833406 (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; EPR reconstruction is unchanged. prior: 356f8bb67b47e96ded0b063313748e23354cf5353a2a2165f409d46797b3eee1)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

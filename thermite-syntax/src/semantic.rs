@@ -52,6 +52,8 @@ pub enum ChildRole {
     Item,
     Requires,
     Ensures,
+    Asks,
+    Promises,
     Measure,
     Keeps,
     Body,
@@ -205,6 +207,10 @@ impl<'a> SemanticNode<'a> {
                             .iter()
                             .map(|x| (ChildRole::Ensures, Self::Clause(x))),
                     );
+                    if let Some(interference) = &f.contract.interference {
+                        out.push((ChildRole::Asks, Self::Clause(&interference.asks)));
+                        out.push((ChildRole::Promises, Self::Clause(&interference.promises)));
+                    }
                     if let Some(x) = &f.measures {
                         out.push((ChildRole::Measure, Self::Clause(x)));
                     }

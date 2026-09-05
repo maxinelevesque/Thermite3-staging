@@ -59,7 +59,16 @@ GATE = Path(__file__).resolve().parents[1] / "doc-drift.py"
 def _git(repo, *args, env=None, check=True):
     """Run a git command in `repo`, returning stdout (stripped)."""
     proc = subprocess.run(
-        ["git", "-C", str(repo), *args],
+        [
+            "git",
+            "-c",
+            "commit.gpgsign=false",
+            "-c",
+            "tag.gpgsign=false",
+            "-C",
+            str(repo),
+            *args,
+        ],
         capture_output=True,
         text=True,
         env=env,

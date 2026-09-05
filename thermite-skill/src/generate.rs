@@ -968,6 +968,7 @@ fn item_inventory() -> Vec<Item> {
                 requires: clause(),
                 ensures: vec![clause()],
                 effects: EffectRow::Pure,
+                interference: None,
             },
             // C9-A (`.design/basis/10-recursion-tuples.md` REQ-1): the optional
             // `measures` termination clause of a recursive exec `fn`. `None` for this

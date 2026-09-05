@@ -1734,3 +1734,24 @@ crate_pattern = "forge/src/audit.rs"
 design = ".design/syntax/resource-types.md"
 reference = ["forge/src/manifest.rs"]
 conformance_ops = ["resource audit projection", "tamper rejection"]
+
+# ---------------------------------------------------------------------
+# Interference clauses and rely-guarantee composition (RFC-12)
+# ---------------------------------------------------------------------
+[[route]]
+crate_pattern = "thermite-spec/src/interference.rs"
+design = ".design/syntax/interference-clauses.md"
+reference = ["thermite-spec/tests/interference_validate.rs", "thermite-lower/tests/effects.rs"]
+conformance_ops = ["relation classification", "postcondition stability", "pairwise composition", "handler direction"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/interference_witness.rs"
+design = ".design/syntax/interference-clauses.md"
+reference = ["thermite-lower/tests/interference_witness.rs", "lean/Thermite/Interference.lean"]
+conformance_ops = ["canonical witness", "graph completeness", "Lean replay", "hostile mutation"]
+
+[[route]]
+crate_pattern = "lean/Thermite/Interference.lean"
+design = ".design/syntax/interference-clauses.md"
+reference = ["thermite-lower/tests/interference_witness.rs"]
+conformance_ops = ["relation compatibility", "composition completeness", "priority direction"]

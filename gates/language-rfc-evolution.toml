@@ -13,7 +13,6 @@ baseline_rfc = [
   "0008-effect-algebra.md",
   "0009-verified-effect-rows.md",
   "0010-shared-state-invariants.md",
-  "0012-interference-clauses.md",
   "0013-protocol-types.md",
   "0014-crash-clause.md",
   "0015-harness-agnostic-tooling.md",
@@ -32,3 +31,12 @@ classifier = "gates/language-completeness-inventory.toml#id = \"rfc11-resource\"
 inclusion = ".design/versioned-language-completeness.md#RFC-11 resource types now have"
 support_matrix = "gates/language-support-matrix.json#\"id\": \"Effect::Forgets\""
 negative_witness = "forge/src/check.rs#a pre-RFC-11/non-resource certificate must miss"
+
+[[evolution]]
+rfc = "0012-interference-clauses.md"
+fragment = "rfc12-interference-v1"
+change = "expand"
+classifier = "gates/language-completeness-inventory.toml#id = \"rfc12-interference\""
+inclusion = ".design/versioned-language-completeness.md#RFC-12 interference clauses now have"
+support_matrix = "thermite-spec/src/interference.rs#MonotoneKind"
+negative_witness = "thermite-lower/tests/interference_fail_closed.rs#L2 has no RFC-12 evidence consumer"

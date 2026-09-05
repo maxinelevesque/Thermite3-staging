@@ -2,6 +2,7 @@
 rfc: 12
 title: Interference clauses — rely-guarantee where a lock is too strong
 status: draft
+language-evolution: tracked
 supersedes: []
 introduces:
   - REQ-SYNTAX-INTERLEAVES-BLOCK
@@ -12,17 +13,17 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
-| **Fork implementation** | **Not started; tracked by issue #76.** Sequenced after RFC-11 resource types (issue #75). |
+| **Status** | **Implementation complete on `codex/rfc12-interference-clauses`; pending review, merge to `main`, and issue #76 closure.** |
+| **Fork implementation** | **Complete on the feature branch.** Syntax, relational validation, RFC-9 conflict composition, L1/L3 lowering, Verus evidence, Lean replay, certificates, audit disclosure, inventories, and the production release-negative are implemented. The checked contract is [interference-clauses.md](../syntax/interference-clauses.md); landing status is deliberately not inferred from this proposal. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 8 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), RFC-9, RFC-10 |
 
-> **Not proposed yet.** This document is written so the work is not blocked on a
-> reply, and it stays unfiled until [RFC-6](0006-full-words.md) lands and the
-> direction in [RFC-7](0007-thermite-3.md) is answered. Filing six capability
-> proposals against a surface nobody has adopted is the failure RFC-7's own
-> sequencing rule exists to prevent.
+> **Implementation candidate completed 2026-09-04.** This RFC remains the
+> proposal and rationale; Git and the issue tracker remain authoritative for
+> landing status. The implementation contract fixes v1 to monotone lock-free state
+> backed by persistent set/bool/count evidence, requires postcondition stability
+> under the rely, and defers protocol-round stability such as epochs to RFC-13.
 
 Kind: two new clauses, shaped like `requires` and `ensures`.
 
@@ -56,8 +57,7 @@ fn ack(s: &mut Shoot, cpu: u64) -> ()
       final(s).acked | s.acked == final(s).acked;          // what may come at me
     }
     promises {
-      final(s).epoch == s.epoch;
-      final(s).acked == s.acked | (1 << cpu);              // what I put out
+      final(s).acked | s.acked == final(s).acked;          // envelope of my steps
     }
   }
 ```
@@ -66,6 +66,11 @@ fn ack(s: &mut Shoot, cpu: u64) -> ()
 `asks`/`promises` are **relations** between two states — duration. The verb says
 who acts: this function asks something of its peers and promises something to
 them.
+
+The relation clauses describe **reflexive-transitive interference envelopes**,
+not one exact call step. An exact update such as
+`final(s).acked == s.acked | (1 << cpu)` belongs in `ensures`; putting it in
+`promises` would contradict the required stuttering/reflexivity law.
 
 An earlier draft used `<~` and `~>` for the two directions. Those were glyphs
 invented to dodge a collision that abbreviation had caused, and
@@ -212,7 +217,7 @@ lock-free, arbitrary" out of reach as needing full CSL or Iris. The persistent
 shardings cover the monotone fragment and nothing more, so the boundary drawn on
 taste turns out to be the boundary the substrate draws.
 
-**One gap the check found.** The worked example's rely has two conjuncts and only
+**One boundary the check found.** The worked example's rely has two conjuncts and only
 one of them maps:
 
 ```thermite
@@ -229,11 +234,10 @@ field. `#[sharding(constant)]` covers a field that never changes at all, and the
 epoch is not that either — it is constant *for the duration of one shootdown* and
 changes between them.
 
-So a stability conjunct is a protocol-scoped fact rather than a field-level one,
-and it needs a different treatment: either an instance per round, so the epoch is
-genuinely `constant` within it, or a mechanism this document does not yet have.
-That is the one part of the lowering that is not settled, and it is narrower than
-the original hypothesis feared.
+So a stability conjunct is a protocol-scoped fact rather than a field-level one.
+RFC-12 v1 does not admit it: epoch-like state is represented by an instance per
+round, where it is genuinely constant, and is deferred to RFC-13. This keeps the
+confirmed RFC-12 scope identical to the persistent-sharding substrate.
 
 ## Sequencing
 

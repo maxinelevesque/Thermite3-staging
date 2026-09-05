@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: 496faf7d7b3a3486f47276eab5998fcf7b0255d3d947f0288df05caef44fb9c7 (re-pinned 2026-09-01 after extending the governed effect-kind projection and its Verus/exhaustive anchor from nine atoms to all eleven, including RFC-10 Owns and RFC-11 Forgets. prior: 7ba6268ec01d7f7fd4e7db702d3c9e915789fbbf4a9fd9485511161070fe91f2)
+audited-content-sha256: e1710f961fc95876530063dc587a07b9e6dd754807162db45f84fde5ffd91f20 (re-pinned 2026-09-01 after extending the governed effect-kind projection and its Verus/exhaustive anchor from nine atoms to all eleven, including RFC-10 Owns and RFC-11 Forgets. prior: 7ba6268ec01d7f7fd4e7db702d3c9e915789fbbf4a9fd9485511161070fe91f2)
 governs: thermite-lower/src/effects.rs
 thesis-refs:
   - thermite-design.md §4.1

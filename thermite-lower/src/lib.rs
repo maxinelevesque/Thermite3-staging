@@ -29,6 +29,7 @@
 
 pub mod checked;
 pub mod effects;
+pub mod interference_witness;
 pub mod l1;
 pub mod l2;
 pub mod l3;
@@ -38,10 +39,16 @@ pub mod resource_witness;
 pub mod witness;
 
 pub use checked::{
-    check_program, contains_rfc11, AccessMode, CheckedCloseEdge, CheckedHolding, CheckedProgram,
-    CheckedSharedPlace, CloseReason, DEFAULT_SEMANTIC_WORK_BUDGET,
+    check_program, contains_rfc11, contains_rfc12, AccessMode, CheckedCloseEdge, CheckedHolding,
+    CheckedProgram, CheckedSharedPlace, CloseReason, DEFAULT_SEMANTIC_WORK_BUDGET,
 };
 pub use effects::{analyze_effects, check_effects, subsumes, EffectAnalysis, EffectWarning};
+pub use interference_witness::{
+    canonical_interference_projection, emit_interference_witness, lean_interference_replay_source,
+    replay_interference_witness, CanonicalInterferenceProjection, InterferenceWitness,
+    WitnessCompositionRequirement, WitnessInterferenceFunction, WitnessInterferenceObligation,
+    WitnessMonotoneAtom, INTERFERENCE_WITNESS_VERSION,
+};
 pub use l1::{lower_l1, lower_l1_artifact, lower_l1_with_lock_provider, L1Artifact, L1Route};
 pub use l2::{bound_string, lower_l2, lower_l2_artifact, L2Artifact};
 pub use l3::{lower_l3_artifact, L3Artifact};

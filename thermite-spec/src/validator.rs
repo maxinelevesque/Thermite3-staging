@@ -151,6 +151,7 @@ use crate::combinators::{self, ArgKind, CombinatorSig};
 use crate::resource::{ResourceEnv, ResourceError};
 use crate::resource_flow::{check_resource_flow, ResourceFlowErrorKind};
 use crate::schemes::{self, SchemeSig};
+use crate::{check_interference, InterferenceErrorKind};
 
 /// The maximum recursive-descent nesting depth the validator will follow before
 /// returning an `ExpressionTooDeep` diagnostic. A fixed constant for determinism
@@ -406,6 +407,13 @@ pub enum SpecError {
     /// fail-closed gate: a parsed resource declaration never validates as an
     /// ordinary droppable ADT.
     UnsupportedResourceTypes { span: Span },
+    /// A checked RFC-12 relation, stability, or composition failure.
+    Interference {
+        kind: InterferenceErrorKind,
+        function: Option<String>,
+        detail: String,
+        span: Span,
+    },
     /// An unmarked ADT owns a resource-bearing field or variant payload.
     MissingResourceMarker {
         declaration: String,
@@ -557,6 +565,7 @@ impl SpecError {
             | SpecError::ExpressionTooDeep { span, .. }
             | SpecError::UnsupportedAdt { span, .. }
             | SpecError::UnsupportedResourceTypes { span }
+            | SpecError::Interference { span, .. }
             | SpecError::MissingResourceMarker { span, .. }
             | SpecError::EmptyResourceMarker { span, .. }
             | SpecError::ResourceProvenanceMismatch { span, .. }
@@ -669,6 +678,7 @@ impl fmt::Display for SpecError {
                 f,
                 "RFC-11 executable resource flow is not yet checkable by the ownership validator"
             ),
+            SpecError::Interference { detail, .. } => write!(f, "{detail}"),
             SpecError::MissingResourceMarker {
                 declaration,
                 computed,
@@ -779,13 +789,24 @@ impl std::error::Error for SpecError {}
 /// `Err` with one `SpecError` per violation (accumulated, not first-stop, for
 /// crisp feedback, §2.4). Never panics (REQ-4/REQ-5).
 ///
-/// This is `thermite-spec`'s boundary API: the validator is the registry's first
-/// production consumer (AC-5, via `combinators::lookup`), and is the gate
-/// `thermite-lower` (#4) and `forge` (#6) call before lowering / the vacuity
-/// battery.
+/// This is `thermite-spec`'s clause-local boundary API: the validator is the
+/// registry's first production consumer (AC-5, via `combinators::lookup`) and
+/// checks RFC-12 relation shape and stability, but it does not invent pairwise
+/// interference requirements without RFC-9's inferred transitive footprints.
+/// `thermite-lower` owns that conflict-aware composition gate, and `forge`
+/// requires both this pre-pass and the checked lowering boundary.
 pub fn validate(program: &Program) -> Result<(), Vec<SpecError>> {
     let mut v = Validator::new(program);
     v.run(program);
+    if let Err(errors) = check_interference(program) {
+        v.errors
+            .extend(errors.into_iter().map(|error| SpecError::Interference {
+                kind: error.kind,
+                function: error.function,
+                detail: error.detail,
+                span: error.span,
+            }));
+    }
     if let Ok(resources) = ResourceEnv::build(program) {
         if let Err(errors) = check_resource_flow(program, &resources) {
             v.errors
@@ -1113,6 +1134,12 @@ impl Validator {
                     self.contract_position = Some("ensures");
                     for clause in &f.contract.ensures {
                         self.walk_clause(clause);
+                    }
+                    if let Some(interference) = &f.contract.interference {
+                        self.contract_position = Some("asks");
+                        self.walk_clause(&interference.asks);
+                        self.contract_position = Some("promises");
+                        self.walk_clause(&interference.promises);
                     }
                     self.contract_position = None;
                     self.contract_bound.clear();
@@ -1468,7 +1495,10 @@ impl Validator {
             // — e.g. the editor case `s == "needle"`; no sub-expression to walk.
             Expr::Path(path) => {
                 if let (Some(position), Some(root)) = (self.contract_position, path.first()) {
-                    if self.shared_roots.contains(root) && !self.contract_bound.contains(root) {
+                    if self.shared_roots.contains(root)
+                        && !self.contract_bound.contains(root)
+                        && !matches!(position, "asks" | "promises")
+                    {
                         self.errors.push(SpecError::SharedStateInContract {
                             root: root.clone(),
                             position,

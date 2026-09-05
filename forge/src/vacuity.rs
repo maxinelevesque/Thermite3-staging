@@ -485,6 +485,7 @@ mod tests {
                         requires: dummy_clause(),
                         ensures: vec![dummy_clause()],
                         effects: EffectRow::Pure,
+                        interference: None,
                     },
                     measures: None,
                     body: Some(thermite_syntax::Block {
