@@ -98,6 +98,10 @@ pub enum ForgeError {
     Rfc12ReplayUnavailable { detail: String },
     /// RFC-12 interference replay ran and kernel-rejected the checked witness.
     Rfc12ReplayRejected { detail: String },
+    /// RFC-13 protocol replay could not be invoked or communicated with.
+    Rfc13ReplayUnavailable { detail: String },
+    /// RFC-13 protocol replay ran and kernel-rejected the checked witness.
+    Rfc13ReplayRejected { detail: String },
     /// The `cargo kani` / kani binary was not found on `PATH` — an environment
     /// error, not a verification failure (`.design/lower/l2-kani.md` REQ-8). The
     /// L2 parallel of `VerusAbsent`.
@@ -226,6 +230,12 @@ impl fmt::Display for ForgeError {
             }
             ForgeError::Rfc12ReplayRejected { detail } => {
                 write!(f, "RFC-12 interference replay rejected: {detail}")
+            }
+            ForgeError::Rfc13ReplayUnavailable { detail } => {
+                write!(f, "RFC-13 protocol replay unavailable: {detail}")
+            }
+            ForgeError::Rfc13ReplayRejected { detail } => {
+                write!(f, "RFC-13 protocol replay rejected: {detail}")
             }
             ForgeError::KaniAbsent { binary } => write!(
                 f,
