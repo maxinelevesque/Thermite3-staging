@@ -3483,6 +3483,23 @@ pub(crate) fn render_audit(manifest: &AuditManifest) -> String {
                     .join(", ")
             ));
         }
+        if let Some(protocol) = &f.protocol {
+            out.push_str(&format!(
+                "    protocol: accepted; definitions={} functions={} checked-protocol-sha256={}\n",
+                protocol.definitions.len(),
+                protocol.functions.len(),
+                protocol.formal_replay.checked_protocol_sha256,
+            ));
+            out.push_str(&format!(
+                "    protocol residual trust: {}\n",
+                protocol
+                    .residual_trust
+                    .iter()
+                    .map(|entry| format!("{entry:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
     }
 
     // The project assurance headline + scope + lowered-assurance fns (REQ-5).
@@ -3730,6 +3747,24 @@ pub(crate) fn render_human(cert: &Certificate) -> String {
                 .collect::<Vec<_>>()
                 .join(", "),
             interference.body_mutation_scoring,
+        ));
+    }
+    if let Some(protocol) = &cert.protocol {
+        out.push_str(&format!(
+            "protocol: accepted (formal replay: kernel-accepted, checker={}, definitions={}, functions={}, checked_protocol_sha256={})\n",
+            protocol.formal_replay.checker,
+            protocol.definitions.len(),
+            protocol.functions.len(),
+            protocol.formal_replay.checked_protocol_sha256,
+        ));
+        out.push_str(&format!(
+            "protocol_residual_trust: {}\n",
+            protocol
+                .residual_trust
+                .iter()
+                .map(|entry| format!("{entry:?}"))
+                .collect::<Vec<_>>()
+                .join(", ")
         ));
     }
     out.push_str(&format!(

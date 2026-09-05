@@ -141,9 +141,10 @@ use crate::manifest::{
     effects_of, Certificate, InterferenceAtomEvidence, InterferenceBodyMutationScoring,
     InterferenceEvidence, InterferenceFormalReplay, InterferenceFormalReplayVerdict,
     InterferenceFunctionEvidence, InterferenceObligationEvidence, InterferenceRequirementEvidence,
-    InterferenceResidualTrust, InterferenceVerdict, Level, ObligationResult, RejectReason,
-    ResourceFlowEvidence, ResourceFlowVerdict, ResourceForgetFootprint, ResourceFormalReplay,
-    ResourceFormalReplayVerdict, ResourceResidualTrust,
+    InterferenceResidualTrust, InterferenceVerdict, Level, ObligationResult, ProtocolEvidence,
+    ProtocolFormalReplay, ProtocolFormalReplayVerdict, ProtocolResidualTrust, ProtocolVerdict,
+    RejectReason, ResourceFlowEvidence, ResourceFlowVerdict, ResourceForgetFootprint,
+    ResourceFormalReplay, ResourceFormalReplayVerdict, ResourceResidualTrust,
 };
 use crate::profile::{self, SolverProfile};
 
@@ -609,9 +610,10 @@ pub fn check_file_with_options(
     };
     let protocol_witness = (!checked.protocol_flow().definitions.is_empty())
         .then(|| thermite_lower::emit_protocol_witness(&checked));
-    if let Some(witness) = &protocol_witness {
-        run_rfc13_lean_replay(&parsed.program, witness)?;
-    }
+    let protocol_evidence = match &protocol_witness {
+        Some(witness) => Some(run_rfc13_lean_replay(&parsed.program, witness)?),
+        None => None,
+    };
 
     // 4/5/6/7. Per-item certification (`thermite-design.md` §5.3 — "proof
     // results content-addressed and cached per item"; "an edit to `f` cannot
@@ -1390,6 +1392,11 @@ pub fn check_file_with_options(
                 interference_witness.as_ref(),
                 interference_evidence.clone(),
             );
+            let cert = attach_protocol_evidence(
+                cert,
+                protocol_witness.as_ref(),
+                protocol_evidence.clone(),
+            );
             let cert = match scopes.get(&cert.item) {
                 Some(scope) => cert.with_assurance_scope(scope.clone()),
                 // A cert whose item has no node keeps its `None` scope, which
@@ -1882,7 +1889,7 @@ fn attach_interference_evidence(
 fn run_rfc13_lean_replay(
     program: &Program,
     witness: &thermite_lower::ProtocolWitness,
-) -> Result<(), ForgeError> {
+) -> Result<ProtocolEvidence, ForgeError> {
     const CHECKER_SOURCE: &str = include_str!("../../lean/Thermite/Protocol.lean");
     const ACCEPTANCE_TOKEN: &str = "THERMITE_RFC13_PROTOCOL_REPLAY_ACCEPTED_V1";
     const REPLAY_TIMEOUT: Duration = Duration::from_secs(60);
@@ -1975,7 +1982,30 @@ fn run_rfc13_lean_replay(
     });
     let forbidden_axiom = combined.contains("sorryAx");
     if output.status.success() && accepted && allowed_axioms && !forbidden_axiom {
-        Ok(())
+        Ok(ProtocolEvidence {
+            verdict: ProtocolVerdict::Accepted,
+            definitions: witness.definitions.clone(),
+            functions: witness.functions.clone(),
+            formal_replay: ProtocolFormalReplay {
+                checker: "Thermite.Protocol/v1".into(),
+                checker_sha256: compiled_hash,
+                witness_version: witness.version,
+                canonical_ast_sha256: witness.canonical_ast_sha256.clone(),
+                checked_protocol_sha256: witness.checked_protocol_sha256.clone(),
+                verdict: ProtocolFormalReplayVerdict::KernelAccepted,
+            },
+            residual_trust: vec![
+                ProtocolResidualTrust::Parser,
+                ProtocolResidualTrust::ProjectionComputation,
+                ProtocolResidualTrust::EndpointFlowComputation,
+                ProtocolResidualTrust::WitnessExtraction,
+                ProtocolResidualTrust::PlatformTransport,
+                ProtocolResidualTrust::PlatformPeerIdentity,
+                ProtocolResidualTrust::PlatformBlockingAndWakeup,
+                ProtocolResidualTrust::PlatformFailureAndCancellation,
+                ProtocolResidualTrust::ExecutableTargetBehavior,
+            ],
+        })
     } else {
         Err(ForgeError::Rfc13ReplayRejected {
             detail: format!(
@@ -1984,6 +2014,20 @@ fn run_rfc13_lean_replay(
                 combined.chars().take(1200).collect::<String>()
             ),
         })
+    }
+}
+
+fn attach_protocol_evidence(
+    cert: Certificate,
+    witness: Option<&thermite_lower::ProtocolWitness>,
+    evidence: Option<ProtocolEvidence>,
+) -> Certificate {
+    match (witness, evidence) {
+        (Some(witness), Some(evidence)) => cert
+            .with_protocol_evidence_for_witness(witness, evidence)
+            .expect("typed RFC-13 replay evidence matches its checked artifact"),
+        (None, None) => cert,
+        _ => panic!("RFC-13 witness and replay evidence must be present together"),
     }
 }
 
@@ -9731,8 +9775,49 @@ fn discard(b: Bundle) -> u64
         assert!(parsed.is_clean(), "fixture parse: {:?}", parsed.errors);
         let checked = thermite_lower::check_program(&parsed.program).unwrap();
         let witness = thermite_lower::emit_protocol_witness(&checked);
-        run_rfc13_lean_replay(&parsed.program, &witness)
+        let evidence = run_rfc13_lean_replay(&parsed.program, &witness)
             .expect("canonical RFC-13 witness must be kernel-accepted");
+
+        let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "a").unwrap();
+        let cert = Certificate::new(
+            "a",
+            Level::L3,
+            vec!["blocks".into()],
+            0,
+            vec![ObligationResult::discharged("fixture proof")],
+        )
+        .with_verus_artifact(&artifact, true)
+        .unwrap()
+        .with_protocol_evidence_for_witness(&witness, evidence.clone())
+        .unwrap();
+        let cert = live_accepted(cert, "verus").into_certificate();
+        let audit = crate::audit::AuditManifest::from_certificates(
+            std::slice::from_ref(&cert),
+            &parsed.program,
+            crate::audit::Toolchain::new("fixture-verus"),
+        );
+        assert_eq!(audit.functions[0].protocol, Some(evidence));
+
+        let mut authority_tamper = cert.clone();
+        authority_tamper.protocol.as_mut().unwrap().functions[0]
+            .completed
+            .clear();
+        assert!(
+            std::panic::catch_unwind(|| crate::audit::AuditManifest::from_certificates(
+                &[authority_tamper],
+                &parsed.program,
+                crate::audit::Toolchain::new("fixture-verus"),
+            ))
+            .is_err(),
+            "display-shaped data cannot manufacture RFC-13 audit authority"
+        );
+        let cert_text = crate::cli::render_human(&cert);
+        let audit_text = crate::cli::render_audit(&audit);
+        for text in [&cert_text, &audit_text] {
+            assert!(text.contains("protocol"));
+            assert!(text.contains("functions=2"));
+            assert!(text.contains("residual trust") || text.contains("residual_trust"));
+        }
 
         let mut tampered = witness;
         tampered.functions[0].completed.clear();

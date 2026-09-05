@@ -62,4 +62,25 @@ fn protocol_program_certifies_only_after_formal_replay() {
     assert!(functions
         .iter()
         .all(|row| row["effects"] == serde_json::json!(["blocks"])));
+    for row in functions {
+        assert_eq!(row["protocol"]["verdict"], "accepted");
+        assert_eq!(
+            row["protocol"]["formal_replay"]["verdict"],
+            "kernel_accepted"
+        );
+        assert_eq!(
+            row["protocol"]["residual_trust"],
+            serde_json::json!([
+                "parser",
+                "projection_computation",
+                "endpoint_flow_computation",
+                "witness_extraction",
+                "platform_transport",
+                "platform_peer_identity",
+                "platform_blocking_and_wakeup",
+                "platform_failure_and_cancellation",
+                "executable_target_behavior"
+            ])
+        );
+    }
 }
