@@ -61,10 +61,10 @@ pub use lower::{
     L3LibraryTarget, LowerError,
 };
 pub use protocol_witness::{
-    canonical_protocol_projection, emit_protocol_witness, replay_protocol_witness,
-    CanonicalProtocolProjection, ProtocolWitness, WitnessProtocolAction, WitnessProtocolDefinition,
-    WitnessProtocolEndpoint, WitnessProtocolFunction, WitnessProtocolTransition,
-    WitnessRoleProjection, PROTOCOL_WITNESS_VERSION,
+    canonical_protocol_projection, emit_protocol_witness, lean_protocol_replay_source,
+    replay_protocol_witness, CanonicalProtocolProjection, ProtocolWitness, WitnessProtocolAction,
+    WitnessProtocolDefinition, WitnessProtocolEndpoint, WitnessProtocolFunction,
+    WitnessProtocolTransition, WitnessRoleProjection, PROTOCOL_WITNESS_VERSION,
 };
 pub use resource_witness::{
     canonical_resource_projection, emit_resource_witness, lean_resource_replay_source,

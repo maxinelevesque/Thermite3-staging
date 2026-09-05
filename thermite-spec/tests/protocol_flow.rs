@@ -77,6 +77,40 @@ fn rejects_payload_type_mismatch() {
 }
 
 #[test]
+fn rejects_typed_variable_payload_mismatch() {
+    let parsed = parse(
+        r#"
+protocol P { A { value: u32 }, B { reply: u32 }, end }
+fn bad(c: P::A, value: bool) -> () ! blocks requires true ensures true
+{ c.send(value); c.receive(); }
+"#,
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    let errors = check_protocols(&parsed.program)
+        .expect_err("a typed bool variable cannot inhabit a u32 payload field");
+    assert!(errors
+        .iter()
+        .any(|error| error.kind == ProtocolErrorKind::PayloadMismatch));
+}
+
+#[test]
+fn rejects_protocol_actions_in_unmodeled_control_flow() {
+    let parsed = parse(
+        r#"
+protocol P { A { value: u32 }, B { reply: u32 }, end }
+fn bad(c: P::A, choose: bool) -> () ! blocks requires true ensures true
+{ if choose { c.send(0); } else { c.send(1); } c.receive(); }
+"#,
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    let errors = check_protocols(&parsed.program)
+        .expect_err("v1 must not flatten two branch paths into one proof witness");
+    assert!(errors
+        .iter()
+        .any(|error| error.kind == ProtocolErrorKind::UnsupportedControlFlow));
+}
+
+#[test]
 fn rejects_endpoint_in_shared_state() {
     let parsed = parse("protocol P { A { x: u32 }, B { y: u32 }, end } shared channel: P::A");
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);

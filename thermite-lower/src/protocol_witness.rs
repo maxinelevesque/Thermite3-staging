@@ -211,3 +211,110 @@ fn checked_digest(
         )
     )
 }
+
+pub fn lean_protocol_replay_source(
+    canonical: &CanonicalProtocolProjection,
+    witness: &ProtocolWitness,
+) -> String {
+    fn string(value: &str) -> String {
+        serde_json::to_string(value).expect("serializing a string cannot fail")
+    }
+    fn strings(values: &[String]) -> String {
+        values
+            .iter()
+            .map(|value| string(value))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+    fn actions(values: &[WitnessProtocolAction]) -> String {
+        values
+            .iter()
+            .map(|action| format!("⟨{}, [{}]⟩", string(&action.kind), strings(&action.payload)))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+    fn projections(values: &[WitnessRoleProjection]) -> String {
+        values
+            .iter()
+            .map(|projection| {
+                format!(
+                    "⟨{}, [{}]⟩",
+                    string(&projection.role),
+                    actions(&projection.actions)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+    fn definitions(values: &[WitnessProtocolDefinition]) -> String {
+        values
+            .iter()
+            .map(|definition| {
+                format!(
+                    "⟨{}, [{}], [{}], {}, {}⟩",
+                    string(&definition.protocol),
+                    strings(&definition.roles),
+                    projections(&definition.projections),
+                    definition.repeat,
+                    definition.compatible
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+    fn endpoints(values: &[WitnessProtocolEndpoint]) -> String {
+        values
+            .iter()
+            .map(|endpoint| {
+                format!(
+                    "⟨{}, {}, {}⟩",
+                    string(&endpoint.binding),
+                    string(&endpoint.protocol),
+                    string(&endpoint.role)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+    fn transitions(values: &[WitnessProtocolTransition]) -> String {
+        values
+            .iter()
+            .map(|transition| {
+                format!(
+                    "⟨{}, {}, {}⟩",
+                    string(&transition.endpoint),
+                    transition.step,
+                    string(&transition.action)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+    fn functions(values: &[WitnessProtocolFunction]) -> String {
+        values
+            .iter()
+            .map(|function| {
+                format!(
+                    "⟨{}, [{}], [{}], [{}]⟩",
+                    string(&function.function),
+                    endpoints(&function.endpoints),
+                    transitions(&function.transitions),
+                    strings(&function.completed)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+    format!(
+        "import Thermite.Protocol\nopen Thermite.Protocol\n\ndef canonical : Canonical := ⟨{}, {}, [{}], [{}]⟩\ndef witness : Witness := ⟨{}, {}, {}, [{}], [{}]⟩\ntheorem rfc13_protocol_verified : verify canonical witness = true := by rfl\n#print axioms rfc13_protocol_verified\n#eval IO.println \"THERMITE_RFC13_PROTOCOL_REPLAY_ACCEPTED_V1\"\n",
+        string(&canonical.canonical_ast_sha256),
+        string(&canonical.checked_protocol_sha256),
+        definitions(&canonical.definitions),
+        functions(&canonical.functions),
+        witness.version,
+        string(&witness.canonical_ast_sha256),
+        string(&witness.checked_protocol_sha256),
+        definitions(&witness.definitions),
+        functions(&witness.functions),
+    )
+}

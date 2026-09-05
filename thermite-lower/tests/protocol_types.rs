@@ -1,8 +1,9 @@
-use std::process::Command;
+use std::io::Write;
+use std::process::{Command, Stdio};
 
 use thermite_lower::{
-    check_program, emit_protocol_witness, lower, lower_l1, lower_l3_artifact,
-    replay_protocol_witness,
+    canonical_protocol_projection, check_program, emit_protocol_witness,
+    lean_protocol_replay_source, lower, lower_l1, lower_l3_artifact, replay_protocol_witness,
 };
 use thermite_syntax::parse;
 
@@ -28,6 +29,29 @@ fn parsed() -> thermite_syntax::Program {
     let parsed = parse(PROGRAM);
     assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
     parsed.program
+}
+
+fn lean_output(
+    canonical: &thermite_lower::CanonicalProtocolProjection,
+    witness: &thermite_lower::ProtocolWitness,
+) -> std::process::Output {
+    let source = lean_protocol_replay_source(canonical, witness);
+    let lean_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../lean");
+    let mut child = Command::new("lake")
+        .args(["env", "lean", "--stdin", "--threads=1"])
+        .current_dir(lean_root)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("lake/lean must be installed");
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(source.as_bytes())
+        .unwrap();
+    child.wait_with_output().unwrap()
 }
 
 #[test]
@@ -102,6 +126,62 @@ fn protocol_witness_replay_rejects_tampering() {
     let mut tampered = witness;
     tampered.functions[0].completed.clear();
     assert!(replay_protocol_witness(&program, &tampered).is_err());
+}
+
+#[test]
+fn lean_replays_duality_and_completion_without_sorry() {
+    let program = parsed();
+    let checked = check_program(&program).unwrap();
+    let witness = emit_protocol_witness(&checked);
+    let canonical = canonical_protocol_projection(&program).unwrap();
+    let output = lean_output(&canonical, &witness);
+    assert!(
+        output.status.success(),
+        "Lean rejected canonical protocol witness:\n{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("THERMITE_RFC13_PROTOCOL_REPLAY_ACCEPTED_V1"));
+    assert!(
+        !stdout.contains("sorryAx"),
+        "unexpected axiom report: {stdout}"
+    );
+}
+
+#[test]
+fn lean_rejects_non_dual_projections_even_when_columns_match() {
+    let program = parsed();
+    let mut witness = emit_protocol_witness(&check_program(&program).unwrap());
+    witness.definitions[0].projections[0].actions[0].kind = "send".into();
+    witness.definitions[0].projections[1].actions[0].kind = "send".into();
+    let canonical = thermite_lower::CanonicalProtocolProjection {
+        canonical_ast_sha256: witness.canonical_ast_sha256.clone(),
+        checked_protocol_sha256: witness.checked_protocol_sha256.clone(),
+        definitions: witness.definitions.clone(),
+        functions: witness.functions.clone(),
+    };
+    assert!(
+        !lean_output(&canonical, &witness).status.success(),
+        "Lean accepted two send projections at one turn"
+    );
+}
+
+#[test]
+fn lean_rejects_claimed_completion_without_transitions() {
+    let program = parsed();
+    let mut witness = emit_protocol_witness(&check_program(&program).unwrap());
+    witness.functions[0].transitions.clear();
+    let canonical = thermite_lower::CanonicalProtocolProjection {
+        canonical_ast_sha256: witness.canonical_ast_sha256.clone(),
+        checked_protocol_sha256: witness.checked_protocol_sha256.clone(),
+        definitions: witness.definitions.clone(),
+        functions: witness.functions.clone(),
+    };
+    assert!(
+        !lean_output(&canonical, &witness).status.success(),
+        "Lean accepted completion with no projected protocol actions"
+    );
 }
 
 #[test]

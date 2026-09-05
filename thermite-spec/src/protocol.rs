@@ -15,6 +15,7 @@ pub enum ProtocolErrorKind {
     UnfinishedEndpoint,
     BranchMismatch,
     InvalidRepeatExit,
+    UnsupportedControlFlow,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -249,6 +250,14 @@ fn check_function(
     report: &mut ProtocolReport,
     errors: &mut Vec<ProtocolError>,
 ) {
+    let mut value_types = function
+        .params
+        .iter()
+        .map(|param| (param.name.clone(), param.ty.clone()))
+        .collect::<BTreeMap<_, _>>();
+    if let Some(body) = &function.body {
+        collect_declared_types(body, &mut value_types);
+    }
     let mut state = State::new();
     for param in &function.params {
         let Type::ProtocolEndpoint { protocol, role } = &param.ty else {
@@ -308,7 +317,15 @@ fn check_function(
         ..ProtocolFunctionFlow::default()
     };
     if let Some(body) = &function.body {
-        let (state, returned) = check_block(body, state, function, protocols, &mut flow, errors);
+        let (state, returned) = check_block(
+            body,
+            state,
+            function,
+            protocols,
+            &value_types,
+            &mut flow,
+            errors,
+        );
         if !returned {
             check_completion(&state, function, errors);
         }
@@ -328,12 +345,21 @@ fn check_block(
     mut state: State,
     function: &FnItem,
     protocols: &BTreeMap<String, Protocol>,
+    value_types: &BTreeMap<String, Type>,
     flow: &mut ProtocolFunctionFlow,
     errors: &mut Vec<ProtocolError>,
 ) -> (State, bool) {
     for stmt in &block.stmts {
         match stmt {
-            Stmt::Expr(expr) => check_expr(expr, &mut state, function, protocols, flow, errors),
+            Stmt::Expr(expr) => check_expr(
+                expr,
+                &mut state,
+                function,
+                protocols,
+                value_types,
+                flow,
+                errors,
+            ),
             Stmt::Let { name, ty, init, .. } => {
                 reject_endpoint_value_use(init, &state, function, errors);
                 if matches!(ty, Some(Type::ProtocolEndpoint { .. })) {
@@ -355,10 +381,39 @@ fn check_block(
             }
             Stmt::If { cond, then, else_ } => {
                 reject_endpoint_value_use(cond, &state, function, errors);
-                let (then_state, then_returned) =
-                    check_block(then, state.clone(), function, protocols, flow, errors);
+                if block_has_protocol_action(then, &state)
+                    || else_
+                        .as_ref()
+                        .is_some_and(|block| block_has_protocol_action(block, &state))
+                {
+                    errors.push(error(
+                        ProtocolErrorKind::UnsupportedControlFlow,
+                        Some(function.name.clone()),
+                        None,
+                        "protocol actions in conditional branches are not supported by the RFC-13 v1 path witness; move the branch outside the session flow".into(),
+                        function.span,
+                    ));
+                    continue;
+                }
+                let (then_state, then_returned) = check_block(
+                    then,
+                    state.clone(),
+                    function,
+                    protocols,
+                    value_types,
+                    flow,
+                    errors,
+                );
                 let (else_state, else_returned) = if let Some(block) = else_ {
-                    check_block(block, state.clone(), function, protocols, flow, errors)
+                    check_block(
+                        block,
+                        state.clone(),
+                        function,
+                        protocols,
+                        value_types,
+                        flow,
+                        errors,
+                    )
                 } else {
                     (state.clone(), false)
                 };
@@ -377,19 +432,37 @@ fn check_block(
                 }
             }
             Stmt::Holding { body, .. } => {
-                let (next, returned) =
-                    check_block(body, state.clone(), function, protocols, flow, errors);
+                let (next, returned) = check_block(
+                    body,
+                    state.clone(),
+                    function,
+                    protocols,
+                    value_types,
+                    flow,
+                    errors,
+                );
                 state = next;
                 if returned {
                     return (state, true);
                 }
             }
             Stmt::Loop(loop_) => {
+                if block_has_protocol_action(&loop_.body, &state) {
+                    errors.push(error(
+                        ProtocolErrorKind::UnsupportedControlFlow,
+                        Some(function.name.clone()),
+                        None,
+                        "protocol actions in general loops are not supported by the RFC-13 v1 path witness; use the protocol's explicit `repeat | end` actions".into(),
+                        loop_.span,
+                    ));
+                    continue;
+                }
                 let (next, returned) = check_block(
                     &loop_.body,
                     state.clone(),
                     function,
                     protocols,
+                    value_types,
                     flow,
                     errors,
                 );
@@ -416,11 +489,29 @@ fn check_block(
     (state, false)
 }
 
+fn block_has_protocol_action(block: &Block, state: &State) -> bool {
+    block.stmts.iter().any(|stmt| match stmt {
+        Stmt::Expr(Expr::MethodCall { receiver, .. }) => {
+            matches!(receiver.as_ref(), Expr::Path(path) if path.len() == 1 && state.contains_key(&path[0]))
+        }
+        Stmt::If { then, else_, .. } => {
+            block_has_protocol_action(then, state)
+                || else_
+                    .as_ref()
+                    .is_some_and(|else_| block_has_protocol_action(else_, state))
+        }
+        Stmt::Loop(loop_) => block_has_protocol_action(&loop_.body, state),
+        Stmt::Holding { body, .. } => block_has_protocol_action(body, state),
+        _ => false,
+    })
+}
+
 fn check_expr(
     expr: &Expr,
     state: &mut State,
     function: &FnItem,
     protocols: &BTreeMap<String, Protocol>,
+    value_types: &BTreeMap<String, Type>,
     flow: &mut ProtocolFunctionFlow,
     errors: &mut Vec<ProtocolError>,
 ) {
@@ -548,7 +639,7 @@ fn check_expr(
         return;
     }
     for (index, (arg, expected_ty)) in args.iter().zip(expected_types).enumerate() {
-        if let Some(found_ty) = infer_literal_type(arg) {
+        if let Some(found_ty) = infer_expr_type(arg, value_types) {
             if !type_compatible(expected_ty, &found_ty, matches!(arg, Expr::IntLit { .. })) {
                 errors.push(error(
                     ProtocolErrorKind::PayloadMismatch,
@@ -583,17 +674,39 @@ fn check_expr(
     }
 }
 
-fn infer_literal_type(expr: &Expr) -> Option<Type> {
+fn infer_expr_type(expr: &Expr, value_types: &BTreeMap<String, Type>) -> Option<Type> {
     match expr {
         Expr::BoolLit(_) => Some(Type::Prim(PrimType::Bool)),
         Expr::IntLit { .. } => Some(Type::Prim(PrimType::U64)),
         Expr::Cast { ty, .. } => Some(ty.clone()),
+        Expr::Path(path) if path.len() == 1 => value_types.get(&path[0]).cloned(),
         Expr::Tuple(items) => items
             .iter()
-            .map(infer_literal_type)
+            .map(|item| infer_expr_type(item, value_types))
             .collect::<Option<Vec<_>>>()
             .map(Type::Tuple),
         _ => None,
+    }
+}
+
+fn collect_declared_types(block: &Block, value_types: &mut BTreeMap<String, Type>) {
+    for stmt in &block.stmts {
+        match stmt {
+            Stmt::Let {
+                name, ty: Some(ty), ..
+            } => {
+                value_types.insert(name.clone(), ty.clone());
+            }
+            Stmt::If { then, else_, .. } => {
+                collect_declared_types(then, value_types);
+                if let Some(else_) = else_ {
+                    collect_declared_types(else_, value_types);
+                }
+            }
+            Stmt::Loop(loop_) => collect_declared_types(&loop_.body, value_types),
+            Stmt::Holding { body, .. } => collect_declared_types(body, value_types),
+            _ => {}
+        }
     }
 }
 

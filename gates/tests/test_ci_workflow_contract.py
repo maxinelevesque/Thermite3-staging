@@ -64,7 +64,11 @@ class CiWorkflowContractTests(unittest.TestCase):
     def test_prepared_lean_build_includes_live_replay_modules(self) -> None:
         for job_name in ("lean-prepare", "test"):
             job = self.job(job_name)
-            for module in ("Thermite.ResourceFlow", "Thermite.Interference"):
+            for module in (
+                "Thermite.ResourceFlow",
+                "Thermite.Interference",
+                "Thermite.Protocol",
+            ):
                 self.assertIn(module, job)
 
     def test_gate_fanout_and_stable_aggregates_are_closed(self) -> None:
