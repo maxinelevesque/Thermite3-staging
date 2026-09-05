@@ -264,6 +264,7 @@ jobs:
           Thermite.Strat.TestModel
           Thermite.Reconstruct
           Thermite.ResourceFlow
+          Thermite.Interference
       - name: Publish prepared Lean build
         uses: actions/upload-artifact@v4
         with:
@@ -325,6 +326,7 @@ jobs:
           Thermite.Strat.TestModel
           Thermite.Reconstruct
           Thermite.ResourceFlow
+          Thermite.Interference
 
       - name: Install toolchain (pinned to rust-toolchain.toml channel)
         uses: dtolnay/rust-toolchain@1.95.0
