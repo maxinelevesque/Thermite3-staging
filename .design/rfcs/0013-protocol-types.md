@@ -9,6 +9,8 @@ introduces:
   - REQ-SPEC-PROTOCOL-ENDPOINT
 ---
 
+audited-content-sha256: 97bfb9ad3857bb6bf5b48f97e0a476f1f2c732f52ecdc92314bd9a0bb298f870 (RFC-13 final implementation pin)
+
 # RFC-13: Protocol types — sessions whose endpoints cannot be abandoned
 
 | | |

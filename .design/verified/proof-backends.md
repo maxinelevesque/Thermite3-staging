@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: 4c453c6d682537f67d51d3b91eb20b144d12f5ac3256ead400ea4e956430160f (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; other backend semantics are unchanged. prior: 33026224d44664a619b395b2f4e98a24a2704f5e6b3081deece89fd753cd5a79)
+audited-content-sha256: 37385553bf7b7b05c99e3458284a3f7d26e93f47da7d04c1a83a82ea79e258e1 (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; other backend semantics are unchanged. prior: 33026224d44664a619b395b2f4e98a24a2704f5e6b3081deece89fd753cd5a79)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and

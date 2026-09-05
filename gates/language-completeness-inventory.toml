@@ -57,6 +57,7 @@ construct = [
   { id = "BvWidth::W64", profile = "current-language" },
   { id = "BvWidth::W8", profile = "current-language" },
   { id = "Effect::Alloc", profile = "current-language" },
+  { id = "Effect::Blocks", profile = "rfc13-protocol" },
   { id = "Effect::Diverge", profile = "current-language" },
   { id = "Effect::Forgets", profile = "rfc11-resource" },
   { id = "Effect::Net", profile = "current-language" },
@@ -111,6 +112,7 @@ construct = [
   { id = "Item::Fn", profile = "current-language" },
   { id = "Item::Forge", profile = "current-language" },
   { id = "Item::LockDecl", profile = "current-language" },
+  { id = "Item::Protocol", profile = "rfc13-protocol" },
   { id = "Item::SharedDecl", profile = "current-language" },
   { id = "Item::SpecFn", profile = "current-language" },
   { id = "Item::Struct", profile = "current-language" },
@@ -151,6 +153,7 @@ construct = [
   { id = "Type::Named", profile = "current-language" },
   { id = "Type::Option", profile = "current-language" },
   { id = "Type::Prim", profile = "current-language" },
+  { id = "Type::ProtocolEndpoint", profile = "rfc13-protocol" },
   { id = "Type::Ref", profile = "current-language" },
   { id = "Type::Result", profile = "current-language" },
   { id = "Type::Slice", profile = "current-language" },
@@ -206,6 +209,28 @@ evidence = [
   "thermite-verified/src/lib.rs",
   "thermite-verified/tests/verus_verify.rs",
   "forge/src/check.rs",
+]
+
+[[profile]]
+id = "rfc13-protocol"
+parser = "supported"
+validator = "supported"
+canonical_semantics = "supported"
+checked_ir = "supported"
+lowering = "supported"
+proof_route = "supported"
+policy = "supported"
+certification = "supported"
+evidence = [
+  "thermite-syntax/tests/protocol_types_parse.rs",
+  "thermite-spec/src/protocol.rs",
+  "thermite-spec/tests/protocol_conformance.rs",
+  "thermite-spec/tests/protocol_flow.rs",
+  "thermite-lower/src/protocol_witness.rs",
+  "thermite-lower/tests/protocol_types.rs",
+  "lean/Thermite/Protocol.lean",
+  "forge/src/check.rs",
+  "forge/tests/protocol_types_conformance.rs",
 ]
 
 # Claim groups are deliberately broader than individual prose sentences. Their
@@ -323,7 +348,7 @@ gap = "GAP-RFC3-MIGRATION"
 id = "CLAIM-REGISTRY-SHIPPED-EVIDENCE"
 profile = "current-language"
 source = ".design/reqs/registry.toml"
-source_sha256 = "fbb374f233290d941e6c6f0a17586a8782cfe4da9230fff337d9b146f7f35073"
+source_sha256 = "83162dbb8a36abba4a05640d6e4f197d5dbdc11d5d4a7e2243fe295e449297d4"
 anchor = "[[requirement]]"
 evidence = ["gates/req-registry.py", "gates/req-status.py"]
 gap = "GAP-CLAIM-EVIDENCE-CLOSURE"
