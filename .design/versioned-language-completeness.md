@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 98afb532908d765c4811e51421fad250d33c0fca27408f8c0a0e0993e107573d (re-pinned after the scoped CI partition receipt refresh for four RFC-13 tests; language completeness semantics are unchanged. prior: a2d798e19358a0c2121db625ef6ab59e3cf24f70d0649a7d469aa427aed17678)
+audited-content-sha256: 1162419a1e8ddb4435cd6caa102c3e328d54345b23b2228dff88f31071b47cae (re-pinned after refreshing the generated RFC-13 skill surface and its 50 scoped receipts; language completeness semantics are unchanged. prior: 98afb532908d765c4811e51421fad250d33c0fca27408f8c0a0e0993e107573d)
 
 ## Summary
 
