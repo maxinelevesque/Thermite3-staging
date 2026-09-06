@@ -3514,7 +3514,7 @@ receipt = "437e1ed7e523149251573f94a805d10ee42e2e0833f112d022b42d4f7d4292c6"
 requirement_id = "REQ-COMPLETE-CLAIM-CLOSURE-POPULATION"
 witness_id = "W-CLAIM-CLOSURE-SELF-GOVERNANCE"
 mechanism = "executable_discriminator"
-discriminator = "89f49dc7f757c8eda290d5db472982d608f4fc7309a2e2a3f6d2a9bafed40e44"
+discriminator = "ea183279eb7f47009761beb3c08be5de732ab2a63ea682bb0dc51e30351b72e6"
 claim_digest = "976115757d0c97e1ae67f1ca9a3de7735b9ffb095ebe239f0c702b154720c0a9"
 verifier = ["uv", "run", "python", "gates/claim-closure-meta.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3523,8 +3523,8 @@ tool_version = "thermite-claim-closure-meta 1; Python 3.12.13"
 oracle = "gates/claim-closure-oracles/self-governance.json"
 artifacts = ["gates/claim-closure-oracles/self-governance.json", "gates/claim-closure-meta.py", "gates/claim-closure-author.py", "gates/tests/test_claim_closure_author.py", ".design/versioned-language-completeness.md#REQ-16", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "{\"id\": \"exact-live-population\", \"expected_exit\": 0}", mutation = "replace_text", name = "permit-unclosed-live-addition", to = "{\"id\": \"exact-live-population\", \"expected_exit\": 1}" }]
-receipt = "9923ebd5fad06e3fa7abb40d0d960f133c733a566464df6d5fc4cb2f7e208c92"
+counterfeit = [{ name = "permit-unclosed-live-addition", mutation = "replace_text", from = "{\"id\": \"exact-live-population\", \"expected_exit\": 0}", to = "{\"id\": \"exact-live-population\", \"expected_exit\": 1}", expected_exit = 4 }]
+receipt = "d0f652da68773f19062f69f9e5b99414e8767b2dd746d4a732294424f344b8eb"
 
 [[closure]]
 requirement_id = "REQ-COMPLETE-CLOSED-WITNESS-MECHANISMS"
@@ -3546,7 +3546,7 @@ receipt = "fffd03cb71867a75a961939b3dc53fe2bf80204a9a8e0f5bc6dbbb1983e25109"
 requirement_id = "REQ-COMPLETE-CONTENT-BOUND-RECEIPTS"
 witness_id = "W-CLAIM-CLOSURE-SELF-GOVERNANCE"
 mechanism = "executable_discriminator"
-discriminator = "07aa4a0602733132b5570355c5c7b4a9ae5dd2919409b8bcbd86cc4bf6a9e12a"
+discriminator = "2b107d51de296ceb8f19ef158d4283a289d41cf2b191cbe0b8eeb47d520f10ef"
 claim_digest = "3fa3756ea2bbde20eab94037a349d6d47a1b937f1f8e7d4439e52265a97d3c7f"
 verifier = ["uv", "run", "python", "gates/claim-closure-meta.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3555,8 +3555,8 @@ tool_version = "thermite-claim-closure-meta 1; Python 3.12.13"
 oracle = "gates/claim-closure-oracles/self-governance.json"
 artifacts = ["gates/claim-closure-oracles/self-governance.json", "gates/claim-closure-meta.py", "gates/claim-closure-author.py", "gates/tests/test_claim_closure_author.py", "gates/tests/test_completeness_review.py", ".design/versioned-language-completeness.md#REQ-19", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "{\"id\": \"content-bound-receipts\", \"expected_exit\": 0}", mutation = "replace_text", name = "accept-stale-content-bound-receipt", to = "{\"id\": \"content-bound-receipts\", \"expected_exit\": 1}" }]
-receipt = "b8eb16dfd97237db409cdd793d7a65312e20f0c6b3eb442bb8586630eb5db256"
+counterfeit = [{ name = "accept-stale-content-bound-receipt", mutation = "replace_text", from = "{\"id\": \"content-bound-receipts\", \"expected_exit\": 0}", to = "{\"id\": \"content-bound-receipts\", \"expected_exit\": 1}", expected_exit = 4 }]
+receipt = "91fb20159efe0d8a2ee5676bd2122eb14f21d5f18f47d2213e32a32e9311c9f6"
 
 [[closure]]
 requirement_id = "REQ-COMPLETE-FINITE-POLICY"
@@ -3578,7 +3578,7 @@ receipt = "fb9d54291425b55795069ece11290d3247bb4305531110ed362b567738ba2338"
 requirement_id = "REQ-COMPLETE-GAP-LEDGER"
 witness_id = "W-EXEC-COMPLETE-GAP-LEDGER"
 mechanism = "executable_discriminator"
-discriminator = "2bed7a2ee66a3522684f0f8dacf31d2313a2eb105f1458f1719abd0f0b952b18"
+discriminator = "3ad35419b2dc92cc6f2ecf8834a4a9b7aefecf28b1b7c709982d1d5119f2dd99"
 claim_digest = "45081af7144867ff46224f31718c832289fbc3c8bdb7f677dff9d10b572a1e3e"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3587,14 +3587,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/complete-gap-ledger.json"
 artifacts = ["gates/claim-closure-oracles/complete-gap-ledger.json", "gates/claim-closure-lower.py", "gates/language-completeness-inventory.toml", "gates/language-completeness-inventory.py", "gates/tests/test_language_completeness_inventory.py", ".design/versioned-language-completeness.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "complete-gap-dispositions", mutation = "replace_text", name = "erase-gap-dispositions", to = "complete-gap-dispositions-missing" }]
-receipt = "5cc0cb036e5bbae7c8b84fc7e27e49a88190ee2fb0b8ec0fadfa13b30ef5f148"
+counterfeit = [{ name = "erase-gap-dispositions", mutation = "replace_text", from = "complete-gap-dispositions", to = "complete-gap-dispositions-missing", expected_exit = 4 }]
+receipt = "b63592933715064c113e1753869f7e1e14764fdf93915afc8138f57a31e4c03f"
 
 [[closure]]
 requirement_id = "REQ-COMPLETE-LANGUAGE-INVENTORY"
 witness_id = "W-EXEC-COMPLETE-LANGUAGE-INVENTORY"
 mechanism = "executable_discriminator"
-discriminator = "47b4c300f0b57ddcc1fc25fc917dd3499dc591eb7d152ccc00914e1b49dc962c"
+discriminator = "51a5ae294e15b6708f446c0f92573101e2a9269b9b2e48291abbe7f8cc8db85d"
 claim_digest = "95df5404ef0c7dca17fd1039d641fae19f66ee85166a932d14b941862113ee51"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3603,8 +3603,8 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/complete-language-inventory.json"
 artifacts = ["gates/claim-closure-oracles/complete-language-inventory.json", "gates/claim-closure-lower.py", "gates/language-support-matrix.json", "gates/language-completeness-inventory.toml", "gates/language-completeness-inventory.py", "gates/tests/test_language_completeness_inventory.py", ".design/versioned-language-completeness.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "complete-language-inventory", mutation = "replace_text", name = "permit-inventory-shrinkage", to = "complete-language-inventory-shrunk" }]
-receipt = "3706e487d0d0bc5b6cbac8e78eb100d598486342dbf5c1a96fed97eac710b4b2"
+counterfeit = [{ name = "permit-inventory-shrinkage", mutation = "replace_text", from = "complete-language-inventory", to = "complete-language-inventory-shrunk", expected_exit = 4 }]
+receipt = "77bc56a3ef157bd75d042f977e8d9b6d962938feaab276409d793b9aa62a18b2"
 
 [[closure]]
 requirement_id = "REQ-COMPLETE-MONOTONE-VERSIONS"
@@ -8465,7 +8465,7 @@ receipt = "5b3e5b7db414ddd77ff6d4e29d3ff6b4b66389dbcc86fc35ec87983fdce41d79"
 requirement_id = "REQ-LOWER-OPTRES-TYPES"
 witness_id = "W-EXEC-LOWER-OPTRES-TYPES"
 mechanism = "executable_discriminator"
-discriminator = "ace3c28360a0ab539b926ab989034b1cb6f982bb8b28fbd6619fc2523b443fb2"
+discriminator = "f77541d584ea80feafb55ce1b4582567ea8dc19f293066c7188817f753cb82f5"
 claim_digest = "7d9f19599e0706fc2810e0448e9eeb4f93b63ff48086257f953f3d08d8269e6a"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8474,14 +8474,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/lower-optres-types.json"
 artifacts = ["gates/claim-closure-oracles/lower-optres-types.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "lower-optres-types", mutation = "replace_text", name = "reject-lower-optres-types-counterfeit", to = "lower-optres-types-counterfeit" }]
-receipt = "de8adffc9736090a4c00d5ad25d441598c65f9e3cfcb7a149504774e4017108f"
+counterfeit = [{ name = "reject-lower-optres-types-counterfeit", mutation = "replace_text", from = "lower-optres-types", to = "lower-optres-types-counterfeit", expected_exit = 4 }]
+receipt = "b7970bd5ce5e3842d88611ed6ff6f9e0585071b27d111ca98058f5aa604177b1"
 
 [[closure]]
 requirement_id = "REQ-LOWER-RECURSION-DECREASES"
 witness_id = "W-EXEC-LOWER-RECURSION-DECREASES"
 mechanism = "executable_discriminator"
-discriminator = "1401d992ac5877190012561129c93aebc5a9f473c09aa2f47c4459ff65bbe370"
+discriminator = "35c8dde9eeedb9b16b34aec549aba1dbde8a8aa191774a3c7e7559c0cd51dd27"
 claim_digest = "d524f4a1e3b5dc6840d96347605d185f0af82723d9bec2b5e3b0de16bb2e5c30"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8490,14 +8490,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/lower-recursion-decreases.json"
 artifacts = ["gates/claim-closure-oracles/lower-recursion-decreases.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "lower-recursion-decreases", mutation = "replace_text", name = "reject-lower-recursion-decreases-counterfeit", to = "lower-recursion-decreases-counterfeit" }]
-receipt = "a77f2e03200fe9fd872d50236fbf4734efc953638d004d4a22cba96b49e7e562"
+counterfeit = [{ name = "reject-lower-recursion-decreases-counterfeit", mutation = "replace_text", from = "lower-recursion-decreases", to = "lower-recursion-decreases-counterfeit", expected_exit = 4 }]
+receipt = "31e83ec173140a4d8c8bb552ef19a2f8c90da6125636354914d55a6283917c6e"
 
 [[closure]]
 requirement_id = "REQ-LOWER-RECURSION-TERMINATION"
 witness_id = "W-EXEC-LOWER-RECURSION-TERMINATION"
 mechanism = "executable_discriminator"
-discriminator = "35062b7b83488a67fc516b99633a6525b2fd3171d09e07bf04db212d12b8447e"
+discriminator = "1d22cd33f251fa722abef920221b9c7f24c150eee78bec819f705b7c2f084393"
 claim_digest = "fd9ee20e59d1157e65163ff8d61ce5d89673bcbdb99fdc9e1feb1a87dfcf7c0f"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8506,8 +8506,8 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/lower-recursion-termination.json"
 artifacts = ["gates/claim-closure-oracles/lower-recursion-termination.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "lower-recursion-termination", mutation = "replace_text", name = "reject-lower-recursion-termination-counterfeit", to = "lower-recursion-termination-counterfeit" }]
-receipt = "ab9f0a9f194d8e81a07cac2c8cef0639588b66c8a2a3bbf0d752f489cfae660a"
+counterfeit = [{ name = "reject-lower-recursion-termination-counterfeit", mutation = "replace_text", from = "lower-recursion-termination", to = "lower-recursion-termination-counterfeit", expected_exit = 4 }]
+receipt = "742915a63396d4f4d0dd94924a8af59e82709efd0151c5b45e90407539df8088"
 
 [[closure]]
 requirement_id = "REQ-LOWER-SCHEME-ERRORS"
@@ -8561,7 +8561,7 @@ receipt = "0567ac9c1a2621cf606c5d9fbe9ac997d4c312f9120e528eb95dba49297125ba"
 requirement_id = "REQ-LOWER-VEC-ELEM-WEAVE"
 witness_id = "W-EXEC-LOWER-VEC-ELEM-WEAVE"
 mechanism = "executable_discriminator"
-discriminator = "0ccb2ed05fb3e9ad48553e048e5602a82ca0bb420caf567bd51f04932f69fb30"
+discriminator = "8e98d99c0576c16f47755c553aa3036a1e9f95584b92a32d4c41cbae56af9ef8"
 claim_digest = "b0670b2e1eddb43d0800a43f579291bb6dc4c68ca0415f40b8b29d8cb9a3ccd3"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8570,14 +8570,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/lower-vec-elem-weave.json"
 artifacts = ["gates/claim-closure-oracles/lower-vec-elem-weave.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "lower-vec-elem-weave", mutation = "replace_text", name = "reject-lower-vec-elem-weave-counterfeit", to = "lower-vec-elem-weave-counterfeit" }]
-receipt = "2bb4831580637d64ebdd17c0c07e7b3356b9654d86ffe1a64cca795db4024ad6"
+counterfeit = [{ name = "reject-lower-vec-elem-weave-counterfeit", mutation = "replace_text", from = "lower-vec-elem-weave", to = "lower-vec-elem-weave-counterfeit", expected_exit = 4 }]
+receipt = "732d84c47e8ab3b66b1eeb5637a37fa6a1792d247f48ed7ea6924302b481269f"
 
 [[closure]]
 requirement_id = "REQ-LOWER-VEC-METHOD-CAGE"
 witness_id = "W-EXEC-LOWER-VEC-METHOD-CAGE"
 mechanism = "executable_discriminator"
-discriminator = "88c94580c53628f7f333a48c55f8e386b2ffd136ff3da5b09ad11194a82cbca2"
+discriminator = "4761fc73a1de69b50b261058cb1e26aa2b150c122981c26ea591143e94f9d994"
 claim_digest = "70e744a2ec1658f584e8935dd50d32e0ec7c6794529d43b26f354c7bbad6f380"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8586,14 +8586,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/lower-vec-method-cage.json"
 artifacts = ["gates/claim-closure-oracles/lower-vec-method-cage.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "lower-vec-method-cage", mutation = "replace_text", name = "reject-lower-vec-method-cage-counterfeit", to = "lower-vec-method-cage-counterfeit" }]
-receipt = "25b57de245a6ada66930f3e94d62191d4e41fa396a5be3366b15107f119536bc"
+counterfeit = [{ name = "reject-lower-vec-method-cage-counterfeit", mutation = "replace_text", from = "lower-vec-method-cage", to = "lower-vec-method-cage-counterfeit", expected_exit = 4 }]
+receipt = "4ebe3c654a87a4fe6d0cb8cb8147a81ae6612f8a88944404e634cba6cc781ebe"
 
 [[closure]]
 requirement_id = "REQ-LOWER-VEC-NEW-REACHABILITY"
 witness_id = "W-EXEC-LOWER-VEC-NEW-REACHABILITY"
 mechanism = "executable_discriminator"
-discriminator = "254defb712c6f09f0b85e8a0870948dfb8f6f9fdd7212493cdf965e51d0782e8"
+discriminator = "9fe35e459991041835deac4006ac120fe09f19810fada48c6c7445c1bba3b76e"
 claim_digest = "cd1b7cb5c560535fb5082830b5d99d7cb7b2f55deee7880fd83f72eaa5f0d18b"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8602,14 +8602,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/lower-vec-new-reachability.json"
 artifacts = ["gates/claim-closure-oracles/lower-vec-new-reachability.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "lower-vec-new-reachability", mutation = "replace_text", name = "reject-lower-vec-new-reachability-counterfeit", to = "lower-vec-new-reachability-counterfeit" }]
-receipt = "5fa9687ad7ca9be1ccae3d628bd3adf4f9007e223b3a36b0052ae7e8aff05e10"
+counterfeit = [{ name = "reject-lower-vec-new-reachability-counterfeit", mutation = "replace_text", from = "lower-vec-new-reachability", to = "lower-vec-new-reachability-counterfeit", expected_exit = 4 }]
+receipt = "c52195ebca7a48efd0f33a4a1a282e1b4d03c0354c4f587d646e9c569841daaf"
 
 [[closure]]
 requirement_id = "REQ-LOWER-VEC-NONCOPY"
 witness_id = "W-EXEC-LOWER-VEC-NONCOPY"
 mechanism = "executable_discriminator"
-discriminator = "c3a4f61f9ebdd6323643c2b78cffe37bd0be8fcbd643bd18d512493a7ba54fae"
+discriminator = "e230823d80e9fd89c3b8ac7fac467328f90b3387d019b24fe003f6a6fa32f863"
 claim_digest = "65e19c44849ae305e285b9762d3437dca44866bbcac58e28fb1cd86a11dc65e1"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8618,14 +8618,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/lower-vec-noncopy.json"
 artifacts = ["gates/claim-closure-oracles/lower-vec-noncopy.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "lower-vec-noncopy", mutation = "replace_text", name = "reject-lower-vec-noncopy-counterfeit", to = "lower-vec-noncopy-counterfeit" }]
-receipt = "b277d5f4d89147a96a406a41f2c40899cd0db75fbc939bedbf93f794b300db1a"
+counterfeit = [{ name = "reject-lower-vec-noncopy-counterfeit", mutation = "replace_text", from = "lower-vec-noncopy", to = "lower-vec-noncopy-counterfeit", expected_exit = 4 }]
+receipt = "9ef47d7ee43b8692c3d1d572e215cfe3c1036c8f2a74f6b29abc791f258676eb"
 
 [[closure]]
 requirement_id = "REQ-LOWER-VEC-OPS"
 witness_id = "W-EXEC-LOWER-VEC-OPS"
 mechanism = "executable_discriminator"
-discriminator = "893d3080c2cd75b9ec2f5c6fdee1b5ae8b15213b9cd43b7f06f269937cde04d8"
+discriminator = "378f08b1cb037b66348b40c7bf49e4a6f38733032aa9c90fc540437dc9a52599"
 claim_digest = "46ab30a2c87b67a97974155fb7abeb9caa257d04669d3699dba62faf1d96cbd6"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8634,8 +8634,8 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/lower-vec-ops.json"
 artifacts = ["gates/claim-closure-oracles/lower-vec-ops.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "lower-vec-ops", mutation = "replace_text", name = "reject-lower-vec-ops-counterfeit", to = "lower-vec-ops-counterfeit" }]
-receipt = "cb28b96a07e016f5df0378373d398502f9e6e85f7677d766f5f9f179ca01a7bf"
+counterfeit = [{ name = "reject-lower-vec-ops-counterfeit", mutation = "replace_text", from = "lower-vec-ops", to = "lower-vec-ops-counterfeit", expected_exit = 4 }]
+receipt = "2fdb721ec222cde945e765a4e0d65b80479d6f0cafcad9b401c0d5919f5459c0"
 
 [[closure]]
 requirement_id = "REQ-LOWER-VERUS-COMBINATOR-DEFS"
@@ -8897,7 +8897,7 @@ receipt = "9e986ae3c0eac3b9b87c978615f40dbb9272a6b74a58f54acc11f6978d0e0b89"
 requirement_id = "REQ-RFC-FRONTMATTER"
 witness_id = "W-EXEC-RFC-FRONTMATTER"
 mechanism = "executable_discriminator"
-discriminator = "bad976b965c6d681bb506b2ce6b607e9173652f9f3c3bc08dac579a4fbc19bf9"
+discriminator = "591e909f5418bea126337ab43853034bc61f8453e0ca88af01efe7424221d749"
 claim_digest = "f3663f335c14a57b1092a84c1e4c70078cc6e37c7b240d2c5ed9d2fec045fc67"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8906,14 +8906,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc-frontmatter.json"
 artifacts = ["gates/claim-closure-oracles/rfc-frontmatter.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc-frontmatter", mutation = "replace_text", name = "reject-rfc-frontmatter-counterfeit", to = "rfc-frontmatter-counterfeit" }]
-receipt = "05c9a2b58540d52e79e4cc57ca8616aa9659be388696cb2888b19279da71a35f"
+counterfeit = [{ name = "reject-rfc-frontmatter-counterfeit", mutation = "replace_text", from = "rfc-frontmatter", to = "rfc-frontmatter-counterfeit", expected_exit = 4 }]
+receipt = "4c51257a6262295b56fbeb6133e4c808a9418e18d40a485e412cd9513dcaf121"
 
 [[closure]]
 requirement_id = "REQ-RFC-GATE"
 witness_id = "W-EXEC-RFC-GATE"
 mechanism = "executable_discriminator"
-discriminator = "96723b4631300ec7cd5da1feda897c1d644d52e73d1ddd745b942b5b99f0bb0c"
+discriminator = "c87e6b858a40ce43aa27577adcffa40fa7ba1bda6ee0949f5faf506d9fa0ef3e"
 claim_digest = "914e29fc6ab6261e479fefd438e5a6e73ead2656c0b7838d67d0e70303e06728"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8922,14 +8922,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc-gate.json"
 artifacts = ["gates/claim-closure-oracles/rfc-gate.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc-gate", mutation = "replace_text", name = "reject-rfc-gate-counterfeit", to = "rfc-gate-counterfeit" }]
-receipt = "d01a93b69be09113523c14035802f4391a6131ef014968f3cb45657892e83f6b"
+counterfeit = [{ name = "reject-rfc-gate-counterfeit", mutation = "replace_text", from = "rfc-gate", to = "rfc-gate-counterfeit", expected_exit = 4 }]
+receipt = "2978920ae1d9ac9ca6542444f110ae090bf10b6695fec37d3435986d64f36b80"
 
 [[closure]]
 requirement_id = "REQ-RFC-REGISTRY-LINK"
 witness_id = "W-EXEC-RFC-REGISTRY-LINK"
 mechanism = "executable_discriminator"
-discriminator = "1bd026f427bff4eac4f71381f085a07c5c8d9894b5a4f2361de0b4ac09a37d7c"
+discriminator = "036c52b417ca65953283ab8f34e0f71173f361e6fcc654c4fe7155d498a99219"
 claim_digest = "0282d80f024d1ee4fc4842e632a016bcab451e88093f4357046a892f64c41776"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8938,14 +8938,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc-registry-link.json"
 artifacts = ["gates/claim-closure-oracles/rfc-registry-link.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc-registry-link", mutation = "replace_text", name = "reject-rfc-registry-link-counterfeit", to = "rfc-registry-link-counterfeit" }]
-receipt = "9a8fae7f347149f0579026a05ad509c4af009bcf900d07f1b37b2f84b9275855"
+counterfeit = [{ name = "reject-rfc-registry-link-counterfeit", mutation = "replace_text", from = "rfc-registry-link", to = "rfc-registry-link-counterfeit", expected_exit = 4 }]
+receipt = "564d6c84bcc21da12f3c41285e1a9177147a0fc55f625a2f6dd3a896629886d7"
 
 [[closure]]
 requirement_id = "REQ-RFC10-BACKEND-CONVERGENCE"
 witness_id = "W-EXEC-RFC10-BACKEND-CONVERGENCE"
 mechanism = "executable_discriminator"
-discriminator = "8bd3eb8587015515ffe39dea1a161dce9d71fc24305c3d746a43f7aa99ac3c8a"
+discriminator = "c01c3dfc8dc3bf8124038dcfeb1ad552c3f47dbe9c9ac752acfcf5c069cb9efa"
 claim_digest = "4f2ef0ab0d076a0b63017f655b61ef3efd13eda2559be246e8ff1a7e25dffe37"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8954,14 +8954,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-backend-convergence.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-backend-convergence.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-backend-convergence", mutation = "replace_text", name = "reject-rfc10-backend-convergence-counterfeit", to = "rfc10-backend-convergence-counterfeit" }]
-receipt = "3c024ddae12fe19ec51db95b5eb716f87f6e7703b081877de0a3c7c79483ecb3"
+counterfeit = [{ name = "reject-rfc10-backend-convergence-counterfeit", mutation = "replace_text", from = "rfc10-backend-convergence", to = "rfc10-backend-convergence-counterfeit", expected_exit = 4 }]
+receipt = "b5a75dd355b819fa0d940bd8b38da6df3430d474d893b2f7cd4c49fb7e60f908"
 
 [[closure]]
 requirement_id = "REQ-RFC10-CANONICAL-CHILDREN"
 witness_id = "W-EXEC-RFC10-CANONICAL-CHILDREN"
 mechanism = "executable_discriminator"
-discriminator = "bf003f03bb646304e6ded25ef30cba9b86b0c5c924fa0adf083bdecd1c48658f"
+discriminator = "805f27d830396ed7954fb930019a0f284a25ae2196fa2583b81261d29daf0eb6"
 claim_digest = "8b4674c90948c6f659f9f10cc9429def16d7ec801700c9e0dce2774578373f5b"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8970,14 +8970,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-canonical-children.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-canonical-children.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-canonical-children", mutation = "replace_text", name = "reject-rfc10-canonical-children-counterfeit", to = "rfc10-canonical-children-counterfeit" }]
-receipt = "7a5cf628a05407807587b4467294e9cc92857abcefd4f3818c1d5e1bdac1a103"
+counterfeit = [{ name = "reject-rfc10-canonical-children-counterfeit", mutation = "replace_text", from = "rfc10-canonical-children", to = "rfc10-canonical-children-counterfeit", expected_exit = 4 }]
+receipt = "33441ce92424c889e013a8a4210400f6498df6f1fbbadc3ad5ca359cc339a86b"
 
 [[closure]]
 requirement_id = "REQ-RFC10-CHECKED-IR"
 witness_id = "W-EXEC-RFC10-CHECKED-IR"
 mechanism = "executable_discriminator"
-discriminator = "c1a058b0998b19a617b8d8925f2be33317486e3f70bb07038d7c267a1e9e82d9"
+discriminator = "69a45d6499862ce0c49c9aa727933b63d4118cc847f1a6cd14abc1a0386fd7c0"
 claim_digest = "94844960f3dbe4fa4f7a1b5947dc707c3481fd769932b9014c961c78d2454ac3"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -8986,14 +8986,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-checked-ir.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-checked-ir.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-checked-ir", mutation = "replace_text", name = "reject-rfc10-checked-ir-counterfeit", to = "rfc10-checked-ir-counterfeit" }]
-receipt = "83c086056e307183084cc8e5f5931dc87d79bfbf8382d783508d26fb051e0862"
+counterfeit = [{ name = "reject-rfc10-checked-ir-counterfeit", mutation = "replace_text", from = "rfc10-checked-ir", to = "rfc10-checked-ir-counterfeit", expected_exit = 4 }]
+receipt = "b5bbf49ae16140d9b0ae34a64f58cf83d240a9c4de47956d9a73fb24c23dfbf4"
 
 [[closure]]
 requirement_id = "REQ-RFC10-CONFORMANCE-MATRIX"
 witness_id = "W-EXEC-RFC10-CONFORMANCE-MATRIX"
 mechanism = "executable_discriminator"
-discriminator = "81118c450f87adfb67913728df88692892977bff9a09987040d0754e4cc06daf"
+discriminator = "90fb16e76dc56dc6b4d44dc1dfe7b9a44ea4fb00c1454bf7f8aabb4a91478b00"
 claim_digest = "42ab8e46f8a400ec174caa459e4f0b93d18eba42343ab5e1bc674eeaf294ef81"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9002,14 +9002,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-conformance-matrix.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-conformance-matrix.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-conformance-matrix", mutation = "replace_text", name = "reject-rfc10-conformance-matrix-counterfeit", to = "rfc10-conformance-matrix-counterfeit" }]
-receipt = "feaad8f440298446baabb1a722f4e62463e5ed8e23aaab29ca8eb61bf3497a5f"
+counterfeit = [{ name = "reject-rfc10-conformance-matrix-counterfeit", mutation = "replace_text", from = "rfc10-conformance-matrix", to = "rfc10-conformance-matrix-counterfeit", expected_exit = 4 }]
+receipt = "c0040a3e3f1344df42d92b7db703cad1669c1a715b7b72877c9d7879cec51154"
 
 [[closure]]
 requirement_id = "REQ-RFC10-DELTA-LEDGER"
 witness_id = "W-EXEC-RFC10-DELTA-LEDGER"
 mechanism = "executable_discriminator"
-discriminator = "c9dba1b0edf6d25fd84a5e59e4720162b8f124e06d9b75e056561494091b12c4"
+discriminator = "744ad6f197d53e0f58d16c263a8ec191eba2848ab03065efb02f93840c20566d"
 claim_digest = "d820f37170916c318600cb1dd4ff5d7bf56b7b7e537defe06753fae5d4b12aef"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9018,14 +9018,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-delta-ledger.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-delta-ledger.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-delta-ledger", mutation = "replace_text", name = "reject-rfc10-delta-ledger-counterfeit", to = "rfc10-delta-ledger-counterfeit" }]
-receipt = "53c719086673509dcfb8332e8fc9ad94a108d32fcb23f7f662b80619570b2a8b"
+counterfeit = [{ name = "reject-rfc10-delta-ledger-counterfeit", mutation = "replace_text", from = "rfc10-delta-ledger", to = "rfc10-delta-ledger-counterfeit", expected_exit = 4 }]
+receipt = "9a31cf68f78ff0aaa84a77d12e5ee531ecc5e4ec523811c52cf380c4b7b35e76"
 
 [[closure]]
 requirement_id = "REQ-RFC10-EVIDENCE-COMPLETENESS"
 witness_id = "W-EXEC-RFC10-EVIDENCE-COMPLETENESS"
 mechanism = "executable_discriminator"
-discriminator = "9b21d7de86e64861c528fdcef5b6d4d5da8bee5f14e182120c29cac24119c471"
+discriminator = "7e62da06aac709b38d2db45a0775830b17cd449a685c5c0e96294f9ab77c0bf3"
 claim_digest = "11d69090fcb1f33f6f54b862ce7d5c7fe5c9d69bbf366c9656123cb6f3bb7592"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9034,8 +9034,8 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-evidence-completeness.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-evidence-completeness.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-evidence-completeness", mutation = "replace_text", name = "reject-rfc10-evidence-completeness-counterfeit", to = "rfc10-evidence-completeness-counterfeit" }]
-receipt = "6c93b53530f0fd4a8fba34dd50e97a3fdb53ca28a984f90a6db0bdc470f14209"
+counterfeit = [{ name = "reject-rfc10-evidence-completeness-counterfeit", mutation = "replace_text", from = "rfc10-evidence-completeness", to = "rfc10-evidence-completeness-counterfeit", expected_exit = 4 }]
+receipt = "15559ea1d6c6129967a7be6f3aee0c76769f9063fd1993dd91b0235595a54740"
 
 [[closure]]
 requirement_id = "REQ-RFC10-FORMAL-SOUNDNESS"
@@ -9054,7 +9054,7 @@ receipt = "045ac27b458e4e1c4415eb6cb621356088611daa61975e957700d6b0e994f0a7"
 requirement_id = "REQ-RFC10-ITERATIVE-TRAVERSAL"
 witness_id = "W-EXEC-RFC10-ITERATIVE-TRAVERSAL"
 mechanism = "executable_discriminator"
-discriminator = "ba869e8c1a591c6a5f47ccdf26d4319b92072176a906096c00870bbc191bc20b"
+discriminator = "642a58496056e218acd33a4fe1c1008a51732c0f7552b8c3846cbc47edb50182"
 claim_digest = "47992761777906c0833e53c973ea854c5cf33094a59c319ebacd926929c74679"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9063,14 +9063,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-iterative-traversal.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-iterative-traversal.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-iterative-traversal", mutation = "replace_text", name = "reject-rfc10-iterative-traversal-counterfeit", to = "rfc10-iterative-traversal-counterfeit" }]
-receipt = "adbb831d11387d46d24896b7db54f2e197e4569f4aa1d72202b6213f313e58a1"
+counterfeit = [{ name = "reject-rfc10-iterative-traversal-counterfeit", mutation = "replace_text", from = "rfc10-iterative-traversal", to = "rfc10-iterative-traversal-counterfeit", expected_exit = 4 }]
+receipt = "f52eeae3554805ba0e99185d5cb821c92ded49045fdc8c511cc6539c40c739c9"
 
 [[closure]]
 requirement_id = "REQ-RFC10-REPLAY-MUTATION-CLOSURE"
 witness_id = "W-EXEC-RFC10-REPLAY-MUTATION-CLOSURE"
 mechanism = "executable_discriminator"
-discriminator = "a0423806f4067076fe6d6bf35513b6083a21ceacfb2710e2945fb7d555a732f4"
+discriminator = "6c6ee5d196858dbef4b7a55039b5a11af22301691816718d28e11af3e2efd701"
 claim_digest = "d031e159b8a49a4c6371966a9dd2cbab3b17f3a932495b741b79513a75d3b6e2"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9079,14 +9079,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-replay-mutation-closure.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-replay-mutation-closure.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-replay-mutation-closure", mutation = "replace_text", name = "reject-rfc10-replay-mutation-closure-counterfeit", to = "rfc10-replay-mutation-closure-counterfeit" }]
-receipt = "a1c6da5ba6db6644e00afb8bddcabff847b98e588beb671fd0b2cada9cfab217"
+counterfeit = [{ name = "reject-rfc10-replay-mutation-closure-counterfeit", mutation = "replace_text", from = "rfc10-replay-mutation-closure", to = "rfc10-replay-mutation-closure-counterfeit", expected_exit = 4 }]
+receipt = "b59c951c355daef92da64d74a0bc52bf08b86a6dcf0281ac161faa2ca76cfede"
 
 [[closure]]
 requirement_id = "REQ-RFC10-SEMANTIC-REPLAY-INDEPENDENCE"
 witness_id = "W-EXEC-RFC10-SEMANTIC-REPLAY-INDEPENDENCE"
 mechanism = "executable_discriminator"
-discriminator = "00ff0c52f8124217b2c3f84ff2f5bcf8e4733b28dd040a8fc6bdee28d70585b9"
+discriminator = "31b83779da581e4dadcb2c154628d49d601f18c4560387ac776ae587f451f18e"
 claim_digest = "529023ca9f533e2bae7611fda57041a0231cc661667a59959c918157d75b451a"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9095,14 +9095,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-semantic-replay-independence.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-semantic-replay-independence.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-semantic-replay-independence", mutation = "replace_text", name = "reject-rfc10-semantic-replay-independence-counterfeit", to = "rfc10-semantic-replay-independence-counterfeit" }]
-receipt = "d5ec6bf7e78d22d418fb0c3016ab6d85e1f3d6802413bcbb90218bc6412855e8"
+counterfeit = [{ name = "reject-rfc10-semantic-replay-independence-counterfeit", mutation = "replace_text", from = "rfc10-semantic-replay-independence", to = "rfc10-semantic-replay-independence-counterfeit", expected_exit = 4 }]
+receipt = "3508a11df204e0fefbf17dbe9be55b2fa8913d785238cae540b0f6f2165af2a9"
 
 [[closure]]
 requirement_id = "REQ-RFC10-UNIFORM-HOLDING"
 witness_id = "W-EXEC-RFC10-UNIFORM-HOLDING"
 mechanism = "executable_discriminator"
-discriminator = "4b60666a5f1f1b2167e4263d7fcccbf71ba421f85cf5c159d9569c239bd20763"
+discriminator = "b224124fa0f934d4197f97fd1a7d43bfc579f48afa49698bd73a50d07adecad6"
 claim_digest = "80b30062cbeea53d64aa7bf05c721288d6311e4591e34268cef60acb6e97262d"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9111,14 +9111,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-uniform-holding.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-uniform-holding.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-uniform-holding", mutation = "replace_text", name = "reject-rfc10-uniform-holding-counterfeit", to = "rfc10-uniform-holding-counterfeit" }]
-receipt = "09dc9c78508e4264b49562ab14a8ddf9d4b3d77d0d5a3b9f01485438890cee57"
+counterfeit = [{ name = "reject-rfc10-uniform-holding-counterfeit", mutation = "replace_text", from = "rfc10-uniform-holding", to = "rfc10-uniform-holding-counterfeit", expected_exit = 4 }]
+receipt = "7adda4fe2d2edaeb0d3d709d612e656a4ff3df4b4c7d8d943416276b097ccce2"
 
 [[closure]]
 requirement_id = "REQ-RFC10-VERIFIED-REPLAY"
 witness_id = "W-EXEC-RFC10-VERIFIED-REPLAY"
 mechanism = "executable_discriminator"
-discriminator = "7dddc466c18a1d58e8f21f8fee7f89b27cca3a2a9b12c4f82be1275247ae3720"
+discriminator = "6d5b9aef69a00c6cfed27275d1aa268741204307edffbf256ae07559a07fb417"
 claim_digest = "47cc6a5d0d7e0b605d3ed3eb1a5047cb3bb16d59d2e70b46727061713914b5f6"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9127,14 +9127,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-verified-replay.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-verified-replay.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-verified-replay", mutation = "replace_text", name = "reject-rfc10-verified-replay-counterfeit", to = "rfc10-verified-replay-counterfeit" }]
-receipt = "d52bd22bf0df91e1dfac6d32a57b9b767fbcb3c8a011197a1706fbfb9ed1e49f"
+counterfeit = [{ name = "reject-rfc10-verified-replay-counterfeit", mutation = "replace_text", from = "rfc10-verified-replay", to = "rfc10-verified-replay-counterfeit", expected_exit = 4 }]
+receipt = "34e359c11f2413b127a550160361aaee4f3a704039364f3e0902891ad06f5b24"
 
 [[closure]]
 requirement_id = "REQ-RFC10-WITNESS-PRODUCER"
 witness_id = "W-EXEC-RFC10-WITNESS-PRODUCER"
 mechanism = "executable_discriminator"
-discriminator = "7ebf2ae7e4dfccf1274d94b301781baa1a41ad419932fd18f667836363fcd7ba"
+discriminator = "dfcfa113ade85b193d89c4fbf829a749cb8556a985cb334b2c62cf2606901854"
 claim_digest = "202d191e72bcdc26461b380111481e9c114d11ed862c565ae6d94e6e50944ade"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9143,14 +9143,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/rfc10-witness-producer.json"
 artifacts = ["gates/claim-closure-oracles/rfc10-witness-producer.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "rfc10-witness-producer", mutation = "replace_text", name = "reject-rfc10-witness-producer-counterfeit", to = "rfc10-witness-producer-counterfeit" }]
-receipt = "fb3859aba19009a7ac90a943adfda0594d8bdb2dade0a81f164f67254fcf82e4"
+counterfeit = [{ name = "reject-rfc10-witness-producer-counterfeit", mutation = "replace_text", from = "rfc10-witness-producer", to = "rfc10-witness-producer-counterfeit", expected_exit = 4 }]
+receipt = "e267136378da0c6613dfb398b3c2cb50d3dfc13989c887104d8bfebb2fe9d75d"
 
 [[closure]]
 requirement_id = "REQ-S1-1"
 witness_id = "W-EXEC-S1-1"
 mechanism = "executable_discriminator"
-discriminator = "78b4b80ca707de9be9788f018397732cdb66f7e51d6dd0bf0795913e11dccb35"
+discriminator = "13171ae5fe57de2406972098e24a95baf789d696dc35a58c2a927921a33a67dd"
 claim_digest = "d382679e303b481172b534b98fc0cb0ee489ca5704125a2f6ce17ca1a7d7a99f"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9159,14 +9159,14 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/s1-1.json"
 artifacts = ["gates/claim-closure-oracles/s1-1.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "s1-1", mutation = "replace_text", name = "reject-s1-1-counterfeit", to = "s1-1-counterfeit" }]
-receipt = "397f8bdbdaebc7b17472b35f86d04e4919a78adfecfddba6a95f6cb084fdd8e7"
+counterfeit = [{ name = "reject-s1-1-counterfeit", mutation = "replace_text", from = "s1-1", to = "s1-1-counterfeit", expected_exit = 4 }]
+receipt = "b0f0e7e35bd7d2b8de9114225081db2f760053fb6cde398c4e39641657486710"
 
 [[closure]]
 requirement_id = "REQ-S1-11"
 witness_id = "W-EXEC-S1-11"
 mechanism = "executable_discriminator"
-discriminator = "e9f833b0d046cb16fa48ac621ca5d011cb16d614c8a71a0ea056ad9c03da8d42"
+discriminator = "91efd05ff95de9d944794093ef6d12dd854a698565e63574b575b1d866fe5c28"
 claim_digest = "c6f8bf2b3fb59bb8a73af17ef55648e16fd69ad5e978b98314498b92354d8c01"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9175,8 +9175,8 @@ tool_version = "thermite-claim-closure-lower 1; cargo 1.95.0 (f2d3ce0bd 2026-03-
 oracle = "gates/claim-closure-oracles/s1-11.json"
 artifacts = ["gates/claim-closure-oracles/s1-11.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave14.rs", "thermite-lower/src/lower.rs", "thermite-spec/src/validator.rs", "forge/tests/option_result_conformance.rs", "forge/tests/recursion_conformance.rs", "forge/tests/vec_completeness_conformance.rs", "gates/rfc-check.py", "gates/tests/test_rfc_check.py", ".design/rfcs/0005-rfc-process.md", ".design/reqs/registry.toml", "thermite-syntax/src/semantic.rs", "thermite-syntax/tests/semantic_inventory.rs", "thermite-lower/src/checked.rs", "thermite-lower/src/witness.rs", "thermite-lower/tests/checked_program.rs", "thermite-lower/tests/traversal_witness.rs", "thermite-lower/tests/rfc10_conformance_matrix.rs", "thermite-lower/tests/shared_state_invariants.rs", "lean/Thermite/CheckedTraversal.lean", "forge/src/check.rs", "forge/tests/check_conformance.rs", ".design/rfc10-checked-traversal.md", ".design/rfc10-evidence-completeness.md", ".design/stage1-forge-tier.md", "docs/v2/program.md", "forge/src/verdict.rs", "forge/src/tv_signal.rs", "forge/src/covenant_engine.rs", "docs/v2/semantics.md", "goal.md", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
-counterfeit = [{ expected_exit = 4, from = "s1-11", mutation = "replace_text", name = "reject-s1-11-counterfeit", to = "s1-11-counterfeit" }]
-receipt = "29fa4c2b86c2836764b5da4dcf5e098960865d2e651550ee20224aeb729ee80a"
+counterfeit = [{ name = "reject-s1-11-counterfeit", mutation = "replace_text", from = "s1-11", to = "s1-11-counterfeit", expected_exit = 4 }]
+receipt = "15a5bbcbadb638bd3cfcd3f2cccc3d8c1b3377898e7f629de7ea70a2298f0312"
 
 [[closure]]
 requirement_id = "REQ-S1-2"

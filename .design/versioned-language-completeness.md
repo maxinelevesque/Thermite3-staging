@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: c56180480bbd9ce8d4dd64194703608c49d62ad398e11bd4c476e6844ac66198 (re-pinned after issue #145 refreshed all 580 receipts and made CI shards compare fresh evidence with the committed ledger. prior: ca438d00bf57c71667d9bc27dda21b925f63896728262451a69a2e9ecb74c314)
+audited-content-sha256: 8653e9f0cc3a77363225cce57111206beac40f7e8f36d53fd16ca30d2655ab70 (re-pinned after refreshing the guard-bound and generated-registry-bound closures under the cross-platform-safe receipt comparison. prior: 3a5eb9a55a9b8043a2ae8857a22528bc337eeea4fe4335e4bac2097b49db93a8)
 
 ## Summary
 
