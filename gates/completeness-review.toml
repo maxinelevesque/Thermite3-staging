@@ -3258,7 +3258,7 @@ receipt = "167bd2f6d72bc8087fda485e3600b812cd4b2b6616d45d353144ab03b6e40e3f"
 requirement_id = "REQ-CI-DETERMINISTIC-BALANCE"
 witness_id = "W-EXEC-CI-DETERMINISTIC-BALANCE"
 mechanism = "executable_discriminator"
-discriminator = "0c93bcae306fd832f63338330404af36bc0a33e31f753115c0658fa8e42112ca"
+discriminator = "4d08933dd4cd683aed5987ac64585eca6646848734642b64e12d3362b033379e"
 claim_digest = "380e47c090fd9900c034f116a250e29828af1416e78df4812a6a4ec26ca8169c"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3268,13 +3268,13 @@ oracle = "gates/claim-closure-oracles/ci-deterministic-balance.json"
 artifacts = ["gates/claim-closure-oracles/ci-deterministic-balance.json", "gates/claim-closure-lower.py", "gates/ci-test-partitions.py", "gates/ci-test-partitions.toml", "gates/tests/test_ci_test_partitions.py", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-deterministic-lpt", mutation = "replace_text", from = "ci-deterministic-lpt", to = "ci-nondeterministic-lpt", expected_exit = 4 }]
-receipt = "ecf9a1b8ecfa7b66338fd88eb5d222a83c96578f530e2f21404fe91e53901418"
+receipt = "443df61c07b108eb3b7f38f5b38e48e67a168cd94dfb586189ac9e446b2550e8"
 
 [[closure]]
 requirement_id = "REQ-CI-DURATION-PARTITIONS"
 witness_id = "W-EXEC-CI-DURATION-PARTITIONS"
 mechanism = "executable_discriminator"
-discriminator = "e944c885cffff5bc9fb89aad0d13106f9eaba6c08f073ab12cfa0a7001bb3e77"
+discriminator = "137bd47662ef2ac796dac3fec3ee48c378c78dc4d9abc3a058566d99d1ba4ba3"
 claim_digest = "fb3245ad80d60e03db28ed74d2919e62e7df2731b889cfab613f599ce987dc36"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3284,7 +3284,7 @@ oracle = "gates/claim-closure-oracles/ci-duration-partitions.json"
 artifacts = ["gates/claim-closure-oracles/ci-duration-partitions.json", "gates/claim-closure-lower.py", "gates/ci-test-partitions.toml", "gates/tests/test_ci_workflow_contract.py", ".github/workflows/ci.yml", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-thirteen-bucket-topology", mutation = "replace_text", from = "ci-thirteen-buckets", to = "ci-twelve-buckets", expected_exit = 4 }]
-receipt = "737019909a9f758e177f12f6061edd45961738e689798028bae04f9d2ebf1467"
+receipt = "e820e210fbb3cd050fc02af1f45d6a5ea90a6765bfee3d4402018ea0defd2cbe"
 
 [[closure]]
 requirement_id = "REQ-CI-GATE-FANOUT"
@@ -3322,7 +3322,7 @@ receipt = "ca91f4a3739abd12e999aec3f04e289be233039079a963ba1f6886d9e11aa2f1"
 requirement_id = "REQ-CI-PARTITION-COVERAGE"
 witness_id = "W-EXEC-CI-PARTITION-COVERAGE"
 mechanism = "executable_discriminator"
-discriminator = "0158c29db525e7abbe9357b6db3e0161aff506b5db9453054f4bc7d496698201"
+discriminator = "9093535e5c14a70aec7e1d49d114b6d3bcdde474bef55baa45470fbcf37e5d5a"
 claim_digest = "bd876ca0f6f98e3d1826942a306aab97ab5f83762899447043fa098edae57f41"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3332,7 +3332,7 @@ oracle = "gates/claim-closure-oracles/ci-partition-coverage.json"
 artifacts = ["gates/claim-closure-oracles/ci-partition-coverage.json", "gates/claim-closure-lower.py", "gates/ci-test-partitions.py", "gates/ci-test-partitions.toml", "gates/tests/test_ci_test_partitions.py", ".github/workflows/ci.yml", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "allow-duplicate-partition-members", mutation = "replace_text", from = "ci-coverage-duplicate", to = "ci-coverage-duplicate-allowed", expected_exit = 4 }]
-receipt = "324e2ea0211d19cc77725a639a879b80502217ef79dda6e3a14749fc44b0d463"
+receipt = "8101cfab6330b241531c49c31ddaa6fb46a50b385a193cbb4457836084bb5525"
 
 [[closure]]
 requirement_id = "REQ-CI-PROOF-TOOL-PARITY"

@@ -161,6 +161,30 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 [[assignment]]
 bucket = 1
 seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_receive_payload_bindings_in_unmodeled_control_flow"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_send_payload_after_unproved_reassignment"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_send_payload_after_untyped_shadowing"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_send_payload_whose_type_is_not_statically_inferrable"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
 test = "thermite-syntax::protocol_types_parse malformed_protocols_recover_to_the_next_item"
 timing_provenance = "reviewed_local_estimate_after_baseline"
 
