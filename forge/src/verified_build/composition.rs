@@ -644,7 +644,11 @@ fn collect_type_closure(
                 }
             }
         }
-        Type::Prim(_) | Type::Unit | Type::String | Type::Named(_) => {}
+        Type::Prim(_)
+        | Type::Unit
+        | Type::String
+        | Type::Named(_)
+        | Type::ProtocolEndpoint { .. } => {}
     }
     Ok(())
 }
@@ -674,6 +678,7 @@ fn type_spelling(ty: &Type) -> Result<String, String> {
         Type::Slice(inner) => format!("[{}]", type_spelling(inner)?),
         Type::Generic { name, arg } => format!("{name}<{}>", type_spelling(arg)?),
         Type::Named(name) => name.clone(),
+        Type::ProtocolEndpoint { protocol, role } => format!("{protocol}::{role}"),
         Type::Box(inner) => format!("Box<{}>", type_spelling(inner)?),
         Type::Vec(inner) => format!("Vec<{}>", type_spelling(inner)?),
         Type::String => "String".to_string(),

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "rfc13-syntax-declaration", "expected_exit": 0},
+    {"id": "rfc13-syntax-repeat", "expected_exit": 0},
+    {"id": "rfc13-syntax-recovery", "expected_exit": 0}
+  ]
+}

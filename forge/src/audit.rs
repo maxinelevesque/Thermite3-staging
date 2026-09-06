@@ -300,6 +300,9 @@ pub struct FunctionRow {
     /// RFC-12 interference clauses, composition graph, formal replay, and trust.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interference: Option<crate::manifest::InterferenceEvidence>,
+    /// RFC-13 protocol projections, formal completion replay, and platform trust.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<crate::manifest::ProtocolEvidence>,
     /// The §7 contract-quality battery block (presence/shape asserted by the
     /// oracle; the version-sensitive `mutants_killed`/`survivor` ratio is not —
     /// OQ-2). A copy of `Certificate::contract_quality`.
@@ -368,6 +371,8 @@ impl FunctionRow {
             .expect("audit rejects RFC-11 evidence without live formal-replay authority");
         cert.validate_interference_authority()
             .expect("audit rejects RFC-12 evidence without live formal-replay authority");
+        cert.validate_protocol_authority()
+            .expect("audit rejects RFC-13 evidence without live formal-replay authority");
         FunctionRow {
             name: cert.item.clone(),
             level: cert.level,
@@ -378,6 +383,7 @@ impl FunctionRow {
             engine_attribution: cert.engine_attribution.clone(),
             resource_flow: cert.resource_flow.clone(),
             interference: cert.interference.clone(),
+            protocol: cert.protocol.clone(),
             contract_quality: cert.contract_quality.clone(),
             slag: cert.slag,
             boundary: cert.boundary,

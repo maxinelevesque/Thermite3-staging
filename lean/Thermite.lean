@@ -56,6 +56,7 @@ import Thermite.PinLanguageNarrowing
 import Thermite.CheckedTraversal
 import Thermite.ResourceFlow
 import Thermite.Interference
+import Thermite.Protocol
 
 -- Closed, parameterized assurance policy and generated Rust/Lean replay.
 import Thermite.AssurancePolicyV2

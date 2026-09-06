@@ -5071,7 +5071,7 @@ owner = "thermite-syntax/src/parser.rs"
 status = "shipped"
 scope = "syntax"
 summary = "The parser is a hand-written recursive-descent implementation with one fallible parser family per surface grammar area."
-claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/parser.rs#^(?s:    fn ([a-z_][a-z0-9_]*)\\s*\\([^)]*\\)\\s*->\\s*PResult<[^{]+>\\s*\\{)$", expected = ["block_into_arm_body", "consume", "expect_contextual", "parse_add", "parse_and", "parse_attribute", "parse_bitand", "parse_bitor", "parse_bitxor", "parse_block", "parse_boundary_body", "parse_break_continue", "parse_bv_tag", "parse_bv_width", "parse_call_args", "parse_cast", "parse_clause", "parse_clause_selector", "parse_closure", "parse_cmp", "parse_concurrent", "parse_contract", "parse_dec_clause", "parse_effect", "parse_effect_decl", "parse_effect_primitive", "parse_effect_row", "parse_enum", "parse_expr", "parse_field_defs", "parse_fn", "parse_for", "parse_forget", "parse_handlers", "parse_holding", "parse_hole", "parse_if_expr", "parse_if_let", "parse_if_parts", "parse_if_parts_inner", "parse_index_arg", "parse_index_arg_inner", "parse_interference_contract", "parse_is", "parse_item", "parse_lemma", "parse_let", "parse_let_tuple_destructure", "parse_lock_decl", "parse_loop", "parse_loop_inner", "parse_match", "parse_mul", "parse_or", "parse_params", "parse_params_inner", "parse_path_expr", "parse_path_pattern", "parse_pattern", "parse_pattern_inner", "parse_postfix", "parse_primary", "parse_proof_item", "parse_prop_fn", "parse_quantifier", "parse_ref", "parse_refinement_clause", "parse_region_path", "parse_resource_decl", "parse_return", "parse_shared_decl", "parse_shift", "parse_slag_body", "parse_slice_pattern", "parse_spec_fn", "parse_struct", "parse_struct_lit", "parse_struct_pattern", "parse_type", "parse_type_inner", "parse_unary", "parse_while_let", "parse_witness", "scan_proof_block", "take_ident", "take_string"], reviewed_summary_sha256 = "d9bc6f58ae9273641347526c4eb9f717acebfa7b46a6b695e381d82eef60b401" }
+claim = { kind = "exact_population", subject = "regex:thermite-syntax/src/parser.rs#^(?s:    fn ([a-z_][a-z0-9_]*)\\s*\\([^)]*\\)\\s*->\\s*PResult<[^{]+>\\s*\\{)$", expected = ["block_into_arm_body", "consume", "expect_contextual", "parse_add", "parse_and", "parse_attribute", "parse_bitand", "parse_bitor", "parse_bitxor", "parse_block", "parse_boundary_body", "parse_break_continue", "parse_bv_tag", "parse_bv_width", "parse_call_args", "parse_cast", "parse_clause", "parse_clause_selector", "parse_closure", "parse_cmp", "parse_concurrent", "parse_contract", "parse_dec_clause", "parse_effect", "parse_effect_decl", "parse_effect_primitive", "parse_effect_row", "parse_enum", "parse_expr", "parse_field_defs", "parse_fn", "parse_for", "parse_forget", "parse_handlers", "parse_holding", "parse_hole", "parse_if_expr", "parse_if_let", "parse_if_parts", "parse_if_parts_inner", "parse_index_arg", "parse_index_arg_inner", "parse_interference_contract", "parse_is", "parse_item", "parse_lemma", "parse_let", "parse_let_tuple_destructure", "parse_lock_decl", "parse_loop", "parse_loop_inner", "parse_match", "parse_mul", "parse_or", "parse_params", "parse_params_inner", "parse_path_expr", "parse_path_pattern", "parse_pattern", "parse_pattern_inner", "parse_postfix", "parse_primary", "parse_proof_item", "parse_prop_fn", "parse_protocol", "parse_quantifier", "parse_ref", "parse_refinement_clause", "parse_region_path", "parse_resource_decl", "parse_return", "parse_shared_decl", "parse_shift", "parse_slag_body", "parse_slice_pattern", "parse_spec_fn", "parse_struct", "parse_struct_lit", "parse_struct_pattern", "parse_type", "parse_type_inner", "parse_unary", "parse_while_let", "parse_witness", "scan_proof_block", "take_ident", "take_string"], reviewed_summary_sha256 = "d9bc6f58ae9273641347526c4eb9f717acebfa7b46a6b695e381d82eef60b401" }
 aliases = ["thermite-syntax/src/parser.rs REQ-1 (recursive descent)"]
 contributors = [".design/syntax/parser.md", "thermite-syntax/tests/conformance.rs"]
 generated_to = ["status", "thermite-syntax-parser-core-status"]
@@ -19327,33 +19327,55 @@ note = "production formal replay, certificate and audit disclosure, residual tru
 id = "REQ-SYNTAX-PROTOCOL-DECL"
 title = "`protocol P { Role { … }, end }`"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "syntax"
 summary = "A sequence of turns, each labelled with whose turn it is. Roles are names rather than keywords, so a protocol names its own and an endpoint is a path to a role."
-remaining_scope = "Parse the declaration, the role sequence, `end`, and the `repeat | end` branch. Proposed by RFC-13; staged and not filed; tracked by issue #77."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc13-protocol-syntax.json", expected = ["accepted"], reviewed_summary_sha256 = "144d28c28f97b8a5fccf3895bf218894e8efcfdcaa934772f5cacc89a264218e" }
+remaining_scope = "Multiparty roles, general labelled choice, and path-sensitive branch witnesses are deferred beyond binary v1. Issue #77 remains open until landing."
 contributors = [".design/rfcs/0013-protocol-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0013-protocol-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-syntax/tests/protocol_types_parse.rs"
+note = "declaration, endpoint path, blocks, end, and repeat/end parser coverage"
+[[requirement.evidence]]
+kind = "file"
+target = "thermite-syntax/src/parser.rs"
+note = "protocol declaration and endpoint-type grammar"
 
 [[requirement]]
 id = "REQ-SPEC-PROTOCOL-ENDPOINT"
 title = "An endpoint is a resource, and `end` consumes it"
 owner = ".design/rfcs"
-status = "not_started"
+status = "shipped"
 scope = "spec"
 summary = "Termination is load-bearing: running the protocol to completion is what consumes the endpoint, so an endpoint that can be dropped abandons its peer mid-session."
-remaining_scope = "Check endpoint linearity and session progress. Depends on resource types landing first in issue #75. Proposed by RFC-13; staged and not filed; tracked by issue #77."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/rfc13-protocol-endpoints.json", expected = ["accepted"], reviewed_summary_sha256 = "fb69f966f3d651eeaea31d3fc1cf9b74990ff419b6feb440ed9de85017cd9b75" }
+remaining_scope = "Transport, peer identity, wakeup, failure/cancellation, multiparty progress, and path-sensitive branch witnesses remain explicit residual/deferred scope. Issue #77 remains open until landing."
 contributors = [".design/rfcs/0013-protocol-types.md"]
 generated_to = ["status"]
 
 [[requirement.evidence]]
-kind = "doc"
-target = ".design/rfcs/0013-protocol-types.md"
-note = "the proposal, with its design record and probe results"
+kind = "test"
+target = "thermite-spec/tests/protocol_conformance.rs"
+note = "hand-derived accept/reject oracle for dual completion and all required negative classes"
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/protocol_types.rs"
+note = "L1/L3 carriers, content-bound witness, Lean replay, and adversarial witness mutations"
+[[requirement.evidence]]
+kind = "file"
+target = "lean/Thermite/Protocol.lean"
+note = "kernel replay of projection compatibility, transition order, repeat rounds, and endpoint completion"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "production Lean replay gate before certificate minting"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/tests/protocol_types_conformance.rs"
+note = "production binary protocol certification anchor"
 
 [[requirement]]
 id = "REQ-SYNTAX-SURVIVES-CLAUSE"

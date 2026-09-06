@@ -170,7 +170,8 @@ impl CallGraph {
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
                 | Item::Concurrent(_)
-                | Item::LockDecl(_) => {}
+                | Item::LockDecl(_)
+                | Item::Protocol(_) => {}
             }
         }
         CallGraph { nodes }
@@ -376,7 +377,8 @@ pub fn verified_closure(
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
 
@@ -519,7 +521,8 @@ fn collect_verified_calls(item: &Item) -> Vec<VerifiedCall> {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => {}
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => {}
     }
     calls
 }

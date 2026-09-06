@@ -185,7 +185,8 @@ fn repository_test_initializer(
         | Type::Slice(_)
         | Type::Generic { .. }
         | Type::Box(_)
-        | Type::Result(_, _) => None,
+        | Type::Result(_, _)
+        | Type::ProtocolEndpoint { .. } => None,
     }
 }
 
@@ -438,7 +439,11 @@ fn build_file_inner(
         // `?N` body-hole refusal — a holed proof must not ship a trust-stamped
         // artifact. Hole-free forge items contribute no reason (`None`).
         Item::Forge(forge) => crate::goal_repl::open_proof_hole_reason(forge),
-        Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => None,
+        Item::EffectDecl(_)
+        | Item::SharedDecl(_)
+        | Item::Concurrent(_)
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => None,
     }) {
         return Err(ForgeError::Usage(format!(
             "`forge build` refuses a holed item: {detail} `forge build` lowers to a \
@@ -639,6 +644,7 @@ pub fn validate_freestanding_effects_with(
                 thermite_syntax::Effect::Alloc => "alloc",
                 thermite_syntax::Effect::Time => "time",
                 thermite_syntax::Effect::Rand => "rand",
+                thermite_syntax::Effect::Blocks => "blocks",
                 thermite_syntax::Effect::Panic => "panic",
                 thermite_syntax::Effect::Diverge => "diverge",
                 thermite_syntax::Effect::Term => "term",
@@ -697,7 +703,8 @@ fn reachable_boundary_targets(program: &Program) -> BTreeSet<String> {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => None,
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => None,
         })
         .collect()
 }
@@ -728,7 +735,8 @@ fn build_functions(program: &Program) -> Vec<BuildFunction> {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => None,
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => None,
         })
         .collect()
 }
@@ -770,6 +778,9 @@ fn find_entry_fn<'a>(program: &'a Program, name: &str) -> Result<&'a FnItem, For
                 "`--entry {name}` names effect-region metadata, not a runnable `fn`; name a `fn`"
             )))
         }
+        Some(Item::Protocol(_)) => Err(ForgeError::Usage(format!(
+            "`--entry {name}` names a protocol declaration, not a runnable `fn`; name a `fn`"
+        ))),
         None => Err(ForgeError::Usage(format!(
             "`--entry {name}` names no `fn` in the program"
         ))),

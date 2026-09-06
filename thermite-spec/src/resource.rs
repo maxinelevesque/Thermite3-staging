@@ -236,8 +236,11 @@ fn provenance_of_type_in(
             .iter()
             .flat_map(|element| provenance_of_type_in(element, declared))
             .collect(),
-        Type::Ref { .. } | Type::Slice(_) | Type::Prim(_) | Type::Unit | Type::String => {
-            BTreeSet::new()
-        }
+        Type::Ref { .. }
+        | Type::Slice(_)
+        | Type::Prim(_)
+        | Type::Unit
+        | Type::String
+        | Type::ProtocolEndpoint { .. } => BTreeSet::new(),
     }
 }

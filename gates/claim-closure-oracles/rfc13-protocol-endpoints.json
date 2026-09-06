@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "probe": "thermite-lower-core",
+  "cases": [
+    {"id": "rfc13-spec-accepted", "expected_exit": 0},
+    {"id": "rfc13-spec-rejected", "expected_exit": 0},
+    {"id": "rfc13-spec-control-flow", "expected_exit": 0},
+    {"id": "rfc13-spec-payload", "expected_exit": 0},
+    {"id": "rfc13-spec-repeat", "expected_exit": 0},
+    {"id": "rfc13-lower-carriers", "expected_exit": 0},
+    {"id": "rfc13-lower-witness", "expected_exit": 0},
+    {"id": "rfc13-lean-replay", "expected_exit": 0},
+    {"id": "rfc13-lean-negative", "expected_exit": 0},
+    {"id": "rfc13-certificate", "expected_exit": 0},
+    {"id": "rfc13-production", "expected_exit": 0}
+  ]
+}

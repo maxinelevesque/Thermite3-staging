@@ -227,6 +227,12 @@ pub fn lower_l2(program: &Program) -> Result<String, LowerError> {
             }
             Item::EffectDecl(_) | Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => {
             }
+            Item::Protocol(protocol) => {
+                return Err(LowerError::Unsupported {
+                    what: "RFC-13 protocol endpoints use the L1 runtime or L3 checked route; no L2 Kani channel model is claimed".to_string(),
+                    span: protocol.span,
+                });
+            }
         }
     }
 
@@ -493,7 +499,8 @@ pub fn bound_string(program: &Program) -> String {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => None,
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => None,
         })
         .max()
         .unwrap_or(SLICE_BOUND + 1);
@@ -551,6 +558,7 @@ fn type_label(ty: &Type) -> String {
         // descriptive name (not a panic) is the neutral value here; the
         // type is dead-in-1a (gated at the validator).
         Type::Named(name) => name.clone(),
+        Type::ProtocolEndpoint { protocol, role } => format!("{protocol}::{role}"),
         Type::Box(_) => "Box<_>".to_string(),
         // Basis Stage 4 (`.design/basis/04-collections.md`): a descriptive label
         // for a bounded `Vec<T>` inside an `Unsupported` L2 diagnostic. L2 (Kani

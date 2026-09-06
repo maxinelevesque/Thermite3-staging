@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: da4834fc550290fd8ea6dc533970e3d3b0ab57f3f12e4123af740d10a3ad9ed2 (re-pinned 2026-08-27 after completing RFC-6's address vocabulary migration in the governed comments: `.measures` is the shipped, conformance-pinned segment and legacy `.dec` is malformed. prior: 1955bd1ea7a9844a61fd5b58aa3c115dbf2c715af0ef854716fcfc696c47a884)
+audited-content-sha256: f0002cb12b5678e8696967bb838edcdfe5f5833513817d5246038431253349e2 (re-pinned 2026-08-27 after completing RFC-6's address vocabulary migration in the governed comments: `.measures` is the shipped, conformance-pinned segment and legacy `.dec` is malformed. prior: 1955bd1ea7a9844a61fd5b58aa3c115dbf2c715af0ef854716fcfc696c47a884)
 governs: thermite-syntax/src/address.rs
 thesis-refs:
   - thermite-design.md §4.3

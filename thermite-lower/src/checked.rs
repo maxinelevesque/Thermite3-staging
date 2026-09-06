@@ -21,6 +21,7 @@ pub struct CheckedProgram {
     regions: thermite_spec::RegionIndex,
     effects: EffectAnalysis,
     resource_flow: thermite_spec::ResourceFlowReport,
+    protocol_flow: thermite_spec::ProtocolReport,
     interference: thermite_spec::InterferenceReport,
     holdings: Vec<CheckedHolding>,
     shared_places: Vec<CheckedSharedPlace>,
@@ -94,6 +95,15 @@ impl CheckedProgram {
                     })
                     .collect::<Vec<_>>()
             })?;
+        let protocol_flow = thermite_spec::check_protocols(source).map_err(|errors| {
+            errors
+                .into_iter()
+                .map(|error| LowerError::EffectAnalysis {
+                    detail: error.detail,
+                    span: error.span,
+                })
+                .collect::<Vec<_>>()
+        })?;
         let inventory = semantic_inventory(source, budget).map_err(|limit| {
             vec![LowerError::ResourceLimit {
                 budget: limit.budget.0,
@@ -119,6 +129,7 @@ impl CheckedProgram {
             regions,
             effects,
             resource_flow,
+            protocol_flow,
             interference,
             holdings,
             shared_places,
@@ -143,6 +154,10 @@ impl CheckedProgram {
 
     pub fn resource_flow(&self) -> &thermite_spec::ResourceFlowReport {
         &self.resource_flow
+    }
+
+    pub fn protocol_flow(&self) -> &thermite_spec::ProtocolReport {
+        &self.protocol_flow
     }
 
     pub fn interference(&self) -> &thermite_spec::InterferenceReport {

@@ -1,0 +1,25 @@
+protocol PageRequest {
+  User { op: u32, count: u64 },
+  Provider { status: u32, base: u64 },
+  end
+}
+
+fn provider(c: PageRequest::Provider) -> u64
+  ! blocks
+  requires true
+  ensures result == 0
+{
+  let request: (u32, u64) = c.receive_payload();
+  c.send(200, 4096);
+  0
+}
+
+fn user(c: PageRequest::User) -> u64
+  ! blocks
+  requires true
+  ensures result == 0
+{
+  c.send(1, 2);
+  let response: (u32, u64) = c.receive_payload();
+  0
+}

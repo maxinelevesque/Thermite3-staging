@@ -14,9 +14,9 @@
 //!
 //! ## The lattice (REQ-1)
 //!
-//! The effects form a lattice over the powerset of the eleven atoms in
+//! The effects form a lattice over the powerset of the twelve atoms in
 //! `thermite_syntax::ast::Effect` (`Read`/`Write`/`Net`/`Alloc`/`Time`/`Rand`/
-//! `Panic`/`Diverge`/`Term`/`Owns`/`Forgets`), ordered by subset inclusion. `EffectRow::Pure` ≡ the empty
+//! `Panic`/`Diverge`/`Term`/`Owns`/`Forgets`/`Blocks`), ordered by subset inclusion. `EffectRow::Pure` ≡ the empty
 //! set `{}` is the bottom: it permits nothing and is subsumed by everything. The
 //! join of two rows is set union. v0.1 subsumption is atom-kind level
 //! (path-insensitive): a `Write(_)` caller subsumes any `Write(_)` callee (OQ-1;
@@ -58,7 +58,7 @@ use crate::lower::LowerError;
 /// Fixed constant (determinism, `goal.md` R-CODE-5).
 const MAX_WALK_DEPTH: usize = 256;
 
-/// The eleven atomic effect kinds (REQ-1), the carriers of subsumption. This is
+/// The twelve atomic effect kinds (REQ-1), the carriers of subsumption. This is
 /// the path-insensitive projection of `thermite_syntax::ast::Effect`: `Read(p)`,
 /// `Write(p)`, `Net(d)` collapse to `Read`/`Write`/`Net` regardless of the path/
 /// domain argument (OQ-1; v0.1 subsumption is atom-kind level). The remaining
@@ -80,12 +80,15 @@ pub enum EffectKind {
     Term,
     Owns,
     Forgets,
+    Blocks,
 }
 
 impl EffectKind {
-    /// The bit position of this atom kind in the 11-atom `u16` bitset shared with
+    /// The bit position of this atom kind in the 12-atom `u16` bitset shared with
     /// the Verus-verified core (`thermite_verified`, epic #60 / #106): Read=0,
-    /// Write=1, Net=2, Alloc=3, Time=4, Rand=5, Panic=6, Diverge=7, Term=8. This
+    /// Write=1, Net=2, Alloc=3, Time=4, Rand=5, Panic=6, Diverge=7, Term=8,
+    /// Owns=9, Forgets=10, Blocks=11. Appending `Blocks` preserves every prior
+    /// atom's stable bit assignment.
     /// is the representation port of `.design/verified/self-verification.md`
     /// (REQ-5): `subsumes` projects each `EffectRow` to its mask via this bit and
     /// delegates the subset test to `thermite_verified::subsumes_masks`, the
@@ -104,6 +107,7 @@ impl EffectKind {
             EffectKind::Term => 8,
             EffectKind::Owns => 9,
             EffectKind::Forgets => 10,
+            EffectKind::Blocks => 11,
         };
         1u16 << index
     }
@@ -118,6 +122,7 @@ impl EffectKind {
             Effect::Alloc => EffectKind::Alloc,
             Effect::Time => EffectKind::Time,
             Effect::Rand => EffectKind::Rand,
+            Effect::Blocks => EffectKind::Blocks,
             Effect::Panic => EffectKind::Panic,
             Effect::Diverge => EffectKind::Diverge,
             Effect::Term => EffectKind::Term,
@@ -127,7 +132,7 @@ impl EffectKind {
     }
 }
 
-/// The 11-atom `u16` bitset of an effect row (one bit per `EffectKind`, see
+/// The 12-atom `u16` bitset of an effect row (one bit per `EffectKind`, see
 /// `EffectKind::bit`): the representation port shared with the Verus-verified
 /// core (`.design/verified/self-verification.md` REQ-5). `mask(Pure) = 0`;
 /// `mask(Set(v))` ORs in `EffectKind::of(e).bit()` for each `e`. Path-insensitive
@@ -150,8 +155,8 @@ fn mask(row: &EffectRow) -> u16 {
 /// the bit-level subset decision is delegated to
 /// `thermite_verified::subsumes_masks`, the plain-Rust mirror of the
 /// `verus`-proved exec body (`(callee & !caller) == 0`). This function projects
-/// each `EffectRow` to its 11-atom mask (`mask`) and hands the masks to the
-/// verified core; the exhaustive 4194304-pair (2048×2048) equivalence test
+/// each `EffectRow` to its 12-atom mask (`mask`) and hands the masks to the
+/// verified core; the exhaustive 16777216-pair (4096×4096) equivalence test
 /// (`tests/effects_verified.rs`) anchors this projection to the proved subset
 /// relation `thermite_verified::spec_subsumes_mask`. Behavior matches the
 /// former set-membership form (the masks encode the same atom-kind sets).
@@ -301,7 +306,8 @@ pub(crate) fn analyze_effects_unchecked(
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
 
@@ -353,6 +359,15 @@ pub(crate) fn analyze_effects_unchecked(
                     return Err(errors);
                 }
                 collect_holding_effects(body, &mut direct.borrow_mut());
+                // RFC-13 endpoint operations may wait for their peer. Owning an
+                // endpoint therefore justifies the mandatory `fx blocks` atom,
+                // even though the carrier methods are not ordinary named callees.
+                if f.params
+                    .iter()
+                    .any(|param| matches!(param.ty, Type::ProtocolEndpoint { .. }))
+                {
+                    direct.borrow_mut().insert(Effect::Blocks);
+                }
                 if let Some(regions) = resource_forgets.get(&f.name) {
                     direct
                         .borrow_mut()
@@ -1144,7 +1159,8 @@ fn shared_read_is_copy(ty: &Type) -> bool {
         | Type::Box(_)
         | Type::Option(_)
         | Type::Result(_, _)
-        | Type::Generic { .. } => false,
+        | Type::Generic { .. }
+        | Type::ProtocolEndpoint { .. } => false,
     }
 }
 

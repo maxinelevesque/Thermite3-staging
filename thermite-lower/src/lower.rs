@@ -362,6 +362,7 @@ fn effect_atom_name(effect: &thermite_syntax::ast::Effect) -> &'static str {
         Effect::Alloc => "alloc",
         Effect::Time => "time",
         Effect::Rand => "rand",
+        Effect::Blocks => "blocks",
         Effect::Panic => "panic",
         Effect::Diverge => "diverge",
         Effect::Term => "term",
@@ -1204,6 +1205,7 @@ fn lower_with_profile(
             Item::Struct(s) => lower_struct(s, &spec_fn_param_types)?,
             Item::Enum(e) if deterministic_composition_enums => lower_composition_enum(e)?,
             Item::Enum(e) => lower_enum(e)?,
+            Item::Protocol(protocol) => lower_protocol(protocol)?,
             // Forge-tier item (stage1-forge-tier.md REQ-3): no v1 lowering/cert
             // consumer yet (increments 2b-3); emit nothing, mirroring the inert
             // ADT-decl arms.
@@ -1295,7 +1297,8 @@ fn program_needs_kernel_alloc(program: &Program) -> bool {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => false,
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => false,
     })
 }
 
@@ -1312,7 +1315,7 @@ fn type_needs_kernel_alloc(ty: &Type) -> bool {
         | Type::Option(inner) => type_needs_kernel_alloc(inner),
         Type::Result(ok, err) => type_needs_kernel_alloc(ok) || type_needs_kernel_alloc(err),
         Type::Tuple(types) => types.iter().any(type_needs_kernel_alloc),
-        Type::Prim(_) | Type::Unit | Type::Named(_) => false,
+        Type::Prim(_) | Type::Unit | Type::Named(_) | Type::ProtocolEndpoint { .. } => false,
     }
 }
 
@@ -1988,7 +1991,8 @@ fn emit_combinator_defs(program: &Program) -> Result<String, LowerError> {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
 
@@ -4923,6 +4927,70 @@ fn one_param<'p>(
 // REQ-2: type lowering.
 // ---------------------------------------------------------------------------
 
+/// Materialize RFC-13 endpoint carrier types. The protocol checker proves the
+/// source-level state machine before lowering; these deterministic carriers are
+/// the explicit boundary where a platform channel implementation is attached.
+fn lower_protocol(protocol: &thermite_syntax::ProtocolItem) -> Result<String, LowerError> {
+    let mut roles = std::collections::BTreeSet::new();
+    for turn in &protocol.turns {
+        roles.insert(turn.role.as_str());
+    }
+    let mut out = String::new();
+    let arities: std::collections::BTreeSet<usize> = protocol
+        .turns
+        .iter()
+        .map(|turn| turn.fields.len())
+        .collect();
+    for role in roles {
+        if !out.is_empty() {
+            out.push('\n');
+        }
+        let ty = format!("{}_{}_Endpoint", protocol.name, role);
+        out.push_str(&format!(
+            "pub struct {ty} {{ pub step: usize }}\nimpl {ty} {{\n"
+        ));
+        for arity in &arities {
+            let generics = (0..*arity).map(|i| format!("T{i}")).collect::<Vec<_>>();
+            let params = (0..*arity)
+                .map(|i| format!("_payload{i}: T{i}"))
+                .collect::<Vec<_>>();
+            let generic_clause = if generics.is_empty() {
+                String::new()
+            } else {
+                format!("<{}>", generics.join(", "))
+            };
+            out.push_str("    #[verifier::external_body]\n");
+            out.push_str(&format!(
+                "    pub fn __thermite_protocol_send_{arity}{generic_clause}(&self{}{}) {{}}\n",
+                if params.is_empty() { "" } else { ", " },
+                params.join(", ")
+            ));
+        }
+        out.push_str(
+            "    #[verifier::external_body]\n    pub fn __thermite_protocol_receive(&self) {}\n",
+        );
+        out.push_str(
+            "    #[verifier::external_body]\n    pub fn __thermite_protocol_receive_payload<T>(&self) -> T { unimplemented!(\"platform protocol transport must supply the received payload\") }\n",
+        );
+        if protocol.repeat {
+            out.push_str(
+                "    #[verifier::external_body]\n    pub fn __thermite_protocol_repeat(&self) {}\n",
+            );
+            out.push_str(
+                "    #[verifier::external_body]\n    pub fn __thermite_protocol_end(self) {}\n",
+            );
+            out.push_str(
+                "    #[verifier::external_body]\n    pub fn __thermite_protocol_receive_repeat(&self) {}\n",
+            );
+            out.push_str(
+                "    #[verifier::external_body]\n    pub fn __thermite_protocol_receive_end(self) {}\n",
+            );
+        }
+        out.push_str("}\n");
+    }
+    Ok(out)
+}
+
 /// Lower a `Type` to its Verus/Rust spelling (REQ-2). No lifetimes (§4.4).
 fn lower_type(ty: &Type) -> Result<String, LowerError> {
     match ty {
@@ -4956,6 +5024,7 @@ fn lower_type(ty: &Type) -> Result<String, LowerError> {
         // Verus `Box<…>` (the recursive occurrence `Box<List>`, REQ-10), which
         // Verus models natively for a recursive datatype.
         Type::Named(name) => Ok(name.clone()),
+        Type::ProtocolEndpoint { protocol, role } => Ok(format!("{protocol}_{role}_Endpoint")),
         Type::Box(inner) => {
             let i = lower_type(inner)?;
             Ok(format!("Box<{i}>"))
@@ -5271,7 +5340,8 @@ pub(crate) fn collect_vec_elem_types(program: &Program) -> Vec<Type> {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
     // Cluster C5 (`.design/basis/07-strings.md` REQ-15, issue #102): the emitted
@@ -5341,7 +5411,7 @@ fn note_vec_elems(ty: &Type, elems: &mut Vec<Type>) {
                 note_vec_elems(t, elems);
             }
         }
-        Type::Prim(_) | Type::Unit | Type::Named(_) | Type::String => {}
+        Type::Prim(_) | Type::Unit | Type::Named(_) | Type::String | Type::ProtocolEndpoint { .. } => {}
     }
 }
 
@@ -5693,7 +5763,8 @@ pub(crate) fn collect_map_kv_types(program: &Program) -> Vec<(Type, Type)> {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
     pairs
@@ -5729,7 +5800,11 @@ fn note_map_kv(ty: &Type, pairs: &mut Vec<(Type, Type)>) {
                 note_map_kv(t, pairs);
             }
         }
-        Type::Prim(_) | Type::Unit | Type::Named(_) | Type::String => {}
+        Type::Prim(_)
+        | Type::Unit
+        | Type::Named(_)
+        | Type::String
+        | Type::ProtocolEndpoint { .. } => {}
     }
 }
 
@@ -6136,7 +6211,7 @@ fn ty_reaches_string(ty: &Type) -> bool {
         // Cluster C9-B (`.design/basis/10-recursion-tuples.md` REQ-8, #109): a
         // tuple type reaches a `String` if any element does.
         Type::Tuple(tys) => tys.iter().any(ty_reaches_string),
-        Type::Prim(_) | Type::Unit | Type::Named(_) => false,
+        Type::Prim(_) | Type::Unit | Type::Named(_) | Type::ProtocolEndpoint { .. } => false,
     }
 }
 
@@ -6192,7 +6267,8 @@ fn program_uses_string(program: &Program) -> bool {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
     false
@@ -6857,7 +6933,8 @@ pub(crate) fn program_uses_string_search(program: &Program) -> bool {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => false,
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => false,
     })
 }
 
@@ -7051,7 +7128,8 @@ fn program_uses_numfmt(program: &Program) -> bool {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => false,
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => false,
     })
 }
 
@@ -7630,7 +7708,8 @@ pub(crate) fn program_uses_parse(program: &Program) -> bool {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => false,
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => false,
     })
 }
 
@@ -7898,7 +7977,8 @@ pub(crate) fn program_uses_bytes_eq(program: &Program) -> bool {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => false,
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => false,
     })
 }
 
@@ -8457,6 +8537,29 @@ fn lower_expr(expr: &Expr, ctx: Ctx, depth: usize, span: Span) -> Result<String,
             // references confirm; the `@` view is only needed where a `Seq`
             // operation (`subrange`/index) is required (handled in `lower_index`).
             let r = lower_expr(receiver, ctx, d, span)?;
+            if !ctx.is_spec()
+                && matches!(
+                    name.as_str(),
+                    "send"
+                        | "receive"
+                        | "receive_payload"
+                        | "repeat"
+                        | "end"
+                        | "receive_repeat"
+                        | "receive_end"
+                )
+            {
+                let lowered_name = if name == "send" {
+                    format!("__thermite_protocol_send_{}", args.len())
+                } else {
+                    format!("__thermite_protocol_{name}")
+                };
+                let parts = args
+                    .iter()
+                    .map(|arg| lower_expr(arg, ctx, d, span))
+                    .collect::<Result<Vec<_>, _>>()?;
+                return Ok(format!("{r}.{lowered_name}({})", parts.join(", ")));
+            }
             // Cluster C4 (`.design/basis/07-strings.md` REQ-8, issue #94): the
             // `u64`→decimal-`String` method `n.to_string()` lowers to a call of the
             // generated free fn `u64_to_string(n)` (emitted by `emit_numfmt_defs`,

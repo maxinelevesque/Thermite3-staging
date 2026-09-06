@@ -11,6 +11,194 @@ timing_source = "gates/fixtures/ci-test-timings-run-31837152080-attempt2.tsv"
 # RFC-12 tests postdate timing_source. Fast in-process checks use the adjacent
 # 0.007s reviewed estimate; Lean subprocess checks use 0.500s and Verus
 # negative checks use 1.500s until the next measured timing snapshot.
+# RFC-13 tests use the same reviewed-estimate policy: 0.007s for in-process
+# checks and 0.500s for compiler or Lean subprocess checks.
+
+[[assignment]]
+bucket = 1
+seconds = 0.500
+test = "forge::bin/forge check::tests::rfc13_protocol_replay_gates_certificate_minting"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.500
+test = "forge::protocol_types_conformance protocol_program_certifies_only_after_formal_replay"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-lower::protocol_types checked_program_binds_protocol_flow_evidence"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.500
+test = "thermite-lower::protocol_types l1_protocol_carriers_compile_and_run"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower::protocol_types l3_artifact_binds_the_checked_protocol_witness"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-lower::protocol_types l3_protocol_carriers_expose_the_platform_boundary"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.500
+test = "thermite-lower::protocol_types lean_rejects_claimed_completion_without_transitions"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.500
+test = "thermite-lower::protocol_types lean_rejects_non_dual_projections_even_when_columns_match"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.500
+test = "thermite-lower::protocol_types lean_replays_duality_and_completion_without_sorry"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-lower::protocol_types lowering_fails_closed_on_wrong_turn"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower::protocol_types protocol_witness_replay_rejects_tampering"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-lower::protocol_types received_payload_can_be_bound_at_its_projected_type"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-spec::protocol_conformance accepted_protocol_cases_complete"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-spec::protocol_conformance rejected_protocol_cases_have_the_expected_structured_kind"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-spec::protocol_flow accepts_the_provider_projection_to_completion"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-spec::protocol_flow receive_payload_requires_and_checks_an_explicit_projected_type"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_endpoint_in_shared_state"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_payload_mismatch_duplication_and_missing_blocks"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_payload_type_mismatch"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_protocol_actions_in_unmodeled_control_flow"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_typed_variable_payload_mismatch"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_wrong_role_and_unfinished_return"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-spec::protocol_flow repeat_tail_distinguishes_chooser_from_peer"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "thermite-spec::protocol_flow repeat_tail_requires_an_explicit_exit_choice"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_receive_payload_bindings_in_unmodeled_control_flow"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_send_payload_after_unproved_reassignment"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_send_payload_after_untyped_shadowing"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-spec::protocol_flow rejects_send_payload_whose_type_is_not_statically_inferrable"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-syntax::protocol_types_parse malformed_protocols_recover_to_the_next_item"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-syntax::protocol_types_parse protocol_declaration_preserves_turns_payloads_and_end"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "thermite-syntax::protocol_types_parse protocol_repeat_tail_is_explicit"
+timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 1

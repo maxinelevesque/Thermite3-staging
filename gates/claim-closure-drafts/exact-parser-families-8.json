@@ -73,6 +73,7 @@
           "parse_primary",
           "parse_proof_item",
           "parse_prop_fn",
+          "parse_protocol",
           "parse_quantifier",
           "parse_ref",
           "parse_refinement_clause",

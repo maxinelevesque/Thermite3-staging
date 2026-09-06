@@ -1,0 +1,56 @@
+{
+  "note": "Hand-derived RFC-13 binary protocol conformance oracle. The accepted case completes both projected endpoints; every reject case names the structured protocol error that must be present.",
+  "accept": [
+    {
+      "name": "binary_dual_completion",
+      "program": "protocol P { A { request: u32 }, B { response: u64 }, end } fn a(c: P::A) -> () ! blocks requires true ensures true { c.send(1); c.receive(); } fn b(c: P::B) -> () ! blocks requires true ensures true { c.receive(); c.send(2); }"
+    }
+  ],
+  "reject": [
+    {
+      "name": "wrong_role",
+      "expected_kind": "WrongTurn",
+      "program": "protocol P { A { request: u32 }, B { response: u64 }, end } fn b(c: P::B) -> () ! blocks requires true ensures true { c.send(1); }"
+    },
+    {
+      "name": "payload_mismatch",
+      "expected_kind": "PayloadMismatch",
+      "program": "protocol P { A { request: u32 }, B { response: u64 }, end } fn a(c: P::A) -> () ! blocks requires true ensures true { c.send(true); c.receive(); }"
+    },
+    {
+      "name": "endpoint_duplication",
+      "expected_kind": "DuplicateEndpoint",
+      "program": "protocol P { A { request: u32 }, B { response: u64 }, end } fn a(c: P::A) -> () ! blocks requires true ensures true { let copied = c; c.send(1); c.receive(); }"
+    },
+    {
+      "name": "endpoint_abandonment",
+      "expected_kind": "UnfinishedEndpoint",
+      "program": "protocol P { A { request: u32 }, B { response: u64 }, end } fn a(c: P::A) -> () ! blocks requires true ensures true { }"
+    },
+    {
+      "name": "invalid_repeat_exit",
+      "expected_kind": "InvalidRepeatExit",
+      "program": "protocol P { A { request: u32 }, B { response: u64 }, repeat | end } fn b(c: P::B) -> () ! blocks requires true ensures true { c.receive(); c.send(2); c.end(); }"
+    },
+    {
+      "name": "missing_blocks_effect",
+      "expected_kind": "WrongTurn",
+      "program": "protocol P { A { request: u32 }, B { response: u64 }, end } fn a(c: P::A) -> () ! pure requires true ensures true { c.send(1); c.receive(); }"
+    },
+    {
+      "name": "shared_endpoint",
+      "expected_kind": "SharedEndpoint",
+      "program": "protocol P { A { request: u32 }, B { response: u64 }, end } shared channel: P::A"
+    },
+    {
+      "name": "multiparty_deferred",
+      "expected_kind": "InvalidDeclaration",
+      "program": "protocol P { A { x: u32 }, B { y: u32 }, C { z: u32 }, end }"
+    },
+    {
+      "name": "branch_path_witness_deferred",
+      "expected_kind": "UnsupportedControlFlow",
+      "program": "protocol P { A { request: u32 }, B { response: u64 }, end } fn a(c: P::A, choose: bool) -> () ! blocks requires true ensures true { if choose { c.send(1); } else { c.send(2); } c.receive(); }"
+    }
+  ]
+}

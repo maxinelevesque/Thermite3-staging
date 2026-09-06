@@ -231,7 +231,8 @@ impl<'a> SemanticNode<'a> {
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
                 | Item::Concurrent(_)
-                | Item::LockDecl(_) => {}
+                | Item::LockDecl(_)
+                | Item::Protocol(_) => {}
                 Item::Forge(forge) => match forge {
                     ForgeItem::PropFn(f) => {
                         if let Some(x) = &f.measures {

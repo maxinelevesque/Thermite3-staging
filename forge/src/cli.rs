@@ -98,6 +98,10 @@ pub enum ForgeError {
     Rfc12ReplayUnavailable { detail: String },
     /// RFC-12 interference replay ran and kernel-rejected the checked witness.
     Rfc12ReplayRejected { detail: String },
+    /// RFC-13 protocol replay could not be invoked or communicated with.
+    Rfc13ReplayUnavailable { detail: String },
+    /// RFC-13 protocol replay ran and kernel-rejected the checked witness.
+    Rfc13ReplayRejected { detail: String },
     /// The `cargo kani` / kani binary was not found on `PATH` — an environment
     /// error, not a verification failure (`.design/lower/l2-kani.md` REQ-8). The
     /// L2 parallel of `VerusAbsent`.
@@ -226,6 +230,12 @@ impl fmt::Display for ForgeError {
             }
             ForgeError::Rfc12ReplayRejected { detail } => {
                 write!(f, "RFC-12 interference replay rejected: {detail}")
+            }
+            ForgeError::Rfc13ReplayUnavailable { detail } => {
+                write!(f, "RFC-13 protocol replay unavailable: {detail}")
+            }
+            ForgeError::Rfc13ReplayRejected { detail } => {
+                write!(f, "RFC-13 protocol replay rejected: {detail}")
             }
             ForgeError::KaniAbsent { binary } => write!(
                 f,
@@ -3473,6 +3483,23 @@ pub(crate) fn render_audit(manifest: &AuditManifest) -> String {
                     .join(", ")
             ));
         }
+        if let Some(protocol) = &f.protocol {
+            out.push_str(&format!(
+                "    protocol: accepted; definitions={} functions={} checked-protocol-sha256={}\n",
+                protocol.definitions.len(),
+                protocol.functions.len(),
+                protocol.formal_replay.checked_protocol_sha256,
+            ));
+            out.push_str(&format!(
+                "    protocol residual trust: {}\n",
+                protocol
+                    .residual_trust
+                    .iter()
+                    .map(|entry| format!("{entry:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
     }
 
     // The project assurance headline + scope + lowered-assurance fns (REQ-5).
@@ -3722,6 +3749,24 @@ pub(crate) fn render_human(cert: &Certificate) -> String {
             interference.body_mutation_scoring,
         ));
     }
+    if let Some(protocol) = &cert.protocol {
+        out.push_str(&format!(
+            "protocol: accepted (formal replay: kernel-accepted, checker={}, definitions={}, functions={}, checked_protocol_sha256={})\n",
+            protocol.formal_replay.checker,
+            protocol.definitions.len(),
+            protocol.functions.len(),
+            protocol.formal_replay.checked_protocol_sha256,
+        ));
+        out.push_str(&format!(
+            "protocol_residual_trust: {}\n",
+            protocol
+                .residual_trust
+                .iter()
+                .map(|entry| format!("{entry:?}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
     out.push_str(&format!(
         "solver_time_ms: {} (non-deterministic; not part of the cert oracle)\n",
         cert.solver_time_ms
@@ -3844,6 +3889,7 @@ fn effect_spelling(effect: &thermite_syntax::Effect) -> String {
         thermite_syntax::Effect::Alloc => "alloc".into(),
         thermite_syntax::Effect::Time => "time".into(),
         thermite_syntax::Effect::Rand => "rand".into(),
+        thermite_syntax::Effect::Blocks => "blocks".into(),
         thermite_syntax::Effect::Panic => "panic".into(),
         thermite_syntax::Effect::Diverge => "diverge".into(),
         thermite_syntax::Effect::Term => "term".into(),

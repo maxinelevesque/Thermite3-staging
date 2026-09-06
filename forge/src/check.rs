@@ -141,9 +141,10 @@ use crate::manifest::{
     effects_of, Certificate, InterferenceAtomEvidence, InterferenceBodyMutationScoring,
     InterferenceEvidence, InterferenceFormalReplay, InterferenceFormalReplayVerdict,
     InterferenceFunctionEvidence, InterferenceObligationEvidence, InterferenceRequirementEvidence,
-    InterferenceResidualTrust, InterferenceVerdict, Level, ObligationResult, RejectReason,
-    ResourceFlowEvidence, ResourceFlowVerdict, ResourceForgetFootprint, ResourceFormalReplay,
-    ResourceFormalReplayVerdict, ResourceResidualTrust,
+    InterferenceResidualTrust, InterferenceVerdict, Level, ObligationResult, ProtocolEvidence,
+    ProtocolFormalReplay, ProtocolFormalReplayVerdict, ProtocolResidualTrust, ProtocolVerdict,
+    RejectReason, ResourceFlowEvidence, ResourceFlowVerdict, ResourceForgetFootprint,
+    ResourceFormalReplay, ResourceFormalReplayVerdict, ResourceResidualTrust,
 };
 use crate::profile::{self, SolverProfile};
 
@@ -605,6 +606,12 @@ pub fn check_file_with_options(
         .then(|| thermite_lower::emit_interference_witness(&checked));
     let interference_evidence = match &interference_witness {
         Some(witness) => Some(run_rfc12_lean_replay(&parsed.program, witness)?),
+        None => None,
+    };
+    let protocol_witness = (!checked.protocol_flow().definitions.is_empty())
+        .then(|| thermite_lower::emit_protocol_witness(&checked));
+    let protocol_evidence = match &protocol_witness {
+        Some(witness) => Some(run_rfc13_lean_replay(&parsed.program, witness)?),
         None => None,
     };
 
@@ -1385,6 +1392,11 @@ pub fn check_file_with_options(
                 interference_witness.as_ref(),
                 interference_evidence.clone(),
             );
+            let cert = attach_protocol_evidence(
+                cert,
+                protocol_witness.as_ref(),
+                protocol_evidence.clone(),
+            );
             let cert = match scopes.get(&cert.item) {
                 Some(scope) => cert.with_assurance_scope(scope.clone()),
                 // A cert whose item has no node keeps its `None` scope, which
@@ -1866,6 +1878,156 @@ fn attach_interference_evidence(
             .expect("typed RFC-12 replay evidence matches its checked artifact"),
         (None, None) => cert,
         _ => panic!("RFC-12 witness and replay evidence must be present together"),
+    }
+}
+
+/// Replay RFC-13's canonical binary projections and endpoint-completion flows
+/// in Lean before any per-item certificate can be minted. Runtime transport is
+/// deliberately outside this theorem: the generated L1/L3 channel carrier is a
+/// disclosed platform boundary, while this replay certifies protocol duality,
+/// legal action order, and completion of every owned endpoint.
+fn run_rfc13_lean_replay(
+    program: &Program,
+    witness: &thermite_lower::ProtocolWitness,
+) -> Result<ProtocolEvidence, ForgeError> {
+    const CHECKER_SOURCE: &str = include_str!("../../lean/Thermite/Protocol.lean");
+    const ACCEPTANCE_TOKEN: &str = "THERMITE_RFC13_PROTOCOL_REPLAY_ACCEPTED_V1";
+    const REPLAY_TIMEOUT: Duration = Duration::from_secs(60);
+
+    let canonical = thermite_lower::canonical_protocol_projection(program).map_err(|error| {
+        ForgeError::Rfc13ReplayRejected {
+            detail: format!("could not reconstruct canonical protocol projection: {error:?}"),
+        }
+    })?;
+    thermite_lower::replay_protocol_witness(program, witness).map_err(|error| {
+        ForgeError::Rfc13ReplayRejected {
+            detail: format!("protocol witness failed checked digest replay: {error:?}"),
+        }
+    })?;
+
+    let checker_path = lean_package_root().join("Thermite/Protocol.lean");
+    let runtime_checker =
+        std::fs::read(&checker_path).map_err(|error| ForgeError::Rfc13ReplayUnavailable {
+            detail: format!("could not read `{}`: {error}", checker_path.display()),
+        })?;
+    let compiled_hash = format!("{:x}", Sha256::digest(CHECKER_SOURCE.as_bytes()));
+    let runtime_hash = format!("{:x}", Sha256::digest(&runtime_checker));
+    if compiled_hash != runtime_hash {
+        return Err(ForgeError::Rfc13ReplayUnavailable {
+            detail: format!(
+                "RFC-13 checker differs from embedded checker (compiled {compiled_hash}, runtime {runtime_hash})"
+            ),
+        });
+    }
+
+    let source = thermite_lower::lean_protocol_replay_source(&canonical, witness);
+    let lake = std::env::var_os("THERMITE_LEAN_LAKE").unwrap_or_else(|| "lake".into());
+    let mut child = Command::new(lake)
+        .args(["env", "lean", "--stdin", "--threads=1"])
+        .current_dir(lean_package_root())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| ForgeError::Rfc13ReplayUnavailable {
+            detail: format!("could not invoke `lake env lean`: {error}"),
+        })?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| ForgeError::Rfc13ReplayUnavailable {
+            detail: "Lean process did not expose stdin".into(),
+        })?
+        .write_all(source.as_bytes())
+        .map_err(|error| ForgeError::Rfc13ReplayUnavailable {
+            detail: format!("could not write Lean input: {error}"),
+        })?;
+
+    let started = Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if started.elapsed() < REPLAY_TIMEOUT => {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(ForgeError::Rfc13ReplayUnavailable {
+                    detail: "RFC-13 Lean replay exceeded 60 seconds".into(),
+                });
+            }
+            Err(error) => {
+                return Err(ForgeError::Rfc13ReplayUnavailable {
+                    detail: format!("could not poll Lean replay: {error}"),
+                });
+            }
+        }
+    }
+    let output = child
+        .wait_with_output()
+        .map_err(|error| ForgeError::Rfc13ReplayUnavailable {
+            detail: format!("could not collect Lean output: {error}"),
+        })?;
+    let combined = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let accepted = combined.lines().any(|line| line.trim() == ACCEPTANCE_TOKEN);
+    let allowed_axioms = combined.lines().any(|line| {
+        line.contains("rfc13_protocol_verified")
+            && (line.contains("does not depend on any axioms")
+                || line.contains("depends on axioms: [propext]"))
+    });
+    let forbidden_axiom = combined.contains("sorryAx");
+    if output.status.success() && accepted && allowed_axioms && !forbidden_axiom {
+        Ok(ProtocolEvidence {
+            verdict: ProtocolVerdict::Accepted,
+            definitions: witness.definitions.clone(),
+            functions: witness.functions.clone(),
+            formal_replay: ProtocolFormalReplay {
+                checker: "Thermite.Protocol/v1".into(),
+                checker_sha256: compiled_hash,
+                witness_version: witness.version,
+                canonical_ast_sha256: witness.canonical_ast_sha256.clone(),
+                checked_protocol_sha256: witness.checked_protocol_sha256.clone(),
+                verdict: ProtocolFormalReplayVerdict::KernelAccepted,
+            },
+            residual_trust: vec![
+                ProtocolResidualTrust::Parser,
+                ProtocolResidualTrust::ProjectionComputation,
+                ProtocolResidualTrust::EndpointFlowComputation,
+                ProtocolResidualTrust::WitnessExtraction,
+                ProtocolResidualTrust::PlatformTransport,
+                ProtocolResidualTrust::PlatformPeerIdentity,
+                ProtocolResidualTrust::PlatformBlockingAndWakeup,
+                ProtocolResidualTrust::PlatformFailureAndCancellation,
+                ProtocolResidualTrust::ExecutableTargetBehavior,
+            ],
+        })
+    } else {
+        Err(ForgeError::Rfc13ReplayRejected {
+            detail: format!(
+                "exit={:?}, acceptance_token={accepted}, allowed_axioms={allowed_axioms}, forbidden_sorryAx={forbidden_axiom}: {}",
+                output.status.code(),
+                combined.chars().take(1200).collect::<String>()
+            ),
+        })
+    }
+}
+
+fn attach_protocol_evidence(
+    cert: Certificate,
+    witness: Option<&thermite_lower::ProtocolWitness>,
+    evidence: Option<ProtocolEvidence>,
+) -> Certificate {
+    match (witness, evidence) {
+        (Some(witness), Some(evidence)) => cert
+            .with_protocol_evidence_for_witness(witness, evidence)
+            .expect("typed RFC-13 replay evidence matches its checked artifact"),
+        (None, None) => cert,
+        _ => panic!("RFC-13 witness and replay evidence must be present together"),
     }
 }
 
@@ -7155,6 +7317,9 @@ fn item_subprogram(
         Item::SharedDecl(_) | Item::Concurrent(_) | Item::LockDecl(_) => Program {
             items: vec![item.clone()],
         },
+        Item::Protocol(_) => Program {
+            items: vec![item.clone()],
+        },
     }
 }
 
@@ -7173,7 +7338,11 @@ fn with_shared_state_metadata(program: &Program, mut sub: Program) -> Program {
         .filter(|candidate| {
             matches!(
                 candidate,
-                Item::Struct(_) | Item::Enum(_) | Item::SharedDecl(_) | Item::LockDecl(_)
+                Item::Struct(_)
+                    | Item::Enum(_)
+                    | Item::SharedDecl(_)
+                    | Item::LockDecl(_)
+                    | Item::Protocol(_)
             ) && !present.contains(candidate.name())
         })
         .cloned()
@@ -7440,7 +7609,8 @@ fn mint_item_obligations(program: &Program, item: &Item) -> ItemObligations {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => (
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => (
             Obligation {
                 item: item.name().to_string(),
                 class: crate::obligation::ObligationClass::Contract,
@@ -7915,7 +8085,8 @@ fn collect_item_adt_refs(
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => {}
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => {}
     }
 }
 
@@ -7959,7 +8130,8 @@ fn collect_decl_field_adt_refs(
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => {}
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => {}
     }
 }
 
@@ -8026,7 +8198,8 @@ fn collect_type_adt_refs(
         // arm alongside `Prim`/`Unit`).
         thermite_syntax::Type::Prim(_)
         | thermite_syntax::Type::Unit
-        | thermite_syntax::Type::String => {}
+        | thermite_syntax::Type::String
+        | thermite_syntax::Type::ProtocolEndpoint { .. } => {}
     }
 }
 
@@ -8756,7 +8929,8 @@ pub(crate) fn item_effects(item: &Item) -> Vec<String> {
         | Item::EffectDecl(_)
         | Item::SharedDecl(_)
         | Item::Concurrent(_)
-        | Item::LockDecl(_) => {
+        | Item::LockDecl(_)
+        | Item::Protocol(_) => {
             vec!["pure".to_string()]
         }
     }
@@ -9587,6 +9761,70 @@ fn discard(b: Bundle) -> u64
             assert!(text.contains("obligations=2"));
             assert!(text.contains("residual trust") || text.contains("residual_trust"));
         }
+    }
+
+    #[test]
+    fn rfc13_protocol_replay_gates_certificate_minting() {
+        let parsed = thermite_syntax::parse(
+            "protocol P { A { request: u32 }, B { response: u32 }, end }\n\
+             fn a(c: P::A) -> () ! blocks requires true ensures true \
+               { c.send(1); c.receive(); }\n\
+             fn b(c: P::B) -> () ! blocks requires true ensures true \
+               { c.receive(); c.send(2); }",
+        );
+        assert!(parsed.is_clean(), "fixture parse: {:?}", parsed.errors);
+        let checked = thermite_lower::check_program(&parsed.program).unwrap();
+        let witness = thermite_lower::emit_protocol_witness(&checked);
+        let evidence = run_rfc13_lean_replay(&parsed.program, &witness)
+            .expect("canonical RFC-13 witness must be kernel-accepted");
+
+        let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "a").unwrap();
+        let cert = Certificate::new(
+            "a",
+            Level::L3,
+            vec!["blocks".into()],
+            0,
+            vec![ObligationResult::discharged("fixture proof")],
+        )
+        .with_verus_artifact(&artifact, true)
+        .unwrap()
+        .with_protocol_evidence_for_witness(&witness, evidence.clone())
+        .unwrap();
+        let cert = live_accepted(cert, "verus").into_certificate();
+        let audit = crate::audit::AuditManifest::from_certificates(
+            std::slice::from_ref(&cert),
+            &parsed.program,
+            crate::audit::Toolchain::new("fixture-verus"),
+        );
+        assert_eq!(audit.functions[0].protocol, Some(evidence));
+
+        let mut authority_tamper = cert.clone();
+        authority_tamper.protocol.as_mut().unwrap().functions[0]
+            .completed
+            .clear();
+        assert!(
+            std::panic::catch_unwind(|| crate::audit::AuditManifest::from_certificates(
+                &[authority_tamper],
+                &parsed.program,
+                crate::audit::Toolchain::new("fixture-verus"),
+            ))
+            .is_err(),
+            "display-shaped data cannot manufacture RFC-13 audit authority"
+        );
+        let cert_text = crate::cli::render_human(&cert);
+        let audit_text = crate::cli::render_audit(&audit);
+        for text in [&cert_text, &audit_text] {
+            assert!(text.contains("protocol"));
+            assert!(text.contains("functions=2"));
+            assert!(text.contains("residual trust") || text.contains("residual_trust"));
+        }
+
+        let mut tampered = witness;
+        tampered.functions[0].completed.clear();
+        assert!(matches!(
+            run_rfc13_lean_replay(&parsed.program, &tampered),
+            Err(ForgeError::Rfc13ReplayRejected { .. })
+        ));
     }
 
     fn l1_gate_certificate(source: &str) -> Certificate {

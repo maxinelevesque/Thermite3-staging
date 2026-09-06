@@ -102,6 +102,7 @@ fn render_type(ty: &Type) -> String {
         // primitive. Additive arms so this existing test helper compiles; the
         // existing `sum`/`binary_search` fixtures never exercise them.
         Type::Named(name) => name.clone(),
+        Type::ProtocolEndpoint { protocol, role } => format!("{protocol}::{role}"),
         Type::Box(inner) => format!("Box<{}>", render_type(inner)),
         // Basis Stage 4 bounded-collection type node
         // (`.design/basis/04-collections.md` REQ-1): the `Vec<T>` surface
@@ -274,7 +275,8 @@ fn check_parse_facts(facts_file: &str) {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {
                 panic!(
                     "{}: unexpected non-(spec)fn item in the corpus fixture",
                     fact.name
@@ -381,7 +383,8 @@ fn recover_per_item() {
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {
                 panic!("`ok` should be a fn, not an ADT/forge item")
             }
         }

@@ -175,7 +175,8 @@ pub fn tv_file(path: &Path, seed: u64, rlimit: f64) -> Result<TvReport, ForgeErr
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
     Ok(report)

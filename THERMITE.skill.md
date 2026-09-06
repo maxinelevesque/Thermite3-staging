@@ -98,6 +98,7 @@ behind the language.
 - `spec fn NAME(..) -> T measures .. { .. }` — a total terminating spec function (one measures clause, no requires/ensures/effect row)
 - `struct NAME { field: T, .. } [keeps EXPR]` — a product type with an optional type-invariant keeps clause
 - `enum NAME { Unit, Tuple(T, ..), Struct { f: T } }` — a sum type; match over it must be exhaustive
+- `protocol NAME { Role { field: T, .. }, .., end }` — a binary global conversation projected into linear role endpoints
 
 **Types**
 
@@ -108,6 +109,7 @@ behind the language.
 - `&[T]` — a borrowed read-only slice view
 - `NAME<T>` — one single-arg generic application
 - `Name` — a bare user-declared struct/enum type name
+- `Protocol::Role` — a linear RFC-13 endpoint projected for one protocol role
 - `Box<T>` — heap indirection for a recursive enum (carries ! alloc)
 - `Vec<T>` — a bounded growable collection over verified vstd (! alloc)
 - `String` — a bounded owned run of u8 bytes (! alloc)
@@ -192,6 +194,7 @@ behind the language.
 - `alloc` — allocates on the heap (Box/Vec/String construction)
 - `time` — reads the wall clock
 - `rand` — draws randomness
+- `blocks` — may wait for the peer while advancing a checked protocol endpoint
 - `panic` — may panic / abort
 - `diverge` — may not terminate (waives the default termination proof)
 - `term` — controls the terminal (raw mode via the `ioctl` syscall)

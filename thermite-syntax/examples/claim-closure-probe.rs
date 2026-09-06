@@ -337,6 +337,7 @@ fn type_text(ty: &Type) -> String {
         Type::Generic { name, arg } => format!("{name}<{}>", type_text(arg)),
         Type::Unit => "()".to_string(),
         Type::Named(name) => name.clone(),
+        Type::ProtocolEndpoint { protocol, role } => format!("{protocol}::{role}"),
         Type::Box(inner) => format!("Box<{}>", type_text(inner)),
         Type::Vec(inner) => format!("Vec<{}>", type_text(inner)),
         Type::String => "String".to_string(),
@@ -366,6 +367,11 @@ fn type_json(ty: &Type) -> Value {
             "name": name,
         }),
         Type::Named(name) => json!({"kind": "Named", "name": name}),
+        Type::ProtocolEndpoint { protocol, role } => json!({
+            "kind": "ProtocolEndpoint",
+            "protocol": protocol,
+            "role": role,
+        }),
         Type::Box(inner) => json!({"argument": type_json(inner), "kind": "Box"}),
         Type::Vec(inner) => json!({"element": type_json(inner), "kind": "Vec"}),
         Type::String => json!({"kind": "String"}),
@@ -739,6 +745,7 @@ fn effect_text(effect: &Effect) -> String {
         Effect::Alloc => "alloc".to_string(),
         Effect::Time => "time".to_string(),
         Effect::Rand => "rand".to_string(),
+        Effect::Blocks => "blocks".to_string(),
         Effect::Panic => "panic".to_string(),
         Effect::Diverge => "diverge".to_string(),
         Effect::Term => "term".to_string(),
@@ -1399,6 +1406,7 @@ fn main() {
                     Item::SharedDecl(_) => "SharedDecl",
                     Item::Concurrent(_) => "Concurrent",
                     Item::LockDecl(_) => "LockDecl",
+                    Item::Protocol(_) => "Protocol",
                 };
                 json!({"kind": kind, "name": item.name()})
             })

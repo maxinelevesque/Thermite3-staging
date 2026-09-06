@@ -184,7 +184,8 @@ pub fn body_tv_file(path: &Path, seed: u64, rlimit: f64) -> Result<BodyTvReport,
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
     Ok(report)
@@ -278,7 +279,8 @@ pub(crate) fn body_tv_support(
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => false,
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => false,
         })
         .collect();
     let adt_names: BTreeSet<String> = crate::check::reachable_adt_deps(program, &referrers)
@@ -298,7 +300,8 @@ pub(crate) fn body_tv_support(
                 | Item::EffectDecl(_)
                 | Item::SharedDecl(_)
                 | Item::Concurrent(_)
-                | Item::LockDecl(_) => false,
+                | Item::LockDecl(_)
+                | Item::Protocol(_) => false,
             })
             .cloned()
             .collect(),

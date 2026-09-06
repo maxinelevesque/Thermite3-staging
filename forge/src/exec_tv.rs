@@ -302,7 +302,8 @@ pub fn exec_tv_file(path: &Path, seed: u64, rlimit: f64) -> Result<ExecTvReport,
             | Item::EffectDecl(_)
             | Item::SharedDecl(_)
             | Item::Concurrent(_)
-            | Item::LockDecl(_) => {}
+            | Item::LockDecl(_)
+            | Item::Protocol(_) => {}
         }
     }
     Ok(report)

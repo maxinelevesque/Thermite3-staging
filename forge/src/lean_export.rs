@@ -2411,6 +2411,11 @@ fn export_item_with_mode(
                 "effect-region metadata (no standalone certification obligation)".to_string(),
             ))
         }
+        Item::Protocol(_) => {
+            return Err(ExportRefusal::OutOfFragment(
+                "protocol declaration (RFC-13 projection metadata, no standalone certification obligation)".to_string(),
+            ))
+        }
     };
 
     // The env coercion frame (sorts free names).

@@ -7,7 +7,7 @@
 //! crates inherit `workspace.lints` and a `verus!{}` exec body with an `ensures`
 //! clause is verus-driver-only syntax. So we land (c): the verified relation is
 //! a proved oracle, and this test enumerates the entire finite input domain
-//! (2^11 × 2^11 = 4194304 (caller_mask, callee_mask) pairs over the 11-atom
+//! (2^12 × 2^12 = 16777216 (caller_mask, callee_mask) pairs over the 12-atom
 //! `u16` bitset) and asserts `effects::subsumes`
 //! (over `EffectRow`s decoded from the masks) equals the verus-proved subset
 //! relation `thermite_verified::spec_subsumes_mask` for every pair. Since the
@@ -25,13 +25,13 @@ use thermite_lower::subsumes;
 use thermite_syntax::ast::{Effect, EffectRow};
 
 /// The number of meaningful atom bits in the widened `u16` bitset (Read=0 ..
-/// Term=8, Owns=9, Forgets=10). The complete hosted domain is `0..2048`.
-const HOSTED_ATOM_DOMAIN: u16 = 2048;
+/// Term=8, Owns=9, Forgets=10, Blocks=11). The complete hosted domain is `0..4096`.
+const HOSTED_ATOM_DOMAIN: u16 = 4096;
 
-/// Decode an 11-atom `u16` mask to the `EffectRow` `effects::subsumes` consumes.
+/// Decode a 12-atom `u16` mask to the `EffectRow` `effects::subsumes` consumes.
 /// Bit positions must match `EffectKind::bit` in `effects.rs` and the verus
 /// core's atom ordering: Read=0, Write=1, Net=2, Alloc=3, Time=4, Rand=5,
-/// Panic=6, Diverge=7, Term=8, Owns=9, Forgets=10. Path-carrying
+/// Panic=6, Diverge=7, Term=8, Owns=9, Forgets=10, Blocks=11. Path-carrying
 /// atoms use a representative path (v0.1 subsumption is path-insensitive, OQ-1).
 fn row_from_mask(mask: u16) -> EffectRow {
     if mask == 0 {
@@ -71,10 +71,13 @@ fn row_from_mask(mask: u16) -> EffectRow {
     if mask & (1 << 10) != 0 {
         effects.push(Effect::Forgets("forgotten".to_string().into()));
     }
+    if mask & (1 << 11) != 0 {
+        effects.push(Effect::Blocks);
+    }
     EffectRow::Set(effects)
 }
 
-/// AC-4: over all 4194304 (caller, callee) pairs in the 11-atom u16 domain,
+/// AC-4: over all 16777216 (caller, callee) pairs in the 12-atom u16 domain,
 /// `effects::subsumes` equals the verus-proved subset relation
 /// `thermite_verified::spec_subsumes_mask`.
 #[test]
@@ -102,13 +105,13 @@ fn subsumes_matches_verified_spec_exhaustively() {
         }
     }
     assert_eq!(
-        checked, 4_194_304,
-        "must enumerate the entire 2^11 x 2^11 domain"
+        checked, 16_777_216,
+        "must enumerate the entire 2^12 x 2^12 domain"
     );
     assert_eq!(
         mismatches, 0,
         "effects::subsumes must equal the verus-verified subset relation for \
-         every one of the 4194304 mask pairs (mechanism (c), AC-4)"
+         every one of the 16777216 mask pairs (mechanism (c), AC-4)"
     );
 }
 
@@ -154,12 +157,16 @@ fn verified_spec_is_not_vacuous() {
         "a term caller subsumes a term callee (reflexive on the new atom)"
     );
     assert!(
-        thermite_verified::spec_subsumes_mask(0x7FF, 0x7FF),
-        "top (all 11 atoms) subsumes top (sanity)"
+        thermite_verified::spec_subsumes_mask(0xFFF, 0xFFF),
+        "top (all 12 atoms) subsumes top (sanity)"
     );
     assert!(
         !thermite_verified::spec_subsumes_mask(0, 1 << 10),
         "Pure must NOT subsume the RFC-11 Forgets atom"
+    );
+    assert!(
+        !thermite_verified::spec_subsumes_mask(0, 1 << 11),
+        "Pure must NOT subsume the RFC-13 Blocks atom"
     );
     assert!(
         thermite_verified::spec_subsumes_mask(0, 0),

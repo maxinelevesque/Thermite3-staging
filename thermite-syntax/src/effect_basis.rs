@@ -229,6 +229,7 @@ pub fn entry_for_effect(effect: &Effect) -> BasisEntry {
         Effect::Alloc => BasisEntry::Primitive(state_write("heap")),
         Effect::Time => BasisEntry::Primitive(state_read("clock")),
         Effect::Rand => BasisEntry::Primitive(state_write("entropy")),
+        Effect::Blocks => BasisEntry::Primitive(Entry::io("session_wait")),
         Effect::Panic => BasisEntry::Primitive(Entry::operationless(Theory::Exception)),
         Effect::Diverge => BasisEntry::Primitive(Entry::operationless(Theory::Partiality)),
         Effect::Term => BasisEntry::Primitive(state_write("termios")),
@@ -271,6 +272,7 @@ pub const fn route_for_effect(effect: &Effect) -> ObligationRoute {
     match effect {
         Effect::Panic => ObligationRoute::NoObligation(NoObligationPremise::None),
         Effect::Diverge => ObligationRoute::Implemented(DischargeForm::Measures),
+        Effect::Blocks => ObligationRoute::Implemented(DischargeForm::SessionDuality),
         Effect::Read(_)
         | Effect::Write(_)
         | Effect::Net(_)
@@ -308,6 +310,7 @@ mod tests {
             (Effect::Alloc, set(&["heap"]), set(&["heap"]), false),
             (Effect::Time, set(&["clock"]), set(&[]), false),
             (Effect::Rand, set(&["entropy"]), set(&["entropy"]), false),
+            (Effect::Blocks, set(&[]), set(&[]), true),
             (Effect::Panic, set(&[]), set(&[]), false),
             (Effect::Diverge, set(&[]), set(&[]), false),
             (Effect::Term, set(&["termios"]), set(&["termios"]), false),
@@ -368,6 +371,7 @@ mod tests {
             (Effect::Alloc, true, true),
             (Effect::Time, true, false),
             (Effect::Rand, true, true),
+            (Effect::Blocks, false, false),
             (Effect::Panic, false, false),
             (Effect::Diverge, false, false),
             (Effect::Term, true, true),

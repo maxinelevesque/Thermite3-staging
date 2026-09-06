@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 (#349), the Rust→Lean obligation exporter: the change to this doc's governed lib roots is additive — `mod lean_smt_export;` in forge/src/main.rs (the SMT-tactic obligation exporter module); the workspace/crate structure is otherwise unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `pub mod classifier;` + `mod strat_tv;`; 2026-06-17 umbrella REQ-7 / AC-12 §6 metrics dashboard `mod metrics;`; stage-1 REQ-10/AC-14 G1 gate seven-verdict test module)
-audited-content-sha256: d4cd6a4ca1fea8aa137f939fd42c83dad121487be84e2431f6a537fdaef7e75e (re-pinned 2026-08-17 after adding the private Assurance V2 replay module; workspace topology and dependencies are unchanged. prior: 8003cabf600eb5de32fd3bb04dab75d40bacb6280244fae418e6953844d23fcf)
+audited-content-sha256: 70ec3f7ca10b4e768010c87e51668c89f4aa1105bdffccfc7145454f65bc734f (re-pinned 2026-08-17 after adding the private Assurance V2 replay module; workspace topology and dependencies are unchanged. prior: 8003cabf600eb5de32fd3bb04dab75d40bacb6280244fae418e6953844d23fcf)
 pin-extract: thermite-syntax/src/lib.rs=code-normalized
 pin-extract: thermite-spec/src/lib.rs=code-normalized
 pin-extract: thermite-lower/src/lib.rs=code-normalized

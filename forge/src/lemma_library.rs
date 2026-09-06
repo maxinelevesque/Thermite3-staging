@@ -119,7 +119,11 @@ pub(crate) fn render_type(ty: &Type) -> String {
         }
         // The leaf shapes (`Prim`, `Unit`, `Named`, `String`) carry no inner type, so a
         // span-free `Debug` is already position-independent.
-        Type::Prim(_) | Type::Unit | Type::Named(_) | Type::String => format!("{ty:?}"),
+        Type::Prim(_)
+        | Type::Unit
+        | Type::Named(_)
+        | Type::String
+        | Type::ProtocolEndpoint { .. } => format!("{ty:?}"),
     }
 }
 

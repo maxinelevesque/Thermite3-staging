@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 use thermite_syntax::ast::Effect;
 use thermite_syntax::{
     is_lexically_shadowed, semantic_inventory, walk_semantic, ChildRole, Item, NodeId, Program,
-    SemanticEvent, SemanticFact, SemanticInventory, WorkBudget,
+    SemanticEvent, SemanticFact, SemanticInventory, Type, WorkBudget,
 };
 
 use crate::{CheckedProgram, LowerError};
@@ -498,6 +498,16 @@ pub fn canonical_ast_projection(source: &Program) -> Result<CanonicalAstProjecti
     }
     for item in &source.items {
         if let Item::Fn(function) = item {
+            if function
+                .params
+                .iter()
+                .any(|param| matches!(param.ty, Type::ProtocolEndpoint { .. }))
+            {
+                direct
+                    .entry(function.name.clone())
+                    .or_default()
+                    .insert(Effect::Blocks);
+            }
             if function.body.is_none() {
                 direct.insert(
                     function.name.clone(),

@@ -9,12 +9,12 @@
 //!
 //! The first proven increment is effect subsumption (`subsumes`): a wrong answer
 //! mints a false `pure` certificate for an effectful function (§4.1 / §9). The
-//! decision is ported to a bounded **11-atom `u16` bitset** (Read=0 ..
-//! Forgets=10,
+//! decision is ported to a bounded **12-atom `u16` bitset** (Read=0 ..
+//! Forgets=10, Blocks=11,
 //! the path-insensitive atom-kind projection `EffectKind::of` already computes in
 //! `thermite-lower`), where subsumption is the mask test `(callee & !caller) == 0`
 //! and the subset relation `effects(callee) ⊆ effects(caller)` is the
-//! explicit 11-way conjunction over the bit positions. The two are proved
+//! explicit 12-way conjunction over the bit positions. The two are proved
 //! equivalent by Verus `bit_vector`-mode SMT. (The proved bitset widened from
 //! `u8` to `u16` for `Term`, then extended through `Owns` and `Forgets`; every
 //! `bit_vector`/`compute` proof is derived over the complete hosted domain.
@@ -46,7 +46,7 @@
 //! - The always-cargo-compiled plain Rust ([`subsumes_masks`] / its spec
 //!   [`spec_subsumes_mask`]) is byte-identical to the verus exec body / spec. The
 //!   toolchain delegates the mask comparison to [`subsumes_masks`]; the
-//!   exhaustive 2^11 × 2^11 = 4194304-pair equivalence test
+//!   exhaustive 2^12 × 2^12 = 16777216-pair equivalence test
 //!   (`tests/equivalence` over in `thermite-lower`) asserts the running code
 //!   equals the proved subset relation for every input — finite + fully
 //!   enumerated, so this shows `effects::subsumes` computes the relation
@@ -96,22 +96,22 @@
 
 /// The number of atomic effect kinds (`thermite_syntax::ast::Effect` →
 /// `thermite_lower::effects::EffectKind`): Read=0, Write=1, Net=2, Alloc=3,
-/// Time=4, Rand=5, Panic=6, Diverge=7, Term=8, Owns=9, Forgets=10. The bitset is
-/// a `u16` (one bit per atom), so bits 0..11 are meaningful and the relation is
-/// total over all 2048 masks.
-pub const ATOM_COUNT: u16 = 11;
+/// Time=4, Rand=5, Panic=6, Diverge=7, Term=8, Owns=9, Forgets=10, Blocks=11.
+/// The bitset is a `u16` (one bit per atom), so bits 0..12 are meaningful and
+/// the relation is total over all 4096 masks.
+pub const ATOM_COUNT: u16 = 12;
 
-/// The executable effect-subsumption decision over the 11-atom `u16` bitset
+/// The executable effect-subsumption decision over the 12-atom `u16` bitset
 /// (REQ-5): `caller` subsumes `callee` iff `callee` has no atom the `caller`
 /// lacks, i.e. `(callee & !caller) == 0`. This plain-Rust body is byte-identical
 /// to the `verus_core::subsumes` exec body the Verus prover discharges against the
 /// subset-relation `ensures` (mechanism (c) — the running code mirrors the proved
 /// code). [`spec_subsumes_mask`] is the spec it is proved to compute. The
-/// `(callee & !caller) == 0` equivalence to the 11-way subset conjunction is
+/// `(callee & !caller) == 0` equivalence to the 12-way subset conjunction is
 /// proved over the complete hosted u16 mask domain.
 ///
 /// `thermite_lower::effects::subsumes` delegates its bit-level comparison here
-/// (the production consumer, R-DEFER-1); the exhaustive 2048×2048 = 4194304-pair
+/// (the production consumer, R-DEFER-1); the exhaustive 4096×4096 = 16777216-pair
 /// equivalence test anchors `effects::subsumes` to this verus-verified relation.
 #[must_use]
 pub fn subsumes_masks(caller: u16, callee: u16) -> bool {
@@ -120,7 +120,7 @@ pub fn subsumes_masks(caller: u16, callee: u16) -> bool {
 }
 
 /// The subset relation `effects(callee) ⊆ effects(caller)` over the
-/// 11-atom `u16` bitset, as the explicit per-atom conjunction (REQ-4 — the
+/// 12-atom `u16` bitset, as the explicit per-atom conjunction (REQ-4 — the
 /// non-trivial contract `subsumes_masks` is proved to compute). For each atom
 /// position `i`, if `callee` has atom `i` then `caller` must have it. This is the
 /// plain-Rust mirror of `verus_core::spec_subsumes`; the Verus `bit_vector` proof
@@ -431,15 +431,15 @@ mod verus_core {
 
     verus! {
 
-    /// Atom `i` is present in `mask` (bit `i` set). 11 atoms (u16): Read=0 .. Forgets=10.
+    /// Atom `i` is present in `mask` (bit `i` set). 12 atoms (u16): Read=0 .. Blocks=11.
     pub open spec fn has(mask: u16, i: u16) -> bool {
         (mask & (1u16 << i)) != 0
     }
 
     /// The subset relation `effects(callee) ⊆ effects(caller)`, as the
-    /// explicit 11-way conjunction over the atom positions (mirrors the plain-Rust
+    /// explicit 12-way conjunction over the atom positions (mirrors the plain-Rust
     /// `spec_subsumes_mask`). Non-vacuous (REQ-4): false when callee has an atom
-    /// caller lacks. Bits 9 and 10 are `Owns` and `Forgets`.
+    /// caller lacks. Bits 9, 10, and 11 are `Owns`, `Forgets`, and `Blocks`.
     pub open spec fn spec_subsumes(caller: u16, callee: u16) -> bool {
         &&& (has(callee, 0) ==> has(caller, 0))
         &&& (has(callee, 1) ==> has(caller, 1))
@@ -452,21 +452,22 @@ mod verus_core {
         &&& (has(callee, 8) ==> has(caller, 8))
         &&& (has(callee, 9) ==> has(caller, 9))
         &&& (has(callee, 10) ==> has(caller, 10))
+        &&& (has(callee, 11) ==> has(caller, 11))
     }
 
     /// The executable mask test, proved equal to the subset relation for all
     /// inputs (the L3 guarantee, §6). Byte-identical to the plain-Rust
-    /// `subsumes_masks` the toolchain runs. The hosted masks set bits 0..10, so
-    /// the contract is over `caller < 2048 && callee < 2048`; the all-16-bit
-    /// mask test agrees with the 11-way specification throughout that domain.
+    /// `subsumes_masks` the toolchain runs. The hosted masks set bits 0..11, so
+    /// the contract is over `caller < 4096 && callee < 4096`; the all-16-bit
+    /// mask test agrees with the 12-way specification throughout that domain.
     pub fn subsumes(caller: u16, callee: u16) -> (r: bool)
-        requires caller < 2048, callee < 2048,
+        requires caller < 4096, callee < 4096,
         ensures r == spec_subsumes(caller, callee),
     {
-        assert(caller < 2048 && callee < 2048 ==>
-            ((callee & !caller & 0x7FF) == 0) == spec_subsumes(caller, callee)) by (bit_vector);
-        assert(caller < 2048 && callee < 2048 ==>
-            (callee & !caller) == (callee & !caller & 0x7FF)) by (bit_vector);
+        assert(caller < 4096 && callee < 4096 ==>
+            ((callee & !caller & 0xFFF) == 0) == spec_subsumes(caller, callee)) by (bit_vector);
+        assert(caller < 4096 && callee < 4096 ==>
+            (callee & !caller) == (callee & !caller & 0xFFF)) by (bit_vector);
         let missing = callee & !caller;
         missing == 0
     }
@@ -480,20 +481,20 @@ mod verus_core {
     }
 
     /// Lattice law 2: Pure (the empty set, mask 0) subsumes only Pure (over the
-    /// 11-atom domain `callee < 2048`; an out-of-domain upper bit is not a modeled
+    /// 12-atom domain `callee < 4096`; an out-of-domain upper bit is not a modeled
     /// atom).
     proof fn lattice_pure_subsumes_only_pure(callee: u16)
-        requires callee < 2048,
+        requires callee < 4096,
         ensures spec_subsumes(0u16, callee) == (callee == 0),
     {
-        assert(callee < 2048 ==> (spec_subsumes(0u16, callee) == (callee == 0))) by (bit_vector);
+        assert(callee < 4096 ==> (spec_subsumes(0u16, callee) == (callee == 0))) by (bit_vector);
     }
 
-    /// Lattice law 3: the top row (all 11 atoms, mask 0x7FF) subsumes every row.
+    /// Lattice law 3: the top row (all 12 atoms, mask 0xFFF) subsumes every row.
     proof fn lattice_top_subsumes_all(callee: u16)
-        ensures spec_subsumes(0x7FFu16, callee),
+        ensures spec_subsumes(0xFFFu16, callee),
     {
-        assert(spec_subsumes(0x7FFu16, callee)) by (bit_vector);
+        assert(spec_subsumes(0xFFFu16, callee)) by (bit_vector);
     }
 
     // =======================================================================

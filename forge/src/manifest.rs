@@ -1326,6 +1326,53 @@ pub enum InterferenceBodyMutationScoring {
     UnavailableUntilEffectTraceObservables,
 }
 
+/// RFC-13 projected protocol and independent Lean-replay disclosure.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProtocolEvidence {
+    pub verdict: ProtocolVerdict,
+    pub definitions: Vec<thermite_lower::WitnessProtocolDefinition>,
+    pub functions: Vec<thermite_lower::WitnessProtocolFunction>,
+    pub formal_replay: ProtocolFormalReplay,
+    pub residual_trust: Vec<ProtocolResidualTrust>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProtocolVerdict {
+    Accepted,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProtocolFormalReplay {
+    pub checker: String,
+    pub checker_sha256: String,
+    pub witness_version: u32,
+    pub canonical_ast_sha256: String,
+    pub checked_protocol_sha256: String,
+    pub verdict: ProtocolFormalReplayVerdict,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProtocolFormalReplayVerdict {
+    KernelAccepted,
+}
+
+/// Facts deliberately left outside the finite protocol replay theorem.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProtocolResidualTrust {
+    Parser,
+    ProjectionComputation,
+    EndpointFlowComputation,
+    WitnessExtraction,
+    PlatformTransport,
+    PlatformPeerIdentity,
+    PlatformBlockingAndWakeup,
+    PlatformFailureAndCancellation,
+    ExecutableTargetBehavior,
+}
+
 /// The certificate `forge check` emits for one item (`thermite-design.md` §5.1,
 /// Appendix A). Field declaration order is the deterministic serialization order
 /// (REQ-7) and mirrors Appendix A: `item`, `level`, `solver_time_ms`,
@@ -1337,6 +1384,7 @@ struct AuditAdmission {
     verus: Option<VerusAuditAuthority>,
     resource: Option<ResourceAuditAuthority>,
     interference: Option<InterferenceAuditAuthority>,
+    protocol: Option<ProtocolAuditAuthority>,
     clause_policy_digest: Option<String>,
 }
 
@@ -1358,6 +1406,11 @@ struct InterferenceAuditAuthority {
     evidence: InterferenceEvidence,
 }
 
+#[derive(Debug, Clone)]
+struct ProtocolAuditAuthority {
+    evidence: ProtocolEvidence,
+}
+
 impl AuditAdmission {
     fn live() -> Self {
         Self {
@@ -1365,6 +1418,7 @@ impl AuditAdmission {
             verus: None,
             resource: None,
             interference: None,
+            protocol: None,
             clause_policy_digest: None,
         }
     }
@@ -1612,6 +1666,9 @@ pub struct Certificate {
     /// RFC-12 checked interference graph and independent Lean replay.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interference: Option<InterferenceEvidence>,
+    /// RFC-13 binary projection, completion replay, and residual platform trust.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<ProtocolEvidence>,
     /// Process-local typed result provenance. This is deliberately absent from
     /// the public certificate wire format: live proof/policy producers stamp it
     /// so later backend arbitration never has to rediscover authority from
@@ -2469,6 +2526,7 @@ impl Certificate {
             burn: None,
             resource_flow: None,
             interference: None,
+            protocol: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -2524,6 +2582,7 @@ impl Certificate {
             burn: None,
             resource_flow: None,
             interference: None,
+            protocol: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -2600,6 +2659,7 @@ impl Certificate {
             burn: None,
             resource_flow: None,
             interference: None,
+            protocol: None,
             live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
@@ -2648,6 +2708,7 @@ impl Certificate {
             burn: None,
             resource_flow: None,
             interference: None,
+            protocol: None,
             live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
@@ -2695,6 +2756,7 @@ impl Certificate {
             burn: None,
             resource_flow: None,
             interference: None,
+            protocol: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -3217,6 +3279,69 @@ impl Certificate {
         Ok(())
     }
 
+    pub(crate) fn with_protocol_evidence_for_witness(
+        mut self,
+        witness: &thermite_lower::ProtocolWitness,
+        evidence: ProtocolEvidence,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        self.validate_protocol_evidence_against(witness, &evidence)?;
+        self.protocol = Some(evidence.clone());
+        self.audit_admission.protocol = Some(ProtocolAuditAuthority { evidence });
+        Ok(self)
+    }
+
+    pub(crate) fn validate_protocol_authority(
+        &self,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        match (&self.protocol, &self.audit_admission.protocol) {
+            (None, None) => Ok(()),
+            (Some(public), Some(authority)) if public == &authority.evidence => Ok(()),
+            (Some(_), None) => Err(IncoherentCertificationPosition {
+                reason: "RFC-13 evidence requires live formal-replay authority",
+            }),
+            (None, Some(_)) => Err(IncoherentCertificationPosition {
+                reason: "RFC-13 live authority requires a public evidence block",
+            }),
+            _ => Err(IncoherentCertificationPosition {
+                reason: "RFC-13 public evidence differs from live replay authority",
+            }),
+        }
+    }
+
+    fn validate_protocol_evidence_against(
+        &self,
+        witness: &thermite_lower::ProtocolWitness,
+        evidence: &ProtocolEvidence,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        let expected_residual = vec![
+            ProtocolResidualTrust::Parser,
+            ProtocolResidualTrust::ProjectionComputation,
+            ProtocolResidualTrust::EndpointFlowComputation,
+            ProtocolResidualTrust::WitnessExtraction,
+            ProtocolResidualTrust::PlatformTransport,
+            ProtocolResidualTrust::PlatformPeerIdentity,
+            ProtocolResidualTrust::PlatformBlockingAndWakeup,
+            ProtocolResidualTrust::PlatformFailureAndCancellation,
+            ProtocolResidualTrust::ExecutableTargetBehavior,
+        ];
+        let replay = &evidence.formal_replay;
+        if evidence.verdict != ProtocolVerdict::Accepted
+            || evidence.definitions != witness.definitions
+            || evidence.functions != witness.functions
+            || replay.checker != "Thermite.Protocol/v1"
+            || replay.witness_version != witness.version
+            || replay.canonical_ast_sha256 != witness.canonical_ast_sha256
+            || replay.checked_protocol_sha256 != witness.checked_protocol_sha256
+            || replay.verdict != ProtocolFormalReplayVerdict::KernelAccepted
+            || evidence.residual_trust != expected_residual
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "RFC-13 evidence does not match the checked protocol artifact",
+            });
+        }
+        Ok(())
+    }
+
     /// Revalidate the persisted general-Verus coordinates against the private
     /// live-producer facts retained across certificate transformations.
     pub(crate) fn validate_verus_artifact_authority(
@@ -3606,6 +3731,7 @@ impl Certificate {
             burn: None,
             resource_flow: None,
             interference: None,
+            protocol: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -3897,6 +4023,7 @@ fn effect_token(effect: &Effect) -> String {
         Effect::Alloc => "alloc".to_string(),
         Effect::Time => "time".to_string(),
         Effect::Rand => "rand".to_string(),
+        Effect::Blocks => "blocks".to_string(),
         Effect::Panic => "panic".to_string(),
         Effect::Diverge => "diverge".to_string(),
         // The #106 terminal-control atom (`fx term` → the `ioctl` seccomp grant,

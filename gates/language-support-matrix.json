@@ -265,6 +265,17 @@
       "certification": "partial"
     },
     {
+      "id": "Effect::Blocks",
+      "parser": "supported",
+      "validator": "supported",
+      "canonical_semantics": "supported",
+      "checked_ir": "supported",
+      "lowering": "supported",
+      "proof_route": "supported",
+      "policy": "supported",
+      "certification": "supported"
+    },
+    {
       "id": "Effect::Diverge",
       "parser": "supported",
       "validator": "partial",
@@ -859,6 +870,17 @@
       "certification": "partial"
     },
     {
+      "id": "Item::Protocol",
+      "parser": "supported",
+      "validator": "supported",
+      "canonical_semantics": "supported",
+      "checked_ir": "supported",
+      "lowering": "supported",
+      "proof_route": "supported",
+      "policy": "supported",
+      "certification": "supported"
+    },
+    {
       "id": "Item::SharedDecl",
       "parser": "supported",
       "validator": "partial",
@@ -1297,6 +1319,17 @@
       "proof_route": "partial",
       "policy": "partial",
       "certification": "partial"
+    },
+    {
+      "id": "Type::ProtocolEndpoint",
+      "parser": "supported",
+      "validator": "supported",
+      "canonical_semantics": "supported",
+      "checked_ir": "supported",
+      "lowering": "supported",
+      "proof_route": "supported",
+      "policy": "supported",
+      "certification": "supported"
     },
     {
       "id": "Type::Ref",

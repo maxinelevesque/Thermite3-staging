@@ -419,7 +419,7 @@
     "rust_reviewed_sites": 219,
     "th_missing_shared": 0,
     "th_programs_with_state_effects": 5,
-    "tracked_th_files": 69
+    "tracked_th_files": 70
   },
   "thermite_programs": [
     {
