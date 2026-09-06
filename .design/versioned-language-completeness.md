@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 1162419a1e8ddb4435cd6caa102c3e328d54345b23b2228dff88f31071b47cae (re-pinned after refreshing the generated RFC-13 skill surface and its 50 scoped receipts; language completeness semantics are unchanged. prior: 98afb532908d765c4811e51421fad250d33c0fca27408f8c0a0e0993e107573d)
+audited-content-sha256: c56180480bbd9ce8d4dd64194703608c49d62ad398e11bd4c476e6844ac66198 (re-pinned after issue #145 refreshed all 580 receipts and made CI shards compare fresh evidence with the committed ledger. prior: ca438d00bf57c71667d9bc27dda21b925f63896728262451a69a2e9ecb74c314)
 
 ## Summary
 

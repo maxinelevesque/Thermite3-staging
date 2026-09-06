@@ -3,7 +3,7 @@ import Std
 namespace Thermite.Interference
 
 structure Atom where
-  place : String
+  place : List String
   kind : String
 deriving DecidableEq, Repr
 
@@ -25,7 +25,7 @@ structure Requirement where
   rightRoot : String
   leftPriority : Option Nat
   rightPriority : Option Nat
-  overlaps : List String
+  overlaps : List (List String)
 deriving DecidableEq, Repr
 
 structure Canonical where
@@ -49,7 +49,8 @@ def validKind (kind : String) : Bool :=
   kind == "ordered" || kind == "bit_set" || kind == "boolean"
 
 def atomListSound (atoms : List Atom) : Bool :=
-  atoms.all (fun atom => !atom.place.isEmpty && validKind atom.kind) &&
+  atoms.all (fun atom => !atom.place.isEmpty && atom.place.all (fun segment => !segment.isEmpty) &&
+    validKind atom.kind) &&
     atoms.eraseDups.length == atoms.length
 
 def functionSound (contract : FunctionContract) : Bool :=
@@ -83,11 +84,18 @@ def expectedObligations (requirement : Requirement) : List Obligation :=
 def expectedGraph (requirements : List Requirement) : List Obligation :=
   requirements.flatMap expectedObligations
 
-def relationCovers (atoms : List Atom) (place : String) : Bool :=
-  atoms.any (fun atom => atom.place == place)
+def regionContains (outer inner : List String) : Bool :=
+  outer.isPrefixOf inner
+
+def regionsOverlap (left right : List String) : Bool :=
+  regionContains left right || regionContains right left
+
+def relationCovers (atoms : List Atom) (place : List String) : Bool :=
+  atoms.any (fun atom => regionsOverlap atom.place place)
 
 def obligationCovers
-    (functions : List FunctionContract) (overlaps : List String) (obligation : Obligation) : Bool :=
+    (functions : List FunctionContract) (overlaps : List (List String))
+    (obligation : Obligation) : Bool :=
   match findFunction functions obligation.guarantor, findFunction functions obligation.relying with
   | some guarantor, some relying =>
       overlaps.all (fun place =>

@@ -13,7 +13,7 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | **Shipped on `main` via PR #144; issue #76 closed.** Conservative region-replay alignment and effect-trace mutation evidence remain tracked by issues #145 and #146. |
+| **Status** | **Shipped on `main` via PR #144; issue #76 closed.** Region-overlap replay alignment is complete under issue #145; effect-trace mutation evidence remains tracked by issue #146. |
 | **Fork implementation** | **Complete.** Syntax, relational validation, RFC-9 conflict composition, L1/L3 lowering, Verus evidence, Lean replay, certificates, audit disclosure, inventories, and the production release-negative are implemented. The checked contract is [interference-clauses.md](../syntax/interference-clauses.md). |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 8 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |

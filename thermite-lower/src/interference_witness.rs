@@ -211,10 +211,16 @@ pub fn lean_interference_replay_source(
     fn string(value: &str) -> String {
         serde_json::to_string(value).expect("serializing a string cannot fail")
     }
+    fn path(value: &str) -> String {
+        format!(
+            "[{}]",
+            value.split('.').map(string).collect::<Vec<_>>().join(", ")
+        )
+    }
     fn atoms(values: &[WitnessMonotoneAtom]) -> String {
         values
             .iter()
-            .map(|atom| format!("⟨{}, {}⟩", string(&atom.place), string(&atom.kind)))
+            .map(|atom| format!("⟨{}, {}⟩", path(&atom.place), string(&atom.kind)))
             .collect::<Vec<_>>()
             .join(", ")
     }
@@ -256,7 +262,7 @@ pub fn lean_interference_replay_source(
                 let overlaps = requirement
                     .overlaps
                     .iter()
-                    .map(|overlap| string(overlap))
+                    .map(|overlap| path(overlap))
                     .collect::<Vec<_>>()
                     .join(", ");
                 format!(

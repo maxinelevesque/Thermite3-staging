@@ -2,7 +2,7 @@
 
 <!--
 status: approved
-audited-content-sha256: fcd59726a5a6e53b649765ea2e896ded4dda367b9aed6c1e917832e1c4626ef8 (re-pinned 2026-09-04 after correcting RFC-12 clause-local validation, overlap coverage, and the Rust/Lean trust boundary. prior: a2427a86b19ac2cb1ba74c6aea1501492f24c8dea2b5c8a9a3eff3d6b0471571)
+audited-content-sha256: fe139f166e9c8dc26167d616965a044104fa234b59ab2b046715daacd797f0b6 (re-pinned 2026-09-06 after aligning Lean relation coverage with Rust's segment-wise region-overlap rule and adding the nested-region replay regression. prior: fcd59726a5a6e53b649765ea2e896ded4dda367b9aed6c1e917832e1c4626ef8)
 -->
 
 ## Summary
@@ -200,6 +200,11 @@ residual trust rather than calling the replay a source-semantics proof.
 - The parser, relation classifier, solver translation, Verus-to-Thermite mapping,
   Rust witness extraction, and target implementation of atomic operations and
   interrupt priorities remain in the named trusted base.
+- Rust and Lean now use the same segment-wise ancestor-or-descendant rule for
+  relation coverage. The witness emitter serializes canonical dotted region
+  identities as segment lists for kernel reduction, and a nested-region fixture
+  crosses Rust witness generation and real Lean replay while a disjoint-region
+  mutation fails closed (issue #145).
 - Effect-trace observables for body-mutation scoring are deferred; RFC-12 uses
   structural, relational, composition, and evidence mutations meanwhile.
 - A value constant only during one protocol round, including the motivating

@@ -267,6 +267,12 @@ test = "thermite-lower::interference_witness lean_derives_handler_direction_from
 timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
+bucket = 12
+seconds = 0.500
+test = "thermite-lower::interference_witness lean_uses_region_overlap_for_nested_relation_coverage"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
 bucket = 11
 seconds = 0.500
 test = "thermite-lower::interference_witness lean_rejects_a_peer_implication_mutation_even_when_shapes_match"

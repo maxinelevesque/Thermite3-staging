@@ -33,6 +33,20 @@ fn handler_fixture() -> thermite_syntax::Program {
     parsed.program
 }
 
+fn nested_region_fixture() -> thermite_syntax::Program {
+    let parsed = parse(
+        "struct State { n: u64 }\n\
+         shared counter: State\n\
+         concurrent pair { left, right }\n\
+         #[boundary(\"ext::left\")] fn left(a: &mut State) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(a.n) >= a.n; promises final(a.n) >= a.n; };\n\
+         #[boundary(\"ext::right\")] fn right(b: &mut State) -> u64 ! write(counter) requires true ensures true \
+           interleaves { asks final(b.n) >= b.n; promises final(b.n) >= b.n; };",
+    );
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    parsed.program
+}
+
 fn lean_output(
     canonical: &thermite_lower::CanonicalInterferenceProjection,
     witness: &InterferenceWitness,
@@ -149,6 +163,51 @@ fn lean_derives_handler_direction_from_priorities() {
     assert!(
         !lean_output(&forged_canonical, &forged).status.success(),
         "Lean accepted the impossible low-priority-to-high-priority edge"
+    );
+}
+
+#[test]
+fn lean_uses_region_overlap_for_nested_relation_coverage() {
+    let program = nested_region_fixture();
+    let checked = check_program(&program).expect("Rust accepts nested relation coverage");
+    let witness = emit_interference_witness(&checked);
+    assert_eq!(witness.requirements[0].overlaps, ["counter"]);
+    assert!(witness.functions.iter().all(|function| {
+        function.asks.iter().all(|atom| atom.place == "counter.n")
+            && function
+                .promises
+                .iter()
+                .all(|atom| atom.place == "counter.n")
+    }));
+
+    let canonical = canonical_interference_projection(&program).unwrap();
+    let output = lean_output(&canonical, &witness);
+    assert!(
+        output.status.success(),
+        "Lean must match Rust's ancestor/descendant region-overlap coverage:\n{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let mut uncovered = witness;
+    for function in &mut uncovered.functions {
+        for atom in &mut function.asks {
+            atom.place = "other.n".to_string();
+        }
+        for atom in &mut function.promises {
+            atom.place = "other.n".to_string();
+        }
+    }
+    let forged_canonical = thermite_lower::CanonicalInterferenceProjection {
+        canonical_ast_sha256: uncovered.canonical_ast_sha256.clone(),
+        checked_interference_sha256: uncovered.checked_interference_sha256.clone(),
+        functions: uncovered.functions.clone(),
+        requirements: uncovered.requirements.clone(),
+        obligations: uncovered.obligations.clone(),
+    };
+    assert!(
+        !lean_output(&forged_canonical, &uncovered).status.success(),
+        "Lean accepted a relation on a disjoint region"
     );
 }
 

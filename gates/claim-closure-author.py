@@ -551,6 +551,24 @@ def check_drafts(root: Path) -> tuple[list[dict], list[str]]:
     return authored, problems
 
 
+def committed_closure_problems(root: Path, authored: list[dict]) -> list[str]:
+    ledger = tomllib.loads((root / LEDGER).read_text(encoding="utf-8"))
+    committed = {
+        closure.get("requirement_id"): closure
+        for closure in ledger.get("closure", [])
+        if isinstance(closure, dict)
+        and isinstance(closure.get("requirement_id"), str)
+    }
+    problems = []
+    for result in authored:
+        requirement_id = result["requirement_id"]
+        if committed.get(requirement_id) != result["closure"]:
+            problems.append(
+                f"{requirement_id}: committed closure differs from freshly authored evidence"
+            )
+    return problems
+
+
 def check_draft_shard(
     root: Path, shard_index: int, shard_count: int
 ) -> tuple[list[dict], int, int, list[str]]:
@@ -581,6 +599,7 @@ def check_draft_shard(
         if result is not None:
             authored.append(result)
     problems.extend(authored_result_problems(authored))
+    problems.extend(committed_closure_problems(root, authored))
     group_count = len({draft_execution_identity(entry) for entry in selected})
     return authored, len(selected), group_count, problems
 

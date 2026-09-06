@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 57413193a95bf3143c8ec665ae6a8d68951b23ff35edddab659c979fe28324c1 (re-pinned after RFC-13 review made endpoint ownership infer Blocks consistently; stable effect atom assignments are unchanged. prior: 6ca5b6de2dcbf25c52ba298cae4858dc6ef1fffed624648cef95803dc454c89f)
+audited-content-sha256: 4b02e78a2126be8403c50b906f60c056b7536f068cf6976cc39d2546a17332ea (re-pinned after issue #145 added two reviewed RFC-12 nested-region fixture token sites; effect semantics are unchanged. prior: 57413193a95bf3143c8ec665ae6a8d68951b23ff35edddab659c979fe28324c1)
 -->
 
 ## Summary
