@@ -303,6 +303,29 @@ summary = "{summary}"
             sharded.extend(result["requirement_id"] for result in results)
         self.assertEqual(sharded, ["REQ-A"])
 
+        command_version = MODULE.REVIEW.command_version
+        MODULE.REVIEW.command_version = lambda _root, _argv: "different-platform"
+        try:
+            shard = MODULE.draft_shard(draft["entries"][0], 3)
+            _, _, _, platform_problems = MODULE.check_draft_shard(
+                self.root, shard, 3
+            )
+        finally:
+            MODULE.REVIEW.command_version = command_version
+        self.assertEqual(platform_problems, [])
+
+        (self.root / "implementation.rs").write_text(
+            "// changed implementation under test\n", encoding="utf-8"
+        )
+        shard = MODULE.draft_shard(draft["entries"][0], 3)
+        _, _, _, stale_problems = MODULE.check_draft_shard(self.root, shard, 3)
+        self.assertTrue(
+            any(
+                "committed closure differs from freshly authored evidence" in value
+                for value in stale_problems
+            )
+        )
+
     def test_draft_shards_are_stable_complete_and_keep_shared_oracles_together(self):
         shared = {
             "claim": {"kind": "executable_discriminator"},

@@ -509,7 +509,7 @@ churn.
 6. shared-state invariants    SHIPPED — RFC-10, issue #49
 7. resource types             SHIPPED — RFC-11, issue #75
 8. interference clauses       SHIPPED — RFC-12, issue #76, PR #144
-9. protocol types             IMPLEMENTED, LANDING PENDING — RFC-13, issue #77
+9. protocol types             SHIPPED — RFC-13, issue #77, PR #149
 ```
 
 Defects go first because they are the dependency, not the diplomacy: #124 blocks

@@ -15,16 +15,15 @@ audited-content-sha256: ee2d0b66d9d8291cbc198fb456f3a40925ac85b7b7673c46ecab7333
 
 | | |
 |---|---|
-| **Status** | **Implemented on the RFC-13 feature branch; not yet landed on `main`.** Issue #77 remains open until the reviewed PR merges. |
-| **Fork implementation** | **Complete pending final qualification and landing.** The parser, binary projection checker, endpoint completion discipline, L1/L3 carriers, versioned witness, Lean replay, Forge replay gate, and conformance anchors are implemented. |
+| **Status** | **Shipped on `main` via PR #149; issue #77 closed.** |
+| **Fork implementation** | **Complete.** The parser, binary projection checker, endpoint completion discipline, L1/L3 carriers, versioned witness, Lean replay, Forge replay gate, and conformance anchors are implemented. |
 | **Baseline** | `maxinelevesque/Thermite3-staging @ 69475aaa` (`3.0.0-alpha.8`) |
 | **Position** | step 9 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md), RFC-11 |
 
-> **Implementation candidate, 2026-09-04.** The RFC-7 direction and dependency
-> sequence are resolved. This document remains the rationale and records the
-> exact v1 surface now implemented; landing and issue closure still require the
-> normal review and CI sequence.
+> **Shipped 2026-09-06.** The RFC-7 direction and dependency sequence are
+> resolved. This document remains the rationale and records the exact v1 surface
+> delivered by the reviewed implementation.
 
 Kind: new item form. Orthogonal to the effect-rows RFC through the
 interference-clauses RFC.

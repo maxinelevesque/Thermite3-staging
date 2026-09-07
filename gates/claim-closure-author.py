@@ -482,6 +482,7 @@ def author_entry(
     closure["discriminator"] = REVIEW.discriminator_digest(root, closure, observed)
     closure["receipt"] = REVIEW.closure_receipt(root, closure, observed=observed)
     return {
+        "_observed": observed,
         "claim": claim,
         "closure": closure,
         "requirement_id": req_id,
@@ -551,6 +552,48 @@ def check_drafts(root: Path) -> tuple[list[dict], list[str]]:
     return authored, problems
 
 
+def committed_closure_problems(root: Path, authored: list[dict]) -> list[str]:
+    ledger = tomllib.loads((root / LEDGER).read_text(encoding="utf-8"))
+    committed = {
+        closure.get("requirement_id"): closure
+        for closure in ledger.get("closure", [])
+        if isinstance(closure, dict)
+        and isinstance(closure.get("requirement_id"), str)
+    }
+    problems = []
+    for result in authored:
+        requirement_id = result["requirement_id"]
+        committed_closure = committed.get(requirement_id)
+        fresh_closure = result["closure"]
+        if committed_closure is None:
+            problems.append(
+                f"{requirement_id}: committed closure differs from freshly authored evidence"
+            )
+            continue
+        environment_fields = {"discriminator", "receipt", "tool_version"}
+        stable_fields = (set(committed_closure) | set(fresh_closure)) - environment_fields
+        stable_mismatch = any(
+            committed_closure.get(field) != fresh_closure.get(field)
+            for field in stable_fields
+        )
+        observed = result.get("_observed")
+        current_discriminator = REVIEW.discriminator_digest(
+            root, committed_closure, observed
+        )
+        current_receipt = REVIEW.closure_receipt(
+            root, committed_closure, observed=observed
+        )
+        if (
+            stable_mismatch
+            or committed_closure.get("discriminator") != current_discriminator
+            or committed_closure.get("receipt") != current_receipt
+        ):
+            problems.append(
+                f"{requirement_id}: committed closure differs from freshly authored evidence"
+            )
+    return problems
+
+
 def check_draft_shard(
     root: Path, shard_index: int, shard_count: int
 ) -> tuple[list[dict], int, int, list[str]]:
@@ -581,6 +624,7 @@ def check_draft_shard(
         if result is not None:
             authored.append(result)
     problems.extend(authored_result_problems(authored))
+    problems.extend(committed_closure_problems(root, authored))
     group_count = len({draft_execution_identity(entry) for entry in selected})
     return authored, len(selected), group_count, problems
 
