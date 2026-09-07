@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 8653e9f0cc3a77363225cce57111206beac40f7e8f36d53fd16ca30d2655ab70 (re-pinned after refreshing the guard-bound and generated-registry-bound closures under the cross-platform-safe receipt comparison. prior: 3a5eb9a55a9b8043a2ae8857a22528bc337eeea4fe4335e4bac2097b49db93a8)
+audited-content-sha256: fd692da8937ea0e083311835827523a33947b0a5a3bd5d4aff4034f9302bb124 (re-pinned 2026-09-07 after refreshing all content-bound claim receipts for the alpha.10 manifest change. prior: 8653e9f0cc3a77363225cce57111206beac40f7e8f36d53fd16ca30d2655ab70)
 
 ## Summary
 
