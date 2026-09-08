@@ -13,7 +13,7 @@ thesis-refs:
 related:
   - .design/basis/05-composition.md (the SHIPPED compositional machinery this experiment exercises)
   - goal.md R-CHAR-3, R-HONEST-3 (the measurement-independence and symmetric-honesty constraints)
-issue: #273 (outside review, item 9)
+issue: #155 (local deferred-research tracker; imported source reference #273)
 -->
 
 ## Summary
@@ -279,7 +279,7 @@ result" without a new pre-registered amendment to this doc.
 
 ## Requirements
 
-All NOT-STARTED — this doc is the pre-registration; nothing is built. Blocker: **#273**.
+All NOT-STARTED — this doc is the pre-registration; nothing is built. Blocker: **#155**.
 
 - **REQ-E1 (task pack):** the 3 task statements (T1/T2/T3) + arm-A contract packs
   (extracted from the cited example contracts) + arm-B signature packs, frozen under
@@ -342,9 +342,9 @@ All NOT-STARTED — this doc is the pre-registration; nothing is built. Blocker:
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-E1 (task pack) | NOT-STARTED | blocker #273. No `experiments/composition/` tree exists; the task statements and seam analyses exist only in this doc. |
-| REQ-E2 (held-out suites) | NOT-STARTED | blocker #273. No suites, adapters, or seeded-defect references authored; AC-1's freeze must precede the first session. |
-| REQ-E3 (arm-B component library) | NOT-STARTED | blocker #273. No contract-stripped build mode exists; the harness must produce the rlib from the lowered example sources and prove behavioral equivalence (AC-3). |
-| REQ-E4 (session runner) | NOT-STARTED | blocker #273. The ACToR dispatch substrate exists (`.crosslink/acto-*.md`) but no per-cell runner, prompt freezing, budget caps, or record schema. |
-| REQ-E5 (scorer + report) | NOT-STARTED | blocker #273. Taxonomy and symmetric-metric definitions are pinned above; no scoring code or report template exists. |
-| REQ-E6 (the run) | NOT-STARTED | blocker #273. Blocked on REQ-E1..E5; the stopping rule and falsification criteria above govern it when it runs. |
+| REQ-E1 (task pack) | NOT-STARTED | blocker #155. No `experiments/composition/` tree exists; the task statements and seam analyses exist only in this doc. |
+| REQ-E2 (held-out suites) | NOT-STARTED | blocker #155. No suites, adapters, or seeded-defect references authored; AC-1's freeze must precede the first session. |
+| REQ-E3 (arm-B component library) | NOT-STARTED | blocker #155. No contract-stripped build mode exists; the harness must produce the rlib from the lowered example sources and prove behavioral equivalence (AC-3). |
+| REQ-E4 (session runner) | NOT-STARTED | blocker #155. The ACToR dispatch substrate exists (`.crosslink/acto-*.md`) but no per-cell runner, prompt freezing, budget caps, or record schema. |
+| REQ-E5 (scorer + report) | NOT-STARTED | blocker #155. Taxonomy and symmetric-metric definitions are pinned above; no scoring code or report template exists. |
+| REQ-E6 (the run) | NOT-STARTED | blocker #155. Blocked on REQ-E1..E5; the stopping rule and falsification criteria above govern it when it runs. |

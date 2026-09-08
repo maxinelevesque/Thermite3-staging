@@ -11,6 +11,7 @@ thesis-refs:
   - thermite-design.md §6 (the verification ladder; L1 always-active runtime checks; L3 = Verus-derived SMT proof)
   - thermite-design.md §13 (v0.1 kernel scope; the forward-looking verified-microkernel convergence)
 epic: crosslink #169
+tracker-provenance: #169 is imported; see .design/imported-tracker-provenance.md
 sibling-groundwork: .design/verified/exec-stmt-tv.md (crosslink #158 — the kernel exec-language freeze; "Kernel convergence" note)
 blocker: #164
 -->

@@ -21,6 +21,7 @@ anchor-doc:
     CLOSES that residual at the inspection tier; the extraction-bridge tier stays a named
     future option, per the reduced-trusted-base table item #3)
 epic: crosslink #169 (lowering-soundness step 3)
+tracker-provenance: #169 is imported; see .design/imported-tracker-provenance.md
 blocker: crosslink #185 (increment 4b — Rust↔Lean correspondence)
 prior-arc:
   - .design/verified/contract-tv.md (#139 — the contract reference encoder R_C)

@@ -11,6 +11,7 @@ thesis-refs:
   - thermite-design.md §5.1 (counterexamples, not adjectives)
   - thermite-design.md §13 (v0.1 kernel scope; the verified-microkernel convergence — loops are kernel-exec)
 epic: crosslink #169 (the lowering-soundness arc); #163 (this component)
+tracker-provenance: #169 is imported; see .design/imported-tracker-provenance.md
 forge-seam: crosslink #162 (forge body-tv check phase — the four-way Faithful/Divergent/Unverifiable/Skipped)
 starting-frame: .design/verified/exec-stmt-tv.md REQ-4 + "Step 2.2.2 horizon"
 unifies-into: .design/verified/thermite-semantics.md (S_B → S_Loop; the (T2) capstone pattern this EXTENDS)
