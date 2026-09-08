@@ -19869,6 +19869,38 @@ target = ".design/ci-duration-balanced-fanout.md"
 note = "branch ci/duration-balanced-fanout was created from staging merge commit 15d362df after PR #50 merged"
 
 [[requirement]]
+id = "REQ-ASSURANCE-PROJECT-COMPOSITION"
+title = "Exact project assurance composition"
+owner = ".design/engineer-assurance-report-and-level-retirement.md"
+status = "shipped"
+scope = "verified"
+summary = "Exact source/build populations, complete heterogeneous portfolio lifts, claim-fiber intersections, distinct common/evidence frontiers, and nonvacuous project lifts fail closed under omissions, unavailable transports, and incomparable positions."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/assurance-project-composition.json", expected = ["accepted"], reviewed_summary_sha256 = "74d68040827749fd9822241cdccb3321822ac89a395db25c9db25bb00789ef10" }
+remaining_scope = "Issue #56 moves this verified and replayed composition seam into production current-authority decisions; this requirement does not claim that integration."
+contributors = ["lean/Thermite/AssuranceComposition.lean", "forge/src/assurance_v2.rs"]
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/engineer-assurance-report-and-level-retirement.md"
+note = "REQ-7, REQ-8, REQ-10 and AC-4/AC-7 define project population, portfolio, frontier, lift, and refutation semantics"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.CertificationMetatheory.ProjectLift.certifiesProject"
+note = "kernel-checked conjunction soundness over the exact source-ordered item evidence vector"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.CertificationMetatheory.ProjectLift.every_item_transport_present"
+note = "whole-project authorization requires every accepted claim-set transport"
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/assurance_v2.rs"
+note = "hostile project-composition tests cover missing clauses and members, incomparable policies, separate frontiers, unavailable transports, exact claim-fiber binding, and nonvacuous lifts"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/assurance-v2-replay.py"
+note = "shared constructor-pair replay plus structural presence of the Lean and Rust project-composition surfaces"
+
+[[requirement]]
 id = "REQ-SPEC-CRASH-MODEL"
 title = "The crash model is a named per-device assumption"
 owner = ".design/rfcs"

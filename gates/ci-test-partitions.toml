@@ -425,6 +425,54 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::common_and_evidence_frontiers_answer_different_questions"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::empty_population_is_no_items_not_top"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::mixed_incomparable_portfolio_is_an_intersection_not_a_representative"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::nonclaim_or_legacy_population_is_only_subset_qualified"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::portfolio_lift_requires_every_source_ordered_clause"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::project_lift_requires_complete_evidence_and_separate_completeness_premises"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::project_population_is_an_exact_total_partition"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_v2::tests::unavailable_clause_and_item_transport_contribute_empty_not_omission"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
 seconds = 0.010
 test = "forge::bin/forge audit::tests::migrated_l1_cannot_strip_all_evidence_and_upgrade_legacy_level"
 

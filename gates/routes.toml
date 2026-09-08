@@ -1542,6 +1542,30 @@ reference = ["gates/assurance-v2-replay.py", "gates/assurance-v2-replay.json"]
 conformance_ops = []
 
 [[route]]
+crate_pattern = "lean/Thermite/AssuranceComposition.lean"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["forge/src/assurance_v2.rs", "gates/assurance-v2-replay.py", "gates/lean-axiom-probe.sh"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-assurance-composition.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/claim-closure-oracles/assurance-project-composition.json", "lean/Thermite/AssuranceComposition.lean", "forge/src/assurance_v2.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-oracles/assurance-project-composition.json"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/claim-closure-assurance-composition.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/lean-axiom-probe.sh"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["lean/Thermite/AssuranceComposition.lean"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "gates/language-rfc-evolution.py"
 design = ".design/versioned-language-completeness.md"
 reference = ["gates/language-rfc-evolution.toml", "gates/tests/test_language_rfc_evolution.py"]

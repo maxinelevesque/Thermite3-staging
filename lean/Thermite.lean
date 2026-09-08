@@ -61,3 +61,4 @@ import Thermite.Protocol
 -- Closed, parameterized assurance policy and generated Rust/Lean replay.
 import Thermite.AssurancePolicyV2
 import Thermite.AssuranceV2Replay
+import Thermite.AssuranceComposition

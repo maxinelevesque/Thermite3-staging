@@ -1,6 +1,6 @@
 # Feature: Engineer assurance report and Level retirement
 
-audited-content-sha256: 1d234f415b8e4d6618144cb854e0488f868dfb4984aa507cea012068f11e07d3 (pinned 2026-08-17 for issue #54: global display fibers, full disclosure, exhaustive predecessor dispositions, proof-carrying populations, canonical antichains, replay, digests, and exact producer-core characterizations.)
+audited-content-sha256: 38564401d42a3b6b0c845627634540a5666154e62320af9ee8bb356303a6fda4 (re-pinned 2026-09-08 after the issue #55 portrait was encapsulated behind read-only accessors, clause- versus item-transport reporting was clarified, and verifier metadata was bound to the repository-pinned Lean toolchain. prior: d2f5b7987844c0d0f00e4936a20b71d8691b0768401662845dc0421fdaebe51d)
 
 ## Summary
 
@@ -121,6 +121,11 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   `common_claim_frontier`. It shall separately serialize the maximal elements
   of the union of item claim sets as `evidence_frontier`, with provenance from
   each maximal policy point to its supporting item and clause evidence. The
+  portrait shall retain each unavailable whole-item transport and its reason.
+  An unavailable addressed-clause transport instead yields an empty transported
+  item claim set: this may coexist with a sound `ProjectLift` over the complete
+  item conjunction, but it leaves the common policy frontier empty and must not
+  be rendered as a shared formal floor.
   names and schemas shall prevent
   consumers from confusing the audit summary of observed strengths with a
   whole-project claim.
@@ -275,7 +280,7 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   the authority digest; mutating display, coverage, schema, or policy version
   fails only the separate presentation digest and cannot change an authority
   decision.
-- [ ] AC-4: (REQ-6, REQ-7, REQ-8, REQ-10) Exhaustive constructor-pair laws and
+- [x] AC-4: (REQ-6, REQ-7, REQ-8, REQ-10) Exhaustive constructor-pair laws and
   finite-report fixtures compute both
   frontiers for singleton, homogeneous, comparable, incomparable, and
   multiple-maximal-lower-bound inputs. They prove order/duplicate invariance and
@@ -304,7 +309,7 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   fails issuance. Compatible cases require checked transports and replay;
   incompatible cases require a negative witness and deterministically render
   policy skew.
-- [ ] AC-7: (REQ-7, REQ-10) A mixed-route fixture proves `PortfolioLift` from
+- [x] AC-7: (REQ-7, REQ-10) A mixed-route fixture proves `PortfolioLift` from
   every expected addressed clause into an item conjunction; dropping a clause
   makes the lift impossible. A multi-item fixture then proves `ProjectLift` for
   the complete `ProjectPopulation` and transports every item evidence. One
