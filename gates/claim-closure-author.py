@@ -13,6 +13,7 @@ import sys
 import tempfile
 import tomllib
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -225,6 +226,32 @@ def draft_population(
     if extra:
         problems.append("draft population has non-shipped IDs: " + ", ".join(extra))
     return rows, expected, problems
+
+
+def materialization_toolchain_problems(root: Path, entries: list[dict]) -> list[str]:
+    if not any(
+        isinstance(entry.get("requirement_id"), str)
+        and entry["requirement_id"].startswith("REQ-G4-")
+        for entry in entries
+    ):
+        return []
+    problems: list[str] = []
+    for variable, executable in (
+        ("THERMITE_EPR_CADICAL", "cadical"),
+        ("THERMITE_EPR_DRAT_TRIM", "drat-trim"),
+    ):
+        configured = os.environ.get(variable)
+        path = (
+            Path(configured)
+            if configured
+            else root / "target/g4-tools/bin" / executable
+        )
+        if not path.is_file() or not os.access(path, os.X_OK):
+            problems.append(
+                f"{variable}: pinned G4 tool is unavailable; "
+                "run `bash dev/install-g4-tools.sh`"
+            )
+    return problems
 
 
 def _artifact_paths(closure: dict) -> set[str]:
@@ -594,19 +621,14 @@ def committed_closure_problems(root: Path, authored: list[dict]) -> list[str]:
     return problems
 
 
-def check_draft_shard(
-    root: Path, shard_index: int, shard_count: int
-) -> tuple[list[dict], int, int, list[str]]:
-    if shard_count <= 0 or shard_index < 0 or shard_index >= shard_count:
-        raise ValueError("draft shard index/count is out of range")
-    entries, load_problems = load_draft_entries(root)
-    rows, expected_population, problems = draft_population(
-        root, entries, load_problems, require_complete=True
-    )
-    selected = [
-        entry for entry in entries if draft_shard(entry, shard_count) == shard_index
-    ]
+def author_selected_entries(
+    root: Path,
+    selected: list[dict],
+    rows: dict[str, dict],
+    expected_population: set[str],
+) -> tuple[list[dict], int, list[str]]:
     authored: list[dict] = []
+    problems: list[str] = []
     execution_cache: dict = {}
     for entry in selected:
         req_id = entry.get("requirement_id")
@@ -624,9 +646,154 @@ def check_draft_shard(
         if result is not None:
             authored.append(result)
     problems.extend(authored_result_problems(authored))
-    problems.extend(committed_closure_problems(root, authored))
     group_count = len({draft_execution_identity(entry) for entry in selected})
+    return authored, group_count, problems
+
+
+def check_draft_shard(
+    root: Path, shard_index: int, shard_count: int
+) -> tuple[list[dict], int, int, list[str]]:
+    if shard_count <= 0 or shard_index < 0 or shard_index >= shard_count:
+        raise ValueError("draft shard index/count is out of range")
+    entries, load_problems = load_draft_entries(root)
+    rows, expected_population, problems = draft_population(
+        root, entries, load_problems, require_complete=True
+    )
+    selected = [
+        entry for entry in entries if draft_shard(entry, shard_count) == shard_index
+    ]
+    authored, group_count, author_problems = author_selected_entries(
+        root, selected, rows, expected_population
+    )
+    problems.extend(author_problems)
+    problems.extend(committed_closure_problems(root, authored))
     return authored, len(selected), group_count, problems
+
+
+def check_drafts_parallel(
+    root: Path, *, shard_count: int, jobs: int
+) -> tuple[list[dict], list[str]]:
+    """Author one complete population through isolated deterministic shards."""
+    if shard_count <= 0:
+        raise ValueError("draft shard count must be positive")
+    if jobs <= 1 or jobs > shard_count:
+        raise ValueError("parallel materialization jobs must be between 2 and shard count")
+
+    entries, load_problems = load_draft_entries(root)
+    rows, expected_population, problems = draft_population(
+        root, entries, load_problems, require_complete=True
+    )
+    if problems:
+        return [], problems
+
+    shards = [
+        [entry for entry in entries if draft_shard(entry, shard_count) == shard_index]
+        for shard_index in range(shard_count)
+    ]
+    # The CI shards run on isolated machines. Local shards share Cargo/Lean
+    # build trees, fixed oracle timeouts, and a cache whose warm-up order is
+    # observable. Author shared-resource probes first in the canonical serial
+    # entry order, then use the bounded worker pool for exact-population work.
+    # Running ordered probes inside shard workers can deadlock when the next
+    # probe belongs to a shard that has not yet acquired a worker.
+    def is_shared_resource_probe(entry: dict) -> bool:
+        claim = entry.get("claim")
+        return isinstance(claim, dict) and claim.get("kind") in {
+            "executable_discriminator",
+            "formal_theorem",
+        }
+
+    probe_entries = [entry for entry in entries if is_shared_resource_probe(entry)]
+    probe_authored, _probe_groups, probe_problems = author_selected_entries(
+        root, probe_entries, rows, expected_population
+    )
+    problems.extend(probe_problems)
+    probe_by_id = {result["requirement_id"]: result for result in probe_authored}
+
+    exact_shards = [
+        [entry for entry in shard if not is_shared_resource_probe(entry)]
+        for shard in shards
+    ]
+
+    def author_shard(selected: list[dict]) -> tuple[list[dict], int, list[str]]:
+        return author_selected_entries(root, selected, rows, expected_population)
+
+    with ThreadPoolExecutor(max_workers=jobs) as executor:
+        exact_results = list(executor.map(author_shard, exact_shards))
+
+    shard_results = []
+    for shard, (exact_authored, _exact_groups, shard_problems) in zip(
+        shards, exact_results, strict=True
+    ):
+        probe_results = [
+            probe_by_id[entry["requirement_id"]]
+            for entry in shard
+            if is_shared_resource_probe(entry)
+            and entry.get("requirement_id") in probe_by_id
+        ]
+        group_count = len({draft_execution_identity(entry) for entry in shard})
+        shard_results.append(
+            (probe_results + exact_authored, group_count, shard_problems)
+        )
+
+    authored, merge_problems = merge_parallel_shard_results(
+        shards, shard_results, expected_population
+    )
+    problems.extend(merge_problems)
+    return authored, problems
+
+
+def merge_parallel_shard_results(
+    shards: list[list[dict]],
+    shard_results: list[tuple[list[dict], int, list[str]]],
+    expected_population: set[str],
+) -> tuple[list[dict], list[str]]:
+    if len(shards) != len(shard_results):
+        raise ValueError("parallel shard result count differs from assignment count")
+
+    shard_count = len(shards)
+    authored: list[dict] = []
+    problems: list[str] = []
+    for shard_index, (shard_authored, _groups, shard_problems) in enumerate(
+        shard_results
+    ):
+        assigned_shard_ids = {
+            entry.get("requirement_id") for entry in shards[shard_index]
+        }
+        authored_shard_ids = {
+            result.get("requirement_id") for result in shard_authored
+        }
+        if len(shard_authored) != len(shards[shard_index]):
+            problems.append(
+                f"shard {shard_index + 1}/{shard_count}: "
+                "did not author every selected entry"
+            )
+        if authored_shard_ids != assigned_shard_ids:
+            problems.append(
+                f"shard {shard_index + 1}/{shard_count}: "
+                "outputs differ from assigned entries"
+            )
+        problems.extend(
+            f"shard {shard_index + 1}/{shard_count}: {problem}"
+            for problem in shard_problems
+        )
+        authored.extend(shard_authored)
+
+    assigned_ids = [
+        entry.get("requirement_id") for shard in shards for entry in shard
+    ]
+    authored_ids = [result.get("requirement_id") for result in authored]
+    if (
+        len(assigned_ids) != len(set(assigned_ids))
+        or set(assigned_ids) != expected_population
+    ):
+        problems.append("parallel shard selection did not cover every draft entry")
+    if len(authored_ids) != len(set(authored_ids)):
+        problems.append("parallel shard outputs overlap")
+    if set(authored_ids) != expected_population:
+        problems.append("parallel shard outputs differ from the frozen+live set")
+    problems.extend(authored_result_problems(authored))
+    return sorted(authored, key=lambda result: result["requirement_id"]), problems
 
 
 def toml_value(value: object) -> str:
@@ -799,6 +966,7 @@ def render_ledger_activation(
         root,
         backlog_document=tomllib.loads(rendered_ledger),
         registry_document=registry_document,
+        execute=False,
     )
     if authoritative_problems:
         raise ValueError(
@@ -845,8 +1013,10 @@ def materialize(root: Path, authored: list[dict]) -> None:
         raise
 
 
-def coordinated_materialize(root: Path) -> int:
+def coordinated_materialize(root: Path, *, jobs: int = 1, shard_count: int = 8) -> int:
     """Activate the registry, its source pin, and the ledger as one transaction."""
+    if jobs < 1 or jobs > shard_count:
+        raise ValueError("materialization jobs must be between 1 and shard count")
     rows, _ = requirement_rows(root)
     baseline = set(
         tomllib.loads((root / LEDGER).read_text(encoding="utf-8")).get(
@@ -857,6 +1027,7 @@ def coordinated_materialize(root: Path) -> int:
         req_id for req_id, row in rows.items() if row.get("status") == "shipped"
     }
     entries, problems = load_draft_entries(root)
+    problems.extend(materialization_toolchain_problems(root, entries))
     seen: set[str] = set()
     provisional: list[dict] = []
     for entry in entries:
@@ -886,7 +1057,12 @@ def coordinated_materialize(root: Path) -> int:
         registry_replaced = True
         _replace_with_rollback(inventory_path, rendered_inventory)
         inventory_replaced = True
-        authored, activation_problems = check_drafts(root)
+        if jobs == 1:
+            authored, activation_problems = check_drafts(root)
+        else:
+            authored, activation_problems = check_drafts_parallel(
+                root, shard_count=shard_count, jobs=jobs
+            )
         if activation_problems:
             raise ValueError("; ".join(activation_problems))
         rendered_ledger = render_ledger_activation(
@@ -917,7 +1093,15 @@ def main(argv: list[str]) -> int:
         help="execute one stable, one-based shard of the complete draft population",
     )
     mode.add_argument("--materialize", action="store_true")
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="parallel workers for --materialize (1..8; default: 1)",
+    )
     args = parser.parse_args(argv)
+    if not args.materialize and args.jobs != 1:
+        parser.error("--jobs is valid only with --materialize")
     root = Path(args.root).resolve()
     try:
         if args.freeze_baseline:
@@ -925,8 +1109,9 @@ def main(argv: list[str]) -> int:
             print(f"froze {BASELINE_SIZE} shipped requirement IDs")
             return 0
         if args.materialize:
-            count = coordinated_materialize(root)
-            print(f"materialized {count} typed claims and closures")
+            count = coordinated_materialize(root, jobs=args.jobs)
+            parallel = "" if args.jobs == 1 else f" via 8 shards/{args.jobs} workers"
+            print(f"materialized {count} typed claims and closures{parallel}")
             return 0
         if args.check_draft_shard:
             shard_index, shard_count = parse_shard_spec(args.check_draft_shard)

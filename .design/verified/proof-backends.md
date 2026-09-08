@@ -31,6 +31,7 @@ anchor-docs:
     auto-discharge fragment for the Lean engine's tactic battery)
   - .design/verified/rust-lean-correspondence.md (the arm-by-arm inspection-tier discipline +
     the drift tripwire — the exporter's faithfulness is the SAME correspondence class)
+tracker-provenance: #169 references are imported; see .design/imported-tracker-provenance.md
 field-refs:
   - formal-methods-sota.md finding #8 (proof-PRODUCING SMT + reconstruction; Lean-SMT/cvc5)
   - formal-methods-sota.md finding #1 (verified validator; the trust-profile economy)

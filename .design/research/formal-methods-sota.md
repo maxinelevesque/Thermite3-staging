@@ -8,6 +8,7 @@ purpose: contextualize Thermite's step-3 ("lowering faithfulness") architecture 
 method: fan-out web search (5 angles) -> 26 primary sources -> 120 claims ->
         25 verified by 3-vote adversarial verification (2/3 refutes to kill) ->
         25 confirmed, 0 killed -> 8 synthesized findings. Issue #175 / epic #169.
+tracker-provenance: imported #175 and #169; see .design/imported-tracker-provenance.md
 -->
 
 ## Headline

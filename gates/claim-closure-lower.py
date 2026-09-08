@@ -11,8 +11,21 @@ import sys
 from pathlib import Path
 
 
-VERSION = "thermite-claim-closure-lower 1"
+VERSION = "thermite-claim-closure-lower 2"
+CASE_TIMEOUT_SECONDS = 360
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def case_environment() -> dict[str, str]:
+    environment = os.environ.copy()
+    for variable, executable in (
+        ("THERMITE_EPR_CADICAL", "cadical"),
+        ("THERMITE_EPR_DRAT_TRIM", "drat-trim"),
+    ):
+        fallback = ROOT / "target/g4-tools/bin" / executable
+        if variable not in environment and fallback.is_file():
+            environment[variable] = str(fallback)
+    return environment
 
 
 def integration(test_target: str, test_name: str) -> list[str]:
@@ -1945,6 +1958,7 @@ def main(argv: list[str]) -> int:
     if not isinstance(cases, list) or not cases:
         return 2
     seen: set[str] = set()
+    environment = case_environment()
     for case in cases:
         if not isinstance(case, dict) or set(case) != {"expected_exit", "id"}:
             return 2
@@ -1965,7 +1979,8 @@ def main(argv: list[str]) -> int:
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=180,
+                env=environment,
+                timeout=CASE_TIMEOUT_SECONDS,
             )
         except (OSError, subprocess.TimeoutExpired):
             return 3

@@ -32,6 +32,7 @@ increment-(d)-blocker: #174 + #183 (SHIPPED — compose → the whole-straight-l
                        Lean kernel}; h_tv = the Z3-discharged premise / trust boundary; loops #163
                        + Z3-demotion #184 + Rust↔Lean #185 are the named residuals)
 research: #175 (the formal-methods SOTA survey + terminology map — the source of the field vocabulary below)
+tracker-provenance: #169, #173, and #175 are imported references; see .design/imported-tracker-provenance.md
 prior-arc:
   - .design/verified/contract-tv.md (#139 — the contract TV reference encoder R_C, SHIPPED + total on corpus)
   - .design/verified/exec-tv.md (#151 — the exec-expression TV reference encoder R_E, SHIPPED)

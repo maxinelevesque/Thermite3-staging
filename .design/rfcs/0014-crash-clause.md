@@ -12,17 +12,16 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | Draft, **staged and not filed**. Waiting on the direction check in [RFC-7](0007-thermite-3.md) |
+| **Status** | Draft, tracked as deferred research in local issue #154; not activated |
 | **Fork implementation** | **Not started; independent and unscheduled.** It is not on the RFC-10 → RFC-11 → RFC-12 → RFC-13 critical path. |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | independent, unscheduled of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
 | **Depends on** | [RFC-6](0006-full-words.md) |
 
-> **Not proposed yet.** This document is written so the work is not blocked on a
-> reply, and it stays unfiled until [RFC-6](0006-full-words.md) lands and the
-> direction in [RFC-7](0007-thermite-3.md) is answered. Filing six capability
-> proposals against a surface nobody has adopted is the failure RFC-7's own
-> sequencing rule exists to prevent.
+> **Tracked, not activated.** Local issue #154 preserves this research direction
+> after RFC-6 and the Thermite 3 core landed. It remains outside the
+> assurance-minimum product spine until the post-alpha.11 roadmap checkpoint
+> explicitly promotes or defers it.
 
 **Unscheduled.** Kind: one new clause, shaped like `ensures`.
 

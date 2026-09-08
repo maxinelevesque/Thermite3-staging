@@ -7,6 +7,7 @@ import tempfile
 import tomllib
 import unittest
 from pathlib import Path
+from unittest import mock
 
 GATE = Path(__file__).resolve().parents[1] / "claim-closure-author.py"
 SPEC = importlib.util.spec_from_file_location("claim_closure_author", GATE)
@@ -169,12 +170,25 @@ summary = "A live shipped addition uses the same closed modes."
             f'source_sha256 = "{registry_sha}"\n',
             encoding="utf-8",
         )
-        self.assertEqual(MODULE.coordinated_materialize(self.root), 2)
+        initial_registry = (self.root / MODULE.REGISTRY).read_bytes()
+        initial_ledger = (self.root / MODULE.LEDGER).read_bytes()
+        initial_inventory = (self.root / MODULE.INVENTORY).read_bytes()
+        with mock.patch.object(
+            MODULE.REVIEW, "check", wraps=MODULE.REVIEW.check
+        ) as authoritative_check:
+            self.assertEqual(MODULE.coordinated_materialize(self.root), 2)
+        self.assertEqual(authoritative_check.call_count, 1)
+        self.assertFalse(authoritative_check.call_args.kwargs["execute"])
+        serial_registry = (self.root / MODULE.REGISTRY).read_bytes()
+        serial_ledger = (self.root / MODULE.LEDGER).read_bytes()
+        serial_inventory = (self.root / MODULE.INVENTORY).read_bytes()
         registry = tomllib.loads((self.root / MODULE.REGISTRY).read_text())
         ledger = tomllib.loads((self.root / MODULE.LEDGER).read_text())
         inventory = tomllib.loads((self.root / MODULE.INVENTORY).read_text())
         self.assertEqual(registry["schema_version"], 2)
-        self.assertEqual(registry["requirement"][0]["claim"]["expected"], ["alpha", "beta"])
+        self.assertEqual(
+            registry["requirement"][0]["claim"]["expected"], ["alpha", "beta"]
+        )
         self.assertEqual(ledger["version"], 2)
         self.assertEqual(ledger["witness"][0]["members"], ["REQ-A", "REQ-LIVE"])
         self.assertEqual(
@@ -182,11 +196,185 @@ summary = "A live shipped addition uses the same closed modes."
             hashlib.sha256((self.root / MODULE.REGISTRY).read_bytes()).hexdigest(),
         )
 
-        self.assertEqual(MODULE.coordinated_materialize(self.root), 2)
+        (self.root / MODULE.REGISTRY).write_bytes(initial_registry)
+        (self.root / MODULE.LEDGER).write_bytes(initial_ledger)
+        (self.root / MODULE.INVENTORY).write_bytes(initial_inventory)
+        self.assertEqual(
+            MODULE.coordinated_materialize(self.root, jobs=2, shard_count=8), 2
+        )
+        self.assertEqual((self.root / MODULE.REGISTRY).read_bytes(), serial_registry)
+        self.assertEqual((self.root / MODULE.LEDGER).read_bytes(), serial_ledger)
+        self.assertEqual((self.root / MODULE.INVENTORY).read_bytes(), serial_inventory)
+
+        self.assertEqual(
+            MODULE.coordinated_materialize(self.root, jobs=2, shard_count=8), 2
+        )
         refreshed_registry = tomllib.loads((self.root / MODULE.REGISTRY).read_text())
         refreshed_ledger = tomllib.loads((self.root / MODULE.LEDGER).read_text())
         self.assertEqual(refreshed_registry["schema_version"], 2)
         self.assertEqual(len(refreshed_ledger["closure"]), 2)
+
+    def test_parallel_materialization_rejects_invalid_worker_counts(self):
+        with self.assertRaisesRegex(ValueError, "between 1 and shard count"):
+            MODULE.coordinated_materialize(self.root, jobs=0)
+        with self.assertRaisesRegex(ValueError, "between 1 and shard count"):
+            MODULE.coordinated_materialize(self.root, jobs=9)
+
+    def test_materialization_preflight_requires_pinned_g4_tools(self):
+        entries = [{"requirement_id": "REQ-G4-8"}]
+        with mock.patch.dict(MODULE.os.environ, {}, clear=True):
+            problems = MODULE.materialization_toolchain_problems(self.root, entries)
+            self.assertEqual(len(problems), 2)
+            self.assertTrue(all("install-g4-tools.sh" in value for value in problems))
+
+            binary_dir = self.root / "target/g4-tools/bin"
+            binary_dir.mkdir(parents=True)
+            for executable in ("cadical", "drat-trim"):
+                path = binary_dir / executable
+                path.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+                path.chmod(0o755)
+            self.assertEqual(
+                MODULE.materialization_toolchain_problems(self.root, entries), []
+            )
+
+        self.assertEqual(
+            MODULE.materialization_toolchain_problems(
+                self.root, [{"requirement_id": "REQ-NOT-G4"}]
+            ),
+            [],
+        )
+
+    def test_parallel_materialization_runs_shared_probes_before_bounded_workers(self):
+        entries = [
+            {
+                "requirement_id": "REQ-PROBE-B",
+                "claim": {"kind": "formal_theorem"},
+                "closure": {"verifier": ["probe-b"]},
+            },
+            {
+                "requirement_id": "REQ-EXACT",
+                "claim": {"kind": "exact_population"},
+                "closure": {"extractor": {"path": "exact"}},
+            },
+            {
+                "requirement_id": "REQ-PROBE-A",
+                "claim": {"kind": "executable_discriminator"},
+                "closure": {"oracle": "probe-a"},
+            },
+        ]
+        rows = {
+            entry["requirement_id"]: {"status": "shipped"} for entry in entries
+        }
+        expected = set(rows)
+        calls = []
+
+        def author_selected(_root, selected, _rows, _expected):
+            calls.append([entry["requirement_id"] for entry in selected])
+            authored = []
+            for entry in selected:
+                requirement_id = entry["requirement_id"]
+                kind = entry["claim"]["kind"]
+                authored.append(
+                    {
+                        "requirement_id": requirement_id,
+                        "closure": {
+                            "discriminator": requirement_id,
+                            "extractor": {"path": requirement_id},
+                            "mechanism": kind,
+                            "oracle": requirement_id,
+                            "verifier": [requirement_id],
+                            "witness_id": requirement_id,
+                        },
+                    }
+                )
+            return authored, len(selected), []
+
+        with (
+            mock.patch.object(MODULE, "load_draft_entries", return_value=(entries, [])),
+            mock.patch.object(
+                MODULE,
+                "draft_population",
+                return_value=(rows, expected, []),
+            ),
+            mock.patch.object(
+                MODULE, "author_selected_entries", side_effect=author_selected
+            ),
+        ):
+            authored, problems = MODULE.check_drafts_parallel(
+                self.root, shard_count=8, jobs=2
+            )
+
+        self.assertEqual(problems, [])
+        self.assertEqual(
+            calls[0], ["REQ-PROBE-B", "REQ-PROBE-A"],
+            "shared-resource probes must complete in canonical entry order before "
+            "bounded shard workers start",
+        )
+        self.assertEqual(
+            [result["requirement_id"] for result in authored], sorted(expected)
+        )
+
+    def test_parallel_merge_rejects_missing_overlapping_and_failed_shards(self):
+        def result(req_id, discriminator):
+            return {
+                "requirement_id": req_id,
+                "closure": {
+                    "discriminator": discriminator,
+                    "extractor": {"path": f"{req_id}.txt"},
+                    "mechanism": "exact_population",
+                    "witness_id": f"W-{req_id}",
+                },
+            }
+
+        shards = [
+            [{"requirement_id": "REQ-A"}],
+            [{"requirement_id": "REQ-B"}],
+        ]
+        authored, problems = MODULE.merge_parallel_shard_results(
+            shards,
+            [
+                ([result("REQ-A", "a")], 1, []),
+                ([result("REQ-A", "b")], 1, ["stale authored evidence"]),
+            ],
+            {"REQ-A", "REQ-B"},
+        )
+
+        self.assertEqual(
+            [row["requirement_id"] for row in authored], ["REQ-A", "REQ-A"]
+        )
+        self.assertTrue(any("stale authored evidence" in value for value in problems))
+        self.assertIn("parallel shard outputs overlap", problems)
+        self.assertIn(
+            "parallel shard outputs differ from the frozen+live set", problems
+        )
+
+        _, missing_problems = MODULE.merge_parallel_shard_results(
+            shards,
+            [([result("REQ-A", "a")], 1, []), ([], 0, [])],
+            {"REQ-A", "REQ-B"},
+        )
+        self.assertTrue(
+            any(
+                "did not author every selected entry" in value
+                for value in missing_problems
+            )
+        )
+
+        _, swapped_problems = MODULE.merge_parallel_shard_results(
+            shards,
+            [
+                ([result("REQ-B", "b")], 1, []),
+                ([result("REQ-A", "a")], 1, []),
+            ],
+            {"REQ-A", "REQ-B"},
+        )
+        self.assertEqual(
+            sum(
+                "outputs differ from assigned entries" in value
+                for value in swapped_problems
+            ),
+            2,
+        )
 
     def test_executable_draft_round_trips_through_authoritative_gate(self):
         MODULE.BASELINE_SIZE = 1

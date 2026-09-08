@@ -73,18 +73,18 @@ lanes remain provisional.
 
 ## Acceptance Criteria
 
-- [ ] AC-1: (REQ-1) Every imported reference `#169`, `#173`, `#175`, and `#273`
+- [x] AC-1: (REQ-1) Every imported reference `#169`, `#173`, `#175`, and `#273`
   has an explicit provenance-preserving disposition, and RFC-14 plus the
   composition experiment each has a current local issue or an explicit
   decision not to file one.
-- [ ] AC-2: (REQ-1, REQ-3) A checked-in execution note states the version-bump
+- [x] AC-2: (REQ-1, REQ-3) A checked-in execution note states the version-bump
   receipt-refresh contract and the event/backoff/no-unchanged-update monitoring
   rules; a review can point to one durable source instead of reconstructing
   them from prior sessions.
-- [ ] AC-3: (REQ-2) Tests run serial and eight-way materialization over the same
+- [x] AC-3: (REQ-2) Tests run serial and eight-way materialization over the same
   fixture population and assert byte-for-byte equality of the generated
   registry and closure ledger.
-- [ ] AC-4: (REQ-2) Missing, duplicate, overlapping, stale, or failed shard
+- [x] AC-4: (REQ-2) Missing, duplicate, overlapping, stale, or failed shard
   output prevents publication, while `gates/claim-closure-author.py
   --materialize` remains a working serial fallback.
 - [ ] AC-5: (REQ-4) Issue #55's hostile tests cover mixed incomparable
@@ -146,11 +146,12 @@ local tracking decisions before either is scheduled.
 materialization, while `.github/workflows/ci.yml` owns the reviewed eight-shard
 execution partition. The local optimization shall expose bounded parallelism
 through the existing author rather than introduce a second receipt format or a
-second source of shard ownership. Shards write isolated drafts; a coordinator
-checks completeness and disjointness before the existing authoritative render
-step writes the registry and closure ledger. Tests belong beside the existing
-coverage in `gates/tests/test_claim_closure_author.py` and the workflow contract
-checks in `gates/tests/test_ci_workflow_contract.py`.
+second source of shard ownership. Shards compute isolated in-memory results; a
+coordinator checks exact per-shard ownership, completeness, and disjointness
+before the existing authoritative render step writes the registry and closure
+ledger. Tests belong beside the existing coverage in
+`gates/tests/test_claim_closure_author.py` and the workflow contract checks in
+`gates/tests/test_ci_workflow_contract.py`.
 
 The monitoring protocol is operational, not authority-bearing. Completion
 events are preferred. Polling, when unavoidable, starts with a short interval,

@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: fd692da8937ea0e083311835827523a33947b0a5a3bd5d4aff4034f9302bb124 (re-pinned 2026-09-07 after refreshing all content-bound claim receipts for the alpha.10 manifest change. prior: 8653e9f0cc3a77363225cce57111206beac40f7e8f36d53fd16ca30d2655ab70)
+audited-content-sha256: d73763c3121065428213aac402af29231a67d64a0219938ab0f04ac7c9d77c61 (re-pinned 2026-09-08 after rematerializing the two self-governance receipts that content-bind the bounded-worker author. prior: eb83c110ba1ad2311cc56a60da01ccbefb4d0d8b5a70e7aa3cb72bacd86a7583)
 
 ## Summary
 
@@ -353,11 +353,32 @@ no mixed-version or partially enforced state that CI can treat as complete.
 Reviewable JSON slices live only in `gates/claim-closure-drafts/`; they are
 non-authoritative recipes checked against the frozen baseline, current prose
 digest, mechanism grammar, live observation, hostile counterfeits, and derived
-  receipt. `gates/claim-closure-author.py` refuses materialization unless those
-  drafts cover the frozen 566-row baseline plus every live shipped addition,
-  then derives the authoritative
+receipt. `gates/claim-closure-author.py` refuses materialization unless those
+drafts cover the frozen 566-row baseline plus every live shipped addition,
+then derives the authoritative
 registry claims, exact witness memberships, discriminators, and ledger receipts
-in one operation. Drafts never create a partially closed production state.
+in one operation. The default materialization path remains serial. Its bounded
+`--jobs 2..8` mode authors the same complete population through the stable
+eight-shard execution-identity partition used by CI, checks the combined shard
+outputs for exact coverage, overlap, and cross-shard witness/discriminator
+collisions, and feeds the same canonical renderer. Unlike CI's isolated
+runners, local shards share build trees, fixed oracle timeouts, and an
+observable cache warm-up order, so the local coordinator admits executable and
+formal probes one at a time in canonical serial entry order while allowing the
+wider worker pool to handle exact-population work.
+Serial and parallel outputs are required to be byte-identical. Drafts never
+create a partially closed production state.
+
+The core lowering closure harness permits 360 seconds per selected test case.
+This is execution margin for cold or loaded local caches, not a language or
+solver proof budget; accepted exit codes, repeated-run determinism, and hostile
+counterfeit rejection are unchanged.
+
+The author performs every positive and counterfeit observation before
+rendering. The renderer applies the authoritative gate in structural mode to
+the candidate registry and ledger, avoiding an immediate serial replay of work
+the shards just completed. Independent executable replay remains a final
+qualification and CI responsibility.
 
 Before population authoring, the claim grammar and closure kernel are frozen
 and tested by `gates/fixtures/claim-closure-known-red.json`. That corpus states
