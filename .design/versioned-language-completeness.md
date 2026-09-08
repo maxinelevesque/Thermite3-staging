@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: eb83c110ba1ad2311cc56a60da01ccbefb4d0d8b5a70e7aa3cb72bacd86a7583 (re-pinned 2026-09-08 after the bounded-worker deadlock fix for deterministic parallel claim materialization. prior: 7409715ee449c4d831704457953ee592f2248be74d7901c5de5b44958b542d52)
+audited-content-sha256: d73763c3121065428213aac402af29231a67d64a0219938ab0f04ac7c9d77c61 (re-pinned 2026-09-08 after rematerializing the two self-governance receipts that content-bind the bounded-worker author. prior: eb83c110ba1ad2311cc56a60da01ccbefb4d0d8b5a70e7aa3cb72bacd86a7583)
 
 ## Summary
 

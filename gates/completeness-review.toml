@@ -3514,7 +3514,7 @@ receipt = "693ca3b6fcd01de80b7f802cf60b84a0ae46847568311b88f500f52e79850204"
 requirement_id = "REQ-COMPLETE-CLAIM-CLOSURE-POPULATION"
 witness_id = "W-CLAIM-CLOSURE-SELF-GOVERNANCE"
 mechanism = "executable_discriminator"
-discriminator = "fa8df832cb2161e6c2349ccef0b57e685d41cbede9de15fa4505f747e3816a10"
+discriminator = "2341b1f422fd1834d8b61d46de6b8f5f0425257c624194a73ce7691bfabd8d8f"
 claim_digest = "976115757d0c97e1ae67f1ca9a3de7735b9ffb095ebe239f0c702b154720c0a9"
 verifier = ["uv", "run", "python", "gates/claim-closure-meta.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3524,7 +3524,7 @@ oracle = "gates/claim-closure-oracles/self-governance.json"
 artifacts = ["gates/claim-closure-oracles/self-governance.json", "gates/claim-closure-meta.py", "gates/claim-closure-author.py", "gates/tests/test_claim_closure_author.py", ".design/versioned-language-completeness.md#REQ-16", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "permit-unclosed-live-addition", mutation = "replace_text", from = "{\"id\": \"exact-live-population\", \"expected_exit\": 0}", to = "{\"id\": \"exact-live-population\", \"expected_exit\": 1}", expected_exit = 4 }]
-receipt = "5e8b66f0101cf0ef6f252b71e748c3e130554a27cdd8173c602e2da803ac36bf"
+receipt = "f5a415ad084ca7e9b95c712ca2ee56bdb8e2726e61d4c6946c1c9fe4316642b4"
 
 [[closure]]
 requirement_id = "REQ-COMPLETE-CLOSED-WITNESS-MECHANISMS"
@@ -3546,7 +3546,7 @@ receipt = "f5d2d640a68f3094a2b897f079a9baea2a299e2b2860e389a710a59359a8f118"
 requirement_id = "REQ-COMPLETE-CONTENT-BOUND-RECEIPTS"
 witness_id = "W-CLAIM-CLOSURE-SELF-GOVERNANCE"
 mechanism = "executable_discriminator"
-discriminator = "a873d56ee994f99ff0496fd35b34447730918b26a7c369efc4f87a0017bc2c50"
+discriminator = "fadb103fa4ab049b4c06750280dbf48e7421128fcd937e68f833cc6e22fd7307"
 claim_digest = "3fa3756ea2bbde20eab94037a349d6d47a1b937f1f8e7d4439e52265a97d3c7f"
 verifier = ["uv", "run", "python", "gates/claim-closure-meta.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3556,7 +3556,7 @@ oracle = "gates/claim-closure-oracles/self-governance.json"
 artifacts = ["gates/claim-closure-oracles/self-governance.json", "gates/claim-closure-meta.py", "gates/claim-closure-author.py", "gates/tests/test_claim_closure_author.py", "gates/tests/test_completeness_review.py", ".design/versioned-language-completeness.md#REQ-19", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "accept-stale-content-bound-receipt", mutation = "replace_text", from = "{\"id\": \"content-bound-receipts\", \"expected_exit\": 0}", to = "{\"id\": \"content-bound-receipts\", \"expected_exit\": 1}", expected_exit = 4 }]
-receipt = "0f0f84fe90ad2c788e8c4dbdf4c14a4cd3ee7e46ea773644d08f82dda4643edc"
+receipt = "51e346a63eddd5211d07458d18ef3ffc2aad52404f512c8abb02e7d43a38f895"
 
 [[closure]]
 requirement_id = "REQ-COMPLETE-FINITE-POLICY"
