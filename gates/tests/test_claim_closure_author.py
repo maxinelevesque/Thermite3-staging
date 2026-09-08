@@ -244,29 +244,75 @@ summary = "A live shipped addition uses the same closed modes."
             [],
         )
 
-    def test_ordered_probe_admission_reproduces_declared_serial_order(self):
-        with self.assertRaisesRegex(ValueError, "must be unique"):
-            MODULE.OrderedProbeAdmission(["REQ-A", "REQ-A"])
+    def test_parallel_materialization_runs_shared_probes_before_bounded_workers(self):
+        entries = [
+            {
+                "requirement_id": "REQ-PROBE-B",
+                "claim": {"kind": "formal_theorem"},
+                "closure": {"verifier": ["probe-b"]},
+            },
+            {
+                "requirement_id": "REQ-EXACT",
+                "claim": {"kind": "exact_population"},
+                "closure": {"extractor": {"path": "exact"}},
+            },
+            {
+                "requirement_id": "REQ-PROBE-A",
+                "claim": {"kind": "executable_discriminator"},
+                "closure": {"oracle": "probe-a"},
+            },
+        ]
+        rows = {
+            entry["requirement_id"]: {"status": "shipped"} for entry in entries
+        }
+        expected = set(rows)
+        calls = []
 
-        admission = MODULE.OrderedProbeAdmission(["REQ-A", "REQ-B", "REQ-C"])
-        observed = []
+        def author_selected(_root, selected, _rows, _expected):
+            calls.append([entry["requirement_id"] for entry in selected])
+            authored = []
+            for entry in selected:
+                requirement_id = entry["requirement_id"]
+                kind = entry["claim"]["kind"]
+                authored.append(
+                    {
+                        "requirement_id": requirement_id,
+                        "closure": {
+                            "discriminator": requirement_id,
+                            "extractor": {"path": requirement_id},
+                            "mechanism": kind,
+                            "oracle": requirement_id,
+                            "verifier": [requirement_id],
+                            "witness_id": requirement_id,
+                        },
+                    }
+                )
+            return authored, len(selected), []
 
-        def execute(requirement_id):
-            return admission.run(
-                requirement_id,
-                lambda: observed.append(requirement_id) or requirement_id,
+        with (
+            mock.patch.object(MODULE, "load_draft_entries", return_value=(entries, [])),
+            mock.patch.object(
+                MODULE,
+                "draft_population",
+                return_value=(rows, expected, []),
+            ),
+            mock.patch.object(
+                MODULE, "author_selected_entries", side_effect=author_selected
+            ),
+        ):
+            authored, problems = MODULE.check_drafts_parallel(
+                self.root, shard_count=8, jobs=2
             )
 
-        with MODULE.ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [
-                executor.submit(execute, requirement_id)
-                for requirement_id in ["REQ-C", "REQ-B", "REQ-A"]
-            ]
-            self.assertEqual(
-                [future.result() for future in futures],
-                ["REQ-C", "REQ-B", "REQ-A"],
-            )
-        self.assertEqual(observed, ["REQ-A", "REQ-B", "REQ-C"])
+        self.assertEqual(problems, [])
+        self.assertEqual(
+            calls[0], ["REQ-PROBE-B", "REQ-PROBE-A"],
+            "shared-resource probes must complete in canonical entry order before "
+            "bounded shard workers start",
+        )
+        self.assertEqual(
+            [result["requirement_id"] for result in authored], sorted(expected)
+        )
 
     def test_parallel_merge_rejects_missing_overlapping_and_failed_shards(self):
         def result(req_id, discriminator):

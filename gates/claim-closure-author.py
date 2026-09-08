@@ -11,7 +11,6 @@ import re
 import os
 import sys
 import tempfile
-import threading
 import tomllib
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -92,31 +91,6 @@ def check_baseline(root: Path) -> list[str]:
     if missing:
         problems.append("baseline IDs are no longer shipped: " + ", ".join(missing))
     return problems
-
-
-class OrderedProbeAdmission:
-    """Serialize shared-resource probes in one deterministic global order."""
-
-    def __init__(self, requirement_ids: list[str]) -> None:
-        if len(requirement_ids) != len(set(requirement_ids)):
-            raise ValueError("ordered probe requirements must be unique")
-        self._rank = {
-            requirement_id: rank
-            for rank, requirement_id in enumerate(requirement_ids)
-        }
-        self._next = 0
-        self._condition = threading.Condition()
-
-    def run(self, requirement_id: str, action):
-        rank = self._rank[requirement_id]
-        with self._condition:
-            while rank != self._next:
-                self._condition.wait()
-            try:
-                return action()
-            finally:
-                self._next += 1
-                self._condition.notify_all()
 
 
 def requirement_rows(root: Path) -> tuple[dict[str, dict], dict]:
@@ -652,7 +626,6 @@ def author_selected_entries(
     selected: list[dict],
     rows: dict[str, dict],
     expected_population: set[str],
-    ordered_probes: OrderedProbeAdmission | None = None,
 ) -> tuple[list[dict], int, list[str]]:
     authored: list[dict] = []
     problems: list[str] = []
@@ -666,20 +639,9 @@ def author_selected_entries(
             or rows[req_id].get("status") != "shipped"
         ):
             continue
-        claim = entry.get("claim")
-        if (
-            ordered_probes is not None
-            and isinstance(claim, dict)
-            and claim.get("kind") in {"executable_discriminator", "formal_theorem"}
-        ):
-            result, entry_problems = ordered_probes.run(
-                req_id,
-                lambda: author_entry(root, entry, rows[req_id], execution_cache),
-            )
-        else:
-            result, entry_problems = author_entry(
-                root, entry, rows[req_id], execution_cache
-            )
+        result, entry_problems = author_entry(
+            root, entry, rows[req_id], execution_cache
+        )
         problems.extend(entry_problems)
         if result is not None:
             authored.append(result)
@@ -730,25 +692,49 @@ def check_drafts_parallel(
     ]
     # The CI shards run on isolated machines. Local shards share Cargo/Lean
     # build trees, fixed oracle timeouts, and a cache whose warm-up order is
-    # observable. Keep the full eight-shard ownership while admitting heavy
-    # probes in the canonical serial entry order. Exact-population work can
-    # still use the wider worker pool.
-    probe_order = [
-        entry["requirement_id"]
-        for entry in entries
-        if isinstance(entry.get("claim"), dict)
-        and entry["claim"].get("kind")
-        in {"executable_discriminator", "formal_theorem"}
+    # observable. Author shared-resource probes first in the canonical serial
+    # entry order, then use the bounded worker pool for exact-population work.
+    # Running ordered probes inside shard workers can deadlock when the next
+    # probe belongs to a shard that has not yet acquired a worker.
+    def is_shared_resource_probe(entry: dict) -> bool:
+        claim = entry.get("claim")
+        return isinstance(claim, dict) and claim.get("kind") in {
+            "executable_discriminator",
+            "formal_theorem",
+        }
+
+    probe_entries = [entry for entry in entries if is_shared_resource_probe(entry)]
+    probe_authored, _probe_groups, probe_problems = author_selected_entries(
+        root, probe_entries, rows, expected_population
+    )
+    problems.extend(probe_problems)
+    probe_by_id = {result["requirement_id"]: result for result in probe_authored}
+
+    exact_shards = [
+        [entry for entry in shard if not is_shared_resource_probe(entry)]
+        for shard in shards
     ]
-    ordered_probes = OrderedProbeAdmission(probe_order)
 
     def author_shard(selected: list[dict]) -> tuple[list[dict], int, list[str]]:
-        return author_selected_entries(
-            root, selected, rows, expected_population, ordered_probes
-        )
+        return author_selected_entries(root, selected, rows, expected_population)
 
     with ThreadPoolExecutor(max_workers=jobs) as executor:
-        shard_results = list(executor.map(author_shard, shards))
+        exact_results = list(executor.map(author_shard, exact_shards))
+
+    shard_results = []
+    for shard, (exact_authored, _exact_groups, shard_problems) in zip(
+        shards, exact_results, strict=True
+    ):
+        probe_results = [
+            probe_by_id[entry["requirement_id"]]
+            for entry in shard
+            if is_shared_resource_probe(entry)
+            and entry.get("requirement_id") in probe_by_id
+        ]
+        group_count = len({draft_execution_identity(entry) for entry in shard})
+        shard_results.append(
+            (probe_results + exact_authored, group_count, shard_problems)
+        )
 
     authored, merge_problems = merge_parallel_shard_results(
         shards, shard_results, expected_population
