@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "probe": "assurance-project-composition",
+  "cases": [
+    {"id": "assurance-project-population", "expected_exit": 0},
+    {"id": "assurance-portfolio-lift", "expected_exit": 0},
+    {"id": "assurance-project-frontiers", "expected_exit": 0},
+    {"id": "assurance-project-transports", "expected_exit": 0},
+    {"id": "assurance-project-lift", "expected_exit": 0},
+    {"id": "assurance-noitems", "expected_exit": 0},
+    {"id": "assurance-composition-lean", "expected_exit": 0},
+    {"id": "assurance-composition-replay", "expected_exit": 0}
+  ]
+}

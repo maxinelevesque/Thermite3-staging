@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: d73763c3121065428213aac402af29231a67d64a0219938ab0f04ac7c9d77c61 (re-pinned 2026-09-08 after rematerializing the two self-governance receipts that content-bind the bounded-worker author. prior: eb83c110ba1ad2311cc56a60da01ccbefb4d0d8b5a70e7aa3cb72bacd86a7583)
+audited-content-sha256: 6d334c933df87e4843fd7629fc54b3cb9c218389ddb62f990eb871c685b3091d (re-pinned 2026-09-08 after rematerializing all 581 claims for the exact 1,948-test CI partition repair; the receipts retain the repository-pinned Lean 4.29.0 verifier identity. prior: f87952975c6f4d3d9e46f22a082fd5c83e1f183152e18ae1d63441435c65d0ab)
 
 ## Summary
 

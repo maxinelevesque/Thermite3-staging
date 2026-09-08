@@ -87,7 +87,7 @@ lanes remain provisional.
 - [x] AC-4: (REQ-2) Missing, duplicate, overlapping, stale, or failed shard
   output prevents publication, while `gates/claim-closure-author.py
   --materialize` remains a working serial fallback.
-- [ ] AC-5: (REQ-4) Issue #55's hostile tests cover mixed incomparable
+- [x] AC-5: (REQ-4) Issue #55's hostile tests cover mixed incomparable
   portfolios, absent clauses, absent population members, representative
   selection, and per-axis scalar minimum; all fail closed as specified by the
   issue.
