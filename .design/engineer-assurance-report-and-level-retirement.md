@@ -353,9 +353,12 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   tampered/stale artifact, untrusted-fork publication attempt, missing report,
   HTML injection fixture, oversized/deep/unknown JSON, unpinned action, forged
   PR assurance content, and
-  presentation-only success cannot acquire certification authority. Durable
-  publication runs only after protected merge/push and regenerates the exact-SHA
-  report; it neither consumes nor republishes PR-produced assurance JSON/HTML.
+  presentation-only success cannot acquire certification authority. Protected
+  publication runs only after merge/push and regenerates the exact-SHA report;
+  it neither consumes nor republishes PR-produced assurance JSON/HTML. The
+  initial Actions transport retains each uploaded portrait for 14 days, so it is
+  bounded review retrieval rather than an indefinite archive; a persistent
+  publisher remains an explicit residual-trust/follow-up concern.
 - [x] AC-13: (REQ-16) An opt-in project policy can declare a formal floor by
   exact fiber or an explicitly normalized project fiber. The check gates only
   through proved dominance/common-frontier semantics; engineer labels and
@@ -374,7 +377,7 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   authority consumer and is removed or isolated in a compatibility module.
   Project, verified-build, repair, review, goal/fill, lemma, Kani, degrade,
   audit, metrics, cache, and CLI tests assert the new authority/report paths.
-- [ ] AC-17: (REQ-13 through REQ-16) A checked example report is published from
+- [x] AC-17: (REQ-13 through REQ-16) A checked example report is published from
   CI for a representative mixed crate. Reviewers can move from status headline
   to common project claims, changed-item list, exact per-item/clause evidence,
   and the complete machine portrait without rerunning certification locally.
@@ -407,9 +410,20 @@ injection, bounded/deep/unknown JSON, and live-capability-only exact-fiber
 floors. `gates/tests/test_ci_workflow_contract.py` pins the stable
 `assurance-report` job's `contents: read` boundary, exact head/base SHA
 selection, commit-pinned actions, bounded summary, retained diagnostic upload,
-non-consumption of PR artifacts, and upload-before-floor ordering. AC-17 remains
-open until the first PR run publishes and exposes the checked mixed-route
-artifact end to end.
+non-consumption of PR artifacts, and upload-before-floor ordering. PR CI run
+`34402490501`, job `102637545245`, exercised that contract end to end on PR
+head `137dfb9410d4c0abaf021d9b7216c91d0a4e5e42` and checked-out PR merge ref
+`bb8164761d785d21afa363d3ecd2c69bf4942007`: Lean preparation, exact-SHA
+generation, bounded summary, diagnostic upload, and the optional-floor status
+check all succeeded. Retained artifact `10124143636`
+(`assurance-report-bb8164761d785d21afa363d3ecd2c69bf4942007`) contains the
+complete base/head JSON, comparison JSON, standalone HTML, summaries, and
+diagnostics. Its report hash is
+`b380d6113c7db0150f14fc2d936951d6d6404b3d423dd3d20e6dedaf6f44ab58`,
+the checked population is 1/2 with `rotl1_injective` explicitly retained as an
+`engine_unknown` non-claim, and GitHub records the bounded retention expiry as
+2026-09-23T20:44:45Z. This is the first checked publication evidence for
+AC-17; it does not elevate the untrusted PR portrait to certification authority.
 
 ## Architecture
 

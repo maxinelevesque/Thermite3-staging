@@ -19954,7 +19954,7 @@ note = "executable cases cover deterministic layers, hostile tampering, comparis
 [[requirement.evidence]]
 kind = "test"
 target = "gates/tests/test_ci_workflow_contract.py"
-note = "the stable assurance-report job is read-only, exact-SHA, action-pinned, non-republishing, bounded, and uploads diagnostics before enforcing an optional floor"
+note = "the stable assurance-report job is read-only, exact-SHA, action-pinned, non-republishing, bounded, and uploads diagnostics before enforcing an optional floor; PR run 34402490501 job 102637545245 published retained artifact 10124143636 end to end for AC-17"
 
 [[requirement]]
 id = "REQ-SPEC-CRASH-MODEL"
