@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: ebc6e8e1782afa4f05667763945607552beeec3fed2da3ce1d783c8be7ff4db7 (re-pinned 2026-09-09 after CI identified and live replay refreshed the exact 127 receipts affected by the late `forge/src/check.rs` change. prior: 869c1bd442e885bc7bd52a17e72ab748ca850ce82e708c2c45944f5ce28ce795)
+audited-content-sha256: 10142c423b69840dccbdd646392159958d43d31b83ca0ad3b7dc3b1434242d8a (re-pinned 2026-09-09 after adding the layered assurance-report claim and materializing all 583 typed claim receipts against the stabilized #57 tree. prior: ebc6e8e1782afa4f05667763945607552beeec3fed2da3ce1d783c8be7ff4db7)
 
 ## Summary
 

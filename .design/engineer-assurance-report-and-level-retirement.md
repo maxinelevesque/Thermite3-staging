@@ -1,6 +1,6 @@
 # Feature: Engineer assurance report and Level retirement
 
-audited-content-sha256: e6c4963bd04a86f99bcf899260ffeacde7e0b548ec48738a1429b3602bf21d27 (re-pinned 2026-09-09 after broadening the issue #56 inventory to 109 type-token and value-access sites and tightening its witness. prior: cb7536ff9b6e2ac4f4ee7ca31ec9a71023906040b3f21e7af6aa7e865bad16d5)
+audited-content-sha256: 9637b3c1064332af40dc9bf0901a453f97d49328578ea9edfb91b1a8c6f29615 (re-pinned 2026-09-09 after implementing the issue #57 layered assurance report and refreshing all 109 reviewed Level-site locations with zero production authority decisions. prior: b209bb90d4423e54700e388df66c9603a18d40aa82192977264b3d1e6148b33c)
 
 ## Summary
 
@@ -326,27 +326,27 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   row, and substitute a cache envelope; every current decision either rejects
   or remains identical through `current_assurance`. `inspect_legacy()` can
   render but cannot satisfy the current API type.
-- [ ] AC-9: (REQ-7, REQ-13) A mixed-route crate produces a deterministic report
+- [x] AC-9: (REQ-7, REQ-13) A mixed-route crate produces a deterministic report
   whose population denominator equals the source/build inventory and whose
   formal portrait contains every function, every expected clause coordinate,
   both project frontiers, exact fiber keys, transports, engineer display and
   disclosure, TCB, boundary, and residual-trust fact. Dropping any item or
   clause, changing source order/address, or changing current artifact identity
   fails report construction or validation.
-- [ ] AC-10: (REQ-14) Snapshot tests cover the project headline, crate summary,
+- [x] AC-10: (REQ-14) Snapshot tests cover the project headline, crate summary,
   per-item drill-down, `--explain`, and full formal JSON for homogeneous,
   heterogeneous, incomplete, policy-rejected, historical, multi-fiber, and
   multiple-common-frontier, and partial-population projects. Every headline
   prints the covered numerator/denominator; no primary human surface leads with
   `Lx`.
-- [ ] AC-11: (REQ-15) Two runs over identical admitted inputs produce
+- [x] AC-11: (REQ-15) Two runs over identical admitted inputs produce
   byte-identical normalized JSON and rendered output. A pull-request comparison
   fixture reports strengthened, weakened, incomparable, boundary-changed,
   residual-changed, population-added/removed, historical, and policy-skew cases
   separately and links every summary row to formal evidence. A missing exact
   base-SHA report yields `no comparison`; cross-policy/schema comparison yields
   skew unless a checked migration theorem is supplied.
-- [ ] AC-12: (REQ-15, REQ-16) An untrusted PR job with only `contents: read`
+- [x] AC-12: (REQ-15, REQ-16) An untrusted PR job with only `contents: read`
   uploads the JSON and standalone
   report even when an optional formal floor fails, publishes a bounded summary
   rather than flooding logs/comments, and exposes a stable check name. A
@@ -356,7 +356,7 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   presentation-only success cannot acquire certification authority. Durable
   publication runs only after protected merge/push and regenerates the exact-SHA
   report; it neither consumes nor republishes PR-produced assurance JSON/HTML.
-- [ ] AC-13: (REQ-16) An opt-in project policy can declare a formal floor by
+- [x] AC-13: (REQ-16) An opt-in project policy can declare a formal floor by
   exact fiber or an explicitly normalized project fiber. The check gates only
   through proved dominance/common-frontier semantics; engineer labels and
   evidence-frontier membership cannot satisfy it.
@@ -389,6 +389,24 @@ inspect-only unversioned L0-L4 documents, portfolio splicing, persisted-artifact
 audit projection. The complete Forge binary suite passes 647 tests with the
 production consumers reading `CurrentAssurance` and deriving any compatibility
 Level only after typed authority validation.
+
+Issue #57 validation evidence: `forge/src/assurance_report.rs` constructs the
+headline, grouped crate portrait, per-item/clause explanation, normalized JSON,
+and escaped/CSP HTML from one non-serializable `LiveAssuranceReport`. The live
+mixed-route probe `gates/assurance-report-smoke.py` checks
+`conformance/forge/mix64.th` as an exact 1/2 source/build population: its
+accepted item retains all three source-ordered clause coordinates across the
+bit-vector and nlsat procedures, while the undecided item is a named exception
+and suppresses a whole-project claim. Report units cover deterministic bytes,
+complete-population and presentation tampering, historical/policy non-claims,
+every comparison movement, missing exact base, schema/policy skew, HTML
+injection, bounded/deep/unknown JSON, and live-capability-only exact-fiber
+floors. `gates/tests/test_ci_workflow_contract.py` pins the stable
+`assurance-report` job's `contents: read` boundary, exact head/base SHA
+selection, commit-pinned actions, bounded summary, retained diagnostic upload,
+non-consumption of PR artifacts, and upload-before-floor ordering. AC-17 remains
+open until the first PR run publishes and exposes the checked mixed-route
+artifact end to end.
 
 ## Architecture
 

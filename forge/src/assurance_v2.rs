@@ -216,7 +216,7 @@ impl AntichainNf {
 /// Exact source/build identity for one project population. Lists are required
 /// to be sorted and duplicate-free so logically identical builds serialize
 /// identically rather than depending on caller insertion order.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ProjectBuildIdentityV2 {
     pub crate_name: String,
     pub target: String,
@@ -226,13 +226,13 @@ pub struct ProjectBuildIdentityV2 {
     pub artifact_sha256: String,
 }
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ProjectItemIdentityV2 {
     pub source_path: String,
     pub item_path: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum ProjectDispositionV2 {
     Accepted,
@@ -240,13 +240,13 @@ pub enum ProjectDispositionV2 {
     LegacyUnversioned { legacy_level: String },
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ProjectPopulationMemberV2 {
     pub identity: ProjectItemIdentityV2,
     pub disposition: ProjectDispositionV2,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ProjectPopulationV2 {
     pub build: ProjectBuildIdentityV2,
     /// Independent source/build inventory in source order.
@@ -303,7 +303,7 @@ fn canonical_strings(values: &[String], field: &str) -> Result<(), CompositionEr
 /// Lean keeps predicates in the key directly. Executable aggregation cannot
 /// serialize functions, so it accepts only a separately validated lowercase
 /// SHA-256 address of that complete typed cell rather than an informal name.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ClaimFiberAddressV2 {
     sha256: String,
 }
@@ -414,7 +414,7 @@ impl ProjectPopulationV2 {
             .all(|member| matches!(member.disposition, ProjectDispositionV2::Accepted))
     }
 
-    fn identity_digest(&self) -> String {
+    pub fn identity_digest(&self) -> String {
         sha256_domain(
             b"thermite-project-population-v2\0",
             &serde_json::to_vec(self).expect("validated population serializes"),
@@ -439,7 +439,7 @@ pub struct PortfolioLiftV2 {
     pub connective_witness: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ClaimProvenanceV2 {
     pub item: ProjectItemIdentityV2,
     pub clause_addresses: Vec<String>,
@@ -547,6 +547,23 @@ impl ItemClaimSetV2 {
         &self.provenance
     }
 
+    /// Rebind the certificate-local subject address to the exact source/build
+    /// population identity used by an assurance report.  This changes neither
+    /// the claim fiber nor the represented downset; it only replaces the
+    /// provisional `certificate://current` identity minted by the item-local
+    /// authority seam.  Report construction performs this rebasing before any
+    /// project aggregation so a missing, duplicated, or reordered source item
+    /// cannot be hidden behind a certificate-local name.
+    pub fn rebase_item_identity(
+        mut self,
+        item: ProjectItemIdentityV2,
+    ) -> Result<Self, CompositionError> {
+        item.validate()?;
+        self.item = item.clone();
+        self.provenance.item = item;
+        Ok(self)
+    }
+
     /// Maximal generators of this exact downset. Consumers compare or impose
     /// floors through these V2 policy points; no scalar representative is
     /// invented for heterogeneous or incomparable conjunctions.
@@ -635,25 +652,25 @@ impl PopulationClaimSetTransportV2 {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct EvidenceFrontierEntryV2 {
     pub kind: AssuranceKindV2,
     pub supporters: Vec<ClaimProvenanceV2>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum CommonClaimFrontierV2 {
     NoItems,
     Frontier(Vec<AssuranceKindV2>),
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct UnavailableTransportV2 {
     pub item: ProjectItemIdentityV2,
     pub reason: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum ProjectPortraitScopeV2 {
     CompletePopulationFloor {
         members: usize,
@@ -668,7 +685,7 @@ pub enum ProjectPortraitScopeV2 {
     },
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ProjectFrontiersV2 {
     population_sha256: String,
     claim_fiber: ClaimFiberAddressV2,
@@ -682,6 +699,10 @@ pub struct ProjectFrontiersV2 {
 }
 
 impl ProjectFrontiersV2 {
+    pub fn population_sha256(&self) -> &str {
+        &self.population_sha256
+    }
+
     pub fn claim_fiber(&self) -> &ClaimFiberAddressV2 {
         &self.claim_fiber
     }
@@ -821,14 +842,14 @@ impl ProjectFrontiersV2 {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct LiftedItemEvidenceV2 {
     pub item: ProjectItemIdentityV2,
     pub evidence_identity: String,
     pub refutation_complete: bool,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ProjectLiftV2 {
     population_sha256: String,
     frontiers_sha256: String,
@@ -839,6 +860,65 @@ pub struct ProjectLiftV2 {
 }
 
 impl ProjectLiftV2 {
+    pub fn claim_fiber(&self) -> &ClaimFiberAddressV2 {
+        &self.claim_fiber
+    }
+
+    pub fn validate_against(
+        &self,
+        population: &ProjectPopulationV2,
+        frontiers: &ProjectFrontiersV2,
+    ) -> Result<(), CompositionError> {
+        if self.population_sha256 != population.identity_digest()
+            || self.claim_fiber != frontiers.claim_fiber
+            || frontiers.population_sha256 != self.population_sha256
+            || !population.all_accepted()
+            || !frontiers.unavailable_transports.is_empty()
+        {
+            return Err(CompositionError::new(
+                "project lift does not match its checked population/frontier inputs",
+            ));
+        }
+        nonempty(&self.project_lift_witness, "project lift witness")?;
+        if let Some(scheduler) = self.finite_scheduler_identity.as_deref() {
+            nonempty(scheduler, "finite scheduler identity")?;
+        }
+        if self
+            .evidence_vector
+            .iter()
+            .map(|evidence| evidence.item.clone())
+            .collect::<Vec<_>>()
+            != population.intended
+            || self
+                .evidence_vector
+                .iter()
+                .any(|evidence| evidence.evidence_identity.is_empty())
+        {
+            return Err(CompositionError::new(
+                "project lift evidence does not cover the exact population",
+            ));
+        }
+        if !matches!(
+            &frontiers.scope,
+            ProjectPortraitScopeV2::WholeProject { project_lift_sha256 }
+                if project_lift_sha256 == &self.digest()
+        ) {
+            return Err(CompositionError::new(
+                "project frontier does not carry this project lift authorization",
+            ));
+        }
+        let mut preauthorization = frontiers.clone();
+        preauthorization.scope = ProjectPortraitScopeV2::CompletePopulationFloor {
+            members: population.members.len(),
+        };
+        if self.frontiers_sha256 != preauthorization.digest() {
+            return Err(CompositionError::new(
+                "project lift does not bind the pre-authorization frontier",
+            ));
+        }
+        Ok(())
+    }
+
     pub fn new(
         population: &ProjectPopulationV2,
         frontiers: &ProjectFrontiersV2,

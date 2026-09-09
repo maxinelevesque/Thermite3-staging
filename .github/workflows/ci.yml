@@ -226,6 +226,139 @@ jobs:
       - name: skill budget gate (issue #7, design §2.2 / §10)
         run: cargo run -p thermite-skill -- --check-budget
 
+  # Issue #57: Codecov-shaped assurance delivery without outsourcing authority.
+  # Every PR artifact is explicitly untrusted; a protected main/staging push
+  # regenerates from that exact checked-out SHA and never consumes PR output.
+  assurance-report:
+    needs: changes
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact report source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.95.0 --profile minimal
+          rustup override set 1.95.0
+
+      - name: Install pinned Verus
+        run: |
+          set -euo pipefail
+          VERUS_VER="0.2026.05.24.ecee80a"
+          curl -fsSL -o /tmp/verus.zip \
+            "https://github.com/verus-lang/verus/releases/download/release/${VERUS_VER}/verus-${VERUS_VER}-x86-linux.zip"
+          mkdir -p "$HOME/verus-dist"
+          unzip -q /tmp/verus.zip -d "$HOME/verus-dist"
+          VERUS_BIN_PATH="$(find "$HOME/verus-dist" -type f -name verus | head -1)"
+          test -n "$VERUS_BIN_PATH"
+          echo "VERUS_BIN=$VERUS_BIN_PATH" >> "$GITHUB_ENV"
+          echo "$(dirname "$VERUS_BIN_PATH")" >> "$GITHUB_PATH"
+
+      - name: Generate exact-SHA assurance portrait
+        id: generate
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p assurance-artifact
+          cargo build -q -p forge
+          reporter="$GITHUB_WORKSPACE/target/debug/forge"
+          compare_args=()
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            trust=pr
+            base_tree="$(mktemp -d)"
+            git archive "$BASE_SHA" | tar -x -C "$base_tree"
+            set +e
+            (
+              cd "$base_tree"
+              "$reporter" assurance \
+                conformance/forge/mix64.th \
+                --revision "$BASE_SHA" \
+                --trust pr \
+                --out-json "$GITHUB_WORKSPACE/assurance-artifact/base.json" \
+                > "$GITHUB_WORKSPACE/assurance-artifact/base-summary.txt" \
+                2> "$GITHUB_WORKSPACE/assurance-artifact/base-diagnostic.txt"
+            )
+            base_status=$?
+            set -e
+            if [ "$base_status" = "0" ]; then
+              compare_args=(
+                --compare assurance-artifact/base.json
+                --base-sha "$BASE_SHA"
+                --out-comparison assurance-artifact/comparison.json
+              )
+            else
+              printf 'no comparison: exact base report generation exited %s\n' \
+                "$base_status" > assurance-artifact/comparison-unavailable.txt
+            fi
+          else
+            trust=protected
+          fi
+          floor_args=()
+          if [ -f .thermite/assurance-floor.json ]; then
+            floor_args=(--floor .thermite/assurance-floor.json)
+          fi
+          set +e
+          "$reporter" assurance \
+            conformance/forge/mix64.th \
+            --revision "${{ github.sha }}" \
+            --trust "$trust" \
+            --out-json assurance-artifact/report.json \
+            --out-html assurance-artifact/report.html \
+            "${compare_args[@]}" \
+            "${floor_args[@]}" \
+            > assurance-artifact/summary.txt \
+            2> assurance-artifact/diagnostic.txt
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Publish bounded check summary
+        if: always()
+        run: |
+          {
+            echo '## Thermite assurance report'
+            echo
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              echo '**UNTRUSTED PR DIAGNOSTIC — NOT CERTIFICATION AUTHORITY**'
+            else
+              echo '**PROTECTED EXACT-SHA PORTRAIT — regenerated after push**'
+            fi
+            echo
+            if [ -f assurance-artifact/report.json ]; then
+              jq -r '"Coverage: \(.body.project.population.covered)/\(.body.project.population.total)\nReport: `\(.report_sha256)`\nRevision: `\(.body.source.revision)`"' assurance-artifact/report.json
+            else
+              echo 'Report generation failed; inspect the retained diagnostic.'
+            fi
+            if [ -f assurance-artifact/comparison.json ]; then
+              jq -r '"Comparison: \(.status.kind); changed items: \(.items | length); common frontier changed: \(.common_frontier_changed)"' assurance-artifact/comparison.json
+              jq -r '.items[:20][] | "- `\(.identity.item_path)`: \(.movements | join(", "))"' assurance-artifact/comparison.json
+            elif [ "${{ github.event_name }}" = "pull_request" ]; then
+              echo 'Comparison: no comparison — exact base report unavailable.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload complete diagnostic portrait
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: assurance-report-${{ github.sha }}
+          path: assurance-artifact
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce optional live formal floor
+        if: always()
+        env:
+          REPORT_STATUS: ${{ steps.generate.outputs.status }}
+        run: test "$REPORT_STATUS" = "0"
+
   # Build the Lean modules shared by every live-replay consumer once, then fan
   # out. The artifact is keyed by this workflow run and contains only generated
   # oleans for the checked-out SHA; dependency packages still come from the
