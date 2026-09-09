@@ -52,7 +52,8 @@ use crate::cli::ForgeError;
 use crate::lean_export::{self, ExportRefusal};
 use crate::manifest::{
     effects_of, AssuranceManifest, AssuranceScope, Certificate, CertificationPosition,
-    ClassificationCertificate, ContractQuality, Level, ProjectAssurance, ProjectScope,
+    ClassificationCertificate, ContractQuality, CurrentAssurance, Level, ProjectAssurance,
+    ProjectScope,
 };
 
 /// The stable format tag for the v1 audit manifest schema (REQ-1, R-SPEC-2). A
@@ -328,12 +329,16 @@ impl FunctionRow {
             cert.is_audit_admitted(),
             "audit projects only live producer output or a validated proof-cache hit"
         );
-        cert.rfc3_coordinates()
-            .expect("audit rejects a classification without a certification position");
-        let final_accepted = matches!(
-            cert.live_disposition(),
-            Some(crate::manifest::LiveResultDisposition::Accepted)
-        );
+        let current = cert
+            .current_assurance()
+            .expect("audit accepts only validated current authority");
+        let final_accepted = matches!(current, CurrentAssurance::Accepted { .. });
+        let compatibility_level = match &current {
+            CurrentAssurance::Accepted { claim } => claim
+                .compatibility_level()
+                .expect("accepted current authority has a compatibility rendering"),
+            CurrentAssurance::NonClaim { .. } => Level::L0,
+        };
         let clause_portfolio = cert
             .clause_portfolio(final_accepted)
             .expect("audit rejects malformed clause portfolios");
@@ -375,7 +380,7 @@ impl FunctionRow {
             .expect("audit rejects RFC-13 evidence without live formal-replay authority");
         FunctionRow {
             name: cert.item.clone(),
-            level: cert.level,
+            level: compatibility_level,
             certification: cert.certification.clone(),
             classification: cert.classification.clone(),
             clause_portfolio,
@@ -858,7 +863,7 @@ fn lookup_contract<'a>(program: &'a Program, name: &str) -> Option<&'a Contract>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::kani::{assemble_l2_certificate, L2Result};
+    use crate::kani::{assemble_l2_certificate, L2Result, L2Verdict};
     use crate::manifest::{Certificate, SlagMeta};
 
     fn empty_program() -> Program {
@@ -874,6 +879,7 @@ mod tests {
             .remove(item)
             .expect("fixture closure scope");
         cert.with_assurance_scope(scope)
+            .with_live_disposition(crate::manifest::LiveResultDisposition::Accepted)
     }
 
     // REQ-1/REQ-4: a pure-Thermite cert collection projects to all-L3 rows + an
@@ -882,8 +888,8 @@ mod tests {
     #[test]
     fn pure_project_has_empty_slag_and_boundary_tcb() {
         let certs = vec![
-            Certificate::new("sum", Level::L3, vec!["pure".to_string()], 0, vec![]),
-            Certificate::new("spec_sum", Level::L3, vec!["pure".to_string()], 0, vec![]),
+            Certificate::test_current("sum", Level::L3),
+            Certificate::test_current("spec_sum", Level::L3),
         ];
         let m = AuditManifest::from_certificates(&certs, &empty_program(), toolchain());
         assert_eq!(m.manifest_version, "v1");
@@ -963,28 +969,20 @@ mod tests {
             detail: "rlimit".to_string(),
         };
         let certs = vec![
-            Certificate::new("f", Level::L3, vec!["pure".to_string()], 0, vec![]),
-            Certificate::new("g", Level::L2, vec!["pure".to_string()], 0, vec![])
-                .into_degraded(reason),
+            Certificate::test_current("f", Level::L3),
+            Certificate::test_current("g", Level::L2)
+                .into_degraded(reason)
+                .with_live_disposition(crate::manifest::LiveResultDisposition::TimeoutDegrade),
         ];
         let m = AuditManifest::from_certificates(&certs, &empty_program(), toolchain());
         assert_eq!(m.project_assurance.lowered_assurance, vec!["g".to_string()]);
-        assert_eq!(
-            m.project_assurance.level,
-            ProjectAssurance::Certified(Level::L2)
-        );
+        assert_eq!(m.project_assurance.level, ProjectAssurance::Failed);
     }
 
     // REQ-6 (determinism): same inputs → byte-identical JSON.
     #[test]
     fn manifest_is_deterministic() {
-        let certs = vec![Certificate::new(
-            "sum",
-            Level::L3,
-            vec!["pure".to_string()],
-            0,
-            vec![],
-        )];
+        let certs = vec![Certificate::test_current("sum", Level::L3)];
         let a = AuditManifest::from_certificates(&certs, &empty_program(), toolchain());
         let b = AuditManifest::from_certificates(&certs, &empty_program(), toolchain());
         let ja = serde_json::to_string(&a).expect("serialize a");
@@ -1190,19 +1188,14 @@ mod tests {
     // clause. This fixture supplies one of each to exercise the aggregation.
     #[test]
     fn req8_residual_trust_aggregates_the_kernel_checked_vs_solver_split() {
-        let cert = Certificate::new(
-            "mix64",
-            Level::L4,
-            vec!["pure".to_string()],
-            0,
-            vec![
-                bv_obl(
-                    "mix64::ens#0",
-                    crate::engine::bv_kernel_checked_trust_profile().items,
-                ),
-                bv_obl("mix64::ens#1", crate::engine::bv_trust_profile().items),
-            ],
-        );
+        let mut cert = Certificate::test_current("mix64", Level::L4);
+        cert.obligations = vec![
+            bv_obl(
+                "mix64::ens#0",
+                crate::engine::bv_kernel_checked_trust_profile().items,
+            ),
+            bv_obl("mix64::ens#1", crate::engine::bv_trust_profile().items),
+        ];
         let m = AuditManifest::from_certificates(&[cert], &empty_program(), toolchain());
         let rt = m
             .residual_trust
@@ -1237,13 +1230,7 @@ mod tests {
     // statement, so its audit manifest serializes byte-identically (the additive discipline).
     #[test]
     fn req8_non_bv_project_has_no_residual_trust_statement() {
-        let certs = vec![Certificate::new(
-            "sum",
-            Level::L3,
-            vec!["pure".to_string()],
-            0,
-            vec![],
-        )];
+        let certs = vec![Certificate::test_current("sum", Level::L3)];
         let m = AuditManifest::from_certificates(&certs, &empty_program(), toolchain());
         assert!(
             m.residual_trust.is_none(),
@@ -1256,13 +1243,13 @@ mod tests {
     // end-to-end boundary, yet their trusted bases remain visibly distinct.
     #[test]
     fn same_assurance_different_trust_bases_survive_audit_projection() {
-        let lean = Certificate::new("lean_fn", Level::L3, vec!["pure".into()], 0, vec![])
+        let lean = Certificate::test_current("lean_fn", Level::L3)
             .with_assurance_scope(AssuranceScope::EndToEnd)
             .with_engine_attribution(crate::engine::EngineAttribution {
                 engine: "lean-auto".into(),
                 trust_profile: vec!["Lean kernel".into(), "propext".into()],
             });
-        let verus = Certificate::new("verus_fn", Level::L3, vec!["pure".into()], 0, vec![])
+        let verus = Certificate::test_current("verus_fn", Level::L3)
             .with_assurance_scope(AssuranceScope::EndToEnd)
             .with_engine_attribution(crate::engine::EngineAttribution {
                 engine: "verus".into(),
@@ -1304,7 +1291,7 @@ mod tests {
     #[test]
     fn kani_rfc3_pair_survives_audit_projection_verbatim() {
         let result = L2Result {
-            level: Level::L2,
+            verdict: L2Verdict::Verified,
             bound: "slice <= 4, unwind 5".to_string(),
             classification: ClassificationCertificate {
                 fragment: "thermite-kani-v1".to_string(),
@@ -1315,7 +1302,8 @@ mod tests {
             )],
             solver_time_ms: 0,
         };
-        let cert = assemble_l2_certificate("sum", vec!["pure".to_string()], &result);
+        let cert = assemble_l2_certificate("sum", vec!["pure".to_string()], &result)
+            .with_live_disposition(crate::manifest::LiveResultDisposition::Accepted);
         let expected_position = cert.certification.clone();
         let expected_classification = cert.classification.clone();
         let audit = AuditManifest::from_certificates(&[cert], &empty_program(), toolchain());
@@ -1495,7 +1483,7 @@ mod tests {
     }
 
     #[test]
-    fn migrated_l1_audit_rejects_legacy_level_substitution() {
+    fn migrated_l1_audit_derives_presentation_after_legacy_level_substitution() {
         let parsed = thermite_syntax::parse(
             "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
         );
@@ -1507,14 +1495,11 @@ mod tests {
             &parsed.program,
             "f",
         );
-        let mut hostile = serde_json::to_value(cert).unwrap();
-        hostile["level"] = serde_json::json!("L3");
-        let hostile: Certificate = serde_json::from_value(hostile).unwrap();
-        assert!(
-            hostile.rfc3_coordinates().is_err(),
-            "migrated L1 evidence cannot be relabeled as another legacy level"
-        );
-        assert_l1_audit_rejects(hostile, &parsed.program);
+        let mut hostile = cert;
+        hostile.set_compatibility_level_for_test(Level::L3);
+        assert!(hostile.rfc3_coordinates().is_ok());
+        let audit = AuditManifest::from_certificates(&[hostile], &parsed.program, toolchain());
+        assert_eq!(audit.functions[0].level, Level::L1);
     }
 
     #[test]
@@ -1551,7 +1536,8 @@ mod tests {
         let cert = Certificate::new("f", Level::L3, vec!["pure".into()], 0, vec![])
             .with_verus_artifact(&artifact, true)
             .unwrap()
-            .with_assurance_scope(AssuranceScope::EndToEnd);
+            .with_assurance_scope(AssuranceScope::EndToEnd)
+            .with_live_disposition(crate::manifest::LiveResultDisposition::Accepted);
         let audit = AuditManifest::from_certificates(
             std::slice::from_ref(&cert),
             &parsed.program,
@@ -1561,8 +1547,13 @@ mod tests {
         assert_eq!(audit.functions[0].classification, cert.classification);
 
         let mut level = cert.clone();
-        level.level = Level::L4;
-        assert_audit_rejects(level, &parsed.program);
+        level.set_compatibility_level_for_test(Level::L4);
+        let level_audit = AuditManifest::from_certificates(&[level], &parsed.program, toolchain());
+        assert_eq!(
+            level_audit.functions[0].level,
+            Level::L3,
+            "compatibility-Level edits cannot change the current audit decision"
+        );
 
         let mut item = cert.clone();
         item.item = "renamed".into();

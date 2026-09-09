@@ -1536,6 +1536,24 @@ reference = ["gates/assurance-v2-replay.py", "lean/Thermite/AssurancePolicyV2.le
 conformance_ops = []
 
 [[route]]
+crate_pattern = "gates/assurance-level-inventory.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-level-inventory.json", "gates/tests/test_assurance_level_inventory.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/assurance-level-inventory.json"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-level-inventory.py", "forge/src/manifest.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_assurance_level_inventory.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/assurance-level-inventory.py", "gates/assurance-level-inventory.json"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "gates/tests/test_assurance_v2_replay.py"
 design = ".design/engineer-assurance-report-and-level-retirement.md"
 reference = ["gates/assurance-v2-replay.py", "gates/assurance-v2-replay.json"]
@@ -1557,6 +1575,18 @@ conformance_ops = []
 crate_pattern = "gates/claim-closure-oracles/assurance-project-composition.json"
 design = ".design/engineer-assurance-report-and-level-retirement.md"
 reference = ["gates/claim-closure-assurance-composition.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-current-assurance.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/claim-closure-oracles/current-assurance-authority.json", "gates/assurance-level-inventory.py", "forge/src/manifest.rs", "forge/src/check.rs", "forge/src/cache.rs", "forge/src/audit.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-oracles/current-assurance-authority.json"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/claim-closure-current-assurance.py"]
 conformance_ops = []
 
 [[route]]

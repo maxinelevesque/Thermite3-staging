@@ -131,6 +131,7 @@ fn divergence_interactive_axiom_allowlist_masked_by_shortname_decoy() {
         .arg("--engine")
         .arg("lean")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output();
     assert!(emit.is_ok(), "forge (skeleton-emit run) invokes");
 
@@ -162,6 +163,7 @@ fn divergence_interactive_axiom_allowlist_masked_by_shortname_decoy() {
         .arg("--engine")
         .arg("lean")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output();
     assert!(replay.is_ok(), "forge (replay run) invokes");
     let stdout = replay

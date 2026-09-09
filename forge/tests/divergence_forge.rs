@@ -46,6 +46,7 @@ fn check_json(src: &str, stem: &str) -> Vec<Value> {
         .arg("check")
         .arg(&fixture)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge");
     let _ = std::fs::remove_file(&fixture);

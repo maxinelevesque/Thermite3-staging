@@ -4,7 +4,7 @@
 tier: 3-component
 status: shipped
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 / AC-8 (#349), the automated Rust→Lean obligation exporter: the change to this doc's governed file (cli.rs) is the additive `forge smt-export [<file>] [--out <path>]` subcommand (`Command::SmtExport` → `run_smt_export`, emitting the `(P_prod) ⟺ (P_ref)` `by smt` Lean theorems + `#print axioms` probes via `lean_smt_export.rs`); every other subcommand + flag parse is unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-21 stage-2 REQ-8 / AC-8 (#330) `forge strat-faithful-tv`; 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `forge strat-tv` + `ForgeError::StratDifferential`; 2026-06-18 umbrella REQ-2c / AC-4 rotating-seed `--seed` flag on `forge tv`; §6 metrics dashboard `--metrics` value)
-audited-content-sha256: 088d3c65986488047dfefb439e4f572b8123144fa3b8d318e86dd6c69f765770 (re-pinned 2026-08-30 for the focused L1-default versus explicit-L3 separation witness; command parsing and success behavior are unchanged. prior: 149378293d85e5428f088ac9f8fb2e73d7cf729093d04ecbd24338c43a588d19)
+audited-content-sha256: ba02b55e18365b18641991afb2e39d814468d0d07c441cff5c107aaf2260f21c (re-pinned 2026-09-08 after final issue #56 schema-current and compatibility-inspection qualification. prior: 9aa748d83d2f1dfec0492975429229bc7417059e824a4f62ff5f17d3590ca816)
 governs: forge/src/cli.rs
 thesis-refs:
   - thermite-design.md §5
@@ -28,6 +28,16 @@ only module that touches `std::env::args` / `std::process::ExitCode`
 (`pub fn run in cli.rs`, consumed by `fn main in main.rs`); most method logic
 lives in the driven modules (`check.rs`, `audit.rs`, `repair.rs`, `review.rs`,
 `build.rs`, `contract_tv.rs`, `exec_tv.rs`, `body_tv.rs`, `goal_repl.rs`).
+
+Issue #56 changes the authority boundary. `check --json` now emits
+schema-current certificate documents that omit the deprecated Level, while
+human output labels its derived rung explicitly as a compatibility view. The
+separate `--legacy-inspection-json` switch is valid only with `--json`; it emits
+an inspect-only schema and a loud warning on every row for frozen compatibility
+oracles. That document has no cache, audit-admission, floor, build, or
+certification input path. Exit decisions and project certification read typed
+`CurrentAssurance`; neither a historical row nor the opt-in compatibility
+projection can become successful CLI authority through its displayed rung.
 
 The public method names, synopses, and short descriptions live in
 `thermite_skill::ForgeMethod`. The parser recognizes its first argument through
@@ -145,7 +155,8 @@ What the old doc never saw, grouped (each verb cites its issue in the code):
 - REQ-8 (`forge check` flag surface + engine routing): `--level l2|l3`
   (explicit rung, never auto-degrade), `--rlimit <FLOAT>` (finite-positive
   validated), `--mutation-floor <FLOAT>` ([0,1] validated), `--engine
-  verus|lean|auto` (#247). `fn run_check in cli.rs` routes: the canonical
+  verus|lean|auto` (#247), and `--legacy-inspection-json` (explicitly
+  inspect-only and rejected without `--json`). `fn run_check in cli.rs` routes: the canonical
   default config → `check::check_file` (the only cache-serving entry); explicit
   `--rlimit`/`--mutation-floor` → `check::check_file_with_options`
   (cache-bypassed); `--engine lean|auto` → `check::check_file_with_engine`

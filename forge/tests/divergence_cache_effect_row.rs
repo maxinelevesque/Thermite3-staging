@@ -82,7 +82,10 @@ fn write_fixture(tag: &str, body: &str) -> PathBuf {
 
 fn run_check(file: &Path, cache_dir: &Path) -> (Option<i32>, Vec<Value>) {
     let mut cmd = Command::new(forge_bin());
-    cmd.arg("check").arg(file).arg("--json");
+    cmd.arg("check")
+        .arg(file)
+        .arg("--json")
+        .arg("--legacy-inspection-json");
     cmd.env("FORGE_CACHE_DIR", cache_dir);
     cmd.env("VERUS_VERSION", PINNED_VERUS_VERSION);
     let out = cmd.output().unwrap_or_else(|e| panic!("spawn forge: {e}"));

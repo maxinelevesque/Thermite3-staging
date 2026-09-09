@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: f09f8ca376257cc1e2543b8ebc9fb771bffd04df (content-sha256 re-pinned 2026-07-29 for stage-3 REQ-1..REQ-9 / gate G3 (#80, crosslink #351): the registry and generated status view carry the fixed-width reconstruction requirements and verified evidence; req-registry.py --check is clean (462 requirements, 119 views). The legacy commit pin remains the f09f8ca3 stable-main ancestor; the active content digest tracks the governed files. prior: 2026-06-21 stage-2 REQ-10 / AC-10 (#332), the pin battery and final gate G2 increment)
-audited-content-sha256: 72482e2266f115631b8e537712ba63103eaa3ae5b0c9f3de79cbb4f4a164d104 (re-pinned 2026-09-08 after the issue #55 requirement explicitly deferred production current-authority integration to issue #56 and regenerated its status view. prior: 8deeefabb94e6fa4416247dd7447fbbb590cd8d787870369d76646fab23e91b4)
+audited-content-sha256: 9e49c8db8ca8859340d193cd054cf1cd318e7c8ae7f148a9ce457e96deea59b1 (re-pinned 2026-09-09 after making file-qualified Rust test evidence resolve exact direct or macro-generated symbols and repairing four stale verified-build pointers with honest behavioral targets. prior: 466898a760cdfc3596fc37724d1f1f2aba6c658bbcad0fe26b37dc1cef5ad6ad)
 governs:
   - .design/reqs/registry.toml
   - .design/reqs/status.md
@@ -84,8 +84,10 @@ stay quiet when no legacy rows are reintroduced.
    tracker references. Other modules reference the owner's entry by ID; they do
    not restate status.
 4. **Typed evidence, not proof by prose.** Evidence has a `kind` and `target`.
-   `file`, `doc`, and `test` targets must resolve as paths; `symbol` targets
-   must resolve in repo text; `issue` targets use tracker-neutral references
+   `file`, `doc`, and `test` targets must resolve as paths. A file-qualified
+   Rust test target (`path.rs::test_name`) must also resolve the exact direct or
+   macro-generated test identifier in that file. `symbol` targets must resolve
+   in repo text; `issue` targets use tracker-neutral references
    (`github:owner/repo#N`, `crosslink:144`, `req:REQ-ID`, or a URI); `command`
    targets must parse, resolve their executable, and resolve repo-path
    arguments. Commands are not executed by this gate.
@@ -197,8 +199,9 @@ scripts that have not switched to the facade.
   per-status validation requirements are declared in registry data, not hard-coded
   by the checker.
 - **REQ-REG-3 (typed evidence validation):** evidence references are mechanically
-  checked at the level this gate can honestly validate: path existence, symbol
-  occurrence, command parseability and executable/path resolution,
+  checked at the level this gate can honestly validate: path existence, exact
+  direct or macro-generated symbols for file-qualified Rust tests, generic
+  symbol occurrence, command parseability and executable/path resolution,
   tracker-neutral ref shape, and `req:` blocker resolution.
 - **REQ-REG-4 (generated status regions):** generated markdown views are rendered
   deterministically from the registry into marked regions, and CI fails when
@@ -216,7 +219,8 @@ scripts that have not switched to the facade.
 - AC-2: an undeclared status fails validation.
 - AC-3: a requirement whose status declares `required_evidence_any` fails without
   at least one matching evidence kind.
-- AC-4: unresolved `file`, `doc`, or `test` evidence fails validation.
+- AC-4: unresolved `file`, `doc`, or `test` evidence fails validation, including
+  stale symbols in file-qualified Rust test targets.
 - AC-5: statuses declaring `requires_blocker` fail without a structurally valid
   blocker; `req:REQ-ID` blockers must resolve to a known registry ID.
 - AC-6: `--check` fails when a generated region differs from renderer output.
@@ -267,9 +271,11 @@ excuse.
 
 ## Known Limits
 
-This registry does not prove semantic adequacy. A symbol can exist without being
-the right symbol; a command can resolve without being executed by this gate; a
-tracker ref can be parseable without being live-resolved unless
+This registry does not prove semantic adequacy. Exact Rust test-symbol
+resolution proves syntactic identity, not that the test establishes the claimed
+property; generic symbols can likewise exist without being the right evidence.
+A command can resolve without being executed by this gate; a tracker ref can be
+parseable without being live-resolved unless
 `--live-issues` is explicitly enabled. Stronger checks require later integration
 with Rust item indexing, CI job metadata, or additional tracker adapters.
 Legacy mappings are likewise structural: they prove that a reviewed old label

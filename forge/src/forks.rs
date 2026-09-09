@@ -301,7 +301,7 @@ fn permille(numerator: usize, denominator: usize) -> u32 {
 mod tests {
     use super::*;
     use crate::burn::BurnReceipt;
-    use crate::manifest::{Level, ObligationResult};
+    use crate::manifest::Level;
 
     fn parse(src: &str) -> Program {
         let parsed = thermite_syntax::parse(src);
@@ -414,15 +414,9 @@ mod tests {
              spec fn b(x: u32) -> bool measures x { x > 0 }\n\
              lemma deep(x: u32) requires true ensures a(x) proof { }",
         );
-        let burned = Certificate::new(
-            "deep",
-            Level::L3,
-            vec!["pure".to_string()],
-            0,
-            vec![ObligationResult::discharged("deep")],
-        )
-        .graduate_triage_clean()
-        .with_burn(BurnReceipt::for_proof_text("trivial"));
+        let burned = Certificate::test_current("deep", Level::L3)
+            .graduate_triage_clean()
+            .with_burn(BurnReceipt::for_proof_text("trivial"));
         let towers = burned_lemma_towers(&[burned], &program);
         assert_eq!(towers.len(), 1, "the certified burned lemma is a tower");
         assert_eq!(towers[0].lemma, "deep");

@@ -73,6 +73,7 @@ fn check_program(tag: &str, program: &str) -> Vec<Value> {
         .arg("check")
         .arg(&fixture)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge");
     let _ = std::fs::remove_file(&fixture);
@@ -332,6 +333,7 @@ fn ac5_string_demo_corpus_unchanged() {
         .arg("check")
         .arg(&demo)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check string_demo");
     let stdout = String::from_utf8_lossy(&out.stdout);

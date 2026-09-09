@@ -47,7 +47,12 @@ fn open_proof_hole_blocks_certification() {
         "cert",
         "lemma add_id(a: u64) requires true ensures a == a proof { ?p0 }",
     );
-    let (cout, cerr, _ok) = run_forge(&["check", th.to_str().unwrap(), "--json"]);
+    let (cout, cerr, _ok) = run_forge(&[
+        "check",
+        th.to_str().unwrap(),
+        "--json",
+        "--legacy-inspection-json",
+    ]);
     let combined = format!("{cout}{cerr}");
     assert!(
         combined.contains("OpenHole"),
@@ -87,7 +92,12 @@ fn hole_free_lemma_is_not_open_hole_rejected() {
         "clean",
         "lemma add_id(a: u64) requires true ensures a == a proof { omega }",
     );
-    let (cout, cerr, _ok) = run_forge(&["check", th.to_str().unwrap(), "--json"]);
+    let (cout, cerr, _ok) = run_forge(&[
+        "check",
+        th.to_str().unwrap(),
+        "--json",
+        "--legacy-inspection-json",
+    ]);
     let combined = format!("{cout}{cerr}");
     assert!(
         !combined.contains("OpenHole"),

@@ -45,7 +45,9 @@ use std::{cell::Cell, thread_local};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::manifest::{Certificate, ObligationStatus};
+use crate::manifest::{
+    Certificate, CertificateDocument, ObligationStatus, PersistedCurrentDisposition,
+};
 
 /// Domain-separation tag prefixed to the whole keyed stream, so a `forge` proof
 /// cache key does not collide with an unrelated sha256 use of the same bytes
@@ -148,7 +150,11 @@ const DOMAIN: &[u8] = b"thermite.forge.proof-cache.v1";
 /// 12 — RFC-11 resource certificates carry checked-flow and kernel-replay
 ///      evidence. Schema-11 rows lack that mandatory authority and must miss
 ///      rather than silently certifying a resource program as an older fragment.
-const CHECK_SCHEMA_VERSION: u32 = 12;
+/// 13 — CurrentAssurance authority replaces the compatibility Level. Cache rows
+///      now contain a schema-current certificate envelope, typed disposition,
+///      and formal authority digest; schema-12 rows are inspectable historical
+///      data only and cannot be re-admitted.
+const CHECK_SCHEMA_VERSION: u32 = 13;
 
 thread_local! {
     static REUSE_SUPPRESSED: Cell<bool> = const { Cell::new(false) };
@@ -329,13 +335,13 @@ struct CacheEntry {
     schema: u32,
     key: String,
     certificate_digest: String,
-    certificate: Certificate,
+    certificate: serde_json::Value,
 }
 
-fn certificate_digest(certificate: &Certificate) -> Option<String> {
+fn certificate_digest(certificate: &serde_json::Value) -> Option<String> {
     let bytes = serde_json::to_vec(certificate).ok()?;
     let mut hasher = Sha256::new();
-    hasher.update(b"thermite-proof-cache-certificate-v1\0");
+    hasher.update(b"thermite-proof-cache-certificate-v2\0");
     hasher.update((bytes.len() as u64).to_le_bytes());
     hasher.update(bytes);
     Some(hex_lower(&hasher.finalize()))
@@ -350,7 +356,29 @@ fn certificate_digest(certificate: &Certificate) -> Option<String> {
 /// panic on the IO error path). The returned cert carries whatever `cached`
 /// value was stored (`store` persists `false`); `check::check_file` sets the
 /// observable `cached: true` via `Certificate::with_cached` on the hit it serves.
-pub fn load(cache_dir: &Path, key: &str) -> Option<Certificate> {
+#[derive(Debug)]
+pub struct CachedCertificate {
+    certificate: Certificate,
+    authority_sha256: String,
+    disposition: PersistedCurrentDisposition,
+}
+
+impl CachedCertificate {
+    #[cfg(test)]
+    pub fn certificate(&self) -> &Certificate {
+        &self.certificate
+    }
+
+    pub fn is_accepted(&self) -> bool {
+        matches!(self.disposition, PersistedCurrentDisposition::Accepted)
+    }
+
+    pub(crate) fn into_parts(self) -> (Certificate, String, PersistedCurrentDisposition) {
+        (self.certificate, self.authority_sha256, self.disposition)
+    }
+}
+
+pub fn load(cache_dir: &Path, key: &str) -> Option<CachedCertificate> {
     if REUSE_SUPPRESSED.with(Cell::get) {
         return None;
     }
@@ -361,10 +389,12 @@ pub fn load(cache_dir: &Path, key: &str) -> Option<Certificate> {
     if entry.schema != CHECK_SCHEMA_VERSION || entry.key != key {
         return None;
     }
-    let cert = entry.certificate;
-    if certificate_digest(&cert).as_deref() != Some(entry.certificate_digest.as_str()) {
+    if certificate_digest(&entry.certificate).as_deref() != Some(entry.certificate_digest.as_str())
+    {
         return None;
     }
+    let document = serde_json::from_value::<CertificateDocument>(entry.certificate).ok()?;
+    let (cert, authority_sha256, disposition) = document.into_current()?;
     // An internally-inconsistent entry is also a miss (blocker #49). A cert
     // produced under a different set of gates than the current `forge` (e.g.
     // stored by a forge before the §7 mutation floor existed) can land under the
@@ -380,7 +410,11 @@ pub fn load(cache_dir: &Path, key: &str) -> Option<Certificate> {
     // gate). This is the load-time half of the soundness guard; the
     // `CHECK_SCHEMA_VERSION` cache-key input is the on-disk-key half.
     if is_internally_consistent(&cert) {
-        Some(cert)
+        Some(CachedCertificate {
+            certificate: cert,
+            authority_sha256,
+            disposition,
+        })
     } else {
         None
     }
@@ -420,16 +454,22 @@ fn is_internally_consistent(cert: &Certificate) -> bool {
 pub fn store(cache_dir: &Path, key: &str, cert: &Certificate) -> std::io::Result<()> {
     std::fs::create_dir_all(cache_dir)?;
     let canonical = cert.clone().with_cached(false);
+    let certificate = serde_json::to_value(
+        canonical
+            .current_document()
+            .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?,
+    )
+    .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
     let entry = CacheEntry {
         schema: CHECK_SCHEMA_VERSION,
         key: key.to_string(),
-        certificate_digest: certificate_digest(&canonical).ok_or_else(|| {
+        certificate_digest: certificate_digest(&certificate).ok_or_else(|| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 "certificate could not be serialized for its cache digest",
             )
         })?,
-        certificate: canonical,
+        certificate,
     };
     let json = serde_json::to_string_pretty(&entry)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
@@ -595,12 +635,21 @@ pub fn store_accessibility(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::manifest::{Certificate, Level, ObligationResult};
+    use crate::manifest::{
+        Certificate, CertificationBoundary, CertificationPosition, CertificationScope,
+        ClassificationCertificate, ClassificationVerdict, Level, LiveResultDisposition,
+        ObligationResult, RefutationChannel, ResidualTrust,
+    };
 
     const VERUS: &str = "verus 0.2024.01.01";
     const THERMITE: &str = "0.1.0";
 
     fn sample_cert(item: &str, level: Level) -> Certificate {
+        assert_eq!(
+            level,
+            Level::L3,
+            "cache fixture only models an accepted proof"
+        );
         Certificate::new(
             item,
             level,
@@ -610,6 +659,21 @@ mod tests {
                 "{item}_check::{item}"
             ))],
         )
+        .with_rfc3_coordinates(
+            CertificationPosition {
+                scope: CertificationScope::All,
+                refutation: RefutationChannel::Incomplete,
+                residual_trust: ResidualTrust::Solver,
+                discharged_trust: vec!["cache-test-proof-v1".into()],
+                boundary: CertificationBoundary::EndToEnd,
+            },
+            ClassificationCertificate {
+                fragment: "cache-test-fragment-v1".into(),
+                verdict: ClassificationVerdict::Admitted,
+            },
+        )
+        .unwrap()
+        .with_live_disposition(LiveResultDisposition::Accepted)
     }
 
     fn unique_test_dir(tag: &str) -> PathBuf {
@@ -754,16 +818,16 @@ mod tests {
         store(&dir, &key, &cert).expect("store");
         let loaded = load(&dir, &key).expect("HIT after store");
         assert_eq!(
-            loaded.oracle_subset(),
+            loaded.certificate().oracle_subset(),
             cert.oracle_subset(),
             "oracle fields round-trip"
         );
         assert!(
-            !loaded.cached,
+            !loaded.certificate().cached,
             "stored cert is canonical fresh-verify (cached:false); provenance is set at serve time"
         );
         assert!(
-            !loaded.is_audit_admitted(),
+            !loaded.certificate().is_audit_admitted(),
             "deserialization cannot restore live-producer audit authority"
         );
         assert!(
@@ -799,14 +863,15 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         let key = cache_key("fn f() {}", 0, VERUS, THERMITE, &pure_row());
         let rejected =
-            Certificate::rejected_weak_contract("f", pure_row(), "1/3".into(), "return 0".into());
+            Certificate::rejected_weak_contract("f", pure_row(), "1/3".into(), "return 0".into())
+                .with_live_disposition(LiveResultDisposition::WeakContract);
         store(&dir, &key, &rejected).expect("store policy reject");
         let path = entry_path(&dir, &key);
         let source = std::fs::read_to_string(&path).expect("read envelope");
         let mut value: serde_json::Value = serde_json::from_str(&source).expect("parse envelope");
-        value["certificate"]["level"] = serde_json::Value::String("L3".into());
-        value["certificate"]["reject"] = serde_json::Value::Null;
-        value["certificate"]["obligations"] = serde_json::Value::Array(Vec::new());
+        value["certificate"]["certificate"]["level"] = serde_json::Value::String("L3".into());
+        value["certificate"]["certificate"]["reject"] = serde_json::Value::Null;
+        value["certificate"]["certificate"]["obligations"] = serde_json::Value::Array(Vec::new());
         std::fs::write(&path, serde_json::to_vec_pretty(&value).unwrap()).expect("edit envelope");
         assert!(
             load(&dir, &key).is_none(),

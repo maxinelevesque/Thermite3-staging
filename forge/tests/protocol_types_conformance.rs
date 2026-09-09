@@ -41,6 +41,7 @@ fn protocol_program_certifies_only_after_formal_replay() {
         .arg("--mutation-floor")
         .arg("0")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge");
     let stdout = String::from_utf8_lossy(&output.stdout);

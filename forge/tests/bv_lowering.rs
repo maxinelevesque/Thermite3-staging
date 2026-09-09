@@ -57,6 +57,7 @@ fn run_bv(example: &str) -> (Option<i32>, Vec<Value>) {
         .arg("bv")
         .arg(&th)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .unwrap_or_else(|e| panic!("spawn forge: {e}"));
     let stdout = String::from_utf8_lossy(&out.stdout);

@@ -23,6 +23,7 @@ fn run_check(path: &std::path::Path) -> (Option<i32>, Vec<Value>, String) {
         .args(["check", "--engine", "bv"])
         .arg(path)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("run forge");
     let stderr = String::from_utf8_lossy(&output.stderr).into_owned();

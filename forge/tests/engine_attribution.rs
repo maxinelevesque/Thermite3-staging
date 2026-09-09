@@ -94,6 +94,7 @@ fn engine_verus_flag_is_byte_identical_oracle() {
         .arg("--engine")
         .arg("verus")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check --engine verus");
     assert_eq!(out.status.code(), Some(0), "a verified sum must exit 0");
@@ -211,6 +212,7 @@ fn engine_lean_attaches_smaller_trust_base_live() {
         .arg("--engine")
         .arg("lean")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check --engine lean");
     let stdout = String::from_utf8_lossy(&out.stdout);

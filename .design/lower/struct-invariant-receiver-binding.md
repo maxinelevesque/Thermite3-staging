@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: a7257e59e28f8bad978f310189e095ae58597b2f02a50aa1640ad6937ff4d30a (re-pinned 2026-08-25 for issue #6 final shared Map lowering changes. prior: 3329cdd885f625f684da2d61487b3598e25e68b6272b806729acf8057351301c)
+audited-content-sha256: 5e0995b875ae397c56167501be1539efc36a605f1f32d9cb92b98c1fb0f0fe63 (re-pinned 2026-09-08 after issue #56 compatibility-inspection test migration; receiver-binding behavior is unchanged. prior: a7257e59e28f8bad978f310189e095ae58597b2f02a50aa1640ad6937ff4d30a)
 decision: qualify invariant field paths in the canonical invariant lowerer
 issue: github:dollspace-gay/Thermite#110
 governs:

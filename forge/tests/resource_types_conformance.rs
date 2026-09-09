@@ -42,6 +42,7 @@ fn resource_program_receives_only_a_resource_aware_certificate() {
         .arg("check")
         .arg(fixture())
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge");
     let stdout = String::from_utf8_lossy(&output.stdout);

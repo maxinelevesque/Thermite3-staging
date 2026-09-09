@@ -62,14 +62,14 @@ use crate::manifest::{
     RefutationChannel, ResidualTrust,
 };
 
-/// The parsed result of one Kani run: the assurance level (L2 on success, L0 on a
-/// reported counterexample) plus the per-obligation results (REQ-5) and the
-/// wall-clock solver time (excluded from the cert oracle, REQ-9).
+/// The parsed result of one Kani run: a typed bounded-check verdict plus the
+/// per-obligation results (REQ-5) and wall-clock solver time (excluded from the
+/// cert oracle, REQ-9). Compatibility `Level` is derived only when constructing
+/// the legacy-facing certificate projection; it is never the decision input.
 #[derive(Debug, Clone)]
 pub struct L2Result {
-    /// `Level::L2` on `verification:- successful`; `Level::L0` on a reported
-    /// counterexample (a non-L2 result, not a false pass, REQ-5/§6).
-    pub level: Level,
+    /// Closed semantic outcome of the bounded run.
+    pub verdict: L2Verdict,
     /// Exact Kani exploration bound supplied to the run. This is formal input,
     /// not reconstructed from the human-readable obligation message.
     pub bound: String,
@@ -89,7 +89,7 @@ pub struct L2Result {
 /// success obligation so the certificate states the bound (REQ-6).
 ///
 /// A reachable contract `assert!` failure is not an `Err`: it is a valid
-/// [`L2Result`] at `Level::L0` carrying the counterexample (REQ-5). Only an
+/// rejected [`L2Result`] carrying the counterexample (REQ-5). Only an
 /// environment / internal failure (kani absent, unparseable output) is an `Err`
 /// (R-CODE-4: a subprocess failure is surfaced, not swallowed into a false pass).
 pub fn run_kani(
@@ -270,7 +270,7 @@ fn parse_kani_output_with_fragment(
         // Verified up to bound → L2, with one discharged obligation recording the
         // bound caveat (REQ-6 / AC-6).
         return Ok(L2Result {
-            level: Level::L2,
+            verdict: L2Verdict::Verified,
             bound: bound.to_string(),
             classification: kani_classification(classifier_fragment),
             obligations: vec![ObligationResult::discharged(format!(
@@ -293,8 +293,9 @@ fn parse_kani_output_with_fragment(
     } else {
         failures
     };
+    let verdict = classify_failed_obligations(&obligations);
     Ok(L2Result {
-        level: Level::L0,
+        verdict,
         bound: bound.to_string(),
         classification: kani_classification(classifier_fragment),
         obligations,
@@ -398,8 +399,8 @@ fn first_lines(text: &str, n: usize) -> String {
 /// the timeout-vs-counterexample split is #11's `SolverProfile`-presence
 /// discriminator; at L2 the discriminator is the shape of the kani failure:
 ///
-/// - [`L2Verdict::Verified`]: `verification:- successful` (`L2Result` is
-///   `Level::L2`) → the ladder certifies L2.
+/// - [`L2Verdict::Verified`]: `verification:- successful` → the ladder
+///   certifies the bounded claim.
 /// - [`L2Verdict::UnderBound`]: a `verification:- FAILED` whose only failed
 ///   obligations are `unwinding assertion` (kani ran out of unwind / could not
 ///   bound the loop, the L2 analog of a timeout, inconclusive). The ladder
@@ -426,8 +427,8 @@ pub enum L2Verdict {
 }
 
 /// Classify an [`L2Result`] for the degrade ladder (issue #10 OQ-2). Splits the
-/// `Level::L0` kani-failure bucket into an inconclusive under-bound (degrade to
-/// L1) and a real counterexample (hard fail), per [`L2Verdict`]. The under-bound
+/// Kani failure bucket into an inconclusive under-bound (degrade) and a real
+/// counterexample (hard fail), per [`L2Verdict`]. The under-bound
 /// discriminator is the grounded kani text `unwinding assertion` (the
 /// `under_bound_is_reported_failure` shape): a failure whose every failed
 /// obligation is an unwinding assertion is the bound running out; any other failed
@@ -435,11 +436,11 @@ pub enum L2Verdict {
 /// parseable failed obligation at all, is a counterexample (conservative,
 /// R-DEFER-9). Consumer: `degrade::run_ladder`.
 pub fn classify_l2_outcome(result: &L2Result) -> L2Verdict {
-    if result.level == Level::L2 {
-        return L2Verdict::Verified;
-    }
-    let failed: Vec<&ObligationResult> = result
-        .obligations
+    result.verdict
+}
+
+fn classify_failed_obligations(obligations: &[ObligationResult]) -> L2Verdict {
+    let failed: Vec<&ObligationResult> = obligations
         .iter()
         .filter(|o| o.status == ObligationStatus::Failed)
         .collect();
@@ -479,45 +480,64 @@ fn is_under_bound_failure(description: &str) -> bool {
 /// recorded in the obligations. Consumer: `check::check_l2_file`.
 // ASSURANCE_V2_ISSUER bounded assemble_l2_certificate
 pub fn assemble_l2_certificate(item: &str, effects: Vec<String>, result: &L2Result) -> Certificate {
-    let cert = Certificate::new(
+    let compatibility_level = match result.verdict {
+        L2Verdict::Verified => Level::L2,
+        L2Verdict::UnderBound | L2Verdict::Counterexample => Level::L0,
+    };
+    let mut cert = Certificate::new(
         item,
-        result.level,
+        compatibility_level,
         effects,
         result.solver_time_ms,
         result.obligations.clone(),
     );
-    if result.level != Level::L2 {
-        return cert
-            .with_rfc3_coordinates(
-                CertificationPosition {
-                    scope: CertificationScope::None,
-                    refutation: RefutationChannel::None,
-                    residual_trust: ResidualTrust::Fiat,
-                    discharged_trust: Vec::new(),
-                    boundary: CertificationBoundary::EndToEnd,
-                },
-                result.classification.clone(),
-            )
-            .expect("the Kani failure position and pre-discharge classification are coherent");
+    if result.verdict == L2Verdict::UnderBound {
+        cert.reject = Some(crate::manifest::RejectReason {
+            cause: "KaniUnderBound".into(),
+            detail: format!(
+                "bounded model checking did not complete within `{}`; this is inconclusive, not a property refutation",
+                result.bound
+            ),
+        });
     }
-    assert!(
-        !result.bound.trim().is_empty(),
-        "an L2 result must carry its exact non-empty Kani bound"
-    );
-    let bound = result.bound.clone();
-    cert.with_rfc3_coordinates(
-        CertificationPosition {
-            scope: CertificationScope::Bounded {
-                bound: bound.clone(),
+    let cert = if result.verdict != L2Verdict::Verified {
+        cert.with_rfc3_coordinates(
+            CertificationPosition {
+                scope: CertificationScope::None,
+                refutation: RefutationChannel::None,
+                residual_trust: ResidualTrust::Fiat,
+                discharged_trust: Vec::new(),
+                boundary: CertificationBoundary::EndToEnd,
             },
-            refutation: RefutationChannel::Trace { bound },
-            residual_trust: ResidualTrust::Solver,
-            discharged_trust: Vec::new(),
-            boundary: CertificationBoundary::EndToEnd,
-        },
-        result.classification.clone(),
-    )
-    .expect("the Kani bounded/trace position is coherent by construction")
+            result.classification.clone(),
+        )
+        .expect("the Kani failure position and pre-discharge classification are coherent")
+    } else {
+        assert!(
+            !result.bound.trim().is_empty(),
+            "an L2 result must carry its exact non-empty Kani bound"
+        );
+        let bound = result.bound.clone();
+        cert.with_rfc3_coordinates(
+            CertificationPosition {
+                scope: CertificationScope::Bounded {
+                    bound: bound.clone(),
+                },
+                refutation: RefutationChannel::Trace { bound },
+                residual_trust: ResidualTrust::Solver,
+                discharged_trust: Vec::new(),
+                boundary: CertificationBoundary::EndToEnd,
+            },
+            result.classification.clone(),
+        )
+        .expect("the Kani bounded/trace position is coherent by construction")
+    };
+    let disposition = match result.verdict {
+        L2Verdict::Verified => crate::manifest::LiveResultDisposition::Accepted,
+        L2Verdict::UnderBound => crate::manifest::LiveResultDisposition::EngineUnknown,
+        L2Verdict::Counterexample => crate::manifest::LiveResultDisposition::Refuted,
+    };
+    cert.with_live_disposition(disposition)
 }
 
 #[cfg(test)]
@@ -533,7 +553,7 @@ mod tests {
     fn success_terse_is_l2() {
         let stdout = "Checking harness check_sum...\n\nVERIFICATION RESULT:\n ** 0 of 38 failed\n\nVERIFICATION:- SUCCESSFUL\n";
         let r = parse_kani_output(stdout, "", Some(0), BOUND, 7).expect("parse");
-        assert_eq!(r.level, Level::L2);
+        assert_eq!(r.verdict, L2Verdict::Verified);
         assert_eq!(r.obligations.len(), 1);
         assert_eq!(r.obligations[0].status, ObligationStatus::Discharged);
         assert!(
@@ -550,7 +570,7 @@ mod tests {
     fn failure_terse_is_counterexample() {
         let stdout = " ** 1 of 38 failed\nFailed Checks: assertion failed: result == spec_sum(xs)\n File: \"src/lib.rs\", line 22, in check_sum\n\nVERIFICATION:- FAILED\n";
         let r = parse_kani_output(stdout, "", Some(1), BOUND, 3).expect("parse");
-        assert_eq!(r.level, Level::L0);
+        assert_eq!(r.verdict, L2Verdict::Counterexample);
         let failed: Vec<_> = r
             .obligations
             .iter()
@@ -572,7 +592,7 @@ mod tests {
     fn under_bound_is_reported_failure() {
         let stdout = " ** 3 of 82 failed (79 undetermined)\nFailed Checks: unwinding assertion loop 0\nFailed Checks: unwinding assertion loop 0\nFailed Checks: unwinding assertion loop 0\nVERIFICATION:- FAILED\n";
         let r = parse_kani_output(stdout, "", Some(1), BOUND, 1).expect("parse");
-        assert_eq!(r.level, Level::L0, "under-bound is NOT a false L2 pass");
+        assert_eq!(r.verdict, L2Verdict::UnderBound);
         let failed: Vec<_> = r
             .obligations
             .iter()
@@ -660,7 +680,7 @@ mod tests {
     #[test]
     fn classify_l2_successful_is_verified() {
         let r = L2Result {
-            level: Level::L2,
+            verdict: L2Verdict::Verified,
             bound: "unwind 5".to_string(),
             classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::discharged("bounded model check passed")],
@@ -675,7 +695,7 @@ mod tests {
     #[test]
     fn classify_l2_unwinding_assertion_is_under_bound() {
         let r = L2Result {
-            level: Level::L0,
+            verdict: L2Verdict::UnderBound,
             bound: "unwind 2".to_string(),
             classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::failed(
@@ -698,7 +718,7 @@ mod tests {
     #[test]
     fn classify_l2_real_assertion_is_counterexample() {
         let r = L2Result {
-            level: Level::L0,
+            verdict: L2Verdict::Counterexample,
             bound: "unwind 5".to_string(),
             classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::failed(
@@ -725,7 +745,7 @@ mod tests {
     #[test]
     fn classify_l2_assertion_with_unwind_substring_is_counterexample() {
         let r = L2Result {
-            level: Level::L0,
+            verdict: L2Verdict::Counterexample,
             bound: "unwind 5".to_string(),
             classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::failed(
@@ -751,7 +771,7 @@ mod tests {
     #[test]
     fn classify_l2_mixed_failure_is_counterexample() {
         let r = L2Result {
-            level: Level::L0,
+            verdict: L2Verdict::Counterexample,
             bound: "unwind 5".to_string(),
             classification: kani_classification("thermite-kani-v1"),
             obligations: vec![
@@ -769,7 +789,7 @@ mod tests {
     #[test]
     fn classify_l2_ambiguous_failure_is_counterexample() {
         let r = L2Result {
-            level: Level::L0,
+            verdict: L2Verdict::Counterexample,
             bound: "unwind 5".to_string(),
             classification: kani_classification("thermite-kani-v1"),
             obligations: vec![],
@@ -784,7 +804,7 @@ mod tests {
     #[test]
     fn bound_recorded_on_l2_cert() {
         let res = L2Result {
-            level: Level::L2,
+            verdict: L2Verdict::Verified,
             bound: BOUND.to_string(),
             classification: kani_classification("thermite-kani-v1"),
             obligations: vec![ObligationResult::discharged(format!(
@@ -793,8 +813,12 @@ mod tests {
             solver_time_ms: 9,
         };
         let cert = assemble_l2_certificate("sum", vec!["pure".to_string()], &res);
-        assert_eq!(cert.level, Level::L2);
-        assert_ne!(cert.level, Level::L3);
+        assert!(matches!(
+            cert.current_assurance(),
+            Ok(crate::manifest::CurrentAssurance::Accepted { .. })
+        ));
+        assert_eq!(cert.compatibility_level(), Level::L2);
+        assert_ne!(cert.compatibility_level(), Level::L3);
         assert!(cert.obligations[0].name.contains("slice <= 4, unwind 5"));
         let position = cert.certification.expect("L2 must carry RFC-3 coordinates");
         assert_eq!(
@@ -819,6 +843,48 @@ mod tests {
     }
 
     #[test]
+    fn l2_nonclaims_have_typed_current_dispositions() {
+        let under_bound = L2Result {
+            verdict: L2Verdict::UnderBound,
+            bound: BOUND.to_string(),
+            classification: kani_classification("thermite-kani-v1"),
+            obligations: vec![ObligationResult::failed(
+                "unwinding assertion loop 0",
+                None,
+                None,
+            )],
+            solver_time_ms: 3,
+        };
+        let under_bound = assemble_l2_certificate("sum", vec!["pure".to_string()], &under_bound);
+        assert!(matches!(
+            under_bound.current_assurance(),
+            Ok(crate::manifest::CurrentAssurance::NonClaim {
+                disposition: crate::manifest::CurrentDisposition::EngineUnknown
+            })
+        ));
+
+        let counterexample = L2Result {
+            verdict: L2Verdict::Counterexample,
+            bound: BOUND.to_string(),
+            classification: kani_classification("thermite-kani-v1"),
+            obligations: vec![ObligationResult::failed(
+                "assertion failed: result == spec_sum(xs)",
+                Some("src/lib.rs:22".to_string()),
+                None,
+            )],
+            solver_time_ms: 3,
+        };
+        let counterexample =
+            assemble_l2_certificate("sum", vec!["pure".to_string()], &counterexample);
+        assert!(matches!(
+            counterexample.current_assurance(),
+            Ok(crate::manifest::CurrentAssurance::NonClaim {
+                disposition: crate::manifest::CurrentDisposition::Refuted
+            })
+        ));
+    }
+
+    #[test]
     fn pre_discharge_classification_is_identical_on_success_and_failure() {
         let success = parse_kani_output("VERIFICATION:- SUCCESSFUL", "", Some(0), BOUND, 1)
             .expect("success result");
@@ -832,7 +898,7 @@ mod tests {
         .expect("failure result");
         assert_eq!(success.classification, failure.classification);
         let failure_cert = assemble_l2_certificate("f", vec!["pure".to_string()], &failure);
-        assert_eq!(failure_cert.level, Level::L0);
+        assert_eq!(failure_cert.compatibility_level(), Level::L0);
         assert_eq!(
             failure_cert.classification,
             Some(kani_classification("thermite-kani-v1"))

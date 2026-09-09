@@ -152,7 +152,7 @@ forge_methods! {
     }
     Check {
         name: "check",
-        usage: "forge check <file> [--json] [--level l2|l3] [--rlimit FLOAT] [--mutation-floor FLOAT] [--engine auto|verus|lean|nlsat|forge|bv]",
+        usage: "forge check <file> [--json] [--legacy-inspection-json] [--level l2|l3] [--rlimit FLOAT] [--mutation-floor FLOAT] [--engine auto|verus|lean|nlsat|forge|bv]",
         purpose: "Certify; auto-routes eligible BV and EPR clauses.",
     }
     Audit {

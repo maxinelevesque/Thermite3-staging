@@ -144,6 +144,7 @@ fn divergence_interactive_indented_command_escapes_allowlist() {
         .arg("--engine")
         .arg("lean")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output();
     assert!(emit.is_ok(), "forge (skeleton-emit run) invokes");
 
@@ -176,6 +177,7 @@ fn divergence_interactive_indented_command_escapes_allowlist() {
         .arg("--engine")
         .arg("lean")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output();
     assert!(replay.is_ok(), "forge (replay run) invokes");
     let stdout = replay

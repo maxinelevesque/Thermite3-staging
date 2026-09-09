@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: 30367de6bd97cda58eee6d85ce8a8e1f338f1a3d84af589add6b2e00a36d87df (re-pinned 2026-08-30 for focused Wave 12 claim discriminators in shared verified-build test modules; kernel-byte behavior is unchanged. prior: 4efce380371c518d1bccc78c915458a8071156b98717ace869407721b7e76a64)
+audited-content-sha256: e34c32d848110d6884e3d532179629c8f95d324080fd774c0aeead13f4370654 (re-pinned 2026-09-08 after final issue #56 authority consumption and portable Apple final-link qualification. prior: a79a94e9b0aaec4e4b1264afd658eb454334f671fd14e44b076725205a4db407)
 decision: explicit pinned vstd proof-model import plus deterministic no_std erased link metadata
 issue: github:dollspace-gay/Thermite#108
 governs:

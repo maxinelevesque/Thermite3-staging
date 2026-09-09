@@ -55,6 +55,7 @@ fn check_corpus(name: &str) -> Vec<Value> {
         .arg("check")
         .arg(&path)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge");
     let stdout = String::from_utf8_lossy(&out.stdout);

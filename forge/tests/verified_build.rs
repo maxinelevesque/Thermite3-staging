@@ -5,7 +5,19 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-const INCOMPATIBLE_RUSTUP_TOOLCHAIN: &str = "1.96.0-x86_64-unknown-linux-gnu";
+fn host_triple() -> String {
+    let output = Command::new("rustc").arg("-vV").output().unwrap();
+    assert_success(&output);
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .find_map(|line| line.strip_prefix("host: "))
+        .expect("rustc -vV exposes its host triple")
+        .to_string()
+}
+
+fn incompatible_rustup_toolchain() -> String {
+    format!("stable-{}", host_triple())
+}
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -26,7 +38,7 @@ fn forge_with_incompatible_host_rustc(args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_forge"))
         .args(args)
         .current_dir(root())
-        .env("RUSTUP_TOOLCHAIN", INCOMPATIBLE_RUSTUP_TOOLCHAIN)
+        .env("RUSTUP_TOOLCHAIN", incompatible_rustup_toolchain())
         .output()
         .unwrap()
 }
@@ -50,8 +62,15 @@ fn codegen_rustc(bundle: &Path) -> Command {
 
 fn incompatible_rustc() -> Command {
     let mut command = Command::new("rustup");
-    command.args(["run", INCOMPATIBLE_RUSTUP_TOOLCHAIN, "rustc"]);
+    command.args(["run", &incompatible_rustup_toolchain(), "rustc"]);
     command
+}
+
+fn configure_freestanding_link(command: &mut Command) {
+    command.args(["-C", "panic=abort", "-C", "link-arg=-nostartfiles"]);
+    if cfg!(target_vendor = "apple") {
+        command.args(["-C", "link-arg=-Wl,-e,__start", "-C", "link-arg=-lSystem"]);
+    }
 }
 
 struct TempDir(PathBuf);
@@ -131,18 +150,18 @@ fn hosted_bundle_is_exact_private_linkable_tamper_evident_and_reproducible() {
     ]));
 
     let toolchain = toolchain_evidence(&bundle_a);
-    assert_eq!(
-        toolchain["artifact_codegen"]["rustup_toolchain"],
-        "1.95.0-x86_64-unknown-linux-gnu"
-    );
+    assert!(toolchain["artifact_codegen"]["rustup_toolchain"]
+        .as_str()
+        .unwrap()
+        .starts_with("1.95.0-"));
     assert!(toolchain["artifact_codegen"]["rustc_version"]
         .as_str()
         .unwrap()
         .contains("release: 1.95.0"));
-    assert!(toolchain["host_rustc"]["rustc_version"]
-        .as_str()
-        .unwrap()
-        .contains("release: 1.96.0"));
+    assert_ne!(
+        toolchain["host_rustc"]["rustc_version"], toolchain["artifact_codegen"]["rustc_version"],
+        "the conformance run must exercise an ambient/codegen compiler mismatch"
+    );
     assert_eq!(
         toolchain["environment"]["RUSTUP_TOOLCHAIN"],
         toolchain["artifact_codegen"]["rustup_toolchain"]
@@ -159,6 +178,10 @@ fn hosted_bundle_is_exact_private_linkable_tamper_evident_and_reproducible() {
             "missing codegen digest `{field}`"
         );
     }
+    assert!(matches!(
+        toolchain["artifact_codegen"]["llvm_linkage"].as_str(),
+        Some("shared_library" | "embedded_in_rustc_driver")
+    ));
 
     let source = fs::read_to_string(bundle_a.join("evidence/source.verus.rs")).unwrap();
     assert!(source.contains("pub fn identity"));
@@ -299,7 +322,7 @@ fn hosted_bundle_is_exact_private_linkable_tamper_evident_and_reproducible() {
             "evidence/toolchain.json",
             (|value: &mut serde_json::Value| {
                 value["artifact_codegen"]["rustup_toolchain"] =
-                    serde_json::Value::String(INCOMPATIBLE_RUSTUP_TOOLCHAIN.to_string());
+                    serde_json::Value::String("1.96.0-incompatible-target".to_string());
             }) as fn(&mut serde_json::Value),
         ),
         (
@@ -483,12 +506,12 @@ fn kernel_bundle_final_links_into_a_separate_no_std_consumer() {
     assert!(!source.contains("use vstd::"));
 
     let consumer = temp.0.join("kernel-consumer");
-    let output = codegen_rustc(&bundle)
-        .current_dir(root())
-        .args([
-            "--edition=2021",
-            "conformance/verified-build/kernel_consumer.rs",
-        ])
+    let mut output = codegen_rustc(&bundle);
+    output.current_dir(root()).args([
+        "--edition=2021",
+        "conformance/verified-build/kernel_consumer.rs",
+    ]);
+    output
         .arg("--extern")
         .arg(format!(
             "kernel_identity={}",
@@ -498,21 +521,18 @@ fn kernel_bundle_final_links_into_a_separate_no_std_consumer() {
         .arg(format!(
             "dependency={}",
             bundle.join("artifact/deps").display()
-        ))
-        .args(["-C", "panic=abort", "-C", "link-arg=-nostartfiles"])
-        .arg("-o")
-        .arg(&consumer)
-        .output()
-        .unwrap();
+        ));
+    configure_freestanding_link(&mut output);
+    let output = output.arg("-o").arg(&consumer).output().unwrap();
     assert_success(&output);
     assert!(consumer.is_file());
 
-    let incompatible = incompatible_rustc()
-        .current_dir(root())
-        .args([
-            "--edition=2021",
-            "conformance/verified-build/kernel_consumer.rs",
-        ])
+    let mut incompatible = incompatible_rustc();
+    incompatible.current_dir(root()).args([
+        "--edition=2021",
+        "conformance/verified-build/kernel_consumer.rs",
+    ]);
+    incompatible
         .arg("--extern")
         .arg(format!(
             "kernel_identity={}",
@@ -522,8 +542,9 @@ fn kernel_bundle_final_links_into_a_separate_no_std_consumer() {
         .arg(format!(
             "dependency={}",
             bundle.join("artifact/deps").display()
-        ))
-        .args(["-C", "panic=abort", "-C", "link-arg=-nostartfiles"])
+        ));
+    configure_freestanding_link(&mut incompatible);
+    let incompatible = incompatible
         .arg("-o")
         .arg(temp.0.join("incompatible-kernel-consumer"))
         .output()
@@ -643,7 +664,10 @@ fn every_bad_body_mutation_is_source_located_and_publishes_nothing() {
         let stdout = String::from_utf8_lossy(&output.stdout);
         assert!(stdout.contains("certificates"), "{class}: {stdout}");
         assert!(stdout.contains("Thermite bytes"), "{class}: {stdout}");
-        assert!(stdout.contains("error:"), "{class}: {stdout}");
+        assert!(
+            stdout.contains("current non-claim (Refuted)"),
+            "{class}: {stdout}"
+        );
     }
 }
 
@@ -984,15 +1008,27 @@ fn parallelized_case_inventories_are_frozen() {
 }
 
 #[test]
-fn every_non_l3_certificate_class_blocks_publication() {
+fn every_certificate_below_verified_build_floor_blocks_publication() {
     let temp = TempDir::new("certificate-matrix");
     for (fault, expected) in [
-        ("certificate-l1", "L1"),
-        ("certificate-l2", "L2"),
-        ("certificate-timeout", "degraded"),
-        ("certificate-counterexample", "L0"),
-        ("certificate-rejected", "rejected"),
-        ("certificate-failed-obligation", "failed obligation"),
+        (
+            "certificate-runtime",
+            "does not meet the solver-incomplete verified-build floor",
+        ),
+        (
+            "certificate-bounded",
+            "does not meet the solver-incomplete verified-build floor",
+        ),
+        (
+            "certificate-timeout-degrade",
+            "current non-claim (TimeoutDegrade)",
+        ),
+        ("certificate-counterexample", "current non-claim (Refuted)"),
+        ("certificate-rejected", "current non-claim (Refuted)"),
+        (
+            "certificate-failed-obligation",
+            "current non-claim (Refuted)",
+        ),
         ("certificate-missing", "missing"),
     ] {
         let bundle = temp.0.join(format!("{fault}.verified"));

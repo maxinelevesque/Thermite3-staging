@@ -99,6 +99,7 @@ fn run_check_floor0(file: &Path) -> (Option<i32>, Vec<Value>, String) {
         .arg("check")
         .arg(file)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .arg("--mutation-floor")
         .arg("0")
         .output()

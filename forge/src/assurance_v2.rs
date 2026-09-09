@@ -43,9 +43,9 @@ enum BoundaryKeyV2 {
     ToPlatform { platform: String },
 }
 
-/// Canonical replay model of the entire formal authority projection. This is
-/// not yet a `Certificate` field: issue #56 performs that atomic authority
-/// migration. Its shape pins what the future digest must cover.
+/// Metatheory fixture for the complete formal authority projection. Production
+/// issue #56 authority is serialized by `manifest::FormalAuthorityRecordV2`;
+/// this independent shape keeps the digest/presentation separation laws pinned.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 struct FormalAuthorityRecordV2 {
     subject: String,
@@ -163,7 +163,7 @@ pub fn lower_bound_frontier(left: AssuranceKindV2, right: AssuranceKindV2) -> Ve
         .collect()
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct AntichainNf(u8);
 
 impl AntichainNf {
@@ -446,12 +446,12 @@ pub struct ClaimProvenanceV2 {
     pub evidence_identities: Vec<String>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ItemClaimSetV2 {
-    pub item: ProjectItemIdentityV2,
-    pub claim_fiber: ClaimFiberAddressV2,
+    item: ProjectItemIdentityV2,
+    claim_fiber: ClaimFiberAddressV2,
     normal: AntichainNf,
-    pub provenance: ClaimProvenanceV2,
+    provenance: ClaimProvenanceV2,
     heterogeneous: bool,
 }
 
@@ -535,6 +535,25 @@ impl PortfolioLiftV2 {
 }
 
 impl ItemClaimSetV2 {
+    pub fn item(&self) -> &ProjectItemIdentityV2 {
+        &self.item
+    }
+
+    pub fn claim_fiber(&self) -> &ClaimFiberAddressV2 {
+        &self.claim_fiber
+    }
+
+    pub fn provenance(&self) -> &ClaimProvenanceV2 {
+        &self.provenance
+    }
+
+    /// Maximal generators of this exact downset. Consumers compare or impose
+    /// floors through these V2 policy points; no scalar representative is
+    /// invented for heterogeneous or incomparable conjunctions.
+    pub fn frontier(&self) -> Vec<AssuranceKindV2> {
+        self.normal.frontier()
+    }
+
     pub fn homogeneous(
         item: ProjectItemIdentityV2,
         claim_fiber: ClaimFiberAddressV2,
@@ -554,6 +573,26 @@ impl ItemClaimSetV2 {
             },
             heterogeneous: false,
         })
+    }
+
+    /// Conjoin additional, independently evidenced premises into this item's
+    /// claim set. Each premise contributes its downset, so conjunction is exact
+    /// intersection rather than a minimum over a legacy scalar ladder.
+    pub fn conjoin(
+        mut self,
+        premises: &[(AssuranceKindV2, String)],
+    ) -> Result<Self, CompositionError> {
+        for (kind, evidence_identity) in premises {
+            nonempty(evidence_identity, "conjunct evidence identity")?;
+            self.normal = self
+                .normal
+                .intersect(AntichainNf::from_generators(&[*kind]));
+            self.provenance
+                .evidence_identities
+                .push(evidence_identity.clone());
+            self.heterogeneous = true;
+        }
+        Ok(self)
     }
 
     /// A heterogeneous portfolio has no singular representative position.

@@ -135,7 +135,8 @@ fn run_check(
         .arg(file)
         .arg("--engine")
         .arg("verus")
-        .arg("--json");
+        .arg("--json")
+        .arg("--legacy-inspection-json");
     cmd.env("FORGE_CACHE_DIR", cache_dir);
     cmd.env("VERUS_VERSION", PINNED_VERUS_VERSION);
     for (k, v) in extra_env {

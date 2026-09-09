@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (cache.rs) is the additive REQ-9 measures wf accessibility-proof cache (AccessibilityProof + accessibility_cache_key + load/store, a separate wf- on-disk namespace, CHECK_SCHEMA_VERSION-invalidated like the per-item cache); the per-item proof cache is byte-identical (REQ-S1-9). prior: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab)
-audited-content-sha256: 1eace6d0305d111514bd4b255f60343182c642154db9e1dcd646496acc7e7f67 (re-pinned 2026-08-16 for schema 11 key/digest-bound private cache envelopes and fail-closed typed result decoding. prior: f460e5861b19c0d4f1cd2159987fb515c9de598e2587ce9f8ece67b8fbaf882c)
+audited-content-sha256: e513cf540a66192b57e2c0295b0f82bb583775a5c957ae9bbeef4448a9c32682 (re-pinned 2026-09-08 for issue #56 schema-13 current documents, persisted authority digests, and fail-closed replay. prior: 1eace6d0305d111514bd4b255f60343182c642154db9e1dcd646496acc7e7f67)
 governs: forge/src/cache.rs
 thesis-refs:
   - thermite-design.md §5.3
@@ -35,6 +35,14 @@ store/load pair, and the additive `cached` field, consumed by
 table below is the per-REQ evidence, and the **Post-pin amendments** section
 records what the four commits since the bootstrap pin changed (re-audited,
 #262).
+
+Issue #56 advances the main-item cache to schema 13. A stored row contains a
+schema-current certificate document, persisted typed disposition, and formal
+authority digest. Loading yields a `CachedCertificate` that remains incapable
+of live audit authority and can be re-admitted only after the caller matches the
+fresh artifact and validates the persisted authority tuple. Schema-12 and
+unversioned rows are historical misses; editing the compatibility Level,
+portfolio, disposition, or envelope makes the row fail closed.
 
 ## Post-pin amendments (re-audited 2026-06-12, #262)
 

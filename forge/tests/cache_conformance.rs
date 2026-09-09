@@ -91,7 +91,10 @@ fn run_check(
     extra_env: &HashMap<String, String>,
 ) -> (Option<i32>, Vec<Value>) {
     let mut cmd = Command::new(forge_bin());
-    cmd.arg("check").arg(file).arg("--json");
+    cmd.arg("check")
+        .arg(file)
+        .arg("--json")
+        .arg("--legacy-inspection-json");
     cmd.env("FORGE_CACHE_DIR", cache_dir);
     cmd.env("VERUS_VERSION", PINNED_VERUS_VERSION);
     for (k, v) in extra_env {
@@ -243,6 +246,7 @@ fn cold_cache_with_verus_unavailable_is_environment_error() {
         .arg("check")
         .arg(&fixture)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .env("FORGE_CACHE_DIR", &cache_dir)
         .env("VERUS_VERSION", PINNED_VERUS_VERSION)
         .env("PATH", "")

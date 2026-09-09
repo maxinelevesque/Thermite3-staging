@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: f7ce928d81d840d249d6eb117add9080b43c2b876f761dd3e017f032b69d294b (re-pinned 2026-08-30 for focused Wave 12 verified-build and composition witnesses; Verus error accounting is unchanged. prior: 976b3b94376c83db633f70993af46ea67f8f1e7d949efa674f5ff736d6f876c1)
+audited-content-sha256: 37769e2e486827184c2512c796ac868c2f523f0b0027e24eeb1368fc21ff6ad9 (re-pinned 2026-09-08 after final issue #56 current-authority and portable verified-build qualification; Verus error accounting is unchanged. prior: 3e1af32ad87af8bf420559c6e98633533999e89ef81109f751d94483649c785d)
 decision: preserve verifier counts when present and represent frontend counts as unknown
 issue: github:dollspace-gay/Thermite#111
 governs:

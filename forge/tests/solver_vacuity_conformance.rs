@@ -134,6 +134,7 @@ fn run_check_json(file: &Path) -> (Option<i32>, Vec<Value>) {
         .arg("check")
         .arg(file)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .env("FORGE_CACHE_DIR", &cache_dir)
         .output()
         .unwrap_or_else(|e| panic!("spawn forge: {e}"));

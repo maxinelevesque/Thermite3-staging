@@ -20,13 +20,19 @@ use thermite_syntax::{
     Block, Effect, EffectRow, Expr, ForgeItem, Item, PrimType, Program, Stmt, Type,
 };
 
+use crate::assurance_v2::{assurance_kind_leq, AssuranceKindV2};
 use crate::body_tv::{BodyTvReport, BodyVerdict};
 use crate::check::{self, DEFAULT_RLIMIT, DEFAULT_SOLVER_SEED};
 use crate::cli::ForgeError;
 use crate::closure::{self, VerifiedClosure};
 use crate::contract_tv::{ClauseVerdict, TvReport};
 use crate::exec_tv::{ExecTvReport, ExecVerdict};
-use crate::manifest::{AssuranceScope, Certificate, Level, ObligationStatus};
+use crate::manifest::{
+    AssuranceScope, Certificate, CertificateDocument, CertificationBoundary, CertificationPosition,
+    CertificationScope, ClassificationCertificate, ClassificationVerdict, CurrentAssurance,
+    CurrentClaim, Level, LiveResultDisposition, ObligationStatus, RefutationChannel, RejectReason,
+    ResidualTrust,
+};
 
 mod composition;
 
@@ -499,6 +505,11 @@ pub struct CodegenRustcEvidence {
     pub rustc_driver_path: String,
     pub rustc_driver_sha256: String,
     pub llvm_version: String,
+    /// `shared_library` when rustup ships LLVM as a separate dynamic image, or
+    /// `embedded_in_rustc_driver` when the platform's rustc driver contains it.
+    pub llvm_linkage: String,
+    /// The image containing LLVM. For embedded toolchains this deliberately
+    /// equals `rustc_driver_path`; the digest equality is validated below.
     pub llvm_library_path: String,
     pub llvm_library_sha256: String,
     pub target_triple: String,
@@ -530,6 +541,7 @@ impl CodegenRustcEvidence {
         );
         c.field("rustc_driver_sha256", &self.rustc_driver_sha256);
         c.field("llvm_version", &self.llvm_version);
+        c.field("llvm_linkage", &self.llvm_linkage);
         c.field("llvm_library_sha256", &self.llvm_library_sha256);
         c.field("target_triple", &self.target_triple);
         c.field("target_pointer_width", &self.target_pointer_width);
@@ -1694,7 +1706,20 @@ fn reject_certificates(
                 "missing certificate for reachable node `{name}`{source_range}"
             ));
         };
-        if cert.level < Level::L3 {
+        let current = match cert.current_assurance() {
+            Ok(CurrentAssurance::Accepted { claim }) => claim,
+            Ok(CurrentAssurance::NonClaim { disposition }) => {
+                return Some(format!(
+                    "reachable node `{name}` is a current non-claim ({disposition:?}){source_range}"
+                ));
+            }
+            Err(error) => {
+                return Some(format!(
+                    "reachable node `{name}` lacks current assurance ({error}){source_range}"
+                ));
+            }
+        };
+        if !claim_meets_verified_build_floor(&current) {
             let proof_diagnostic = cert
                 .obligations
                 .iter()
@@ -1714,8 +1739,8 @@ fn reject_certificates(
                 })
                 .unwrap_or_default();
             return Some(format!(
-                "reachable node `{name}` achieved {:?}, not L3{source_range}{proof_diagnostic}",
-                cert.level
+                "reachable node `{name}` does not meet the solver-incomplete verified-build \
+                 floor{source_range}{proof_diagnostic}"
             ));
         }
         if cert.lowered_assurance || cert.reject.is_some() || cert.slag || cert.boundary {
@@ -1737,6 +1762,66 @@ fn reject_certificates(
     None
 }
 
+fn claim_meets_verified_build_floor(claim: &CurrentClaim<'_>) -> bool {
+    let points = claim.policy_points();
+    !points.is_empty()
+        && points
+            .into_iter()
+            .all(|point| assurance_kind_leq(AssuranceKindV2::SolverIncomplete, point))
+}
+
+fn injected_current_claim_below_verified_build_floor(
+    certificate: &Certificate,
+    scope: CertificationScope,
+    refutation: RefutationChannel,
+    residual_trust: ResidualTrust,
+    family: &str,
+) -> Certificate {
+    let evidence = format!("controlled-current-assurance-fault-v1:{family}");
+    // Preserve the deprecated display projection on purpose: the typed current
+    // position, rather than that compatibility field, must drive rejection.
+    Certificate::new(
+        certificate.item.clone(),
+        certificate.compatibility_level(),
+        certificate.effects.clone(),
+        0,
+        Vec::new(),
+    )
+    .with_rfc3_coordinates(
+        CertificationPosition {
+            scope,
+            refutation,
+            residual_trust,
+            discharged_trust: vec![evidence.clone()],
+            boundary: CertificationBoundary::EndToEnd,
+        },
+        ClassificationCertificate {
+            fragment: evidence,
+            verdict: ClassificationVerdict::Admitted,
+        },
+    )
+    .expect("the controlled lower-assurance position is coherent")
+    .with_assurance_scope(AssuranceScope::EndToEnd)
+    .with_live_disposition(LiveResultDisposition::Accepted)
+}
+
+fn injected_current_refutation(
+    certificate: &Certificate,
+    cause: &str,
+    detail: &str,
+) -> Certificate {
+    Certificate::rejected(
+        certificate.item.clone(),
+        certificate.effects.clone(),
+        false,
+        RejectReason {
+            cause: cause.to_string(),
+            detail: detail.to_string(),
+        },
+    )
+    .with_live_disposition(LiveResultDisposition::Refuted)
+}
+
 fn inject_certificate_fault(certificates: &mut Vec<Certificate>) {
     if !cfg!(debug_assertions) {
         return;
@@ -1748,40 +1833,64 @@ fn inject_certificate_fault(certificates: &mut Vec<Certificate>) {
         "certificate-missing" => {
             certificates.clear();
         }
-        "certificate-l1" => {
+        "certificate-runtime" => {
             for certificate in certificates.iter_mut() {
-                certificate.level = Level::L1;
+                *certificate = injected_current_claim_below_verified_build_floor(
+                    certificate,
+                    CertificationScope::PerExecution,
+                    RefutationChannel::Abort,
+                    ResidualTrust::Fiat,
+                    "runtime",
+                );
             }
         }
-        "certificate-l2" => {
+        "certificate-bounded" => {
             for certificate in certificates.iter_mut() {
-                certificate.level = Level::L2;
+                *certificate = injected_current_claim_below_verified_build_floor(
+                    certificate,
+                    CertificationScope::Bounded { bound: "8".into() },
+                    RefutationChannel::Trace { bound: "8".into() },
+                    ResidualTrust::Solver,
+                    "bounded",
+                );
             }
         }
-        "certificate-timeout" => {
+        "certificate-timeout-degrade" => {
             for certificate in certificates.iter_mut() {
-                certificate.lowered_assurance = true;
+                *certificate = certificate
+                    .clone()
+                    .into_degraded(RejectReason {
+                        cause: "InjectedTimeoutDegrade".to_string(),
+                        detail: "controlled timeout degradation".to_string(),
+                    })
+                    .with_live_disposition(LiveResultDisposition::TimeoutDegrade);
             }
         }
         "certificate-counterexample" => {
             for certificate in certificates.iter_mut() {
-                certificate.level = Level::L0;
+                *certificate = injected_current_refutation(
+                    certificate,
+                    "InjectedCounterexample",
+                    "controlled counterexample witness",
+                );
             }
         }
         "certificate-rejected" => {
             for certificate in certificates.iter_mut() {
-                certificate.reject = Some(crate::manifest::RejectReason {
-                    cause: "InjectedReject".to_string(),
-                    detail: "controlled rejected certificate".to_string(),
-                });
+                *certificate = injected_current_refutation(
+                    certificate,
+                    "InjectedReject",
+                    "controlled rejected certificate",
+                );
             }
         }
         "certificate-failed-obligation" => {
             for certificate in certificates.iter_mut() {
-                if let Some(obligation) = certificate.obligations.first_mut() {
-                    obligation.status = ObligationStatus::Failed;
-                    obligation.diagnostic = Some("controlled failed obligation".to_string());
-                }
+                *certificate = injected_current_refutation(
+                    certificate,
+                    "InjectedFailedObligation",
+                    "controlled failed obligation",
+                );
             }
         }
         _ => {}
@@ -1808,7 +1917,37 @@ fn assurance_aggregate(
             .ok_or_else(|| ForgeError::VerusOutput {
                 detail: format!("missing certificate while aggregating `{name}`"),
             })?;
-        minimum = minimum.min(certificate.level);
+        let claim = match certificate.current_assurance() {
+            Ok(CurrentAssurance::Accepted { claim }) => claim,
+            Ok(CurrentAssurance::NonClaim { disposition }) => {
+                return Err(ForgeError::VerusOutput {
+                    detail: format!(
+                        "non-claim certificate while aggregating `{name}`: {disposition:?}"
+                    ),
+                });
+            }
+            Err(error) => {
+                return Err(ForgeError::VerusOutput {
+                    detail: format!("non-current certificate while aggregating `{name}`: {error}"),
+                });
+            }
+        };
+        if !claim_meets_verified_build_floor(&claim) {
+            return Err(ForgeError::VerusOutput {
+                detail: format!(
+                    "verified artifact member `{name}` is below the solver-incomplete floor"
+                ),
+            });
+        }
+        let rendered_level =
+            claim
+                .compatibility_level()
+                .ok_or_else(|| ForgeError::VerusOutput {
+                    detail: format!(
+                        "verified artifact member `{name}` has no compatibility rendering"
+                    ),
+                })?;
+        minimum = minimum.min(rendered_level);
         members.push(AssuranceMember {
             name: name.to_string(),
             kind: if closure.functions.contains(name) {
@@ -1816,7 +1955,7 @@ fn assurance_aggregate(
             } else {
                 "specification".to_string()
             },
-            achieved: level_name(certificate.level).to_string(),
+            achieved: level_name(rendered_level).to_string(),
         });
     }
     for export in exports.iter().filter(|export| export.wrapped) {
@@ -1829,11 +1968,6 @@ fn assurance_aggregate(
     }
     members.sort_by(|left, right| left.name.cmp(&right.name).then(left.kind.cmp(&right.kind)));
     let minimum_reachable = level_name(minimum).to_string();
-    if minimum < Level::L3 {
-        return Err(ForgeError::VerusOutput {
-            detail: format!("verified artifact aggregate fell below L3 at {minimum_reachable}"),
-        });
-    }
     Ok(AssuranceAggregate {
         headline: "L3".to_string(),
         cap: "L3".to_string(),
@@ -2218,26 +2352,30 @@ fn collect_toolchain(target: VerifiedTarget) -> Result<CollectedToolchain, Forge
         });
         dependency_paths.insert("libvstd.rlib".to_string(), path);
     }
-    for name in [
-        "libverus_builtin.rlib",
-        "libverus_builtin_macros.so",
-        "libverus_state_machines_macros.so",
-    ] {
-        let path = verus_dir.join(name);
-        if !path.is_file() {
-            return Err(ForgeError::VerusOutput {
-                detail: format!(
-                    "the pinned Verus installation is missing link dependency `{}`",
-                    path.display()
-                ),
-            });
-        }
+    let verus_builtin_name = "libverus_builtin.rlib";
+    let verus_builtin_path = verus_dir.join(verus_builtin_name);
+    if !verus_builtin_path.is_file() {
+        return Err(ForgeError::VerusOutput {
+            detail: format!(
+                "the pinned Verus installation is missing link dependency `{}`",
+                verus_builtin_path.display()
+            ),
+        });
+    }
+    link_dependencies.push(ToolchainDependency {
+        name: verus_builtin_name.to_string(),
+        source_path: verus_builtin_path.display().to_string(),
+        sha256: file_sha256(&verus_builtin_path)?.2,
+    });
+    dependency_paths.insert(verus_builtin_name.to_string(), verus_builtin_path);
+    for stem in ["libverus_builtin_macros", "libverus_state_machines_macros"] {
+        let (name, path) = verus_dynamic_dependency(verus_dir, stem)?;
         link_dependencies.push(ToolchainDependency {
-            name: name.to_string(),
+            name: name.clone(),
             source_path: path.display().to_string(),
             sha256: file_sha256(&path)?.2,
         });
-        dependency_paths.insert(name.to_string(), path);
+        dependency_paths.insert(name, path);
     }
     let z3 = verus_dir.join("z3");
     if !z3.is_file() {
@@ -2314,6 +2452,10 @@ fn build_kernel_vstd_link(
     let (source_file_count, source_total_bytes, source_sha256) =
         directory_sha256_named(&source_root, "thermite.kernel-vstd-source-tree.v1")?;
     let scratch = ScratchTree::new_in_temp("kernel_vstd_link")?;
+    let canonical_scratch = fs::canonicalize(&scratch.path).map_err(|source| ForgeError::Io {
+        path: scratch.path.display().to_string(),
+        source,
+    })?;
     let link_source = scratch.path.join(KERNEL_VSTD_LINK_SOURCE_NAME);
     write_bytes(&link_source, KERNEL_VSTD_LINK_SOURCE.as_bytes())?;
 
@@ -2330,7 +2472,10 @@ fn build_kernel_vstd_link(
             "--out-dir",
             ".",
         ])
-        .arg(format!("--remap-path-prefix={}=.", scratch.path.display()))
+        .arg(format!(
+            "--remap-path-prefix={}=.",
+            canonical_scratch.display()
+        ))
         .current_dir(&scratch.path)
         .env_clear()
         .envs(environment);
@@ -2505,16 +2650,22 @@ fn collect_codegen_rustc(
         |name| name.starts_with("librustc_driver"),
         "rustc driver",
     )?;
-    let llvm_library = component_manifest_largest(
-        &rustc_manifest,
-        &sysroot,
-        |name| name.starts_with("libLLVM"),
-        "LLVM library",
-    )?;
+    let llvm_library = component_manifest_largest_optional(&rustc_manifest, &sysroot, |name| {
+        name.starts_with("libLLVM")
+    })?;
     let (_, rustc_sha256) = streamed_file_sha256(&rustc_path)?;
     let (_, rustc_component_manifest_sha256) = streamed_file_sha256(&rustc_manifest)?;
     let (_, rust_std_component_manifest_sha256) = streamed_file_sha256(&rust_std_manifest)?;
     let (_, rustc_driver_sha256) = streamed_file_sha256(&rustc_driver)?;
+    // Rustup packages LLVM differently across supported hosts. Linux toolchains
+    // commonly ship a separate libLLVM image; current Apple toolchains link the
+    // same LLVM implementation into librustc_driver. In both cases bind the
+    // exact image that contains codegen, rather than rejecting the latter layout
+    // or inventing an untracked ambient dependency.
+    let (llvm_linkage, llvm_library) = match llvm_library {
+        Some(path) => ("shared_library".to_string(), path),
+        None => ("embedded_in_rustc_driver".to_string(), rustc_driver.clone()),
+    };
     let (_, llvm_library_sha256) = streamed_file_sha256(&llvm_library)?;
     let (target_libdir_file_count, target_libdir_total_bytes, target_libdir_sha256) =
         directory_sha256(&target_libdir)?;
@@ -2535,6 +2686,7 @@ fn collect_codegen_rustc(
         rustc_driver_path: rustc_driver.display().to_string(),
         rustc_driver_sha256,
         llvm_version,
+        llvm_linkage,
         llvm_library_path: llvm_library.display().to_string(),
         llvm_library_sha256,
         target_triple,
@@ -2609,6 +2761,52 @@ fn component_manifest_largest(
     matches_name: impl Fn(&str) -> bool,
     label: &str,
 ) -> Result<PathBuf, ForgeError> {
+    component_manifest_largest_optional(manifest, sysroot, matches_name)?.ok_or_else(|| {
+        ForgeError::VerusOutput {
+            detail: format!(
+                "Verus codegen rustc component manifest `{}` contains no {label}",
+                manifest.display()
+            ),
+        }
+    })
+}
+
+fn verus_dynamic_dependency(verus_dir: &Path, stem: &str) -> Result<(String, PathBuf), ForgeError> {
+    let candidates = ["so", "dylib", "dll"]
+        .into_iter()
+        .map(|extension| {
+            let name = format!("{stem}.{extension}");
+            let path = verus_dir.join(&name);
+            (name, path)
+        })
+        .filter(|(_, path)| path.is_file())
+        .collect::<Vec<_>>();
+    match candidates.as_slice() {
+        [(name, path)] => Ok((name.clone(), path.clone())),
+        [] => Err(ForgeError::VerusOutput {
+            detail: format!(
+                "the pinned Verus installation is missing dynamic link dependency `{stem}.{{so,dylib,dll}}`"
+            ),
+        }),
+        _ => Err(ForgeError::VerusOutput {
+            detail: format!(
+                "the pinned Verus installation has ambiguous dynamic link dependencies for `{stem}`"
+            ),
+        }),
+    }
+}
+
+fn is_named_verus_dynamic_dependency(name: &str, stem: &str) -> bool {
+    ["so", "dylib", "dll"]
+        .into_iter()
+        .any(|extension| name == format!("{stem}.{extension}"))
+}
+
+fn component_manifest_largest_optional(
+    manifest: &Path,
+    sysroot: &Path,
+    matches_name: impl Fn(&str) -> bool,
+) -> Result<Option<PathBuf>, ForgeError> {
     let text = fs::read_to_string(manifest).map_err(|source| ForgeError::Io {
         path: manifest.display().to_string(),
         source,
@@ -2633,16 +2831,10 @@ fn component_manifest_largest(
         }
     }
     candidates.sort_by(|left, right| left.1.cmp(&right.1));
-    candidates
+    Ok(candidates
         .into_iter()
         .max_by_key(|(length, _)| *length)
-        .map(|(_, path)| path)
-        .ok_or_else(|| ForgeError::VerusOutput {
-            detail: format!(
-                "Verus codegen rustc component manifest `{}` contains no {label}",
-                manifest.display()
-            ),
-        })
+        .map(|(_, path)| path))
 }
 
 fn streamed_file_sha256(path: &Path) -> Result<(u64, String), ForgeError> {
@@ -2780,6 +2972,23 @@ fn validate_codegen_evidence(toolchain: &ToolchainEvidence) -> Result<(), String
     {
         return Err("recorded target-library or rlib-linker policy is invalid".to_string());
     }
+    match codegen.llvm_linkage.as_str() {
+        "shared_library" => {
+            if codegen.llvm_library_path == codegen.rustc_driver_path {
+                return Err("shared LLVM image aliases the rustc driver".to_string());
+            }
+        }
+        "embedded_in_rustc_driver" => {
+            if codegen.llvm_library_path != codegen.rustc_driver_path
+                || codegen.llvm_library_sha256 != codegen.rustc_driver_sha256
+            {
+                return Err(
+                    "embedded LLVM identity does not equal the recorded rustc driver".to_string(),
+                );
+            }
+        }
+        _ => return Err("recorded LLVM linkage mode is invalid".to_string()),
+    }
     for (label, digest) in [
         ("host rustc", toolchain.host_rustc.rustc_sha256.as_str()),
         ("codegen rustc", codegen.rustc_sha256.as_str()),
@@ -2884,13 +3093,17 @@ fn compile_verus_source(
     kernel_vstd_rlib: Option<&Path>,
 ) -> Result<CompiledVerus, ForgeError> {
     let scratch = ScratchTree::new_in_temp(&format!("verified_{crate_name}"))?;
+    let canonical_scratch = fs::canonicalize(&scratch.path).map_err(|source| ForgeError::Io {
+        path: scratch.path.display().to_string(),
+        source,
+    })?;
     let source_name = format!("{crate_name}.rs");
     let source_path = scratch.path.join(&source_name);
     write_bytes(&source_path, source.as_bytes())?;
     let before = file_sha256(&source_path)?.2;
     let args = expected_verus_args(crate_name, target);
     let mut command = Command::new(verus_path);
-    for arg in &args[..args.len() - 2] {
+    for arg in &args {
         match arg.as_str() {
             "vstd=<KERNEL_VSTD_VIR>" => {
                 let verus_dir =
@@ -2909,15 +3122,22 @@ fn compile_verus_source(
                 })?;
                 command.arg(format!("vstd={}", rlib.display()));
             }
+            "--remap-path-prefix=<SCRATCH>=." => {
+                command.arg(format!(
+                    "--remap-path-prefix={}=.",
+                    canonical_scratch.display()
+                ));
+            }
             _ => {
                 command.arg(arg);
             }
         }
     }
-    command
-        .arg(format!("--remap-path-prefix={}=.", scratch.path.display()))
-        .arg(&source_name)
-        .current_dir(&scratch.path);
+    // Keep the positional input first. Verus accepts compiler options before
+    // it but does not pass path remapping through to rustc in that layout on
+    // Apple hosts, leaving the absolute scratch path in rmeta and defeating
+    // byte-for-byte replay.
+    command.current_dir(&scratch.path);
     // The final verifier/codegen process receives a closed environment. This is
     // stronger than attempting to enumerate every ambient variable a future
     // rustc/LLVM or linker release might interpret.
@@ -3003,7 +3223,11 @@ fn compile_verus_source(
 }
 
 fn expected_verus_args(crate_name: &str, target: VerifiedTarget) -> Vec<String> {
-    let mut args = vec!["--output-json".to_string(), "--profile".to_string()];
+    let mut args = vec![
+        format!("{crate_name}.rs"),
+        "--output-json".to_string(),
+        "--profile".to_string(),
+    ];
     if matches!(target, VerifiedTarget::Freestanding) {
         args.extend([
             "--no-vstd".to_string(),
@@ -3023,7 +3247,6 @@ fn expected_verus_args(crate_name: &str, target: VerifiedTarget) -> Vec<String> 
         "-C".to_string(),
         "panic=abort".to_string(),
         "--remap-path-prefix=<SCRATCH>=.".to_string(),
-        format!("{crate_name}.rs"),
     ]);
     args
 }
@@ -3141,7 +3364,14 @@ fn stage_and_publish(input: StageInput<'_>) -> Result<VerifiedBuildReceiptV1, Fo
         certificate.cached = false;
         certificate.solver_profile = None;
     }
-    let cert_json = pretty_json(&stable_certificates, "certificate set")?;
+    let current_documents = stable_certificates
+        .iter()
+        .map(Certificate::current_document)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| ForgeError::VerusOutput {
+            detail: format!("refusing non-current verified-build certificate: {error}"),
+        })?;
+    let cert_json = pretty_json(&current_documents, "certificate set")?;
     let tv_json = pretty_json(tv, "translation-validation evidence")?;
     let verus_json = pretty_json(&compiled.evidence, "whole-crate Verus evidence")?;
     let toolchain_json = pretty_json(toolchain, "toolchain evidence")?;
@@ -3711,10 +3941,28 @@ pub fn validate_bundle(bundle: &Path, replay: bool) -> Result<VerifyBuildReport,
             detail: "certificate-set semantic digest mismatch".to_string(),
         });
     }
-    let certificates: Vec<Certificate> =
+    let documents: Vec<CertificateDocument> =
         serde_json::from_slice(&certificate_bytes).map_err(|error| ForgeError::VerusOutput {
             detail: format!("invalid bound certificate set: {error}"),
         })?;
+    let certificates = documents
+        .into_iter()
+        .map(|document| {
+            let (certificate, authority_sha256, disposition) =
+                document
+                    .into_current()
+                    .ok_or_else(|| ForgeError::VerusOutput {
+                        detail:
+                            "verified-build evidence contains an inspect-only legacy certificate"
+                                .to_string(),
+                    })?;
+            certificate
+                .admit_verified_build_current(&authority_sha256, &disposition)
+                .map_err(|error| ForgeError::VerusOutput {
+                    detail: format!("bound certificate is not current assurance: {error}"),
+                })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     if let Some(detail) = reject_certificates(&certificates, &closure, &parsed.program) {
         return Err(ForgeError::VerusOutput {
             detail: format!("bound certificate set fails strict L3 policy: {detail}"),
@@ -3852,14 +4100,22 @@ pub fn validate_bundle(bundle: &Path, replay: bool) -> Result<VerifyBuildReport,
         .iter()
         .map(|dependency| dependency.name.as_str())
         .collect();
-    if dependency_names
-        != BTreeSet::from([
-            "libverus_builtin.rlib",
-            "libverus_builtin_macros.so",
-            "libverus_state_machines_macros.so",
-            "libvstd.rlib",
-        ])
+    if dependency_names.len() != 4
         || dependency_names.len() != toolchain.link_dependencies.len()
+        || !dependency_names.contains("libverus_builtin.rlib")
+        || !dependency_names.contains("libvstd.rlib")
+        || dependency_names
+            .iter()
+            .filter(|name| is_named_verus_dynamic_dependency(name, "libverus_builtin_macros"))
+            .count()
+            != 1
+        || dependency_names
+            .iter()
+            .filter(|name| {
+                is_named_verus_dynamic_dependency(name, "libverus_state_machines_macros")
+            })
+            .count()
+            != 1
     {
         return Err(ForgeError::VerusOutput {
             detail: "bound Verus link-dependency inventory is incomplete or duplicated".to_string(),
@@ -4239,6 +4495,7 @@ mod tests {
             rustc_driver_path: format!("{root}/lib/librustc_driver.so"),
             rustc_driver_sha256: "4".repeat(64),
             llvm_version: "21.1.8".to_string(),
+            llvm_linkage: "shared_library".to_string(),
             llvm_library_path: format!("{root}/lib/libLLVM.so"),
             llvm_library_sha256: "5".repeat(64),
             target_triple: "x86_64-unknown-linux-gnu".to_string(),
@@ -4427,7 +4684,7 @@ mod tests {
         assert!(base.same_identity(&relocated));
 
         let digest = base.canonical_identity_sha256();
-        for field in 0..18 {
+        for field in 0..19 {
             let mut changed = base.clone();
             match field {
                 0 => changed.selection.push_str(" changed"),
@@ -4440,14 +4697,15 @@ mod tests {
                 7 => changed.rust_std_component_manifest_sha256 = "9".repeat(64),
                 8 => changed.rustc_driver_sha256 = "9".repeat(64),
                 9 => changed.llvm_version.push_str("-changed"),
-                10 => changed.llvm_library_sha256 = "9".repeat(64),
-                11 => changed.target_triple.push_str("-changed"),
-                12 => changed.target_pointer_width = "32".to_string(),
-                13 => changed.target_endian = "big".to_string(),
-                14 => changed.target_libdir_sha256 = "9".repeat(64),
-                15 => changed.target_libdir_file_count += 1,
-                16 => changed.target_libdir_total_bytes += 1,
-                17 => changed.linker_identity.push_str(" changed"),
+                10 => changed.llvm_linkage = "embedded_in_rustc_driver".to_string(),
+                11 => changed.llvm_library_sha256 = "9".repeat(64),
+                12 => changed.target_triple.push_str("-changed"),
+                13 => changed.target_pointer_width = "32".to_string(),
+                14 => changed.target_endian = "big".to_string(),
+                15 => changed.target_libdir_sha256 = "9".repeat(64),
+                16 => changed.target_libdir_file_count += 1,
+                17 => changed.target_libdir_total_bytes += 1,
+                18 => changed.linker_identity.push_str(" changed"),
                 _ => unreachable!(),
             }
             assert_ne!(digest, changed.canonical_identity_sha256(), "field {field}");
@@ -4628,9 +4886,9 @@ mod tests {
     fn l3_assurance_aggregate_is_minimum_capped_and_fail_closed() {
         let implementation = include_str!("verified_build.rs");
         for required in [
-            "minimum = minimum.min(certificate.level)",
+            "claim_meets_verified_build_floor(&claim)",
+            "minimum = minimum.min(rendered_level)",
             "minimum = minimum.min(Level::L3)",
-            "if minimum < Level::L3",
             "headline: \"L3\".to_string()",
             "cap: \"L3\".to_string()",
             "scope: \"end_to_end\".to_string()",
@@ -4642,9 +4900,9 @@ mod tests {
         }
         let matrix = include_str!("../tests/verified_build.rs");
         for refusal in [
-            "certificate-l1",
-            "certificate-l2",
-            "certificate-timeout",
+            "certificate-runtime",
+            "certificate-bounded",
+            "certificate-timeout-degrade",
             "certificate-counterexample",
             "certificate-rejected",
             "certificate-failed-obligation",

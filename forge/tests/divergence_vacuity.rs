@@ -43,6 +43,7 @@ fn first_cert(program: &str, name: &str) -> Value {
         .arg("check")
         .arg(&path)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .unwrap_or_else(|e| panic!("spawn forge: {e}"));
     let _ = std::fs::remove_file(&path);

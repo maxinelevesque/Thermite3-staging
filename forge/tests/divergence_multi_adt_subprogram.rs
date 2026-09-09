@@ -80,6 +80,7 @@ fn check_program(tag: &str, program: &str) -> Vec<Value> {
         .arg("check")
         .arg(&fixture)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check");
     let _ = std::fs::remove_file(&fixture);
@@ -301,6 +302,7 @@ fn multi_adt_corpus_program_certifies_end_to_end() {
         .arg("check")
         .arg(&corpus)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check");
     let stdout = String::from_utf8_lossy(&out.stdout);

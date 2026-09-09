@@ -1,6 +1,6 @@
 # Feature: Engineer assurance report and Level retirement
 
-audited-content-sha256: 38564401d42a3b6b0c845627634540a5666154e62320af9ee8bb356303a6fda4 (re-pinned 2026-09-08 after the issue #55 portrait was encapsulated behind read-only accessors, clause- versus item-transport reporting was clarified, and verifier metadata was bound to the repository-pinned Lean toolchain. prior: d2f5b7987844c0d0f00e4936a20b71d8691b0768401662845dc0421fdaebe51d)
+audited-content-sha256: e6c4963bd04a86f99bcf899260ffeacde7e0b548ec48738a1429b3602bf21d27 (re-pinned 2026-09-09 after broadening the issue #56 inventory to 109 type-token and value-access sites and tightening its witness. prior: cb7536ff9b6e2ac4f4ee7ca31ec9a71023906040b3f21e7af6aa7e865bad16d5)
 
 ## Summary
 
@@ -318,7 +318,7 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   the scheduler, one population member, or one required per-item completeness
   premise. Any non-claim/legacy member suppresses the whole-project headline and
   produces only an exact subset-qualified portrait.
-- [ ] AC-8: (REQ-11, REQ-12, REQ-20) A source inventory classifies every
+- [x] AC-8: (REQ-11, REQ-12, REQ-20) A source inventory classifies every
   `Level` occurrence as constructor, presentation, or authority decision; the
   decision set becomes empty in one atomic migration where the field becomes
   private and derived. Hostile tests edit only
@@ -360,17 +360,17 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   exact fiber or an explicitly normalized project fiber. The check gates only
   through proved dominance/common-frontier semantics; engineer labels and
   evidence-frontier membership cannot satisfy it.
-- [ ] AC-14: (REQ-17) Unversioned historical L0-L4 fixtures remain parseable as
+- [x] AC-14: (REQ-17) Unversioned historical L0-L4 fixtures remain parseable as
   `LegacyUnversioned` and render the
   loud re-certification warning. L2 names the absent bound and L3 names its
   semantic ambiguity. Check, build, citation, cache authority, aggregation, and
   floors all reject the records as current assurance.
-- [ ] AC-15: (REQ-17, REQ-18, REQ-20) The schema-envelope release distinguishes
+- [x] AC-15: (REQ-17, REQ-18, REQ-20) The schema-envelope release distinguishes
   current envelopes from `LegacyUnversioned` input without field-presence
   guessing. Current output omits Level. An opt-in legacy-inspection export may
   render it but has no current deserializer/admission route. Check/cache identity
   bumps; frozen old JSON remains inspectable but never audit-admitted.
-- [ ] AC-16: (REQ-12, REQ-18, REQ-19) `manifest::Level` has no production
+- [x] AC-16: (REQ-12, REQ-18, REQ-19) `manifest::Level` has no production
   authority consumer and is removed or isolated in a compatibility module.
   Project, verified-build, repair, review, goal/fill, lemma, Kani, degrade,
   audit, metrics, cache, and CLI tests assert the new authority/report paths.
@@ -378,6 +378,17 @@ intersection; the parameterized realizable policy need not be assumed to be a la
   CI for a representative mixed crate. Reviewers can move from status headline
   to common project claims, changed-item list, exact per-item/clause evidence,
   and the complete machine portrait without rerunning certification locally.
+
+Issue #56 validation evidence: `gates/assurance-level-inventory.py` classifies
+all 85 remaining `Level` token sites plus 24 value-level `.level` or
+`.compatibility_level()` accesses (109 reviewed sites total) as constructors or
+presentation and reports zero production authority decisions. The
+`current-assurance-authority` claim-closure
+probe exercises hostile Level edits, current-envelope schema confusion,
+inspect-only unversioned L0-L4 documents, portfolio splicing, persisted-artifact replay, and
+audit projection. The complete Forge binary suite passes 647 tests with the
+production consumers reading `CurrentAssurance` and deriving any compatibility
+Level only after typed authority validation.
 
 ## Architecture
 

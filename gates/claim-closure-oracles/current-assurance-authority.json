@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "probe": "current-assurance-authority",
+  "cases": [
+    {"id": "current-assurance-level-inventory", "expected_exit": 0},
+    {"id": "current-assurance-level-is-presentation", "expected_exit": 0},
+    {"id": "current-assurance-envelope", "expected_exit": 0},
+    {"id": "current-assurance-historical-inspection", "expected_exit": 0},
+    {"id": "current-assurance-portfolio-splice", "expected_exit": 0},
+    {"id": "current-assurance-persisted-artifact-replay", "expected_exit": 0},
+    {"id": "current-assurance-audit-presentation", "expected_exit": 0}
+  ]
+}

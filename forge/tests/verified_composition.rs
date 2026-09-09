@@ -290,7 +290,7 @@ fn composition_faults_and_nonpass_evidence_publish_nothing() {
     let temp = TempDir::new("faults");
     for (index, fault) in [
         "composition-after-plan-shell-mutation",
-        "certificate-l2",
+        "certificate-bounded",
         "tv-contract-divergent",
     ]
     .iter()

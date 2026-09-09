@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (repair.rs) is the additive Level::L4 arm in the certified-rung match (REQ-S1-8 — L4 is a certified rung, not a timeout to escalate); repair behavior unchanged.)
-audited-content-sha256: d1c5957cc4c2d7e392ba6c46c3dc22c036112fcdc84b9a0a507eb66e6834b564
+audited-content-sha256: ec4a019f530b988668131c2c22893ae3f8853dbf5cc92ee12bc175dd8f418b0e (re-pinned 2026-09-08 after issue #56 moved repair candidate authority from Level to CurrentAssurance. prior: d1c5957cc4c2d7e392ba6c46c3dc22c036112fcdc84b9a0a507eb66e6834b564)
 governs: forge/src/repair.rs
 thesis-refs:
   - thermite-design.md §5.2
@@ -24,6 +24,12 @@ repair PROMPT (the #11 solver profile + the failing obligation) for the rest.**
 This is exactly §6's "driving L1s and L2s back up to L3 is a background task
 agents can run unattended (proof repair is a local, checkable move — the task
 shape LLMs are best at)" and §6's "upgrades are a standing background task."
+
+After issue #56, L1/L2/L3 in this document are compatibility names for typed
+current dispositions and formal positions. Repair selects candidates through
+`current_assurance`, never through the stored/displayed `Level`; a non-claim,
+historical row, or failed current validation cannot be promoted by changing its
+rung label.
 
 The mechanical move repair attempts is **budget escalation**: an item that TIMED
 OUT at the default `--rlimit` may PROVE with more SMT budget. Repair re-verifies

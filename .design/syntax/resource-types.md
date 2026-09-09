@@ -2,7 +2,7 @@
 
 <!--
 status: approved
-audited-content-sha256: decf470d5ffe2ead2dd50ef5c3bf5eb852e236676b99376af008f8e48a49cc60 (re-pinned 2026-09-02 after the certificate enum and conformance test made `resource_flow_computation` explicit residual trust. prior: d7e63308ff4d5f7018a0adc8b4ad772de63302b6081606aa62d580c5d289f0c8)
+audited-content-sha256: 4426367dd18b4867c5b150c2d72589a4f7fc336a34d22ded59bdc84a6fca53fa (re-pinned 2026-09-09 after correcting stale authority terminology in Forge comments; resource semantics are unchanged. prior: e73e10f158e665ff491d03df2cf232422840349df519e097c78eb37d303c3f71)
 -->
 
 ## Summary

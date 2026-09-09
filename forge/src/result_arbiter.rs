@@ -5,7 +5,9 @@
 //! earlier result (`.design/forge-result-arbiter.md`).
 
 use crate::engine::{Counterexample, Disagreement};
-use crate::manifest::{Certificate, LiveResultDisposition, ObligationStatus};
+use crate::manifest::{
+    Certificate, CurrentAssurance, CurrentDisposition, LiveResultDisposition, ObligationStatus,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum InconclusiveReason {
@@ -195,7 +197,10 @@ impl ItemOutcome {
     ) -> Result<Self, PersistedOutcomeError> {
         let (certificate, engine) = authority.into_parts();
         let Some(disposition) = certificate.live_disposition().cloned() else {
-            return Self::from_structural_certificate(certificate);
+            return Err(candidate_error(
+                &certificate,
+                "certificate lacks a typed live producer disposition",
+            ));
         };
         certificate
             .clause_portfolio(matches!(disposition, LiveResultDisposition::Accepted))
@@ -235,12 +240,14 @@ impl ItemOutcome {
     /// Fresh producers use the typed constructors above.  Reject causes are
     /// interpreted only here, together with level, failed obligations, and the
     /// lowered-assurance marker.
+    #[cfg(test)]
     pub(crate) fn from_persisted_certificate(
         authority: crate::check::PersistedCertificateAuthority,
     ) -> Result<Self, PersistedOutcomeError> {
         Self::from_structural_certificate(authority.into_certificate())
     }
 
+    #[cfg(test)]
     fn from_structural_certificate(
         certificate: Certificate,
     ) -> Result<Self, PersistedOutcomeError> {
@@ -259,7 +266,7 @@ impl ItemOutcome {
             .iter()
             .any(|obligation| obligation.status == ObligationStatus::Failed);
         if matches!(
-            certificate.level,
+            certificate.compatibility_level(),
             crate::manifest::Level::L3 | crate::manifest::Level::L4
         ) && has_failed
         {
@@ -283,7 +290,7 @@ impl ItemOutcome {
             ));
         }
         if let Some(reject) = certificate.reject.as_ref() {
-            if certificate.level != crate::manifest::Level::L0 {
+            if certificate.compatibility_level() != crate::manifest::Level::L0 {
                 return Err(PersistedOutcomeError {
                     item: certificate.item.clone(),
                     detail: "terminal reject is not at L0".into(),
@@ -331,7 +338,7 @@ impl ItemOutcome {
             return Ok(Self::refuted(certificate, engine));
         }
         if matches!(
-            certificate.level,
+            certificate.compatibility_level(),
             crate::manifest::Level::L3 | crate::manifest::Level::L4
         ) {
             if certificate.contract_quality.tautology
@@ -622,7 +629,7 @@ fn validate_complete_candidate(
     let coordinates_match = if engine == "epr" {
         position.scope == crate::manifest::CertificationScope::All
             && position.refutation == crate::manifest::RefutationChannel::Complete
-            && position.residual_trust == crate::manifest::ResidualTrust::Solver
+            && position.residual_trust == crate::manifest::ResidualTrust::LeanChecked
     } else {
         position.scope == crate::manifest::CertificationScope::All
             && position.refutation == crate::manifest::RefutationChannel::Empirical
@@ -651,21 +658,14 @@ fn validate_complete_candidate(
         ));
     }
     if engine == "epr"
-        && (certificate.level != crate::manifest::Level::L4
-            || certificate
-                .obligations
-                .iter()
-                .any(|obligation| obligation.reconstruction.is_none()))
+        && certificate
+            .obligations
+            .iter()
+            .any(|obligation| obligation.reconstruction.is_none())
     {
         return Err(candidate_error(
             certificate,
-            "EPR proof authority requires L4 and checked reconstruction evidence per obligation",
-        ));
-    }
-    if engine != "epr" && certificate.level != crate::manifest::Level::L3 {
-        return Err(candidate_error(
-            certificate,
-            "Lean supplemental proof authority requires an L3 receipt",
+            "EPR proof authority requires checked reconstruction evidence per obligation",
         ));
     }
     Ok(())
@@ -723,41 +723,66 @@ fn validate_live_shape(
     certificate: &Certificate,
     disposition: &LiveResultDisposition,
 ) -> Result<(), PersistedOutcomeError> {
-    certificate
-        .clause_portfolio(matches!(disposition, LiveResultDisposition::Accepted))
+    // The capability variant at this entrance is itself the typed producer
+    // disposition.  Stamp a validation-only clone so no caller can smuggle a
+    // contradictory public rendering into the authority seam.
+    let stamped = certificate
+        .clone()
+        .with_live_disposition(disposition.clone());
+    let current = stamped
+        .current_assurance()
         .map_err(|error| candidate_error(certificate, error.to_string()))?;
-    let failed = certificate
-        .obligations
-        .iter()
-        .any(|obligation| obligation.status == ObligationStatus::Failed);
-    let valid = match disposition {
-        LiveResultDisposition::Accepted => {
-            matches!(
-                certificate.level,
-                crate::manifest::Level::L3 | crate::manifest::Level::L4
-            ) && certificate.reject.is_none()
-                && !certificate.lowered_assurance
-                && !failed
-        }
-        LiveResultDisposition::VerusTimeout | LiveResultDisposition::EngineUnknown => {
-            certificate.level == crate::manifest::Level::L0
-                && certificate.reject.is_some()
-                && failed
-        }
-        LiveResultDisposition::TimeoutDegrade => {
-            certificate.lowered_assurance
-                && certificate.degrade_reason.is_some()
-                && certificate.reject.is_none()
-        }
-        LiveResultDisposition::Refuted => certificate.level == crate::manifest::Level::L0 && failed,
-        LiveResultDisposition::WeakContract
-        | LiveResultDisposition::SemanticTautology
-        | LiveResultDisposition::VacuousPrecondition => {
-            certificate.level == crate::manifest::Level::L0
-                && certificate.reject.is_some()
-                && failed
-        }
-        LiveResultDisposition::SettledOther(_) => true,
+    let valid = match (disposition, current) {
+        (LiveResultDisposition::Accepted, CurrentAssurance::Accepted { .. }) => true,
+        (
+            LiveResultDisposition::VerusTimeout,
+            CurrentAssurance::NonClaim {
+                disposition: CurrentDisposition::VerusTimeout,
+            },
+        )
+        | (
+            LiveResultDisposition::TimeoutDegrade,
+            CurrentAssurance::NonClaim {
+                disposition: CurrentDisposition::TimeoutDegrade,
+            },
+        )
+        | (
+            LiveResultDisposition::EngineUnknown,
+            CurrentAssurance::NonClaim {
+                disposition: CurrentDisposition::EngineUnknown,
+            },
+        )
+        | (
+            LiveResultDisposition::Refuted,
+            CurrentAssurance::NonClaim {
+                disposition: CurrentDisposition::Refuted,
+            },
+        )
+        | (
+            LiveResultDisposition::WeakContract,
+            CurrentAssurance::NonClaim {
+                disposition: CurrentDisposition::WeakContract,
+            },
+        )
+        | (
+            LiveResultDisposition::SemanticTautology,
+            CurrentAssurance::NonClaim {
+                disposition: CurrentDisposition::SemanticTautology,
+            },
+        )
+        | (
+            LiveResultDisposition::VacuousPrecondition,
+            CurrentAssurance::NonClaim {
+                disposition: CurrentDisposition::VacuousPrecondition,
+            },
+        ) => true,
+        (
+            LiveResultDisposition::SettledOther(expected),
+            CurrentAssurance::NonClaim {
+                disposition: CurrentDisposition::SettledOther(actual),
+            },
+        ) => expected == actual,
+        _ => false,
     };
     if valid {
         Ok(())
@@ -805,6 +830,7 @@ fn mutation_ratio_below_floor(score: &str) -> bool {
     total == 0 || killed > total || (killed as f64 / total as f64) < crate::mutation::MUTATION_FLOOR
 }
 
+#[cfg(test)]
 fn mutation_ratio_is_asserted_below_floor(score: &str) -> bool {
     // `0/0` is also the legacy forward-declared/unscored value. It is a valid
     // fact for an explicitly typed WeakContract rejection, but cannot by itself
@@ -855,7 +881,9 @@ mod tests {
     use super::*;
     use crate::covenant_engine::CovenantEvidence;
     use crate::manifest::{
-        AssuranceScope, CertificationBoundary, Level, ObligationResult, RejectReason,
+        AssuranceScope, CertificationBoundary, CertificationPosition, CertificationScope,
+        ClassificationCertificate, ClassificationVerdict, Level, ObligationResult,
+        RefutationChannel, RejectReason, ResidualTrust,
     };
     use crate::meaning::MeaningAudit;
 
@@ -890,7 +918,21 @@ mod tests {
         issued_candidate(crate::check::IssuedProofCandidate::Complete {
             engine: "lean-auto".into(),
             certificate: Certificate::new(item, Level::L3, effects(), 0, vec![obligation])
-                .with_engine_attribution(attribution),
+                .with_engine_attribution(attribution)
+                .with_rfc3_coordinates(
+                    CertificationPosition {
+                        scope: CertificationScope::All,
+                        refutation: RefutationChannel::Empirical,
+                        residual_trust: ResidualTrust::LeanChecked,
+                        discharged_trust: vec!["test-lean-proof-v1".into()],
+                        boundary: CertificationBoundary::EndToEnd,
+                    },
+                    ClassificationCertificate {
+                        fragment: "test-lean-fragment-v1".into(),
+                        verdict: ClassificationVerdict::Admitted,
+                    },
+                )
+                .unwrap(),
         })
     }
 
@@ -1003,7 +1045,11 @@ mod tests {
             );
         }
         assert_eq!(
-            timeout.combine(proof()).unwrap().certificate().level,
+            timeout
+                .combine(proof())
+                .unwrap()
+                .certificate()
+                .compatibility_level(),
             Level::L3
         );
 
@@ -1015,7 +1061,11 @@ mod tests {
         let degraded =
             ItemOutcome::inconclusive(degraded_cert, "verus", InconclusiveReason::TimeoutDegrade);
         assert_eq!(
-            degraded.combine(proof()).unwrap().certificate().level,
+            degraded
+                .combine(proof())
+                .unwrap()
+                .certificate()
+                .compatibility_level(),
             Level::L3
         );
     }

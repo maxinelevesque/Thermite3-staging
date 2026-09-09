@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (review.rs) is the additive REQ-9 burned_lemmas partition + BurnedLemma projection (a certified lemma surfaces like any certified item); the v1 intent-reviewable / battery-failing partitions are unchanged (REQ-S1-9). prior: 92396428567edc6940a9e2845217f5ff4c2ea3c6)
-audited-content-sha256: 4f7af1e08a3d85e7b430a4cc7e8ad0a4003246860116261d206bd3a072ba77b0 (re-pinned 2026-08-29 for focused guard-callee review coverage, intent-prompt assertions, and machine/human dual-emission conformance. prior: e39c9dcb76dd2b8217d2ef926ce27c8de7d50aa9ca19190225a5317ce536cce4)
+audited-content-sha256: c1687d9a91bf70cb7a5160db713cabdb431d0e1c62fd29169c55920d0503830d (re-pinned 2026-09-08 after issue #56 moved review eligibility from Level to CurrentAssurance. prior: 4f7af1e08a3d85e7b430a4cc7e8ad0a4003246860116261d206bd3a072ba77b0)
 governs: forge/src/review.rs
 thesis-refs:
   - thermite-design.md §7
@@ -26,6 +26,11 @@ machine artifact (`--json`, for a critic model) and a human form, and it defines
 question is spec-intent alignment) fills and attaches back additively. This is the
 §7 "residue surfaced for review" — the one irreducible judgment the deterministic
 battery cannot make (thermite-design.md §1 line 26, §12 "Spec-intent gap").
+
+Issue #56 moves review eligibility to typed `current_assurance`. References
+below to certified L1-L4 or non-certified L0 describe the derived compatibility
+display, not an authority input; historical or deserialized Level values cannot
+enter the reviewable set.
 
 `forge review` does **not** call an LLM. Forge is a deterministic Rust toolchain
 (R-CODE-5); a built-in model call would be non-deterministic and require an external

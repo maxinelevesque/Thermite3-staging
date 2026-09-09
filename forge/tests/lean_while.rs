@@ -89,6 +89,7 @@ fn check_lean_opt(path: &PathBuf) -> Option<Vec<Value>> {
         .arg("--engine")
         .arg("lean")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check --engine lean");
     let stdout = String::from_utf8_lossy(&out.stdout);

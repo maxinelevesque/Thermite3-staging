@@ -79,6 +79,7 @@ fn run_check_in(file: &Path, cache_dir: &Path) -> Vec<Value> {
         .arg("check")
         .arg(file)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .env("FORGE_CACHE_DIR", cache_dir)
         .output()
         .unwrap();
@@ -246,7 +247,10 @@ fn divergence_stale_same_version_cache_entry_bypasses_mutation_gate() {
             continue;
         }
         let mut d: Value = serde_json::from_str(&std::fs::read_to_string(&p).unwrap()).unwrap();
-        let certificate = d.get("certificate").unwrap_or(&d);
+        let certificate = d
+            .get("certificate")
+            .and_then(|document| document.get("certificate"))
+            .unwrap_or(&d);
         let is_main_weak = certificate
             .get("reject")
             .and_then(|r| r.get("cause"))
@@ -257,9 +261,13 @@ fn divergence_stale_same_version_cache_entry_bypasses_mutation_gate() {
             // certificate while deliberately retaining the original digest:
             // either the envelope integrity check or the stale-verdict shape
             // check must turn this planted pre-gate row into a miss.
-            let certificate = d
+            let document = d
                 .get_mut("certificate")
-                .expect("current cache entries carry an enveloped certificate");
+                .expect("current cache entries carry a current certificate document");
+            document["disposition"] = serde_json::json!({ "kind": "accepted" });
+            let certificate = document
+                .get_mut("certificate")
+                .expect("current certificate documents carry a nested certificate");
             certificate["level"] = Value::String("L3".to_string());
             certificate["reject"] = Value::Null;
             if let Some(q) = certificate

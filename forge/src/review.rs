@@ -942,8 +942,8 @@ mod tests {
     fn sum_intent_reviewable_no_bodies() {
         let program = parse_ok(include_str!("../../conformance/sum.th"));
         let certs = vec![
-            Certificate::new("spec_sum", Level::L3, vec!["pure".to_string()], 0, vec![]),
-            Certificate::new("sum", Level::L3, vec!["pure".to_string()], 0, vec![]),
+            Certificate::test_current("spec_sum", Level::L3),
+            Certificate::test_current("sum", Level::L3),
         ];
         let artifact = project_artifact(&certs, &program, None);
 
@@ -1010,13 +1010,7 @@ mod tests {
     #[test]
     fn artifact_is_deterministic() {
         let program = parse_ok(include_str!("../../conformance/sum.th"));
-        let certs = vec![Certificate::new(
-            "sum",
-            Level::L3,
-            vec!["pure".to_string()],
-            7,
-            vec![],
-        )];
+        let certs = vec![Certificate::test_current("sum", Level::L3)];
         let a = project_artifact(&certs, &program, None);
         let b = project_artifact(&certs, &program, None);
         let ja = serde_json::to_string(&a).expect("a");
@@ -1030,13 +1024,7 @@ mod tests {
             "spec fn guard(x: u32) -> bool measures 0 { x < 10 } \
              fn f(x: u32) -> bool ! pure requires true ensures result == match x { n if guard(n) => true, _ => false } { x < 10 }",
         );
-        let certs = vec![Certificate::new(
-            "f",
-            Level::L3,
-            vec!["pure".to_string()],
-            0,
-            vec![],
-        )];
+        let certs = vec![Certificate::test_current("f", Level::L3)];
         let artifact = project_artifact(&certs, &program, None);
         let reviewed = &artifact.intent_reviewable[0];
         assert_eq!(
@@ -1088,8 +1076,8 @@ mod tests {
     fn item_filter_restricts() {
         let program = parse_ok(include_str!("../../conformance/sum.th"));
         let certs = vec![
-            Certificate::new("spec_sum", Level::L3, vec!["pure".to_string()], 0, vec![]),
-            Certificate::new("sum", Level::L3, vec!["pure".to_string()], 0, vec![]),
+            Certificate::test_current("spec_sum", Level::L3),
+            Certificate::test_current("sum", Level::L3),
         ];
         let artifact = project_artifact(&certs, &program, Some("sum"));
         assert_eq!(artifact.intent_reviewable.len(), 1);
@@ -1105,17 +1093,11 @@ mod tests {
         let program = parse_ok(
             "lemma melems_cons(n: u32) requires n > 0 ensures n >= 1 proof { simp [Thermite.denote]; omega }",
         );
-        let burned = Certificate::new(
-            "melems_cons",
-            Level::L3,
-            vec!["pure".to_string()],
-            0,
-            vec![crate::manifest::ObligationResult::discharged("melems_cons")],
-        )
-        .graduate_triage_clean()
-        .with_burn(crate::burn::BurnReceipt::for_proof_text(
-            "simp [Thermite.denote]; omega",
-        ));
+        let burned = Certificate::test_current("melems_cons", Level::L3)
+            .graduate_triage_clean()
+            .with_burn(crate::burn::BurnReceipt::for_proof_text(
+                "simp [Thermite.denote]; omega",
+            ));
         let artifact = project_artifact(&[burned], &program, None);
         assert_eq!(
             artifact.burned_lemmas.len(),

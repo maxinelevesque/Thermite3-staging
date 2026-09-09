@@ -286,13 +286,18 @@ where
         // L2 verified (a degrade) → certify L2, stamped lowered-assurance + reason.
         LadderAction::CertifyL2 => {
             debug_assert!(action.is_degrade(), "CertifyL2 is a degrade (REQ-7)");
-            Ok(l2.cert.into_degraded(reason))
+            Ok(l2
+                .cert
+                .into_degraded(reason)
+                .with_live_disposition(crate::manifest::LiveResultDisposition::TimeoutDegrade))
         }
         // L2 under-bound (a degrade) → drop to L1. Record Level::L1 + stamp (REQ-3).
         LadderAction::DegradeToL1 => {
             debug_assert!(action.is_degrade(), "DegradeToL1 is a degrade (REQ-7)");
             let l1 = attempt_l1()?;
-            Ok(l1.into_degraded(reason))
+            Ok(l1
+                .into_degraded(reason)
+                .with_live_disposition(crate::manifest::LiveResultDisposition::TimeoutDegrade))
         }
         // L2 counterexample → hard fail (not a degrade, REQ-2/REQ-7 2nd rung): the
         // cert is returned unchanged, never stamped, no L1 rung. The anti-cheat
@@ -307,9 +312,14 @@ where
         // `ladder_action_l2` never returns an L3-only action for an L2 verdict; map
         // each remaining verdict (no unreachable!(), R-APG-1).
         LadderAction::CertifyL3 | LadderAction::AttemptL2 => match l2.verdict {
-            L2Verdict::Verified => Ok(l2.cert.into_degraded(reason)),
+            L2Verdict::Verified => Ok(l2
+                .cert
+                .into_degraded(reason)
+                .with_live_disposition(crate::manifest::LiveResultDisposition::TimeoutDegrade)),
             L2Verdict::Counterexample => Ok(l2.cert),
-            L2Verdict::UnderBound => Ok(attempt_l1()?.into_degraded(reason)),
+            L2Verdict::UnderBound => Ok(attempt_l1()?
+                .into_degraded(reason)
+                .with_live_disposition(crate::manifest::LiveResultDisposition::TimeoutDegrade)),
         },
     }
 }
@@ -321,30 +331,14 @@ mod tests {
 
     /// A synthesized L3 proved cert (the hermetic ladder driver, no live verus).
     fn proved_cert(item: &str) -> Certificate {
-        Certificate::new(
-            item,
-            Level::L3,
-            vec!["pure".to_string()],
-            0,
-            vec![ObligationResult::discharged("1 obligations discharged")],
-        )
+        Certificate::test_current(item, Level::L3)
     }
 
     /// A synthesized L3 counterexample cert (Level::L0, a failed obligation, no
     /// profile; the shape `check::assemble_certificate` produces on
     /// `VerusOutcome::Counterexample`).
     fn counterexample_cert(item: &str) -> Certificate {
-        Certificate::new(
-            item,
-            Level::L0,
-            vec!["pure".to_string()],
-            0,
-            vec![ObligationResult::failed(
-                "postcondition not satisfied",
-                Some("x.rs:5:13".to_string()),
-                Some("error: postcondition not satisfied".to_string()),
-            )],
-        )
+        Certificate::test_current(item, Level::L0)
     }
 
     /// The synthesized `VerusTimeout` degrade reason (the #11 reason material).
@@ -381,23 +375,14 @@ mod tests {
                 )],
             ),
         };
-        L2Attempt {
-            verdict,
-            cert: Certificate::new("f", level, vec!["pure".to_string()], 0, obs),
-        }
+        let mut cert = Certificate::test_current("f", level);
+        cert.obligations = obs;
+        L2Attempt { verdict, cert }
     }
 
     /// A synthesized L1 fallback cert (the achieved-level record, OQ-3 (b)).
     fn l1_cert(item: &str) -> Certificate {
-        Certificate::new(
-            item,
-            Level::L1,
-            vec!["pure".to_string()],
-            0,
-            vec![ObligationResult::discharged(
-                "contract recorded at L1 (runtime checks emitted at build by lower_l1)",
-            )],
-        )
+        Certificate::test_current(item, Level::L1)
     }
 
     // REQ-1: a proved L3 verdict certifies L3 and runs no lower rung (the closures
@@ -410,7 +395,7 @@ mod tests {
             || panic!("attempt_l1 must NOT run on a PROVED verdict"),
         )
         .expect("ladder");
-        assert_eq!(cert.level, Level::L3);
+        assert_eq!(cert.compatibility_level(), Level::L3);
         assert!(!cert.lowered_assurance, "an L3 proof is not a degrade");
         assert!(cert.degrade_reason.is_none());
     }
@@ -427,7 +412,11 @@ mod tests {
             || panic!("attempt_l1 must NOT run when L2 verifies"),
         )
         .expect("ladder");
-        assert_eq!(cert.level, Level::L2, "the degrade target is L2");
+        assert_eq!(
+            cert.compatibility_level(),
+            Level::L2,
+            "the degrade target is L2"
+        );
         assert!(
             cert.lowered_assurance,
             "a degraded cert is lowered-assurance"
@@ -465,7 +454,11 @@ mod tests {
             || Ok(l1_cert("f")),
         )
         .expect("ladder");
-        assert_eq!(cert.level, Level::L1, "L2 under-bound degrades to L1");
+        assert_eq!(
+            cert.compatibility_level(),
+            Level::L1,
+            "L2 under-bound degrades to L1"
+        );
         assert!(cert.lowered_assurance);
         assert_eq!(
             cert.degrade_reason.as_ref().map(|r| r.cause.as_str()),
@@ -487,7 +480,7 @@ mod tests {
         )
         .expect("ladder");
         assert_eq!(
-            cert.level,
+            cert.compatibility_level(),
             Level::L0,
             "a counterexample is non-certifying L0"
         );
@@ -499,8 +492,8 @@ mod tests {
             cert.degrade_reason.is_none(),
             "a hard fail carries no degrade reason"
         );
-        assert_ne!(cert.level, Level::L1, "NEVER certified L1");
-        assert_ne!(cert.level, Level::L2, "NEVER certified L2");
+        assert_ne!(cert.compatibility_level(), Level::L1, "NEVER certified L1");
+        assert_ne!(cert.compatibility_level(), Level::L2, "NEVER certified L2");
     }
 
     // REQ-4 / AC-3, the covenant anti-cheat (the `counterexample_never_degrades`
@@ -519,7 +512,7 @@ mod tests {
         )
         .expect("ladder");
         assert_eq!(
-            cert.level,
+            cert.compatibility_level(),
             Level::L0,
             "a covenant refutation is non-certifying L0"
         );
@@ -531,8 +524,8 @@ mod tests {
             cert.degrade_reason.is_none(),
             "a covenant hard fail carries no degrade reason"
         );
-        assert_ne!(cert.level, Level::L1, "NEVER certified L1");
-        assert_ne!(cert.level, Level::L2, "NEVER certified L2");
+        assert_ne!(cert.compatibility_level(), Level::L1, "NEVER certified L1");
+        assert_ne!(cert.compatibility_level(), Level::L2, "NEVER certified L2");
         // The ladder ACTION for a covenant refutation is the same hard-fail action as a
         // counterexample, and it is never a degrade (the anti-cheat predicate).
         let action = ladder_action_l3(&L3Verdict::CovenantRefuted(counterexample_cert("f")));
@@ -603,7 +596,7 @@ mod tests {
         )
         .expect("ladder");
         assert_eq!(
-            cert.level,
+            cert.compatibility_level(),
             Level::L0,
             "an L2 counterexample is non-certifying L0"
         );
@@ -611,7 +604,7 @@ mod tests {
             !cert.lowered_assurance,
             "an L2 counterexample is NOT a degrade — it is a FAILURE"
         );
-        assert_ne!(cert.level, Level::L1);
+        assert_ne!(cert.compatibility_level(), Level::L1);
     }
 
     // REQ-8: an environment failure on the L2 rung (kani absent) propagates as the
@@ -672,13 +665,12 @@ mod tests {
             )
             .expect("ladder")
         };
-        assert_eq!(run().level, run().level);
+        assert_eq!(run().compatibility_level(), run().compatibility_level());
         assert_eq!(run().lowered_assurance, run().lowered_assurance);
     }
 
-    // REQ-5 / REQ-6 / AC-5: the assurance manifest aggregate is the min over
-    // functions. A {L3, L2, L1} set → project Certified(L1). Expected: Level's Ord
-    // L0<L1<L2<L3 (`manifest.rs` REQ-6), not forge's output (R-CHAR-3).
+    // Current-assurance migration: timeout-degraded rows are typed non-claims,
+    // so they cannot contribute a project certificate through their old rung.
     #[test]
     fn aggregate_is_min_over_functions() {
         let certs = vec![
@@ -689,16 +681,14 @@ mod tests {
                 .into_degraded(timeout_reason()),
         ];
         let manifest = AssuranceManifest::aggregate(&certs);
-        assert_eq!(
-            manifest.project,
-            ProjectAssurance::Certified(Level::L1),
-            "the project headline is the min over functions"
-        );
+        assert_eq!(manifest.project, ProjectAssurance::Failed);
         assert_eq!(manifest.functions.len(), 3);
         // The L2 and L1 fns are flagged lowered-assurance; the L3 fn is not.
         assert!(!manifest.functions[0].lowered_assurance);
         assert!(manifest.functions[1].lowered_assurance);
         assert!(manifest.functions[2].lowered_assurance);
+        assert!(!manifest.functions[1].certified);
+        assert!(!manifest.functions[2].certified);
     }
 
     // REQ-6 / REQ-2 / AC-5: a single hard-failed (counterexample) fn makes the
@@ -944,7 +934,7 @@ mod verus_anchor {
 
         // The observable outcome: hard-fail cert, no degrade stamp, no closure run.
         assert_eq!(
-            cert.level,
+            cert.compatibility_level(),
             Level::L0,
             "a counterexample is non-certifying L0"
         );
@@ -1004,7 +994,7 @@ mod verus_anchor {
         );
         assert!(!LadderAction::HardFail.is_degrade());
         assert_eq!(
-            cert.level,
+            cert.compatibility_level(),
             Level::L0,
             "an L2 counterexample is non-certifying L0"
         );

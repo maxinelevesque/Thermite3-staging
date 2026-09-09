@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 6d334c933df87e4843fd7629fc54b3cb9c218389ddb62f990eb871c685b3091d (re-pinned 2026-09-08 after rematerializing all 581 claims for the exact 1,948-test CI partition repair; the receipts retain the repository-pinned Lean 4.29.0 verifier identity. prior: f87952975c6f4d3d9e46f22a082fd5c83e1f183152e18ae1d63441435c65d0ab)
+audited-content-sha256: ebc6e8e1782afa4f05667763945607552beeec3fed2da3ce1d783c8be7ff4db7 (re-pinned 2026-09-09 after CI identified and live replay refreshed the exact 127 receipts affected by the late `forge/src/check.rs` change. prior: 869c1bd442e885bc7bd52a17e72ab748ca850ce82e708c2c45944f5ce28ce795)
 
 ## Summary
 
@@ -451,8 +451,9 @@ does not expose a position-only success path. Certificate coordinate fields are
 crate-private, the public reader rejects classification-without-position and
 position-without-classification for L2, and audit invokes that validation before
 copying the fields. Historical bare L2 with neither field remains readable.
-This migrates one end-to-end producer without claiming that the remaining L0,
-L1, L3, L4, project aggregation, or display consumers have retired `Level`.
+This was the first end-to-end producer cut; issue #56 subsequently migrated the
+remaining production authority consumers. L0-L4 now survive only as derived
+compatibility presentation.
 
 The second production cut migrates the runtime-enforced L1 family. Checked L1
 lowering returns an opaque artifact containing the emitted source, routed item,
@@ -477,13 +478,15 @@ remains readable, but cannot be laundered into a current audit claim by deleting
 the migration pair or mutating its surrounding fields. Migrated-L1 detection is
 independent of the mutable legacy `Level` projection: retained wrapper,
 classifier, or per-execution/abort/fiat evidence forces validation, and a row
-carrying migrated L1 evidence under another `Level` is rejected.
+carrying migrated L1 evidence under another `Level` cannot change the derived
+current claim.
 Directly deserialized certificate JSON is compatibility data, not an audit
 capability. The audit command disables proof-cache certificate reuse, so only
 live producer output reaches projection. This closes the otherwise
 indistinguishable coordinated attack that removes every L1 marker while changing
 the legacy scalar to `L3`.
-Project aggregation and display continue to consume `Level` during migration.
+Project aggregation now consumes typed `CurrentAssurance`; display may render a
+derived compatibility Level but cannot feed it back into authority.
 
 The third production cut migrates the homogeneous general-Verus route. Checked
 L3 lowering now returns an opaque artifact containing the exact isolated source,

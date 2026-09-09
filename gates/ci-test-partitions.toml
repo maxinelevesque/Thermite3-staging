@@ -2530,7 +2530,7 @@ test = "forge::bin/forge audit::tests::manifest_is_deterministic"
 [[assignment]]
 bucket = 4
 seconds = 0.010
-test = "forge::bin/forge audit::tests::migrated_l1_audit_rejects_legacy_level_substitution"
+test = "forge::bin/forge audit::tests::migrated_l1_audit_derives_presentation_after_legacy_level_substitution"
 
 [[assignment]]
 bucket = 4
@@ -3392,7 +3392,7 @@ test = "forge::bin/forge manifest::tests::bv_shadow_is_additive_and_serializes_t
 [[assignment]]
 bucket = 5
 seconds = 0.010
-test = "forge::bin/forge manifest::tests::rfc3_coordinates::historical_unmarked_l1_position_remains_readable"
+test = "forge::bin/forge manifest::tests::rfc3_coordinates::historical_unmarked_l1_has_no_invented_position"
 
 [[assignment]]
 bucket = 5
@@ -4284,7 +4284,7 @@ test = "forge::verified_build commitment_after_evidence_hash_is_atomic"
 [[assignment]]
 bucket = 6
 seconds = 224.154
-test = "forge::verified_build every_non_l3_certificate_class_blocks_publication"
+test = "forge::verified_build every_certificate_below_verified_build_floor_blocks_publication"
 
 [[assignment]]
 bucket = 6
@@ -4749,7 +4749,7 @@ test = "forge::bin/forge manifest::tests::rfc3_coordinates::classification_witho
 [[assignment]]
 bucket = 7
 seconds = 0.010
-test = "forge::bin/forge manifest::tests::rfc3_coordinates::migrated_l1_pair_rejects_serialized_legacy_level_substitution"
+test = "forge::bin/forge manifest::tests::rfc3_coordinates::migrated_l1_pair_ignores_serialized_legacy_level_substitution"
 
 [[assignment]]
 bucket = 7
@@ -10127,4 +10127,61 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 bucket = 5
 seconds = 0.007
 test = "thermite-syntax::resource_types_parse resource_structs_and_enums_preserve_explicit_and_bare_provenance"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# Issue #56 current-assurance tests postdate the frozen timing source. These
+# focused in-process checks use the established 0.007s reviewed estimate until
+# the next measured timing snapshot.
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "forge::bin/forge check::tests::complete_clause_route_retains_solver_incomplete_invariant_constraint"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "forge::bin/forge kani::tests::l2_nonclaims_have_typed_current_dispositions"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "forge::bin/forge manifest::tests::current_assurance::compatibility_level_edit_cannot_change_current_authority"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge manifest::tests::current_assurance::current_envelope_omits_level_and_round_trips_unadmitted"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "forge::bin/forge manifest::tests::current_assurance::current_envelope_rejects_compatibility_level_and_unknown_schema"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "forge::bin/forge manifest::tests::current_assurance::deserialized_current_looking_row_is_not_current_authority"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "forge::bin/forge manifest::tests::current_assurance::non_claim_uses_typed_disposition_not_level"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "forge::bin/forge manifest::tests::current_assurance::presentation_policy_is_bound_separately_from_formal_authority"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "forge::bin/forge manifest::tests::current_assurance::unversioned_levels_are_inspect_only_with_specific_warnings"
 timing_provenance = "reviewed_local_estimate_after_baseline"

@@ -63,6 +63,7 @@ fn run_check_json(file: &Path) -> (Option<i32>, Vec<Value>) {
         .arg("check")
         .arg(file)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .unwrap_or_else(|e| panic!("spawn forge: {e}"));
     let stdout = String::from_utf8_lossy(&out.stdout);

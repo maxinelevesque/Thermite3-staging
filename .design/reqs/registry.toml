@@ -12488,8 +12488,8 @@ note = "contract, executable, body and loop TV inventory gate"
 
 [[requirement.evidence]]
 kind = "test"
-target = "forge/tests/verified_build.rs::every_tv_phase_and_nonpass_class_blocks_publication"
-note = "complete phase and non-pass refusal matrix"
+target = "forge/tests/verified_build.rs::tv_loop_unverifiable_blocks_publication"
+note = "generated loop/unverifiable endpoint refuses publication; sibling generated cases cover the remaining phase/non-pass pairs"
 
 [[requirement]]
 id = "REQ-L3BUILD-6"
@@ -12576,8 +12576,8 @@ note = "staged self-validation, fsync and atomic rename"
 
 [[requirement.evidence]]
 kind = "test"
-target = "forge/tests/verified_build.rs::every_injected_commitment_failure_is_atomic"
-note = "publication fault matrix and staging cleanup"
+target = "forge/tests/verified_build.rs::commitment_after_receipt_staging_is_atomic"
+note = "post-receipt staging fault refuses publication and cleans the staging tree"
 
 [[requirement]]
 id = "REQ-L3BUILD-10"
@@ -12598,7 +12598,7 @@ note = "minimum reachable assurance capped at L3"
 
 [[requirement.evidence]]
 kind = "test"
-target = "forge/tests/verified_build.rs::every_non_l3_certificate_class_blocks_publication"
+target = "forge/tests/verified_build.rs::every_certificate_below_verified_build_floor_blocks_publication"
 note = "no-downgrade certificate refusal matrix"
 
 [[requirement]]
@@ -12642,8 +12642,8 @@ note = "debug-only post-freeze commitment fault seams"
 
 [[requirement.evidence]]
 kind = "test"
-target = "forge/tests/verified_build.rs::every_injected_commitment_failure_is_atomic"
-note = "body, helper, wrapper, evidence, toolchain and artifact mutation matrix"
+target = "forge/tests/verified_build.rs::commitment_after_plan_body_mutation_is_atomic"
+note = "post-freeze executable-body mutation refuses publication and cleans the staging tree"
 
 [[requirement]]
 id = "REQ-L3BUILD-13"
@@ -19876,7 +19876,7 @@ status = "shipped"
 scope = "verified"
 summary = "Exact source/build populations, complete heterogeneous portfolio lifts, claim-fiber intersections, distinct common/evidence frontiers, and nonvacuous project lifts fail closed under omissions, unavailable transports, and incomparable positions."
 claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/assurance-project-composition.json", expected = ["accepted"], reviewed_summary_sha256 = "74d68040827749fd9822241cdccb3321822ac89a395db25c9db25bb00789ef10" }
-remaining_scope = "Issue #56 moves this verified and replayed composition seam into production current-authority decisions; this requirement does not claim that integration."
+remaining_scope = ""
 contributors = ["lean/Thermite/AssuranceComposition.lean", "forge/src/assurance_v2.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
@@ -19899,6 +19899,30 @@ note = "hostile project-composition tests cover missing clauses and members, inc
 kind = "test"
 target = "gates/assurance-v2-replay.py"
 note = "shared constructor-pair replay plus structural presence of the Lean and Rust project-composition surfaces"
+
+[[requirement]]
+id = "REQ-ASSURANCE-CURRENT-AUTHORITY"
+title = "Typed current assurance is the sole production authority"
+owner = ".design/engineer-assurance-report-and-level-retirement.md"
+status = "shipped"
+scope = "forge"
+summary = "Current certification authority is admitted through a versioned typed disposition and complete clause portfolio; Level is derived presentation only, historical documents are inspect-only, and cache or portfolio substitution fails closed."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/current-assurance-authority.json", expected = ["accepted"], reviewed_summary_sha256 = "4ebea400a7f0b69d820aff22000354dce275bc2cba83e8c993f9071cdccf4ae8" }
+remaining_scope = "Issue #57 owns the deterministic engineer report, comparison, CI publication, and formal-floor surfaces; this requirement closes only the authority migration."
+contributors = ["forge/src/manifest.rs", "forge/src/check.rs", "forge/src/cache.rs", "forge/src/audit.rs"]
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/engineer-assurance-report-and-level-retirement.md"
+note = "REQ-11, REQ-12, REQ-17 through REQ-20 and AC-8/AC-14/AC-15/AC-16 define the atomic authority migration and historical boundary"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/assurance-level-inventory.py"
+note = "reviewed source inventory classifies every Level site and rejects any production authority-decision occurrence"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/claim-closure-current-assurance.py"
+note = "hostile executable cases cover Level edits, current schema confusion, historical inspection, portfolio splicing, cache replay, and audit projection"
 
 [[requirement]]
 id = "REQ-SPEC-CRASH-MODEL"

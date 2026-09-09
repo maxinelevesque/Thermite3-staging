@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 //! `forge/src/seven_verdicts.rs` — the seven-verdict hermetic suite (`.design/
 //! stage1-forge-tier.md` REQ-10 / AC-14: "a hermetic test per verdict (seven tests named
 //! for their verdict)"). One `#[test]` per cert-level verdict

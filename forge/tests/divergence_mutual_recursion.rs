@@ -111,6 +111,7 @@ fn divergence_mutual_recursion_is_rejected_not_crashed() {
         .arg("check")
         .arg(&fixture)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge");
     let _ = std::fs::remove_file(&fixture);

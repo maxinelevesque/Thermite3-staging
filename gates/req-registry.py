@@ -211,6 +211,39 @@ def path_exists(root: Path, target: str) -> bool:
     return bool(token) and (root / token).exists()
 
 
+def rust_test_symbol_detail(root: Path, target: str) -> str | None:
+    """Validate the symbol portion of a file-qualified Rust test target."""
+    match = re.fullmatch(
+        r"(?P<path>.+\.rs)::(?P<symbol>[A-Za-z_][A-Za-z0-9_]*)",
+        target.strip(),
+    )
+    if match is None:
+        return None
+
+    path = root / match.group("path")
+    if not path.is_file():
+        return None  # The ordinary path check reports this independently.
+
+    try:
+        source = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        source = path.read_text(encoding="utf-8", errors="ignore")
+
+    symbol = re.escape(match.group("symbol"))
+    direct_test = re.search(
+        rf"#\s*\[\s*(?:[A-Za-z_][A-Za-z0-9_]*::)*test(?:\s*\([^]]*\))?\s*\]"
+        rf"(?:\s*#\s*\[[^]]*\])*\s*(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?fn\s+{symbol}\s*\(",
+        source,
+    )
+    generated_test = re.search(
+        rf"\b[A-Za-z_][A-Za-z0-9_]*!\s*\(\s*{symbol}\s*(?:,|\))",
+        source,
+    )
+    if direct_test is not None or generated_test is not None:
+        return None
+    return f"Rust test evidence symbol does not resolve in its file: {target}"
+
+
 def repo_or_abs_path_exists(root: Path, target: str) -> bool:
     path = Path(target)
     return path.exists() if path.is_absolute() else (root / path).exists()
@@ -986,6 +1019,16 @@ def validate_registry(root: Path, registry: Registry, *, live_issues: bool = Fal
                         f"{ev.kind} evidence path does not exist: {ev.target}",
                     )
                 )
+            if ev.kind == "test":
+                detail = rust_test_symbol_detail(root, ev.target)
+                if detail is not None:
+                    issues.append(
+                        Issue(
+                            "UNRESOLVED-EVIDENCE",
+                            req.id,
+                            detail,
+                        )
+                    )
             if ev.kind == "symbol" and not symbol_exists(haystack, ev.target):
                 issues.append(
                     Issue(

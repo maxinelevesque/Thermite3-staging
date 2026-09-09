@@ -466,7 +466,8 @@ fn render_proof_cert_status(cert: &Certificate) -> String {
             reject.cause, reject.detail
         );
     }
-    let mut out = format!("  re-check: certified {} \u{2713}\n", level_str(cert.level));
+    let level = cert.current_compatibility_level().unwrap_or(Level::L0);
+    let mut out = format!("  re-check: certified {} \u{2713}\n", level_str(level));
     if let Some(burn) = &cert.burn {
         out.push_str(&format!("  burn: {} proof token(s)", burn.proof_tokens));
         if !burn.cited_lemmas.is_empty() {
@@ -534,11 +535,16 @@ fn render_goal_item(cert: &Certificate, program: &Program) -> String {
         .obligations
         .iter()
         .any(|o| o.status == ObligationStatus::Failed);
-    if cert.level == Level::L3 && !any_failed {
+    let current_level = cert.current_compatibility_level().unwrap_or(Level::L0);
+    let accepted = matches!(
+        cert.current_assurance(),
+        Ok(crate::manifest::CurrentAssurance::Accepted { .. })
+    );
+    if accepted && !any_failed {
         out.push_str(&format!(
             "  ALL GOALS DISCHARGED \u{2713}  {} certified {}\n",
             cert.item,
-            level_str(cert.level)
+            level_str(current_level)
         ));
     } else {
         for ob in &cert.obligations {
@@ -559,7 +565,7 @@ fn render_goal_item(cert: &Certificate, program: &Program) -> String {
         }
         out.push_str(&format!(
             "  status: {} (not all goals discharged)\n",
-            level_str(cert.level)
+            level_str(current_level)
         ));
     }
 
@@ -982,13 +988,8 @@ mod tests {
     /// A discharged-L3 cert with the corpus battery verdict (anchored to
     /// `conformance/sum.cert.json`, not copied from the verb, R-CHAR-3).
     fn sum_cert_l3() -> Certificate {
-        let mut c = Certificate::new(
-            "sum",
-            Level::L3,
-            vec!["pure".to_string()],
-            0,
-            vec![ObligationResult::discharged("sum_ensures")],
-        );
+        let mut c = Certificate::test_current("sum", Level::L3);
+        c.obligations = vec![ObligationResult::discharged("sum_ensures")];
         c.contract_quality = ContractQuality {
             tautology: false,
             vacuous_precondition: false,

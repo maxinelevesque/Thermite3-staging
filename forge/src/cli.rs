@@ -319,6 +319,10 @@ enum Command {
     Check {
         file: PathBuf,
         json: bool,
+        /// Emit the deprecated, inspect-only compatibility projection used by
+        /// frozen conformance oracles. This is never accepted as current
+        /// authority and is only valid together with `--json`.
+        legacy_inspection_json: bool,
         level: CheckLevel,
         /// The verus `--rlimit` (SMT resource budget, roughly seconds) for the
         /// L3 path (#11; `.design/forge/solver-profiles.md` REQ-5). Defaults to
@@ -663,6 +667,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
         ForgeMethod::Check => {
             let mut file: Option<PathBuf> = None;
             let mut json = false;
+            let mut legacy_inspection_json = false;
             let mut level = CheckLevel::L3;
             let mut rlimit = DEFAULT_RLIMIT;
             let mut mutation_floor = MUTATION_FLOOR;
@@ -671,6 +676,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             while let Some(arg) = iter.next() {
                 match arg.as_str() {
                     "--json" => json = true,
+                    "--legacy-inspection-json" => legacy_inspection_json = true,
                     "--rlimit" => {
                         // `--rlimit <FLOAT>` — the verus SMT resource budget (#11;
                         // `.design/forge/solver-profiles.md` REQ-5). The value is a
@@ -785,9 +791,15 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                         .to_string(),
                 )
             })?;
+            if legacy_inspection_json && !json {
+                return Err(ForgeError::Usage(
+                    "`--legacy-inspection-json` requires `--json`".to_string(),
+                ));
+            }
             Ok(Command::Check {
                 file,
                 json,
+                legacy_inspection_json,
                 level,
                 rlimit,
                 mutation_floor,
@@ -1760,11 +1772,20 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
         Command::Check {
             file,
             json,
+            legacy_inspection_json,
             level,
             rlimit,
             mutation_floor,
             engine,
-        } => run_check(&file, json, level, rlimit, mutation_floor, engine),
+        } => run_check(
+            &file,
+            json,
+            legacy_inspection_json,
+            level,
+            rlimit,
+            mutation_floor,
+            engine,
+        ),
         Command::Audit {
             file,
             json,
@@ -2122,6 +2143,7 @@ fn run_restratify(json: bool) -> Result<ExitCode, ForgeError> {
 fn run_check(
     file: &Path,
     json: bool,
+    legacy_inspection_json: bool,
     level: CheckLevel,
     rlimit: f64,
     mutation_floor: f64,
@@ -2181,10 +2203,29 @@ fn run_check(
     let manifest = AssuranceManifest::aggregate(&certs);
 
     if json {
-        // One JSON document on stdout: the array of certificates. Nothing else
-        // goes to stdout under --json (the per-cert `lowered_assurance` flag is in
-        // each cert; the project headline is a derived display, not a schema field).
-        let doc = serde_json::to_string_pretty(&certs).map_err(|e| ForgeError::VerusOutput {
+        let doc = if legacy_inspection_json {
+            // REQ-18: machine compatibility is an explicit terminal
+            // presentation. Its schema and warning make it inspect-only; the
+            // current-document deserializer cannot admit it as authority.
+            let documents = certs
+                .iter()
+                .map(legacy_inspection_document)
+                .collect::<Result<Vec<_>, _>>()?;
+            serde_json::to_string_pretty(&documents)
+        } else {
+            // One schema-current document on stdout. Compatibility Level is
+            // absent; every row carries its independently checked authority
+            // digest and typed disposition.
+            let documents = certs
+                .iter()
+                .map(Certificate::current_document)
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|error| ForgeError::VerusOutput {
+                    detail: format!("refusing non-current certificate JSON: {error}"),
+                })?;
+            serde_json::to_string_pretty(&documents)
+        }
+        .map_err(|e| ForgeError::VerusOutput {
             detail: format!("failed to serialize certificate JSON: {e}"),
         })?;
         println!("{doc}");
@@ -2215,6 +2256,33 @@ fn run_check(
     } else {
         Ok(ExitCode::from(EXIT_VERIFICATION_FAILURE))
     }
+}
+
+/// Render a deprecated compatibility projection for frozen conformance and
+/// human inspection. The schema is deliberately outside the current authority
+/// namespace, and the loud warning is repeated on every row so array slicing
+/// cannot erase it accidentally.
+fn legacy_inspection_document(cert: &Certificate) -> Result<serde_json::Value, ForgeError> {
+    let mut payload = serde_json::to_value(cert).map_err(|error| ForgeError::VerusOutput {
+        detail: format!("failed to serialize legacy inspection row: {error}"),
+    })?;
+    let object = payload
+        .as_object_mut()
+        .ok_or_else(|| ForgeError::VerusOutput {
+            detail: "legacy inspection certificate is not an object".to_string(),
+        })?;
+    object.insert(
+        "schema".to_string(),
+        serde_json::Value::String("thermite-legacy-inspection/v1".to_string()),
+    );
+    object.insert(
+        "legacy_inspection_warning".to_string(),
+        serde_json::Value::String(
+            "INSPECTION ONLY: compatibility Level is not current assurance; re-certify and use the schema-current document for every authority decision."
+                .to_string(),
+        ),
+    );
+    Ok(payload)
 }
 
 /// Run `forge audit`: emit the project audit manifest v1 (#15;
@@ -3654,32 +3722,22 @@ fn render_assurance(manifest: &AssuranceManifest) -> String {
 /// readable text"). The §5.1 structured JSON is the `--json` rendering; this is
 /// the default.
 pub(crate) fn render_human(cert: &Certificate) -> String {
-    // The deterministic oracle-stable subset (manifest::Certificate::oracle_subset):
-    // item / level / effects / slag — the fields the cert-oracle compares — are
-    // rendered first, then the non-deterministic `solver_time_ms` labelled as
-    // such so a reader does not mistake it for an oracle field.
-    let (
-        item,
-        level,
-        effects,
-        slag,
-        boundary,
-        _scope_end_to_end,
-        _covenant_evidence,
-        _meaning,
-        _bv_shadows,
-        _clause_certifications,
-        _resource_flow,
-        _interference,
-    ) = cert.oracle_subset();
+    // Level remains a deprecated human-only rendering. It is derived from the
+    // admitted formal claim and is never read as certificate authority.
+    let level = cert
+        .current_compatibility_level()
+        .unwrap_or_else(|_| cert.compatibility_level());
     let mut out = String::new();
-    out.push_str(&format!("item: {item}\n"));
-    out.push_str(&format!("level: {}\n", level_str(level)));
-    out.push_str(&format!("effects: [{}]\n", effects.join(", ")));
-    out.push_str(&format!("slag: {slag}\n"));
+    out.push_str(&format!("item: {}\n", cert.item));
+    out.push_str(&format!(
+        "level: {} (deprecated compatibility view)\n",
+        level_str(level)
+    ));
+    out.push_str(&format!("effects: [{}]\n", cert.effects.join(", ")));
+    out.push_str(&format!("slag: {}\n", cert.slag));
     // #16: a boundary fn (FFI crossing) renders its flag + foreign target so the
     // §9 "to-the-boundary, body unproven" status is visible (the #15 TCB hook).
-    out.push_str(&format!("boundary: {boundary}\n"));
+    out.push_str(&format!("boundary: {}\n", cert.boundary));
     if let Some(target) = &cert.boundary_target {
         out.push_str(&format!("boundary_target: {target}\n"));
     }
@@ -3942,6 +4000,7 @@ mod tests {
             Some(Command::Check {
                 file: PathBuf::from("a.th"),
                 json: false,
+                legacy_inspection_json: false,
                 level: CheckLevel::L3,
                 rlimit: DEFAULT_RLIMIT,
                 mutation_floor: MUTATION_FLOOR,
@@ -3953,12 +4012,35 @@ mod tests {
             Some(Command::Check {
                 file: PathBuf::from("a.th"),
                 json: true,
+                legacy_inspection_json: false,
                 level: CheckLevel::L3,
                 rlimit: DEFAULT_RLIMIT,
                 mutation_floor: MUTATION_FLOOR,
                 engine: check::EngineSelection::Auto,
             })
         );
+        assert_eq!(
+            parse_args(&argv(&[
+                "check",
+                "a.th",
+                "--json",
+                "--legacy-inspection-json",
+            ]))
+            .ok(),
+            Some(Command::Check {
+                file: PathBuf::from("a.th"),
+                json: true,
+                legacy_inspection_json: true,
+                level: CheckLevel::L3,
+                rlimit: DEFAULT_RLIMIT,
+                mutation_floor: MUTATION_FLOOR,
+                engine: check::EngineSelection::Auto,
+            })
+        );
+        assert!(matches!(
+            parse_args(&argv(&["check", "a.th", "--legacy-inspection-json",])),
+            Err(ForgeError::Usage(_))
+        ));
     }
 
     #[test]
@@ -4030,6 +4112,7 @@ mod tests {
             Some(Command::Check {
                 file: PathBuf::from("a.th"),
                 json: false,
+                legacy_inspection_json: false,
                 level: CheckLevel::L3,
                 rlimit: 1.0,
                 mutation_floor: MUTATION_FLOOR,
@@ -4042,6 +4125,7 @@ mod tests {
             Some(Command::Check {
                 file: PathBuf::from("a.th"),
                 json: false,
+                legacy_inspection_json: false,
                 level: CheckLevel::L3,
                 rlimit: DEFAULT_RLIMIT,
                 mutation_floor: MUTATION_FLOOR,
@@ -4110,6 +4194,7 @@ mod tests {
             Some(Command::Check {
                 file: PathBuf::from("a.th"),
                 json: false,
+                legacy_inspection_json: false,
                 level: CheckLevel::L3,
                 rlimit: DEFAULT_RLIMIT,
                 mutation_floor: 0.2,
@@ -4150,6 +4235,7 @@ mod tests {
             Some(Command::Check {
                 file: PathBuf::from("a.th"),
                 json: false,
+                legacy_inspection_json: false,
                 level: CheckLevel::L2,
                 rlimit: DEFAULT_RLIMIT,
                 mutation_floor: MUTATION_FLOOR,
@@ -4161,6 +4247,7 @@ mod tests {
             Some(Command::Check {
                 file: PathBuf::from("a.th"),
                 json: false,
+                legacy_inspection_json: false,
                 level: CheckLevel::L3,
                 rlimit: DEFAULT_RLIMIT,
                 mutation_floor: MUTATION_FLOOR,
@@ -4555,18 +4642,19 @@ mod tests {
             detail: "rlimit".to_string(),
         };
         let certs = vec![
-            Certificate::new("f", Level::L3, vec!["pure".to_string()], 0, vec![]),
-            Certificate::new("g", Level::L2, vec!["pure".to_string()], 0, vec![])
-                .into_degraded(reason),
+            Certificate::test_current("f", Level::L3),
+            Certificate::test_current("g", Level::L2)
+                .into_degraded(reason)
+                .with_live_disposition(crate::manifest::LiveResultDisposition::TimeoutDegrade),
         ];
         let m = AssuranceManifest::aggregate(&certs);
         let text = render_assurance(&m);
         assert!(
-            text.contains("project assurance: L2"),
-            "headline is the min over functions (L2):\n{text}"
+            text.contains("project assurance: FAILED"),
+            "a timeout-degraded non-claim cannot establish a project claim:\n{text}"
         );
         assert!(
-            text.contains("lowered-assurance: g achieved L2"),
+            text.contains("lowered-assurance: g achieved L0"),
             "the degraded fn is surfaced:\n{text}"
         );
     }

@@ -42,7 +42,9 @@ use sha2::{Digest, Sha256};
 
 use thermite_syntax::ast::{ForgeItem, Item, LemmaItem, Param, Program, Type};
 
-use crate::manifest::{Certificate, Level};
+#[cfg(test)]
+use crate::manifest::Level;
+use crate::manifest::{cert_certifies, Certificate};
 
 /// Domain-separation tag for the lemma statement hash, so a forge lemma statement hash
 /// never collides with an unrelated sha256 use of the same bytes (mirrors the proof
@@ -213,7 +215,7 @@ impl LemmaLibrary {
     pub fn build(program: &Program, certs: &[Certificate]) -> Self {
         let certified_names: BTreeSet<&str> = certs
             .iter()
-            .filter(|c| c.level == Level::L3 && c.reject.is_none())
+            .filter(|c| cert_certifies(c))
             .map(|c| c.item.as_str())
             .collect();
         let mut by_name = BTreeMap::new();
@@ -436,14 +438,7 @@ mod tests {
 
     /// A certified L3 cert for `item` (the discharge-produced shape).
     fn certified(item: &str) -> Certificate {
-        Certificate::new(
-            item,
-            Level::L3,
-            vec!["pure".to_string()],
-            0,
-            vec![crate::manifest::ObligationResult::discharged(item)],
-        )
-        .graduate_triage_clean()
+        Certificate::test_current(item, Level::L3).graduate_triage_clean()
     }
 
     // Two lemmas with the same statement (params + req + ens) under different names hash

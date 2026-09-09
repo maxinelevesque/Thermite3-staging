@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: e09febf7511a427e6a4df79976e3ac9f6f9cb95667ad39fb3d75a33df4670906 (re-pinned 2026-09-02 after the RFC-11 certificate explicitly named Rust resource-flow computation as residual trust. prior: 2662da35cb96bf90af2e27d081737573421f166488ed5f06c2a0085d17bac2f5)
+audited-content-sha256: eb0d5c050e0d0ebce5f08b93e87177be59e00619d46ca91d9cfa5a485c8fd1cf (re-pinned 2026-09-09 after correcting stale Level-based authority terminology; behavior is unchanged. prior: 589326c12867f905eb1595e0444d1a8e16b6b111e42bcd9537e091c3d87b0028)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1
