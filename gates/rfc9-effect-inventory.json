@@ -67,11 +67,13 @@
     },
     {
       "atoms": [
+        "read(base_path)",
+        "read(floor_path)",
         "write(db.child)"
       ],
       "classification": "structured diagnostic expected-output token",
       "path": "forge/src/cli.rs",
-      "sites": 1
+      "sites": 3
     },
     {
       "atoms": [
@@ -416,7 +418,7 @@
     "json_missing_shared": 0,
     "json_program_fields_with_state_effects": 5,
     "rust_files_reviewed": 37,
-    "rust_reviewed_sites": 221,
+    "rust_reviewed_sites": 223,
     "th_missing_shared": 0,
     "th_programs_with_state_effects": 5,
     "tracked_th_files": 70

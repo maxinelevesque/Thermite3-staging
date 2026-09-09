@@ -1,6 +1,6 @@
 # Feature: Engineer assurance report and Level retirement
 
-audited-content-sha256: 9637b3c1064332af40dc9bf0901a453f97d49328578ea9edfb91b1a8c6f29615 (re-pinned 2026-09-09 after implementing the issue #57 layered assurance report and refreshing all 109 reviewed Level-site locations with zero production authority decisions. prior: b209bb90d4423e54700e388df66c9603a18d40aa82192977264b3d1e6148b33c)
+audited-content-sha256: 596e4c897686031410feb03b6b4fdd2e485f8528121407031eb0363c58832dd4 (re-pinned 2026-09-09 after normalizing process-specific Lean scratch paths and adding a live two-process byte-determinism gate for issue #57 reports. prior: 9637b3c1064332af40dc9bf0901a453f97d49328578ea9edfb91b1a8c6f29615)
 
 ## Summary
 
@@ -393,8 +393,11 @@ Level only after typed authority validation.
 Issue #57 validation evidence: `forge/src/assurance_report.rs` constructs the
 headline, grouped crate portrait, per-item/clause explanation, normalized JSON,
 and escaped/CSP HTML from one non-serializable `LiveAssuranceReport`. The live
-mixed-route probe `gates/assurance-report-smoke.py` checks
-`conformance/forge/mix64.th` as an exact 1/2 source/build population: its
+mixed-route probe `gates/assurance-report-smoke.py` checks the same
+`conformance/forge/mix64.th` source in two separate Forge processes and requires
+byte-identical normalized JSON and HTML after engine scratch paths are
+normalized out of diagnostics. The source is an exact 1/2 source/build
+population: its
 accepted item retains all three source-ordered clause coordinates across the
 bit-vector and nlsat procedures, while the undecided item is a named exception
 and suppresses a whole-project claim. Report units cover deterministic bytes,

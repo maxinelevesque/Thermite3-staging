@@ -3257,7 +3257,7 @@ members = ["REQ-SYNTAX-PROTOCOL-DECL"]
 requirement_id = "REQ-ASSURANCE-CURRENT-AUTHORITY"
 witness_id = "W-ASSURANCE-CURRENT-AUTHORITY"
 mechanism = "executable_discriminator"
-discriminator = "c87527b536c572a2aee51ea54639d3c82ee5cfbc8f8c5f7caf0eef673f029a11"
+discriminator = "8b0951c332ac50f68e0bcc0fda8e4a132728bc29f5b05a9867aa3ee2b4d02dfb"
 claim_digest = "2d28f9a07e125fa7ddaec9611227562318912bec456548ec4fc79356bc06bcc4"
 verifier = ["uv", "run", "python", "gates/claim-closure-current-assurance.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3267,29 +3267,29 @@ oracle = "gates/claim-closure-oracles/current-assurance-authority.json"
 artifacts = ["gates/claim-closure-oracles/current-assurance-authority.json", "gates/claim-closure-current-assurance.py", ".design/engineer-assurance-report-and-level-retirement.md", "forge/src/manifest.rs", "forge/src/assurance_v2.rs", "forge/src/check.rs", "forge/src/cache.rs", "forge/src/audit.rs", "forge/src/cli.rs", "gates/assurance-level-inventory.py", "gates/assurance-level-inventory.json", "gates/completeness-review.py", "gates/claim_closure_schema.py", "Cargo.lock", "rust-toolchain.toml"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-level-inventory-case", mutation = "replace_text", from = "current-assurance-level-inventory", to = "current-assurance-level-inventory-erased", expected_exit = 4 }]
-receipt = "bed2388ec20ba4c3a40c8bc0b5b775d7d645630955901fd9a143505c34d39f8e"
+receipt = "1285be4ebe9ba856f7eef21fdc934ecd497083f62559bba321740dbcdc6fa844"
 
 [[closure]]
 requirement_id = "REQ-ASSURANCE-LAYERED-REPORT"
 witness_id = "W-ASSURANCE-LAYERED-REPORT"
 mechanism = "executable_discriminator"
-discriminator = "0c9d2ba9d33fa82dac44b8b2a594ae27a3d6d0eb9e5672358b85e8f4df68db25"
+discriminator = "6c75ca2cc3375d444921530d6f8517f301d85c066734c75b274c3620831d5c40"
 claim_digest = "6f77d048299f37a5dfc41ce729c18d2fe347a36df5a405dce9dcb756c36ec389"
 verifier = ["uv", "run", "python", "gates/claim-closure-assurance-report.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
 tool_version_argv = ["uv", "run", "python", "gates/claim-closure-assurance-report.py", "--version"]
 tool_version = "thermite-claim-closure-assurance-report 1; cargo 1.95.0 (f2d3ce0bd 2026-03-21)"
 oracle = "gates/claim-closure-oracles/assurance-layered-report.json"
-artifacts = ["gates/claim-closure-oracles/assurance-layered-report.json", "gates/claim-closure-assurance-report.py", "gates/assurance-report-smoke.py", ".design/engineer-assurance-report-and-level-retirement.md", "forge/src/assurance_report.rs", "forge/src/assurance_v2.rs", "forge/src/cli.rs", "forge/src/main.rs", ".github/workflows/ci.yml", "gates/tests/test_ci_workflow_contract.py", "thermite-skill/src/generate.rs", "THERMITE.skill.md", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
+artifacts = ["gates/claim-closure-oracles/assurance-layered-report.json", "gates/claim-closure-assurance-report.py", "gates/assurance-report-smoke.py", ".design/engineer-assurance-report-and-level-retirement.md", "forge/src/assurance_report.rs", "forge/src/assurance_v2.rs", "forge/src/engine.rs", "forge/src/cli.rs", "forge/src/main.rs", ".github/workflows/ci.yml", "gates/tests/test_ci_workflow_contract.py", "thermite-skill/src/generate.rs", "THERMITE.skill.md", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-live-floor-case", mutation = "replace_text", from = "assurance-report-live-floor", to = "assurance-report-live-floor-erased", expected_exit = 4 }]
-receipt = "d99707fb13203321dcb70ec55d014274461f4a309249ca1918930216c4dfbc42"
+receipt = "9783bec3f77021722ef53727ac5a876b32c8349bb54c8d052ac702a7ef0860bd"
 
 [[closure]]
 requirement_id = "REQ-ASSURANCE-PROJECT-COMPOSITION"
 witness_id = "W-ASSURANCE-PROJECT-COMPOSITION"
 mechanism = "executable_discriminator"
-discriminator = "32d0754a1a6a54c4dcb80b9e38c95fb9d39f8e48bd4d14d6a96c7f49727cd4cb"
+discriminator = "78a44a5f8383711964deee4bf8aa1bd3becd4ad7bb452ad98378041a70e488ef"
 claim_digest = "6c8268b1cf9792713f62495e9086605748f19cfd86330d69b81b59024254fef9"
 verifier = ["uv", "run", "python", "gates/claim-closure-assurance-composition.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3299,7 +3299,7 @@ oracle = "gates/claim-closure-oracles/assurance-project-composition.json"
 artifacts = ["gates/claim-closure-oracles/assurance-project-composition.json", "gates/claim-closure-assurance-composition.py", ".design/engineer-assurance-report-and-level-retirement.md", "lean/Thermite/AssuranceComposition.lean", "lean/Thermite/AssurancePolicyV2.lean", "forge/src/assurance_v2.rs", "gates/assurance-v2-replay.py", "gates/assurance-v2-replay.json", "gates/lean-axiom-probe.sh", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-project-lift-case", mutation = "replace_text", from = "assurance-project-lift", to = "assurance-project-lift-erased", expected_exit = 4 }]
-receipt = "164e780c4e9c730a2dbbcd8aaef32f38a206cab130fb95176aa67ca0b747fb48"
+receipt = "38272b3c95b3d5480d3f944e9ef3e3bbbcad548a40d1c9a783460f5f7a2a1f62"
 
 [[closure]]
 requirement_id = "REQ-CI-BEFORE-AFTER-EVIDENCE"
@@ -3321,7 +3321,7 @@ receipt = "d05df28d12302ff7c3ff3476b741da0e9179ac456321e165586f22bc32997d8a"
 requirement_id = "REQ-CI-DETERMINISTIC-BALANCE"
 witness_id = "W-EXEC-CI-DETERMINISTIC-BALANCE"
 mechanism = "executable_discriminator"
-discriminator = "2ea2aedf2ea52ec4422d1b306226e817b90c937946240e2a743e028a815c9ca0"
+discriminator = "5e981951e5828e1f5531045e111dabe446ef87984cb1ed6f52339d74a0e9aad0"
 claim_digest = "380e47c090fd9900c034f116a250e29828af1416e78df4812a6a4ec26ca8169c"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3331,13 +3331,13 @@ oracle = "gates/claim-closure-oracles/ci-deterministic-balance.json"
 artifacts = ["gates/claim-closure-oracles/ci-deterministic-balance.json", "gates/claim-closure-lower.py", "gates/ci-test-partitions.py", "gates/ci-test-partitions.toml", "gates/tests/test_ci_test_partitions.py", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-deterministic-lpt", mutation = "replace_text", from = "ci-deterministic-lpt", to = "ci-nondeterministic-lpt", expected_exit = 4 }]
-receipt = "9f30683b7b1aa1752cdd6566f87a9ae17feb6d199940711ff18b547442a51bdc"
+receipt = "5639ba5c69698a8bf24d0a23354283aa545c7ffcef1ff37ea4a1bffe4051e326"
 
 [[closure]]
 requirement_id = "REQ-CI-DURATION-PARTITIONS"
 witness_id = "W-EXEC-CI-DURATION-PARTITIONS"
 mechanism = "executable_discriminator"
-discriminator = "2314688f60a08e8dc6ff2ceaca4bb1af207f34521b2c3812dd8e704aecc8b4f3"
+discriminator = "04c79bd015cca5183107c4925745b04036ce76bc35f6b8e092117a3d96bd77e2"
 claim_digest = "fb3245ad80d60e03db28ed74d2919e62e7df2731b889cfab613f599ce987dc36"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3347,7 +3347,7 @@ oracle = "gates/claim-closure-oracles/ci-duration-partitions.json"
 artifacts = ["gates/claim-closure-oracles/ci-duration-partitions.json", "gates/claim-closure-lower.py", "gates/ci-test-partitions.toml", "gates/tests/test_ci_workflow_contract.py", ".github/workflows/ci.yml", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-thirteen-bucket-topology", mutation = "replace_text", from = "ci-thirteen-buckets", to = "ci-twelve-buckets", expected_exit = 4 }]
-receipt = "6765059b32ec7c1f5030cd8fde43146b6cc8bf34f8321641261e40114141213f"
+receipt = "5c7a4c43c5ae55a2e36bd8b74983ef089d780ebd297a9d054be57744e3e103aa"
 
 [[closure]]
 requirement_id = "REQ-CI-GATE-FANOUT"
@@ -3385,7 +3385,7 @@ receipt = "2532b5eabb95f7f3c18c8ed973e11e186bfda09d46d372ecb40fa0f70b6170ee"
 requirement_id = "REQ-CI-PARTITION-COVERAGE"
 witness_id = "W-EXEC-CI-PARTITION-COVERAGE"
 mechanism = "executable_discriminator"
-discriminator = "f367d40ed1894485cd09759c20cd35e9b0230141776e6f2b72f4d13ef87c040a"
+discriminator = "7249840bfd6dfd9d810853752a952e1d4bff739ae574cdbe62e5b9ae813e2e7f"
 claim_digest = "bd876ca0f6f98e3d1826942a306aab97ab5f83762899447043fa098edae57f41"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3395,7 +3395,7 @@ oracle = "gates/claim-closure-oracles/ci-partition-coverage.json"
 artifacts = ["gates/claim-closure-oracles/ci-partition-coverage.json", "gates/claim-closure-lower.py", "gates/ci-test-partitions.py", "gates/ci-test-partitions.toml", "gates/tests/test_ci_test_partitions.py", ".github/workflows/ci.yml", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "allow-duplicate-partition-members", mutation = "replace_text", from = "ci-coverage-duplicate", to = "ci-coverage-duplicate-allowed", expected_exit = 4 }]
-receipt = "744a29a36b570ae6e7b7b14eab6c4514ab01d1be60f2d3daab5c90864c2c8b76"
+receipt = "63e045976558130d0231caee698633365a9b3518b8c88002f3c206bf7023b640"
 
 [[closure]]
 requirement_id = "REQ-CI-PROOF-TOOL-PARITY"
@@ -3545,7 +3545,7 @@ receipt = "d1a490dc49726bb01d3dd3e477d89424ea25122f271f1d746c542aa45d6f46eb"
 requirement_id = "REQ-CLAUSE-PORTFOLIO-MUTATION-REPLAY"
 witness_id = "W-EXEC-CLAUSE-PORTFOLIO-MUTATION-REPLAY"
 mechanism = "executable_discriminator"
-discriminator = "5fd1b52c71289fa205d19b8e2c067307ec5fc4d724e802dcc6e9448bec1bcd2b"
+discriminator = "4ac4e966714f670bb070b18aea513b96e2dd57fe45d3f625efabd9f2613f82d2"
 claim_digest = "f1c3ddea67a8433c3ad3637f20aa1f3694274249a072084edcac9df5a498c440"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3555,7 +3555,7 @@ oracle = "gates/claim-closure-oracles/clause-portfolio-mutation-replay.json"
 artifacts = ["gates/claim-closure-oracles/clause-portfolio-mutation-replay.json", "gates/claim-closure-lower.py", "forge/src/check.rs", "forge/src/engine.rs", ".design/clause-coordinate-portfolios.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-addressed-replay-fold", mutation = "replace_text", from = "clause-mutation-replay-addressed", to = "clause-mutation-replay-representative-only", expected_exit = 4 }]
-receipt = "ad3631fd4a4ee099cee92adb39d6f4c15c71952de10c3024006aef701a898811"
+receipt = "2f6eaa435ae5cc7a443037137e1bcbb29f360a7be1e077ae9529d17928ab4b30"
 
 [[closure]]
 requirement_id = "REQ-CLAUSE-PORTFOLIO-VALIDATION"
@@ -5152,7 +5152,7 @@ receipt = "736038a2d256976626a07e7fb05784ad5302eea153b0985f7f096750967c11a9"
 requirement_id = "REQ-FORGE-ENGINE-ATTRIBUTION"
 witness_id = "W-EXEC-FORGE-ENGINE-ATTRIBUTION"
 mechanism = "executable_discriminator"
-discriminator = "dc1ba03a6d486167dd47d97d6c79234cd93f0a532ab5d9112ad5e685621e1fb2"
+discriminator = "cf8617d38a8285009eb14eecc257b59b69595f9b4cfac5e89e12fb5d466ebf4c"
 claim_digest = "334577b4f9640cb3edcfe47c2c39d71f1789aad1976cb4f581c03bf2591e9707"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5162,13 +5162,13 @@ oracle = "gates/claim-closure-oracles/engine-attribution.json"
 artifacts = ["gates/claim-closure-oracles/engine-attribution.json", "gates/claim-closure-lower.py", "forge/src/engine.rs", "forge/src/manifest.rs", "forge/tests/engine_attribution.rs", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-engine-attribution", mutation = "replace_text", from = "engine-attribution-roundtrip", to = "engine-attribution-roundtrip-bypassed", expected_exit = 4 }]
-receipt = "c8436f94ab96df539f7fc703683b414194b80d3ee0c59a0101be65af1eb972c5"
+receipt = "b9d44fd5edb986f4f7e8fc7a67dd3117dfa24b48cb30930067a0b39542f5ebad"
 
 [[closure]]
 requirement_id = "REQ-FORGE-ENGINE-DISAGREEMENT"
 witness_id = "W-EXEC-FORGE-ENGINE-DISAGREEMENT"
 mechanism = "executable_discriminator"
-discriminator = "21159ec1e9c9b807db652328c351e199e9c093d3d82955a00e521d1dab74d995"
+discriminator = "cf61d631bee3dcc1e1bdefc04d74c62859d0482f3feee5874f4e9bb1baf23b29"
 claim_digest = "8a6736a04a43dc9339b6ff5136646babe7a2898df7c8c87ec7f6b2a479df41c0"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5178,13 +5178,13 @@ oracle = "gates/claim-closure-oracles/engine-disagreement.json"
 artifacts = ["gates/claim-closure-oracles/engine-disagreement.json", "gates/claim-closure-lower.py", "forge/src/engine.rs", "forge/tests/engine_attribution.rs", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-engine-disagreement", mutation = "replace_text", from = "engine-disagreement-alarm", to = "engine-disagreement-alarm-preferred", expected_exit = 4 }]
-receipt = "ce6b7c900f43282ccc4a2c671f1be9c361fd2b7fdd7128578eb7fdb0d83ca98a"
+receipt = "f0c17daedd3a15ccc4ed0000356da4b1c413725df1d34189bd3f50f6ce750d79"
 
 [[closure]]
 requirement_id = "REQ-FORGE-ENGINE-DISCHARGE-DISCIPLINE"
 witness_id = "W-EXEC-FORGE-ENGINE-DISCHARGE-DISCIPLINE"
 mechanism = "executable_discriminator"
-discriminator = "ed068353478be3f8bd1d5cade69bc2f3ab779276e5ed83bb0255b741a7a37331"
+discriminator = "0bd536fb472be8feafb0721aa75815bd502c1ae8f71aa9a4685dc5647ca17882"
 claim_digest = "6bb4a9bf7e1e31fa79c95f754e8a20f1d8377f0aaa6f2ddc88b96e9024af708e"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5194,13 +5194,13 @@ oracle = "gates/claim-closure-oracles/engine-discharge-discipline.json"
 artifacts = ["gates/claim-closure-oracles/engine-discharge-discipline.json", "gates/claim-closure-lower.py", "forge/src/engine.rs", "forge/src/degrade.rs", "forge/tests/engine_interface.rs", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-engine-discharge-discipline", mutation = "replace_text", from = "engine-ladder-discipline", to = "engine-ladder-discipline-collapsed", expected_exit = 4 }]
-receipt = "c8a46e70872372a79ea52f18e42319b311ce4792b74c8269bd7e99db31fb25d7"
+receipt = "db233264fe796fbb276149fbb71fe74de1e935e7c764a7711aad9c1eb5f5ca6c"
 
 [[closure]]
 requirement_id = "REQ-FORGE-ENGINE-FAST-UNKNOWN"
 witness_id = "W-EXEC-FORGE-ENGINE-FAST-UNKNOWN"
 mechanism = "executable_discriminator"
-discriminator = "c6b49a796159a97ce6d5434d93e5b59a156e80403d8e802ab1e8747038ae6fd3"
+discriminator = "a68abe7b836b36bfc44d1ccf2f681d69d2c97500004159e3ebcbc333479f3bd7"
 claim_digest = "04aa7d1d180b36b88ea670cbd2928bb6f9baa34bfa4131bf8b9b54cb70501b3d"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5210,13 +5210,13 @@ oracle = "gates/claim-closure-oracles/engine-fast-unknown.json"
 artifacts = ["gates/claim-closure-oracles/engine-fast-unknown.json", "gates/claim-closure-lower.py", "forge/src/engine.rs", "forge/src/check.rs", "forge/tests/engine_interface.rs", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-engine-fast-unknown", mutation = "replace_text", from = "\"id\":\"engine-fast-unknown\"", to = "\"id\":\"engine-fast-unknown-unconditional\"", expected_exit = 4 }]
-receipt = "6c150dc3e10a8bb42c865bd3aae0df6532047c07a0bdf3843193b02d766bc1b5"
+receipt = "6c6e0e370dc8e8dabc1d94d6a23dab20bfffd28c76ceb83b1dc4d93464fc9217"
 
 [[closure]]
 requirement_id = "REQ-FORGE-ENGINE-INTERACTIVE-REPLAY"
 witness_id = "W-EXEC-FORGE-ENGINE-INTERACTIVE-REPLAY"
 mechanism = "executable_discriminator"
-discriminator = "a651e79e289fa892b2d80ee7cb839b1acd7700aa674f67335145b1c6b99948c7"
+discriminator = "675cf4b5af0229fe58c5248e931839ddca3bdb9b2925fffe420aa75b3b4cc657"
 claim_digest = "b5aff9e300d4d00e96f9cdbc061b3d04ea56624613172608dd43b2ceb70bb45f"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5226,13 +5226,13 @@ oracle = "gates/claim-closure-oracles/engine-interactive-replay.json"
 artifacts = ["gates/claim-closure-oracles/engine-interactive-replay.json", "gates/claim-closure-lower.py", "forge/src/engine.rs", "forge/tests/lean_engine.rs", "forge/tests/divergence_252_indented_command_escape.rs", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-engine-interactive-replay", mutation = "replace_text", from = "engine-interactive-stale", to = "engine-interactive-stale-reused", expected_exit = 4 }]
-receipt = "0083bf4d9e23018f9f1e9a500db2f63023ee95941a33c3ce0f8cedf1726eab7e"
+receipt = "2cb9189eeefc6bef45e2a944df77fc6a40a445ebf455ffc1fad6e2dffdf83ca1"
 
 [[closure]]
 requirement_id = "REQ-FORGE-ENGINE-INTERFACE"
 witness_id = "W-EXEC-FORGE-ENGINE-INTERFACE"
 mechanism = "executable_discriminator"
-discriminator = "8be3e1abce7809694345203ae48d7f2b61c7d9050454800684cc0d4196409018"
+discriminator = "6c61691b8dce93252b8d2e1cc9c043e80d28b03719d94c8589a6e414aa875035"
 claim_digest = "5fcf5ef13049ff9240b6ef1e49254744d8baa871e651dd09235e54f326ea865a"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5242,13 +5242,13 @@ oracle = "gates/claim-closure-oracles/engine-interface.json"
 artifacts = ["gates/claim-closure-oracles/engine-interface.json", "gates/claim-closure-lower.py", "forge/src/engine.rs", "forge/tests/engine_interface.rs", "forge/tests/engine_attribution.rs", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-engine-interface", mutation = "replace_text", from = "engine-interface-verus-slots", to = "engine-interface-verus-slots-missing", expected_exit = 4 }]
-receipt = "99bd8511c585a60e57422c1ccff91b8db52dcbd758ee8805861f7d27c22510e3"
+receipt = "93525b9929713131135bccb8cb21fb75cad0291b16af6f1531815346a20346ba"
 
 [[closure]]
 requirement_id = "REQ-FORGE-ENGINE-LEAN-MUTATION"
 witness_id = "W-EXEC-FORGE-ENGINE-LEAN-MUTATION"
 mechanism = "executable_discriminator"
-discriminator = "e2a522482a61c669ac169d26d6441a637515143959aa379f6c0f407decc0f190"
+discriminator = "a3a7f49fadce0e67f8a20db4dd76589ac38e7d2bb50e210edda3cd4af01fa79d"
 claim_digest = "47a7ec9c6c98222ea703db2375d2e02a3547200cc44e117b2c7ad43a072c861a"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5258,13 +5258,13 @@ oracle = "gates/claim-closure-oracles/engine-lean-mutation.json"
 artifacts = ["gates/claim-closure-oracles/engine-lean-mutation.json", "gates/claim-closure-lower.py", "forge/src/engine.rs", "forge/src/check.rs", "forge/tests/engine_attribution.rs", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-engine-lean-mutation", mutation = "replace_text", from = "engine-lean-mutation-untested", to = "engine-lean-mutation-untested-inflated", expected_exit = 4 }]
-receipt = "058e70a8cd27e61de73cf8aa58bc8d7d6d4d67d68027cc71c41fbc03f0db5417"
+receipt = "a299c883658d0471e2134b356e11b72aa3755ffce2198847e752f4ba83dae481"
 
 [[closure]]
 requirement_id = "REQ-FORGE-ENGINE-ORDERING"
 witness_id = "W-EXEC-FORGE-ENGINE-ORDERING"
 mechanism = "executable_discriminator"
-discriminator = "6beb5a55900675493465a0eaaa9a02d19a9fdc893004faca44742eca292d0e3b"
+discriminator = "16f9f9e714f9eb86dccf71a2c789fe3dd0570540b67ca982c7e546abad9f25a0"
 claim_digest = "d7358745efd840b6f6f5aa32e524a575afde6e7a56ed212c852ef68eb680473a"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5274,7 +5274,7 @@ oracle = "gates/claim-closure-oracles/engine-ordering.json"
 artifacts = ["gates/claim-closure-oracles/engine-ordering.json", "gates/claim-closure-lower.py", "forge/src/engine.rs", "forge/src/check.rs", "forge/tests/engine_interface.rs", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-engine-ordering", mutation = "replace_text", from = "engine-default-order", to = "engine-default-order-reversed", expected_exit = 4 }]
-receipt = "acee8681b36f41afd9d1756281a5eff510d904552530cbbb41f76c186e861fea"
+receipt = "a66e2f18b085c531cdacb0bbf22f08deb60c6e3fd928ba2626d816a1ad177145"
 
 [[closure]]
 requirement_id = "REQ-FORGE-GOAL-BATTERY-VIEW"
@@ -5488,7 +5488,7 @@ receipt = "d24421259f340de6bb1bd9b82b77aacee2aef37a7a31aa0739b6653ece1ab1e5"
 requirement_id = "REQ-FORGE-LEAN-BODY-THEOREMS"
 witness_id = "W-EXEC-FORGE-LEAN-BODY-THEOREMS"
 mechanism = "executable_discriminator"
-discriminator = "483907039cf6ff1b6dd915f8f9ff12598340ebe7e0fb8e600beabb97395f4759"
+discriminator = "110a0293736ea044972d214bc1968a0c17aa3e92a5a2482c5e1a211a19e89635"
 claim_digest = "86fdc795d26dc2f6333ffd111f54d8eedfdfbad33074338a385d5c45345ddd8a"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5498,13 +5498,13 @@ oracle = "gates/claim-closure-oracles/lean-body-theorems.json"
 artifacts = ["gates/claim-closure-oracles/lean-body-theorems.json", "gates/claim-closure-lower.py", "forge/src/lean_export.rs", "forge/src/engine.rs", ".design/verified/proof-backends.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "relabel-overflow-body-proved", mutation = "replace_text", from = "lean-body-overflow-honest", to = "lean-body-overflow-proved", expected_exit = 4 }]
-receipt = "69701afdc6be0f2050accc343877429be29690b9fa22f0af399ce1e14f0afa00"
+receipt = "eb518745178f94289b639e227d2792a741e8e51302a9334c3613835071f73e0c"
 
 [[closure]]
 requirement_id = "REQ-FORGE-LEAN-DISCHARGE-MODES"
 witness_id = "W-EXEC-FORGE-LEAN-DISCHARGE-MODES"
 mechanism = "executable_discriminator"
-discriminator = "1fefa78fb0d22fdf93c8c27818ab715e1490065f5d4c7b1d6d7343cb5cb0be39"
+discriminator = "a0ef7906da4396fcdcbab346fb8704d790ca64e83402a2edf6b583514de0036e"
 claim_digest = "fea9316f8ecbf5b5e16505dacf681e4e0e1adcd118118c6c6a7cf3cece2f9d23"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5514,13 +5514,13 @@ oracle = "gates/claim-closure-oracles/lean-discharge-modes.json"
 artifacts = ["gates/claim-closure-oracles/lean-discharge-modes.json", "gates/claim-closure-lower.py", "forge/src/lean_export.rs", "forge/src/engine.rs", ".design/verified/proof-backends.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-tier-b-discharge", mutation = "replace_text", from = "lean-tier-b", to = "lean-tier-b-unchecked", expected_exit = 4 }]
-receipt = "b48704a5388f618ff28875b8ca4e22dd04e5ad01087b964ebdd6a0c5e49f1389"
+receipt = "32d2e57de36e1755c8fc0e3c6449390185a2fd482616eb5bbfc08ee80208d54f"
 
 [[closure]]
 requirement_id = "REQ-FORGE-LEAN-EXPORTER"
 witness_id = "W-EXEC-FORGE-LEAN-EXPORTER"
 mechanism = "executable_discriminator"
-discriminator = "70696b3060ca75954ea5e728ef24090e6f7874cd10575d8114546361846b9869"
+discriminator = "5b132530edee17c07d3c2d55ec9c50677b230e9b90f1f345b9964d61c8214a21"
 claim_digest = "9f5db645068aedf842ee74af631a2522baff672a3949c9e75d9d6e99a4e4c6e9"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5530,13 +5530,13 @@ oracle = "gates/claim-closure-oracles/lean-exporter.json"
 artifacts = ["gates/claim-closure-oracles/lean-exporter.json", "gates/claim-closure-lower.py", "forge/src/lean_export.rs", "forge/src/engine.rs", ".design/verified/proof-backends.md", ".design/verified/rust-lean-correspondence.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-export-hard-gate", mutation = "replace_text", from = "lean-export-hard-gate", to = "lean-export-soft-gate", expected_exit = 4 }]
-receipt = "ee3902d7d035a0d76a6b5c9e298a3b569fa6d409aefac4a1b5044688afc81c76"
+receipt = "02991d991201a8b878894a3ebc3e50a1534dbe17cd1f958aacbb6f78e4ebce07"
 
 [[closure]]
 requirement_id = "REQ-FORGE-LEAN-MUTATION-ACCOUNTING"
 witness_id = "W-EXEC-FORGE-LEAN-MUTATION-ACCOUNTING"
 mechanism = "executable_discriminator"
-discriminator = "a017bd2b009eba2f6c69d0ee9b1695b55645a0882e148d2df52cf0ca5662d6af"
+discriminator = "c524f37f1ab89e943ec5881bbdcb180737c3a4009835fd9046eebd35144ffd62"
 claim_digest = "7e8eb2625d8765535e867e71793d4396acae07b37ce09c4dd829988cb68a5744"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5546,13 +5546,13 @@ oracle = "gates/claim-closure-oracles/lean-mutation-accounting.json"
 artifacts = ["gates/claim-closure-oracles/lean-mutation-accounting.json", "gates/claim-closure-lower.py", "forge/src/lean_export.rs", "forge/src/engine.rs", ".design/verified/proof-backends.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "inflate-untested-mutation-tally", mutation = "replace_text", from = "lean-mutation-accounting", to = "lean-mutation-accounting-inflated", expected_exit = 4 }]
-receipt = "57180b176f2b3f2f86920806615a24938d35ed929e1216e9b1e9bef2930a08b0"
+receipt = "7f993fb31641a84cf0303f5cc3a2092577b7eae951399e9ca0aad1632d7d71e6"
 
 [[closure]]
 requirement_id = "REQ-FORGE-LEAN-REFUSAL-INVENTORY"
 witness_id = "W-EXEC-FORGE-LEAN-REFUSAL-INVENTORY"
 mechanism = "executable_discriminator"
-discriminator = "e2beaf5b452b160af0b620f5be2a099d366f5c1e529f58eed53abf3fff78208f"
+discriminator = "7ef487d72d8e3c66c531bfaf05f020333f8997cb8a528b688220e2a128e14276"
 claim_digest = "0c9b144edfb61156fe8797f1ef70d848c4e9766799863544b55c280dc3b96c8d"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5562,13 +5562,13 @@ oracle = "gates/claim-closure-oracles/lean-refusal-inventory.json"
 artifacts = ["gates/claim-closure-oracles/lean-refusal-inventory.json", "gates/claim-closure-lower.py", "forge/src/lean_export.rs", "forge/src/engine.rs", "forge/tests/lean_while.rs", ".design/verified/proof-backends.md", ".design/verified/loop-tv.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-while-refusal-inventory", mutation = "replace_text", from = "lean-refusal-inventory", to = "lean-refusal-inventory-silent", expected_exit = 4 }]
-receipt = "151ae569306f43d34f42a2d5f85bd56b4ae06c0a676e1cb4dcecadb8ed27125b"
+receipt = "27030ff451a0a5c2536a9b68e2e9933f5646c92ce414942a197e061615506c21"
 
 [[closure]]
 requirement_id = "REQ-FORGE-LEAN-STATE-CORRESPONDENCE"
 witness_id = "W-EXEC-FORGE-LEAN-STATE-CORRESPONDENCE"
 mechanism = "executable_discriminator"
-discriminator = "cb6e74a1ac2fb4de9aa38ce299c16340fad38098500367a05ad49d4d50b4ad62"
+discriminator = "088943c8951766aab2d1ad738d62f5d1af750b6aff0c1279e589cfbe5ec22caf"
 claim_digest = "7b9d91dc637f837401321046b6e70d9338692a3d4af859fbbd57ed1c3dab2b12"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5578,13 +5578,13 @@ oracle = "gates/claim-closure-oracles/lean-state-correspondence.json"
 artifacts = ["gates/claim-closure-oracles/lean-state-correspondence.json", "gates/claim-closure-lower.py", "forge/src/lean_export.rs", "forge/src/engine.rs", ".design/verified/proof-backends.md", ".design/verified/exporter-surface-correspondence.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-state-correspondence", mutation = "replace_text", from = "lean-state-correspondence", to = "lean-state-correspondence-omitted", expected_exit = 4 }]
-receipt = "183039c5c369b10df9e977c3d5ef1ec6f8f095ffe51347c907cfbf7ba21af109"
+receipt = "d3cbad8e1f069ce2e0a606c905ab436acb18f5e548cfd4ff2f4fb97edd73b749"
 
 [[closure]]
 requirement_id = "REQ-FORGE-LEAN-STRUCTURED-REFUSAL"
 witness_id = "W-EXEC-FORGE-LEAN-STRUCTURED-REFUSAL"
 mechanism = "executable_discriminator"
-discriminator = "1688ba14011900718f6942182df45b82702cb2b932a26176c0e6323f339932b7"
+discriminator = "f278a4fcc172bbda4df931f58a0a8606c14564559d22b9396f638776e341ef57"
 claim_digest = "588b0eda3dd1c773e40d60d9cfd4c680cc917f0a1e3f21452f7a40af013ad1b6"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5594,13 +5594,13 @@ oracle = "gates/claim-closure-oracles/lean-structured-refusal.json"
 artifacts = ["gates/claim-closure-oracles/lean-structured-refusal.json", "gates/claim-closure-lower.py", "forge/src/lean_export.rs", "forge/src/engine.rs", "forge/tests/lean_engine.rs", ".design/verified/proof-backends.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-structured-loop-refusal", mutation = "replace_text", from = "lean-structured-loop-refusal", to = "lean-loop-refusal-silent", expected_exit = 4 }]
-receipt = "567a5220a93ada267ff80bbfffbfb5197f1a13ab6f8e7a37abf6cabb15c38ad2"
+receipt = "ca0189743132d3749c9409df9f17bdbe75567d928eece332b1724dcd38ae7bc3"
 
 [[closure]]
 requirement_id = "REQ-FORGE-LEAN-WHILE-BODY"
 witness_id = "W-EXEC-FORGE-LEAN-WHILE-BODY"
 mechanism = "executable_discriminator"
-discriminator = "d45c82f9dee9a769e376e7349151bf1f7001b6b5bb0fc2521a811a38c0a84a65"
+discriminator = "48db6366b2d71e9fa6a6335647e91a5d69866d1b64a7a75df76a9cfc511eb466"
 claim_digest = "7f1d7d1944abbfa3247a90b219c3e0d0647377c98f4c601b46dafb8b44fb592d"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -5610,7 +5610,7 @@ oracle = "gates/claim-closure-oracles/lean-while-body.json"
 artifacts = ["gates/claim-closure-oracles/lean-while-body.json", "gates/claim-closure-lower.py", "forge/src/lean_export.rs", "forge/src/engine.rs", "forge/tests/lean_while.rs", ".design/verified/proof-backends.md", ".design/verified/loop-tv.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-while-obligation-set", mutation = "replace_text", from = "lean-while-obligation-set", to = "lean-while-unchecked", expected_exit = 4 }]
-receipt = "a9cad21ea6782b197e00c462966a54c02b0d3949c73455a97355c3bf27ccd8f9"
+receipt = "96aba5a82fd417d9ef6d12d52c503962709dd92271064f2f238e239006cb8191"
 
 [[closure]]
 requirement_id = "REQ-FORGE-MANIFEST-ASSURANCE-AGGREGATE"
@@ -6144,7 +6144,7 @@ receipt = "8f1792e2b0d2abe5fd34e25fd5fa71e3edc33a262b275ac4fff59cdf4ad98e7e"
 requirement_id = "REQ-FORGE-OBLIGATION-ARTIFACT"
 witness_id = "W-EXEC-FORGE-OBLIGATION-ARTIFACT"
 mechanism = "executable_discriminator"
-discriminator = "d6db3ee2f443165a59bd47142845d5dce7b16a3ef37f338506d5afbc0a16a61e"
+discriminator = "0bb1af45069017962e1b49edcdcfd6b099206073a6c5359824c8ca468ad9ad2b"
 claim_digest = "9e2c6842b6ebc0578f5686e96b5cd2f0504fa4f6488feae3b69cbf411568fb7d"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -6154,13 +6154,13 @@ oracle = "gates/claim-closure-oracles/obligation-artifact.json"
 artifacts = ["gates/claim-closure-oracles/obligation-artifact.json", "gates/claim-closure-lower.py", "forge/src/obligation.rs", "forge/src/engine.rs", ".design/verified/proof-backends.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-neutral-obligation-content", mutation = "replace_text", from = "obligation-neutral-content", to = "obligation-verus-string", expected_exit = 4 }]
-receipt = "2943fd7f959ca908f5d310de61d7bb6201815abae8fa6adebc09d0b85f4b65f7"
+receipt = "f465ed44bae0e28fb389c1a988ae81cd24ba416e030d12de6b5fb71523c0f838"
 
 [[closure]]
 requirement_id = "REQ-FORGE-OBLIGATION-REGISTRY-TERMINATION"
 witness_id = "W-EXEC-FORGE-OBLIGATION-REGISTRY-TERMINATION"
 mechanism = "executable_discriminator"
-discriminator = "e491e586e7f6988f31a9fc5e844d34500de22172753da1cd5373164868e224ab"
+discriminator = "de6844f022db4e766cba39c4a780ad1743eead172ed753eacdfd8ce8d1d14c19"
 claim_digest = "d7ba6f8cedcfed450a6e1c6aa8195418721c2b6143839ddbc33aba9072256166"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -6170,7 +6170,7 @@ oracle = "gates/claim-closure-oracles/obligation-registry-termination.json"
 artifacts = ["gates/claim-closure-oracles/obligation-registry-termination.json", "gates/claim-closure-lower.py", "forge/src/obligation.rs", "forge/src/check.rs", ".design/verified/proof-backends.md", "forge/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-full-position-closure", mutation = "replace_text", from = "obligation-full-position-closure", to = "obligation-requires-only-closure", expected_exit = 4 }]
-receipt = "16eea5eaeb547be8bf8dcce658a71b9448dfc6db10658bed8e6c4ba6905aefc0"
+receipt = "8083181077edf92990f52a6ea445fc5cc19287f757992bc0da0336fdb629d163"
 
 [[closure]]
 requirement_id = "REQ-FORGE-PROFILE-CAPTURE"
@@ -9245,7 +9245,7 @@ receipt = "b8bbb08cb8bbe17569ee53682662cf8813fcd179f5815b7dd5085b8cdee8db50"
 requirement_id = "REQ-S1-2"
 witness_id = "W-EXEC-S1-2"
 mechanism = "executable_discriminator"
-discriminator = "f00662b0e68149e1de812ae132dfaced6c465a109876f5d337bf48cb6b60d138"
+discriminator = "4319c942e75700056eea56a08a796bb95b6951c530df2457fdb929d7142f811f"
 claim_digest = "0fe54d7b2301272ac7ef13434dd0776e93cdc368d1ce6515416a9d10e38a4aee"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9255,13 +9255,13 @@ oracle = "gates/claim-closure-oracles/s1-2.json"
 artifacts = ["gates/claim-closure-oracles/s1-2.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s1-2-counterfeit", mutation = "replace_text", from = "s1-2", to = "s1-2-counterfeit", expected_exit = 4 }]
-receipt = "62c5502a2dae4c0eff52014e979678e52aea9a9ba4777a36c60b32cd16d07db2"
+receipt = "2022a682c3de15d87649bf0fb27c4ae596d28a5fdc7707acd0c560819d37ab06"
 
 [[closure]]
 requirement_id = "REQ-S1-4"
 witness_id = "W-EXEC-S1-4"
 mechanism = "executable_discriminator"
-discriminator = "e7237beed0c6c4e161d824a762d199d62160b0820c046e4a33553485ea60d34f"
+discriminator = "2469ad496b672ea5a8affede6fe5b3bd4d2385dba1fde31c587b7470d301994c"
 claim_digest = "121b714fbce1b0a93e62b8f42f1e94a498aa7ac4f9e59649bd757af7b31e0e7e"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9271,13 +9271,13 @@ oracle = "gates/claim-closure-oracles/s1-4.json"
 artifacts = ["gates/claim-closure-oracles/s1-4.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s1-4-counterfeit", mutation = "replace_text", from = "s1-4", to = "s1-4-counterfeit", expected_exit = 4 }]
-receipt = "49e308b37e49c57c3d3fd7786546f33c2bd4d3708b993c291bb5324919e3d500"
+receipt = "e003b88a9a8d8a8da3b2bfc4e7b05891f7711c841e7607faa51492d3b30b3bf1"
 
 [[closure]]
 requirement_id = "REQ-S1-5"
 witness_id = "W-EXEC-S1-5"
 mechanism = "executable_discriminator"
-discriminator = "d060e3b4d984cce4531773bbb15a47c7da2f8d961ff3b80dd6dc9cf50082bf7e"
+discriminator = "f1115092b07674798f8aabb692b7ef9b6d388c73df1cb5545540511052c5328b"
 claim_digest = "e7a149fc035ab80bbc552314c20399ee37e5dd0fec9ef605dec717e23309e337"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9287,13 +9287,13 @@ oracle = "gates/claim-closure-oracles/s1-5.json"
 artifacts = ["gates/claim-closure-oracles/s1-5.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s1-5-counterfeit", mutation = "replace_text", from = "s1-5", to = "s1-5-counterfeit", expected_exit = 4 }]
-receipt = "f78b5ca5c70716768ba9407ca03316ebc7b4ea44ed21d63c5b9bc4eb206f0e58"
+receipt = "9f0a8dd65af365db51a8b31b7b641743a704662ad0419053971cb494d86ff9d8"
 
 [[closure]]
 requirement_id = "REQ-S1-6"
 witness_id = "W-EXEC-S1-6"
 mechanism = "executable_discriminator"
-discriminator = "c8ae7d882ec64e46410e9256aea762e76391d1e006e22ac9c5a82f48d8229d8b"
+discriminator = "068c152de779ff7e3700c0a821315e8f5d8d5e962b08785400f29c79ba832331"
 claim_digest = "734fc07f2b65442c8b858f4d096110073bc618f1a8305e72f33154f73920680c"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9303,13 +9303,13 @@ oracle = "gates/claim-closure-oracles/s1-6.json"
 artifacts = ["gates/claim-closure-oracles/s1-6.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s1-6-counterfeit", mutation = "replace_text", from = "s1-6", to = "s1-6-counterfeit", expected_exit = 4 }]
-receipt = "e1a6b9a2c4b86d447f91ab060594e4eaf7f7b59c9e7f1fcf706d5e9b0524a0ad"
+receipt = "95f99fccc7f13f8ad4b912717ffa119a1450a2d44357a5263a2e3844214220dd"
 
 [[closure]]
 requirement_id = "REQ-S1-7"
 witness_id = "W-EXEC-S1-7"
 mechanism = "executable_discriminator"
-discriminator = "b89492905a186529e53273399223e939e9a6044f0e0f1de0235f414178cb44b5"
+discriminator = "aabfb3653ce09bd1b8f1d0b49cefb865c45139753086840e1b22dfc98c90334c"
 claim_digest = "bc715d13390de80cbebdbda9482dd507cf8792b65d804c9942e46fed1f71eeca"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9319,13 +9319,13 @@ oracle = "gates/claim-closure-oracles/s1-7.json"
 artifacts = ["gates/claim-closure-oracles/s1-7.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s1-7-counterfeit", mutation = "replace_text", from = "s1-7", to = "s1-7-counterfeit", expected_exit = 4 }]
-receipt = "b93d23bf5100b32a147ab3209e444198a3d5be70c3339193c3f8f1d06b6d5cbd"
+receipt = "ba628dd8079d10253fe9010d644de454608ff772a3541d5e89600e3ffd9b69a0"
 
 [[closure]]
 requirement_id = "REQ-S1-8"
 witness_id = "W-EXEC-S1-8"
 mechanism = "executable_discriminator"
-discriminator = "e7d8a8907f19bf1b62b17277f1ff2661b979dbd0029b4546a95b1350dc83f0f1"
+discriminator = "4c4a5bf988a18ee2a5a594aa42a723935a8587946aa8fea523921feaa75bf99f"
 claim_digest = "20130179924799e73acb58a256339235a4b26b2008cf3d17e777a97f29dce9a4"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9335,13 +9335,13 @@ oracle = "gates/claim-closure-oracles/s1-8.json"
 artifacts = ["gates/claim-closure-oracles/s1-8.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s1-8-counterfeit", mutation = "replace_text", from = "s1-8", to = "s1-8-counterfeit", expected_exit = 4 }]
-receipt = "0c0d080a6b4211622f2f654a143c86a0cc2f33e4361da4d08d70d8265a88bab7"
+receipt = "bb5116a275d47d7c00b5f18a5f0fd160a7f2140a81cb53ef5afd2f927c5474bb"
 
 [[closure]]
 requirement_id = "REQ-S1-8A"
 witness_id = "W-EXEC-S1-8A"
 mechanism = "executable_discriminator"
-discriminator = "33def4d9de5f760b52758b728c3a51976b915773ebf5d8b40e8a5af52000d7c4"
+discriminator = "c585eef65a9f5b819478b059337dff679d3b5246abbc0aec78db35c9849b9bb5"
 claim_digest = "31ee198f0fd0cd71e5e7138598e554333e4c0e50026136afbc61fc8d216db32b"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9351,13 +9351,13 @@ oracle = "gates/claim-closure-oracles/s1-8a.json"
 artifacts = ["gates/claim-closure-oracles/s1-8a.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s1-8a-counterfeit", mutation = "replace_text", from = "s1-8a", to = "s1-8a-counterfeit", expected_exit = 4 }]
-receipt = "87e0ac313cf8f761557fa2a258e3ae2073728fd0ad6cd210b50b239f0f85ed5e"
+receipt = "a276f39aea7467618328c667f719e39b510fc76b295390f392d164c8c59c5738"
 
 [[closure]]
 requirement_id = "REQ-S1-9"
 witness_id = "W-EXEC-S1-9"
 mechanism = "executable_discriminator"
-discriminator = "1f260ded5034d3d7af7265aac619e31aeb51e95c28c3a24dd4025362e8a33900"
+discriminator = "caadcc1da24eb38e63016a44b90911ddb0e3baf8a4e2b2091e5c0a368fab52dc"
 claim_digest = "378facba5c38d2776cc1e3c768c49eb51d6a2d55f08f5a576df5820829cbc661"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9367,13 +9367,13 @@ oracle = "gates/claim-closure-oracles/s1-9.json"
 artifacts = ["gates/claim-closure-oracles/s1-9.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s1-9-counterfeit", mutation = "replace_text", from = "s1-9", to = "s1-9-counterfeit", expected_exit = 4 }]
-receipt = "e29e05b1b6c40a91e8d8f4eb4a5936051e6e5a141e30e329abd899dfd512775d"
+receipt = "110ff83615c42a72bdaf8d02ef10dc2473a8d646ae6337754b60f287c4ed460e"
 
 [[closure]]
 requirement_id = "REQ-S1-PROOF-TARGET-BINDING"
 witness_id = "W-EXEC-S1-PROOF-TARGET-BINDING"
 mechanism = "executable_discriminator"
-discriminator = "dcc1eebee4113022e798aabd313d6370cd3a109c92be75c4de038fce980a7813"
+discriminator = "1ff7675e9645cd2d2da9f6befce5b859e874f9e5ff526223b53ade9f276acea0"
 claim_digest = "9e5791e6243035808987efc79285f416ecbf172d6a8da832cf04ec759b4206e9"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9383,13 +9383,13 @@ oracle = "gates/claim-closure-oracles/s1-proof-target-binding.json"
 artifacts = ["gates/claim-closure-oracles/s1-proof-target-binding.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s1-proof-target-binding-counterfeit", mutation = "replace_text", from = "s1-proof-target-binding", to = "s1-proof-target-binding-counterfeit", expected_exit = 4 }]
-receipt = "855851ffb7df78259411ef9f8e626a0a3ab2d2a2c25862f92b1123df25c97db7"
+receipt = "bdc4ac42563b9c08f77a9803c5581062ba81b6387c4b78d7d247b303d9042bba"
 
 [[closure]]
 requirement_id = "REQ-S2-1"
 witness_id = "W-EXEC-S2-1"
 mechanism = "executable_discriminator"
-discriminator = "3467c0564a36066e6493588116fe037a231343d01449fad1f6d883b03a04d7f1"
+discriminator = "79ebecfd4c2e05224b8c78d5c7396244c48fa5e75367110b329d8b9f7ff84bb9"
 claim_digest = "2264fc67a4cb992bf0c12bc766de53ffad43d48918bf44c6c9edccc0b85fe574"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9399,13 +9399,13 @@ oracle = "gates/claim-closure-oracles/s2-1.json"
 artifacts = ["gates/claim-closure-oracles/s2-1.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s2-1-counterfeit", mutation = "replace_text", from = "s2-1", to = "s2-1-counterfeit", expected_exit = 4 }]
-receipt = "c8421998e28492b09476dcd590eb47ff6f83633c9a910a51ef96696a45cd5f82"
+receipt = "7ccb61874b0a465b3dd542698b8d8ad7fb03cb879e96728917feb0947ce92c76"
 
 [[closure]]
 requirement_id = "REQ-S2-10"
 witness_id = "W-EXEC-S2-10"
 mechanism = "executable_discriminator"
-discriminator = "0f348088c4fc990f2188310fdd8dd6d7cbfa9df3df44239d24f717f3530da5b4"
+discriminator = "031d281c16b53c44c8444da1a62f4bcd26044e3c4fc76aa9dd4b26443beb392a"
 claim_digest = "79efd717b810daa480c9479eeb81422955c8fdfc862b6aa7d93c1e3605622eb8"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9415,13 +9415,13 @@ oracle = "gates/claim-closure-oracles/s2-10.json"
 artifacts = ["gates/claim-closure-oracles/s2-10.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s2-10-counterfeit", mutation = "replace_text", from = "s2-10", to = "s2-10-counterfeit", expected_exit = 4 }]
-receipt = "46a8a9c45e2a8578fad0b7dcb2848b6e567c9d20ab2b4d420b18724dc71462af"
+receipt = "77a717a9ed99db4eedf917658fc18d5841d10e1d1a91613bd4c6350b0553ed65"
 
 [[closure]]
 requirement_id = "REQ-S2-2"
 witness_id = "W-EXEC-S2-2"
 mechanism = "executable_discriminator"
-discriminator = "ff9b828301526c566e06554a5c42d0947be6acc16a7250b59e36aa0b84518c20"
+discriminator = "4949dc3c4ea77cb3b1c78a53383a5ad5b6e69f19addfc0bdc9d18a9a427abe92"
 claim_digest = "b7ec91d62b40b678dc89ed04323b58074b3f07580f60fa40437bd23aa178f4db"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9431,7 +9431,7 @@ oracle = "gates/claim-closure-oracles/s2-2.json"
 artifacts = ["gates/claim-closure-oracles/s2-2.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s2-2-counterfeit", mutation = "replace_text", from = "s2-2", to = "s2-2-counterfeit", expected_exit = 4 }]
-receipt = "7f798ab5ef40f3085d6f3a7bc7344b24585de52940b6a8f7ca29a6e1c83d09c8"
+receipt = "12ddfb945f237ac25faa07c928bb9b0b7d98f556da03f27898bde440749ddbc9"
 
 [[closure]]
 requirement_id = "REQ-S2-3"
@@ -9450,7 +9450,7 @@ receipt = "26e2e3e11e7269e335b5302e0813dd908ffd7884cdb4bd98d591cdcee364b47e"
 requirement_id = "REQ-S2-4"
 witness_id = "W-EXEC-S2-4"
 mechanism = "executable_discriminator"
-discriminator = "6a44feac8968b2c7c36ec279c04e8f24565a3b651d29bd102ae95c94997dd98c"
+discriminator = "c3592d5f1f0f3fbcc60618a34ff5bc17a682c3786956bec28212849b2b573276"
 claim_digest = "f09b00dfd507ffe006bdf133b5071bbb162283c3a2c292495579d96a4ede232c"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9460,13 +9460,13 @@ oracle = "gates/claim-closure-oracles/s2-4.json"
 artifacts = ["gates/claim-closure-oracles/s2-4.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s2-4-counterfeit", mutation = "replace_text", from = "s2-4", to = "s2-4-counterfeit", expected_exit = 4 }]
-receipt = "217c2479ade0b8cb72e2f41af409919f986f7207b10e6cc56e248e6740805383"
+receipt = "26250a7770c7aaab4be0d471671829b6835a056c9657558b73dcde0dc3f67ff9"
 
 [[closure]]
 requirement_id = "REQ-S2-5"
 witness_id = "W-EXEC-S2-5"
 mechanism = "executable_discriminator"
-discriminator = "d4690c5fb2cb71491d17910d5992723b44316b31a09e26281bbd46b1d1d87582"
+discriminator = "a5186b25c6bb521bdc23fa8715fe929789abfeef857f2403b1be25578e17ba27"
 claim_digest = "0b174e7919215ed50d781922518ff8bbf7be92f01c9df33f98ad817d91a66f05"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9476,13 +9476,13 @@ oracle = "gates/claim-closure-oracles/s2-5.json"
 artifacts = ["gates/claim-closure-oracles/s2-5.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s2-5-counterfeit", mutation = "replace_text", from = "s2-5", to = "s2-5-counterfeit", expected_exit = 4 }]
-receipt = "0c460279046f45a6b897f4cb2ab0b41a4b277c4e5afcde6fbac54e159531ed0e"
+receipt = "dcdb7378656f587de13a8f8e96ddc6dec7f01eefd84cc4152d330043b6b12d3f"
 
 [[closure]]
 requirement_id = "REQ-S2-6"
 witness_id = "W-EXEC-S2-6"
 mechanism = "executable_discriminator"
-discriminator = "da9ed717a27a2fd7bd9a1d838b3afb8e4f1bcf394c7d4b30e667bc674d37bcd5"
+discriminator = "7a4244879a03051f164c8cc4d1e10981e32460fcfeee76f3e802b2ac804cb056"
 claim_digest = "31ecfcd4e6f865e6c49c25db48af4dd6961acdc7fbebaec6362711e8ed95ebe3"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9492,13 +9492,13 @@ oracle = "gates/claim-closure-oracles/s2-6.json"
 artifacts = ["gates/claim-closure-oracles/s2-6.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s2-6-counterfeit", mutation = "replace_text", from = "s2-6", to = "s2-6-counterfeit", expected_exit = 4 }]
-receipt = "89dc1da948c5ace50831c10a7fd25c7eef9a0913d27aab42dd48d2738222c104"
+receipt = "de357231e1e694e8e174dee0e4301034feed2de9b0fd0a912914360cd7c3e858"
 
 [[closure]]
 requirement_id = "REQ-S2-7"
 witness_id = "W-EXEC-S2-7"
 mechanism = "executable_discriminator"
-discriminator = "c3202f329d63a8abd94e450196c51151a20ac21e0fc9f5d04493d797a4bde6fc"
+discriminator = "0d7142148f97e5cb5373e8343ffe9a27b59732ae6ede066ae35575b5fc4117e9"
 claim_digest = "e342dc1e78007c3fdddec2fd7ff7dc48850db7ee9ed8c75d7da06fbfa1ba9031"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9508,13 +9508,13 @@ oracle = "gates/claim-closure-oracles/s2-7.json"
 artifacts = ["gates/claim-closure-oracles/s2-7.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s2-7-counterfeit", mutation = "replace_text", from = "s2-7", to = "s2-7-counterfeit", expected_exit = 4 }]
-receipt = "5275a1d63e8db3946035aa9264a8afe95e00a6b024ab4bc64b035778a3d0844f"
+receipt = "17dc86ecc2f948d58d92c5954724c8215f798679fd763330b3a56bf0d30df6be"
 
 [[closure]]
 requirement_id = "REQ-S2-8"
 witness_id = "W-EXEC-S2-8"
 mechanism = "executable_discriminator"
-discriminator = "3b5c09d847e5899ebeb169e3cf9a411807a05d5849aff092cd956f63c222fbc5"
+discriminator = "70dff8b8c524987e6f2139ae9327584af718944ca9d9d2c44f12d2fc25f3a145"
 claim_digest = "7c7fb1aa10337d275fc0793d00062d20cc9dc8a812c565683a4a7f3154a0a1aa"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9524,13 +9524,13 @@ oracle = "gates/claim-closure-oracles/s2-8.json"
 artifacts = ["gates/claim-closure-oracles/s2-8.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s2-8-counterfeit", mutation = "replace_text", from = "s2-8", to = "s2-8-counterfeit", expected_exit = 4 }]
-receipt = "e6da53e2d6d163b6eb718ec81497abaf0cc202c28559b3655f5fe2d1f1d2591d"
+receipt = "38f11917cd6b9d493ed87819543f46bbaf747c61a2de1b9fffc49c46546c6b63"
 
 [[closure]]
 requirement_id = "REQ-S2-9"
 witness_id = "W-EXEC-S2-9"
 mechanism = "executable_discriminator"
-discriminator = "a868d74a6c5222098a27f560ce41d148f135cd589f0eb9d1d3ec898771c5f4d7"
+discriminator = "10a5c38681a5f27320de289d7f25d337c24a962b84936015f40fe1c09c8ecbe1"
 claim_digest = "3a4f25831a0f75237cc9566d2bce6ec3e1bd7ae9db6fd382ff9ead225d7c7447"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9540,13 +9540,13 @@ oracle = "gates/claim-closure-oracles/s2-9.json"
 artifacts = ["gates/claim-closure-oracles/s2-9.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s2-9-counterfeit", mutation = "replace_text", from = "s2-9", to = "s2-9-counterfeit", expected_exit = 4 }]
-receipt = "5c664cdaf6dcc9ba7e858eca4251472c5129cb32b81ddfc65006b49d695d5325"
+receipt = "485249bbc76252a2ba5a0c3e79d7aba587811f7bcb0a3d3f6cdd543ee0f53b45"
 
 [[closure]]
 requirement_id = "REQ-S3-1"
 witness_id = "W-EXEC-S3-1"
 mechanism = "executable_discriminator"
-discriminator = "57705a884e238e2a8dbef9f04b3a986e6dafcbf43f590a38debeed6ff045db88"
+discriminator = "a1eeebad7c35c7572ad5163ce55fd41958aa7645f86f97ee66b9dfe635910710"
 claim_digest = "e9c50d445ab1692de6e95d253e24ddc8cb7038778f7facca1a06cbbe542a3ea6"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9556,13 +9556,13 @@ oracle = "gates/claim-closure-oracles/s3-1.json"
 artifacts = ["gates/claim-closure-oracles/s3-1.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s3-1-counterfeit", mutation = "replace_text", from = "s3-1", to = "s3-1-counterfeit", expected_exit = 4 }]
-receipt = "da95f4fa2cbcadb5198b2c814a792e2afa6d9286b228099453869387bcafd89d"
+receipt = "baf31a8c8b08dc41eef97297910cbe8751e3c4bc3365edec16dde93332aeebeb"
 
 [[closure]]
 requirement_id = "REQ-S3-2"
 witness_id = "W-EXEC-S3-2"
 mechanism = "executable_discriminator"
-discriminator = "5c2f308e4050940aa2d06ef044f07df5ee780ab3e7e75a14c269bee19531e17a"
+discriminator = "86468471dafce5e0501f4034bf890d9145415955e2664f8e8447acefb288898f"
 claim_digest = "5d32fffdc36674163d6f1fa2b23a890dc864254dac6be5d7cad273e44f625f97"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9572,13 +9572,13 @@ oracle = "gates/claim-closure-oracles/s3-2.json"
 artifacts = ["gates/claim-closure-oracles/s3-2.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s3-2-counterfeit", mutation = "replace_text", from = "s3-2", to = "s3-2-counterfeit", expected_exit = 4 }]
-receipt = "838abc8bc19958855d2b9f30a1a1be7ca172fa9c132843207436edc1dee6260e"
+receipt = "3f58cbe5efbf4202d07dad74993a0899887fcb4bd68b0f41d4138c4dca6b1389"
 
 [[closure]]
 requirement_id = "REQ-S3-3"
 witness_id = "W-EXEC-S3-3"
 mechanism = "executable_discriminator"
-discriminator = "5860626f081af58f5f9084c2546a8549e607a7dfef3e45a5a323962db8549534"
+discriminator = "fa4b8b7e79f35fd96ce16dc7ef5c45e977fcc6bbd4289dc69d79899af1e43247"
 claim_digest = "63e138f1c55c2346d60c451462638d34eb2f1d42e8d65cefa43bc2d5a3eca7fe"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9588,13 +9588,13 @@ oracle = "gates/claim-closure-oracles/s3-3.json"
 artifacts = ["gates/claim-closure-oracles/s3-3.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s3-3-counterfeit", mutation = "replace_text", from = "s3-3", to = "s3-3-counterfeit", expected_exit = 4 }]
-receipt = "1e7db6646024a945829f63d4c825b3f176f5215aeecd36f469be12789233187c"
+receipt = "65d7d1627bdac8c158a2e86f2f496dc089905e2ab57a5a1d642da16e1fd1fcd9"
 
 [[closure]]
 requirement_id = "REQ-S3-4"
 witness_id = "W-EXEC-S3-4"
 mechanism = "executable_discriminator"
-discriminator = "6f1fdfa280074450b7ebd9b2e53ded496b5311b4569e41c668d928de81058020"
+discriminator = "9772cc47b9ae3a65aa378cfbb4e86563f3e27cf6f62c7fd00286b7384b58e182"
 claim_digest = "d0c4fba681b1c26613ded3e462d325e26c9dd4610bff7677fb6c536d1d955687"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9604,13 +9604,13 @@ oracle = "gates/claim-closure-oracles/s3-4.json"
 artifacts = ["gates/claim-closure-oracles/s3-4.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s3-4-counterfeit", mutation = "replace_text", from = "s3-4", to = "s3-4-counterfeit", expected_exit = 4 }]
-receipt = "9d52977088093df2a042274fe117071cf313c08b0f3ff98967d9db4c1f9a3d79"
+receipt = "1ef73f90233b4007232a52e1503a1413229bdea4ed43ec4302a015118bc72e75"
 
 [[closure]]
 requirement_id = "REQ-S3-5"
 witness_id = "W-EXEC-S3-5"
 mechanism = "executable_discriminator"
-discriminator = "06cc67836115e600a4279b4aced7fcf9406774710e315e9697cf847b29f8cc70"
+discriminator = "3a95cf728b342c1181884baa2d84f1588e92ef32c3a7bf35b116482fa176d76e"
 claim_digest = "84df02c4cf69a125bb4e7eedb852465f64cadc9918ecb2c819c105b2ed374fab"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9620,13 +9620,13 @@ oracle = "gates/claim-closure-oracles/s3-5.json"
 artifacts = ["gates/claim-closure-oracles/s3-5.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s3-5-counterfeit", mutation = "replace_text", from = "s3-5", to = "s3-5-counterfeit", expected_exit = 4 }]
-receipt = "f517bf312ab125bd8c0d16a68e8587cd208b1c012a841086ab8c9e48e4c232d7"
+receipt = "0fea51e0f7c327b97db928b40bb871fd5a80669ac274af6a326754ac863ee5bf"
 
 [[closure]]
 requirement_id = "REQ-S3-6"
 witness_id = "W-EXEC-S3-6"
 mechanism = "executable_discriminator"
-discriminator = "5b7a4e59cfc206e4196f80651a080033f720b1ad31aa112b8174a254325caa2c"
+discriminator = "94ebc9b6dac22a59cd7d63025262ed98e01a93111b41dfe2434bbee5d0e29321"
 claim_digest = "5570790744dfd6fe51df4a25335686adbebd73f680d23fdf9e96c1b468c2aec8"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9636,13 +9636,13 @@ oracle = "gates/claim-closure-oracles/s3-6.json"
 artifacts = ["gates/claim-closure-oracles/s3-6.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s3-6-counterfeit", mutation = "replace_text", from = "s3-6", to = "s3-6-counterfeit", expected_exit = 4 }]
-receipt = "6d84ea73d2f1851515d055e7929daba23ebafb14febea93039c0fc14a4f45a0e"
+receipt = "d41fbce616779061722c099ca5699fc7f7b748bbb4daeab4f790ec3a07a1ea02"
 
 [[closure]]
 requirement_id = "REQ-S3-7"
 witness_id = "W-EXEC-S3-7"
 mechanism = "executable_discriminator"
-discriminator = "d07bc693c27d61b0fb317320717903862239f3bb95053e0a493817427d1950f1"
+discriminator = "b13b209ba2133bc391d36f0b806fbe87da6b1df1d63382dda1968c88e3158687"
 claim_digest = "0f1f77976f8654c6fffdbcd01839287a75a8c5baf11061d81b082163f0d2adf8"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9652,7 +9652,7 @@ oracle = "gates/claim-closure-oracles/s3-7.json"
 artifacts = ["gates/claim-closure-oracles/s3-7.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave15.rs", ".design/stage1-forge-tier.md", ".design/stage2-stratified-cage.md", ".design/stage3-bv-reconstruction.md", ".design/verified/exporter-surface-correspondence.md", ".design/verified/strat-rust-lean-correspondence.md", "forge/src/engine.rs", "forge/src/covenant.rs", "forge/src/covenant_eval.rs", "forge/src/covenant_engine.rs", "forge/src/battery.rs", "forge/src/check.rs", "forge/src/meaning.rs", "forge/src/lean_export.rs", "forge/src/goal_repl.rs", "forge/src/burn.rs", "forge/src/relax.rs", "forge/src/manifest.rs", "forge/src/lemma_library.rs", "forge/src/accessibility.rs", "forge/src/strat_tv.rs", "forge/src/strat_faithful.rs", "forge/src/bitvector.rs", "forge/src/audit.rs", "forge/src/forks.rs", "forge/src/lean_smt_export.rs", "thermite-spec/src/validator.rs", "thermite-spec/src/classifier.rs", "thermite-spec/src/restratify.rs", "thermite-spec/tests/proof_target_validate.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/tests/forge_items.rs", "thermite-syntax/tests/bv_tag_parse.rs", "thermite-tv/src/strat_ref_encode.rs", "thermite-tv/src/strat_two_phase.rs", "thermite-tv/tests/strat_two_phase_corpus.rs", "thermite-lower/src/lower.rs", "thermite-lower/tests/strat_quantifier_lower.rs", "forge/tests/covenant_conformance.rs", "forge/tests/strat_differential.rs", "forge/tests/bv_lowering.rs", "conformance/battery/registry.json", "lean/Thermite/Relax.lean", "lean/Thermite/Strat/Carrier.lean", "lean/Thermite/Strat/Denote.lean", "lean/Thermite/Strat/SubstKit.lean", "lean/Thermite/Strat/Soundness.lean", "lean/Thermite/Strat/CombDeriv.lean", "lean/Thermite/Strat/Restratify.lean", "lean/Thermite/Strat/Faithfulness.lean", "lean/Thermite/PinFiniteEscape.lean", "lean/Thermite/PinBrokenLift.lean", "lean/Thermite/PinStratFlip.lean", "lean/Thermite/PinStratCapture.lean", "lean/Thermite/PinCombDeriv.lean", "lean/Thermite/PinRestratDropSide.lean", "lean/Thermite/PinStratSelfLoop.lean", "lean/Thermite/PinNNFPolarity.lean", "lean/Thermite/PinRelaxRefute.lean", "gates/lean-axiom-probe.sh", "gates/audit.sh", "thermite-lower/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s3-7-counterfeit", mutation = "replace_text", from = "s3-7", to = "s3-7-counterfeit", expected_exit = 4 }]
-receipt = "b7a79c90a7874ae1b2af3ba4b972a32b1b01b51cd0f1f9b40e48b03e42f136be"
+receipt = "56590e1c7fd5b2fb32d24913633c748e0b667fa43fe9f143131d1a3c6d97d9c3"
 
 [[closure]]
 requirement_id = "REQ-S3-8"

@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 10142c423b69840dccbdd646392159958d43d31b83ca0ad3b7dc3b1434242d8a (re-pinned 2026-09-09 after adding the layered assurance-report claim and materializing all 583 typed claim receipts against the stabilized #57 tree. prior: ebc6e8e1782afa4f05667763945607552beeec3fed2da3ce1d783c8be7ff4db7)
+audited-content-sha256: ecec632b338bfc8e812f222f789e802e2c3175fc1bb5a296de623c071a30ffe6 (re-pinned 2026-09-09 after the final 583-claim materialization incorporated the issue #57 determinism fix and CI partition inventory. prior: 10142c423b69840dccbdd646392159958d43d31b83ca0ad3b7dc3b1434242d8a)
 
 ## Summary
 

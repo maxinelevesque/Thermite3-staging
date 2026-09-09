@@ -22,6 +22,7 @@
           ".design/engineer-assurance-report-and-level-retirement.md",
           "forge/src/assurance_report.rs",
           "forge/src/assurance_v2.rs",
+          "forge/src/engine.rs",
           "forge/src/cli.rs",
           "forge/src/main.rs",
           ".github/workflows/ci.yml",

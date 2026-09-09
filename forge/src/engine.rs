@@ -723,7 +723,16 @@ impl LeanEngine {
                 } else {
                     format!("{stdout}\n{stderr}")
                 };
-                let head: String = detail.chars().take(400).collect();
+                // Lean echoes the exact input path in elaboration diagnostics. Every
+                // caller supplies a unique process/nonce scratch path so concurrent
+                // proof attempts cannot collide; that operational identity must not
+                // leak into a certificate authority digest or a durable assurance
+                // report. Replace only the exact path (and its basename fallback)
+                // passed to this invocation, preserving every semantic diagnostic,
+                // source coordinate, and goal while making identical checks stable
+                // across processes and machines.
+                let stable_detail = normalize_lean_scratch_diagnostic(&detail, file);
+                let head: String = stable_detail.chars().take(400).collect();
                 Verdict::Unknown(Reason::ProofFailure(format!(
                     "lake/lean did not kernel-accept the exported obligation (tactic \
                      failure / elaboration error — NOT a countermodel, REQ-3): {head}"
@@ -850,6 +859,16 @@ impl LeanEngine {
             .unwrap_or_else(|_| "no-manifest".to_string());
         format!("{}+manifest:{manifest}", toolchain.trim())
     }
+}
+
+fn normalize_lean_scratch_diagnostic(detail: &str, file: &std::path::Path) -> String {
+    const STABLE_SCRATCH: &str = "<forge-lean-scratch>.lean";
+    let exact = file.to_string_lossy();
+    let mut normalized = detail.replace(exact.as_ref(), STABLE_SCRATCH);
+    if let Some(name) = file.file_name().and_then(|name| name.to_str()) {
+        normalized = normalized.replace(name, STABLE_SCRATCH);
+    }
+    normalized
 }
 
 impl Engine for LeanEngine {
@@ -3086,6 +3105,29 @@ mod tests {
             engine: EngineName::Verus,
             content_address: "deadbeef".to_string(),
         }
+    }
+
+    #[test]
+    fn lean_scratch_diagnostics_are_process_and_temp_root_stable() {
+        let first =
+            std::path::Path::new("/private/tmp/forge_lean_lemma_80086_rotl1_injective_0.lean");
+        let second = std::path::Path::new("/var/tmp/forge_lean_lemma_80442_rotl1_injective_0.lean");
+        let first_detail = format!(
+            "{}:14:552: error: unexpected token; unsolved goals remain",
+            first.display()
+        );
+        let second_detail = format!(
+            "{}:14:552: error: unexpected token; unsolved goals remain",
+            second.display()
+        );
+        assert_eq!(
+            normalize_lean_scratch_diagnostic(&first_detail, first),
+            normalize_lean_scratch_diagnostic(&second_detail, second)
+        );
+        assert_eq!(
+            normalize_lean_scratch_diagnostic(&first_detail, first),
+            "<forge-lean-scratch>.lean:14:552: error: unexpected token; unsolved goals remain"
+        );
     }
 
     // REQ-FORGE-ENGINE-ORDERING: the automatic ladder is stable and starts with

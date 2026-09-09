@@ -18,33 +18,47 @@ def main() -> int:
         output = Path(directory)
         report_path = output / "report.json"
         html_path = output / "report.html"
-        result = subprocess.run(
-            [
-                "cargo",
-                "run",
-                "--quiet",
-                "--locked",
-                "-p",
-                "forge",
-                "--",
-                "assurance",
-                "conformance/forge/mix64.th",
-                "--revision",
-                REVISION,
-                "--trust",
-                "local",
-                "--out-json",
-                str(report_path),
-                "--out-html",
-                str(html_path),
-            ],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=180,
-        )
-        if result.returncode != 0:
+        second_report_path = output / "report-second.json"
+        second_html_path = output / "report-second.html"
+        for json_output, html_output in (
+            (report_path, html_path),
+            (second_report_path, second_html_path),
+        ):
+            result = subprocess.run(
+                [
+                    "cargo",
+                    "run",
+                    "--quiet",
+                    "--locked",
+                    "-p",
+                    "forge",
+                    "--",
+                    "assurance",
+                    "conformance/forge/mix64.th",
+                    "--revision",
+                    REVISION,
+                    "--trust",
+                    "local",
+                    "--out-json",
+                    str(json_output),
+                    "--out-html",
+                    str(html_output),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=180,
+            )
+            if result.returncode != 0:
+                return 4
+        try:
+            if (
+                report_path.read_bytes() != second_report_path.read_bytes()
+                or html_path.read_bytes() != second_html_path.read_bytes()
+            ):
+                return 4
+        except OSError:
             return 4
         try:
             report = json.loads(report_path.read_text(encoding="utf-8"))
