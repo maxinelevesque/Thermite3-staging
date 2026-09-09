@@ -3273,7 +3273,7 @@ receipt = "1285be4ebe9ba856f7eef21fdc934ecd497083f62559bba321740dbcdc6fa844"
 requirement_id = "REQ-ASSURANCE-LAYERED-REPORT"
 witness_id = "W-ASSURANCE-LAYERED-REPORT"
 mechanism = "executable_discriminator"
-discriminator = "6c75ca2cc3375d444921530d6f8517f301d85c066734c75b274c3620831d5c40"
+discriminator = "b056b32231eaa0636c684cbe23cad14a99b5014939bd085d19427afa12e9c614"
 claim_digest = "6f77d048299f37a5dfc41ce729c18d2fe347a36df5a405dce9dcb756c36ec389"
 verifier = ["uv", "run", "python", "gates/claim-closure-assurance-report.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3283,7 +3283,7 @@ oracle = "gates/claim-closure-oracles/assurance-layered-report.json"
 artifacts = ["gates/claim-closure-oracles/assurance-layered-report.json", "gates/claim-closure-assurance-report.py", "gates/assurance-report-smoke.py", ".design/engineer-assurance-report-and-level-retirement.md", "forge/src/assurance_report.rs", "forge/src/assurance_v2.rs", "forge/src/engine.rs", "forge/src/cli.rs", "forge/src/main.rs", ".github/workflows/ci.yml", "gates/tests/test_ci_workflow_contract.py", "thermite-skill/src/generate.rs", "THERMITE.skill.md", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-live-floor-case", mutation = "replace_text", from = "assurance-report-live-floor", to = "assurance-report-live-floor-erased", expected_exit = 4 }]
-receipt = "9783bec3f77021722ef53727ac5a876b32c8349bb54c8d052ac702a7ef0860bd"
+receipt = "7e01bcaa81cc9f2e8b862287f06325a90225e838dfb25fd39670316f782c9e5a"
 
 [[closure]]
 requirement_id = "REQ-ASSURANCE-PROJECT-COMPOSITION"
@@ -3305,7 +3305,7 @@ receipt = "38272b3c95b3d5480d3f944e9ef3e3bbbcad548a40d1c9a783460f5f7a2a1f62"
 requirement_id = "REQ-CI-BEFORE-AFTER-EVIDENCE"
 witness_id = "W-EXEC-CI-BEFORE-AFTER-EVIDENCE"
 mechanism = "executable_discriminator"
-discriminator = "79878a30b238562b2d7773c95bc895a05dfbc2bdec11553574ecca9fea936fbf"
+discriminator = "45fd4aa32c4c9ca34b94ca1054d064008bc587dcd9e737539c03afb4ba687069"
 claim_digest = "2467ae55471043cc831144df8959da67132e25579193afdc57b5adfa8fa1326d"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3315,7 +3315,7 @@ oracle = "gates/claim-closure-oracles/ci-before-after-evidence.json"
 artifacts = ["gates/claim-closure-oracles/ci-before-after-evidence.json", "gates/claim-closure-lower.py", "gates/tests/test_ci_workflow_contract.py", ".design/ci-duration-balanced-fanout.md", ".github/workflows/ci.yml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-separated-before-after-metrics", mutation = "replace_text", from = "ci-before-after-metrics", to = "ci-before-after-metrics-conflated", expected_exit = 4 }]
-receipt = "d05df28d12302ff7c3ff3476b741da0e9179ac456321e165586f22bc32997d8a"
+receipt = "aa6380c6b6dd80ba3a0008d94f10978bb200bee7a91359dcaca1370eac127fc6"
 
 [[closure]]
 requirement_id = "REQ-CI-DETERMINISTIC-BALANCE"
@@ -3337,7 +3337,7 @@ receipt = "5639ba5c69698a8bf24d0a23354283aa545c7ffcef1ff37ea4a1bffe4051e326"
 requirement_id = "REQ-CI-DURATION-PARTITIONS"
 witness_id = "W-EXEC-CI-DURATION-PARTITIONS"
 mechanism = "executable_discriminator"
-discriminator = "04c79bd015cca5183107c4925745b04036ce76bc35f6b8e092117a3d96bd77e2"
+discriminator = "0222d8fe7ba94b76ab3b24a8aae9f9688a5cbb4d1502cfe030ca853518d5eff1"
 claim_digest = "fb3245ad80d60e03db28ed74d2919e62e7df2731b889cfab613f599ce987dc36"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3347,13 +3347,13 @@ oracle = "gates/claim-closure-oracles/ci-duration-partitions.json"
 artifacts = ["gates/claim-closure-oracles/ci-duration-partitions.json", "gates/claim-closure-lower.py", "gates/ci-test-partitions.toml", "gates/tests/test_ci_workflow_contract.py", ".github/workflows/ci.yml", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "defeat-thirteen-bucket-topology", mutation = "replace_text", from = "ci-thirteen-buckets", to = "ci-twelve-buckets", expected_exit = 4 }]
-receipt = "5c7a4c43c5ae55a2e36bd8b74983ef089d780ebd297a9d054be57744e3e103aa"
+receipt = "dd6ce1c166aba6d175a9db156a2feaa11320178c9496b9dab27ab47c6fe58204"
 
 [[closure]]
 requirement_id = "REQ-CI-GATE-FANOUT"
 witness_id = "W-EXEC-CI-GATE-FANOUT"
 mechanism = "executable_discriminator"
-discriminator = "18f96eda303d21053a99deb833e5b3f7b9f00518a7985cdb77d4fd6c5339af2b"
+discriminator = "5da8e1974bed9bcaef178754b42aadcc9a418c97c16fec5af8de5e6dd954c273"
 claim_digest = "5446d69a32c5b3de32f0c11338df8fd13c2a0565ed38ffa45678ec052fc4da22"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3363,7 +3363,7 @@ oracle = "gates/claim-closure-oracles/ci-gate-fanout.json"
 artifacts = ["gates/claim-closure-oracles/ci-gate-fanout.json", "gates/claim-closure-lower.py", "gates/tests/test_ci_workflow_contract.py", "gates/tests/test_ci_gate_segments.py", "gates/g3.sh", "gates/g4.sh", ".github/workflows/ci.yml", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "collapse-gate-fanout", mutation = "replace_text", from = "ci-gate-fanout", to = "ci-monolithic-gates", expected_exit = 4 }]
-receipt = "57bb97ffec6edd9c01f6a5ecde5dc813eff82a10da9ba3fc6d7d54cdc7135dad"
+receipt = "dfa7b328ce52f00695be67008378a7891967355daed0261f814f3df3dfe960c1"
 
 [[closure]]
 requirement_id = "REQ-CI-MATRIX-ATOMIZATION"
@@ -3385,7 +3385,7 @@ receipt = "2532b5eabb95f7f3c18c8ed973e11e186bfda09d46d372ecb40fa0f70b6170ee"
 requirement_id = "REQ-CI-PARTITION-COVERAGE"
 witness_id = "W-EXEC-CI-PARTITION-COVERAGE"
 mechanism = "executable_discriminator"
-discriminator = "7249840bfd6dfd9d810853752a952e1d4bff739ae574cdbe62e5b9ae813e2e7f"
+discriminator = "1f79c29eba683168d3c26a812ad06154b50be56b5264e232dc6e5896f466b90f"
 claim_digest = "bd876ca0f6f98e3d1826942a306aab97ab5f83762899447043fa098edae57f41"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3395,13 +3395,13 @@ oracle = "gates/claim-closure-oracles/ci-partition-coverage.json"
 artifacts = ["gates/claim-closure-oracles/ci-partition-coverage.json", "gates/claim-closure-lower.py", "gates/ci-test-partitions.py", "gates/ci-test-partitions.toml", "gates/tests/test_ci_test_partitions.py", ".github/workflows/ci.yml", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "allow-duplicate-partition-members", mutation = "replace_text", from = "ci-coverage-duplicate", to = "ci-coverage-duplicate-allowed", expected_exit = 4 }]
-receipt = "63e045976558130d0231caee698633365a9b3518b8c88002f3c206bf7023b640"
+receipt = "a0781b9fa2b11a7dcffd5067158bfbb95ad59109fadfd8654ee8afb9eb8f250a"
 
 [[closure]]
 requirement_id = "REQ-CI-PROOF-TOOL-PARITY"
 witness_id = "W-EXEC-CI-PROOF-TOOL-PARITY"
 mechanism = "executable_discriminator"
-discriminator = "3477fd27a3f997e958924280365c4c9ae67592cd9a5c52576613cc8cb6ba7b65"
+discriminator = "80f6cd94a0113046ced6ea54685246001c68d33851f573a6b1e04b8d8eeae7a0"
 claim_digest = "c2779c02e9ad38dbdfeeb5345781ddb3eb54f4e9e873e9048bb8cf77a9d82185"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3411,13 +3411,13 @@ oracle = "gates/claim-closure-oracles/ci-proof-tool-parity.json"
 artifacts = ["gates/claim-closure-oracles/ci-proof-tool-parity.json", "gates/claim-closure-lower.py", "gates/tests/test_ci_workflow_contract.py", ".github/workflows/ci.yml", "gates/g4.sh", "dev/g4-toolchain.env", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "drop-partition-proof-tools", mutation = "replace_text", from = "ci-proof-tool-parity", to = "ci-proof-tools-skipped", expected_exit = 4 }]
-receipt = "803c749d8210a1bb642707d64327945c0d45c1ce6fac9111f9ca7be41b94f04f"
+receipt = "140c9b8cb14058e4daaca4fc6d3c60d38511c710e2f842e4136e07451436040c"
 
 [[closure]]
 requirement_id = "REQ-CI-SEPARATE-LANDING"
 witness_id = "W-EXEC-CI-SEPARATE-LANDING"
 mechanism = "executable_discriminator"
-discriminator = "eb02a9d404c477693206e54067ebe1b6433374e79d2a2cab29160452552cdd27"
+discriminator = "26d7a93163fceb93349e154a56406ac20030da852270b274f136ab42227d583b"
 claim_digest = "12120d2f36c2cde042b617a99b52159e8dc7a263d2dd35591625fdd86fdc0dba"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3427,13 +3427,13 @@ oracle = "gates/claim-closure-oracles/ci-separate-landing.json"
 artifacts = ["gates/claim-closure-oracles/ci-separate-landing.json", "gates/claim-closure-lower.py", "gates/tests/test_ci_workflow_contract.py", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "erase-separate-landing-receipt", mutation = "replace_text", from = "ci-separate-landing", to = "ci-rfc10-rewrite", expected_exit = 4 }]
-receipt = "5afdc5f0859c6f50614707c6c113da0e8d4c56485ac6ea5c6cd306407f31b1ba"
+receipt = "7c53cd709aee5833b0c7552b096d8ddc3ad02afdeed72531d99805ee2d0e3d4a"
 
 [[closure]]
 requirement_id = "REQ-CI-STABLE-AGGREGATES"
 witness_id = "W-EXEC-CI-STABLE-AGGREGATES"
 mechanism = "executable_discriminator"
-discriminator = "14b92540c9230a4f3d205058544bf8138e31c3f6e87d6563bc9229a7128f36db"
+discriminator = "253ee40fbf3ee1f8b422e81e14af1b7df7bb00d7c35f38e06ea8a96d297d64b0"
 claim_digest = "1995e9114787db5ef0339db60deb7f5932423809612df3c50d4f7f1598487ef3"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3443,13 +3443,13 @@ oracle = "gates/claim-closure-oracles/ci-stable-aggregates.json"
 artifacts = ["gates/claim-closure-oracles/ci-stable-aggregates.json", "gates/claim-closure-lower.py", "gates/tests/test_ci_workflow_contract.py", "gates/tests/test_ci_aggregate.py", "gates/ci-aggregate.py", ".github/workflows/ci.yml", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "make-aggregate-fail-open", mutation = "replace_text", from = "ci-stable-aggregate-fail-closed", to = "ci-stable-aggregate-fail-open", expected_exit = 4 }]
-receipt = "c9d0d6910606e7cb5eaa62078f9db1b3480fc458fcf9bbafac101c0a5f9eaf12"
+receipt = "17a6c3e2d3bb8827a3f189dffa1696906a43f25d108567e3687c7b8e67a82695"
 
 [[closure]]
 requirement_id = "REQ-CI-TIMING-ARTIFACTS"
 witness_id = "W-EXEC-CI-TIMING-ARTIFACTS"
 mechanism = "executable_discriminator"
-discriminator = "626ccb5649f5e5772cbe05d70ef08fafbe37b3b83f2bac5b565fd049b058a266"
+discriminator = "5fc98a11edd96d8c4360e0a80b2ca4b164caa04002bda9bd2942a340db8d6c79"
 claim_digest = "2b0ac143f87bdd49ba763336f048976ec8b41b051fa6d25b0f60de22d9eecdf8"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -3459,7 +3459,7 @@ oracle = "gates/claim-closure-oracles/ci-timing-artifacts.json"
 artifacts = ["gates/claim-closure-oracles/ci-timing-artifacts.json", "gates/claim-closure-lower.py", "gates/tests/test_ci_workflow_contract.py", "gates/tests/test_time_command.py", "gates/time-command.py", ".config/nextest.toml", ".github/workflows/ci.yml", ".design/ci-duration-balanced-fanout.md", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "drop-failure-timing-evidence", mutation = "replace_text", from = "ci-timing-status-preserved", to = "ci-timing-masks-status", expected_exit = 4 }]
-receipt = "e91386dee98ea02064f7c1bbcc88d1320ddf96a0c439825575a194af9bb1775e"
+receipt = "41207159d74c27a85e74bad9c1448f102851a4275b7fcb462d5965add2b4071e"
 
 [[closure]]
 requirement_id = "REQ-CLAUSE-PORTFOLIO-ADDRESS"
@@ -7104,7 +7104,7 @@ receipt = "aadc581915a132c484019e7072d2b6f900c68cba610f46e353716adf58b8a1e1"
 requirement_id = "REQ-G4-10"
 witness_id = "W-EXEC-G4-10"
 mechanism = "executable_discriminator"
-discriminator = "979d195bf9554bef57ccc165ec817431311360e5ac061159d9ff17aae81ef932"
+discriminator = "7b183b194674141bdd230504aa15d3daa9a86420ff00f9180d1484a93fbe37b3"
 claim_digest = "12fdc55ae075117d8018b0610052eb260d4437cc0195102706800890ba046280"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -7114,7 +7114,7 @@ oracle = "gates/claim-closure-oracles/g4-closed-gate.json"
 artifacts = ["gates/claim-closure-oracles/g4-closed-gate.json", "gates/claim-closure-lower.py", "gates/g4.sh", "gates/tests/test_ci_gate_segments.py", ".github/workflows/ci.yml", ".design/stage4-epr-reconstruction.md", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "open-g4-segment-selector", mutation = "replace_text", from = "g4-closed-gate", to = "g4-open-selector", expected_exit = 4 }]
-receipt = "9bbca4f39028dd7e50ad8b525d293dd218df20c8ee08667eeaae9e509e5e62a2"
+receipt = "880ae3767069c19c65274f4ac8e16b6add8d29d521074eecc9f6227b0412a33f"
 
 [[closure]]
 requirement_id = "REQ-G4-2"
@@ -9658,7 +9658,7 @@ receipt = "56590e1c7fd5b2fb32d24913633c748e0b667fa43fe9f143131d1a3c6d97d9c3"
 requirement_id = "REQ-S3-8"
 witness_id = "W-EXEC-S3-8"
 mechanism = "executable_discriminator"
-discriminator = "78d8f0b4cd4051a49dd8e1c987536c934bc84f987c96cbe11cbc9179085de28a"
+discriminator = "a72110aab903dc1ada43bc83b87ccbe1bcd5f77d9043ad393b61d6c8caee620a"
 claim_digest = "fd6868140877c4a0736271c00f0477b00651c61f41d32a9194d6e53f5bd4b721"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9668,13 +9668,13 @@ oracle = "gates/claim-closure-oracles/s3-8.json"
 artifacts = ["gates/claim-closure-oracles/s3-8.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s3-8-counterfeit", mutation = "replace_text", from = "s3-8", to = "s3-8-counterfeit", expected_exit = 4 }]
-receipt = "8ab32b9dfd2fc70e98313b320d57cd39d0d3f6101ce4be9315e943c50a4adba8"
+receipt = "e284972d2b63013da0319e11ac00ae201ed04e61761ddadc13b90ea4359568ec"
 
 [[closure]]
 requirement_id = "REQ-S3-9"
 witness_id = "W-EXEC-S3-9"
 mechanism = "executable_discriminator"
-discriminator = "ad77c5749d9d680c97c8ed236d089891c6a27cac3d1b2c22c747589785c76805"
+discriminator = "6d654197a7d19b27d8489779a4906298bb68ee53bd171d1b4b2420dc09884d0c"
 claim_digest = "71cfbd03d20ff7a0d68d4d502e34a72cba9b71e38313271c17ffafa46afa8406"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9684,13 +9684,13 @@ oracle = "gates/claim-closure-oracles/s3-9.json"
 artifacts = ["gates/claim-closure-oracles/s3-9.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-s3-9-counterfeit", mutation = "replace_text", from = "s3-9", to = "s3-9-counterfeit", expected_exit = 4 }]
-receipt = "7186ddac53dc59ba1a4c9a45d9b205c78464feabb9d12efa9829355631ebca0c"
+receipt = "12555c5fc14792032ee4111a6e11889ec48bd5efce8b0abc6770817695ef11ca"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-FORGE-COMPILE"
 witness_id = "W-EXEC-SCAFFOLD-FORGE-COMPILE"
 mechanism = "executable_discriminator"
-discriminator = "00662194b0b638df9cf0d6bcbb5d86114b0965558c9538b57bf94a840b87236a"
+discriminator = "3b051deb13a70f156ffae4dd3110b04a3806bcc738fe22e35c185162acaad842"
 claim_digest = "d488e6ebe6067a8cd75f131b8fe75edc08e8d8eac5f5a7cb380249c41bec2094"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9700,13 +9700,13 @@ oracle = "gates/claim-closure-oracles/scaffold-forge-compile.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-forge-compile.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-forge-compile-counterfeit", mutation = "replace_text", from = "scaffold-forge-compile", to = "scaffold-forge-compile-counterfeit", expected_exit = 4 }]
-receipt = "c7fc191bc4dc978237570ddb1023a789d9ed7e3e9983d873eb771d49deab848f"
+receipt = "fd630d157b43116058cc7168283c21778c38d2efe4b62cdebe24c21c433d2438"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-FORGE-DAG"
 witness_id = "W-EXEC-SCAFFOLD-FORGE-DAG"
 mechanism = "executable_discriminator"
-discriminator = "69791e291774e1ee91ed0a19a371820a72d4399dd240c3fb269d6b5f43440f44"
+discriminator = "ba43159b91bc1b00734923437b6f35d5251bbb3f52a31fdbee6b52d250401649"
 claim_digest = "8687b441407a8cf9d00afe8f59bd680fb6462139ce5f79e5d2cbf46d5300c878"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9716,13 +9716,13 @@ oracle = "gates/claim-closure-oracles/scaffold-forge-dag.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-forge-dag.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-forge-dag-counterfeit", mutation = "replace_text", from = "scaffold-forge-dag", to = "scaffold-forge-dag-counterfeit", expected_exit = 4 }]
-receipt = "6beac3f83fb5cf30b14465350838d613446c9cd5cb33b2a8a363d9e6ef7f7b67"
+receipt = "85a26de2d1cc57fa456247da5ff1d7e762c15343eedc0fa8827b0d8b03c983af"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-FORGE-RESULT"
 witness_id = "W-EXEC-SCAFFOLD-FORGE-RESULT"
 mechanism = "executable_discriminator"
-discriminator = "e1d8b2d39e1524b3cfd0b7ea452ca820a3c78f4a1aaf85b0047e68c7f4553199"
+discriminator = "ed36fe8b4635ea828738ff03ef669c2e4c13b26e9e25fa4c6848426cca7ecad1"
 claim_digest = "5154c22d60b8aa25c91ccf841e750c77f471cf95187240cdafab78562f698099"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9732,13 +9732,13 @@ oracle = "gates/claim-closure-oracles/scaffold-forge-result.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-forge-result.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-forge-result-counterfeit", mutation = "replace_text", from = "scaffold-forge-result", to = "scaffold-forge-result-counterfeit", expected_exit = 4 }]
-receipt = "dd1828dc7a332243d019ca51f1f784118579c24d2da77366b511d797e897be1b"
+receipt = "cb6e4fd2428aa9194899ce1e09b49d6f4c88622999a14c0557ef1e61f6986037"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-FORGE-WORKSPACE"
 witness_id = "W-EXEC-SCAFFOLD-FORGE-WORKSPACE"
 mechanism = "executable_discriminator"
-discriminator = "4c3123b646b7c06bff6036a32d62f83adb0682bb57507aaeb8e2ef6e460915d2"
+discriminator = "cb9ea9bb83ba8dec47438db5d3b3d71fa5f6c2abb6d817a68d869eb178092516"
 claim_digest = "59aba820355f5895f0080a809a603db3ef2d3a01469dc14305aa5f1999043f03"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9748,13 +9748,13 @@ oracle = "gates/claim-closure-oracles/scaffold-forge-workspace.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-forge-workspace.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-forge-workspace-counterfeit", mutation = "replace_text", from = "scaffold-forge-workspace", to = "scaffold-forge-workspace-counterfeit", expected_exit = 4 }]
-receipt = "55055807067b71dc3d9b3a483a34afdc395d334763df185948e905636ddba828"
+receipt = "a635df0976bfaba5bbcfa569f55f9ade478b603ca5ef6065986c8e856ab22ef4"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-LOWER-COMPILE"
 witness_id = "W-EXEC-SCAFFOLD-LOWER-COMPILE"
 mechanism = "executable_discriminator"
-discriminator = "8f69cfa109d054877ad1032f85b7493ecc8a68c154e3a669cf16a5e1037094b1"
+discriminator = "a96bfd9b6d53b80c91c26759d27fa01d1335281301551db5fa6974a4e0ea91b9"
 claim_digest = "5a50963264c472488a8ba5fc69f20a22329bb967d4af2400f27a77891a04dd77"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9764,13 +9764,13 @@ oracle = "gates/claim-closure-oracles/scaffold-lower-compile.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-lower-compile.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-lower-compile-counterfeit", mutation = "replace_text", from = "scaffold-lower-compile", to = "scaffold-lower-compile-counterfeit", expected_exit = 4 }]
-receipt = "a10579f095026a17fdf52083c4d7dcd46c095b2fb3931587c42225d940f9710e"
+receipt = "b176e39d557ac55f204b8791692cb3c4ebdc0f8e86e0d4fa56c262fc384c5294"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-LOWER-DAG"
 witness_id = "W-EXEC-SCAFFOLD-LOWER-DAG"
 mechanism = "executable_discriminator"
-discriminator = "8f75bee4ac269355f1e8e6f9f0df8cd17f0e773736fac3137087444168a0b3f4"
+discriminator = "1ca2708327796ed0185465e3765fa9688511152cfbda61b785a4052974ef36f4"
 claim_digest = "e4975eeef080145099ddc5ca921c5156c6a21b7d7da84dbc929b28e31cfbf1c8"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9780,13 +9780,13 @@ oracle = "gates/claim-closure-oracles/scaffold-lower-dag.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-lower-dag.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-lower-dag-counterfeit", mutation = "replace_text", from = "scaffold-lower-dag", to = "scaffold-lower-dag-counterfeit", expected_exit = 4 }]
-receipt = "0fa3ce11a1dae57ee152036255d597dff7cc10acbbfa4bc2a08106ffe93a3f05"
+receipt = "861dc415b1da0c4e016413b205fb4040faed6b1206902febb833d8dba1e293ae"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-LOWER-RESULT"
 witness_id = "W-EXEC-SCAFFOLD-LOWER-RESULT"
 mechanism = "executable_discriminator"
-discriminator = "5056e787ca6b28b09960594e1ff355ce5adef214d1c0ff6caa6b5034690fa9b0"
+discriminator = "122a6a346da20b09c8693b769aaa2ee7eff7ee717472e67ca475d54c4dac3e1b"
 claim_digest = "b2158a37e5717cb72ce78b0314753e0226567cbb8e5df4a17f07aa10983d3f2a"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9796,13 +9796,13 @@ oracle = "gates/claim-closure-oracles/scaffold-lower-result.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-lower-result.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-lower-result-counterfeit", mutation = "replace_text", from = "scaffold-lower-result", to = "scaffold-lower-result-counterfeit", expected_exit = 4 }]
-receipt = "08bea5862a9ec02b1e9b880885a7a01e075e0be8615cee3906e0cad5c0d44053"
+receipt = "c709a86f077a4d7f9b486229e762f5f5cb15afd81c5e60dd04882b5d44dbebe8"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-LOWER-WORKSPACE"
 witness_id = "W-EXEC-SCAFFOLD-LOWER-WORKSPACE"
 mechanism = "executable_discriminator"
-discriminator = "f84e7beffb2aac20b78db84a76ed64cf1d2fa90db0103094bd78ee605131ff6e"
+discriminator = "1e69768b2eae021dcc95e8e8559d3a9131481b76b3b762a695d67d7a606c06a6"
 claim_digest = "19e023b93dd5a9f09e2731b1b282c1ceca26e5c237dad785fadf0d5f02f24b08"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9812,13 +9812,13 @@ oracle = "gates/claim-closure-oracles/scaffold-lower-workspace.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-lower-workspace.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-lower-workspace-counterfeit", mutation = "replace_text", from = "scaffold-lower-workspace", to = "scaffold-lower-workspace-counterfeit", expected_exit = 4 }]
-receipt = "b2f67de62f18ad106aca6a11b82c5f935ac35773721b151669ec0c228ae6098d"
+receipt = "b673f042d3ae6ddb94f9fd18ef29615bb4a5c8ae0ee623b7cf0008332952763b"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-SPEC-COMPILE"
 witness_id = "W-EXEC-SCAFFOLD-SPEC-COMPILE"
 mechanism = "executable_discriminator"
-discriminator = "db0da4d02f0214d3f80313d46ec840d20d87bb81217701f5418c0b8d66b9f819"
+discriminator = "56ede9aa46de2ad15b543ec83dfd2c52d8e786592a8a25a2d47685f0d12c4975"
 claim_digest = "1c8342cb812fa332de3284d7bc65d035c3547745cafc475f853d2c5e94bdd583"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9828,13 +9828,13 @@ oracle = "gates/claim-closure-oracles/scaffold-spec-compile.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-spec-compile.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-spec-compile-counterfeit", mutation = "replace_text", from = "scaffold-spec-compile", to = "scaffold-spec-compile-counterfeit", expected_exit = 4 }]
-receipt = "43324314e3282bab89b6480e6d9306570e1853e23407646a8cbad839cfdcae18"
+receipt = "34123e48b2c795825f66606ab17ddf862c572e4998fd0e558aa09a5758596abf"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-SPEC-DAG"
 witness_id = "W-EXEC-SCAFFOLD-SPEC-DAG"
 mechanism = "executable_discriminator"
-discriminator = "e0999d0bfca682b1b19bd671db42615521ec0fc1b48cdce3ebf631bc2169cc43"
+discriminator = "bfd90957be02636c931957eb663a65ee94e0cd8fff09010f94f5daac568157ab"
 claim_digest = "536f30dbfd38285a862655be948d4f18a33107e7dbdf412d95f3c8abaeaa05ed"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9844,13 +9844,13 @@ oracle = "gates/claim-closure-oracles/scaffold-spec-dag.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-spec-dag.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-spec-dag-counterfeit", mutation = "replace_text", from = "scaffold-spec-dag", to = "scaffold-spec-dag-counterfeit", expected_exit = 4 }]
-receipt = "ddb7f123b759871f7f6c64ddf39d52b9ff55a7c226bfd692971b4c4beb51268f"
+receipt = "f2d2e8baf4eba667e9e76357effb74bc082edc7243e339127f1e322cf5fe016c"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-SPEC-RESULT"
 witness_id = "W-EXEC-SCAFFOLD-SPEC-RESULT"
 mechanism = "executable_discriminator"
-discriminator = "ad34057ae47ef0fe82bc6cee8c19c77a4fc1eb0a4d3878b3fcea2b0fc4065fa6"
+discriminator = "b38fcc668b15e9505bb5024fdec04956e6ca8215fd3e3efd99e7202f67585475"
 claim_digest = "b1639cc23ff4428b51308b8b000bfa1087463f374ac7eaee72c7272c19ffc4af"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9860,13 +9860,13 @@ oracle = "gates/claim-closure-oracles/scaffold-spec-result.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-spec-result.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-spec-result-counterfeit", mutation = "replace_text", from = "scaffold-spec-result", to = "scaffold-spec-result-counterfeit", expected_exit = 4 }]
-receipt = "6695b4931a8c4ad40ef3228fb18b1a7b8cf6e610f1a21cb511955de3565e2289"
+receipt = "e6339cfedb78883230629d2c68f6dcc6413f1b723bc1d48a3a1fe9cdb101190f"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-SPEC-WORKSPACE"
 witness_id = "W-EXEC-SCAFFOLD-SPEC-WORKSPACE"
 mechanism = "executable_discriminator"
-discriminator = "16259edf1ade54e01eafb89d7b72f0cfe9e30cdf8b074c6fd88c1672ced3d958"
+discriminator = "7c958c05ddd99c5e2238a693c797229e8e5a2c352b69718cd49356358b84df85"
 claim_digest = "e723a8e147bb511546f62ec162496afc8376ad00822ced7838eaa0911c941428"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9876,13 +9876,13 @@ oracle = "gates/claim-closure-oracles/scaffold-spec-workspace.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-spec-workspace.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-spec-workspace-counterfeit", mutation = "replace_text", from = "scaffold-spec-workspace", to = "scaffold-spec-workspace-counterfeit", expected_exit = 4 }]
-receipt = "3ed7f27a3ad312c4e962b855e23090fa4a49d4c97f3d242d6705f631c0b21340"
+receipt = "53abb6b42ea88e2a22cd57c36ee4feb963e1a3b60995e4e4257a9dd28c6bb7fc"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-SYNTAX-COMPILE"
 witness_id = "W-EXEC-SCAFFOLD-SYNTAX-COMPILE"
 mechanism = "executable_discriminator"
-discriminator = "69b1777a4ddd356b2e9a73ca90a81e75108d908729cf068dad8831faf271e8f4"
+discriminator = "730eeba95fe424736fa872d4ecf7b71a370cea004755b84d09f6561057491c4d"
 claim_digest = "fe9169f043386ea734567f9e52b2365c2c8b07bf4738747ec99f6b3fdcef4372"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9892,13 +9892,13 @@ oracle = "gates/claim-closure-oracles/scaffold-syntax-compile.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-syntax-compile.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-syntax-compile-counterfeit", mutation = "replace_text", from = "scaffold-syntax-compile", to = "scaffold-syntax-compile-counterfeit", expected_exit = 4 }]
-receipt = "1f0cbb99f052a95021e76c51f4cc36cad6e9affb87a6d6d7730b56e0bb5fcbee"
+receipt = "c73d5a21993e4d2e8c6948cf6b167b2922f16300a6ba112db1ddef12e9a621f0"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-SYNTAX-DAG"
 witness_id = "W-EXEC-SCAFFOLD-SYNTAX-DAG"
 mechanism = "executable_discriminator"
-discriminator = "928f813867a2a37a8a9326fedbc3967ce7c8bbe1bdde5ce0166fc798926b1a09"
+discriminator = "05e38fe51d498e51f3dd0146e864693b6cd4a5e96751ca6926bfbbca015f0783"
 claim_digest = "697f66b9110f556fa2e66595f5bb06ab047c77ffb8d1d3159bea20a0d60be0f1"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9908,13 +9908,13 @@ oracle = "gates/claim-closure-oracles/scaffold-syntax-dag.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-syntax-dag.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-syntax-dag-counterfeit", mutation = "replace_text", from = "scaffold-syntax-dag", to = "scaffold-syntax-dag-counterfeit", expected_exit = 4 }]
-receipt = "421876c7cd90dbcc0d321f391d7c595c4546d665db00ec0f1d165f960018e2a9"
+receipt = "0099da91698180d077aa3c11f04cc3d6dc07bf611b948704388013dff2a2d636"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-SYNTAX-RESULT"
 witness_id = "W-EXEC-SCAFFOLD-SYNTAX-RESULT"
 mechanism = "executable_discriminator"
-discriminator = "f3bd4a41b925052a6f01b9f591636d26edd52a3364a079132e429b78ad2d42a4"
+discriminator = "463b4724613d40197f7ac8d2bfe5aaf9c935bfcc1443deb54dc37dc4dcc71aab"
 claim_digest = "b49269c442c649799683090a737a61b0644b9f90390a3a98f6b58baf6c0aa789"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9924,13 +9924,13 @@ oracle = "gates/claim-closure-oracles/scaffold-syntax-result.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-syntax-result.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-syntax-result-counterfeit", mutation = "replace_text", from = "scaffold-syntax-result", to = "scaffold-syntax-result-counterfeit", expected_exit = 4 }]
-receipt = "6ea38ef05f69ae1a5041d843cab6df49760c53d8655132bc86c31317c00b3d43"
+receipt = "6459a16489950f229196924a1ddad59bfc6066c0472c03a5c3203c982e35e42a"
 
 [[closure]]
 requirement_id = "REQ-SCAFFOLD-SYNTAX-WORKSPACE"
 witness_id = "W-EXEC-SCAFFOLD-SYNTAX-WORKSPACE"
 mechanism = "executable_discriminator"
-discriminator = "dc8e5d4dc36926cfd1e7f150c85947ce4123fbaa59c4f7a16f5a908d41165d17"
+discriminator = "1b41a16365961406a4a15a3baf66df4188628ce86ab1bc67e3a75afa4bb818f3"
 claim_digest = "b88e542c6d80788617d5085610146380c4ffe54f019a21b68be0f99f1d1fe27d"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9940,13 +9940,13 @@ oracle = "gates/claim-closure-oracles/scaffold-syntax-workspace.json"
 artifacts = ["gates/claim-closure-oracles/scaffold-syntax-workspace.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-scaffold-syntax-workspace-counterfeit", mutation = "replace_text", from = "scaffold-syntax-workspace", to = "scaffold-syntax-workspace-counterfeit", expected_exit = 4 }]
-receipt = "3a8fa62f5eb982fe5e154d724ba4bc9004fff8d78fe0c892b56bb0742b6ff60d"
+receipt = "8d1409083cd47d71f173605a97d0659edbfa99ec751510dcbd24186afad8e94a"
 
 [[closure]]
 requirement_id = "REQ-SKILL-ERGONOMICS-DESUGAR"
 witness_id = "W-EXEC-SKILL-ERGONOMICS-DESUGAR"
 mechanism = "executable_discriminator"
-discriminator = "5b2d809094a5f13a55a6b9caa0daa043d8cccd5e178a3f43e3ab3e3e185f2147"
+discriminator = "027396354cc9d1d7c5405ef231b90dd76d8b34afda5976f9f64b882f73f24b47"
 claim_digest = "f6853df4432064efdd286a32e47f314df6d76652fdc180f4036765c6236d780a"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9956,13 +9956,13 @@ oracle = "gates/claim-closure-oracles/skill-ergonomics-desugar.json"
 artifacts = ["gates/claim-closure-oracles/skill-ergonomics-desugar.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-skill-ergonomics-desugar-counterfeit", mutation = "replace_text", from = "skill-ergonomics-desugar", to = "skill-ergonomics-desugar-counterfeit", expected_exit = 4 }]
-receipt = "9d1f7f6d1790928734c6fd7cd70dbbdd442516857af1acb2f1dd9e9518b44846"
+receipt = "e11330655dcf8eb12aae9837542e5ab4ab4a8168cd0063c87eb3fccf8feabab1"
 
 [[closure]]
 requirement_id = "REQ-SKILL-ERGONOMICS-MATCH-GUARD"
 witness_id = "W-EXEC-SKILL-ERGONOMICS-MATCH-GUARD"
 mechanism = "executable_discriminator"
-discriminator = "ccc6c599fe03e0c634a3985e6234837c28285c6e96b7408f12d56a0b50400b0b"
+discriminator = "a5b6b163075fbf9146c9bcfdfe45d9dca0819e2f075c55aedce0bf8dc45bfd1e"
 claim_digest = "9fe11dd4b86692c6f81794b66c3f2d3873c31b4b43d758cd0ae1e61127dd0c89"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9972,13 +9972,13 @@ oracle = "gates/claim-closure-oracles/skill-ergonomics-match-guard.json"
 artifacts = ["gates/claim-closure-oracles/skill-ergonomics-match-guard.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-skill-ergonomics-match-guard-counterfeit", mutation = "replace_text", from = "skill-ergonomics-match-guard", to = "skill-ergonomics-match-guard-counterfeit", expected_exit = 4 }]
-receipt = "b230ae9837ada8de83017e47b64dd1cd6a55e267ea5fc9ff0c321ed9cae2f2fc"
+receipt = "1d60ad007ae6d33aaee71084f293e7b9ea329445bcb2f602f8b8c8a89dd1b836"
 
 [[closure]]
 requirement_id = "REQ-SKILL-ERGONOMICS-OR-PATTERN"
 witness_id = "W-EXEC-SKILL-ERGONOMICS-OR-PATTERN"
 mechanism = "executable_discriminator"
-discriminator = "cec5916a98604c96e6fbd465b1cedab21908e3cd6b22ae1e3cee41c89db17f30"
+discriminator = "a74552770f9086529c8809636b5172c50da5a75dd60951d860c292a095170d56"
 claim_digest = "daf26fc2beeb7defb9063aec5c236c4a22eda0d4f9ea94f2e0ec95f0ad6256a2"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -9988,13 +9988,13 @@ oracle = "gates/claim-closure-oracles/skill-ergonomics-or-pattern.json"
 artifacts = ["gates/claim-closure-oracles/skill-ergonomics-or-pattern.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-skill-ergonomics-or-pattern-counterfeit", mutation = "replace_text", from = "skill-ergonomics-or-pattern", to = "skill-ergonomics-or-pattern-counterfeit", expected_exit = 4 }]
-receipt = "104215a98416f723bbc73dc5dde2d8c1ca18fb7de857e74d1d064818f2a39fd9"
+receipt = "3639d110e2dd3c65bfdfb2f422b1c5a6ad01eb1b4b3d27bca130f4145223befd"
 
 [[closure]]
 requirement_id = "REQ-SKILL-GENERATOR-BIN"
 witness_id = "W-EXEC-SKILL-GENERATOR-BIN"
 mechanism = "executable_discriminator"
-discriminator = "615e805921841e9cba49045aa1e2265110879cdb7041ae70a5246ff691d12f29"
+discriminator = "4fe9b399f543d2c552d40ea0281b26c92cb5c474c123ef8b44fc79400b07afb0"
 claim_digest = "db957770fa458da372e4da9e13716af239d8972bfb6748f8038aacfd3ca57351"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -10004,13 +10004,13 @@ oracle = "gates/claim-closure-oracles/skill-generator-bin.json"
 artifacts = ["gates/claim-closure-oracles/skill-generator-bin.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-skill-generator-bin-counterfeit", mutation = "replace_text", from = "skill-generator-bin", to = "skill-generator-bin-counterfeit", expected_exit = 4 }]
-receipt = "83116ee63e33bb4faa26406f2e4855a1cb5e15855a191f15de6087a1340b9bc7"
+receipt = "945119dac65a646836172e29902865f3cade62cfd59a0e8c9e24f898ab0cd88b"
 
 [[closure]]
 requirement_id = "REQ-SKILL-GENERATOR-BUDGET"
 witness_id = "W-EXEC-SKILL-GENERATOR-BUDGET"
 mechanism = "executable_discriminator"
-discriminator = "d951f49cfb85b95b6399f5a4bdd053c92f6b325f8ab95592f55f65919bc850a8"
+discriminator = "b6ed542b99f4d0cad3b6d8e6989690c40fd61763d8df8ae362b531769c706fe1"
 claim_digest = "2c6cdece10bf915755858d86d69334eef84b4ac040893973d0e09b70e1aa1dcd"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -10020,13 +10020,13 @@ oracle = "gates/claim-closure-oracles/skill-generator-budget.json"
 artifacts = ["gates/claim-closure-oracles/skill-generator-budget.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-skill-generator-budget-counterfeit", mutation = "replace_text", from = "skill-generator-budget", to = "skill-generator-budget-counterfeit", expected_exit = 4 }]
-receipt = "e2883af8b27225fbbc3dd2a3a1480731ab4eb94d167e4cf97c18c18a336caa35"
+receipt = "e4ebedfa8f3b3927f6fe27e0b007d09529b0961d95622b9775c5bf719940fa9f"
 
 [[closure]]
 requirement_id = "REQ-SKILL-GENERATOR-CANONICAL-SECTIONS"
 witness_id = "W-EXEC-SKILL-GENERATOR-CANONICAL-SECTIONS"
 mechanism = "executable_discriminator"
-discriminator = "88419c3d127816b99f5a153bfa43d72520dd64f4ea774d6a02af41e60eaf9a29"
+discriminator = "2e79cecd457b5303d604d5f5ce518930b229807607af3f9ac45a2d2016a525f0"
 claim_digest = "1ebae94c388e7de99e29203ebfcb4b6b996b20ad63a0df45b8a33378d30d2643"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -10036,13 +10036,13 @@ oracle = "gates/claim-closure-oracles/skill-generator-canonical-sections.json"
 artifacts = ["gates/claim-closure-oracles/skill-generator-canonical-sections.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-skill-generator-canonical-sections-counterfeit", mutation = "replace_text", from = "skill-generator-canonical-sections", to = "skill-generator-canonical-sections-counterfeit", expected_exit = 4 }]
-receipt = "bedf95df8ce216f95ba11ef86ef064cbd3df7bbc865464e3416787bef4c87d79"
+receipt = "57ccaaa389dd33ca8727dd2df447800af1f1dbe40fe7ee5f136defe073c63e0c"
 
 [[closure]]
 requirement_id = "REQ-SKILL-GENERATOR-CI-BUDGET"
 witness_id = "W-EXEC-SKILL-GENERATOR-CI-BUDGET"
 mechanism = "executable_discriminator"
-discriminator = "4930a421b5ee8e66cace5f0152e6dfeaa935142132a597a81fb8a98dcdc75180"
+discriminator = "100f9c4a89052c1783301a74c258a2fd5b2b24885fc053e8432ae986b58ca4d9"
 claim_digest = "95a0ec02c8a71e46213f8b8990d1b78c8f6fffa47357d65ec36b84c5449fe4e6"
 verifier = ["uv", "run", "python", "gates/claim-closure-lower.py"]
 verifier_version = "214063bc738d9231ee66774e53bf213461f702188614192a80078740fe43842a"
@@ -10052,7 +10052,7 @@ oracle = "gates/claim-closure-oracles/skill-generator-ci-budget.json"
 artifacts = ["gates/claim-closure-oracles/skill-generator-ci-budget.json", "gates/claim-closure-lower.py", "thermite-lower/tests/claim_closure_wave16.rs", ".design/stage3-bv-reconstruction.md", ".design/scaffold/workspace.md", ".design/skill/skill-generator.md", ".design/basis/11-ergonomics.md", "gates/g3.sh", "gates/lean-axiom-probe.sh", ".github/workflows/ci.yml", "lean/Thermite/Reconstruct.lean", "lean/Thermite/PinReconstruction.lean", "forge/src/lean_smt_export.rs", "forge/src/check.rs", "forge/src/main.rs", "forge/src/cli.rs", "forge/Cargo.toml", "thermite-lower/src/lib.rs", "thermite-lower/src/lower.rs", "thermite-lower/Cargo.toml", "thermite-spec/src/lib.rs", "thermite-spec/src/validator.rs", "thermite-spec/Cargo.toml", "thermite-syntax/src/lib.rs", "thermite-syntax/src/parser.rs", "thermite-syntax/Cargo.toml", "thermite-skill/src/generate.rs", "thermite-skill/src/main.rs", "thermite-skill/tests/skill.rs", "thermite-skill/Cargo.toml", "THERMITE.skill.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "gates/completeness-review.py", "gates/claim_closure_schema.py"]
 expected = ["accepted"]
 counterfeit = [{ name = "reject-skill-generator-ci-budget-counterfeit", mutation = "replace_text", from = "skill-generator-ci-budget", to = "skill-generator-ci-budget-counterfeit", expected_exit = 4 }]
-receipt = "8a9fd0e2c23a4bd577656ffaf0db47e31ad63246b35e1eef8083d86cadee8729"
+receipt = "767dcf048e4e3327282b35927bc9a1f59d59aadb0404d3f0ffd645a7f74cc2fc"
 
 [[closure]]
 requirement_id = "REQ-SKILL-GENERATOR-COMBINATOR-SECTION"

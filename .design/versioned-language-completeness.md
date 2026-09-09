@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: ecec632b338bfc8e812f222f789e802e2c3175fc1bb5a296de623c071a30ffe6 (re-pinned 2026-09-09 after the final 583-claim materialization incorporated the issue #57 determinism fix and CI partition inventory. prior: 10142c423b69840dccbdd646392159958d43d31b83ca0ad3b7dc3b1434242d8a)
+audited-content-sha256: 641e366aff94971baba8dd2be7d0b1c453b815cf7a8789c4202b5c3c06472784 (re-pinned 2026-09-09 after rematerializing the 583-claim ledger for the issue #57 assurance-job Lean provisioning fix. prior: ecec632b338bfc8e812f222f789e802e2c3175fc1bb5a296de623c071a30ffe6)
 
 ## Summary
 

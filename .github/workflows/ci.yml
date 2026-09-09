@@ -260,6 +260,30 @@ jobs:
           echo "VERUS_BIN=$VERUS_BIN_PATH" >> "$GITHUB_ENV"
           echo "$(dirname "$VERUS_BIN_PATH")" >> "$GITHUB_PATH"
 
+      - name: Install elan for live Lean replay
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+          bash /tmp/elan-init.sh -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Prepare mixed-route Lean replay modules
+        working-directory: lean
+        run: |
+          set -euo pipefail
+          lake exe cache get
+          lake build \
+            Thermite.Stabilize \
+            Thermite.Exec.Stmt \
+            Thermite.Exec.WhileBody \
+            Thermite.Strat.Cls.Wire \
+            Thermite.Strat.EprReplay \
+            Thermite.Strat.TestModel \
+            Thermite.Reconstruct \
+            Thermite.ResourceFlow \
+            Thermite.Interference \
+            Thermite.Protocol
+
       - name: Generate exact-SHA assurance portrait
         id: generate
         env:

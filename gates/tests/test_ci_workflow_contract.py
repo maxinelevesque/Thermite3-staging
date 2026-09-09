@@ -153,6 +153,14 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn("trust=protected", job)
         self.assertIn("UNTRUSTED PR DIAGNOSTIC", job)
         self.assertIn("regenerated after push", job)
+        self.assertIn("Install elan for live Lean replay", job)
+        self.assertIn("Prepare mixed-route Lean replay modules", job)
+        self.assertIn("lake exe cache get", job)
+        self.assertIn("Thermite.Stabilize", job)
+        self.assertLess(
+            job.index("Prepare mixed-route Lean replay modules"),
+            job.index("Generate exact-SHA assurance portrait"),
+        )
         self.assertIn("retention-days: 14", job)
         self.assertIn("if: always()", job)
         self.assertLess(job.index("Upload complete diagnostic portrait"), job.index("Enforce optional live formal floor"))
