@@ -158,6 +158,7 @@ fn check_json(file: &Path) -> Vec<Value> {
         .arg("check")
         .arg(file)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check");
     let stdout = String::from_utf8_lossy(&out.stdout);

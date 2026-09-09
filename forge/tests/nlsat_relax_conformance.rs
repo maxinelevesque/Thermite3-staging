@@ -51,6 +51,7 @@ fn nlsat_check(stem: &str, src: &str) -> Value {
         .arg("--engine")
         .arg("nlsat")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("forge invokes");
     let stdout = String::from_utf8_lossy(&out.stdout).into_owned();

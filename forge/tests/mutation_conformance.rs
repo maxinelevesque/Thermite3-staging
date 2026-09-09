@@ -130,7 +130,10 @@ fn run_check_json(file: &Path, extra: &[&str]) -> (Option<i32>, Vec<Value>) {
     let cache_dir = unique_cache_dir();
     let _ = std::fs::remove_dir_all(&cache_dir);
     let mut cmd = Command::new(forge_bin());
-    cmd.arg("check").arg(file).arg("--json");
+    cmd.arg("check")
+        .arg(file)
+        .arg("--json")
+        .arg("--legacy-inspection-json");
     for a in extra {
         cmd.arg(a);
     }

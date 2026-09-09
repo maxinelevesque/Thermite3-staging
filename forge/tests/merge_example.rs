@@ -137,6 +137,7 @@ fn merge_conformance_certifies_l3_with_burn_via_lean() {
         "lean",
         "../conformance/forge/merge.th",
         "--json",
+        "--legacy-inspection-json",
     ]);
     let combined = format!("{out}{err}");
     // The merge_advance lemma certifies L3 and carries the burn receipt block.

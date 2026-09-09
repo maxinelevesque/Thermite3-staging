@@ -103,6 +103,7 @@ fn run_check_json(file: &Path, mutation_floor: f64) -> (Option<i32>, Vec<Value>,
         .arg("--mutation-floor")
         .arg(format!("{mutation_floor}"))
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .unwrap_or_else(|e| panic!("spawn forge check: {e}"));
     let stdout = String::from_utf8_lossy(&out.stdout).to_string();

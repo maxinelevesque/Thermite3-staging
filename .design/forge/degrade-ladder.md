@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 9171f7fc260242151432300c3ce7ec7bd3000d6e (re-pinned 2026-06-16: forge runtime status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: a2db0d8a82ae573cd114387d903ab8f3093dc840 (bootstrap pin: decision 4 — doc-last-touch, NOT verified-current; backlog #262))
-audited-content-sha256: 11e6a27a8ef9da754eac16f90c6d112bfb329380faa610ae6ac8a75ace61ab9d (re-pinned 2026-08-28 for the symmetric L1 degrade-error propagation witness. prior: 529978efa07a07858bc50a17d545c92aac5b5add24d550c15be363d528fd39ac)
+audited-content-sha256: fda765b765de614454d9984c57349b97da3dd006f4c6e212208782260fa0b10f (re-pinned 2026-09-08 after issue #56 made degraded outcomes typed non-claims and removed Level from project authority. prior: 11e6a27a8ef9da754eac16f90c6d112bfb329380faa610ae6ac8a75ace61ab9d)
 governs: forge/src/degrade.rs
 thesis-refs:
   - thermite-design.md §5.2
@@ -28,6 +28,14 @@ degrade REASON (#11's `SolverProfile` / timeout reason as "here's where I got
 lost"). The assurance manifest aggregates the per-fn certificates into a
 project-level view whose headline number is the **min over functions**, displayed
 on every build (§5.2, §6).
+
+Issue #56 supersedes the scalar-decision part of that historical description.
+The ladder may still render a derived L1/L2/L3 compatibility rung, but its live
+result is admitted through a typed disposition and formal position. In
+particular, a timeout-degraded result is a typed non-claim and cannot establish
+a project certificate merely because its compatibility rendering is L1 or L2;
+project aggregation now fails closed on such rows. No production branch in
+`degrade.rs` reads `Level` as authority.
 
 **L4 and the upward forge-escalation (RFC-1 / GH #2, Stage-1 forge tier).** The
 L3→L2→L1 ladder this component governs is the DOWNWARD degrade of an

@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: e907b719ea469556b703ed6744656042cb0c5f5e2b1dd0e29ecf1cdbf807b3fe (re-pinned 2026-09-02 after making RFC-11 Rust resource-flow computation explicit residual trust; boundary composition is unchanged. prior: 4623be1dc16357f20ee30fd741c1092186ee5ad1123933580e7673ce86151d08)
+audited-content-sha256: 8424f09bfef4abf5c9aaf7b5ca0e179f7e57900223e605a3a015f6be3bcd6783 (re-pinned 2026-09-09 after correcting stale authority terminology in Forge comments; boundary composition is unchanged. prior: 5c3d28c23349b170255af3223f9d16fe3af50c8eb2ffbed55037a0a1a2b7d99b)
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9

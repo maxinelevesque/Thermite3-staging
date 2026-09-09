@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 1cc9d97c6c5d7eab6109561834db77f2ef4b57ab (re-pinned 2026-06-16: forge workflow status rows now render from canonical registry IDs; behavior unchanged; RFC #17)  (prior: 488103d4382815b85141d17bc01b60917ba744e7 (#274 — lean_fragment membership report; REQ-7..10 SHIPPED, audit.rs verified-current))
-audited-content-sha256: 5bc7579cb0602d5c05585a4edc5a3fb2b1753a2606e936a9630764665dfc7d2a (re-pinned 2026-08-16 after re-auditing live general-Verus artifact authority and substitution rejection; project Level aggregation remains pending retirement. prior: c9da396682d8781d9e5871214378d83580d5e20b01e4ecbc8217817d1c2694db)
+audited-content-sha256: 7d0a29fe6ffcbb9dec4acbbdb154a6ebf635bffd790cb1761dc33dbebe1db582 (re-pinned 2026-09-08 after issue #56 moved audit authority to validated CurrentAssurance and made Level derived presentation only. prior: 5bc7579cb0602d5c05585a4edc5a3fb2b1753a2606e936a9630764665dfc7d2a)
 governs: forge/src/audit.rs
 thesis-refs:
   - thermite-design.md §6
@@ -67,6 +67,15 @@ classification; only discharge changes the position. A serialized row can be
 read for compatibility but has no producer authority, and a half-pair or
 substituted row cannot be projected as a current audit claim. Mixed clause
 solver routes remain outside this item-level cut pending clause coordinates.
+
+Issue #56 completes this authority migration. Audit now calls
+`Certificate::current_assurance` and rejects any row without live validated
+authority; its retained `level` field is a deprecated display projection derived
+from the accepted formal claim (or L0 for a typed non-claim), never a copied
+decision input. Mixed clause portfolios are admitted only through their complete
+sealed claim set. Historical/unversioned documents remain inspectable but cannot
+populate `AuditManifest`. Older project-Level and pending-clause language below
+records the v1 schema history rather than current authority semantics.
 
 ## Decided scope
 

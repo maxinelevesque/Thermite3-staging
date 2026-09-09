@@ -1237,7 +1237,7 @@ mod tests {
         let faults = include_str!("../../tests/verified_composition.rs");
         for required in [
             "composition-after-plan-shell-mutation",
-            "certificate-l2",
+            "certificate-bounded",
             "tv-contract-divergent",
             "assert!(!bundle.exists()",
         ] {

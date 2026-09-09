@@ -105,7 +105,7 @@ fn run_check_json(file: &Path, mutation_floor: Option<f64>) -> (Option<i32>, Vec
     if let Some(floor) = mutation_floor {
         cmd.arg("--mutation-floor").arg(format!("{floor}"));
     }
-    cmd.arg("--json");
+    cmd.arg("--json").arg("--legacy-inspection-json");
     let out = cmd.output().unwrap_or_else(|e| panic!("spawn forge: {e}"));
     let stdout = String::from_utf8_lossy(&out.stdout).to_string();
     let stderr = String::from_utf8_lossy(&out.stderr).to_string();

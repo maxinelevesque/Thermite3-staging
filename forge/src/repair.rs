@@ -45,9 +45,10 @@
 //! | REQ-FORGE-REPAIR-UPGRADE-LOOP | shipped | `forge/src/repair.rs` | forge repair upgrade loop |  |
 //! <!-- /generated:reqs -->
 
+use crate::assurance_v2::AssuranceKindV2;
 use crate::check::{self, DEFAULT_RLIMIT};
 use crate::cli::ForgeError;
-use crate::manifest::{Certificate, Level, SuggestedMove};
+use crate::manifest::{Certificate, CurrentAssurance, CurrentDisposition, Level, SuggestedMove};
 use crate::profile::SolverProfile;
 
 /// The fixed, bounded geometric escalation ladder (REQ-3;
@@ -152,81 +153,47 @@ pub enum SubL3Status {
 /// `postcondition not satisfied` witness path) lands in `NotRepairable`, so more
 /// budget can never be thrown at it.
 pub fn classify_sub_l3(cert: &Certificate) -> Option<SubL3Status> {
-    // A `lowered_assurance` cert (the #10 down-ladder degraded a timeout to L1/L2):
-    // its underlying obstruction was a verus timeout, so repair may re-attempt the
-    // L3 proof at a higher budget (it carries `degrade_reason` = VerusTimeout). The
-    // degrade reason is the gate (not merely the `lowered_assurance` flag) so a
-    // future non-timeout degrade is not silently retried.
-    if cert.lowered_assurance {
-        if let Some(reason) = &cert.degrade_reason {
-            if reason.cause == "VerusTimeout" {
-                return Some(SubL3Status::Timeout {
-                    level: cert.level,
-                    profile: cert.solver_profile.clone(),
-                    suggested_move: cert.suggested_move.clone(),
-                    detail: reason.detail.clone(),
-                });
-            }
-        }
-        // A degraded cert whose degrade was not a verus timeout is not repairable
-        // by budget escalation (v0.1 only degrades on timeout).
-        return Some(SubL3Status::NotRepairable {
-            level: cert.level,
-            cause: cert
-                .degrade_reason
-                .as_ref()
-                .map(|r| r.cause.clone())
-                .unwrap_or_else(|| "LoweredAssurance".to_string()),
+    let level = cert.compatibility_level();
+    let failed_detail = || {
+        cert.obligations
+            .iter()
+            .find(|o| matches!(o.status, crate::manifest::ObligationStatus::Failed))
+            .and_then(|o| o.diagnostic.clone())
+            .unwrap_or_else(|| {
+                "verus did not discharge the obligation (no profile report)".to_string()
+            })
+    };
+    match cert.current_assurance() {
+        Ok(CurrentAssurance::Accepted { .. }) => None,
+        Ok(CurrentAssurance::NonClaim {
+            disposition: CurrentDisposition::VerusTimeout | CurrentDisposition::TimeoutDegrade,
+        }) => Some(SubL3Status::Timeout {
+            level,
+            profile: cert.solver_profile.clone(),
+            suggested_move: cert.suggested_move.clone(),
             detail: cert
                 .degrade_reason
                 .as_ref()
-                .map(|r| r.detail.clone())
-                .unwrap_or_default(),
-        });
+                .or(cert.reject.as_ref())
+                .map_or_else(failed_detail, |reason| reason.detail.clone()),
+        }),
+        Ok(CurrentAssurance::NonClaim { disposition }) => Some(SubL3Status::NotRepairable {
+            level,
+            cause: cert
+                .reject
+                .as_ref()
+                .map_or_else(|| format!("{disposition:?}"), |reject| reject.cause.clone()),
+            detail: cert
+                .reject
+                .as_ref()
+                .map_or_else(failed_detail, |reject| reject.detail.clone()),
+        }),
+        Err(error) => Some(SubL3Status::NotRepairable {
+            level,
+            cause: "LegacyUnversioned".to_string(),
+            detail: error.to_string(),
+        }),
     }
-
-    // A reject cert: a `VerusTimeout` reject is a timeout (retry); everything else
-    // (a vacuity / weak-contract / triage / slag reject) is a hard fail the
-    // anti-cheat forbids retrying (REQ-2).
-    if let Some(reject) = &cert.reject {
-        if reject.cause == "VerusTimeout" {
-            return Some(SubL3Status::Timeout {
-                level: cert.level,
-                profile: cert.solver_profile.clone(),
-                suggested_move: cert.suggested_move.clone(),
-                detail: reject.detail.clone(),
-            });
-        }
-        return Some(SubL3Status::NotRepairable {
-            level: cert.level,
-            cause: reject.cause.clone(),
-            detail: reject.detail.clone(),
-        });
-    }
-
-    // No reject + a certified rung (L1/L2/L3) → already certifies → no-op. Repair
-    // drives the L3 budget; a non-degraded certified lower rung (slag/boundary/an
-    // explicit `--level l2`) is not a timeout to escalate.
-    if matches!(cert.level, Level::L1 | Level::L2 | Level::L3 | Level::L4) {
-        return None;
-    }
-
-    // No reject + `Level::L0` (an un-discharged proof with no structured reject,
-    // the bare counterexample path). Never retried (REQ-2): more budget does not
-    // discharge a disproved obligation.
-    let detail = cert
-        .obligations
-        .iter()
-        .find(|o| matches!(o.status, crate::manifest::ObligationStatus::Failed))
-        .and_then(|o| o.diagnostic.clone())
-        .unwrap_or_else(|| {
-            "verus did not discharge the obligation (no profile report)".to_string()
-        });
-    Some(SubL3Status::NotRepairable {
-        level: cert.level,
-        cause: "Counterexample".to_string(),
-        detail,
-    })
 }
 
 /// The per-item repair outcome (REQ-6). One of: upgraded to L3 (with the winning
@@ -441,7 +408,11 @@ where
 /// degrade) is `Timeout` (carry the prompt material); anything else is a
 /// `Counterexample` (a hard fail at this budget, sound to report, never upgrade).
 fn verdict_from_cert(cert: &Certificate) -> RepairVerdict {
-    if cert.reject.is_none() && cert.level == Level::L3 {
+    if matches!(
+        cert.current_assurance(),
+        Ok(CurrentAssurance::Accepted { ref claim })
+            if claim.policy_points() == [AssuranceKindV2::SolverIncomplete]
+    ) {
         return RepairVerdict::Proved;
     }
     match classify_sub_l3(cert) {
@@ -696,7 +667,8 @@ mod tests {
                 detail: "x".to_string(),
             }),
             "rlimit exhausted".to_string(),
-        );
+        )
+        .with_live_disposition(crate::manifest::LiveResultDisposition::VerusTimeout);
         assert!(matches!(
             classify_sub_l3(&timeout),
             Some(SubL3Status::Timeout { .. })
@@ -713,7 +685,8 @@ mod tests {
                 Some("x.rs:5:13".to_string()),
                 Some("error: postcondition not satisfied".to_string()),
             )],
-        );
+        )
+        .with_live_disposition(crate::manifest::LiveResultDisposition::Refuted);
         assert!(matches!(
             classify_sub_l3(&cx),
             Some(SubL3Status::NotRepairable { .. })
@@ -729,14 +702,15 @@ mod tests {
             },
             false,
             true,
-        );
+        )
+        .with_live_disposition(crate::manifest::LiveResultDisposition::VacuousPrecondition);
         assert!(matches!(
             classify_sub_l3(&vac),
             Some(SubL3Status::NotRepairable { cause, .. }) if cause == "VacuousPrecondition"
         ));
 
         // An L3 proved cert → no-op (None).
-        let proved = Certificate::new("ok", Level::L3, vec!["pure".to_string()], 0, vec![]);
+        let proved = Certificate::test_current("ok", Level::L3);
         assert!(classify_sub_l3(&proved).is_none());
     }
 
@@ -749,7 +723,8 @@ mod tests {
             .into_degraded(RejectReason {
                 cause: "VerusTimeout".to_string(),
                 detail: "rlimit exhausted at L3".to_string(),
-            });
+            })
+            .with_live_disposition(crate::manifest::LiveResultDisposition::TimeoutDegrade);
         assert!(matches!(
             classify_sub_l3(&degraded),
             Some(SubL3Status::Timeout {

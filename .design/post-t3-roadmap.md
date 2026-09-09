@@ -91,7 +91,7 @@ lanes remain provisional.
   portfolios, absent clauses, absent population members, representative
   selection, and per-axis scalar minimum; all fail closed as specified by the
   issue.
-- [ ] AC-6: (REQ-5) Issue #56's completion gate reports zero production
+- [x] AC-6: (REQ-5) Issue #56's completion gate reports zero production
   `Level` decisions, rejects current-looking legacy rows and portfolio/cache
   splices, and leaves inspect-only historical evidence non-authoritative.
 - [ ] AC-7: (REQ-6) Issue #57's deterministic snapshots and hostile

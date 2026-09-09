@@ -78,7 +78,12 @@ fn run_forge(args: &[&str]) -> Run {
 /// (the tool-computed, oracle-excluded value the battery view must mirror).
 fn check_sum_mutants_killed() -> String {
     let out = Command::new(forge_bin())
-        .args(["check", sum_th().to_str().unwrap(), "--json"])
+        .args([
+            "check",
+            sum_th().to_str().unwrap(),
+            "--json",
+            "--legacy-inspection-json",
+        ])
         .output()
         .expect("spawn forge check");
     let stdout = String::from_utf8_lossy(&out.stdout);

@@ -65,7 +65,14 @@ fn forge_check_level_l2_sum_is_l2() {
     }
     let path = corpus("sum");
     let path_str = path.to_str().expect("utf8 path");
-    let (ok, stdout, stderr) = run_forge(&["check", "--level", "l2", "--json", path_str]);
+    let (ok, stdout, stderr) = run_forge(&[
+        "check",
+        "--level",
+        "l2",
+        "--json",
+        "--legacy-inspection-json",
+        path_str,
+    ]);
     assert!(
         ok,
         "`forge check --level l2 sum.th` must exit 0 (sum verifies to bound).\nstdout:\n{stdout}\nstderr:\n{stderr}"

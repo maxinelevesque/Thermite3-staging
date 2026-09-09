@@ -241,7 +241,12 @@ fn holed_item_never_certifies_open_hole_l0_no_verus() {
     );
     // `forge check --json` reports the item as L0 with the OpenHole reject — no
     // certification, regardless of verus presence (the short-circuit precedes it).
-    let (cout, _ce, _cok) = run_forge(&["check", th.to_str().unwrap(), "--json"]);
+    let (cout, _ce, _cok) = run_forge(&[
+        "check",
+        th.to_str().unwrap(),
+        "--json",
+        "--legacy-inspection-json",
+    ]);
     assert!(
         cout.contains("OpenHole"),
         "check cert carries OpenHole: {cout}"

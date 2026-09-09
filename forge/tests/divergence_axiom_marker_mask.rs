@@ -134,6 +134,7 @@ fn divergence_replay_masks_nonstandard_axiom_via_earlier_print() {
         .arg("--engine")
         .arg("lean")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check --engine lean (pass 1)");
     if !pass1.status.success() && pass1.stdout.is_empty() {
@@ -199,6 +200,7 @@ fn divergence_replay_masks_nonstandard_axiom_via_earlier_print() {
         .arg("--engine")
         .arg("lean")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check --engine lean (pass 2)");
     let stdout = String::from_utf8_lossy(&pass2.stdout);

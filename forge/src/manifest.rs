@@ -108,6 +108,7 @@
 //! | REQ-FORGE-MANIFEST-PROJECT-SCOPE | shipped | `forge/src/manifest.rs` | Project assurance scope |  |
 //! <!-- /generated:reqs -->
 
+use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thermite_syntax::{Effect, EffectRow};
@@ -254,7 +255,7 @@ impl ClauseProcedure {
         }
     }
 
-    fn expected_engine(&self) -> &'static str {
+    pub(crate) fn expected_engine(&self) -> &'static str {
         match self {
             Self::BitVector { .. } => crate::engine::EngineName::BitVector.tag(),
             Self::Epr { .. } => crate::engine::EngineName::Epr.tag(),
@@ -545,6 +546,10 @@ impl ClauseCertification {
     fn has_valid_seal(&self, obligation: &ObligationResult) -> bool {
         self.authority.0.as_deref() == Some(self.authority_digest(obligation).as_str())
     }
+
+    fn restore_bound_seal(&mut self, obligation: &ObligationResult) {
+        self.authority = ClauseAuthorityStamp(Some(self.authority_digest(obligation)));
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -562,6 +567,60 @@ pub struct ClausePortfolio {
     pub clauses: Vec<ClauseCertification>,
 }
 
+/// A checked item-wide prerequisite conjoined with the primary item or clause
+/// claim.  This is intentionally a formal position rather than a compatibility
+/// rung: mixed-route producers can retain a stronger per-clause portfolio while
+/// exposing the exact weaker premise on which that conjunction depends.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClaimConstraint {
+    pub name: String,
+    pub position: CertificationPosition,
+    pub classification: ClassificationCertificate,
+    pub evidence_sha256: String,
+    #[serde(skip)]
+    authority: ClaimConstraintAuthority,
+}
+
+#[derive(Debug, Clone, Default)]
+struct ClaimConstraintAuthority(Option<String>);
+
+impl PartialEq for ClaimConstraintAuthority {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for ClaimConstraintAuthority {}
+
+impl ClaimConstraint {
+    fn authority_digest(&self) -> String {
+        let bytes = serde_json::to_vec(&(
+            &self.name,
+            &self.position,
+            &self.classification,
+            &self.evidence_sha256,
+        ))
+        .expect("claim constraint serializes");
+        let mut hash = Sha256::new();
+        hash.update(b"thermite-live-claim-constraint-v1\0");
+        hash.update((bytes.len() as u64).to_le_bytes());
+        hash.update(bytes);
+        hash.finalize()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+
+    fn seal(&mut self) {
+        self.authority = ClaimConstraintAuthority(Some(self.authority_digest()));
+    }
+
+    fn has_valid_seal(&self) -> bool {
+        self.authority.0.as_deref() == Some(self.authority_digest().as_str())
+    }
+}
+
+#[cfg(test)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClauseOracleEntry {
     pub certification: ClauseCertification,
@@ -573,6 +632,7 @@ pub struct ClauseOracleEntry {
     pub reconstruction: Option<crate::lean_smt_export::ReconstructionEvidence>,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClauseOraclePortfolio {
     pub clauses: Vec<ClauseOracleEntry>,
@@ -702,6 +762,34 @@ impl CertificationPosition {
         }
     }
 
+    /// Derive the deprecated rung projection from a validated formal position.
+    /// This is presentation-only: callers making assurance decisions must use
+    /// [`Certificate::current_assurance`] and inspect the typed claim instead.
+    pub fn compatibility_level(&self) -> Option<Level> {
+        use AssuranceElement::*;
+        match self.element().ok()? {
+            NoClaim => Some(Level::L0),
+            Runtime => Some(Level::L1),
+            Bounded => Some(Level::L2),
+            IncompleteSolver | EmpiricalLean => Some(Level::L3),
+            CompleteSolver | CompleteLean => Some(Level::L4),
+        }
+    }
+
+    pub fn assurance_kind_v2(&self) -> Option<crate::assurance_v2::AssuranceKindV2> {
+        use crate::assurance_v2::AssuranceKindV2 as V2;
+        use AssuranceElement::*;
+        match self.element().ok()? {
+            NoClaim => None,
+            Runtime => Some(V2::Runtime),
+            Bounded => Some(V2::Bounded),
+            IncompleteSolver => Some(V2::SolverIncomplete),
+            CompleteSolver => Some(V2::SolverComplete),
+            EmpiricalLean => Some(V2::LeanEmpirical),
+            CompleteLean => Some(V2::LeanComplete),
+        }
+    }
+
     /// Product-order comparison. `Some(Ordering)` means comparable; `None`
     /// preserves RFC-3's intentionally incomparable solver/forge positions.
     pub fn partial_cmp_assurance(
@@ -783,6 +871,7 @@ pub enum AssuranceScope {
     },
 }
 
+#[cfg(test)]
 impl AssuranceScope {
     /// `true` iff this scope is end-to-end ("verified, period"). The verdict-
     /// relevant bit the cert-oracle compares (see [`Certificate::oracle_subset`]):
@@ -800,6 +889,7 @@ impl AssuranceScope {
 /// This is the normalization that keeps the golden `sum.cert.json` (no
 /// `assurance_scope` key) oracle-equal to a freshly-classified `Some(EndToEnd)`
 /// `sum` cert (`.design/forge/e2e-vs-boundary.md` Verification).
+#[cfg(test)]
 fn scope_is_end_to_end(scope: &Option<AssuranceScope>) -> bool {
     match scope {
         None => true,
@@ -853,43 +943,6 @@ pub enum Level {
     /// reconstructed fixed-width BV, and reconstructed finite relation/sequence
     /// clauses. Above L3 on the ladder.
     L4,
-}
-
-/// Temporary beta-line bridge for producers not yet converted to explicit
-/// classification certificates. L2 intentionally returns `None`: the scalar
-/// never stored its bound, so inventing one would repeat the lossy migration
-/// RFC-3 is removing.
-fn legacy_position(level: Level) -> Option<CertificationPosition> {
-    let (scope, refutation, residual_trust) = match level {
-        Level::L0 => (
-            CertificationScope::None,
-            RefutationChannel::None,
-            ResidualTrust::Fiat,
-        ),
-        Level::L1 => (
-            CertificationScope::PerExecution,
-            RefutationChannel::Abort,
-            ResidualTrust::Fiat,
-        ),
-        Level::L2 => return None,
-        Level::L3 => (
-            CertificationScope::All,
-            RefutationChannel::Incomplete,
-            ResidualTrust::Solver,
-        ),
-        Level::L4 => (
-            CertificationScope::All,
-            RefutationChannel::Complete,
-            ResidualTrust::Solver,
-        ),
-    };
-    Some(CertificationPosition {
-        scope,
-        refutation,
-        residual_trust,
-        discharged_trust: Vec::new(),
-        boundary: CertificationBoundary::EndToEnd,
-    })
 }
 
 /// The status of a single proof obligation (REQ-5). v0.1 records discharged or
@@ -1439,8 +1492,9 @@ impl Eq for AuditAdmission {}
 pub struct Certificate {
     /// The checked item's name.
     pub item: String,
-    /// The assurance level (REQ-2: L3 iff verus reports 0 errors).
-    pub level: Level,
+    /// Deprecated compatibility projection. Current authority is available only
+    /// through [`Certificate::current_assurance`].
+    level: Level,
     /// RFC-3's authoritative certification tuple. During the beta migration the
     /// historical `level` remains readable, but new producers persist this
     /// independently inspectable surface and audit copies it verbatim.
@@ -1487,6 +1541,11 @@ pub struct Certificate {
     /// certificate-manifest.md OQ-2) deserializes into a `Certificate`.
     #[serde(default)]
     pub obligations: Vec<ObligationResult>,
+    /// Sealed, item-wide formal premises that are conjunctive with the primary
+    /// homogeneous claim or lifted clause portfolio.  They are never collapsed
+    /// into a synthetic representative position.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    claim_constraints: Vec<ClaimConstraint>,
     /// Whether this certificate was served from the proof cache (#8 additive
     /// field; `.design/forge/proof-cache.md` REQ-7). `true` on a cache hit (verus
     /// skipped), `false` on a fresh verify. `#[serde(default)]` so the frozen
@@ -1702,7 +1761,1185 @@ impl PartialEq for LiveDispositionStamp {
 
 impl Eq for LiveDispositionStamp {}
 
+/// The closed, authority-bearing result of validating a current certificate.
+///
+/// This view deliberately contains no [`Level`].  The rung is a compatibility
+/// presentation derived after validation; it is never an input to a current
+/// assurance decision.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CurrentAssurance<'a> {
+    Accepted { claim: Box<CurrentClaim<'a>> },
+    NonClaim { disposition: CurrentDisposition<'a> },
+}
+
+/// An accepted current claim is either one coherent realized position or a
+/// complete, validated heterogeneous clause lift.  A heterogeneous portfolio
+/// never acquires a synthetic representative position.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CurrentClaim<'a> {
+    Homogeneous {
+        position: &'a CertificationPosition,
+        classification: &'a ClassificationCertificate,
+        item_claim_set: crate::assurance_v2::ItemClaimSetV2,
+        constraints: &'a [ClaimConstraint],
+        authority_sha256: String,
+    },
+    LiftedClausePortfolio {
+        portfolio: ClausePortfolio,
+        lift_sha256: String,
+        item_claim_sets_by_fiber: Vec<crate::assurance_v2::ItemClaimSetV2>,
+        constraints: &'a [ClaimConstraint],
+        authority_sha256: String,
+    },
+}
+
+/// Typed terminal/progress state for a current non-claim.  The free-form detail
+/// is diagnostic; the variant is the closed decision input.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CurrentDisposition<'a> {
+    VerusTimeout,
+    TimeoutDegrade,
+    EngineUnknown,
+    Refuted,
+    WeakContract,
+    SemanticTautology,
+    VacuousPrecondition,
+    SettledOther(&'a str),
+}
+
+/// Why a value could not enter the current authority seam.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NotCurrent {
+    pub reason: String,
+}
+
+impl NotCurrent {
+    fn new(reason: impl Into<String>) -> Self {
+        Self {
+            reason: reason.into(),
+        }
+    }
+}
+
+impl std::fmt::Display for NotCurrent {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "not current assurance: {}", self.reason)
+    }
+}
+
+impl std::error::Error for NotCurrent {}
+
+pub const CURRENT_CERTIFICATE_SCHEMA: &str = "thermite-certificate/v2";
+
+/// Canonical certificate-local formal authority record. Every field here is
+/// either a typed judgment/evidence component or an admitted composition
+/// witness. Human labels, compatibility `Level`, timings, cache-hit display,
+/// repair suggestions, and proof-authoring burn are deliberately absent.
+#[derive(Serialize)]
+struct FormalAuthorityRecordV2<'a> {
+    schema: &'static str,
+    subject: &'a str,
+    certification: &'a Option<CertificationPosition>,
+    classification: &'a Option<ClassificationCertificate>,
+    contract_quality: &'a ContractQuality,
+    effects: &'a [String],
+    slag: bool,
+    slag_meta: &'a Option<SlagMeta>,
+    reject: &'a Option<RejectReason>,
+    obligations: &'a [ObligationResult],
+    claim_constraints: &'a [ClaimConstraint],
+    lowered_assurance: bool,
+    boundary: bool,
+    boundary_target: &'a Option<String>,
+    assurance_scope: &'a Option<AssuranceScope>,
+    engine_attribution: &'a Option<crate::engine::EngineAttribution>,
+    covenant_evidence: &'a Option<crate::covenant_engine::CovenantEvidence>,
+    meaning_audit: &'a Option<crate::meaning::MeaningAudit>,
+    resource_flow: &'a Option<ResourceFlowEvidence>,
+    interference: &'a Option<InterferenceEvidence>,
+    protocol: &'a Option<ProtocolEvidence>,
+    disposition: &'a str,
+    settled_detail: Option<&'a str>,
+    portfolio_lift_sha256: Option<&'a str>,
+    item_claim_sets: &'a [crate::assurance_v2::ItemClaimSetV2],
+}
+
+#[derive(Serialize)]
+#[allow(
+    dead_code,
+    reason = "issue #56 separates this digest domain before issue #57 consumes it in reports"
+)]
+struct CurrentPresentationRecordV1<'a> {
+    authority_sha256: &'a str,
+    report_schema: u64,
+    policy_version: u64,
+    item: &'a str,
+    compatibility_level: Level,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum PersistedCurrentDisposition {
+    Accepted,
+    VerusTimeout,
+    TimeoutDegrade,
+    EngineUnknown,
+    Refuted,
+    WeakContract,
+    SemanticTautology,
+    VacuousPrecondition,
+    SettledOther { detail: String },
+}
+
+impl PersistedCurrentDisposition {
+    fn from_live(disposition: &LiveResultDisposition) -> Self {
+        match disposition {
+            LiveResultDisposition::Accepted => Self::Accepted,
+            LiveResultDisposition::VerusTimeout => Self::VerusTimeout,
+            LiveResultDisposition::TimeoutDegrade => Self::TimeoutDegrade,
+            LiveResultDisposition::EngineUnknown => Self::EngineUnknown,
+            LiveResultDisposition::Refuted => Self::Refuted,
+            LiveResultDisposition::WeakContract => Self::WeakContract,
+            LiveResultDisposition::SemanticTautology => Self::SemanticTautology,
+            LiveResultDisposition::VacuousPrecondition => Self::VacuousPrecondition,
+            LiveResultDisposition::SettledOther(detail) => Self::SettledOther {
+                detail: detail.clone(),
+            },
+        }
+    }
+
+    pub(crate) fn as_live(&self) -> LiveResultDisposition {
+        match self {
+            Self::Accepted => LiveResultDisposition::Accepted,
+            Self::VerusTimeout => LiveResultDisposition::VerusTimeout,
+            Self::TimeoutDegrade => LiveResultDisposition::TimeoutDegrade,
+            Self::EngineUnknown => LiveResultDisposition::EngineUnknown,
+            Self::Refuted => LiveResultDisposition::Refuted,
+            Self::WeakContract => LiveResultDisposition::WeakContract,
+            Self::SemanticTautology => LiveResultDisposition::SemanticTautology,
+            Self::VacuousPrecondition => LiveResultDisposition::VacuousPrecondition,
+            Self::SettledOther { detail } => LiveResultDisposition::SettledOther(detail.clone()),
+        }
+    }
+}
+
+/// Serialization-only view of one admitted current certificate.  It emits the
+/// explicit schema and authority digest and removes the compatibility `level`
+/// field from the payload.
+#[derive(Debug)]
+pub struct CurrentCertificateDocument<'a> {
+    certificate: &'a Certificate,
+    authority_sha256: String,
+    disposition: PersistedCurrentDisposition,
+}
+
+impl Serialize for CurrentCertificateDocument<'_> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut payload =
+            serde_json::to_value(self.certificate).map_err(serde::ser::Error::custom)?;
+        let object = payload
+            .as_object_mut()
+            .ok_or_else(|| serde::ser::Error::custom("certificate payload is not an object"))?;
+        object.remove("level");
+        let mut document = serializer.serialize_struct("CurrentCertificateDocument", 4)?;
+        document.serialize_field("schema", CURRENT_CERTIFICATE_SCHEMA)?;
+        document.serialize_field("authority_sha256", &self.authority_sha256)?;
+        document.serialize_field("disposition", &self.disposition)?;
+        document.serialize_field("certificate", &payload)?;
+        document.end()
+    }
+}
+
+/// Frozen unversioned certificate evidence.  It is intentionally not a
+/// `Certificate` and therefore cannot satisfy any current-authority API.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LegacyUnversioned {
+    pub legacy_level: Level,
+    pub item: Option<String>,
+    raw: serde_json::Value,
+}
+
+impl LegacyUnversioned {
+    #[allow(dead_code, reason = "public inspect-only API consumed by issue #57")]
+    pub fn warning(&self) -> String {
+        let level_detail = match self.legacy_level {
+            Level::L2 => " The historical L2 row does not record its bound.",
+            Level::L3 => {
+                " Historical L3 is ambiguous between solver-incomplete and Lean-empirical semantics."
+            }
+            _ => "",
+        };
+        format!(
+            "HISTORICAL CERTIFICATE — NOT VALID FOR CURRENT ASSURANCE DECISIONS. \
+             Formal frame, versions, exact boundary context, residual assumptions, accepted \
+             evidence, and collapse-policy license are missing; re-certification is required.\
+             {level_detail}"
+        )
+    }
+
+    #[allow(dead_code, reason = "public inspect-only API consumed by issue #57")]
+    pub fn raw(&self) -> &serde_json::Value {
+        &self.raw
+    }
+}
+
+/// Parse boundary for certificate data.  Only an exact schema tag can produce
+/// a current (still unadmitted) payload; every unversioned L0–L4 object is kept
+/// as inspect-only historical evidence.
+#[derive(Debug, Clone, PartialEq)]
+pub enum CertificateDocument {
+    Current {
+        certificate: Box<Certificate>,
+        authority_sha256: String,
+        disposition: PersistedCurrentDisposition,
+    },
+    LegacyUnversioned(LegacyUnversioned),
+}
+
+impl<'de> Deserialize<'de> for CertificateDocument {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        let object = value
+            .as_object()
+            .ok_or_else(|| serde::de::Error::custom("certificate document must be an object"))?;
+        let Some(schema) = object.get("schema") else {
+            let legacy_level = object
+                .get("level")
+                .cloned()
+                .ok_or_else(|| serde::de::Error::custom("unversioned certificate lacks level"))?;
+            let legacy_level =
+                serde_json::from_value::<Level>(legacy_level).map_err(serde::de::Error::custom)?;
+            let item = object
+                .get("item")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned);
+            return Ok(Self::LegacyUnversioned(LegacyUnversioned {
+                legacy_level,
+                item,
+                raw: value,
+            }));
+        };
+        if schema.as_str() != Some(CURRENT_CERTIFICATE_SCHEMA) {
+            return Err(serde::de::Error::custom(
+                "unsupported certificate schema; refusing field-presence guessing",
+            ));
+        }
+        let authority_sha256 = object
+            .get("authority_sha256")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| serde::de::Error::custom("current envelope lacks authority digest"))?
+            .to_owned();
+        let disposition = object
+            .get("disposition")
+            .cloned()
+            .ok_or_else(|| serde::de::Error::custom("current envelope lacks disposition"))?;
+        let disposition = serde_json::from_value::<PersistedCurrentDisposition>(disposition)
+            .map_err(serde::de::Error::custom)?;
+        let mut payload = object
+            .get("certificate")
+            .cloned()
+            .ok_or_else(|| serde::de::Error::custom("current envelope lacks certificate"))?;
+        let payload_object = payload.as_object_mut().ok_or_else(|| {
+            serde::de::Error::custom("current certificate payload is not an object")
+        })?;
+        if payload_object.contains_key("level") {
+            return Err(serde::de::Error::custom(
+                "current certificate payload must not contain compatibility level",
+            ));
+        }
+        let derived_level = payload_object
+            .get("certification")
+            .cloned()
+            .map(serde_json::from_value::<CertificationPosition>)
+            .transpose()
+            .map_err(serde::de::Error::custom)?
+            .and_then(|position| position.compatibility_level())
+            .unwrap_or(Level::L0);
+        payload_object.insert(
+            "level".into(),
+            serde_json::to_value(derived_level).map_err(serde::de::Error::custom)?,
+        );
+        let certificate =
+            serde_json::from_value::<Certificate>(payload).map_err(serde::de::Error::custom)?;
+        Ok(Self::Current {
+            certificate: Box::new(certificate),
+            authority_sha256,
+            disposition,
+        })
+    }
+}
+
+impl CertificateDocument {
+    #[allow(dead_code, reason = "public inspect-only API consumed by issue #57")]
+    pub fn inspect_legacy(&self) -> Option<&LegacyUnversioned> {
+        match self {
+            Self::LegacyUnversioned(legacy) => Some(legacy),
+            Self::Current { .. } => None,
+        }
+    }
+
+    pub(crate) fn into_current(self) -> Option<(Certificate, String, PersistedCurrentDisposition)> {
+        match self {
+            Self::Current {
+                certificate,
+                authority_sha256,
+                disposition,
+            } => Some((*certificate, authority_sha256, disposition)),
+            Self::LegacyUnversioned(_) => None,
+        }
+    }
+}
+
+fn portfolio_lift_sha256(item: &str, portfolio: &ClausePortfolio) -> String {
+    let bytes = serde_json::to_vec(&(
+        item,
+        "Thermite.CertificationMetatheory.PortfolioLift.certifiesItem",
+        "thermite-item-ensures-conjunction-v1",
+        portfolio,
+    ))
+    .expect("validated clause portfolio serializes");
+    let mut hash = Sha256::new();
+    hash.update(b"thermite-current-portfolio-lift-v1\0");
+    hash.update((bytes.len() as u64).to_le_bytes());
+    hash.update(bytes);
+    hash.finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+fn current_claim_fiber_sha256(
+    certificate: &Certificate,
+    portfolio: Option<&ClausePortfolio>,
+) -> String {
+    let clause_addresses = portfolio
+        .map(|portfolio| {
+            portfolio
+                .clauses
+                .iter()
+                .map(|clause| &clause.address)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let bytes = serde_json::to_vec(&(
+        &certificate.item,
+        &certificate.effects,
+        certificate.slag,
+        &certificate.boundary,
+        &certificate.boundary_target,
+        &certificate.assurance_scope,
+        clause_addresses,
+        "thermite-item-contract-claim-v2",
+    ))
+    .expect("current claim-fiber identity serializes");
+    let mut hash = Sha256::new();
+    hash.update(b"thermite-current-claim-fiber-v2\0");
+    hash.update((bytes.len() as u64).to_le_bytes());
+    hash.update(bytes);
+    hash.finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+fn current_evidence_sha256<T: Serialize>(domain: &[u8], evidence: &T) -> String {
+    let bytes = serde_json::to_vec(evidence).expect("current evidence identity serializes");
+    let mut hash = Sha256::new();
+    hash.update(domain);
+    hash.update((bytes.len() as u64).to_le_bytes());
+    hash.update(bytes);
+    hash.finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+impl CurrentClaim<'_> {
+    pub fn authority_sha256(&self) -> &str {
+        match self {
+            Self::Homogeneous {
+                authority_sha256, ..
+            }
+            | Self::LiftedClausePortfolio {
+                authority_sha256, ..
+            } => authority_sha256,
+        }
+    }
+
+    /// The historical rung is presentation-only.  For a heterogeneous
+    /// conjunction this returns the conservative minimum projection of every
+    /// addressed clause position; it is not a synthetic formal representative
+    /// and must never be used as an authority decision.
+    pub fn compatibility_level(&self) -> Option<Level> {
+        let primary = match self {
+            Self::Homogeneous { position, .. } => position.compatibility_level(),
+            Self::LiftedClausePortfolio { portfolio, .. } => portfolio
+                .clauses
+                .iter()
+                .map(|clause| clause.position.as_ref()?.compatibility_level())
+                .collect::<Option<Vec<_>>>()?
+                .into_iter()
+                .min(),
+        }?;
+        self.constraints()
+            .iter()
+            .map(|constraint| constraint.position.compatibility_level())
+            .try_fold(primary, |minimum, next| Some(minimum.min(next?)))
+    }
+
+    pub fn policy_points(&self) -> Vec<crate::assurance_v2::AssuranceKindV2> {
+        self.item_claim_sets()
+            .iter()
+            .flat_map(crate::assurance_v2::ItemClaimSetV2::frontier)
+            .collect()
+    }
+
+    pub fn item_claim_sets(&self) -> &[crate::assurance_v2::ItemClaimSetV2] {
+        match self {
+            Self::Homogeneous { item_claim_set, .. } => std::slice::from_ref(item_claim_set),
+            Self::LiftedClausePortfolio {
+                item_claim_sets_by_fiber,
+                ..
+            } => item_claim_sets_by_fiber,
+        }
+    }
+
+    pub fn constraints(&self) -> &[ClaimConstraint] {
+        match self {
+            Self::Homogeneous { constraints, .. }
+            | Self::LiftedClausePortfolio { constraints, .. } => constraints,
+        }
+    }
+}
+
 impl Certificate {
+    /// Historical/presentation-only rung rendering. This value is never
+    /// authority; production decisions must use [`Self::current_assurance`].
+    pub fn compatibility_level(&self) -> Level {
+        self.level
+    }
+
+    /// Test-only mutation seam for proving that the deprecated projection has
+    /// no authority. Production code cannot write the field.
+    #[cfg(test)]
+    pub(crate) fn set_compatibility_level_for_test(&mut self, level: Level) {
+        self.level = level;
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_current(item: impl Into<String>, level: Level) -> Self {
+        let item = item.into();
+        if level == Level::L0 {
+            return Certificate::new(
+                item,
+                level,
+                vec!["pure".into()],
+                0,
+                vec![ObligationResult::failed(
+                    "test refutation",
+                    None,
+                    Some("test witness".into()),
+                )],
+            )
+            .with_live_disposition(LiveResultDisposition::Refuted);
+        }
+        let (scope, refutation, residual_trust) = match level {
+            Level::L0 => unreachable!(),
+            Level::L1 => (
+                CertificationScope::PerExecution,
+                RefutationChannel::Abort,
+                ResidualTrust::Fiat,
+            ),
+            Level::L2 => (
+                CertificationScope::Bounded { bound: "8".into() },
+                RefutationChannel::Trace { bound: "8".into() },
+                ResidualTrust::Solver,
+            ),
+            Level::L3 => (
+                CertificationScope::All,
+                RefutationChannel::Incomplete,
+                ResidualTrust::Solver,
+            ),
+            Level::L4 => (
+                CertificationScope::All,
+                RefutationChannel::Complete,
+                ResidualTrust::LeanChecked,
+            ),
+        };
+        Certificate::new(item, level, vec!["pure".into()], 0, Vec::new())
+            .with_rfc3_coordinates(
+                CertificationPosition {
+                    scope,
+                    refutation,
+                    residual_trust,
+                    discharged_trust: vec!["test-current-authority-v1".into()],
+                    boundary: CertificationBoundary::EndToEnd,
+                },
+                ClassificationCertificate {
+                    fragment: "test-current-authority-v1".into(),
+                    verdict: ClassificationVerdict::Admitted,
+                },
+            )
+            .expect("test current coordinates are coherent")
+            .with_live_disposition(LiveResultDisposition::Accepted)
+    }
+
+    /// Derive the deprecated rung rendering from the validated current seam.
+    /// A non-claim renders as L0 for compatibility; a historical/unadmitted
+    /// value has no current compatibility rendering at all.
+    pub fn current_compatibility_level(&self) -> Result<Level, NotCurrent> {
+        match self.current_assurance()? {
+            CurrentAssurance::Accepted { claim } => claim.compatibility_level().ok_or_else(|| {
+                NotCurrent::new("accepted authority has no compatibility-level projection")
+            }),
+            CurrentAssurance::NonClaim { .. } => Ok(Level::L0),
+        }
+    }
+
+    pub fn current_document(&self) -> Result<CurrentCertificateDocument<'_>, NotCurrent> {
+        let authority_sha256 = self.current_authority_digest()?;
+        let disposition = PersistedCurrentDisposition::from_live(
+            self.live_disposition()
+                .expect("validated current assurance has a typed disposition"),
+        );
+        Ok(CurrentCertificateDocument {
+            certificate: self,
+            authority_sha256,
+            disposition,
+        })
+    }
+
+    /// Deterministic oracle/cache identity of the admitted formal authority.
+    /// Presentation fields, including deprecated compatibility Level, are not
+    /// inputs. Calling this on historical or unadmitted data fails closed.
+    pub fn current_authority_digest(&self) -> Result<String, NotCurrent> {
+        match self.current_assurance()? {
+            CurrentAssurance::Accepted { claim } => Ok(claim.authority_sha256().to_owned()),
+            CurrentAssurance::NonClaim { .. } => {
+                let disposition = self
+                    .live_disposition()
+                    .expect("validated current assurance has a typed disposition");
+                Ok(self.current_authority_sha256(disposition, None, &[]))
+            }
+        }
+    }
+
+    /// Bind a derived compatibility presentation without allowing it to enter
+    /// formal authority. Issue #57 will place this digest on the layered report;
+    /// keeping the derivation here ensures presentation policy can evolve while
+    /// certificate/cache authority remains byte-stable.
+    #[allow(
+        dead_code,
+        reason = "issue #56 establishes presentation non-authority before issue #57 publishes it"
+    )]
+    pub fn current_presentation_digest(
+        &self,
+        report_schema: u64,
+        policy_version: u64,
+    ) -> Result<String, NotCurrent> {
+        let authority_sha256 = self.current_authority_digest()?;
+        let record = CurrentPresentationRecordV1 {
+            authority_sha256: &authority_sha256,
+            report_schema,
+            policy_version,
+            item: &self.item,
+            compatibility_level: self.current_compatibility_level()?,
+        };
+        Ok(current_evidence_sha256(
+            b"thermite-assurance-presentation-v1\0",
+            &record,
+        ))
+    }
+
+    pub(crate) fn persisted_authority_digest_matches(
+        &self,
+        claimed: &str,
+        disposition: &PersistedCurrentDisposition,
+    ) -> bool {
+        let live = disposition.as_live();
+        let (lift, item_claim_sets) = if matches!(live, LiveResultDisposition::Accepted) {
+            let portfolio = match self.clause_portfolio(true) {
+                Ok(portfolio) => portfolio,
+                Err(_) => return false,
+            };
+            if portfolio
+                .as_ref()
+                .is_some_and(|portfolio| portfolio.kind == ClausePortfolioKind::Heterogeneous)
+            {
+                let portfolio = portfolio.as_ref().expect("checked heterogeneous portfolio");
+                let lift = portfolio_lift_sha256(&self.item, portfolio);
+                let claim_set = match self.lifted_item_claim_set(portfolio, &lift) {
+                    Ok(claim_set) => claim_set,
+                    Err(_) => return false,
+                };
+                (Some(lift), vec![claim_set])
+            } else {
+                let (Some(position), Some(classification)) =
+                    (self.certification.as_ref(), self.classification.as_ref())
+                else {
+                    return false;
+                };
+                let claim_set = match self.homogeneous_item_claim_set(
+                    position,
+                    classification,
+                    portfolio.as_ref(),
+                ) {
+                    Ok(claim_set) => claim_set,
+                    Err(_) => return false,
+                };
+                (None, vec![claim_set])
+            }
+        } else {
+            (None, Vec::new())
+        };
+        self.current_authority_sha256(&live, lift.as_deref(), &item_claim_sets) == claimed
+    }
+
+    /// Re-admit a schema-current cache row only after its authority digest and
+    /// the freshly lowered main-item artifact agree with the persisted facts.
+    /// Deserialization itself never restores any private capability.
+    pub(crate) fn admit_cached_current(
+        self,
+        claimed: &str,
+        disposition: &PersistedCurrentDisposition,
+        artifact: &thermite_lower::L3Artifact,
+        expected_resource: Option<&ResourceFlowEvidence>,
+    ) -> Result<Self, NotCurrent> {
+        if !self.persisted_authority_digest_matches(claimed, disposition) {
+            return Err(NotCurrent::new(
+                "cached certificate authority digest does not match its payload",
+            ));
+        }
+        let succeeded = matches!(disposition, PersistedCurrentDisposition::Accepted);
+        if !self.persisted_verus_artifact_matches(artifact, succeeded)
+            || !self.persisted_resource_evidence_matches(artifact, expected_resource)
+        {
+            return Err(NotCurrent::new(
+                "cached certificate does not match the freshly lowered item artifact",
+            ));
+        }
+
+        let mut admitted = self
+            .with_verus_artifact(artifact, succeeded)
+            .map_err(|error| NotCurrent::new(error.to_string()))?;
+        if let (Some(witness), Some(evidence)) = (artifact.resource_witness(), expected_resource) {
+            admitted = admitted
+                .with_resource_flow_evidence_for_witness(witness, evidence.clone())
+                .map_err(|error| NotCurrent::new(error.to_string()))?;
+        }
+        admitted.audit_admission.live = true;
+        admitted.live_disposition = LiveDispositionStamp(Some(disposition.as_live()));
+
+        let current = admitted.current_assurance()?;
+        let actual = match current {
+            CurrentAssurance::Accepted { claim } => claim.authority_sha256().to_owned(),
+            CurrentAssurance::NonClaim { .. } => admitted.current_authority_sha256(
+                admitted
+                    .live_disposition()
+                    .expect("cache admission just stamped a disposition"),
+                None,
+                &[],
+            ),
+        };
+        if actual != claimed {
+            return Err(NotCurrent::new(
+                "fresh cache admission changed the persisted authority identity",
+            ));
+        }
+        Ok(admitted)
+    }
+
+    /// Re-admit one schema-current certificate from a verified-build evidence
+    /// bundle. The bundle verifier separately binds the certificate document to
+    /// the exact source, plan, whole-crate proof/codegen result, and receipt.
+    /// This boundary restores only process-local validation seals, then requires
+    /// the recomputed authority digest to equal the persisted envelope digest.
+    pub(crate) fn admit_verified_build_current(
+        mut self,
+        claimed: &str,
+        disposition: &PersistedCurrentDisposition,
+    ) -> Result<Self, NotCurrent> {
+        self.audit_admission = AuditAdmission::live();
+        self.live_disposition = LiveDispositionStamp(Some(disposition.as_live()));
+
+        if self.requires_verus_artifact_validation() {
+            let query_identity = self
+                .certification
+                .as_ref()
+                .and_then(|position| {
+                    position
+                        .discharged_trust
+                        .iter()
+                        .find(|fact| fact.starts_with("thermite-verus-query-v1:"))
+                })
+                .cloned()
+                .ok_or_else(|| {
+                    NotCurrent::new("bound Verus certificate lacks its exact query identity")
+                })?;
+            self.audit_admission.verus = Some(VerusAuditAuthority {
+                item: self.item.clone(),
+                effects: self.effects.clone(),
+                query_identity,
+                succeeded: matches!(disposition, PersistedCurrentDisposition::Accepted),
+            });
+        }
+        self.audit_admission.resource = self
+            .resource_flow
+            .clone()
+            .map(|evidence| ResourceAuditAuthority { evidence });
+        self.audit_admission.interference = self
+            .interference
+            .clone()
+            .map(|evidence| InterferenceAuditAuthority { evidence });
+        self.audit_admission.protocol = self
+            .protocol
+            .clone()
+            .map(|evidence| ProtocolAuditAuthority { evidence });
+
+        for obligation in &mut self.obligations {
+            if let Some(mut clause) = obligation.clause_certification.take() {
+                clause.restore_bound_seal(obligation);
+                obligation.clause_certification = Some(clause);
+            }
+        }
+        for constraint in &mut self.claim_constraints {
+            constraint.seal();
+        }
+        if self
+            .obligations
+            .iter()
+            .any(|obligation| obligation.clause_certification.is_some())
+        {
+            self.audit_admission.clause_policy_digest = Some(self.clause_policy_digest());
+        }
+
+        let actual = self.current_authority_digest()?;
+        if actual != claimed {
+            return Err(NotCurrent::new(
+                "verified-build certificate authority digest does not match its envelope",
+            ));
+        }
+        Ok(self)
+    }
+
+    fn validate_claim_constraints(&self) -> Result<(), NotCurrent> {
+        for constraint in &self.claim_constraints {
+            if constraint.name.trim().is_empty()
+                || constraint.evidence_sha256.trim().is_empty()
+                || constraint.classification.verdict != ClassificationVerdict::Admitted
+                || constraint.position.assurance_kind_v2().is_none()
+                || constraint.position.validate().is_err()
+                || !constraint.has_valid_seal()
+            {
+                return Err(NotCurrent::new(
+                    "claim carries an invalid or unsealed conjunctive constraint",
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    fn current_item_identity(&self) -> crate::assurance_v2::ProjectItemIdentityV2 {
+        crate::assurance_v2::ProjectItemIdentityV2 {
+            // The certificate is item-scoped; issue #57 rebases this local
+            // identity onto the exact source/build population before project
+            // aggregation.
+            source_path: "certificate://current".to_string(),
+            item_path: self.item.clone(),
+        }
+    }
+
+    fn current_claim_fiber(
+        &self,
+        portfolio: Option<&ClausePortfolio>,
+    ) -> Result<crate::assurance_v2::ClaimFiberAddressV2, NotCurrent> {
+        crate::assurance_v2::ClaimFiberAddressV2::new(current_claim_fiber_sha256(self, portfolio))
+            .map_err(|error| NotCurrent::new(error.to_string()))
+    }
+
+    fn conjoin_current_constraints(
+        &self,
+        claim_set: crate::assurance_v2::ItemClaimSetV2,
+    ) -> Result<crate::assurance_v2::ItemClaimSetV2, NotCurrent> {
+        let premises = self
+            .claim_constraints
+            .iter()
+            .map(|constraint| {
+                (
+                    constraint
+                        .position
+                        .assurance_kind_v2()
+                        .expect("validated constraint has a V2 assurance kind"),
+                    constraint.evidence_sha256.clone(),
+                )
+            })
+            .collect::<Vec<_>>();
+        claim_set
+            .conjoin(&premises)
+            .map_err(|error| NotCurrent::new(error.to_string()))
+    }
+
+    fn homogeneous_item_claim_set(
+        &self,
+        position: &CertificationPosition,
+        classification: &ClassificationCertificate,
+        portfolio: Option<&ClausePortfolio>,
+    ) -> Result<crate::assurance_v2::ItemClaimSetV2, NotCurrent> {
+        let point = position
+            .assurance_kind_v2()
+            .ok_or_else(|| NotCurrent::new("homogeneous position has no admitted V2 point"))?;
+        let evidence = current_evidence_sha256(
+            b"thermite-current-homogeneous-evidence-v2\0",
+            &(
+                &self.item,
+                position,
+                classification,
+                &self.obligations,
+                &self.resource_flow,
+                &self.interference,
+                &self.protocol,
+            ),
+        );
+        let claim_set = crate::assurance_v2::ItemClaimSetV2::homogeneous(
+            self.current_item_identity(),
+            self.current_claim_fiber(portfolio)?,
+            point,
+            evidence,
+        )
+        .map_err(|error| NotCurrent::new(error.to_string()))?;
+        self.conjoin_current_constraints(claim_set)
+    }
+
+    fn lifted_item_claim_set(
+        &self,
+        portfolio: &ClausePortfolio,
+        lift_sha256: &str,
+    ) -> Result<crate::assurance_v2::ItemClaimSetV2, NotCurrent> {
+        let expected_clauses = portfolio
+            .clauses
+            .iter()
+            .map(|clause| format!("{:?}[{}]", clause.address.family, clause.address.index))
+            .collect::<Vec<_>>();
+        let clauses = portfolio
+            .clauses
+            .iter()
+            .zip(&expected_clauses)
+            .map(|(clause, address)| {
+                let kind = clause
+                    .position
+                    .as_ref()
+                    .and_then(CertificationPosition::assurance_kind_v2)
+                    .ok_or_else(|| {
+                        NotCurrent::new("lifted clause lacks an admitted V2 assurance point")
+                    })?;
+                Ok(crate::assurance_v2::ClauseClaimSetV2 {
+                    address: address.clone(),
+                    evidence_identity: current_evidence_sha256(
+                        b"thermite-current-clause-evidence-v2\0",
+                        clause,
+                    ),
+                    transported_generators: Some(vec![kind]),
+                })
+            })
+            .collect::<Result<Vec<_>, NotCurrent>>()?;
+        let lift = crate::assurance_v2::PortfolioLiftV2::new(
+            self.current_item_identity(),
+            expected_clauses,
+            clauses,
+            lift_sha256.to_string(),
+        )
+        .map_err(|error| NotCurrent::new(error.to_string()))?;
+        let claim_set = lift
+            .item_claim_set(self.current_claim_fiber(Some(portfolio))?)
+            .map_err(|error| NotCurrent::new(error.to_string()))?;
+        self.conjoin_current_constraints(claim_set)
+    }
+
+    /// Validate this value into the sole production assurance-decision seam.
+    ///
+    /// The legacy `level` projection is intentionally never read here.  A
+    /// caller cannot upgrade, downgrade, or otherwise change a current decision
+    /// by editing only that compatibility field.
+    pub fn current_assurance(&self) -> Result<CurrentAssurance<'_>, NotCurrent> {
+        if !self.audit_admission.live {
+            return Err(NotCurrent::new(
+                "certificate lacks live or freshly cache-admitted authority",
+            ));
+        }
+        self.validate_current_evidence_authority()?;
+        self.validate_claim_constraints()?;
+
+        let disposition = self
+            .live_disposition()
+            .ok_or_else(|| NotCurrent::new("certificate lacks a typed live disposition"))?;
+        let accepted = matches!(disposition, LiveResultDisposition::Accepted);
+
+        // Portfolio validation is deliberately first.  Singular coordinates on
+        // a spliced or incomplete portfolio can never mask the portfolio defect.
+        let portfolio = self
+            .clause_portfolio(accepted)
+            .map_err(|error| NotCurrent::new(error.to_string()))?;
+
+        if accepted {
+            if self.reject.is_some()
+                || self.lowered_assurance
+                || self
+                    .obligations
+                    .iter()
+                    .any(|obligation| obligation.status == ObligationStatus::Failed)
+            {
+                return Err(NotCurrent::new(
+                    "accepted disposition contradicts terminal certificate evidence",
+                ));
+            }
+            if let Some(portfolio) = portfolio.as_ref() {
+                match portfolio.kind {
+                    ClausePortfolioKind::Heterogeneous => {
+                        let lift_sha256 = portfolio_lift_sha256(&self.item, portfolio);
+                        let item_claim_set = self.lifted_item_claim_set(portfolio, &lift_sha256)?;
+                        let item_claim_sets_by_fiber = vec![item_claim_set];
+                        let authority_sha256 = self.current_authority_sha256(
+                            disposition,
+                            Some(&lift_sha256),
+                            &item_claim_sets_by_fiber,
+                        );
+                        return Ok(CurrentAssurance::Accepted {
+                            claim: Box::new(CurrentClaim::LiftedClausePortfolio {
+                                portfolio: portfolio.clone(),
+                                lift_sha256,
+                                item_claim_sets_by_fiber,
+                                constraints: &self.claim_constraints,
+                                authority_sha256,
+                            }),
+                        });
+                    }
+                    ClausePortfolioKind::AcceptedHomogeneous => {
+                        // Continue through the singular pair only after the
+                        // complete portfolio and its producer seals validated.
+                    }
+                    ClausePortfolioKind::Incomplete | ClausePortfolioKind::PolicyRejected => {
+                        return Err(NotCurrent::new(
+                            "accepted disposition carries a non-accepted clause portfolio",
+                        ));
+                    }
+                }
+            }
+
+            let (position, classification) = self.current_homogeneous_pair()?;
+            if position.assurance_kind_v2().is_none()
+                || classification.verdict != ClassificationVerdict::Admitted
+            {
+                return Err(NotCurrent::new(
+                    "accepted disposition lacks an admitted realized position",
+                ));
+            }
+            let item_claim_set =
+                self.homogeneous_item_claim_set(position, classification, portfolio.as_ref())?;
+            let authority_sha256 = self.current_authority_sha256(
+                disposition,
+                None,
+                std::slice::from_ref(&item_claim_set),
+            );
+            return Ok(CurrentAssurance::Accepted {
+                claim: Box::new(CurrentClaim::Homogeneous {
+                    position,
+                    classification,
+                    item_claim_set,
+                    constraints: &self.claim_constraints,
+                    authority_sha256,
+                }),
+            });
+        }
+
+        if !self.claim_constraints.is_empty() {
+            return Err(NotCurrent::new(
+                "a current non-claim cannot retain accepted claim constraints",
+            ));
+        }
+        self.validate_optional_current_pair()?;
+        self.validate_current_nonclaim_shape(disposition, portfolio.as_ref())?;
+        Ok(CurrentAssurance::NonClaim {
+            disposition: match disposition {
+                LiveResultDisposition::Accepted => unreachable!("handled above"),
+                LiveResultDisposition::VerusTimeout => CurrentDisposition::VerusTimeout,
+                LiveResultDisposition::TimeoutDegrade => CurrentDisposition::TimeoutDegrade,
+                LiveResultDisposition::EngineUnknown => CurrentDisposition::EngineUnknown,
+                LiveResultDisposition::Refuted => CurrentDisposition::Refuted,
+                LiveResultDisposition::WeakContract => CurrentDisposition::WeakContract,
+                LiveResultDisposition::SemanticTautology => CurrentDisposition::SemanticTautology,
+                LiveResultDisposition::VacuousPrecondition => {
+                    CurrentDisposition::VacuousPrecondition
+                }
+                LiveResultDisposition::SettledOther(detail) => {
+                    CurrentDisposition::SettledOther(detail)
+                }
+            },
+        })
+    }
+
+    fn validate_current_evidence_authority(&self) -> Result<(), NotCurrent> {
+        if self.requires_verus_artifact_validation() {
+            self.validate_verus_artifact_authority()
+                .map_err(|error| NotCurrent::new(error.to_string()))?;
+        }
+        self.validate_resource_flow_authority()
+            .map_err(|error| NotCurrent::new(error.to_string()))?;
+        self.validate_interference_authority()
+            .map_err(|error| NotCurrent::new(error.to_string()))?;
+        self.validate_protocol_authority()
+            .map_err(|error| NotCurrent::new(error.to_string()))?;
+        Ok(())
+    }
+
+    fn current_homogeneous_pair(
+        &self,
+    ) -> Result<(&CertificationPosition, &ClassificationCertificate), NotCurrent> {
+        let position = self
+            .certification
+            .as_ref()
+            .ok_or_else(|| NotCurrent::new("current accepted claim lacks formal coordinates"))?;
+        position
+            .validate()
+            .map_err(|error| NotCurrent::new(error.to_string()))?;
+        let classification = self.classification.as_ref().ok_or_else(|| {
+            NotCurrent::new("current accepted claim lacks its classifier certificate")
+        })?;
+        if classification.fragment.trim().is_empty() {
+            return Err(NotCurrent::new(
+                "current classifier identity must not be empty",
+            ));
+        }
+        Ok((position, classification))
+    }
+
+    fn validate_optional_current_pair(&self) -> Result<(), NotCurrent> {
+        match (&self.certification, &self.classification) {
+            (None, None) => Ok(()),
+            (Some(position), None) if position.assurance_kind_v2().is_none() => position
+                .validate()
+                .map_err(|error| NotCurrent::new(error.to_string())),
+            (Some(position), Some(classification)) => {
+                position
+                    .validate()
+                    .map_err(|error| NotCurrent::new(error.to_string()))?;
+                if classification.fragment.trim().is_empty() {
+                    return Err(NotCurrent::new(
+                        "current classifier identity must not be empty",
+                    ));
+                }
+                Ok(())
+            }
+            _ => Err(NotCurrent::new(
+                "current certification coordinates and classification must remain paired",
+            )),
+        }
+    }
+
+    fn validate_current_nonclaim_shape(
+        &self,
+        disposition: &LiveResultDisposition,
+        portfolio: Option<&ClausePortfolio>,
+    ) -> Result<(), NotCurrent> {
+        let failed = self
+            .obligations
+            .iter()
+            .any(|obligation| obligation.status == ObligationStatus::Failed);
+        // A post-proof policy gate can reject a completely discharged clause
+        // portfolio (for example the G1 mutation floor).  In that shape there
+        // is intentionally no failed proof obligation: the typed policy fact
+        // and the sealed `PolicyRejected` portfolio are the terminal evidence.
+        let policy_rejected_portfolio = portfolio
+            .is_some_and(|portfolio| portfolio.kind == ClausePortfolioKind::PolicyRejected);
+        let valid = match disposition {
+            LiveResultDisposition::Accepted => false,
+            LiveResultDisposition::VerusTimeout | LiveResultDisposition::EngineUnknown => {
+                self.reject.is_some() && failed && !self.lowered_assurance
+            }
+            LiveResultDisposition::TimeoutDegrade => {
+                self.lowered_assurance && self.degrade_reason.is_some() && self.reject.is_none()
+            }
+            LiveResultDisposition::Refuted => failed,
+            LiveResultDisposition::WeakContract
+            | LiveResultDisposition::SemanticTautology
+            | LiveResultDisposition::VacuousPrecondition => {
+                self.reject.is_some() && (failed || policy_rejected_portfolio)
+            }
+            LiveResultDisposition::SettledOther(_) => true,
+        };
+        if valid {
+            Ok(())
+        } else {
+            Err(NotCurrent::new(format!(
+                "typed disposition {disposition:?} contradicts terminal evidence"
+            )))
+        }
+    }
+
+    fn current_authority_sha256(
+        &self,
+        disposition: &LiveResultDisposition,
+        portfolio_lift: Option<&str>,
+        item_claim_sets: &[crate::assurance_v2::ItemClaimSetV2],
+    ) -> String {
+        let disposition = match disposition {
+            LiveResultDisposition::Accepted => "accepted",
+            LiveResultDisposition::VerusTimeout => "verus_timeout",
+            LiveResultDisposition::TimeoutDegrade => "timeout_degrade",
+            LiveResultDisposition::EngineUnknown => "engine_unknown",
+            LiveResultDisposition::Refuted => "refuted",
+            LiveResultDisposition::WeakContract => "weak_contract",
+            LiveResultDisposition::SemanticTautology => "semantic_tautology",
+            LiveResultDisposition::VacuousPrecondition => "vacuous_precondition",
+            LiveResultDisposition::SettledOther(_) => "settled_other",
+        };
+        let settled_detail = match self.live_disposition() {
+            Some(LiveResultDisposition::SettledOther(detail)) => Some(detail.as_str()),
+            _ => None,
+        };
+        let record = FormalAuthorityRecordV2 {
+            schema: "thermite-formal-authority/v2",
+            subject: &self.item,
+            certification: &self.certification,
+            classification: &self.classification,
+            contract_quality: &self.contract_quality,
+            effects: &self.effects,
+            slag: self.slag,
+            slag_meta: &self.slag_meta,
+            reject: &self.reject,
+            obligations: &self.obligations,
+            claim_constraints: &self.claim_constraints,
+            lowered_assurance: self.lowered_assurance,
+            boundary: self.boundary,
+            boundary_target: &self.boundary_target,
+            assurance_scope: &self.assurance_scope,
+            engine_attribution: &self.engine_attribution,
+            covenant_evidence: &self.covenant_evidence,
+            meaning_audit: &self.meaning_audit,
+            resource_flow: &self.resource_flow,
+            interference: &self.interference,
+            protocol: &self.protocol,
+            disposition,
+            settled_detail,
+            portfolio_lift_sha256: portfolio_lift,
+            item_claim_sets,
+        };
+        let bytes = serde_json::to_vec(&record).expect("current authority record serializes");
+        let mut hash = Sha256::new();
+        hash.update(b"thermite-assurance-authority-v2\0");
+        hash.update((bytes.len() as u64).to_le_bytes());
+        hash.update(bytes);
+        hash.finalize()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+
     /// Read the RFC-3 pair through one structural seam. A classification without
     /// a position is rejected rather than projected as a partial claim. Legacy
     /// position-only certificates remain readable during migration.
@@ -1716,9 +2953,13 @@ impl Certificate {
             (None, Some(_)) => Err(IncoherentCertificationPosition {
                 reason: "classification cannot exist without a certification position",
             }),
-            (Some(_), None) if self.level == Level::L2 => Err(IncoherentCertificationPosition {
-                reason: "migrated L2 certification requires its classification pair",
-            }),
+            (Some(position), None)
+                if matches!(position.element(), Ok(AssuranceElement::Bounded)) =>
+            {
+                Err(IncoherentCertificationPosition {
+                    reason: "bounded certification requires its classification pair",
+                })
+            }
             (Some(position), None)
                 if position
                     .discharged_trust
@@ -1737,18 +2978,6 @@ impl Certificate {
             {
                 Err(IncoherentCertificationPosition {
                     reason: "migrated Verus certification requires its classification pair",
-                })
-            }
-            (Some(position), Some(classification))
-                if self.level != Level::L1
-                    && (position
-                        .discharged_trust
-                        .iter()
-                        .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:"))
-                        || classification.fragment.starts_with("thermite-l1-")) =>
-            {
-                Err(IncoherentCertificationPosition {
-                    reason: "migrated L1 evidence requires the legacy Level::L1 projection",
                 })
             }
             (Some(position), Some(classification))
@@ -1772,19 +3001,14 @@ impl Certificate {
     /// producer. Audit uses this independently of the mutable legacy `level`, so
     /// changing that projection cannot bypass checked-artifact validation.
     pub(crate) fn requires_l1_artifact_validation(&self) -> bool {
-        self.level == Level::L1
-            || self
-                .classification
-                .as_ref()
-                .is_some_and(|classification| classification.fragment.starts_with("thermite-l1-"))
+        self.classification
+            .as_ref()
+            .is_some_and(|classification| classification.fragment.starts_with("thermite-l1-"))
             || self.certification.as_ref().is_some_and(|position| {
                 position
                     .discharged_trust
                     .iter()
                     .any(|fact| fact.starts_with("thermite-l1-wrapper-v1:"))
-                    || (position.scope == CertificationScope::PerExecution
-                        && position.refutation == RefutationChannel::Abort
-                        && position.residual_trust == ResidualTrust::Fiat)
             })
     }
 
@@ -2463,14 +3687,72 @@ impl Certificate {
                     });
         }
         self.audit_admission.clause_policy_digest = Some(self.clause_policy_digest());
-        self.clause_portfolio(final_accepted)?;
+        let portfolio = self.clause_portfolio(final_accepted)?;
         if final_accepted {
+            // `level` is a compatibility projection only. Derive it after the
+            // typed clause portfolio has been validated; callers never choose
+            // acceptance by pre-computing or comparing this scalar.
+            self.level = portfolio
+                .as_ref()
+                .and_then(|portfolio| {
+                    portfolio
+                        .clauses
+                        .iter()
+                        .filter_map(|clause| clause.position.as_ref()?.compatibility_level())
+                        .min()
+                })
+                .unwrap_or(Level::L0);
             // Mixed-route producers return early from the ordinary arbiter path,
             // so this sealed assembler is the point at which their accepted live
             // disposition becomes known. Audit must not reinterpret an unstamped,
             // all-discharged portfolio as policy-rejected.
             self.live_disposition = LiveDispositionStamp(Some(LiveResultDisposition::Accepted));
+        } else {
+            self.level = Level::L0;
         }
+        Ok(self)
+    }
+
+    /// Conjoin one already-admitted homogeneous claim as an item-wide premise
+    /// of this certificate.  The source authority digest is retained as exact
+    /// evidence identity, and any constraints already carried by that source
+    /// are inherited rather than silently dropped.
+    pub(crate) fn with_current_claim_constraint_from(
+        mut self,
+        name: impl Into<String>,
+        source: &Certificate,
+    ) -> Result<Self, NotCurrent> {
+        let source_claim = match source.current_assurance()? {
+            CurrentAssurance::Accepted { claim } => claim,
+            CurrentAssurance::NonClaim { .. } => {
+                return Err(NotCurrent::new(
+                    "a non-claim cannot authorize an accepted claim constraint",
+                ));
+            }
+        };
+        let (position, classification) = match source_claim.as_ref() {
+            CurrentClaim::Homogeneous {
+                position,
+                classification,
+                ..
+            } => ((*position).clone(), (*classification).clone()),
+            CurrentClaim::LiftedClausePortfolio { .. } => {
+                return Err(NotCurrent::new(
+                    "a heterogeneous claim requires an explicit conjunctive transport",
+                ));
+            }
+        };
+        let mut constraint = ClaimConstraint {
+            name: name.into(),
+            position,
+            classification,
+            evidence_sha256: source_claim.authority_sha256().to_string(),
+            authority: ClaimConstraintAuthority::default(),
+        };
+        constraint.seal();
+        self.claim_constraints = source.claim_constraints.clone();
+        self.claim_constraints.push(constraint);
+        self.validate_claim_constraints()?;
         Ok(self)
     }
 
@@ -2501,7 +3783,7 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level,
-            certification: legacy_position(level),
+            certification: None,
             classification: None,
             audit_admission: AuditAdmission::live(),
             solver_time_ms,
@@ -2511,6 +3793,7 @@ impl Certificate {
             slag_meta: None,
             reject: None,
             obligations,
+            claim_constraints: Vec::new(),
             cached: false,
             solver_profile: None,
             suggested_move: None,
@@ -2557,7 +3840,7 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L0,
-            certification: legacy_position(Level::L0),
+            certification: None,
             classification: None,
             audit_admission: AuditAdmission::live(),
             solver_time_ms,
@@ -2567,6 +3850,7 @@ impl Certificate {
             slag_meta: None,
             reject: Some(reason),
             obligations: vec![obligation],
+            claim_constraints: Vec::new(),
             cached: false,
             solver_profile: Some(profile),
             suggested_move,
@@ -2632,7 +3916,7 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L1,
-            certification: legacy_position(Level::L1),
+            certification: None,
             classification: None,
             audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
@@ -2644,6 +3928,7 @@ impl Certificate {
             obligations: vec![ObligationResult::discharged(
                 "contract enforced at L1 (slag); proof exempt by fiat",
             )],
+            claim_constraints: Vec::new(),
             cached: false,
             solver_profile: None,
             suggested_move: None,
@@ -2681,7 +3966,7 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L1,
-            certification: legacy_position(Level::L1),
+            certification: None,
             classification: None,
             audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
@@ -2693,6 +3978,7 @@ impl Certificate {
             obligations: vec![ObligationResult::discharged(
                 "contract enforced at L1 (boundary); foreign body trusted by fiat",
             )],
+            claim_constraints: Vec::new(),
             cached: false,
             solver_profile: None,
             suggested_move: None,
@@ -2731,7 +4017,7 @@ impl Certificate {
         Certificate {
             item: item.into(),
             level: Level::L0,
-            certification: legacy_position(Level::L0),
+            certification: None,
             classification: None,
             audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
@@ -2741,6 +4027,7 @@ impl Certificate {
             slag_meta: None,
             reject: Some(reason),
             obligations: vec![obligation],
+            claim_constraints: Vec::new(),
             cached: false,
             solver_profile: None,
             suggested_move: None,
@@ -2949,14 +4236,9 @@ impl Certificate {
     /// documents for fail-closed partial-pair validation. Historical unmarked L1
     /// position-only documents remain readable.
     pub fn with_l1_artifact(
-        self,
+        mut self,
         artifact: &thermite_lower::L1Artifact,
     ) -> Result<Self, IncoherentCertificationPosition> {
-        if self.level != Level::L1 {
-            return Err(IncoherentCertificationPosition {
-                reason: "an L1 artifact can only certify Level::L1",
-            });
-        }
         if self.item != artifact.item() {
             return Err(IncoherentCertificationPosition {
                 reason: "the L1 artifact item must match the certificate item",
@@ -2997,6 +4279,9 @@ impl Certificate {
                 }
             }
         };
+        // `level` is the compatibility projection of the checked coordinates,
+        // never an input to their authority.
+        self.level = Level::L1;
         let attached = self.with_rfc3_coordinates(
             CertificationPosition {
                 scope: CertificationScope::PerExecution,
@@ -3018,14 +4303,14 @@ impl Certificate {
     /// classifier and query identity exist before solver execution and therefore
     /// remain identical on proof success and every non-success outcome.
     pub fn with_verus_artifact(
-        self,
+        mut self,
         artifact: &thermite_lower::L3Artifact,
         succeeded: bool,
     ) -> Result<Self, IncoherentCertificationPosition> {
         let expected_level = if succeeded { Level::L3 } else { Level::L0 };
-        if self.level != expected_level || self.item != artifact.item() {
+        if self.item != artifact.item() {
             return Err(IncoherentCertificationPosition {
-                reason: "the Verus artifact item/outcome must match the certificate",
+                reason: "the Verus artifact item must match the certificate",
             });
         }
         let expected_effects = artifact
@@ -3049,6 +4334,8 @@ impl Certificate {
                 ResidualTrust::Fiat,
             )
         };
+        // Preserve the historical field as a derived presentation projection.
+        self.level = expected_level;
         let mut attached = self.with_rfc3_coordinates(
             CertificationPosition {
                 scope,
@@ -3363,12 +4650,8 @@ impl Certificate {
     pub(crate) fn persisted_verus_artifact_matches(
         &self,
         artifact: &thermite_lower::L3Artifact,
+        succeeded: bool,
     ) -> bool {
-        let succeeded = match self.level {
-            Level::L3 => true,
-            Level::L0 => false,
-            _ => return false,
-        };
         let effects = artifact
             .effect_row()
             .map_or_else(|| vec!["pure".to_string()], effects_of);
@@ -3385,15 +4668,7 @@ impl Certificate {
         &self,
         authority: &VerusAuditAuthority,
     ) -> Result<(), IncoherentCertificationPosition> {
-        let expected_level = if authority.succeeded {
-            Level::L3
-        } else {
-            Level::L0
-        };
-        if self.item != authority.item
-            || self.effects != authority.effects
-            || self.level != expected_level
-        {
+        if self.item != authority.item || self.effects != authority.effects {
             return Err(IncoherentCertificationPosition {
                 reason: "persisted Verus item/effects/outcome do not match live authority",
             });
@@ -3458,9 +4733,9 @@ impl Certificate {
         artifact: &thermite_lower::L1Artifact,
         expected_scope: Option<&AssuranceScope>,
     ) -> Result<(), IncoherentCertificationPosition> {
-        if self.level != Level::L1 || self.item != artifact.item() {
+        if self.item != artifact.item() {
             return Err(IncoherentCertificationPosition {
-                reason: "persisted L1 item/level does not match its checked artifact",
+                reason: "persisted L1 item does not match its checked artifact",
             });
         }
         if self.effects != effects_of(artifact.effect_row()) {
@@ -3706,7 +4981,7 @@ impl Certificate {
         Certificate {
             item,
             level: Level::L0,
-            certification: legacy_position(Level::L0),
+            certification: None,
             classification: None,
             audit_admission: AuditAdmission::live(),
             solver_time_ms: 0,
@@ -3716,6 +4991,7 @@ impl Certificate {
             slag_meta: None,
             reject: Some(reason),
             obligations: vec![obligation],
+            claim_constraints: Vec::new(),
             cached: false,
             solver_profile: None,
             suggested_move: None,
@@ -3789,6 +5065,7 @@ impl Certificate {
                   the exact comparison surface the cert oracle compares; the tuple is the \
                   contract."
     )]
+    #[cfg(test)]
     pub fn oracle_subset(
         &self,
     ) -> (
@@ -3942,11 +5219,25 @@ impl AssuranceManifest {
     pub fn aggregate(certs: &[Certificate]) -> Self {
         let functions: Vec<FunctionAssurance> = certs
             .iter()
-            .map(|c| FunctionAssurance {
-                item: c.item.clone(),
-                level: c.level,
-                certified: cert_certifies(c),
-                lowered_assurance: c.lowered_assurance,
+            .map(|c| {
+                let current = c.current_assurance();
+                let certified = matches!(current, Ok(CurrentAssurance::Accepted { .. }));
+                let level = current
+                    .ok()
+                    .and_then(|authority| match authority {
+                        CurrentAssurance::Accepted { claim } => claim.compatibility_level(),
+                        CurrentAssurance::NonClaim { .. } => Some(Level::L0),
+                    })
+                    // Historical/unadmitted rows are not current authority.  L0
+                    // is only their compatibility rendering in this deprecated
+                    // view; the `certified` bit remains false.
+                    .unwrap_or(Level::L0);
+                FunctionAssurance {
+                    item: c.item.clone(),
+                    level,
+                    certified,
+                    lowered_assurance: c.lowered_assurance,
+                }
             })
             .collect();
         let project = if functions.iter().any(|f| !f.certified) {
@@ -3999,7 +5290,10 @@ fn project_scope(certs: &[Certificate]) -> ProjectScope {
 /// what "certifies"). L4 (the relax route's kernel-grounded rung, 2f) certifies like
 /// any proven rung.
 pub fn cert_certifies(cert: &Certificate) -> bool {
-    cert.reject.is_none() && matches!(cert.level, Level::L4 | Level::L3 | Level::L2 | Level::L1)
+    matches!(
+        cert.current_assurance(),
+        Ok(CurrentAssurance::Accepted { .. })
+    )
 }
 
 /// Map a parsed `EffectRow` to the certificate's `effects` string vector
@@ -4037,6 +5331,154 @@ fn effect_token(effect: &Effect) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod current_assurance {
+        use super::*;
+
+        fn accepted_solver_certificate() -> Certificate {
+            Certificate::new("f", Level::L3, vec!["pure".into()], 0, Vec::new())
+                .with_rfc3_coordinates(
+                    CertificationPosition {
+                        scope: CertificationScope::All,
+                        refutation: RefutationChannel::Incomplete,
+                        residual_trust: ResidualTrust::Solver,
+                        discharged_trust: vec!["test-proof-v1".into()],
+                        boundary: CertificationBoundary::EndToEnd,
+                    },
+                    ClassificationCertificate {
+                        fragment: "test-current-fragment-v1".into(),
+                        verdict: ClassificationVerdict::Admitted,
+                    },
+                )
+                .unwrap()
+                .with_live_disposition(LiveResultDisposition::Accepted)
+        }
+
+        #[test]
+        fn compatibility_level_edit_cannot_change_current_authority() {
+            let original = accepted_solver_certificate();
+            let original_claim = match original.current_assurance().unwrap() {
+                CurrentAssurance::Accepted { claim } => claim,
+                CurrentAssurance::NonClaim { .. } => panic!("accepted fixture became non-claim"),
+            };
+            assert_eq!(original_claim.compatibility_level(), Some(Level::L3));
+
+            let mut hostile = original.clone();
+            hostile.level = Level::L0;
+            let hostile_claim = match hostile.current_assurance().unwrap() {
+                CurrentAssurance::Accepted { claim } => claim,
+                CurrentAssurance::NonClaim { .. } => panic!("level edit changed disposition"),
+            };
+            assert_eq!(hostile_claim.compatibility_level(), Some(Level::L3));
+            assert_eq!(
+                hostile_claim.authority_sha256(),
+                original_claim.authority_sha256(),
+                "the deprecated presentation rung is outside formal authority"
+            );
+            assert_eq!(
+                original_claim.policy_points(),
+                [crate::assurance_v2::AssuranceKindV2::SolverIncomplete]
+            );
+            assert_eq!(original_claim.item_claim_sets().len(), 1);
+            assert_eq!(original_claim.item_claim_sets()[0].item().item_path, "f");
+        }
+
+        #[test]
+        fn presentation_policy_is_bound_separately_from_formal_authority() {
+            let cert = accepted_solver_certificate();
+            let authority = cert.current_authority_digest().unwrap();
+            let v1 = cert.current_presentation_digest(1, 1).unwrap();
+            let schema_v2 = cert.current_presentation_digest(2, 1).unwrap();
+            let policy_v2 = cert.current_presentation_digest(1, 2).unwrap();
+            assert_ne!(v1, schema_v2);
+            assert_ne!(v1, policy_v2);
+            assert_eq!(cert.current_authority_digest().unwrap(), authority);
+        }
+
+        #[test]
+        fn deserialized_current_looking_row_is_not_current_authority() {
+            let live = accepted_solver_certificate();
+            let encoded = serde_json::to_string(&live).unwrap();
+            let historical: Certificate = serde_json::from_str(&encoded).unwrap();
+            assert!(historical.current_assurance().is_err());
+        }
+
+        #[test]
+        fn current_envelope_omits_level_and_round_trips_unadmitted() {
+            let live = accepted_solver_certificate();
+            let encoded = serde_json::to_value(live.current_document().unwrap()).unwrap();
+            assert_eq!(
+                encoded["schema"],
+                serde_json::Value::String(CURRENT_CERTIFICATE_SCHEMA.into())
+            );
+            assert!(encoded["certificate"].get("level").is_none());
+
+            let document: CertificateDocument = serde_json::from_value(encoded).unwrap();
+            let (persisted, claimed, disposition) = document.into_current().unwrap();
+            assert!(persisted.persisted_authority_digest_matches(&claimed, &disposition));
+            assert!(persisted.current_assurance().is_err());
+        }
+
+        #[test]
+        fn unversioned_levels_are_inspect_only_with_specific_warnings() {
+            for level in [Level::L0, Level::L1, Level::L2, Level::L3, Level::L4] {
+                let document: CertificateDocument = serde_json::from_value(serde_json::json!({
+                    "item": "historical",
+                    "level": level,
+                    "certification": {
+                        "scope": { "kind": "all" },
+                        "refutation": { "kind": "complete" },
+                        "residual_trust": "lean_checked",
+                        "boundary": { "kind": "end_to_end" }
+                    }
+                }))
+                .unwrap();
+                let legacy = document.inspect_legacy().unwrap();
+                assert_eq!(legacy.legacy_level, level);
+                assert_eq!(legacy.raw()["item"], "historical");
+                assert!(legacy.warning().contains("NOT VALID FOR CURRENT ASSURANCE"));
+                assert!(legacy.warning().contains("re-certification is required"));
+                if level == Level::L2 {
+                    assert!(legacy.warning().contains("does not record its bound"));
+                }
+                if level == Level::L3 {
+                    assert!(legacy.warning().contains("ambiguous"));
+                }
+            }
+        }
+
+        #[test]
+        fn current_envelope_rejects_compatibility_level_and_unknown_schema() {
+            let live = accepted_solver_certificate();
+            let mut encoded = serde_json::to_value(live.current_document().unwrap()).unwrap();
+            encoded["certificate"]["level"] = serde_json::json!("L4");
+            assert!(serde_json::from_value::<CertificateDocument>(encoded).is_err());
+            assert!(
+                serde_json::from_value::<CertificateDocument>(serde_json::json!({
+                    "schema": "thermite-certificate/v999",
+                    "level": "L4"
+                }))
+                .is_err()
+            );
+        }
+
+        #[test]
+        fn non_claim_uses_typed_disposition_not_level() {
+            let reason = RejectReason {
+                cause: "WeakContract".into(),
+                detail: "hostile fixture".into(),
+            };
+            let mut cert = Certificate::rejected("f", vec!["pure".into()], false, reason)
+                .with_live_disposition(LiveResultDisposition::WeakContract);
+            cert.level = Level::L4;
+            assert_eq!(
+                cert.current_assurance().unwrap(),
+                CurrentAssurance::NonClaim {
+                    disposition: CurrentDisposition::WeakContract,
+                }
+            );
+        }
+    }
 
     mod rfc3_coordinates {
         use super::*;
@@ -4279,7 +5721,7 @@ mod tests {
         }
 
         #[test]
-        fn migrated_l1_pair_rejects_serialized_legacy_level_substitution() {
+        fn migrated_l1_pair_ignores_serialized_legacy_level_substitution() {
             let parsed = thermite_syntax::parse(
                 "fn f(x: u32) -> u32 ! pure requires x < 100 ensures result == x { x }",
             );
@@ -4290,7 +5732,7 @@ mod tests {
             let mut hostile = serde_json::to_value(cert).unwrap();
             hostile["level"] = serde_json::json!("L3");
             let decoded: Certificate = serde_json::from_value(hostile).unwrap();
-            assert!(decoded.rfc3_coordinates().is_err());
+            assert!(decoded.rfc3_coordinates().is_ok());
             assert!(decoded.requires_l1_artifact_validation());
         }
 
@@ -4339,7 +5781,7 @@ mod tests {
 
             let mut level = cert.clone();
             level.level = Level::L4;
-            assert!(level.validate_verus_artifact_authority().is_err());
+            assert!(level.validate_verus_artifact_authority().is_ok());
 
             let mut effects = cert.clone();
             effects.effects = vec!["time".into()];
@@ -4381,7 +5823,7 @@ mod tests {
                 .unwrap();
             let decoded: Certificate =
                 serde_json::from_value(serde_json::to_value(cert).unwrap()).unwrap();
-            assert!(decoded.persisted_verus_artifact_matches(&artifact));
+            assert!(decoded.persisted_verus_artifact_matches(&artifact, true));
             assert!(!decoded.is_audit_admitted());
 
             let bare: Certificate = serde_json::from_value(
@@ -4395,23 +5837,20 @@ mod tests {
                 .unwrap(),
             )
             .unwrap();
-            assert!(!bare.persisted_verus_artifact_matches(&artifact));
+            assert!(!bare.persisted_verus_artifact_matches(&artifact, true));
 
             let changed = thermite_syntax::parse(
                 "fn f(x: u32) -> u32 ! pure requires x < 99 ensures result == x { x }",
             );
             let changed = thermite_lower::lower_l3_artifact(&changed.program, "f").unwrap();
-            assert!(!decoded.persisted_verus_artifact_matches(&changed));
+            assert!(!decoded.persisted_verus_artifact_matches(&changed, true));
         }
 
         #[test]
-        fn historical_unmarked_l1_position_remains_readable() {
+        fn historical_unmarked_l1_has_no_invented_position() {
             let historical = Certificate::new("f", Level::L1, vec![], 0, vec![]);
-            let (_, classification) = historical
-                .rfc3_coordinates()
-                .expect("legacy L1 remains readable")
-                .expect("legacy position exists");
-            assert!(classification.is_none());
+            assert_eq!(historical.rfc3_coordinates().unwrap(), None);
+            assert!(historical.current_assurance().is_err());
         }
 
         #[test]
@@ -5076,9 +6515,9 @@ mod tests {
     #[test]
     fn aggregate_headline_is_min_over_functions() {
         let certs = vec![
-            Certificate::new("f", Level::L3, vec!["pure".to_string()], 0, vec![]),
-            Certificate::new("g", Level::L2, vec!["pure".to_string()], 0, vec![]),
-            Certificate::new("h", Level::L1, vec!["pure".to_string()], 0, vec![]),
+            Certificate::test_current("f", Level::L3),
+            Certificate::test_current("g", Level::L2),
+            Certificate::test_current("h", Level::L1),
         ];
         let m = AssuranceManifest::aggregate(&certs);
         assert_eq!(m.project, ProjectAssurance::Certified(Level::L1));
@@ -5095,8 +6534,9 @@ mod tests {
             detail: "ens#0 is true".to_string(),
         };
         let certs = vec![
-            Certificate::new("f", Level::L3, vec!["pure".to_string()], 0, vec![]),
-            Certificate::rejected("bad", vec!["pure".to_string()], false, reason),
+            Certificate::test_current("f", Level::L3),
+            Certificate::rejected("bad", vec!["pure".to_string()], false, reason)
+                .with_live_disposition(LiveResultDisposition::SettledOther("EnsIsTrivial".into())),
         ];
         let m = AssuranceManifest::aggregate(&certs);
         assert_eq!(m.project, ProjectAssurance::Failed);
@@ -5118,46 +6558,20 @@ mod tests {
     // reject as not — the shared predicate the aggregate + cli exit code use.
     #[test]
     fn cert_certifies_recognizes_the_certified_rungs() {
-        assert!(cert_certifies(&Certificate::new(
-            "a",
-            Level::L3,
-            vec![],
-            0,
-            vec![]
-        )));
-        assert!(cert_certifies(&Certificate::new(
-            "b",
-            Level::L2,
-            vec![],
-            0,
-            vec![]
-        )));
-        assert!(cert_certifies(&Certificate::new(
-            "c",
-            Level::L1,
-            vec![],
-            0,
-            vec![]
-        )));
-        assert!(!cert_certifies(&Certificate::new(
-            "d",
-            Level::L0,
-            vec![],
-            0,
-            vec![]
-        )));
+        assert!(cert_certifies(&Certificate::test_current("a", Level::L3)));
+        assert!(cert_certifies(&Certificate::test_current("b", Level::L2)));
+        assert!(cert_certifies(&Certificate::test_current("c", Level::L1)));
+        assert!(!cert_certifies(&Certificate::test_current("d", Level::L0)));
         let reason = RejectReason {
             cause: "WeakContract".to_string(),
             detail: "x".to_string(),
         };
         // An L3 cert with a reject (e.g. a WeakContract reject built on L0) does not
         // certify — the reject dominates.
-        assert!(!cert_certifies(&Certificate::rejected(
-            "e",
-            vec![],
-            false,
-            reason
-        )));
+        assert!(!cert_certifies(
+            &Certificate::rejected("e", vec![], false, reason)
+                .with_live_disposition(LiveResultDisposition::WeakContract)
+        ));
     }
 
     // #17 (e2e-vs-boundary REQ-3, R-SPEC-2): `assurance_scope` is additive — absent
@@ -5306,9 +6720,7 @@ mod tests {
             levels
                 .iter()
                 .enumerate()
-                .map(|(i, &lvl)| {
-                    Certificate::new(format!("f{i}"), lvl, vec!["pure".to_string()], 0, vec![])
-                })
+                .map(|(i, &lvl)| Certificate::test_current(format!("f{i}"), lvl))
                 .collect()
         }
 

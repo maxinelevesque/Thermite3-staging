@@ -87,6 +87,7 @@ fn check(name: &str, program: &str) -> Value {
         .arg("check")
         .arg(&path)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .env("FORGE_CACHE_DIR", &cache_dir)
         .output()
         .unwrap_or_else(|e| panic!("spawn forge: {e}"));
@@ -118,6 +119,7 @@ fn check_item(name: &str, program: &str, item: &str) -> Value {
         .arg("check")
         .arg(&path)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .env("FORGE_CACHE_DIR", &cache_dir)
         .output()
         .unwrap_or_else(|e| panic!("spawn forge: {e}"));

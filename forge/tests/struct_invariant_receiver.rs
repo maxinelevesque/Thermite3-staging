@@ -74,7 +74,14 @@ fn check_and_battery_accept_unary_struct_invariant() {
     let repro = fixture("repro.th");
     let repro_text = repro.to_string_lossy();
     let repro_check = run_with_fresh_cache(
-        &["check", &repro_text, "--level", "l3", "--json"],
+        &[
+            "check",
+            &repro_text,
+            "--level",
+            "l3",
+            "--json",
+            "--legacy-inspection-json",
+        ],
         "repro-check",
     );
     let repro_certs: Value = serde_json::from_slice(&repro_check.stdout).unwrap_or_else(|error| {
@@ -105,7 +112,17 @@ fn check_and_battery_accept_unary_struct_invariant() {
     // fact the mutation battery needs, so both user-facing commands finish clean.
     let path = fixture("accept.th");
     let path_text = path.to_string_lossy();
-    let check = run_with_fresh_cache(&["check", &path_text, "--level", "l3", "--json"], "check");
+    let check = run_with_fresh_cache(
+        &[
+            "check",
+            &path_text,
+            "--level",
+            "l3",
+            "--json",
+            "--legacy-inspection-json",
+        ],
+        "check",
+    );
     assert!(
         check.status.success(),
         "forge check must accept the receiver-bound invariant\nstdout:\n{}\nstderr:\n{}",

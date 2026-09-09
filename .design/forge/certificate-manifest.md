@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: a728d95ca3dbd4fbbee1cb496c003f408d82f327 (re-pinned 2026-06-16 for stage-1 increment 2f, REQ-8: the only change to this doc's governed file (manifest.rs) is the additive Level::L4 kernel-grounded rung (REQ-S1-8); the relax route is reached only via --engine nlsat, so the v1 corpus stays L3 and oracle_subset is byte-identical (check_conformance green).)
-audited-content-sha256: 19872e6574d08458b8a6d8cd49e8dce6742764fee3b94f9a19a5b86c6e66ebaf (re-pinned 2026-09-02 after the RFC-11 certificate explicitly named Rust resource-flow computation as residual trust. prior: 74bcf58435418157f8cf01a7ff7f878d7af9173ab6fe15025f12358c27780707)
+audited-content-sha256: 1c9fcd428f46db3a950ec1191b944a4b467cdb6c281279c0a271d6e052344c0c (re-pinned 2026-09-08 after final issue #56 versioned-authority qualification and boxed document boundary. prior: 1e634bb26162227fa61e1f0dfb741eae2aeff296217bd9405c92890a943a746c)
 governs: forge/src/manifest.rs
 thesis-refs:
   - thermite-design.md §5.1
@@ -86,6 +86,18 @@ certificate gained a family of ADDITIVE fields — see the Amendment.
 > audit authority. Partial EPR reconstruction is not appended to this
 > authoritative Verus item certificate; only complete homogeneous reconstruction
 > may replace it with the EPR result.
+
+> **Current-authority amendment, 2026-09-08 (issue #56).** The migration above
+> is now complete for production decisions. `Certificate::current_assurance`
+> validates the typed live disposition, complete clause/item claim sets, sealed
+> formal evidence, and producer capability before returning either an accepted
+> claim or a typed non-claim. `Level` is private and derived for compatibility
+> rendering only. Current `thermite-certificate/v2` documents omit it and bind a
+> separate formal-authority digest; deserialization never restores the live
+> capability. Unversioned L0-L4 JSON is represented as `LegacyUnversioned` for
+> loud inspection and cannot enter check, audit, cache, aggregation, or floor
+> authority. Earlier statements that project aggregation or mixed clause
+> portfolios remain unmigrated describe the superseded incremental state.
 
 > **Amendment 2026-06-12 (doc-freshness re-audit, #262).** Re-verified against the
 > current tree (`dff9ae86`, 12 post-pin commits to `manifest.rs`). Corrections and

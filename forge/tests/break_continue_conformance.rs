@@ -83,6 +83,7 @@ fn check_program(tag: &str, program: &str) -> Vec<Value> {
         .arg("check")
         .arg(&fixture)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge");
     let _ = std::fs::remove_file(&fixture);
@@ -485,6 +486,7 @@ fn corpus_loops_without_break_or_continue_still_certify_l3() {
             .arg("check")
             .arg(&path)
             .arg("--json")
+            .arg("--legacy-inspection-json")
             .output()
             .expect("spawn forge");
         let stdout = String::from_utf8_lossy(&out.stdout);

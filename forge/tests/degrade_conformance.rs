@@ -82,7 +82,7 @@ fn run_check_json(file: &Path, extra: &[&str]) -> (Option<i32>, Vec<Value>) {
     for a in extra {
         cmd.arg(a);
     }
-    cmd.arg("--json");
+    cmd.arg("--json").arg("--legacy-inspection-json");
     let out = cmd.output().unwrap_or_else(|e| panic!("spawn forge: {e}"));
     let stdout = String::from_utf8_lossy(&out.stdout);
     let value: Value = serde_json::from_str(stdout.trim()).unwrap_or_else(|e| {

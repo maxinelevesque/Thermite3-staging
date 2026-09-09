@@ -64,8 +64,9 @@ mod result_arbiter;
 mod review;
 #[cfg(test)]
 mod rfc3_replay;
-// Issue #54 ships the checked replay before issue #56 moves production
-// authority decisions onto this seam.
+// Assurance V2 is the sole production policy model behind CurrentAssurance.
+// Its project/report half is intentionally staged for the immediately following
+// issue #57, while issue #56 consumes the item-claim subset now.
 #[allow(dead_code)]
 mod assurance_v2;
 mod sandbox;

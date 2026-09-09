@@ -102,6 +102,7 @@ fn check_program(tag: &str, program: &str) -> Vec<Value> {
         .arg("--engine")
         .arg("verus")
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check");
     let _ = std::fs::remove_file(&fixture);

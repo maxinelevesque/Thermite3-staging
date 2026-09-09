@@ -132,6 +132,54 @@ class ReqRegistryOracleTest(unittest.TestCase):
         self.assertEqual(check_res.returncode, 0, check_res.stdout + check_res.stderr)
         self.assertIn("REQ registry clean: 1 requirement(s), 1 view(s)", check_res.stdout)
 
+    def test_file_qualified_rust_test_evidence_resolves_direct_test(self):
+        self.fx.valid_registry(
+            """
+            [[requirement.evidence]]
+            kind = "test"
+            target = "tests/direct.rs::direct_test"
+            """
+        )
+        self.fx.write("tests/direct.rs", "#[test]\nfn direct_test() {}\n")
+
+        res = self.fx.run()
+
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+
+    def test_file_qualified_rust_test_evidence_resolves_macro_generated_test(self):
+        self.fx.valid_registry(
+            """
+            [[requirement.evidence]]
+            kind = "test"
+            target = "tests/generated.rs::generated_test"
+            """
+        )
+        self.fx.write(
+            "tests/generated.rs",
+            "macro_rules! case { ($name:ident) => { #[test] fn $name() {} }; }\n"
+            "case!(generated_test);\n",
+        )
+
+        res = self.fx.run()
+
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+
+    def test_file_qualified_rust_test_evidence_rejects_stale_symbol(self):
+        self.fx.valid_registry(
+            """
+            [[requirement.evidence]]
+            kind = "test"
+            target = "tests/stale.rs::deleted_test"
+            """
+        )
+        self.fx.write("tests/stale.rs", "#[test]\nfn current_test() {}\n")
+
+        res = self.fx.run()
+
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("UNRESOLVED-EVIDENCE", res.stdout)
+        self.assertIn("Rust test evidence symbol does not resolve", res.stdout)
+
     def test_reqs_facade_supports_check_render_query(self):
         self.fx.valid_registry()
 

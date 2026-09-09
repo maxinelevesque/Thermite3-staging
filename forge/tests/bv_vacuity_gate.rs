@@ -37,7 +37,7 @@ fn check_bv(name: &str, src: &str) -> Vec<Value> {
     let out = Command::new(forge_bin())
         .args(["check"])
         .arg(&f)
-        .args(["--engine", "bv", "--json"])
+        .args(["--engine", "bv", "--json", "--legacy-inspection-json"])
         .output()
         .unwrap();
     serde_json::from_slice(&out.stdout).unwrap_or_default()

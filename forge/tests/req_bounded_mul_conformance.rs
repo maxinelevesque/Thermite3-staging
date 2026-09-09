@@ -53,6 +53,7 @@ fn check_program(tag: &str, src: &str) -> Vec<Value> {
         .arg("check")
         .arg(&fixture)
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .unwrap_or_else(|e| panic!("spawn forge: {e}"));
     let _ = std::fs::remove_file(&fixture);

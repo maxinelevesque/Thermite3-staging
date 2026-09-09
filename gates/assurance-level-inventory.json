@@ -1,0 +1,1105 @@
+{
+  "schema": 1,
+  "sites": [
+    {
+      "category": "presentation",
+      "column": 67,
+      "id": "4bb009282ba44c70e19b3cbfd6b8314932b01cbd6f647fbb537a84ae217db083",
+      "line": 55,
+      "path": "forge/src/audit.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "ClassificationCertificate, ContractQuality, CurrentAssurance, Level, ProjectAssurance,"
+    },
+    {
+      "category": "presentation",
+      "column": 16,
+      "id": "8d3cea11684f8c9867cec0197061b6d3ba6a0ca368c923afdbeb5596f2ee152f",
+      "line": 274,
+      "path": "forge/src/audit.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "pub level: Level,"
+    },
+    {
+      "category": "presentation",
+      "column": 17,
+      "id": "c169013f550b5acb219c153c4a5472cb1de72fe7928b1cec9a6c206d450635e7",
+      "line": 338,
+      "path": "forge/src/audit.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": ".compatibility_level()"
+    },
+    {
+      "category": "presentation",
+      "column": 50,
+      "id": "dd3a6d0e2a744468d9059cff13844af61f87b7e9f0b223a2520bffe026acfcbc",
+      "line": 340,
+      "path": "forge/src/audit.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "CurrentAssurance::NonClaim { .. } => Level::L0,"
+    },
+    {
+      "category": "presentation",
+      "column": 53,
+      "id": "f2d671312b0456da2a37510c3a851304064bb5d8a19e39229460bdf92c8184fa",
+      "line": 144,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "InterferenceResidualTrust, InterferenceVerdict, Level, ObligationResult, ProtocolEvidence,"
+    },
+    {
+      "category": "constructor",
+      "column": 9,
+      "id": "6d0b68fee0b414d5fcfd582f562af569c684fb0b4f69a146bd559343ee3cd5ea",
+      "line": 2662,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L4,"
+    },
+    {
+      "category": "constructor",
+      "column": 9,
+      "id": "c74b20adbf6d6f5f89b02430b6fc766d061f3eb999f30f7d27b088875c3a26d5",
+      "line": 3000,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L4,"
+    },
+    {
+      "category": "constructor",
+      "column": 53,
+      "id": "85255ef98ad37080137faddf67cf0f3984e6bdd62213c8473bd04a4c952e794c",
+      "line": 4790,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "let mut cert = Certificate::new(f.name.clone(), Level::L0, effects, 0, Vec::new())"
+    },
+    {
+      "category": "constructor",
+      "column": 53,
+      "id": "d4388f86976dd4acc6c447dd972a63b54b88ecaf3e90249892e21c97ac4a1557",
+      "line": 5139,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "let accepted = Certificate::new(l.name.clone(), Level::L4, effects, 0, obligations)"
+    },
+    {
+      "category": "constructor",
+      "column": 53,
+      "id": "c3992288c7bfdb7936981e4cb6c37151cae21a20876b033ce2e2a73abf5e05ce",
+      "line": 6189,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "let mut cert = Certificate::new(f.name.clone(), Level::L0, effects, 0, Vec::new())"
+    },
+    {
+      "category": "constructor",
+      "column": 25,
+      "id": "d92616cc92d6d0fedab762ef78dcf5d8f53899b23cf1373b25885dfa4d459123",
+      "line": 6674,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L0,"
+    },
+    {
+      "category": "constructor",
+      "column": 25,
+      "id": "40798ca128dd070c43de21d1dabb4b12b277a2532e284a306ac2cdd1f1ff7f06",
+      "line": 6738,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L0,"
+    },
+    {
+      "category": "constructor",
+      "column": 9,
+      "id": "4d708b4561de8b7218781906fbd5f9f968a5784b60229859a805cf1ffff04648",
+      "line": 6801,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L3,"
+    },
+    {
+      "category": "constructor",
+      "column": 9,
+      "id": "c514e85a3afb64ad8c620e865f1e549cc02ad04fdd09d45c6a397211a4908942",
+      "line": 6898,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L3,"
+    },
+    {
+      "category": "constructor",
+      "column": 9,
+      "id": "36ee216a6bbf1bb5afde4750f973069e918f666eb0387446e3b40dd9e165ef54",
+      "line": 7040,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L3,"
+    },
+    {
+      "category": "constructor",
+      "column": 13,
+      "id": "b4eea0abc4d3feef55526cdd889fd3dfa6a3b4774f045625870f06f608004ada",
+      "line": 9332,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L3,"
+    },
+    {
+      "category": "constructor",
+      "column": 13,
+      "id": "75cfb03ac7b7e483dd855653266a4f49b56bdf859a3092f1b04234797a9297a1",
+      "line": 9372,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L0,"
+    },
+    {
+      "category": "constructor",
+      "column": 17,
+      "id": "58f96e786a4ca439fd606b38f4fbe6cbba8a963c72732955902ce73316f60b24",
+      "line": 9549,
+      "path": "forge/src/check.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L1,"
+    },
+    {
+      "category": "presentation",
+      "column": 53,
+      "id": "1195e86a6e0d6373c9dabee04856813695dc8882af1799a27c9e7f8fef3b6722",
+      "line": 49,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "AssuranceManifest, AssuranceScope, Certificate, Level, ObligationStatus, ProjectAssurance,"
+    },
+    {
+      "category": "presentation",
+      "column": 35,
+      "id": "82a0568e84bcbab2e6f58f50754be33e971ceabbfd22bdbc74b3150807c59880",
+      "line": 2405,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "manifest.project_assurance.level,"
+    },
+    {
+      "category": "presentation",
+      "column": 24,
+      "id": "74085bb4e17d06055600c8a4300ae882bb8c442ebb382e65a6c1f9d713298804",
+      "line": 3502,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "level_str(f.level),"
+    },
+    {
+      "category": "presentation",
+      "column": 54,
+      "id": "4f381b8f0066bd3b00b2b6d0e3e65e9d1ff013f21fbfe58aaf26f0ccee5c0676",
+      "line": 3575,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "let level_line = match manifest.project_assurance.level {"
+    },
+    {
+      "category": "presentation",
+      "column": 33,
+      "id": "4213423023b03f4b7c34869d57430afdbf421aa3285b2719d42188e159e4330d",
+      "line": 3636,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": ".map(|f| level_str(f.level))"
+    },
+    {
+      "category": "presentation",
+      "column": 28,
+      "id": "caede5d0c98f8dec908f183b5a38e81d893f67760c2ee882ae19b0ffca23ee4d",
+      "line": 3700,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "level_str(f.level)"
+    },
+    {
+      "category": "presentation",
+      "column": 33,
+      "id": "c8fed32885c01289144e59e5772b0347aa691b3d3792f0b5865f2f0d8a94d5dd",
+      "line": 3729,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": ".unwrap_or_else(|_| cert.compatibility_level());"
+    },
+    {
+      "category": "presentation",
+      "column": 21,
+      "id": "a97df3b668b42761023825c67ce599b34bc75a9d2822e2340c97e6c4b5ffb1d2",
+      "line": 3855,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "fn level_str(level: Level) -> &'static str {"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "cbdd56a3fba247601cd1280cc809f40f38037fde213f35b0dd5cb90ede14383f",
+      "line": 3857,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L0 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "a5f6e4c9351ccaa87adeca53073ea0f774415b859450a4a84aab9c29bf554a4f",
+      "line": 3858,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L1 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "9bdbf4cf58f7401999ecd1f65f3a2a5e4f42553b55a0d8c3a05a7bdb696a54d3",
+      "line": 3859,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L2 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "1430b4750ea38fe9d085dc13cd7af3b67dc8361dd387ce74bdc191e6d0a02c35",
+      "line": 3860,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L3 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "2b5cdba0b5a293e64dfac6702b46861bfd35569aafcd114d6c32ee7f36f8f8ad",
+      "line": 3861,
+      "path": "forge/src/cli.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L4 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 36,
+      "id": "08e67ec52b9149610eea9171d899ccaa0b81f45c706cbc8e9e81b98f6ef95a0d",
+      "line": 50,
+      "path": "forge/src/goal_repl.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "use crate::manifest::{Certificate, Level, ObligationStatus};"
+    },
+    {
+      "category": "presentation",
+      "column": 62,
+      "id": "8708d5766ec3696705e8e464fefbd3907aa71730a180bbdbba68851556e12efe",
+      "line": 469,
+      "path": "forge/src/goal_repl.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "let level = cert.current_compatibility_level().unwrap_or(Level::L0);"
+    },
+    {
+      "category": "presentation",
+      "column": 70,
+      "id": "e15a8546c14c0332432bd1b94bb468160a3b1c2e25494e8cd80ac06da9eab988",
+      "line": 538,
+      "path": "forge/src/goal_repl.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "let current_level = cert.current_compatibility_level().unwrap_or(Level::L0);"
+    },
+    {
+      "category": "presentation",
+      "column": 21,
+      "id": "b058615c94f8da4f17a148eabf204b6db892e9972e90e92c759a497408715ff1",
+      "line": 966,
+      "path": "forge/src/goal_repl.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "fn level_str(level: Level) -> &'static str {"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "39733b68a00ed4d7e298d45f62034984d3bb177c69359ac920b3a85df478e55c",
+      "line": 968,
+      "path": "forge/src/goal_repl.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L0 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "c4ffd3e2ef379922232a1b4898d79f0832218314f080a6e0e8ce770c3b3b8b23",
+      "line": 969,
+      "path": "forge/src/goal_repl.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L1 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "02855a5ebcea338d74abd17a84644a900539c0f16fa38ac18beae8974ed62607",
+      "line": 970,
+      "path": "forge/src/goal_repl.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L2 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "5fa756bd5de0c82cc02b916ea43949cfa0694716053df451a06d873493598616",
+      "line": 971,
+      "path": "forge/src/goal_repl.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L3 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "8ad89ee499bc74b3863d661cf0062b47f1e443585bec2357528b7a323b90b3f0",
+      "line": 972,
+      "path": "forge/src/goal_repl.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L4 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 55,
+      "id": "16a458f5a694992819d8a1115adc1a3e29aaed2be261fefa1c5032e6c367b40a",
+      "line": 61,
+      "path": "forge/src/kani.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "ClassificationCertificate, ClassificationVerdict, Level, ObligationResult, ObligationStatus,"
+    },
+    {
+      "category": "constructor",
+      "column": 32,
+      "id": "6568ad051aa4dd7c9f495a7986937e1d6a378e54aa240579bb609d447e2f7d87",
+      "line": 484,
+      "path": "forge/src/kani.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "L2Verdict::Verified => Level::L2,"
+    },
+    {
+      "category": "constructor",
+      "column": 62,
+      "id": "b991a160586fab4e3f9a5175727e40c28be3640b78778e28d5de77e2771d5c5d",
+      "line": 485,
+      "path": "forge/src/kani.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "L2Verdict::UnderBound | L2Verdict::Counterexample => Level::L0,"
+    },
+    {
+      "category": "presentation",
+      "column": 49,
+      "id": "ebd5e1e55f79a4e799ea57744400976de9a0cb2e99063d7c349100edba1e1066",
+      "line": 768,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "pub fn compatibility_level(&self) -> Option<Level> {"
+    },
+    {
+      "category": "presentation",
+      "column": 29,
+      "id": "965857bc47d5373f7e1e7111255fc2c3e877b857ec8fba61a593264a208f8255",
+      "line": 771,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "NoClaim => Some(Level::L0),"
+    },
+    {
+      "category": "presentation",
+      "column": 29,
+      "id": "1490d984f013d0cd8cf9af28e6cd5d7f34144c70c6a7b4878532a05c23d8fb91",
+      "line": 772,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Runtime => Some(Level::L1),"
+    },
+    {
+      "category": "presentation",
+      "column": 29,
+      "id": "4542afe62c5f0b857c44adf58cb66913bd33be34f300846f459e47f442b4d01c",
+      "line": 773,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Bounded => Some(Level::L2),"
+    },
+    {
+      "category": "presentation",
+      "column": 54,
+      "id": "04bf7d48507c6a6dddb632224cf43dd11bb0004b6fc16f89b38d31284c28353e",
+      "line": 774,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "IncompleteSolver | EmpiricalLean => Some(Level::L3),"
+    },
+    {
+      "category": "presentation",
+      "column": 51,
+      "id": "33fe65f177ec07e861464b5deab1ad2fb594eb8a03816552baf5e0e17745740f",
+      "line": 775,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "CompleteSolver | CompleteLean => Some(Level::L4),"
+    },
+    {
+      "category": "presentation",
+      "column": 10,
+      "id": "14adb797f449e34e1705f6550833a783bd7bab2ba35d93e79f4f566ab3455fbb",
+      "line": 930,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "pub enum Level {"
+    },
+    {
+      "category": "presentation",
+      "column": 12,
+      "id": "9ded6254cbd321fd0e7916c8b7a1d744e287717cb30088981d2834b75a8532ba",
+      "line": 1497,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level,"
+    },
+    {
+      "category": "presentation",
+      "column": 26,
+      "id": "b4d24b5bd2577206331d0e1c50bd7a0eea475f8a95569b0202f5646361e67bc1",
+      "line": 1877,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "compatibility_level: Level,"
+    },
+    {
+      "category": "presentation",
+      "column": 23,
+      "id": "51bed283d8f415cb205c5c4ab555f5871df28e9571b274c09b35161c24490cd1",
+      "line": 1960,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "pub legacy_level: Level,"
+    },
+    {
+      "category": "presentation",
+      "column": 13,
+      "id": "e7849463dd7765cb6ab8014e25a839a5510b1a441cecbc97fa09d24fbf87c6f6",
+      "line": 1969,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L2 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 13,
+      "id": "96e7c38a48fec8651215ff2916424c8b6c3ff09f56a673af5e63763afd355970",
+      "line": 1970,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L3 => {"
+    },
+    {
+      "category": "presentation",
+      "column": 42,
+      "id": "ad5e7abd51cf1a82b367e869108c720019b2c083f85a7479766c5cffd7d9362d",
+      "line": 2017,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "serde_json::from_value::<Level>(legacy_level).map_err(serde::de::Error::custom)?;"
+    },
+    {
+      "category": "constructor",
+      "column": 42,
+      "id": "7ca18cf98f7d1f432cd140c584881e1400bb55e05cf8a60ff5a2a74b4f677af4",
+      "line": 2062,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": ".and_then(|position| position.compatibility_level())"
+    },
+    {
+      "category": "presentation",
+      "column": 24,
+      "id": "c4c9fa287c39d11cbe73b9125f74a6030541189529cdef441a78055c182365bf",
+      "line": 2063,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": ".unwrap_or(Level::L0);"
+    },
+    {
+      "category": "presentation",
+      "column": 49,
+      "id": "7f42899c0a22c5a3fa11347d5c28d22588a87b4c2e6850525e1a4370239bc73e",
+      "line": 2179,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "pub fn compatibility_level(&self) -> Option<Level> {"
+    },
+    {
+      "category": "presentation",
+      "column": 59,
+      "id": "cbc4b91582a7b69b7d156971c060f1b72cc071033b81fbcab8f6cbd041d79794",
+      "line": 2181,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "Self::Homogeneous { position, .. } => position.compatibility_level(),"
+    },
+    {
+      "category": "presentation",
+      "column": 56,
+      "id": "9bec217e862f4ab0cf0f75c58b1a5ea699ff4e26b73d79d7628872630f1a6910",
+      "line": 2185,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": ".map(|clause| clause.position.as_ref()?.compatibility_level())"
+    },
+    {
+      "category": "presentation",
+      "column": 50,
+      "id": "92913330f83e087e832962b72f8cb00f993a844123ac918502428b9e88f6859e",
+      "line": 2192,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": ".map(|constraint| constraint.position.compatibility_level())"
+    },
+    {
+      "category": "presentation",
+      "column": 42,
+      "id": "ac3e150d89ee1375b49cc6c0ba15edad8e03e8ebaed5f2edf61cd3ae6c20d0fd",
+      "line": 2224,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "pub fn compatibility_level(&self) -> Level {"
+    },
+    {
+      "category": "presentation",
+      "column": 13,
+      "id": "a4834b4653b7c02bff96d20fdc138da89b343daaf530b2ea1faaa3cd89ff1902",
+      "line": 2225,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "self.level"
+    },
+    {
+      "category": "presentation",
+      "column": 57,
+      "id": "f087974250e65ef38a31204e56a7624bd5b382c41f499f861549be06e866f00e",
+      "line": 2296,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "pub fn current_compatibility_level(&self) -> Result<Level, NotCurrent> {"
+    },
+    {
+      "category": "presentation",
+      "column": 58,
+      "id": "32dc2a6d5dd840d631b1e3c4d474993f1cc1db7f5b639cde6e8ec323682b3a34",
+      "line": 2298,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "CurrentAssurance::Accepted { claim } => claim.compatibility_level().ok_or_else(|| {"
+    },
+    {
+      "category": "presentation",
+      "column": 53,
+      "id": "758948cf5407449cd6cf488b1c8c49c89c098f88393cc7d64c690498b6cafb79",
+      "line": 2301,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "CurrentAssurance::NonClaim { .. } => Ok(Level::L0),"
+    },
+    {
+      "category": "constructor",
+      "column": 17,
+      "id": "52e283b0d372bde93372d800c57084dc76b5c1720b0432a748150a7476e950b3",
+      "line": 3695,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "self.level = portfolio"
+    },
+    {
+      "category": "presentation",
+      "column": 71,
+      "id": "f9117da0f2e062c6c6060e4ca8f569263401245348189a645c9c312e3c670769",
+      "line": 3701,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": ".filter_map(|clause| clause.position.as_ref()?.compatibility_level())"
+    },
+    {
+      "category": "presentation",
+      "column": 28,
+      "id": "8b0a68ea95787487381ffe07d139b5251a8805c5db593f55deec4f0ad189c2a0",
+      "line": 3704,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": ".unwrap_or(Level::L0);"
+    },
+    {
+      "category": "presentation",
+      "column": 26,
+      "id": "7ef59a43d42bc5cca0f875f20ecfa6c3982986dd4a93557aa288d6c21abc9560",
+      "line": 3711,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "self.level = Level::L0;"
+    },
+    {
+      "category": "constructor",
+      "column": 17,
+      "id": "ef148508f708e69abe3175a3a16c674b1d410104abe0eb09fd2868969f55a6c0",
+      "line": 3711,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "self.level = Level::L0;"
+    },
+    {
+      "category": "constructor",
+      "column": 16,
+      "id": "b10f6c68ff3817e49f5937676449cd6a4fa1dd805cc5e37eb6c6fa71c17845a2",
+      "line": 3778,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level,"
+    },
+    {
+      "category": "constructor",
+      "column": 20,
+      "id": "9e4e9272db5d5b4f2a1cb4cf6d93ecdf60dc9d9f7fea51f268e54351fc137499",
+      "line": 3842,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level::L0,"
+    },
+    {
+      "category": "constructor",
+      "column": 20,
+      "id": "df6315af96389f37f4868c0c105c8b46a3cb6886bf0261c5e3ad7cf7a7974a78",
+      "line": 3918,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level::L1,"
+    },
+    {
+      "category": "constructor",
+      "column": 20,
+      "id": "69d81740e2bbecaeec65083257f9faeb83832d27075079f3fd91b018d228b745",
+      "line": 3968,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level::L1,"
+    },
+    {
+      "category": "constructor",
+      "column": 20,
+      "id": "7bb8bc33854f20c0bcef2202dfae12114ad173adce7ddd06b224e572dabc0a2f",
+      "line": 4019,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level::L0,"
+    },
+    {
+      "category": "presentation",
+      "column": 22,
+      "id": "6d1875a5a77d1d112f51247e4af4d10ae63f9450ea4b10b43e46c434869d25a1",
+      "line": 4284,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "self.level = Level::L1;"
+    },
+    {
+      "category": "constructor",
+      "column": 13,
+      "id": "2f47fda09220111cd7840a3a576fefaf4fb0fb29429f857c6109d935a14a4177",
+      "line": 4284,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "self.level = Level::L1;"
+    },
+    {
+      "category": "presentation",
+      "column": 45,
+      "id": "7139e46682392fd43ff526877ff464abc14be989d6ab78ae366f1e3bd61bf52a",
+      "line": 4310,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "let expected_level = if succeeded { Level::L3 } else { Level::L0 };"
+    },
+    {
+      "category": "presentation",
+      "column": 64,
+      "id": "25ae4b033bfe30c11b020edcd76a7611d097f7cf09c01ce11678340d948399d9",
+      "line": 4310,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "let expected_level = if succeeded { Level::L3 } else { Level::L0 };"
+    },
+    {
+      "category": "constructor",
+      "column": 13,
+      "id": "3a594b92a3604c4ea6b2be7a4b25a38ff617cf33f2ee05aa0b62d441505901f7",
+      "line": 4338,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "self.level = expected_level;"
+    },
+    {
+      "category": "constructor",
+      "column": 20,
+      "id": "28eb792e9fe9507ad5050449252fb68040e060419dd811efd9166c6970eeb443",
+      "line": 4983,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level::L0,"
+    },
+    {
+      "category": "presentation",
+      "column": 15,
+      "id": "92d076b5ec0417328dc1a73cbb50746aa5927ad8b4ba057d1c39ae28859fa1f0",
+      "line": 5142,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Certified(Level),"
+    },
+    {
+      "category": "presentation",
+      "column": 16,
+      "id": "7e097645a2387acc8054d160fdc98c6c655a2d77ba6405d2767dcd1812431ba7",
+      "line": 5202,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "pub level: Level,"
+    },
+    {
+      "category": "presentation",
+      "column": 70,
+      "id": "9c04f6c44a584edc9f3284f7187e4de06cbdf2cbcd1c4f1d3fd0958af2c07ba6",
+      "line": 5228,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "CurrentAssurance::Accepted { claim } => claim.compatibility_level(),"
+    },
+    {
+      "category": "presentation",
+      "column": 67,
+      "id": "b28cdff69ba32651d8f397c0b2d5c5955e7b67b122cfeabbf7ec4dbbc016ac02",
+      "line": 5229,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "CurrentAssurance::NonClaim { .. } => Some(Level::L0),"
+    },
+    {
+      "category": "presentation",
+      "column": 32,
+      "id": "d8cb6ae9fdd14cf0a70b2c19ec05c36fd85596f0ac4b00f43892821978592978",
+      "line": 5234,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": ".unwrap_or(Level::L0);"
+    },
+    {
+      "category": "presentation",
+      "column": 73,
+      "id": "f04d2a7302f8cc8563c2e7863779e13830fcba1359b22a8a83f860d583892725",
+      "line": 5249,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "let min = functions.iter().map(|f| f.level).min().unwrap_or(Level::L3);"
+    },
+    {
+      "category": "presentation",
+      "column": 49,
+      "id": "88835d65ffb6bf7480db17d31cfb6e2b846594ac1daaa969fc819451692b15e5",
+      "line": 5249,
+      "path": "forge/src/manifest.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "let min = functions.iter().map(|f| f.level).min().unwrap_or(Level::L3);"
+    },
+    {
+      "category": "presentation",
+      "column": 59,
+      "id": "d6fe7368b7a963f2d1f14f5deb08daf0e459cf648c554f656abec85177dc3d7b",
+      "line": 218,
+      "path": "forge/src/meaning.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "out.push_str(&format!( , def.level, def.name));"
+    },
+    {
+      "category": "presentation",
+      "column": 74,
+      "id": "c05701ab5f439f3467083cdf1c23ab92db9644a8b5ba77776c1f4af78e950781",
+      "line": 51,
+      "path": "forge/src/repair.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "use crate::manifest::{Certificate, CurrentAssurance, CurrentDisposition, Level, SuggestedMove};"
+    },
+    {
+      "category": "presentation",
+      "column": 16,
+      "id": "1e5a12316b954c866ba352ae8fc5913fd3e89b85e3eff554ac7140c177647b02",
+      "line": 113,
+      "path": "forge/src/repair.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level,"
+    },
+    {
+      "category": "presentation",
+      "column": 16,
+      "id": "2bb7f8bd4f61a7beb580358616c02b0d020974d102429aa26246c0f5d7489afa",
+      "line": 126,
+      "path": "forge/src/repair.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level,"
+    },
+    {
+      "category": "presentation",
+      "column": 21,
+      "id": "e6ec1a0c81e9fef887ebb6da9391a9461cc5cf2894f78a1b541f9c2dbb3f060d",
+      "line": 156,
+      "path": "forge/src/repair.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "let level = cert.compatibility_level();"
+    },
+    {
+      "category": "presentation",
+      "column": 16,
+      "id": "08e60d743773a4d305d470bc0120651b633a40c35aef3ae9735e74e6ed2505af",
+      "line": 216,
+      "path": "forge/src/repair.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level,"
+    },
+    {
+      "category": "presentation",
+      "column": 16,
+      "id": "157b76d05c0135e9f397fe73c42c355045e5a3d3fc1761d29456e8f4e32242b4",
+      "line": 230,
+      "path": "forge/src/repair.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level,"
+    },
+    {
+      "category": "presentation",
+      "column": 28,
+      "id": "0e7314dc37bef60b8123c92cb184fb59c8498ed74ce5e67e21ee42f33d294b6e",
+      "line": 342,
+      "path": "forge/src/repair.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "level: Level::L0,"
+    },
+    {
+      "category": "presentation",
+      "column": 19,
+      "id": "b60081a9e22c618b18ab8624efc342884ffb0b9c9ad0ba4ce77d4602fd74dc37",
+      "line": 33,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "CurrentClaim, Level, LiveResultDisposition, ObligationStatus, RefutationChannel, RejectReason,"
+    },
+    {
+      "category": "constructor",
+      "column": 20,
+      "id": "0938083f8fdbd6d0a2fb1b5a50df823179e6dc16e55fe71e8f134bbb39b00952",
+      "line": 1785,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": "certificate.compatibility_level(),"
+    },
+    {
+      "category": "presentation",
+      "column": 23,
+      "id": "172550af91c2f2dbd8962091d28e35fb1bf902bba57f2ad988745d873eb21712",
+      "line": 1911,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "let mut minimum = Level::L4;"
+    },
+    {
+      "category": "presentation",
+      "column": 17,
+      "id": "d99007fbe23b1c45303d7cf468f571d47ca8accada1e767d50feb9aebb6c3081",
+      "line": 1944,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "value_access",
+      "source": ".compatibility_level()"
+    },
+    {
+      "category": "presentation",
+      "column": 31,
+      "id": "5b767f4aa124666dbce5df374fd38b8f1f12595c4cb4433b154415929d7676d6",
+      "line": 1962,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "minimum = minimum.min(Level::L3);"
+    },
+    {
+      "category": "presentation",
+      "column": 22,
+      "id": "ba635c907d2941274393f15f2356fb08ee894a4c37d1614bd5f520000cb75a7b",
+      "line": 1980,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "fn level_name(level: Level) -> &'static str {"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "d3dd81a0feefaccfcee248a34f64712c747d86d2dc09e1879a948c1e6dfaf3f2",
+      "line": 1982,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L0 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "bf92379b2fcf8b897331323a6e90d2759646e0854d4aeef655ddf6fce52ba9aa",
+      "line": 1983,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L1 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "b0583e95c746e85507f9ed418650e1750ab47ac3f46682eb0cce033168b91c5a",
+      "line": 1984,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L2 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "cf3b9b8a8d0e2ff03524945878cf5a8d23766ca1898f21c45d6d131a78f37753",
+      "line": 1985,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L3 => ,"
+    },
+    {
+      "category": "presentation",
+      "column": 9,
+      "id": "0c0e989e1471cba72684eb9176ff5837cbfbed25631e5c392d2cb734d6d71238",
+      "line": 1986,
+      "path": "forge/src/verified_build.rs",
+      "scope": "production",
+      "signal": "level_token",
+      "source": "Level::L4 => ,"
+    }
+  ],
+  "summary": {
+    "categories": {
+      "authority_decision": 0,
+      "constructor": 27,
+      "presentation": 82,
+      "unclassified": 0
+    },
+    "production_authority_decisions": 0,
+    "sites": 109
+  }
+}

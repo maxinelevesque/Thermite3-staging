@@ -84,6 +84,15 @@ fn codegen_rustc(bundle: &Path) -> Command {
     command
 }
 
+fn configure_freestanding_link(command: &mut Command) {
+    command.args(["-C", "panic=abort", "-C", "link-arg=-nostartfiles"]);
+    if cfg!(target_vendor = "apple") {
+        // Darwin still needs an explicit Mach-O entry and libSystem's dyld
+        // binder even though no language runtime or start files are linked.
+        command.args(["-C", "link-arg=-Wl,-e,__start", "-C", "link-arg=-lSystem"]);
+    }
+}
+
 #[test]
 fn kernel_byte_slice_is_verified_executable_freestanding_and_reproducible() {
     let temp = TempDir::new();
@@ -187,17 +196,18 @@ fn kernel_byte_slice_is_verified_executable_freestanding_and_reproducible() {
         .unwrap();
     assert_success(&low_gate);
 
-    let high_gate = codegen_rustc(&first)
-        .current_dir(root())
-        .args([
-            "--edition=2021",
-            "conformance/verified-composition/kernel_bytes_freestanding.rs",
-        ])
+    let mut high_gate = codegen_rustc(&first);
+    high_gate.current_dir(root()).args([
+        "--edition=2021",
+        "conformance/verified-composition/kernel_bytes_freestanding.rs",
+    ]);
+    high_gate
         .arg("--extern")
         .arg(format!("thermite_kernel_bytes={}", artifact.display()))
         .arg("-L")
-        .arg(format!("dependency={}", deps.display()))
-        .args(["-C", "panic=abort", "-C", "link-arg=-nostartfiles"])
+        .arg(format!("dependency={}", deps.display()));
+    configure_freestanding_link(&mut high_gate);
+    let high_gate = high_gate
         .arg("-o")
         .arg(temp.0.join("freestanding-gate"))
         .output()

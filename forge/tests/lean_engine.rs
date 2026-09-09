@@ -104,6 +104,7 @@ fn sum_cert_oracle_byte_identical_after_lean_exporter() {
         .arg("check")
         .arg(corpus_dir().join("sum.th"))
         .arg("--json")
+        .arg("--legacy-inspection-json")
         .output()
         .expect("spawn forge check");
     assert_eq!(

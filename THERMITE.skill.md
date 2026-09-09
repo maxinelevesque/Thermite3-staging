@@ -263,7 +263,7 @@ Plain `check` automatically routes eligible fixed-width and finite EPR clauses
 through checked reconstruction.
 
 - `forge new <name>` — Create a pinned project.
-- `forge check <file> [--json] [--level l2|l3] [--rlimit FLOAT] [--mutation-floor FLOAT] [--engine auto|verus|lean|nlsat|forge|bv]` — Certify; auto-routes eligible BV and EPR clauses.
+- `forge check <file> [--json] [--legacy-inspection-json] [--level l2|l3] [--rlimit FLOAT] [--mutation-floor FLOAT] [--engine auto|verus|lean|nlsat|forge|bv]` — Certify; auto-routes eligible BV and EPR clauses.
 - `forge audit <file> [--json] [--meaning] [--metrics]` — Show assurance, boundaries, meaning, and metrics.
 - `forge repair <file> [item] [--json]` — Retry timeout-lowered items.
 - `forge review <file> [item] [--json] [--reviewer <cmd>]` — Emit contracts for intent review.
