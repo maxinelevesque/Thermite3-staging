@@ -70,6 +70,8 @@ mod rfc3_replay;
 // The closed V2 authority model intentionally exposes theorem-parity helpers
 // beyond the subset consumed by today's report/floor CLI.
 #[allow(dead_code)]
+mod assurance_transport;
+#[allow(dead_code)]
 mod assurance_v2;
 mod sandbox;
 /// The seven-verdict hermetic suite (REQ-10 / AC-14) — test-only.
