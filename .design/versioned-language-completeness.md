@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: b9ef376eafbc243451b17e01986b5d0ece7bf7e224422a4f35e7249a4adf8f9d (re-pinned 2026-09-09 after the final 583-claim materialization incorporated the AC-17 CI publication receipt. prior: 641e366aff94971baba8dd2be7d0b1c453b815cf7a8789c4202b5c3c06472784)
+audited-content-sha256: 00ed23b27d9605b943d8c38aeb996514dd8a1514b2f28bead4b0da16e3a0ffac (re-pinned 2026-09-09 after the alpha.11 workspace-version change refreshed all 583 content-bound claim receipts. prior: b9ef376eafbc243451b17e01986b5d0ece7bf7e224422a4f35e7249a4adf8f9d)
 
 ## Summary
 
