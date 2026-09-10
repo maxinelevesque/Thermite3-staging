@@ -25,6 +25,7 @@
 //! <!-- /generated:reqs -->
 
 mod accessibility;
+mod assurance_report;
 mod audit;
 mod battery;
 mod bitvector;
@@ -64,9 +65,10 @@ mod result_arbiter;
 mod review;
 #[cfg(test)]
 mod rfc3_replay;
-// Assurance V2 is the sole production policy model behind CurrentAssurance.
-// Its project/report half is intentionally staged for the immediately following
-// issue #57, while issue #56 consumes the item-claim subset now.
+// Assurance V2 is the sole production policy model behind CurrentAssurance and
+// the layered issue #57 report/floor surface.
+// The closed V2 authority model intentionally exposes theorem-parity helpers
+// beyond the subset consumed by today's report/floor CLI.
 #[allow(dead_code)]
 mod assurance_v2;
 mod sandbox;

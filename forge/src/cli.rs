@@ -41,6 +41,7 @@ use thermite_skill::{forge_usage, generate, generate_claude, ForgeMethod};
 use thermite_spec::SpecError;
 use thermite_syntax::SyntaxError;
 
+use crate::assurance_report::{self, ReportTrust};
 use crate::audit::{self, AuditManifest};
 use crate::build::{self, BuildManifest, BuildTarget, CrateType};
 use crate::check::{self, CheckOptions, DEFAULT_RLIMIT, DEFAULT_SOLVER_SEED};
@@ -177,6 +178,8 @@ pub enum ForgeError {
     /// and could not be decoded into the typed result arbiter. This is a hard
     /// soundness halt, not permission to guess a favorable disposition.
     ResultArbiterAlarm { item: String, detail: String },
+    /// Layered assurance report construction, validation, or comparison failed.
+    AssuranceReport { detail: String },
 }
 
 impl fmt::Display for ForgeError {
@@ -278,6 +281,9 @@ impl fmt::Display for ForgeError {
             ForgeError::ReviewerOutput { detail } => {
                 write!(f, "could not read a reviewer verdict: {detail}")
             }
+            ForgeError::AssuranceReport { detail } => {
+                write!(f, "assurance report failed: {detail}")
+            }
             ForgeError::Usage(msg) => write!(f, "usage error: {msg}"),
             ForgeError::SoundnessAlarm(d) => write!(f, "SOUNDNESS ALARM: {d}"),
             ForgeError::ResultArbiterAlarm { item, detail } => write!(
@@ -354,6 +360,24 @@ enum Command {
         json: bool,
         meaning: bool,
         metrics: bool,
+    },
+    /// `forge assurance` derives all disclosure layers from one live, admitted
+    /// certificate graph. Persisted reports remain diagnostic data and cannot
+    /// be converted back into formal-floor authority.
+    Assurance {
+        file: PathBuf,
+        revision: String,
+        trust: ReportTrust,
+        json: bool,
+        html: bool,
+        items: bool,
+        explain: Option<String>,
+        out_json: Option<PathBuf>,
+        out_html: Option<PathBuf>,
+        compare: Option<PathBuf>,
+        base_sha: Option<String>,
+        out_comparison: Option<PathBuf>,
+        floor: Option<PathBuf>,
     },
     /// `forge repair <file> [item]` — the background L1/L2 → L3 upgrade loop
     /// (issue #18; `.design/forge/proof-repair.md` REQ-1). Re-derives the per-item
@@ -852,6 +876,147 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                 json,
                 meaning,
                 metrics,
+            })
+        }
+        ForgeMethod::Assurance => {
+            let mut file = None;
+            let mut revision = None;
+            let mut trust = ReportTrust::LocalDiagnostic;
+            let mut json = false;
+            let mut html = false;
+            let mut items = false;
+            let mut explain = None;
+            let mut out_json = None;
+            let mut out_html = None;
+            let mut compare = None;
+            let mut base_sha = None;
+            let mut out_comparison = None;
+            let mut floor = None;
+            let mut iter = iter.peekable();
+            while let Some(arg) = iter.next() {
+                match arg.as_str() {
+                    "--revision" => {
+                        revision = Some(
+                            iter.next()
+                                .ok_or_else(|| {
+                                    ForgeError::Usage("`--revision` requires an exact SHA".into())
+                                })?
+                                .clone(),
+                        );
+                    }
+                    "--trust" => {
+                        trust = match iter.next().map(String::as_str) {
+                            Some("local") => ReportTrust::LocalDiagnostic,
+                            Some("pr") => ReportTrust::UntrustedPullRequest,
+                            Some("protected") => ReportTrust::ProtectedExactSha,
+                            Some(other) => {
+                                return Err(ForgeError::Usage(format!(
+                                    "unknown `--trust` value `{other}` (expected local, pr, or protected)"
+                                )))
+                            }
+                            None => {
+                                return Err(ForgeError::Usage(
+                                    "`--trust` requires local, pr, or protected".into(),
+                                ))
+                            }
+                        };
+                    }
+                    "--json" => json = true,
+                    "--html" => html = true,
+                    "--items" => items = true,
+                    "--explain" => {
+                        explain = Some(
+                            iter.next()
+                                .ok_or_else(|| {
+                                    ForgeError::Usage(
+                                        "`--explain` requires an item name or `project`".into(),
+                                    )
+                                })?
+                                .clone(),
+                        );
+                    }
+                    "--out-json" => {
+                        out_json = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                            ForgeError::Usage("`--out-json` requires a path".into())
+                        })?));
+                    }
+                    "--out-html" => {
+                        out_html = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                            ForgeError::Usage("`--out-html` requires a path".into())
+                        })?));
+                    }
+                    "--compare" => {
+                        compare = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                            ForgeError::Usage("`--compare` requires a base report path".into())
+                        })?));
+                    }
+                    "--base-sha" => {
+                        base_sha = Some(
+                            iter.next()
+                                .ok_or_else(|| {
+                                    ForgeError::Usage("`--base-sha` requires an exact SHA".into())
+                                })?
+                                .clone(),
+                        );
+                    }
+                    "--out-comparison" => {
+                        out_comparison = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                            ForgeError::Usage("`--out-comparison` requires a path".into())
+                        })?));
+                    }
+                    "--floor" => {
+                        floor = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                            ForgeError::Usage("`--floor` requires a policy path".into())
+                        })?));
+                    }
+                    flag if flag.starts_with("--") => {
+                        return Err(ForgeError::Usage(format!("unknown flag `{flag}`")));
+                    }
+                    positional if file.is_none() => file = Some(PathBuf::from(positional)),
+                    positional => {
+                        return Err(ForgeError::Usage(format!(
+                            "`forge assurance` takes one <file>; unexpected `{positional}`"
+                        )))
+                    }
+                }
+            }
+            let display_modes = usize::from(json)
+                + usize::from(html)
+                + usize::from(items)
+                + usize::from(explain.is_some());
+            if display_modes > 1 {
+                return Err(ForgeError::Usage(
+                    "choose only one of --json, --html, --items, or --explain".into(),
+                ));
+            }
+            if compare.is_some() != base_sha.is_some() {
+                return Err(ForgeError::Usage(
+                    "`--compare` and `--base-sha` must be supplied together".into(),
+                ));
+            }
+            if out_comparison.is_some() && compare.is_none() {
+                return Err(ForgeError::Usage(
+                    "`--out-comparison` requires `--compare` and `--base-sha`".into(),
+                ));
+            }
+            Ok(Command::Assurance {
+                file: file.ok_or_else(|| {
+                    ForgeError::Usage("`forge assurance` requires a <file>".into())
+                })?,
+                revision: revision.ok_or_else(|| {
+                    ForgeError::Usage("`forge assurance` requires `--revision <sha>`".into())
+                })?,
+                trust,
+                json,
+                html,
+                items,
+                explain,
+                out_json,
+                out_html,
+                compare,
+                base_sha,
+                out_comparison,
+                floor,
             })
         }
         ForgeMethod::Repair => {
@@ -1792,6 +1957,35 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             meaning,
             metrics,
         } => run_audit(&file, json, meaning, metrics),
+        Command::Assurance {
+            file,
+            revision,
+            trust,
+            json,
+            html,
+            items,
+            explain,
+            out_json,
+            out_html,
+            compare,
+            base_sha,
+            out_comparison,
+            floor,
+        } => run_assurance(AssuranceRun {
+            file: &file,
+            revision: &revision,
+            trust,
+            json,
+            html,
+            items,
+            explain: explain.as_deref(),
+            out_json: out_json.as_deref(),
+            out_html: out_html.as_deref(),
+            compare: compare.as_deref(),
+            base_sha: base_sha.as_deref(),
+            out_comparison: out_comparison.as_deref(),
+            floor: floor.as_deref(),
+        }),
         Command::Repair { file, item, json } => run_repair(&file, item.as_deref(), json),
         Command::Review {
             file,
@@ -2283,6 +2477,131 @@ fn legacy_inspection_document(cert: &Certificate) -> Result<serde_json::Value, F
         ),
     );
     Ok(payload)
+}
+
+struct AssuranceRun<'a> {
+    file: &'a Path,
+    revision: &'a str,
+    trust: ReportTrust,
+    json: bool,
+    html: bool,
+    items: bool,
+    explain: Option<&'a str>,
+    out_json: Option<&'a Path>,
+    out_html: Option<&'a Path>,
+    compare: Option<&'a Path>,
+    base_sha: Option<&'a str>,
+    out_comparison: Option<&'a Path>,
+    floor: Option<&'a Path>,
+}
+
+fn report_error(error: assurance_report::ReportError) -> ForgeError {
+    ForgeError::AssuranceReport {
+        detail: error.reason,
+    }
+}
+
+/// Derive every disclosure layer from one live certificate graph. JSON/HTML
+/// outputs are passive portraits; only the in-process `LiveAssuranceReport`
+/// capability can evaluate a repository floor.
+fn run_assurance(options: AssuranceRun<'_>) -> Result<ExitCode, ForgeError> {
+    let source = std::fs::read_to_string(options.file).map_err(|source| ForgeError::Io {
+        path: options.file.display().to_string(),
+        source,
+    })?;
+    let parsed = thermite_syntax::parse(&source);
+    if !parsed.is_clean() {
+        return Err(ForgeError::Parse(parsed.errors));
+    }
+    let certificates = crate::cache::without_reuse(|| {
+        check::check_file_with_engine(
+            options.file,
+            CheckOptions {
+                engine: check::EngineSelection::Auto,
+                ..Default::default()
+            },
+        )
+    })?;
+    let toolchain = audit::Toolchain::new(audit::resolve_verus_version()?);
+    let live = assurance_report::build_live_report(
+        &certificates,
+        &parsed.program,
+        &options.file.display().to_string(),
+        &source,
+        options.revision,
+        options.trust,
+        toolchain,
+    )
+    .map_err(report_error)?;
+    let report = live.report();
+    let json = report.normalized_json().map_err(report_error)?;
+    let html = report.render_html().map_err(report_error)?;
+
+    if let Some(path) = options.out_json {
+        std::fs::write(path, &json).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
+    }
+    if let Some(path) = options.out_html {
+        std::fs::write(path, &html).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
+    }
+
+    if options.json {
+        print!("{json}");
+    } else if options.html {
+        print!("{html}");
+    } else if options.items {
+        print!("{}", report.render_items().map_err(report_error)?);
+    } else if let Some(subject) = options.explain {
+        print!("{}", report.render_explain(subject).map_err(report_error)?);
+    } else {
+        print!("{}", report.render_headline().map_err(report_error)?);
+    }
+
+    if let (Some(base_path), Some(base_sha)) = (options.compare, options.base_sha) {
+        let bytes = std::fs::read(base_path).map_err(|source| ForgeError::Io {
+            path: base_path.display().to_string(),
+            source,
+        })?;
+        let base = assurance_report::parse_report_json(&bytes).map_err(report_error)?;
+        let comparison = assurance_report::compare_reports(&base, report, base_sha);
+        let rendered = serde_json::to_string_pretty(&comparison).map_err(|error| {
+            ForgeError::AssuranceReport {
+                detail: format!("comparison serialization failed: {error}"),
+            }
+        })?;
+        if let Some(path) = options.out_comparison {
+            std::fs::write(path, format!("{rendered}\n")).map_err(|source| ForgeError::Io {
+                path: path.display().to_string(),
+                source,
+            })?;
+        }
+        eprintln!("comparison:\n{rendered}");
+    }
+
+    if let Some(floor_path) = options.floor {
+        let bytes = std::fs::read(floor_path).map_err(|source| ForgeError::Io {
+            path: floor_path.display().to_string(),
+            source,
+        })?;
+        let policy = assurance_report::parse_floor_json(&bytes).map_err(report_error)?;
+        let evaluation = live.evaluate_floor(&policy);
+        let rendered = serde_json::to_string_pretty(&evaluation).map_err(|error| {
+            ForgeError::AssuranceReport {
+                detail: format!("floor serialization failed: {error}"),
+            }
+        })?;
+        eprintln!("formal floor:\n{rendered}");
+        if !evaluation.passed {
+            return Ok(ExitCode::from(EXIT_VERIFICATION_FAILURE));
+        }
+    }
+
+    Ok(ExitCode::SUCCESS)
 }
 
 /// Run `forge audit`: emit the project audit manifest v1 (#15;
@@ -4072,6 +4391,76 @@ mod tests {
         ));
         assert!(matches!(
             parse_args(&argv(&["skill", "--write"])),
+            Err(ForgeError::Usage(_))
+        ));
+    }
+
+    #[test]
+    fn parses_assurance_single_run_outputs_and_comparison() {
+        let sha = "a".repeat(40);
+        let args = vec![
+            "assurance".into(),
+            "a.th".into(),
+            "--revision".into(),
+            sha.clone(),
+            "--trust".into(),
+            "pr".into(),
+            "--items".into(),
+            "--out-json".into(),
+            "report.json".into(),
+            "--out-html".into(),
+            "report.html".into(),
+            "--compare".into(),
+            "base.json".into(),
+            "--base-sha".into(),
+            sha.clone(),
+            "--out-comparison".into(),
+            "comparison.json".into(),
+            "--floor".into(),
+            "floor.json".into(),
+        ];
+        assert_eq!(
+            parse_args(&args).unwrap(),
+            Command::Assurance {
+                file: PathBuf::from("a.th"),
+                revision: sha,
+                trust: ReportTrust::UntrustedPullRequest,
+                json: false,
+                html: false,
+                items: true,
+                explain: None,
+                out_json: Some(PathBuf::from("report.json")),
+                out_html: Some(PathBuf::from("report.html")),
+                compare: Some(PathBuf::from("base.json")),
+                base_sha: Some("a".repeat(40)),
+                out_comparison: Some(PathBuf::from("comparison.json")),
+                floor: Some(PathBuf::from("floor.json")),
+            }
+        );
+        assert!(matches!(
+            parse_args(&argv(&["assurance", "a.th"])),
+            Err(ForgeError::Usage(_))
+        ));
+        assert!(matches!(
+            parse_args(&argv(&[
+                "assurance",
+                "a.th",
+                "--revision",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "--compare",
+                "base.json"
+            ])),
+            Err(ForgeError::Usage(_))
+        ));
+        assert!(matches!(
+            parse_args(&argv(&[
+                "assurance",
+                "a.th",
+                "--revision",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "--json",
+                "--html"
+            ])),
             Err(ForgeError::Usage(_))
         ));
     }

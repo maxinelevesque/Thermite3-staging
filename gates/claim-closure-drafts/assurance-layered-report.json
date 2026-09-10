@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "slice_id": "assurance-layered-report",
+  "entries": [
+    {
+      "requirement_id": "REQ-ASSURANCE-LAYERED-REPORT",
+      "witness_id": "W-ASSURANCE-LAYERED-REPORT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/assurance-layered-report.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "6eabe913149ede765273276a11cc87a0cdac50d48c8459a0062c02be484ebbee"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-assurance-report.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-assurance-report.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/assurance-layered-report.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/assurance-layered-report.json",
+          "gates/claim-closure-assurance-report.py",
+          "gates/assurance-report-smoke.py",
+          ".design/engineer-assurance-report-and-level-retirement.md",
+          "forge/src/assurance_report.rs",
+          "forge/src/assurance_v2.rs",
+          "forge/src/engine.rs",
+          "forge/src/cli.rs",
+          "forge/src/main.rs",
+          ".github/workflows/ci.yml",
+          "gates/tests/test_ci_workflow_contract.py",
+          "thermite-skill/src/generate.rs",
+          "THERMITE.skill.md",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-live-floor-case",
+            "mutation": "replace_text",
+            "from": "assurance-report-live-floor",
+            "to": "assurance-report-live-floor-erased",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

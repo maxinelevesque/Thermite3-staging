@@ -1590,6 +1590,30 @@ reference = ["gates/claim-closure-current-assurance.py"]
 conformance_ops = []
 
 [[route]]
+crate_pattern = "gates/claim-closure-assurance-report.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/claim-closure-oracles/assurance-layered-report.json", "forge/src/assurance_report.rs", "forge/src/cli.rs", ".github/workflows/ci.yml"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "forge/src/assurance_report.rs"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["forge/src/assurance_v2.rs", "forge/src/manifest.rs", "forge/src/cli.rs", "gates/claim-closure-assurance-report.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/assurance-report-smoke.py"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["forge/src/assurance_report.rs", "forge/src/cli.rs", "conformance/forge/mix64.th"]
+conformance_ops = ["assurance-report"]
+
+[[route]]
+crate_pattern = "gates/claim-closure-oracles/assurance-layered-report.json"
+design = ".design/engineer-assurance-report-and-level-retirement.md"
+reference = ["gates/claim-closure-assurance-report.py"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "gates/lean-axiom-probe.sh"
 design = ".design/engineer-assurance-report-and-level-retirement.md"
 reference = ["lean/Thermite/AssuranceComposition.lean"]

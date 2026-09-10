@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 (#349), the Rust→Lean obligation exporter: the change to this doc's governed lib roots is additive — `mod lean_smt_export;` in forge/src/main.rs (the SMT-tactic obligation exporter module); the workspace/crate structure is otherwise unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `pub mod classifier;` + `mod strat_tv;`; 2026-06-17 umbrella REQ-7 / AC-12 §6 metrics dashboard `mod metrics;`; stage-1 REQ-10/AC-14 G1 gate seven-verdict test module)
-audited-content-sha256: 70ec3f7ca10b4e768010c87e51668c89f4aa1105bdffccfc7145454f65bc734f (re-pinned 2026-08-17 after adding the private Assurance V2 replay module; workspace topology and dependencies are unchanged. prior: 8003cabf600eb5de32fd3bb04dab75d40bacb6280244fae418e6953844d23fcf)
+audited-content-sha256: f8c8f88ce8770dee3fe085f4c26a0c8a484d9f163d9f3d64e258a471d2a7161b (re-pinned 2026-09-09 after adding the issue #57 assurance-report module and correcting the current Forge module count; workspace topology and dependencies are unchanged. prior: 70ec3f7ca10b4e768010c87e51668c89f4aa1105bdffccfc7145454f65bc734f)
 pin-extract: thermite-syntax/src/lib.rs=code-normalized
 pin-extract: thermite-spec/src/lib.rs=code-normalized
 pin-extract: thermite-lower/src/lib.rs=code-normalized
@@ -220,8 +220,8 @@ thermite-skill/    (lib)   dep: thermite-spec, thermite-syntax; route: generate.
 (Current-tree growth, #262 re-audit: `thermite-verified` (leaf, #60) and
 `thermite-tv` (deps syntax+spec, #144) are members six and seven;
 `thermite-skill` also ships a `src/main.rs` bin (#7); `forge/src/main.rs` now
-registers ~27 modules — `gates/routes.toml` remains the authoritative
-module map.)
+registers 51 modules (including its test-only module) — `gates/routes.toml`
+remains the authoritative module map.)
 
 The dependency DAG (REQ-2) reflects the data flow of the toolchain in
 `thermite-design.md §3`: source text → tokens/AST (`thermite-syntax`) → spec

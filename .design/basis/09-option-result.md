@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: ab50b79280faeb05cab2705dd5d50938122ad7751acd60c97c615740ba88dbdb (re-pinned 2026-09-08 after final issue #56 typed current-authority issuance; Option/Result behavior and derived compatibility results are unchanged. prior: 9b61b3fd0fb0c18e6818a68380bf5d9535f0e54bddedb6ac025a2c75060206eb)
+audited-content-sha256: 15779f3f5824361a39ebb7fe140766560644322042d0bbeff31c6d86e12adf6a (re-pinned 2026-09-09 after adding the registry-driven issue #57 assurance-report command; Option/Result behavior and derived compatibility results are unchanged. prior: ab50b79280faeb05cab2705dd5d50938122ad7751acd60c97c615740ba88dbdb)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

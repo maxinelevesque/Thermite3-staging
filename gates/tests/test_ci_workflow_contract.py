@@ -128,6 +128,48 @@ class CiWorkflowContractTests(unittest.TestCase):
         self.assertIn("if: always()", claim_job)
         self.assertIn("claim-closure-${{ matrix.shard }}-timing", claim_job)
 
+    def test_assurance_report_is_least_privilege_exact_sha_and_commit_pinned(self) -> None:
+        job = self.job("assurance-report")
+        self.assertRegex(job, r"(?m)^    permissions:\n      contents: read$")
+        for forbidden in (
+            "pull-requests: write",
+            "checks: write",
+            "pages: write",
+            "id-token: write",
+            "actions/download-artifact",
+        ):
+            self.assertNotIn(forbidden, job)
+        self.assertIn("ref: ${{ github.sha }}", job)
+        self.assertIn("persist-credentials: false", job)
+        self.assertIn('--revision "${{ github.sha }}"', job)
+        self.assertEqual(job.count("conformance/forge/mix64.th"), 2)
+        self.assertIn("BASE_SHA: ${{ github.event.pull_request.base.sha }}", job)
+        self.assertIn('git archive "$BASE_SHA"', job)
+        self.assertIn('--revision "$BASE_SHA"', job)
+        self.assertIn('--base-sha "$BASE_SHA"', job)
+        self.assertIn("--out-comparison assurance-artifact/comparison.json", job)
+        self.assertIn("no comparison — exact base report unavailable", job)
+        self.assertIn("trust=pr", job)
+        self.assertIn("trust=protected", job)
+        self.assertIn("UNTRUSTED PR DIAGNOSTIC", job)
+        self.assertIn("regenerated after push", job)
+        self.assertIn("Install elan for live Lean replay", job)
+        self.assertIn("Prepare mixed-route Lean replay modules", job)
+        self.assertIn("lake exe cache get", job)
+        self.assertIn("Thermite.Stabilize", job)
+        self.assertLess(
+            job.index("Prepare mixed-route Lean replay modules"),
+            job.index("Generate exact-SHA assurance portrait"),
+        )
+        self.assertIn("retention-days: 14", job)
+        self.assertIn("if: always()", job)
+        self.assertLess(job.index("Upload complete diagnostic portrait"), job.index("Enforce optional live formal floor"))
+
+        uses = re.findall(r"(?m)^        uses: ([^\s#]+)", job)
+        self.assertTrue(uses, "assurance report job must declare its actions")
+        for action in uses:
+            self.assertRegex(action, r"^[^@]+@[0-9a-f]{40}$")
+
     def test_ci_optimization_landed_after_rfc10_without_rewriting_it(self) -> None:
         merged_ci_pr = "92310867"
         post_rfc10_staging = "15d362df"

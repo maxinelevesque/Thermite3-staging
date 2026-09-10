@@ -13,6 +13,74 @@ timing_source = "gates/fixtures/ci-test-timings-run-31837152080-attempt2.tsv"
 # negative checks use 1.500s until the next measured timing snapshot.
 # RFC-13 tests use the same reviewed-estimate policy: 0.007s for in-process
 # checks and 0.500s for compiler or Lean subprocess checks.
+# Issue #57 assurance-report unit/CLI parser tests are in-process and use the
+# same 0.007s reviewed estimate until the next measured timing snapshot.
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::comparison_vocabulary_keeps_formal_changes_separate"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::diagnostic_json_is_bounded_and_rejects_unknown_report_fields"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::exact_base_comparison_separates_formal_movements"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::floors_consume_only_live_common_frontier_and_exact_fiber"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::historical_and_policy_rejected_portraits_remain_loud_nonclaims"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::html_escapes_source_controlled_content_and_carries_restrictive_csp"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::one_validated_object_drives_all_disclosure_layers_deterministically"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::population_and_presentation_tampering_fail_validation"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::source_population_includes_certified_effect_and_protocol_declarations"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "forge::bin/forge cli::tests::parses_assurance_single_run_outputs_and_comparison"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "forge::bin/forge engine::tests::lean_scratch_diagnostics_are_process_and_temp_root_stable"
+timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]
 bucket = 1

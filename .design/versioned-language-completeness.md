@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: ebc6e8e1782afa4f05667763945607552beeec3fed2da3ce1d783c8be7ff4db7 (re-pinned 2026-09-09 after CI identified and live replay refreshed the exact 127 receipts affected by the late `forge/src/check.rs` change. prior: 869c1bd442e885bc7bd52a17e72ab748ca850ce82e708c2c45944f5ce28ce795)
+audited-content-sha256: b9ef376eafbc243451b17e01986b5d0ece7bf7e224422a4f35e7249a4adf8f9d (re-pinned 2026-09-09 after the final 583-claim materialization incorporated the AC-17 CI publication receipt. prior: 641e366aff94971baba8dd2be7d0b1c453b815cf7a8789c4202b5c3c06472784)
 
 ## Summary
 

@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: 92396428567edc6940a9e2845217f5ff4c2ea3c6 (re-pinned 2026-06-16, user-authorized: the only change to this doc's governed files since the prior pin is the additive stage-1 forge-tier increment 2a — the new Item::Forge surface + inert Item::Forge match arms, verified net-additive with no substantive removal of existing v1 logic (git log <main>..HEAD = the 8 forge commits); the v1 behavior this doc governs is unchanged, and the new forge-tier surface is specified in .design/stage1-forge-tier.md / REQ-S1-3)
-audited-content-sha256: ddc51d54340f887e2669ced67497b8bc27323dd94622bcedd1bd58e653eda72e (re-pinned 2026-09-08 after issue #56 replaced generated Level authority guidance with current-assurance guidance. prior: fe1432532d24828f162a62c787474dccadf104f7dfb536f4ff2f7e89ee8c1d65)
+audited-content-sha256: 317fbc9c0f4cfc832b041fb409e6d74e8aab4b0b7fadf1431fa34a2f116afe0b (re-pinned 2026-09-09 after adding the registry-driven issue #57 assurance-report method to Forge help and the committed skill. prior: ddc51d54340f887e2669ced67497b8bc27323dd94622bcedd1bd58e653eda72e)
 governs: thermite-skill/src/generate.rs
 thesis-refs:
   - thermite-design.md §2.2
@@ -57,7 +57,9 @@ so this removes the old cycle concern without exposing Forge's private parsed
 `Command` values. The build record now advertises the paired
 `--compose-export`/`--compose-shell` rich-state L3 surface and describes its
 output as an exact-source link/composition bundle (#104); regenerating the skill
-keeps that synopsis identical in the CLI and agent reference.
+keeps that synopsis identical in the CLI and agent reference. The issue #57
+`assurance` method follows the same registry path, so its layered-report synopsis
+appears in Forge help and the committed skill from one metadata record.
 
 The crate exposes `generate() -> String` (the library API) and a `thermite-skill`
 binary (`--emit`, `--check-budget`) that the CI gauntlet runs. The committed

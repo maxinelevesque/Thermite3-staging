@@ -160,6 +160,11 @@ forge_methods! {
         usage: "forge audit <file> [--json] [--meaning] [--metrics]",
         purpose: "Show assurance, boundaries, meaning, and metrics.",
     }
+    Assurance {
+        name: "assurance",
+        usage: "forge assurance <file> --revision <sha> [--trust local|pr|protected] [--json|--html|--items|--explain <item|project>] [--out-json <path>] [--out-html <path>] [--compare <base.json> --base-sha <sha> --out-comparison <path>] [--floor <policy.json>]",
+        purpose: "Emit, compare, and optionally floor the layered assurance report.",
+    }
     Repair {
         name: "repair",
         usage: "forge repair <file> [item] [--json]",

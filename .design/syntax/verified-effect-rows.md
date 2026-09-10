@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 4b02e78a2126be8403c50b906f60c056b7536f068cf6976cc39d2546a17332ea (re-pinned after issue #145 added two reviewed RFC-12 nested-region fixture token sites; effect semantics are unchanged. prior: 57413193a95bf3143c8ec665ae6a8d68951b23ff35edddab659c979fe28324c1)
+audited-content-sha256: dfca9b3d1815d6bc7ff4bfb8c803d7ecde50e0d443385f222e3df3efce5223a2 (re-pinned 2026-09-09 after issue #57 added two reviewed structured-diagnostic path tokens in Forge CLI tests; effect semantics are unchanged. prior: 4b02e78a2126be8403c50b906f60c056b7536f068cf6976cc39d2546a17332ea)
 -->
 
 ## Summary

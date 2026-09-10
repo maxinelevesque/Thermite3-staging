@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: 6b15c8e76ec03df4cf90de2a8f9bb9072727e0f25326b6ea79e9a6f610c187e7 (re-pinned 2026-09-09 after correcting stale authority terminology in Forge comments; proof-backend semantics are unchanged. prior: eaf336d9b5a61853150514303cc0826fab473e8929d96a499091d7ca69d98530)
+audited-content-sha256: 69334c52aa23d2fd88fe164606822c3ce9e33c1e815aa724fae61f4694ac5c87 (re-pinned 2026-09-09 after normalizing process-specific Lean scratch paths at the engine boundary; semantic diagnostics and proof behavior are unchanged. prior: 6b15c8e76ec03df4cf90de2a8f9bb9072727e0f25326b6ea79e9a6f610c187e7)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and
@@ -3011,6 +3011,18 @@ Per increment (this doc's own ACs are statement-completeness, discharged by revi
   are UNPERTURBED; the THREE pins are authored kernel-checked, each pinning the poisoned
   discharge AND the faithful behavior (R-CHAR-3: fixtures hand-authored, never regenerated from
   the exporter).
+
+### Deterministic Lean failure diagnostics
+
+`LeanEngine::run_lake` preserves Lean's semantic failure text, source coordinates, and
+goals, but replaces the exact generated scratch path (and its basename fallback) with
+`<forge-lean-scratch>.lean` before constructing `Reason::ProofFailure`. The generated
+path carries a process id and nonce for collision avoidance; it is operational identity,
+not proof evidence. Normalizing it at the engine boundary keeps certificate authority
+digests and assurance-report bytes stable across independent processes and temporary
+directory roots. The unit regression compares distinct PID/root paths, and
+`gates/assurance-report-smoke.py` runs the same live mixed-route source in two separate
+Forge processes and requires byte-identical normalized JSON and HTML.
 
 ## REQ status
 

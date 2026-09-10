@@ -265,6 +265,7 @@ through checked reconstruction.
 - `forge new <name>` — Create a pinned project.
 - `forge check <file> [--json] [--legacy-inspection-json] [--level l2|l3] [--rlimit FLOAT] [--mutation-floor FLOAT] [--engine auto|verus|lean|nlsat|forge|bv]` — Certify; auto-routes eligible BV and EPR clauses.
 - `forge audit <file> [--json] [--meaning] [--metrics]` — Show assurance, boundaries, meaning, and metrics.
+- `forge assurance <file> --revision <sha> [--trust local|pr|protected] [--json|--html|--items|--explain <item|project>] [--out-json <path>] [--out-html <path>] [--compare <base.json> --base-sha <sha> --out-comparison <path>] [--floor <policy.json>]` — Emit, compare, and optionally floor the layered assurance report.
 - `forge repair <file> [item] [--json]` — Retry timeout-lowered items.
 - `forge review <file> [item] [--json] [--reviewer <cmd>]` — Emit contracts for intent review.
 - `forge build <file> [--level l1|l3] [--export <fn>] [--compose-export <fn> --compose-shell <file.rs>] [--crate-name <name>] [--entry <fn>] [--out <path>] [--target std|kernel] [--json] [--no-sandbox] [--sandbox-self-test]` — Build L1 checked Rust or an exact-source L3 link/composition bundle.

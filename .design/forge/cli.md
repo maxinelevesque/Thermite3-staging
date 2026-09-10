@@ -4,7 +4,7 @@
 tier: 3-component
 status: shipped
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 / AC-8 (#349), the automated Rust→Lean obligation exporter: the change to this doc's governed file (cli.rs) is the additive `forge smt-export [<file>] [--out <path>]` subcommand (`Command::SmtExport` → `run_smt_export`, emitting the `(P_prod) ⟺ (P_ref)` `by smt` Lean theorems + `#print axioms` probes via `lean_smt_export.rs`); every other subcommand + flag parse is unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-21 stage-2 REQ-8 / AC-8 (#330) `forge strat-faithful-tv`; 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `forge strat-tv` + `ForgeError::StratDifferential`; 2026-06-18 umbrella REQ-2c / AC-4 rotating-seed `--seed` flag on `forge tv`; §6 metrics dashboard `--metrics` value)
-audited-content-sha256: ba02b55e18365b18641991afb2e39d814468d0d07c441cff5c107aaf2260f21c (re-pinned 2026-09-08 after final issue #56 schema-current and compatibility-inspection qualification. prior: 9aa748d83d2f1dfec0492975429229bc7417059e824a4f62ff5f17d3590ca816)
+audited-content-sha256: ad0a73584d0ce082b011bdad2a4373ad681e66c82785033e73efbdf8b77e2c28 (re-pinned 2026-09-09 after adding the versioned issue #57 assurance-report command and outputs. prior: ba02b55e18365b18641991afb2e39d814468d0d07c441cff5c107aaf2260f21c)
 governs: forge/src/cli.rs
 thesis-refs:
   - thermite-design.md §5
@@ -15,7 +15,8 @@ thesis-refs:
 ## Summary
 
 `forge/src/cli.rs` is the command surface of the `forge` driver. Its hand-rolled
-argument matcher dispatches 18 top-level methods — `new`, `check`, `audit`,
+argument matcher dispatches 19 top-level methods — `new`, `check`, `audit`,
+`assurance`,
 `repair`, `review`, `build`, `tv`, `exec-tv`, `strat-tv`,
 `strat-faithful-tv`, `g2-gate`, `body-tv`, `goal`, `battery`, `edit`, `fill`,
 `smt-export`, and `skill` —
@@ -38,6 +39,17 @@ oracles. That document has no cache, audit-admission, floor, build, or
 certification input path. Exit decisions and project certification read typed
 `CurrentAssurance`; neither a historical row nor the opt-in compatibility
 projection can become successful CLI authority through its displayed rung.
+
+Issue #57 adds `forge assurance <file> --revision <sha>`. One live automatic
+certification pass constructs a typed `LiveAssuranceReport`; the default view is
+the boundary-qualified project headline, while `--items`, `--explain`, `--json`,
+and `--html` expose progressively deeper views of that same object. `--out-json`
+and `--out-html` write both retained artifacts without rerunning certification.
+`--compare <base.json> --base-sha <sha> --out-comparison <path>` accepts only a
+validated report bound to that exact base revision and keeps stronger, weaker,
+incomparable, fiber, boundary, residual, population, historical, and policy/schema
+movements distinct. `--floor <policy.json>` is evaluated only through the
+non-serializable live capability; uploaded JSON cannot become floor authority.
 
 The public method names, synopses, and short descriptions live in
 `thermite_skill::ForgeMethod`. The parser recognizes its first argument through
@@ -86,6 +98,10 @@ What the old doc never saw, grouped (each verb cites its issue in the code):
   `EngineSelection::Auto`. The ordinary backend pass is followed by per-clause
   checked BV and EPR reconstruction when the source clause is eligible.
   `--engine verus` retains the legacy byte-identical diagnostic path.
+- **Layered assurance report** — `forge assurance` (#57) emits the exact-source,
+  exact-build V2 project portrait as headline, grouped/items, explain, normalized
+  JSON, and CSP-hardened HTML views; it also produces exact-base comparison
+  artifacts and optionally enforces a live formal floor.
 
 ## Requirements
 
@@ -187,6 +203,13 @@ What the old doc never saw, grouped (each verb cites its issue in the code):
   `manifest::cert_certifies`).
   Source: `thermite-design.md` §5.2 ("displayed on every build");
   `.design/forge/degrade-ladder.md` REQ-5/REQ-6.
+- REQ-12 (layered assurance report, #57): `run_assurance` performs one live
+  `check_file_with_engine` pass and derives every disclosure/output layer from
+  the resulting `LiveAssuranceReport`. Exact-base comparison is diagnostic and
+  rejects stale/schema-skewed input; a formal floor consumes only the live
+  capability and returns `EXIT_VERIFICATION_FAILURE` without suppressing output
+  artifacts. Source: `.design/engineer-assurance-report-and-level-retirement.md`
+  REQ-13 through REQ-16.
 
 ## Acceptance criteria
 
@@ -221,6 +244,12 @@ What the old doc never saw, grouped (each verb cites its issue in the code):
   `forge skill --check` accepts a fresh canonical file and rejects stale bytes;
   `forge skill --claude` starts with valid `name` and `description`
   frontmatter.
+- AC-10: `forge assurance` writes deterministic JSON and HTML from one live
+  certification pass, exposes grouped and explained human layers, emits an
+  exact-base comparison artifact, and rejects an optional unmet live formal
+  floor only after retaining the report. Verification:
+  `gates/claim-closure-assurance-report.py` and
+  `gates/assurance-report-smoke.py`.
 
 ## Architecture
 
@@ -236,7 +265,9 @@ The methods fall into five families, each with its own exit-code convention
    level/engine route of REQ-8, then `AssuranceManifest::aggregate` for the
    headline + exit), `audit` (`run_audit`: the SAME default pipeline projected
    into `AuditManifest`, exit mirrors the headline), `repair` (`run_repair`:
-   exit 0 iff `all_upgraded`).
+   exit 0 iff `all_upgraded`), and `assurance` (`run_assurance`: one live
+   certificate graph feeds every retained disclosure layer; an optional live
+   formal floor can produce the verification-failure exit after output).
 2. **TV deeper audits** — `tv`/`exec-tv`/`body-tv`
    (`run_tv`/`run_exec_tv`/`run_body_tv`): opt-in, NOT folded into `forge
    check`; exit fails only on a DIVERGENT finding; Unverifiable/Skipped are
@@ -295,7 +326,7 @@ a reader cannot mistake it for an oracle field.
 
 | REQ | Status | Evidence |
 |---|---|---|
-| REQ-1 (18-method command surface) | SHIPPED | `fn parse_args in cli.rs` resolves every entry in `ForgeMethod::ALL`, including `skill`, then exhaustively matches it. Unknown names return `ForgeError::Usage` with generated usage text. |
+| REQ-1 (19-method command surface) | SHIPPED | `fn parse_args in cli.rs` resolves every entry in `ForgeMethod::ALL`, including `assurance` and `skill`, then exhaustively matches it. Unknown names return `ForgeError::Usage` with generated usage text. |
 | REQ-2 (hand-rolled argv matcher) | SHIPPED | `fn parse_args in cli.rs` uses a registry lookup plus per-method flag loops; `forge/Cargo.toml` has no CLI parser dependency. Consumer: `fn dispatch in cli.rs`. |
 | REQ-3 (`ForgeError` aggregation) | SHIPPED | `enum ForgeError in cli.rs`: `Parse(Vec<SyntaxError>)`/`Spec`/`Effects`/`Lower` + the verus/kani/rustc/reviewer Absent-Spawn-Output families + `Io`/`Usage` + `SoundnessAlarm(crate::engine::Disagreement)`; `impl fmt::Display` forwards inner diagnostics. Non-test consumers: every driven module returns it (`check::check_file -> Result<_, ForgeError>`, `pub fn check_disagreement in engine.rs` surfaces the alarm). Verification: `aggregation_preserves_inner_diagnostics`. |
 | REQ-4 (human + `--json` dual rendering) | SHIPPED | `fn run_check in cli.rs`: `serde_json::to_string_pretty(&certs)` under `--json`, else `render_human` per cert + `render_assurance`; parallel paths in `run_audit`/`run_repair`/`run_review`/`run_build`/`run_tv`/`run_exec_tv`/`run_body_tv`; stderr for diagnostics (e.g. `run_review`'s `eprintln!` keeps `--json` stdout clean). Verification: `run_check_json` harness parses stdout whole in `check_conformance.rs`. |
@@ -305,6 +336,7 @@ a reader cannot mistake it for an oracle field.
 | REQ-8 (`check` flags + engine routing) | SHIPPED | `Command::Check { file, json, level, rlimit, mutation_floor, engine }`; the parser defaults `engine` to `Auto`, and `fn run_check` sends normal L3 checks through `check_file_with_engine` for per-clause BV/EPR routing. Explicit `--engine verus` uses the byte-stable legacy entries; `(CheckLevel::L2, _)` uses `check_l2_file`. Verification: the flag parser tests, `engine_verus_flag_is_byte_identical_oracle`, automatic-route tests, and the engine disagreement halt. |
 | REQ-9 (usage-banner currency) | SHIPPED | `fn usage_text in cli.rs` iterates `ForgeMethod::ALL`; method names and synopses share their source with parsing and the generated skill. |
 | REQ-10 (project assurance display, #10) | SHIPPED | `fn render_assurance in cli.rs` prints per-fn `lowered-assurance:` lines + the `project assurance:` headline; `run_check` computes `AssuranceManifest::aggregate(&certs)` once for both the display and the exit gate. Verification: `render_assurance_shows_headline_and_lowered_flags`, `render_assurance_shows_failed_headline`. |
+| REQ-12 (layered assurance report, #57) | SHIPPED | `fn run_assurance in cli.rs` produces headline/grouped/explain/JSON/HTML views from one live admitted report, writes exact-base comparison JSON, and evaluates floors only through the live capability. Verification: `gates/claim-closure-assurance-report.py`, `gates/assurance-report-smoke.py`. |
 | REQ-11 (`forge skill`) | SHIPPED | `Command::Skill` dispatches to `run_skill`; canonical and Claude-compatible output are sourced from `thermite-skill`, with stdout, write, and check modes covered by unit tests. |
 
 ## Open questions

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "probe": "assurance-layered-report",
+  "cases": [
+    {"id": "assurance-report-mixed-live", "expected_exit": 0},
+    {"id": "assurance-report-layers", "expected_exit": 0},
+    {"id": "assurance-report-declaration-population", "expected_exit": 0},
+    {"id": "assurance-report-tamper", "expected_exit": 0},
+    {"id": "assurance-report-comparison", "expected_exit": 0},
+    {"id": "assurance-report-movement-vocabulary", "expected_exit": 0},
+    {"id": "assurance-report-historical-policy", "expected_exit": 0},
+    {"id": "assurance-report-html", "expected_exit": 0},
+    {"id": "assurance-report-bounded-json", "expected_exit": 0},
+    {"id": "assurance-report-live-floor", "expected_exit": 0},
+    {"id": "assurance-report-ci-contract", "expected_exit": 0},
+    {"id": "assurance-report-skill-fresh", "expected_exit": 0}
+  ]
+}

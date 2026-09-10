@@ -19925,6 +19925,38 @@ target = "gates/claim-closure-current-assurance.py"
 note = "hostile executable cases cover Level edits, current schema confusion, historical inspection, portfolio splicing, cache replay, and audit projection"
 
 [[requirement]]
+id = "REQ-ASSURANCE-LAYERED-REPORT"
+title = "Layered exact-SHA engineer assurance reporting"
+owner = ".design/engineer-assurance-report-and-level-retirement.md"
+status = "shipped"
+scope = "ci"
+summary = "One live admitted assurance object produces deterministic headline, drill-down, explain, normalized JSON, and injection-safe HTML layers; exact-base comparison keeps formal movements separate, formal floors consume only live common-frontier authority, and an untrusted read-only CI job uploads bounded exact-SHA diagnostics without acquiring certification authority."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/assurance-layered-report.json", expected = ["accepted"], reviewed_summary_sha256 = "6eabe913149ede765273276a11cc87a0cdac50d48c8459a0062c02be484ebbee" }
+remaining_scope = "The alpha.11 cut and post-Thermite-3 research reassessment are subsequent roadmap stages, not report scope."
+contributors = ["forge/src/assurance_report.rs", "forge/src/cli.rs", ".github/workflows/ci.yml"]
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/engineer-assurance-report-and-level-retirement.md"
+note = "REQ-13 through REQ-16 and AC-9 through AC-13/AC-17 define the report, comparison, CI publication, and floor contract"
+[[requirement.evidence]]
+kind = "symbol"
+target = "assurance_report::build_live_report"
+note = "constructs all disclosure layers from exact-source live current authority and a complete source-ordered population"
+[[requirement.evidence]]
+kind = "symbol"
+target = "assurance_report::LiveAssuranceReport::evaluate_floor"
+note = "non-serializable live capability gates exact-fiber floors through common-frontier dominance and checked project lift"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/claim-closure-assurance-report.py"
+note = "executable cases cover deterministic layers, hostile tampering, comparison vocabulary, bounded JSON, HTML injection, live-only floors, CI least privilege, and generated skill freshness"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/tests/test_ci_workflow_contract.py"
+note = "the stable assurance-report job is read-only, exact-SHA, action-pinned, non-republishing, bounded, and uploads diagnostics before enforcing an optional floor; PR run 34402490501 job 102637545245 published retained artifact 10124143636 end to end for AC-17"
+
+[[requirement]]
 id = "REQ-SPEC-CRASH-MODEL"
 title = "The crash model is a named per-device assumption"
 owner = ".design/rfcs"
