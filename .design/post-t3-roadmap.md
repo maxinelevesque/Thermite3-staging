@@ -94,17 +94,17 @@ lanes remain provisional.
 - [x] AC-6: (REQ-5) Issue #56's completion gate reports zero production
   `Level` decisions, rejects current-looking legacy rows and portfolio/cache
   splices, and leaves inspect-only historical evidence non-authoritative.
-- [ ] AC-7: (REQ-6) Issue #57's deterministic snapshots and hostile
+- [x] AC-7: (REQ-6) Issue #57's deterministic snapshots and hostile
   stale/tampered/injection/fork cases pass, and every disclosure layer is
   derived from the same validated report object.
-- [ ] AC-8: (REQ-7) Every product-spine pull request records its exact reviewed
+- [x] AC-8: (REQ-7) Every product-spine pull request records its exact reviewed
   head, qualification result, required CI result, and merge commit; any
   post-review head change invalidates the prior review receipt.
-- [ ] AC-9: (REQ-8) Main contains merged #55, #56, and #57 before the alpha.11
+- [x] AC-9: (REQ-8) Main contains merged #55, #56, and #57 before the alpha.11
   version commit; locked metadata reports one workspace version; all refreshed
   receipts are content-current; required CI is green; and no alpha.11 tag or
   GitHub Release is created.
-- [ ] AC-10: (REQ-9, REQ-10) The post-alpha.11 checkpoint records a deliberate
+- [x] AC-10: (REQ-9, REQ-10) The post-alpha.11 checkpoint records a deliberate
   next selection or pause, with #58–#63, #146, RFC-14, the composition
   experiment, relational contracts, formal-methods work, and issue #45 all
   classified rather than silently treated as queued implementation.
@@ -197,6 +197,57 @@ implementation by default. The checkpoint may promote one of the relational,
 crash-consistency, experimental, Iroh, or proof-boundary lanes only after naming
 the question, expected evidence, and opportunity cost against the assurance
 sequence.
+
+### Post-alpha.11 reassessment (2026-09-09)
+
+The fixed product spine is complete. The table below is the durable boundary
+receipt; GitHub reported every named required check successful on the recorded
+head before squash merge.
+
+| Boundary | Exact admitted/reviewed head | Qualification and review | Final CI | Merge on `main` |
+| --- | --- | --- | --- | --- |
+| #55 / PR #157 | `7f6b2c4d581b32f46644aac098e3efdfb0ecf704` | 581 deterministic claim closures, complete project-composition qualification, and cold Opus 4.8 `APPROVE WITH FOLLOW-UPS` with no blocker | run `34287641676`, 35/35 successful or intentionally skipped | `c5ec03c253bb688c02dc3af950f79def41e0ef47` |
+| #56 / PR #158 | `b139f77a2d7e6beb20261dd40ab8ec4b3a246958` | 582 deterministic claim closures, full authority-migration qualification, zero production `Level` decisions, and cold Opus 4.8 `APPROVE WITH FOLLOW-UPS` with no blocker | run `34343131320`, 35/35 successful or intentionally skipped | `745ed990e033ca2042f8f9c924c81081f401715d` |
+| #57 / PR #159 | `01eec97e540bd84ed748fd139c5eca090a4bf482` | 583 deterministic claim closures, full report/CI qualification, retained first-run publication evidence, and cold Opus 4.8 `APPROVE WITH FOLLOW-UPS` with no blocker | run `34411473052`, 36/36 successful or intentionally skipped | `1479d4b3785982093e8273525901344d01dd0c0b` |
+| alpha.11 / PR #160 | `921a4468975a7ef189cb0c1651db4b6f477c30c1` | locked metadata, format, workspace check, 583 refreshed closures, full completeness replay, and structural qualification | run `34426428509`, 36/36 successful or intentionally skipped | `ffacc03a9f68d2d0dc5f851bc26b06af775012b9` |
+
+For #57 specifically, `LiveAssuranceReport` remains the non-serializable
+validated capability from which all four disclosure layers are rendered. Unit
+and live-process evidence covers byte determinism, complete-population and
+presentation tampering, missing/stale exact-base comparison, schema and policy
+skew, HTML injection, bounded/deep/unknown JSON, untrusted publication, and
+live-capability-only floor evaluation. The first PR artifact receipt is recorded
+in `.design/engineer-assurance-report-and-level-retirement.md`.
+
+Alpha.11 followed the intended release boundary: #55, #56, and #57 were already
+merged and their issues closed; `Cargo.toml` and every workspace package entry
+in `Cargo.lock` report `3.0.0-alpha.11`; all 583 content-bound receipts were
+rematerialized and the governed audit pin refreshed. The repository has neither
+an alpha.11 tag nor a GitHub Release.
+
+The checkpoint compares four factors qualitatively: immediate product value,
+research uncertainty, prerequisite maturity, and validation cost. `Promote`
+means one next candidate, not permission to start every dependent item.
+
+| Lane | Product value | Research uncertainty | Prerequisite maturity | Validation cost | Checkpoint disposition |
+| --- | --- | --- | --- | --- | --- |
+| #58 cross-version/procedure transport | High: makes assurance comparable across compiler, model, and procedure evolution and forms the basis for #59 and #63 | Medium: simulation and incompatibility witnesses need a precise authority boundary | Ready: #48 and #54 are closed and the current authority/report carriers exist | High: hostile skew cases, transport proofs, receipts, and cross-version fixtures | **Promote as the next implementation candidate, beginning with a design checkpoint.** No implementation starts in this checkpoint. |
+| #59 policy migration/report comparability | High once policies evolve | Medium | Partly ready; #54 and #57 are closed, but #58 should establish the transport vocabulary first | High | Defer until #58 lands and exposes the exact migration obligations. |
+| #60 workspace/build-matrix populations | High for multi-package, feature, target, and platform use | Medium | Ready at the project-report layer, but should consume stable transport semantics | High because the population matrix grows quickly | Defer behind #58; reassess against concrete multi-workspace demand before #59/#60 ordering is fixed. |
+| #61 historical discovery/re-certification | Medium; valuable for legacy estates but not current authority | Low to medium | Ready: #56 and #57 are closed | Medium | Demand-driven defer; do not revive legacy `Lx` records as modern authority. |
+| #62 signed pre-merge attestations | High integrity value for distributed publication | High threat-model and operational uncertainty | The report carrier exists, but protected regeneration is currently authoritative and PR artifacts are intentionally untrusted | High security and key-lifecycle cost | Research/design incubation; require a threat model before implementation. |
+| #63 organization-level floors | Medium to high only with real multi-repository governance demand | High policy, inheritance, exception, and delegation complexity | All original dependencies are closed, but #58/#59 should precede it | High | Defer until transport and policy migration are proved and an organizational consumer exists. |
+| #146 RFC-12 effect-trace mutation observables | High bounded correctness value for detecting weakened/deleted/redirected promises | Medium | Ready after #57 supplied the comparison surface | Medium | Promote as the bounded correctness follow-up after #58, unless a small design probe first shows an invalid-proof risk requiring earlier interruption. |
+| RFC-14 / #154 crash clause | Potentially high for persistence protocols | High: sector atomicity, flush, recovery relation, and trust boundary remain unsettled | Not ready for code | Very high | Continue design incubation; no implementation commitment. |
+| Composition experiment / #155 | High epistemic value for whether the method improves independent contract composition | Medium experimental risk | Preregistered, but frozen task packs, stripped comparison library, runner, and scorer are not built | Very high: 36 model sessions plus harness and scoring | Preserve the preregistration and schedule only with an explicit experiment budget; keep off the product critical path. |
+| Relational contracts | Tier A frame and `hides` work has credible near-term value; probabilistic, dynamic-authority, and certificate-algebra work is longer horizon | Low to very high by tier | Tier A is conceptually mature; Tier B/C are not | Medium for Tier A, very high beyond it | After #58, consider a separate Tier A frame-lemma design. Keep Tier B/C as research. |
+| Formal-methods / trust-boundary survey | High as design discipline, low as a standalone feature | Medium because the survey's historical `L0`–`L3` vocabulary no longer matches current certificates | Source material exists but needs translation | Medium | Refresh terminology into current certificate coordinates when a consuming design needs it; do not implement directly from the archival taxonomy. |
+| Fully verified Iroh / #45 | High as a pressure test of the architecture, low as a near-term deliverable | Very high across async failure, cancellation, temporal/network semantics, QUIC/TLS, runtime, and OS trust | Not ready | Multi-year | Retain as a long-horizon pressure test; extract questions for protocol designs, but do not schedule full implementation. |
+
+The deliberate next selection is therefore **#58**, with design refinement
+before code. #146 is the next bounded correctness follow-up. All other rows
+remain deferred or incubated exactly as classified above; this checkpoint does
+not queue them and grants no external-sharing or merge authority.
 
 ## Residual trust
 
