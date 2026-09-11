@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 00ed23b27d9605b943d8c38aeb996514dd8a1514b2f28bead4b0da16e3a0ffac (re-pinned 2026-09-09 after the alpha.11 workspace-version change refreshed all 583 content-bound claim receipts. prior: b9ef376eafbc243451b17e01986b5d0ece7bf7e224422a4f35e7249a4adf8f9d)
+audited-content-sha256: cdabe99a22f02debf219e31dc385dade9cc894d2819479c7f9577153f00616d5 (re-pinned 2026-09-11 after the generated RFC-58 Lean replay bridge refreshed the governed claim ledger. prior: 10236f17b172d0bac67cd6f85e6289f10a94e79109175ac029e7d0d10acb12e5)
 
 ## Summary
 

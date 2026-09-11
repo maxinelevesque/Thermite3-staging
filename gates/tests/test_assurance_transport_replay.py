@@ -1,4 +1,5 @@
 import importlib.util
+import re
 import unittest
 from pathlib import Path
 
@@ -16,3 +17,21 @@ class AssuranceTransportReplayTest(unittest.TestCase):
     def test_assurance_transport_replay_is_clean(self):
         gate = load_gate()
         self.assertEqual(gate.validate(Path(__file__).parents[2]), [])
+
+    def test_transport_decisions_do_not_read_archival_levels(self):
+        root = Path(__file__).parents[2]
+        for relative in (
+            "forge/src/assurance_transport.rs",
+            "lean/Thermite/AssuranceTransport.lean",
+            "lean/Thermite/AssuranceTransportReplay.lean",
+            "gates/assurance-transport-replay.py",
+        ):
+            text = (root / relative).read_text(encoding="utf-8")
+            executable = "\n".join(
+                line
+                for line in text.splitlines()
+                if not line.lstrip().startswith(("//!", "/--", "--"))
+            )
+            self.assertIsNone(
+                re.search(r"\bLevel\b|\bL[0-4]\b", executable), relative
+            )

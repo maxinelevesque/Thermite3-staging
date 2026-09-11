@@ -1566,6 +1566,12 @@ reference = ["lean/Thermite/CertificationMetatheory.lean", "lean/Thermite/Implem
 conformance_ops = ["identity transport", "composition", "predecessor classification"]
 
 [[route]]
+crate_pattern = "lean/Thermite/AssuranceTransportReplay.lean"
+design = ".design/checked-cross-version-and-cross-procedure-assurance-transport.md"
+reference = ["lean/Thermite/AssuranceTransport.lean", "gates/assurance-transport-replay.py", "gates/assurance-transport-replay.json", "forge/src/assurance_transport.rs"]
+conformance_ops = ["generated replay", "outcome mutation rejection"]
+
+[[route]]
 crate_pattern = "forge/src/assurance_transport.rs"
 design = ".design/checked-cross-version-and-cross-procedure-assurance-transport.md"
 reference = ["lean/Thermite/AssuranceTransport.lean", "gates/assurance-transport-replay.py", "gates/assurance-transport-replay.json"]
@@ -1574,19 +1580,31 @@ conformance_ops = ["canonical receipt", "graph completeness", "hostile mutation"
 [[route]]
 crate_pattern = "gates/assurance-transport-replay.py"
 design = ".design/checked-cross-version-and-cross-procedure-assurance-transport.md"
-reference = ["gates/assurance-transport-replay.json", "forge/src/assurance_transport.rs", "lean/Thermite/AssuranceTransport.lean"]
+reference = ["gates/assurance-transport-replay.json", "forge/src/assurance_transport.rs", "lean/Thermite/AssuranceTransport.lean", "lean/Thermite/AssuranceTransportReplay.lean"]
 conformance_ops = ["canonical bytes", "outcome matrix"]
 
 [[route]]
 crate_pattern = "gates/assurance-transport-replay.json"
 design = ".design/checked-cross-version-and-cross-procedure-assurance-transport.md"
-reference = ["gates/assurance-transport-replay.py", "forge/src/assurance_transport.rs"]
+reference = ["gates/assurance-transport-replay.py", "forge/src/assurance_transport.rs", "lean/Thermite/AssuranceTransportReplay.lean"]
 conformance_ops = []
 
 [[route]]
 crate_pattern = "gates/tests/test_assurance_transport_replay.py"
 design = ".design/checked-cross-version-and-cross-procedure-assurance-transport.md"
 reference = ["gates/assurance-transport-replay.py", "gates/assurance-transport-replay.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-assurance-transport.py"
+design = ".design/checked-cross-version-and-cross-procedure-assurance-transport.md"
+reference = ["gates/claim-closure-oracles/assurance-transport.json", "lean/Thermite/AssuranceTransport.lean", "forge/src/assurance_transport.rs", "gates/assurance-transport-replay.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-oracles/assurance-transport.json"
+design = ".design/checked-cross-version-and-cross-procedure-assurance-transport.md"
+reference = ["gates/claim-closure-assurance-transport.py"]
 conformance_ops = []
 
 [[route]]

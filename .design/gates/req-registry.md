@@ -4,7 +4,7 @@
 tier: 3-component
 status: draft
 audited-sha: f09f8ca376257cc1e2543b8ebc9fb771bffd04df (content-sha256 re-pinned 2026-07-29 for stage-3 REQ-1..REQ-9 / gate G3 (#80, crosslink #351): the registry and generated status view carry the fixed-width reconstruction requirements and verified evidence; req-registry.py --check is clean (462 requirements, 119 views). The legacy commit pin remains the f09f8ca3 stable-main ancestor; the active content digest tracks the governed files. prior: 2026-06-21 stage-2 REQ-10 / AC-10 (#332), the pin battery and final gate G2 increment)
-audited-content-sha256: 9f112f959630a088c9fb1a973aa39693d303a3d87e0c53db0e1e0a380ea3bcbb (re-pinned 2026-09-09 after recording the first end-to-end AC-17 assurance artifact in the canonical registry and generated status view. prior: 99da99279b1f1d2098d9e9958ea150d5ce667a75b2d7115674a30deef0618a8f)
+audited-content-sha256: fceb5d19f774741539d25c016b26c829c28c614170c3a0c31b5d540f01e5062f (re-pinned 2026-09-11 after registering the governed issue #58 assurance-transport claim and generated status row. prior: 9f112f959630a088c9fb1a973aa39693d303a3d87e0c53db0e1e0a380ea3bcbb)
 governs:
   - .design/reqs/registry.toml
   - .design/reqs/status.md

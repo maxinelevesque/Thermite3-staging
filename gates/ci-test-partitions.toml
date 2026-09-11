@@ -10203,6 +10203,42 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 [[assignment]]
 bucket = 10
 seconds = 0.007
+test = "forge::bin/forge assurance_transport::tests::identity_and_composition_preserve_endpoints"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "forge::bin/forge assurance_transport::tests::comparison_outcomes_preserve_typed_coordinate_distinctions"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "forge::bin/forge assurance_transport::tests::checked_replay_matrix_is_consumed_by_rust_comparison"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge assurance_transport::tests::invalid_or_misbound_relations_cannot_classify_authority"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "forge::bin/forge assurance_transport::tests::missing_and_incompatible_relations_are_distinct"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "forge::bin/forge assurance_transport::tests::predecessor_domain_requires_transitive_classification"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
 test = "forge::bin/forge check::tests::complete_clause_route_retains_solver_incomplete_invariant_constraint"
 timing_provenance = "reviewed_local_estimate_after_baseline"
 

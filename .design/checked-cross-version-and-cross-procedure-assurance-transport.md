@@ -1,5 +1,7 @@
 # Feature: Generalize checked cross-version and cross-procedure assurance transport
 
+audited-content-sha256: a57469efcaefba6f63dc760cdd21e8108cb163ed51726a6c0a5b7e0d7e0bbc0f (re-pinned 2026-09-11 after binding the canonical transport matrix to a generated Lean replay theorem. prior: 865c462eb7b60ce85a3ca487f2fe3368c2d58c999b2d64d1d4aef9e7250a9437)
+
 ## Summary
 
 Issue #58 defines the typed transport and simulation framework needed when a
@@ -11,8 +13,9 @@ predecessor relation is checked as either transported or intentionally
 incompatible, with deterministic Rust replay and CI comparison behavior.
 
 This design is the assurance-extension layer after the Assurance V2
-foundation. It does not perform the product-facing `CurrentAssurance` or
-historical `Level` migration owned by issues #56–57.
+foundation. The product-facing `CurrentAssurance` and historical `Level`
+migrations landed earlier through issues #56–57; this work consumes that
+authority boundary without reopening it.
 
 ## Requirements
 
@@ -28,15 +31,15 @@ historical `Level` migration owned by issues #56–57.
 
 ## Acceptance Criteria
 
-- [ ] AC-1: (REQ-1) Lean contains distinct semantic-version, model-version, and procedure-simulation witness types with explicit translation fields for programs or members, claims, evidence, observations, contexts, and boundaries; a fixture using a mismatched model or procedure identity is rejected.
-- [ ] AC-2: (REQ-2) A supported transport fixture proves preservation of fragment membership, claim truth, accepted evidence, refutation behavior, residual-context entailment, and boundary qualification; deleting any one preservation premise makes the fixture fail.
-- [ ] AC-3: (REQ-3) The evidence-fiber fixture keeps different semantic/model versions, procedures, environments, tools/resources, contexts, boundaries, and reconstruction identities separate until a checked transport produces a target-fiber record; string-equal coordinates without a witness do not compare.
-- [ ] AC-4: (REQ-4) Procedure replay covers the equality identity case and at least one non-identity simulation; mutating the procedure version, environment, tool/resource premise, evidence translation, or observation translation causes replay failure.
-- [ ] AC-5: (REQ-5) A predecessor-domain matrix fixture passes when every reachable predecessor has exactly one transport or incompatibility classification, and fails when any reachable predecessor is omitted, duplicated, or classified by an unproved relation; an unclassified predecessor blocks current-authority issuance for the new domain.
-- [ ] AC-6: (REQ-6) An incompatibility fixture produces a deterministic incomparable/policy-skew result, preserves both input certificates as independently valid, and rejects any attempted stronger/weaker or aggregate comparison across the incompatible relation.
-- [ ] AC-7: (REQ-7) Lean proves transport identity and composition, including composed program/member and evidence translations and preservation of the composed observation/context/boundary obligations; Rust replay agrees with the generated or replayed Lean decisions.
-- [ ] AC-8: (REQ-8) Deterministic CI comparison emits stable results for strengthened, weakened, incomparable/policy-skewed, changed-fiber, and missing-classification cases across repeated runs and process boundaries.
-- [ ] AC-9: (REQ-9) The implementation inventory and negative tests show that no transport, comparison, authority, routing, aggregation, cache-authority, audit-authority, or CI decision reads archival `Level`/`L0…L4` as its transport coordinate; archival values remain inspect-only compatibility data.
+- [x] AC-1: (REQ-1) Lean contains distinct semantic-version, model-version, and procedure-simulation witness types with explicit translation fields for programs or members, claims, evidence, observations, contexts, and boundaries; a fixture using a mismatched model or procedure identity is rejected.
+- [x] AC-2: (REQ-2) A supported transport fixture proves preservation of fragment membership, claim truth, accepted evidence, refutation behavior, residual-context entailment, and boundary qualification; deleting any one preservation premise makes the fixture fail.
+- [x] AC-3: (REQ-3) The evidence-fiber fixture keeps different semantic/model versions, procedures, environments, tools/resources, contexts, boundaries, and reconstruction identities separate until a checked transport produces a target-fiber record; string-equal coordinates without a witness do not compare.
+- [x] AC-4: (REQ-4) Procedure replay covers the equality identity case and at least one non-identity simulation; mutating the procedure version, environment, tool/resource premise, evidence translation, or observation translation causes replay failure.
+- [x] AC-5: (REQ-5) A predecessor-domain matrix fixture passes when every reachable predecessor has exactly one transport or incompatibility classification, and fails when any reachable predecessor is omitted, duplicated, or classified by an unproved relation; an unclassified predecessor blocks current-authority issuance for the new domain.
+- [x] AC-6: (REQ-6) An incompatibility fixture produces a deterministic incomparable/policy-skew result, preserves both input certificates as independently valid, and rejects any attempted stronger/weaker or aggregate comparison across the incompatible relation.
+- [x] AC-7: (REQ-7) Lean proves transport identity and composition, including composed program/member and evidence translations and preservation of the composed observation/context/boundary obligations; Rust replay agrees with the generated or replayed Lean decisions.
+- [x] AC-8: (REQ-8) Deterministic CI comparison emits stable results for strengthened, weakened, incomparable/policy-skewed, changed-fiber, and missing-classification cases across repeated runs and process boundaries.
+- [x] AC-9: (REQ-9) The implementation inventory and negative tests show that no transport, comparison, authority, routing, aggregation, cache-authority, audit-authority, or CI decision reads archival `Level`/`L0…L4` as its transport coordinate; archival values remain inspect-only compatibility data.
 
 ## Architecture
 
@@ -125,10 +128,11 @@ certification authority.
 
 ### Authority and migration boundary
 
-Issue #58 supplies the transport contract consumed later by #56–57. It does
-not migrate all decision consumers, redesign report layers, or remove legacy
-JSON parsing. Historical `L0…L4` values remain inspect-only compatibility
-records. Any later current-authority API must accept the typed formal
+Issue #58 supplies the transport contract consumed by later policy migration,
+workspace-population, and organization-floor work in issues #59, #60, and
+#63. It does not remigrate decision consumers, redesign the report layers, or
+remove legacy JSON parsing. Historical `L0…L4` values remain inspect-only
+compatibility records. Current-authority consumers must accept the typed formal
 coordinate/witness envelope and reject a legacy level as a substitute.
 
 The design preserves Thermite's append-only assurance invariant: transport
@@ -151,7 +155,9 @@ than being converted into stronger assurance.
 
 ## Open Questions
 
-- Q-1: Scope is limited to typed transport/simulation, predecessor comparison, Rust replay, and deterministic CI; `CurrentAssurance`, report UX, and final `Level` migration remain with issues #56–57.
+- Q-1: Scope is limited to typed transport/simulation, predecessor comparison,
+  Rust replay, and deterministic CI; the already-landed `CurrentAssurance`,
+  report UX, and final `Level` migration from issues #56–57 are not reopened.
 - Q-2: Exact evidence fibers are preserved; transport creates a target-fiber record only through an explicit witness and never normalizes incompatible fibers by convention.
 - Q-3: Procedure simulation generalizes equality with typed evidence/observation/environment/tool/resource preservation; unsupported procedures remain separate fibers.
 - Q-4: The comparison domain consists of declared direct predecessors plus their reachable closure; every reachable predecessor needs exactly one checked transport or incompatibility classification.
@@ -159,7 +165,8 @@ than being converted into stronger assurance.
 
 ## Out of Scope
 
-- Migrating every authority, routing, floor, aggregation, cache, audit, and UI consumer from `Level`; that belongs to issues #56–57.
+- Reopening the authority, routing, floor, aggregation, cache, audit, and UI
+  migration from `Level`; that work was completed by issues #56–57.
 - Defining a shared normalized fiber that erases semantic/model/procedure or context distinctions.
 - Treating report prose, CI success, engineer labels, or scalar `L0…L4` values as transport evidence.
 - Inventing a total order across incompatible or unsupported procedure/model relations.
