@@ -3869,6 +3869,10 @@ pub(crate) fn render_audit(manifest: &AuditManifest) -> String {
                     .collect::<Vec<_>>()
                     .join(", ")
             ));
+            out.push_str(&format!(
+                "    interference body mutation scoring: {:?}\n",
+                interference.body_mutation_scoring
+            ));
         }
         if let Some(protocol) = &f.protocol {
             out.push_str(&format!(

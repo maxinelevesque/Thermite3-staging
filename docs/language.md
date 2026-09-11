@@ -93,8 +93,12 @@ L1 preserves executable behavior and discloses that environment steps are not
 fully runtime-observable. L3 binds the checked graph to the source, replays its
 completeness and direction in Lean, and uses Verus-checked algebraic lemmas for
 the three persistent relation kinds. Certificates enumerate the clauses,
-conflicting places, directed obligations, formal replay, unavailable body
-mutation scoring, and the remaining correspondence and platform trust.
+conflicting places, directed obligations, formal replay, and a bounded mutation
+score over canonical promise-relevant shared-write regions. Weakening, deletion,
+and redirection are classified as killed, survived, or explicitly unsupported;
+the report also names effect-trace extraction, foreign-boundary declarations,
+correspondence, and platform trust. This region trace is not a runtime value or
+event-order trace and does not claim general effectful-body equivalence.
 
 ## The specification language
 

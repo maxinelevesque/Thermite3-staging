@@ -145,7 +145,7 @@ lanes remain provisional.
   next selection or pause, with #58–#63, #146, RFC-14, the composition
   experiment, relational contracts, formal-methods work, and issue #45 all
   classified rather than silently treated as queued implementation.
-- [ ] AC-11: (REQ-11) #58 is merged and closed only after the existing pull
+- [x] AC-11: (REQ-11) #58 is merged and closed only after the existing pull
   request has reviewed test-partition ownership, current claim evidence and
   design status, full local qualification, an exact-head adversarial-review
   receipt, and all required CI green on that unchanged head.
@@ -311,13 +311,12 @@ not queue them and grants no external-sharing or merge authority.
 
 ### Second product spine activation (2026-09-10)
 
-The #58 design and implementation have been authored, but authoring is not the
-landing boundary. PR #162 remains the active implementation vehicle at head
-`5206908bd5a0c236b1cce6ef79f8918889ae15d5`. Its first CI run exposed three
-unreviewed catch-all Rust tests in the test-partition gate and failures in the
-claim-closure fanout. Those are closure work for the existing pull request,
-not grounds to discard the checked transport implementation or to begin #146
-in parallel.
+#58 landed through PR #162 after reviewed test-partition repair, current claim
+evidence, full local qualification, exact-head adversarial review at
+`c565b3a06d43037439866dda6e84fc7f1e48b0e7`, and green required CI run
+`34595728028`. Main advanced to
+`4a3ee96f43b8b76c6e09819938835a7b0c664cc4`, and issue #58 is closed. #146 is
+therefore the active bounded implementation step rather than parallel work.
 
 The activated dependency chain is:
 

@@ -12,6 +12,8 @@
     {"id": "rfc12-effect-coverage-negative", "expected_exit": 0},
     {"id": "rfc12-handler-direction", "expected_exit": 0},
     {"id": "rfc12-lean-graph", "expected_exit": 0},
+    {"id": "rfc12-promise-mutation-unsupported", "expected_exit": 0},
+    {"id": "rfc12-promise-mutation-inferred-write", "expected_exit": 0},
     {"id": "rfc12-lean-mutations", "expected_exit": 0},
     {"id": "rfc12-lean-handler", "expected_exit": 0},
     {"id": "rfc12-lean-axioms", "expected_exit": 0},

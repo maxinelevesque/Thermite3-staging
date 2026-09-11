@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft (v-next architecture — the obligation/engine interface; most REQs NOT-STARTED
-audited-content-sha256: 69334c52aa23d2fd88fe164606822c3ce9e33c1e815aa724fae61f4694ac5c87 (re-pinned 2026-09-09 after normalizing process-specific Lean scratch paths at the engine boundary; semantic diagnostics and proof behavior are unchanged. prior: 6b15c8e76ec03df4cf90de2a8f9bb9072727e0f25326b6ea79e9a6f610c187e7)
+audited-content-sha256: fd5702bf24609af6f41acb1ab8b02f828d185a651abe50a7af4f7c3b0c2dfe5d (re-pinned 2026-09-11 after extending RFC-12 Lean replay in the shared checker; proof-backend behavior is otherwise unchanged. prior: 69334c52aa23d2fd88fe164606822c3ce9e33c1e815aa724fae61f4694ac5c87)
         behind build blockers. The SHIPPED substrates this builds on are quoted-code-grounded.)
 governs: forge/src/check.rs + forge/src/degrade.rs + forge/src/manifest.rs (the discharge
          pipeline, the ladder, the certificate this interface generalizes) and

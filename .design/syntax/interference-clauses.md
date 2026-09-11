@@ -2,7 +2,7 @@
 
 <!--
 status: approved
-audited-content-sha256: fe139f166e9c8dc26167d616965a044104fa234b59ab2b046715daacd797f0b6 (re-pinned 2026-09-06 after aligning Lean relation coverage with Rust's segment-wise region-overlap rule and adding the nested-region replay regression. prior: fcd59726a5a6e53b649765ea2e896ded4dda367b9aed6c1e917832e1c4626ef8)
+audited-content-sha256: 0008c248ebae8db8b92afb6a43a25631d366a92874c423234faefa407371e109 (re-pinned 2026-09-11 for issue #146 canonical promise-relevant shared-write observations and Rust/Lean mutation replay. prior: bff27ae6bea1bfe4bb5549f8dce47c8ba7b26f5f2f752e0783317c338d67c58c)
 -->
 
 ## Summary
@@ -98,9 +98,11 @@ are present, the next unsupported boundary fails closed.
 - REQ-17: Mutation and negative evidence shall target structure and semantics:
   deleted or swapped clauses, weakened/strengthened relations, reversed handler
   edges, omitted peers, broken stability, reset/non-monotone transitions, and
-  forged evidence must be rejected. Body-mutation scoring shall remain explicitly
-  unavailable until effect-trace observables exist; it shall not be reported as
-  evidence that `asks` or `promises` is strong.
+  forged evidence must be rejected. Promise mutation scoring shall use the
+  canonical promise-relevant shared-write regions from the checked transitive
+  effect footprint. Deterministic weakening, deletion, and redirection mutants
+  shall be replayed through Rust and Lean; a missing observable shall be reported
+  as `unsupported`, never silently upgraded to a kill or passing evidence.
 - REQ-18: RFC-12 shall update the requirement registry, language inventory,
   completeness evolution, conformance corpus, route coverage, status views,
   and documentation pins. Its two umbrella requirements become shipped only
@@ -141,13 +143,18 @@ are present, the next unsupported boundary fails closed.
   conditional rely and its discharge state, with residual trust named and no
   authority derived from prose.
 - [x] AC-10: (REQ-17) Structural and semantic mutation suites catch all listed
-  mutants, and reports explicitly distinguish unimplemented effect-trace body
-  scoring from a passing score.
+  mutants, and reports distinguish checked promise-trace kills, survivors, and
+  unsupported observations rather than treating unsupported scoring as a pass.
 - [x] AC-11: (REQ-18) Registry, inventory, completeness, conformance, routes,
   status, doc-drift, formatting, lint, workspace, and frozen-corpus gates pass.
 - [x] AC-12: (REQ-12, REQ-18) A production release-negative fixture proves that
   an RFC-12 program cannot silently fall back to a pre-RFC-12 fragment or reach
   full assurance with an undischarged rely.
+- [x] AC-13: (REQ-17) The bounded issue-#146 scorer derives canonical
+  promise-relevant shared-write observations, kills weakening, deletion, and
+  redirection mutations in the Rust classifier, replays the same mutant verdicts
+  in Lean, and retains observation-free cases as explicit `unsupported` entries
+  in certificates and human/audit output.
 
 ## Architecture
 
@@ -178,10 +185,14 @@ or a full-assurance conditional proof.
 
 `thermite-lower/src/l1.rs` keeps relational claims out of executable authority except where an existing
 boundary predicate is directly checkable. L3 serializes the checked relation and
-obligation graph from `thermite-lower/src/lower.rs` with source and semantic identities. Verus supplies the
-persistent-state proof mechanism; Lean independently replays graph completeness
-and the transcribed verdicts. Certificates name the gap between those layers as
-residual trust rather than calling the replay a source-semantics proof.
+obligation graph from `thermite-lower/src/lower.rs` with source and semantic identities. The RFC-12 witness
+also carries the subset of its exact transitive shared-write footprint covered
+by the original promise relation. Rust deterministically mutates that promise;
+Lean independently reduces whether the retained observation is still covered.
+Verus supplies the persistent-state proof mechanism. Certificates name effect
+trace extraction, foreign-boundary effect declarations, and the gap between
+these layers as residual trust rather than calling the replay a runtime trace or
+source-semantics proof.
 
 ## Sequence
 
@@ -205,8 +216,12 @@ residual trust rather than calling the replay a source-semantics proof.
   identities as segment lists for kernel reduction, and a nested-region fixture
   crosses Rust witness generation and real Lean replay while a disjoint-region
   mutation fails closed (issue #145).
-- Effect-trace observables for body-mutation scoring are deferred; RFC-12 uses
-  structural, relational, composition, and evidence mutations meanwhile.
+- RFC-12 now has a bounded effect-trace observable: canonical shared-write
+  regions in the checked transitive footprint that the original `promises`
+  relation covers. It records neither values nor event order and therefore does
+  not solve general effectful-body equivalence. Extraction of in-language
+  footprints and the truth of foreign-boundary effect declarations remain named
+  residual trust. Observation-free mutation cases remain `unsupported`.
 - A value constant only during one protocol round, including the motivating
   shootdown epoch, is deferred to RFC-13 rather than misrepresented as
   persistent state.

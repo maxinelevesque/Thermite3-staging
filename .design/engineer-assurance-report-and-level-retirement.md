@@ -1,6 +1,6 @@
 # Feature: Engineer assurance report and Level retirement
 
-audited-content-sha256: 596e4c897686031410feb03b6b4fdd2e485f8528121407031eb0363c58832dd4 (re-pinned 2026-09-09 after normalizing process-specific Lean scratch paths and adding a live two-process byte-determinism gate for issue #57 reports. prior: 9637b3c1064332af40dc9bf0901a453f97d49328578ea9edfb91b1a8c6f29615)
+audited-content-sha256: 220efda9b12ef05a26a65ad438756a1b31fb805458ee38571115c0cf400f0e64 (re-pinned 2026-09-11 after refreshing assurance-level inventory line locations for the RFC-12 certificate extensions; authority classification is unchanged. prior: 596e4c897686031410feb03b6b4fdd2e485f8528121407031eb0363c58832dd4)
 
 ## Summary
 

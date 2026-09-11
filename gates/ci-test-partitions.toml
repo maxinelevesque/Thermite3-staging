@@ -319,7 +319,19 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 [[assignment]]
 bucket = 8
 seconds = 0.500
-test = "thermite-lower::interference_witness interference_witness_is_deterministic_and_source_bound"
+test = "thermite-lower::interference_witness interference_witness_and_promise_mutation_replay_are_deterministic_and_source_bound"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "thermite-lower::interference_witness promise_mutation_scoring_reports_unsupported_observables_explicitly"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "thermite-lower::interference_witness promise_trace_uses_inferred_in_language_shared_writes"
 timing_provenance = "reviewed_local_estimate_after_baseline"
 
 [[assignment]]

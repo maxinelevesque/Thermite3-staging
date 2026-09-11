@@ -1580,7 +1580,13 @@ CASES = {
         "effects", "production_analysis_preserves_handler_direction_for_conflicts"
     ),
     "rfc12-lean-graph": integration(
-        "interference_witness", "interference_witness_is_deterministic_and_source_bound"
+        "interference_witness", "interference_witness_and_promise_mutation_replay_are_deterministic_and_source_bound"
+    ),
+    "rfc12-promise-mutation-unsupported": integration(
+        "interference_witness", "promise_mutation_scoring_reports_unsupported_observables_explicitly"
+    ),
+    "rfc12-promise-mutation-inferred-write": integration(
+        "interference_witness", "promise_trace_uses_inferred_in_language_shared_writes"
     ),
     "rfc12-lean-mutations": integration(
         "interference_witness", "lean_derives_graph_completeness_and_rejects_a_reversed_edge"
