@@ -8,6 +8,12 @@ product spine—process cleanup, issues #55, #56, and #57, then alpha.11—and a
 explicit reassessment gate before any post-T3 research issue becomes an
 automatic implementation commitment.
 
+The post-alpha.11 checkpoint has now selected a second bounded product spine:
+finish checked assurance transport in #58, close the RFC-12 anti-vacuity debt
+in #146, cut alpha.12, then extend the product through #59, #60, and #63. A
+single design-only relational-assurance research slot follows alpha.12 without
+entering the product critical path.
+
 GitHub issues remain the executable work units and
 `.github/workflows/roadmap.yml` remains the issue-derived visualization. This
 document is the durable sequencing and decision record that explains why the
@@ -70,6 +76,37 @@ lanes remain provisional.
   `.design/research/composition-experiment.md`, RFC-14 in
   `.design/rfcs/0014-crash-clause.md`, and the fully verified Iroh exploration
   tracked by issue #45.
+- REQ-11: Issue #58 shall be completed in its existing implementation pull
+  request rather than restarted. Completion requires every new test to have
+  reviewed partition ownership, all affected claim receipts and generated
+  status to be current, the controlling design to state present landing truth,
+  full qualification to pass, and the exact admitted head to receive
+  adversarial review and green required CI before merge and issue closure.
+- REQ-12: Issue #146 shall follow a green merge of #58. It shall define the
+  RFC-12 trace/evidence boundary, exercise mutations that weaken, delete, or
+  redirect promised effects, and prove that the Rust and Lean checking path
+  rejects or honestly classifies each mutation without granting authority to
+  an unsupported observation.
+- REQ-13: Alpha.12 shall be cut after #58 and #146 are merged. It shall use the
+  established version-only release practice, including mechanically required
+  content-bound receipt and audit-pin refresh, and shall not imply a tag or
+  GitHub Release.
+- REQ-14: After alpha.12, issue #59 policy-version migration and report
+  comparability shall precede #60 workspace/build-matrix populations. Issue
+  #63 organization-level floors shall follow both so that organization policy
+  consumes proved transport, migration, and population semantics rather than
+  defining a parallel authority system.
+- REQ-15: One bounded design-only research slot shall follow alpha.12. Its
+  default subject is the relational-contract Tier-A frame lemma. The slot may
+  refine a design and name decisive evidence, but shall not silently authorize
+  implementation or displace the #59 -> #60 -> #63 product sequence. RFC-14,
+  the composition experiment, later relational tiers, formal-methods survey
+  work, and the verified-Iroh pressure test remain incubated.
+- REQ-16: Execution of the second product spine shall preserve the low-churn
+  operating protocol. Prefer completion events; otherwise use bounded backoff.
+  Emit no update for unchanged state, make an external-sharing approval request
+  at most once per unresolved scope, and notify only on a meaningful milestone,
+  actionable failure, material decision, approval boundary, or completion.
 
 ## Acceptance Criteria
 
@@ -108,6 +145,29 @@ lanes remain provisional.
   next selection or pause, with #58–#63, #146, RFC-14, the composition
   experiment, relational contracts, formal-methods work, and issue #45 all
   classified rather than silently treated as queued implementation.
+- [ ] AC-11: (REQ-11) #58 is merged and closed only after the existing pull
+  request has reviewed test-partition ownership, current claim evidence and
+  design status, full local qualification, an exact-head adversarial-review
+  receipt, and all required CI green on that unchanged head.
+- [ ] AC-12: (REQ-12) #146 demonstrates at least weakening, deletion, and
+  redirection mutations across the declared Rust/Lean observation boundary,
+  with every mutant either killed or returned as an explicit unsupported
+  result rather than accepted as valid evidence.
+- [ ] AC-13: (REQ-13) Main contains merged #58 and #146 before the alpha.12
+  version commit; locked metadata reports one workspace version; required
+  receipts and pins are current; CI is green; and no alpha.12 tag or GitHub
+  Release exists.
+- [ ] AC-14: (REQ-14) #59 lands before #60, and #63 consumes their checked
+  transport, migration, comparison, and population carriers without adding a
+  second current-authority path.
+- [ ] AC-15: (REQ-15) The post-alpha.12 research slot produces a checked design
+  or an explicit evidence-backed pause for the Tier-A frame lemma, while every
+  other incubated lane retains a named disposition and no implicit
+  implementation commitment.
+- [ ] AC-16: (REQ-16) The execution record contains no repeated unchanged-state
+  user notifications or duplicate outstanding approval requests; failures and
+  milestones remain observable through their durable CI, review, and merge
+  receipts.
 
 ## Architecture
 
@@ -249,6 +309,46 @@ before code. #146 is the next bounded correctness follow-up. All other rows
 remain deferred or incubated exactly as classified above; this checkpoint does
 not queue them and grants no external-sharing or merge authority.
 
+### Second product spine activation (2026-09-10)
+
+The #58 design and implementation have been authored, but authoring is not the
+landing boundary. PR #162 remains the active implementation vehicle at head
+`5206908bd5a0c236b1cce6ef79f8918889ae15d5`. Its first CI run exposed three
+unreviewed catch-all Rust tests in the test-partition gate and failures in the
+claim-closure fanout. Those are closure work for the existing pull request,
+not grounds to discard the checked transport implementation or to begin #146
+in parallel.
+
+The activated dependency chain is:
+
+```text
+#58 landing repair and closure -> #146 RFC-12 mutation observables
+                               -> alpha.12
+                               -> bounded Tier-A relational design slot
+                               -> #59 policy migration/comparability
+                               -> #60 workspace/build-matrix populations
+                               -> #63 organization floors
+```
+
+The research slot is intentionally design-only and may overlap planning, but
+not authority-bearing implementation, with the product sequence. #59 precedes
+#60 because #58 supplies its transport relation directly and policy/report
+comparability should be stable before population matrices multiply the number
+of compared variants. #63 remains last because an organization floor is a
+consumer of all three semantics, not a shortcut around them.
+
+Alpha.12 is the release boundary for checked transport plus the bounded
+RFC-12 anti-vacuity repair. It deliberately does not wait for #59 or #60; doing
+so would produce a much larger admission unit and obscure whether transport,
+mutation observability, migration, or population semantics caused a failure.
+
+The operating protocol applies to the whole chain. A dispatched long-running
+job receives one initial observation, then event-driven completion or bounded
+backoff. An unchanged poll produces no conversational update. An approval
+request is surfaced once and remains pending without reminders. Exact-head
+qualification, review, CI, and merge receipts—not polling frequency—are the
+durable evidence of completion.
+
 ## Residual trust
 
 The roadmap trusts GitHub issue and milestone state as the scheduling view, but
@@ -280,6 +380,14 @@ content to an external reviewer.
 - Q-4: Monitoring prefers events, otherwise bounded exponential backoff, and stays
   silent when state is unchanged.
 - Q-5: Issues #58–#63 are reconsidered after alpha.11 and are not an automatic queue.
+- Q-6: The second product spine finishes #58 in its existing pull request, then
+  runs #146 before cutting alpha.12.
+- Q-7: After alpha.12 the product order is #59, #60, then #63; #61 and #62
+  remain demand-driven or research-bound rather than implicit prerequisites.
+- Q-8: The first post-alpha.12 research allocation is one design-only Tier-A
+  relational frame-lemma slot and does not authorize implementation.
+- Q-9: Monitoring and approval notifications are state-change-driven and
+  one-shot; unchanged state is silent.
 
 ## Open Questions
 
