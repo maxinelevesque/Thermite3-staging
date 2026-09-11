@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: ba2ae9f4141bf914d242055931c386ad6a5877a02b35654b5e8e478dc3388a06 (re-pinned 2026-09-11 after materializing the final 584-entry claim-closure population for RFC-12 promise-trace evidence. prior: d7cddfb86c06cac95f47a455a37331f5f51eabc1c2648eb8935b47605a2952b7)
+audited-content-sha256: eaeb35dba1ab9919aefe4c074ad0ea0edf1acdadab671804d17083262fc6b1bb (re-pinned 2026-09-11 after the alpha.12 Cargo.lock change required regenerating all 584 content-bound claim-closure receipts. prior: ba2ae9f4141bf914d242055931c386ad6a5877a02b35654b5e8e478dc3388a06)
 
 ## Summary
 
