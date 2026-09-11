@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "outcomes": [
+    "strengthened",
+    "weakened",
+    "incomparable",
+    "changed_fiber",
+    "missing_classification"
+  ],
+  "case": [
+    {"id": "identity", "source": "v1", "target": "v1", "relation": "transported", "fiber": "same", "boundary": "same", "outcome": "strengthened"},
+    {"id": "semantic-expansion", "source": "v1", "target": "v2", "relation": "transported", "fiber": "same", "boundary": "same", "outcome": "strengthened"},
+    {"id": "boundary-weakening", "source": "v2", "target": "v2", "relation": "transported", "fiber": "same", "boundary": "weaker", "outcome": "weakened"},
+    {"id": "semantic-fork", "source": "v1", "target": "fork", "relation": "incompatible", "fiber": "different", "boundary": "same", "outcome": "incomparable"},
+    {"id": "procedure-fork", "source": "lean-v1", "target": "solver-v1", "relation": "incompatible", "fiber": "different", "boundary": "same", "outcome": "incomparable"},
+    {"id": "changed-fiber", "source": "v1", "target": "v2", "relation": "transported", "fiber": "different", "boundary": "same", "outcome": "changed_fiber"},
+    {"id": "missing", "source": "v1", "target": "v2", "relation": "missing", "fiber": "same", "boundary": "same", "outcome": "missing_classification"}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "probe": "assurance-transport",
+  "cases": [
+    {"id": "assurance-transport-rust", "expected_exit": 0},
+    {"id": "assurance-transport-lean", "expected_exit": 0},
+    {"id": "assurance-transport-replay", "expected_exit": 0},
+    {"id": "assurance-transport-level-boundary", "expected_exit": 0}
+  ]
+}

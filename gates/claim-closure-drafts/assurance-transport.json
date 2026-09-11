@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "slice_id": "assurance-transport",
+  "entries": [
+    {
+      "requirement_id": "REQ-ASSURANCE-TRANSPORT",
+      "witness_id": "W-ASSURANCE-TRANSPORT",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/assurance-transport.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "cfcd8465e04b803e69691c8527dad583033b361455cf9e91a90902faa39dd95b"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-assurance-transport.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-assurance-transport.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/assurance-transport.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/assurance-transport.json",
+          "gates/claim-closure-assurance-transport.py",
+          ".design/checked-cross-version-and-cross-procedure-assurance-transport.md",
+          "lean/Thermite/AssuranceTransport.lean",
+          "lean/Thermite/AssuranceTransportReplay.lean",
+          "lean/Thermite/CertificationMetatheory.lean",
+          "forge/src/assurance_transport.rs",
+          "forge/src/main.rs",
+          "gates/assurance-transport-replay.py",
+          "gates/assurance-transport-replay.json",
+          "gates/tests/test_assurance_transport_replay.py",
+          "gates/ci-test-partitions.toml",
+          ".github/workflows/ci.yml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-receipt-and-coordinate-tests",
+            "mutation": "replace_text",
+            "from": "assurance-transport-rust",
+            "to": "assurance-transport-rust-erased",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # Thermite — convenience targets. The build/test system is Cargo; these are
 # thin entry points. `make audit` is the headline: a FULL TRUST-CHAIN
 # re-derivation a skeptic runs on their own machine (see gates/audit.sh).
-.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test rfc9-effect-inventory assurance-level-inventory language-completeness-inventory language-outcome-matrix rfc3-certification-replay assurance-v2-replay language-rfc-evolution claim-closure-drafts completeness-review
+.PHONY: audit audit-fast check test fmt clippy gauntlet doc-drift doc-drift-ci doc-drift-worktree doc-drift-test req-status req-status-test req-registry req-registry-test control-plane control-plane-test route-coverage route-coverage-test paths-exist paths-exist-test rfc9-effect-inventory assurance-level-inventory language-completeness-inventory language-outcome-matrix rfc3-certification-replay assurance-v2-replay assurance-transport-replay language-rfc-evolution claim-closure-drafts completeness-review
 
 DOC_DRIFT_CI_BASE ?= origin/main
 DOC_DRIFT_CI_HEAD ?= HEAD
@@ -41,6 +41,7 @@ gauntlet:
 	uv run python gates/language-outcome-matrix.py
 	uv run python gates/rfc3-certification-replay.py
 	uv run python gates/assurance-v2-replay.py
+	uv run python gates/assurance-transport-replay.py
 	uv run python gates/language-rfc-evolution.py
 	uv run python gates/claim-closure-author.py --check-baseline
 	uv run python gates/claim-closure-author.py --check-drafts
@@ -174,6 +175,9 @@ rfc3-certification-replay:
 
 assurance-v2-replay:
 	@uv run python gates/assurance-v2-replay.py
+
+assurance-transport-replay:
+	@uv run python gates/assurance-transport-replay.py
 
 language-rfc-evolution:
 	@uv run python gates/language-rfc-evolution.py
