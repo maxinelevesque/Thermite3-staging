@@ -19309,11 +19309,11 @@ note = "RFC-9 conflict-first production integration and exact shared-place cover
 [[requirement.evidence]]
 kind = "test"
 target = "thermite-lower/tests/interference_witness.rs"
-note = "source binding plus Lean graph, relation, edge, and direction mutations"
+note = "source binding plus Lean graph, relation, edge, direction, and promise-trace mutations with explicit unsupported observations"
 [[requirement.evidence]]
 kind = "file"
 target = "lean/Thermite/Interference.lean"
-note = "kernel replay derives obligation completeness and priority direction from composition requirements"
+note = "kernel replay derives obligation completeness and priority direction and independently reduces promise-trace mutant coverage"
 [[requirement.evidence]]
 kind = "test"
 target = "thermite-verified/tests/verus_verify.rs"
@@ -19321,7 +19321,7 @@ note = "no-cheating count, bit-set, and boolean preorder/persistence proofs with
 [[requirement.evidence]]
 kind = "test"
 target = "forge/src/check.rs"
-note = "production formal replay, certificate and audit disclosure, residual trust, and tamper rejection"
+note = "production formal replay, checked promise-mutation scoring, certificate and audit disclosure, residual trust, and tamper rejection"
 
 [[requirement]]
 id = "REQ-SYNTAX-PROTOCOL-DECL"

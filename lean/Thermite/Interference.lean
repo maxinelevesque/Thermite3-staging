@@ -11,6 +11,7 @@ structure FunctionContract where
   function : String
   asks : List Atom
   promises : List Atom
+  observedWrites : List (List String)
 deriving DecidableEq, Repr
 
 structure Obligation where
@@ -53,8 +54,21 @@ def atomListSound (atoms : List Atom) : Bool :=
     validKind atom.kind) &&
     atoms.eraseDups.length == atoms.length
 
+def regionContains (outer inner : List String) : Bool :=
+  outer.isPrefixOf inner
+
+def regionsOverlap (left right : List String) : Bool :=
+  regionContains left right || regionContains right left
+
+def relationCovers (atoms : List Atom) (place : List String) : Bool :=
+  atoms.any (fun atom => regionsOverlap atom.place place)
+
 def functionSound (contract : FunctionContract) : Bool :=
-  !contract.function.isEmpty && atomListSound contract.asks && atomListSound contract.promises
+  !contract.function.isEmpty && atomListSound contract.asks && atomListSound contract.promises &&
+    contract.observedWrites.all (fun place =>
+      !place.isEmpty && place.all (fun segment => !segment.isEmpty) &&
+        relationCovers contract.promises place) &&
+    contract.observedWrites.eraseDups.length == contract.observedWrites.length
 
 def findFunction (functions : List FunctionContract) (name : String) : Option FunctionContract :=
   functions.find? (fun function => function.function == name)
@@ -83,15 +97,6 @@ def expectedObligations (requirement : Requirement) : List Obligation :=
 
 def expectedGraph (requirements : List Requirement) : List Obligation :=
   requirements.flatMap expectedObligations
-
-def regionContains (outer inner : List String) : Bool :=
-  outer.isPrefixOf inner
-
-def regionsOverlap (left right : List String) : Bool :=
-  regionContains left right || regionContains right left
-
-def relationCovers (atoms : List Atom) (place : List String) : Bool :=
-  atoms.any (fun atom => regionsOverlap atom.place place)
 
 def obligationCovers
     (functions : List FunctionContract) (overlaps : List (List String))

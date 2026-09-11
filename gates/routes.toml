@@ -1874,13 +1874,13 @@ conformance_ops = ["relation classification", "postcondition stability", "pairwi
 crate_pattern = "thermite-lower/src/interference_witness.rs"
 design = ".design/syntax/interference-clauses.md"
 reference = ["thermite-lower/tests/interference_witness.rs", "lean/Thermite/Interference.lean"]
-conformance_ops = ["canonical witness", "graph completeness", "Lean replay", "hostile mutation"]
+conformance_ops = ["canonical witness", "graph completeness", "promise-relevant shared-write trace", "Lean replay", "hostile mutation"]
 
 [[route]]
 crate_pattern = "lean/Thermite/Interference.lean"
 design = ".design/syntax/interference-clauses.md"
 reference = ["thermite-lower/tests/interference_witness.rs"]
-conformance_ops = ["relation compatibility", "composition completeness", "priority direction"]
+conformance_ops = ["relation compatibility", "composition completeness", "priority direction", "promise mutation replay"]
 
 # ---------------------------------------------------------------------
 # Binary protocol types and checked endpoint completion (RFC-13)

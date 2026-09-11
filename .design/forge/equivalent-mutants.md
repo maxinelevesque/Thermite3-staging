@@ -352,7 +352,10 @@ v1 covers EXACTLY what the composition fixtures need:
 - **OUT (counted-survivor fallback via REQ-9):** calls to generated free fns /
   combinators / string-method receivers inside the compared bodies (OQ-4);
   non-scalar params/returns (OQ-1, unchanged); effectful bodies (OQ-2,
-  unchanged).
+  unchanged for this general equivalence query). RFC-12 issue #146 owns a
+  separate bounded observable over canonical promise-relevant shared-write
+  regions; it neither compares runtime values nor excludes general effectful
+  mutants as equivalent.
 
 ## Acceptance criteria
 

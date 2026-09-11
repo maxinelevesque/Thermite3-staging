@@ -32,12 +32,57 @@ pub struct WitnessInterferenceFunction {
     pub function: String,
     pub asks: Vec<WitnessMonotoneAtom>,
     pub promises: Vec<WitnessMonotoneAtom>,
+    /// Canonical promise-relevant shared-write regions in the checked
+    /// transitive footprint.
+    ///
+    /// For an in-language body these are inferred from assignments and callees.
+    /// For a foreign boundary they come from its declared effect row, which
+    /// remains named residual trust.  The list is the bounded RFC-12 effect
+    /// trace observable: it records *where* a step may write, not runtime values
+    /// or a total order of concurrent events.
+    pub observed_writes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WitnessMonotoneAtom {
     pub place: String,
     pub kind: String,
+}
+
+pub const PROMISE_TRACE_OBSERVABLE_VERSION: &str =
+    "rfc12-canonical-promised-shared-write-regions-v1";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PromiseTraceMutationKind {
+    Weaken,
+    Delete,
+    Redirect,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PromiseTraceMutationOutcome {
+    Killed,
+    Survived,
+    Unsupported,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PromiseTraceMutationCase {
+    pub id: String,
+    pub function: String,
+    pub kind: PromiseTraceMutationKind,
+    pub outcome: PromiseTraceMutationOutcome,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PromiseTraceMutationScore {
+    pub observable: String,
+    pub killed: usize,
+    pub survived: usize,
+    pub unsupported: usize,
+    pub cases: Vec<PromiseTraceMutationCase>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -73,10 +118,30 @@ pub fn emit_interference_witness(checked: &CheckedProgram) -> InterferenceWitnes
         .interference()
         .functions
         .values()
-        .map(|function| WitnessInterferenceFunction {
-            function: function.function.clone(),
-            asks: witness_atoms(&function.asks),
-            promises: witness_atoms(&function.promises),
+        .map(|function| {
+            let promises = witness_atoms(&function.promises);
+            let observed_writes = checked
+                .effects()
+                .footprints
+                .get(&function.function)
+                .into_iter()
+                .flatten()
+                .filter_map(|effect| match effect {
+                    thermite_syntax::Effect::Write(path) => Some(path.display()),
+                    _ => None,
+                })
+                .filter(|write| {
+                    promises
+                        .iter()
+                        .any(|atom| regions_overlap(&atom.place, write))
+                })
+                .collect();
+            WitnessInterferenceFunction {
+                function: function.function.clone(),
+                asks: witness_atoms(&function.asks),
+                promises,
+                observed_writes,
+            }
         })
         .collect::<Vec<_>>();
     let obligations = checked
@@ -158,6 +223,11 @@ pub fn replay_interference_witness(
             field: "interference_functions",
         });
     }
+    if !witness.functions.iter().all(promise_trace_sound) {
+        return Err(WitnessError::Mismatch {
+            field: "interference_promise_trace",
+        });
+    }
     if witness.requirements != expected.requirements {
         return Err(WitnessError::Mismatch {
             field: "interference_requirements",
@@ -185,6 +255,132 @@ fn witness_atoms(relation: &thermite_spec::CheckedRelation) -> Vec<WitnessMonoto
             .to_string(),
         })
         .collect()
+}
+
+fn region_contains(outer: &str, inner: &str) -> bool {
+    let outer = outer.split('.').collect::<Vec<_>>();
+    let inner = inner.split('.').collect::<Vec<_>>();
+    outer.len() <= inner.len() && outer.iter().zip(inner).all(|(left, right)| left == &right)
+}
+
+fn regions_overlap(left: &str, right: &str) -> bool {
+    region_contains(left, right) || region_contains(right, left)
+}
+
+/// Whether every checked shared-write observation is covered by the function's
+/// promised monotone relation.
+pub fn promise_trace_sound(function: &WitnessInterferenceFunction) -> bool {
+    function.observed_writes.iter().all(|write| {
+        !write.is_empty()
+            && write.split('.').all(|segment| !segment.is_empty())
+            && function
+                .promises
+                .iter()
+                .any(|atom| regions_overlap(&atom.place, write))
+    })
+}
+
+/// The deterministic RFC-12 mutation family over a checked promise trace.
+///
+/// Unsupported cases are retained explicitly rather than counted as kills or
+/// survivors.  A supported mutant survives only when its changed promise still
+/// covers every observed shared-write region.
+pub fn promise_trace_mutants(
+    function: &WitnessInterferenceFunction,
+) -> Vec<(
+    PromiseTraceMutationKind,
+    Option<WitnessInterferenceFunction>,
+)> {
+    if function.observed_writes.is_empty() || function.promises.is_empty() {
+        return [
+            PromiseTraceMutationKind::Weaken,
+            PromiseTraceMutationKind::Delete,
+            PromiseTraceMutationKind::Redirect,
+        ]
+        .into_iter()
+        .map(|kind| (kind, None))
+        .collect();
+    }
+
+    let mut weakened = function.clone();
+    weakened.promises.remove(0);
+
+    let mut deleted = function.clone();
+    deleted.promises.clear();
+
+    let mut redirected = function.clone();
+    redirected.promises[0].place = fresh_redirect_region(function);
+
+    vec![
+        (PromiseTraceMutationKind::Weaken, Some(weakened)),
+        (PromiseTraceMutationKind::Delete, Some(deleted)),
+        (PromiseTraceMutationKind::Redirect, Some(redirected)),
+    ]
+}
+
+fn fresh_redirect_region(function: &WitnessInterferenceFunction) -> String {
+    let occupied = function.promises.len() + function.observed_writes.len();
+    (0..=occupied)
+        .map(|index| format!("__thermite_promise_redirect_{index}"))
+        .find(|candidate| {
+            function
+                .promises
+                .iter()
+                .all(|atom| !regions_overlap(&atom.place, candidate))
+                && function
+                    .observed_writes
+                    .iter()
+                    .all(|write| !regions_overlap(write, candidate))
+        })
+        .expect("one more deterministic root than occupied roots must be fresh")
+}
+
+pub fn score_promise_trace_mutations(witness: &InterferenceWitness) -> PromiseTraceMutationScore {
+    let mut cases = Vec::new();
+    for function in &witness.functions {
+        for (kind, mutant) in promise_trace_mutants(function) {
+            let outcome = match mutant {
+                Some(mutant) if promise_trace_sound(&mutant) => {
+                    PromiseTraceMutationOutcome::Survived
+                }
+                Some(_) => PromiseTraceMutationOutcome::Killed,
+                None => PromiseTraceMutationOutcome::Unsupported,
+            };
+            cases.push(PromiseTraceMutationCase {
+                id: format!("{}-{}", function.function, mutation_kind_name(kind)),
+                function: function.function.clone(),
+                kind,
+                outcome,
+            });
+        }
+    }
+    let killed = cases
+        .iter()
+        .filter(|case| case.outcome == PromiseTraceMutationOutcome::Killed)
+        .count();
+    let survived = cases
+        .iter()
+        .filter(|case| case.outcome == PromiseTraceMutationOutcome::Survived)
+        .count();
+    let unsupported = cases
+        .iter()
+        .filter(|case| case.outcome == PromiseTraceMutationOutcome::Unsupported)
+        .count();
+    PromiseTraceMutationScore {
+        observable: PROMISE_TRACE_OBSERVABLE_VERSION.to_string(),
+        killed,
+        survived,
+        unsupported,
+        cases,
+    }
+}
+
+fn mutation_kind_name(kind: PromiseTraceMutationKind) -> &'static str {
+    match kind {
+        PromiseTraceMutationKind::Weaken => "weaken",
+        PromiseTraceMutationKind::Delete => "delete",
+        PromiseTraceMutationKind::Redirect => "redirect",
+    }
 }
 
 fn checked_digest(
@@ -229,12 +425,25 @@ pub fn lean_interference_replay_source(
             .iter()
             .map(|function| {
                 format!(
-                    "⟨{}, [{}], [{}]⟩",
+                    "⟨{}, [{}], [{}], [{}]⟩",
                     string(&function.function),
                     atoms(&function.asks),
-                    atoms(&function.promises)
+                    atoms(&function.promises),
+                    function
+                        .observed_writes
+                        .iter()
+                        .map(|write| path(write))
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 )
             })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+    fn bools(values: &[bool]) -> String {
+        values
+            .iter()
+            .map(|value| if *value { "true" } else { "false" })
             .collect::<Vec<_>>()
             .join(", ")
     }
@@ -278,8 +487,18 @@ pub fn lean_interference_replay_source(
             .collect::<Vec<_>>()
             .join(", ")
     }
+    let promise_mutants = witness
+        .functions
+        .iter()
+        .flat_map(promise_trace_mutants)
+        .filter_map(|(_, mutant)| mutant)
+        .collect::<Vec<_>>();
+    let expected_survivors = promise_mutants
+        .iter()
+        .map(promise_trace_sound)
+        .collect::<Vec<_>>();
     format!(
-        "import Thermite.Interference\nopen Thermite.Interference\n\ndef canonical : Canonical := ⟨{}, {}, [{}], [{}], [{}]⟩\ndef witness : Witness := ⟨{}, {}, {}, [{}], [{}], [{}]⟩\ntheorem rfc12_interference_verified : verify canonical witness = true := by rfl\n#print axioms rfc12_interference_verified\n#eval IO.println \"THERMITE_RFC12_INTERFERENCE_REPLAY_ACCEPTED_V1\"\n",
+        "import Thermite.Interference\nopen Thermite.Interference\n\ndef canonical : Canonical := ⟨{}, {}, [{}], [{}], [{}]⟩\ndef witness : Witness := ⟨{}, {}, {}, [{}], [{}], [{}]⟩\ndef promiseMutants : List FunctionContract := [{}]\ndef expectedPromiseMutationSurvivors : List Bool := [{}]\ntheorem rfc12_interference_verified : verify canonical witness = true := by rfl\ntheorem rfc12_promise_mutation_replay_agrees : promiseMutants.map functionSound = expectedPromiseMutationSurvivors := by rfl\n#print axioms rfc12_interference_verified\n#print axioms rfc12_promise_mutation_replay_agrees\n#eval IO.println \"THERMITE_RFC12_INTERFERENCE_REPLAY_ACCEPTED_V1\"\n#eval IO.println \"THERMITE_RFC12_PROMISE_MUTATION_REPLAY_ACCEPTED_V1\"\n",
         string(&canonical.canonical_ast_sha256),
         string(&canonical.checked_interference_sha256),
         functions(&canonical.functions),
@@ -291,5 +510,7 @@ pub fn lean_interference_replay_source(
         functions(&witness.functions),
         requirements(&witness.requirements),
         obligations(&witness.obligations),
+        functions(&promise_mutants),
+        bools(&expected_survivors),
     )
 }

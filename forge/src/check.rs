@@ -138,7 +138,7 @@ use crate::cache;
 use crate::cli::ForgeError;
 use crate::covenant::CovenantRecord;
 use crate::manifest::{
-    effects_of, Certificate, InterferenceAtomEvidence, InterferenceBodyMutationScoring,
+    effects_of, interference_body_mutation_scoring, Certificate, InterferenceAtomEvidence,
     InterferenceEvidence, InterferenceFormalReplay, InterferenceFormalReplayVerdict,
     InterferenceFunctionEvidence, InterferenceObligationEvidence, InterferenceRequirementEvidence,
     InterferenceResidualTrust, InterferenceVerdict, Level, ObligationResult, ProtocolEvidence,
@@ -1754,6 +1754,7 @@ fn run_rfc12_lean_replay(
 ) -> Result<InterferenceEvidence, ForgeError> {
     const CHECKER_SOURCE: &str = include_str!("../../lean/Thermite/Interference.lean");
     const ACCEPTANCE_TOKEN: &str = "THERMITE_RFC12_INTERFERENCE_REPLAY_ACCEPTED_V1";
+    const MUTATION_ACCEPTANCE_TOKEN: &str = "THERMITE_RFC12_PROMISE_MUTATION_REPLAY_ACCEPTED_V1";
     const REPLAY_TIMEOUT: Duration = Duration::from_secs(60);
 
     let canonical =
@@ -1836,16 +1837,30 @@ fn run_rfc12_lean_replay(
         String::from_utf8_lossy(&output.stderr)
     );
     let accepted = combined.lines().any(|line| line.trim() == ACCEPTANCE_TOKEN);
+    let mutation_accepted = combined
+        .lines()
+        .any(|line| line.trim() == MUTATION_ACCEPTANCE_TOKEN);
     let allowed_axioms = combined.lines().any(|line| {
         line.contains("rfc12_interference_verified")
             && (line.contains("does not depend on any axioms")
                 || line.contains("depends on axioms: [propext]"))
     });
+    let mutation_allowed_axioms = combined.lines().any(|line| {
+        line.contains("rfc12_promise_mutation_replay_agrees")
+            && (line.contains("does not depend on any axioms")
+                || line.contains("depends on axioms: [propext]"))
+    });
     let forbidden_axiom = combined.contains("sorryAx");
-    if !output.status.success() || !accepted || !allowed_axioms || forbidden_axiom {
+    if !output.status.success()
+        || !accepted
+        || !mutation_accepted
+        || !allowed_axioms
+        || !mutation_allowed_axioms
+        || forbidden_axiom
+    {
         return Err(ForgeError::Rfc12ReplayRejected {
             detail: format!(
-                "exit={:?}, acceptance_token={accepted}, allowed_axioms={allowed_axioms}, forbidden_sorryAx={forbidden_axiom}: {}",
+                "exit={:?}, acceptance_token={accepted}, mutation_acceptance_token={mutation_accepted}, allowed_axioms={allowed_axioms}, mutation_allowed_axioms={mutation_allowed_axioms}, forbidden_sorryAx={forbidden_axiom}: {}",
                 output.status.code(),
                 combined.chars().take(1200).collect::<String>()
             ),
@@ -1875,6 +1890,7 @@ fn run_rfc12_lean_replay(
                         kind: atom.kind.clone(),
                     })
                     .collect(),
+                observed_writes: function.observed_writes.clone(),
             })
             .collect(),
         requirements: witness
@@ -1913,12 +1929,13 @@ fn run_rfc12_lean_replay(
             InterferenceResidualTrust::SolverEncoding,
             InterferenceResidualTrust::BackendCorrespondence,
             InterferenceResidualTrust::WitnessExtraction,
+            InterferenceResidualTrust::EffectTraceExtraction,
+            InterferenceResidualTrust::ForeignBoundaryEffectDeclaration,
             InterferenceResidualTrust::PersistentTokenImplementation,
             InterferenceResidualTrust::ExecutableTargetBehavior,
             InterferenceResidualTrust::PlatformPreemption,
         ],
-        body_mutation_scoring:
-            InterferenceBodyMutationScoring::UnavailableUntilEffectTraceObservables,
+        body_mutation_scoring: interference_body_mutation_scoring(witness),
     })
 }
 
@@ -10100,6 +10117,18 @@ fn discard(b: Bundle) -> u64
         assert_eq!(evidence.functions.len(), 2);
         assert_eq!(evidence.requirements.len(), 1);
         assert_eq!(evidence.obligations.len(), 2);
+        assert!(evidence
+            .functions
+            .iter()
+            .all(|function| function.observed_writes == ["counter"]));
+        match &evidence.body_mutation_scoring {
+            crate::manifest::InterferenceBodyMutationScoring::Checked(score) => {
+                assert_eq!(score.killed, 6);
+                assert_eq!(score.survived, 0);
+                assert_eq!(score.unsupported, 0);
+            }
+            scoring => panic!("expected checked RFC-12 mutation scoring, got {scoring:?}"),
+        }
 
         let artifact = thermite_lower::lower_l3_artifact(&parsed.program, "left").unwrap();
         let cert = Certificate::new(
@@ -10110,9 +10139,21 @@ fn discard(b: Bundle) -> u64
             vec![ObligationResult::discharged("fixture proof")],
         )
         .with_verus_artifact(&artifact, true)
-        .unwrap()
-        .with_interference_evidence_for_witness(&witness, evidence.clone())
         .unwrap();
+        let mut tampered_score = evidence.clone();
+        let crate::manifest::InterferenceBodyMutationScoring::Checked(score) =
+            &mut tampered_score.body_mutation_scoring
+        else {
+            panic!("fixture must have a checked score")
+        };
+        score.killed += 1;
+        assert!(cert
+            .clone()
+            .with_interference_evidence_for_witness(&witness, tampered_score)
+            .is_err());
+        let cert = cert
+            .with_interference_evidence_for_witness(&witness, evidence.clone())
+            .unwrap();
         let cert = live_accepted(cert, "verus").into_certificate();
         let audit = crate::audit::AuditManifest::from_certificates(
             std::slice::from_ref(&cert),
@@ -10137,6 +10178,8 @@ fn discard(b: Bundle) -> u64
         for text in [&cert_text, &audit_text] {
             assert!(text.contains("interference"));
             assert!(text.contains("obligations=2"));
+            assert!(text.contains("canonical-promised-shared-write-regions"));
+            assert!(text.contains("killed: 6"));
             assert!(text.contains("residual trust") || text.contains("residual_trust"));
         }
     }

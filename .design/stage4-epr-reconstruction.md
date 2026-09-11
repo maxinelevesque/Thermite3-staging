@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: d86386e01c67b9d10c0d5d1556ad645e1b6ac07357790b21bc4ffc51274981a7 (re-pinned 2026-09-09 after correcting stale authority terminology in Forge comments; reconstruction semantics are unchanged. prior: d3caca6cfc9980c66a910f9719c4b0efa9edb17989a44d3f22ed7de66655c94e)
+audited-content-sha256: 0baea5288b69a80e8a8fb84cf022f9a9f348f29bdf0ba04b92c67cb3743d8c5e (re-pinned 2026-09-11 after adding RFC-12 promise-trace evidence to the shared Forge checker; reconstruction semantics are unchanged. prior: d86386e01c67b9d10c0d5d1556ad645e1b6ac07357790b21bc4ffc51274981a7)
 governs: canonical S₂.0 bridge, typed Lean reconstruction, production routing,
          audit boundary, proof tooling, and Gate G4 (see gates/routes.toml)
 -->

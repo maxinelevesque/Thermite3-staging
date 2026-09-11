@@ -2,7 +2,7 @@
 
 <!--
 status: approved
-audited-content-sha256: 4426367dd18b4867c5b150c2d72589a4f7fc336a34d22ded59bdc84a6fca53fa (re-pinned 2026-09-09 after correcting stale authority terminology in Forge comments; resource semantics are unchanged. prior: e73e10f158e665ff491d03df2cf232422840349df519e097c78eb37d303c3f71)
+audited-content-sha256: 95191c91817c0fb9fa36fad82b003390c553ab9c83eb16c010d93860c320eb2b (re-pinned 2026-09-11 after adding RFC-12 fields to shared certificate/checking surfaces; resource semantics are unchanged. prior: 4426367dd18b4867c5b150c2d72589a4f7fc336a34d22ded59bdc84a6fca53fa)
 -->
 
 ## Summary

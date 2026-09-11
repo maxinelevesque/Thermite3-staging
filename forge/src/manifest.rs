@@ -1316,6 +1316,7 @@ pub struct InterferenceFunctionEvidence {
     pub function: String,
     pub asks: Vec<InterferenceAtomEvidence>,
     pub promises: Vec<InterferenceAtomEvidence>,
+    pub observed_writes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1368,15 +1369,93 @@ pub enum InterferenceResidualTrust {
     SolverEncoding,
     BackendCorrespondence,
     WitnessExtraction,
+    EffectTraceExtraction,
+    ForeignBoundaryEffectDeclaration,
     PersistentTokenImplementation,
     ExecutableTargetBehavior,
     PlatformPreemption,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum InterferenceBodyMutationScoring {
     UnavailableUntilEffectTraceObservables,
+    Checked(InterferencePromiseMutationScoreEvidence),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InterferencePromiseMutationScoreEvidence {
+    pub observable: String,
+    pub killed: usize,
+    pub survived: usize,
+    pub unsupported: usize,
+    pub cases: Vec<InterferencePromiseMutationCaseEvidence>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InterferencePromiseMutationCaseEvidence {
+    pub id: String,
+    pub function: String,
+    pub kind: InterferencePromiseMutationKind,
+    pub outcome: InterferencePromiseMutationOutcome,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InterferencePromiseMutationKind {
+    Weaken,
+    Delete,
+    Redirect,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InterferencePromiseMutationOutcome {
+    Killed,
+    Survived,
+    Unsupported,
+}
+
+pub(crate) fn interference_body_mutation_scoring(
+    witness: &thermite_lower::InterferenceWitness,
+) -> InterferenceBodyMutationScoring {
+    let score = thermite_lower::score_promise_trace_mutations(witness);
+    InterferenceBodyMutationScoring::Checked(InterferencePromiseMutationScoreEvidence {
+        observable: score.observable,
+        killed: score.killed,
+        survived: score.survived,
+        unsupported: score.unsupported,
+        cases: score
+            .cases
+            .into_iter()
+            .map(|case| InterferencePromiseMutationCaseEvidence {
+                id: case.id,
+                function: case.function,
+                kind: match case.kind {
+                    thermite_lower::PromiseTraceMutationKind::Weaken => {
+                        InterferencePromiseMutationKind::Weaken
+                    }
+                    thermite_lower::PromiseTraceMutationKind::Delete => {
+                        InterferencePromiseMutationKind::Delete
+                    }
+                    thermite_lower::PromiseTraceMutationKind::Redirect => {
+                        InterferencePromiseMutationKind::Redirect
+                    }
+                },
+                outcome: match case.outcome {
+                    thermite_lower::PromiseTraceMutationOutcome::Killed => {
+                        InterferencePromiseMutationOutcome::Killed
+                    }
+                    thermite_lower::PromiseTraceMutationOutcome::Survived => {
+                        InterferencePromiseMutationOutcome::Survived
+                    }
+                    thermite_lower::PromiseTraceMutationOutcome::Unsupported => {
+                        InterferencePromiseMutationOutcome::Unsupported
+                    }
+                },
+            })
+            .collect(),
+    })
 }
 
 /// RFC-13 projected protocol and independent Lean-replay disclosure.
@@ -4511,6 +4590,7 @@ impl Certificate {
                         kind: atom.kind.clone(),
                     })
                     .collect(),
+                observed_writes: function.observed_writes.clone(),
             })
             .collect::<Vec<_>>();
         let requirements = witness
@@ -4541,6 +4621,8 @@ impl Certificate {
             InterferenceResidualTrust::SolverEncoding,
             InterferenceResidualTrust::BackendCorrespondence,
             InterferenceResidualTrust::WitnessExtraction,
+            InterferenceResidualTrust::EffectTraceExtraction,
+            InterferenceResidualTrust::ForeignBoundaryEffectDeclaration,
             InterferenceResidualTrust::PersistentTokenImplementation,
             InterferenceResidualTrust::ExecutableTargetBehavior,
             InterferenceResidualTrust::PlatformPreemption,
@@ -4556,8 +4638,7 @@ impl Certificate {
             || replay.checked_interference_sha256 != witness.checked_interference_sha256
             || replay.verdict != InterferenceFormalReplayVerdict::KernelAccepted
             || evidence.residual_trust != expected_residual
-            || evidence.body_mutation_scoring
-                != InterferenceBodyMutationScoring::UnavailableUntilEffectTraceObservables
+            || evidence.body_mutation_scoring != interference_body_mutation_scoring(witness)
         {
             return Err(IncoherentCertificationPosition {
                 reason: "RFC-12 evidence does not match the checked interference artifact",

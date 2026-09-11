@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 8424f09bfef4abf5c9aaf7b5ca0e179f7e57900223e605a3a015f6be3bcd6783 (re-pinned 2026-09-09 after correcting stale authority terminology in Forge comments; boundary composition is unchanged. prior: 5c3d28c23349b170255af3223f9d16fe3af50c8eb2ffbed55037a0a1a2b7d99b)
+audited-content-sha256: 8ff71fb7ee7104447b12a2246f6fb0c08656ada92a27e02d31d1bb7e186eff31 (re-pinned 2026-09-11 after adding RFC-12 promise-trace evidence to the shared Forge checker; boundary composition is unchanged. prior: 8424f09bfef4abf5c9aaf7b5ca0e179f7e57900223e605a3a015f6be3bcd6783)
 governs: thermite-lower/src/lower.rs, forge/src/check.rs
 thesis-refs:
   - thermite-design.md §9

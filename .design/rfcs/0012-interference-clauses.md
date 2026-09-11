@@ -13,7 +13,7 @@ introduces:
 
 | | |
 |---|---|
-| **Status** | **Shipped on `main` via PR #144; issue #76 closed.** Region-overlap replay alignment is complete under issue #145; effect-trace mutation evidence remains tracked by issue #146. |
+| **Status** | **Shipped on `main` via PR #144; issue #76 closed.** Region-overlap replay alignment is complete under issue #145. The bounded promise-relevant shared-write mutation observable is implemented under issue #146; general effectful equivalence remains outside RFC-12. |
 | **Fork implementation** | **Complete.** Syntax, relational validation, RFC-9 conflict composition, L1/L3 lowering, Verus evidence, Lean replay, certificates, audit disclosure, inventories, and the production release-negative are implemented. The checked contract is [interference-clauses.md](../syntax/interference-clauses.md). |
 | **Baseline** | `dollspace-gay/Thermite @ 84d276e7` |
 | **Position** | step 8 of the sequence in [RFC-7](0007-thermite-3.md#14-the-sequence) |
@@ -124,13 +124,15 @@ the mutant — a contract that fails to distinguish a deliberately wrong body is
 reported `WeakContract` (`.design/forge/mutation-scoring.md` §7). The two clauses
 here sit on opposite sides of that.
 
-**`promises` scores like `ensures`.** It is a claim about this function's own
-steps, so a body mutant that violates the guarantee is killed by the guarantee,
-using the machinery that already exists. One dependency: the observable has to
-include the effect trace on shared state rather than only the return value, which
-is `equivalent-mutants.md` **OQ-2** — "an effectful body's observable result would
-also include its effect trace" — currently out of scope, since v0.1 scores
-`fx pure` bodies. So `promises` is scoreable in principle and not scoreable yet.
+**`promises` now has a bounded scorer.** Issue #146 does not attempt general
+effectful-body equivalence. Instead, the checked RFC-9 transitive footprint is
+projected to the canonical shared-write regions covered by the original promise.
+The scorer weakens, deletes, or redirects that relation and asks whether the same
+observations remain covered. Rust classifies every case as killed, survived, or
+unsupported; Lean independently reduces the supported mutant verdicts. An empty
+observable is explicit `unsupported`, not a passing score. Runtime values,
+ordering, and effect equivalence outside promised shared regions remain
+`equivalent-mutants.md` **OQ-2**.
 
 **`asks` has no body mutant at all.** It is a claim about the *environment*. No
 mutation of this function's body can violate it, so mutation scoring is silent on
@@ -142,9 +144,9 @@ probes:
 | the rely is unnecessary — it assumes something the proof never uses | weaken it: does the obligation still discharge with `asks nothing`? If it does, the clause is doing no work. This is a strengthening probe, not a mutation |
 | the rely is unjustified — it assumes more than any peer guarantees | discharge it at the composition site: every peer's `promises` must imply it. Not a per-item check at all |
 
-The second is the dangerous one, and it has no home today. Until a composition
-site exists, an `asks` is a free assumption that makes this function's proof
-easier and is checked against nothing — the same shape as
+The second is the dangerous one. RFC-12's shipped composition gate is its home:
+an `asks` outside a discharged composition is a free assumption that makes this
+function's proof easier and is checked against nothing — the same shape as
 `! write(a_resource_that_does_not_exist)` certifying at L3 before the effect-rows
 RFC makes the row checkable.
 

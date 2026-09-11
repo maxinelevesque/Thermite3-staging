@@ -2,8 +2,8 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use thermite_lower::{
     canonical_interference_projection, check_program, emit_interference_witness,
-    lean_interference_replay_source, replay_interference_witness, InterferenceWitness,
-    WitnessError,
+    lean_interference_replay_source, replay_interference_witness, score_promise_trace_mutations,
+    InterferenceWitness, PromiseTraceMutationOutcome, WitnessError,
 };
 use thermite_syntax::parse;
 
@@ -47,6 +47,21 @@ fn nested_region_fixture() -> thermite_syntax::Program {
     parsed.program
 }
 
+fn inferred_write_fixture(write_body: bool) -> thermite_syntax::Program {
+    let body = if write_body {
+        "{ counter = counter + 1; counter }"
+    } else {
+        "{ 0 }"
+    };
+    let parsed = parse(&format!(
+        "shared counter: u64\n\
+         fn increment() -> u64 ! read(counter), write(counter) requires true ensures true \
+           interleaves {{ asks final(counter) >= counter; promises final(counter) >= counter; }} {body}"
+    ));
+    assert!(parsed.is_clean(), "parse errors: {:?}", parsed.errors);
+    parsed.program
+}
+
 fn lean_output(
     canonical: &thermite_lower::CanonicalInterferenceProjection,
     witness: &InterferenceWitness,
@@ -71,7 +86,7 @@ fn lean_output(
 }
 
 #[test]
-fn interference_witness_is_deterministic_and_source_bound() {
+fn interference_witness_and_promise_mutation_replay_are_deterministic_and_source_bound() {
     let program = fixture();
     let checked = check_program(&program).expect("checked RFC-12 program");
     let first = emit_interference_witness(&checked);
@@ -85,6 +100,18 @@ fn interference_witness_is_deterministic_and_source_bound() {
     let canonical = canonical_interference_projection(&program).unwrap();
     assert_eq!(canonical.functions, first.functions);
     assert_eq!(canonical.obligations, first.obligations);
+    assert!(first
+        .functions
+        .iter()
+        .all(|function| function.observed_writes == ["counter"]));
+    let score = score_promise_trace_mutations(&first);
+    assert_eq!(score.killed, 6);
+    assert_eq!(score.survived, 0);
+    assert_eq!(score.unsupported, 0);
+    assert!(score
+        .cases
+        .iter()
+        .all(|case| case.outcome == PromiseTraceMutationOutcome::Killed));
     let output = lean_output(&canonical, &first);
     assert!(
         output.status.success(),
@@ -94,6 +121,7 @@ fn interference_witness_is_deterministic_and_source_bound() {
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("THERMITE_RFC12_INTERFERENCE_REPLAY_ACCEPTED_V1"));
+    assert!(stdout.contains("THERMITE_RFC12_PROMISE_MUTATION_REPLAY_ACCEPTED_V1"));
     assert!(
         stdout.contains("depends on axioms: [propext]")
             && !stdout.contains("sorryAx")
@@ -101,6 +129,31 @@ fn interference_witness_is_deterministic_and_source_bound() {
             && !stdout.contains("Quot.sound"),
         "unexpected axiom report: {stdout}"
     );
+}
+
+#[test]
+fn promise_mutation_scoring_reports_unsupported_observables_explicitly() {
+    let program = inferred_write_fixture(false);
+    let witness = emit_interference_witness(&check_program(&program).unwrap());
+
+    let score = score_promise_trace_mutations(&witness);
+    assert_eq!(score.killed, 0);
+    assert_eq!(score.survived, 0);
+    assert_eq!(score.unsupported, 3);
+    assert!(score
+        .cases
+        .iter()
+        .all(|case| { case.outcome == PromiseTraceMutationOutcome::Unsupported }));
+}
+
+#[test]
+fn promise_trace_uses_inferred_in_language_shared_writes() {
+    let program = inferred_write_fixture(true);
+    let witness = emit_interference_witness(&check_program(&program).unwrap());
+    assert_eq!(witness.functions[0].observed_writes, ["counter"]);
+
+    let score = score_promise_trace_mutations(&witness);
+    assert_eq!((score.killed, score.survived, score.unsupported), (3, 0, 0));
 }
 
 #[test]

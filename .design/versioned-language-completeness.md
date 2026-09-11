@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: cdabe99a22f02debf219e31dc385dade9cc894d2819479c7f9577153f00616d5 (re-pinned 2026-09-11 after the generated RFC-58 Lean replay bridge refreshed the governed claim ledger. prior: 10236f17b172d0bac67cd6f85e6289f10a94e79109175ac029e7d0d10acb12e5)
+audited-content-sha256: ba2ae9f4141bf914d242055931c386ad6a5877a02b35654b5e8e478dc3388a06 (re-pinned 2026-09-11 after materializing the final 584-entry claim-closure population for RFC-12 promise-trace evidence. prior: d7cddfb86c06cac95f47a455a37331f5f51eabc1c2648eb8935b47605a2952b7)
 
 ## Summary
 
