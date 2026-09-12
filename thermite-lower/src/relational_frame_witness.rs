@@ -880,6 +880,9 @@ pub fn emit_relational_transport_receipts(
         .functions
         .iter()
         .filter_map(|function| {
+            if function.projections.is_empty() {
+                return None;
+            }
             let body = function.body.as_ref()?;
             let CanonicalRelationalProgram::Return { value } = body else {
                 return None;
@@ -1139,9 +1142,11 @@ fn lean_list(values: impl IntoIterator<Item = String>) -> String {
     format!("[{}]", values.into_iter().collect::<Vec<_>>().join(", "))
 }
 
-/// Emit a cold Lean replay for every authority-bearing function in an exact
-/// checked witness. Unsupported functions are intentionally absent because
-/// their canonical witness carries no projections.
+/// Emit a cold Lean replay for every translated function in an exact checked
+/// witness. A translated research-gated function may request no semantic
+/// projections; its replay still checks that the empty claim and named gates
+/// are the canonical classification. Bodies outside the modeled fragment are
+/// intentionally absent and carry no formal authority.
 pub fn lean_relational_frame_replay_source(
     source: &Program,
     witness: &RelationalFrameWitness,

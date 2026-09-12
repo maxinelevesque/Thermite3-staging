@@ -143,8 +143,10 @@ use crate::manifest::{
     InterferenceFunctionEvidence, InterferenceObligationEvidence, InterferenceRequirementEvidence,
     InterferenceResidualTrust, InterferenceVerdict, Level, ObligationResult, ProtocolEvidence,
     ProtocolFormalReplay, ProtocolFormalReplayVerdict, ProtocolResidualTrust, ProtocolVerdict,
-    RejectReason, ResourceFlowEvidence, ResourceFlowVerdict, ResourceForgetFootprint,
-    ResourceFormalReplay, ResourceFormalReplayVerdict, ResourceResidualTrust,
+    RejectReason, RelationalEvidence, RelationalFormalReplay, RelationalFormalReplayVerdict,
+    RelationalResidualTrust, RelationalTransportEvidence, ResourceFlowEvidence,
+    ResourceFlowVerdict, ResourceForgetFootprint, ResourceFormalReplay,
+    ResourceFormalReplayVerdict, ResourceResidualTrust,
 };
 use crate::profile::{self, SolverProfile};
 
@@ -632,6 +634,8 @@ pub fn check_file_with_options(
         Some(witness) => Some(run_rfc13_lean_replay(&parsed.program, witness)?),
         None => None,
     };
+    let relational_witness = thermite_lower::emit_relational_frame_witness(&checked);
+    let relational_evidence = run_relational_lean_replays(&parsed.program, &relational_witness)?;
 
     // 4/5/6/7. Per-item certification (`thermite-design.md` §5.3 — "proof
     // results content-addressed and cached per item"; "an edit to `f` cannot
@@ -1452,6 +1456,7 @@ pub fn check_file_with_options(
                 protocol_witness.as_ref(),
                 protocol_evidence.clone(),
             );
+            let cert = attach_relational_evidence(cert, &relational_witness, &relational_evidence);
             let cert = match scopes.get(&cert.item) {
                 Some(scope) => cert.with_assurance_scope(scope.clone()),
                 // A cert whose item has no node keeps its `None` scope, which
@@ -2101,6 +2106,233 @@ fn attach_protocol_evidence(
         (None, None) => cert,
         _ => panic!("RFC-13 witness and replay evidence must be present together"),
     }
+}
+
+fn run_relational_replay_process(source: &str, token: &str) -> Result<(), ForgeError> {
+    const REPLAY_TIMEOUT: Duration = Duration::from_secs(60);
+    let lake = std::env::var_os("THERMITE_LEAN_LAKE").unwrap_or_else(|| "lake".into());
+    let mut child = Command::new(lake)
+        .args(["env", "lean", "--stdin", "--threads=1"])
+        .current_dir(lean_package_root())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| ForgeError::RelationalReplayUnavailable {
+            detail: format!("could not invoke `lake env lean`: {error}"),
+        })?;
+    child
+        .stdin
+        .take()
+        .ok_or_else(|| ForgeError::RelationalReplayUnavailable {
+            detail: "Lean process did not expose stdin".into(),
+        })?
+        .write_all(source.as_bytes())
+        .map_err(|error| ForgeError::RelationalReplayUnavailable {
+            detail: format!("could not write Lean input: {error}"),
+        })?;
+    let started = Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if started.elapsed() < REPLAY_TIMEOUT => {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(ForgeError::RelationalReplayUnavailable {
+                    detail: format!(
+                        "Lean replay exceeded the {} second timeout",
+                        REPLAY_TIMEOUT.as_secs()
+                    ),
+                });
+            }
+            Err(error) => {
+                return Err(ForgeError::RelationalReplayUnavailable {
+                    detail: format!("could not poll Lean replay: {error}"),
+                });
+            }
+        }
+    }
+    let output =
+        child
+            .wait_with_output()
+            .map_err(|error| ForgeError::RelationalReplayUnavailable {
+                detail: format!("could not collect Lean replay output: {error}"),
+            })?;
+    let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let accepted = combined.lines().any(|line| line.trim() == token);
+    let allowed_axioms = relational_axiom_reports_allowed(&combined);
+    if output.status.success() && accepted && allowed_axioms && !combined.contains("sorryAx") {
+        Ok(())
+    } else {
+        Err(ForgeError::RelationalReplayRejected {
+            detail: format!(
+                "exit={:?}, acceptance_token={accepted}, allowed_axioms={allowed_axioms}, forbidden_sorryAx={}: {}",
+                output.status.code(),
+                combined.contains("sorryAx"),
+                combined.chars().take(1200).collect::<String>()
+            ),
+        })
+    }
+}
+
+fn relational_axiom_reports_allowed(output: &str) -> bool {
+    let reports = output
+        .lines()
+        .filter(|line| {
+            line.contains("does not depend on any axioms") || line.contains("depends on axioms:")
+        })
+        .collect::<Vec<_>>();
+    !reports.is_empty()
+        && reports.into_iter().all(|line| {
+            if line.contains("does not depend on any axioms") {
+                return true;
+            }
+            let Some((_, listed)) = line.split_once("depends on axioms:") else {
+                return false;
+            };
+            let listed = listed.trim().trim_start_matches('[').trim_end_matches(']');
+            listed
+                .split(',')
+                .all(|axiom| matches!(axiom.trim(), "propext" | "Classical.choice" | "Quot.sound"))
+        })
+}
+
+fn relational_checker_hash(modules: &[(&str, &str)]) -> Result<String, ForgeError> {
+    let mut compiled = Sha256::new();
+    let mut runtime = Sha256::new();
+    for (relative, embedded) in modules {
+        compiled.update((embedded.len() as u64).to_le_bytes());
+        compiled.update(embedded.as_bytes());
+        let path = lean_package_root().join(relative);
+        let bytes =
+            std::fs::read(&path).map_err(|error| ForgeError::RelationalReplayUnavailable {
+                detail: format!("could not read `{}`: {error}", path.display()),
+            })?;
+        runtime.update((bytes.len() as u64).to_le_bytes());
+        runtime.update(bytes);
+    }
+    let compiled = format!("{:x}", compiled.finalize());
+    let runtime = format!("{:x}", runtime.finalize());
+    if compiled != runtime {
+        return Err(ForgeError::RelationalReplayUnavailable {
+            detail: format!(
+                "relational checker sources differ from embedded sources (compiled {compiled}, runtime {runtime})"
+            ),
+        });
+    }
+    Ok(compiled)
+}
+
+fn run_relational_lean_replays(
+    program: &Program,
+    witness: &thermite_lower::RelationalFrameWitness,
+) -> Result<Vec<RelationalEvidence>, ForgeError> {
+    const FRAME: &str = include_str!("../../lean/Thermite/RelationalFrame.lean");
+    const WITNESS: &str = include_str!("../../lean/Thermite/RelationalFrameWitness.lean");
+    const TRANSPORT: &str = include_str!("../../lean/Thermite/RelationalFrameTransport.lean");
+    let source_hash = relational_checker_hash(&[
+        ("Thermite/RelationalFrame.lean", FRAME),
+        ("Thermite/RelationalFrameWitness.lean", WITNESS),
+    ])?;
+    let source =
+        thermite_lower::lean_relational_frame_replay_source(program, witness).map_err(|error| {
+            ForgeError::RelationalReplayRejected {
+                detail: format!("could not reconstruct exact source replay: {error:?}"),
+            }
+        })?;
+    if witness
+        .functions
+        .iter()
+        .any(|function| function.body.is_some())
+    {
+        run_relational_replay_process(&source, "THERMITE_RELATIONAL_FRAME_REPLAY_ACCEPTED_V1")?;
+    }
+    let receipts =
+        thermite_lower::emit_relational_transport_receipts(program, witness).map_err(|error| {
+            ForgeError::RelationalReplayRejected {
+                detail: format!("could not construct exact transport receipts: {error:?}"),
+            }
+        })?;
+    let transport_hash = if receipts.is_empty() {
+        None
+    } else {
+        let hash = relational_checker_hash(&[
+            ("Thermite/RelationalFrame.lean", FRAME),
+            ("Thermite/RelationalFrameWitness.lean", WITNESS),
+            ("Thermite/RelationalFrameTransport.lean", TRANSPORT),
+        ])?;
+        let source =
+            thermite_lower::lean_relational_transport_replay_source(program, witness, &receipts)
+                .map_err(|error| ForgeError::RelationalReplayRejected {
+                    detail: format!("could not reconstruct exact transport replay: {error:?}"),
+                })?;
+        run_relational_replay_process(&source, "THERMITE_RELATIONAL_TRANSPORT_ACCEPTED_V1")?;
+        Some(hash)
+    };
+    Ok(witness
+        .functions
+        .iter()
+        .filter(|function| function.body.is_some())
+        .map(|function| {
+            let transport = receipts
+                .iter()
+                .find(|receipt| receipt.function == function.function)
+                .map(|receipt| RelationalTransportEvidence {
+                    receipt: receipt.clone(),
+                    checker: "Thermite.RelationalFrameTransport/v1".into(),
+                    checker_sha256: transport_hash
+                        .clone()
+                        .expect("a receipt implies a transport replay"),
+                    verdict: RelationalFormalReplayVerdict::KernelAccepted,
+                });
+            RelationalEvidence {
+                function: function.clone(),
+                formal_replay: RelationalFormalReplay {
+                    checker: "Thermite.RelationalFrameWitness/v1".into(),
+                    checker_sha256: source_hash.clone(),
+                    witness_version: witness.version,
+                    canonical_ast_sha256: witness.canonical_ast_sha256.clone(),
+                    verdict: RelationalFormalReplayVerdict::KernelAccepted,
+                },
+                transport,
+                residual_trust: vec![
+                    RelationalResidualTrust::Parser,
+                    RelationalResidualTrust::BodyTranslation,
+                    RelationalResidualTrust::EffectAnalysis,
+                    RelationalResidualTrust::WitnessExtraction,
+                    RelationalResidualTrust::SourceModelCorrespondence,
+                    RelationalResidualTrust::ExecutableTargetBehavior,
+                ],
+            }
+        })
+        .collect())
+}
+
+fn attach_relational_evidence(
+    cert: Certificate,
+    witness: &thermite_lower::RelationalFrameWitness,
+    evidence: &[RelationalEvidence],
+) -> Certificate {
+    let Some(evidence) = evidence
+        .iter()
+        .find(|evidence| evidence.function.function == cert.item)
+    else {
+        return cert;
+    };
+    let receipts = evidence
+        .transport
+        .iter()
+        .map(|transport| transport.receipt.clone())
+        .collect::<Vec<_>>();
+    cert.with_relational_evidence_for_witness(witness, &receipts, evidence.clone())
+        .expect("typed relational evidence matches its exact checked witness")
 }
 
 /// Run a non-legacy proof route. [`check_file_with_options`] supplies the
@@ -10245,6 +10477,152 @@ fn discard(b: Bundle) -> u64
         assert!(matches!(
             run_rfc13_lean_replay(&parsed.program, &tampered),
             Err(ForgeError::Rfc13ReplayRejected { .. })
+        ));
+    }
+
+    #[test]
+    fn relational_evidence_is_exact_scoped_and_shared_by_certificate_review_and_audit() {
+        let parsed = thermite_syntax::parse(
+            "struct State { n: u64 } keeps n < 10\n\
+             shared state: State\n\
+             fn identity(x: u64) -> u64 ! pure requires true ensures result == x { x }\n\
+             fn bump() -> u64 ! read(state.n), write(state.n) requires true ensures true \
+               { state.n = state.n + 1; state.n }\n\
+             fn wait(x: u64) -> u64 ! blocks requires true ensures result == x { x }",
+        );
+        assert!(parsed.is_clean(), "fixture parse: {:?}", parsed.errors);
+        thermite_spec::validate(&parsed.program).expect("relational fixture validates");
+        let checked = thermite_lower::check_program(&parsed.program).unwrap();
+        let witness = thermite_lower::emit_relational_frame_witness(&checked);
+        let evidence = run_relational_lean_replays(&parsed.program, &witness)
+            .expect("translated relational functions kernel-replay");
+        assert_eq!(evidence.len(), 3);
+
+        let identity = evidence
+            .iter()
+            .find(|evidence| evidence.function.function == "identity")
+            .unwrap();
+        assert!(
+            identity.transport.is_some(),
+            "pure return has exact T2 transport"
+        );
+        assert!(!identity.function.projections.is_empty());
+
+        let bump = evidence
+            .iter()
+            .find(|evidence| evidence.function.function == "bump")
+            .unwrap();
+        assert!(bump.transport.is_none(), "shared write remains source-only");
+        assert!(!bump.function.projections.is_empty());
+
+        let wait = evidence
+            .iter()
+            .find(|evidence| evidence.function.function == "wait")
+            .unwrap();
+        assert!(wait.transport.is_none());
+        assert!(wait.function.projections.is_empty());
+        assert!(format!("{:?}", wait.function.effect_support).contains("PeerProgress"));
+
+        let mut certs = Vec::new();
+        for (name, effects) in [
+            ("identity", vec!["pure".to_string()]),
+            (
+                "bump",
+                vec!["read(state.n)".to_string(), "write(state.n)".to_string()],
+            ),
+            ("wait", vec!["blocks".to_string()]),
+        ] {
+            let artifact = thermite_lower::lower_l3_artifact(&parsed.program, name).unwrap();
+            let cert = Certificate::new(
+                name,
+                Level::L3,
+                effects,
+                0,
+                vec![ObligationResult::discharged("fixture proof")],
+            )
+            .with_verus_artifact(&artifact, true)
+            .unwrap();
+            certs.push(
+                live_accepted(
+                    attach_relational_evidence(cert, &witness, &evidence),
+                    "verus",
+                )
+                .into_certificate(),
+            );
+        }
+
+        let audit = crate::audit::AuditManifest::from_certificates(
+            &certs,
+            &parsed.program,
+            crate::audit::Toolchain::new("fixture-verus"),
+        );
+        let review = crate::review::project_artifact(&certs, &parsed.program, None);
+        assert_eq!(audit.functions[0].relational, certs[0].relational);
+        assert_eq!(review.intent_reviewable[0].relational, certs[0].relational);
+
+        let identity_text = crate::cli::render_human(&certs[0]);
+        let bump_text = crate::cli::render_human(&certs[1]);
+        let wait_text = crate::cli::render_human(&certs[2]);
+        let audit_text = crate::cli::render_audit(&audit);
+        let review_text = crate::cli::render_review(&review);
+        assert!(identity_text.contains("end-to-end"));
+        assert!(identity_text.contains("Result"));
+        assert!(bump_text.contains("source-only"));
+        assert!(wait_text.contains("source-only"));
+        assert!(wait_text.contains("PeerProgress"));
+        for text in [&audit_text, &review_text] {
+            assert!(text.contains("relational"));
+            assert!(text.contains("Result"));
+            assert!(text.contains("end-to-end"));
+            assert!(text.contains("source-only"));
+            assert!(text.contains("PeerProgress"));
+        }
+
+        let mut tampered = certs[0].clone();
+        tampered
+            .relational
+            .as_mut()
+            .unwrap()
+            .function
+            .projections
+            .pop();
+        assert!(
+            std::panic::catch_unwind(|| crate::audit::AuditManifest::from_certificates(
+                &[tampered],
+                &parsed.program,
+                crate::audit::Toolchain::new("fixture-verus"),
+            ))
+            .is_err(),
+            "display-shaped relational data cannot retain live audit authority"
+        );
+
+        let legacy = Certificate::new(
+            "identity",
+            Level::L3,
+            vec!["pure".into()],
+            0,
+            vec![ObligationResult::discharged("legacy proof")],
+        );
+        let json = serde_json::to_value(&legacy).unwrap();
+        assert!(json.get("relational").is_none());
+        let decoded: Certificate = serde_json::from_value(json).unwrap();
+        assert!(decoded.relational.is_none());
+        decoded.validate_relational_authority().unwrap();
+    }
+
+    #[test]
+    fn relational_replay_accepts_only_the_enumerated_axiom_profile() {
+        assert!(!relational_axiom_reports_allowed(
+            "THERMITE_RELATIONAL_FRAME_REPLAY_ACCEPTED_V1"
+        ));
+        assert!(relational_axiom_reports_allowed(
+            "'source' does not depend on any axioms"
+        ));
+        assert!(relational_axiom_reports_allowed(
+            "'transport' depends on axioms: [propext, Classical.choice, Quot.sound]"
+        ));
+        assert!(!relational_axiom_reports_allowed(
+            "'transport' depends on axioms: [propext, Thermite.secretAxiom]"
         ));
     }
 
