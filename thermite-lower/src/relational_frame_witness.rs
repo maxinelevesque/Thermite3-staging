@@ -203,6 +203,10 @@ pub struct RelationalTransportReceipt {
     pub source_body: CanonicalRelationalProgram,
     pub lowered_artifact_sha256: String,
     pub theorem: String,
+    /// Exactly the independently transported projections. The current T2
+    /// return theorem transports result/completion equality, not region-state
+    /// framing, so write-frame authority remains source-only.
+    pub projections: Vec<Projection>,
     pub scope: RelationalScope,
 }
 
@@ -880,7 +884,15 @@ pub fn emit_relational_transport_receipts(
         .functions
         .iter()
         .filter_map(|function| {
-            if function.projections.is_empty() {
+            let projections = [
+                Projection::Result,
+                Projection::Outcome,
+                Projection::Termination,
+            ]
+            .into_iter()
+            .filter(|projection| function.projections.contains(projection))
+            .collect::<Vec<_>>();
+            if projections.is_empty() {
                 return None;
             }
             let body = function.body.as_ref()?;
@@ -897,6 +909,7 @@ pub fn emit_relational_transport_receipts(
                 source_body: body.clone(),
                 lowered_artifact_sha256: lowered_artifact_sha256.clone(),
                 theorem: "Thermite.RelationalFrameTransport.bounded_return_pair_end_to_end".into(),
+                projections,
                 scope: RelationalScope::EndToEnd,
             })
         })
@@ -921,16 +934,21 @@ fn lean_string(value: &str) -> String {
     serde_json::to_string(value).expect("serializing a string cannot fail")
 }
 
-/// Injective, prefix-preserving encoding of a segmented source region into the
-/// kernel's `List Nat` carrier. Each segment is length-prefixed UTF-8, so two
-/// different segment sequences cannot alias and source ancestry is preserved.
-fn lean_region(path: &str) -> String {
-    let encoded = path
-        .split('.')
+fn encoded_region(path: &str) -> Vec<usize> {
+    path.split('.')
         .flat_map(|segment| {
             std::iter::once(segment.len())
                 .chain(segment.as_bytes().iter().copied().map(usize::from))
         })
+        .collect()
+}
+
+/// Injective, prefix-preserving encoding of a segmented source region into the
+/// kernel's `List Nat` carrier. Each segment is length-prefixed UTF-8, so two
+/// different segment sequences cannot alias and source ancestry is preserved.
+fn lean_region(path: &str) -> String {
+    let encoded = encoded_region(path)
+        .into_iter()
         .map(|byte| byte.to_string())
         .collect::<Vec<_>>()
         .join(", ");
@@ -1334,5 +1352,26 @@ mod tests {
         assert!(witness.functions[0].body.is_none());
         assert!(witness.functions[0].unsupported_reason.is_some());
         assert!(witness.functions[0].projections.is_empty());
+    }
+
+    #[test]
+    fn encoded_region_overlap_matches_canonical_segment_prefix_overlap() {
+        let paths = ["a", "a.b", "a.b.c", "a.bc", "ab", "b"];
+        for left in paths {
+            for right in paths {
+                let left_segments = left.split('.').collect::<Vec<_>>();
+                let right_segments = right.split('.').collect::<Vec<_>>();
+                let source_overlap = left_segments.starts_with(&right_segments)
+                    || right_segments.starts_with(&left_segments);
+                let left_encoded = encoded_region(left);
+                let right_encoded = encoded_region(right);
+                let lean_overlap = left_encoded.starts_with(&right_encoded)
+                    || right_encoded.starts_with(&left_encoded);
+                assert_eq!(
+                    lean_overlap, source_overlap,
+                    "region overlap diverged for {left:?} and {right:?}"
+                );
+            }
+        }
     }
 }

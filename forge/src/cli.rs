@@ -3641,20 +3641,9 @@ pub(crate) fn render_review(artifact: &ReviewArtifact) -> String {
             out.push_str(&format!("  {} dec {}\n", decl.signature, decl.measures));
         }
         if let Some(relational) = &r.relational {
-            let scope = if relational.transport.is_some() {
-                "end-to-end"
-            } else {
-                "source-only"
-            };
             out.push_str(&format!(
-                "  relational: scope={scope} projections=[{}] effect-support=[{}]\n",
-                relational
-                    .function
-                    .projections
-                    .iter()
-                    .map(|projection| format!("{projection:?}"))
-                    .collect::<Vec<_>>()
-                    .join(", "),
+                "  relational: projections=[{}] effect-support=[{}]\n",
+                render_relational_projections(relational),
                 relational
                     .function
                     .effect_support
@@ -3845,6 +3834,32 @@ fn render_repair_item(item: &RepairItem) -> String {
 /// `.design/forge/audit-manifest.md` REQ-2, OQ-1 — the human shape is a rendering
 /// detail; the `--json` document is the stable contract). Three sections: the
 /// per-fn table, the project assurance, and the §8/§9 greppable TCB inventory.
+fn render_relational_projections(evidence: &crate::manifest::RelationalEvidence) -> String {
+    if evidence.function.projections.is_empty() {
+        return "(none; research-gated or structural-only)".to_string();
+    }
+    evidence
+        .function
+        .projections
+        .iter()
+        .map(|projection| {
+            let transported = evidence
+                .transport
+                .as_ref()
+                .is_some_and(|transport| transport.receipt.projections.contains(projection));
+            format!(
+                "{projection:?}@{}",
+                if transported {
+                    "end-to-end"
+                } else {
+                    "source-only"
+                }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 pub(crate) fn render_audit(manifest: &AuditManifest) -> String {
     let mut out = String::new();
     out.push_str(&format!(
@@ -3945,20 +3960,9 @@ pub(crate) fn render_audit(manifest: &AuditManifest) -> String {
             ));
         }
         if let Some(relational) = &f.relational {
-            let scope = if relational.transport.is_some() {
-                "end-to-end"
-            } else {
-                "source-only"
-            };
             out.push_str(&format!(
-                "    relational: accepted; scope={scope} projections=[{}] checker={} canonical-ast-sha256={}\n",
-                relational
-                    .function
-                    .projections
-                    .iter()
-                    .map(|projection| format!("{projection:?}"))
-                    .collect::<Vec<_>>()
-                    .join(", "),
+                "    relational: accepted; projections=[{}] checker={} canonical-ast-sha256={}\n",
+                render_relational_projections(relational),
                 relational.formal_replay.checker,
                 relational.formal_replay.canonical_ast_sha256,
             ));
@@ -4248,22 +4252,11 @@ pub(crate) fn render_human(cert: &Certificate) -> String {
         ));
     }
     if let Some(relational) = &cert.relational {
-        let scope = if relational.transport.is_some() {
-            "end-to-end"
-        } else {
-            "source-only"
-        };
         out.push_str(&format!(
-            "relational: accepted (scope={scope}, formal replay: kernel-accepted, checker={}, canonical_ast_sha256={}, projections=[{}])\n",
+            "relational: accepted (formal replay: kernel-accepted, checker={}, canonical_ast_sha256={}, projections=[{}])\n",
             relational.formal_replay.checker,
             relational.formal_replay.canonical_ast_sha256,
-            relational
-                .function
-                .projections
-                .iter()
-                .map(|projection| format!("{projection:?}"))
-                .collect::<Vec<_>>()
-                .join(", "),
+            render_relational_projections(relational),
         ));
         out.push_str(&format!(
             "relational_effect_support: {}\n",

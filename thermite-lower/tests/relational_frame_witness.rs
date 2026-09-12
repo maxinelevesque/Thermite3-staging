@@ -62,6 +62,20 @@ fn production_pure_function_receives_exact_t2_transport() {
     assert_eq!(receipts.len(), 1);
     assert_eq!(receipts[0].function, "identity");
     assert_eq!(receipts[0].scope, thermite_lower::RelationalScope::EndToEnd);
+    assert_eq!(
+        receipts[0].projections,
+        [
+            thermite_lower::RelationalProjection::Result,
+            thermite_lower::RelationalProjection::Outcome,
+            thermite_lower::RelationalProjection::Termination,
+        ]
+    );
+    assert!(
+        !receipts[0]
+            .projections
+            .contains(&thermite_lower::RelationalProjection::WriteFrame),
+        "the return transport theorem does not upgrade source region framing"
+    );
     let replay = thermite_lower::lean_relational_transport_replay_source(
         &parsed.program,
         &witness,
@@ -79,12 +93,35 @@ fn production_pure_function_receives_exact_t2_transport() {
         .contains("THERMITE_RELATIONAL_TRANSPORT_ACCEPTED_V1"));
     assert!(!String::from_utf8_lossy(&output.stdout).contains("sorryAx"));
 
+    let mut mutants = Vec::new();
     let mut mutant = receipts.clone();
     mutant[0].lowered_artifact_sha256.push('0');
+    mutants.push(mutant);
+    let mut mutant = receipts.clone();
+    mutant[0].theorem = "Thermite.forged".into();
+    mutants.push(mutant);
+    let mut mutant = receipts.clone();
+    mutant[0].projections.pop();
+    mutants.push(mutant);
+    let mut mutant = receipts.clone();
+    mutant[0].canonical_ast_sha256.push('0');
+    mutants.push(mutant);
+    for mutant in mutants {
+        assert!(thermite_lower::replay_relational_transport_receipts(
+            &parsed.program,
+            &witness,
+            &mutant,
+        )
+        .is_err());
+    }
+
+    let changed =
+        parse("fn identity(x: u64) -> u64 ! pure requires true ensures result == x { x + x }");
+    assert!(changed.is_clean(), "parse errors: {:?}", changed.errors);
     assert!(thermite_lower::replay_relational_transport_receipts(
-        &parsed.program,
+        &changed.program,
         &witness,
-        &mutant,
+        &receipts,
     )
-    .is_err());
+    .is_err(), "source-valid evidence cannot cross to a different production body");
 }

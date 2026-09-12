@@ -409,6 +409,29 @@ theorem net_is_state_plus_io :
     supportForKind .net =
       combineProjection (supportForPrimitive .state) (supportForPrimitive .io) := rfl
 
+theorem accrues_has_accumulator_agreement :
+    (supportForPrimitive .accrues).accumulator = .derived := by
+  decide
+
+theorem io_requires_external_coupling_but_retains_frame :
+    (supportForPrimitive .io).result = .conditional .externalCoupling ∧
+      (supportForPrimitive .io).trace = .conditional .externalCoupling ∧
+      (supportForPrimitive .io).writeFrame = .derived := by
+  decide
+
+theorem exception_retains_outcome_and_frame :
+    (supportForPrimitive .exception).result = .notApplicable ∧
+      (supportForPrimitive .exception).outcome = .derived ∧
+      (supportForPrimitive .exception).writeFrame = .derived := by
+  decide
+
+theorem partiality_separates_completed_pairs_from_termination :
+    (supportForPrimitive .partiality).result = .derived ∧
+      (supportForPrimitive .partiality).writeFrame = .derived ∧
+      (supportForPrimitive .partiality).termination =
+        .unavailable .terminationWitness := by
+  decide
+
 theorem bare_random_requires_new_denotation :
     (supportForPrimitive .random).result = .unavailable .probabilisticDenotation ∧
       (supportForPrimitive .random).writeFrame =

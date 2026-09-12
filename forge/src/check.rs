@@ -10507,6 +10507,13 @@ fn discard(b: Bundle) -> u64
             "pure return has exact T2 transport"
         );
         assert!(!identity.function.projections.is_empty());
+        assert!(!identity
+            .transport
+            .as_ref()
+            .unwrap()
+            .receipt
+            .projections
+            .contains(&thermite_lower::RelationalProjection::WriteFrame));
 
         let bump = evidence
             .iter()
@@ -10566,9 +10573,10 @@ fn discard(b: Bundle) -> u64
         let audit_text = crate::cli::render_audit(&audit);
         let review_text = crate::cli::render_review(&review);
         assert!(identity_text.contains("end-to-end"));
+        assert!(identity_text.contains("WriteFrame@source-only"));
         assert!(identity_text.contains("Result"));
         assert!(bump_text.contains("source-only"));
-        assert!(wait_text.contains("source-only"));
+        assert!(wait_text.contains("none; research-gated"));
         assert!(wait_text.contains("PeerProgress"));
         for text in [&audit_text, &review_text] {
             assert!(text.contains("relational"));
