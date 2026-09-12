@@ -23,6 +23,7 @@ import Thermite.Faithfulness
 import Thermite.EffectRows
 import Thermite.RelationalFrame
 import Thermite.RelationalFrameWitness
+import Thermite.RelationalFrameTransport
 
 -- Solver-replay examples, generated exporter fixtures, and BitVec models.
 import Thermite.SmtDemo
