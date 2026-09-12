@@ -28,6 +28,115 @@ theorem tv_meta_body_pair
       Thermite.tv_meta_body body rightState rightLowered rightTv]
   exact sourceCongruent
 
+/-! ## Exact transport for the region-free bounded return fragment -/
+
+open Thermite.RelationalFrame.Bounded
+
+def toExec : Thermite.RelationalFrame.Bounded.Expr → Option Thermite.Exec.ExecExpr
+  | .literal (.int _) => none
+  | .literal (.bool value) => some (.boolLit value)
+  | .local value => some value
+  | .region _ => none
+  | .arith op left right => do
+      some (.arith op (← toExec left) (← toExec right))
+  | .compare op left right => do
+      some (.cmp op (← toExec left) (← toExec right))
+  | .logic op left right => do
+      some (.logic op (← toExec left) (← toExec right))
+  | .not value => do
+      some (.not (← toExec value))
+  | .cast value ty => do
+      some (.cast (← toExec value) ty)
+
+theorem eval_toExec : ∀ (expr : Thermite.RelationalFrame.Bounded.Expr)
+    {encoded : Thermite.Exec.ExecExpr}
+    {world : Thermite.RelationalFrame.Bounded.World},
+    toExec expr = some encoded →
+      expr.eval world = Thermite.Exec.execDenote encoded world.locals.env
+  | .literal (.int _), encoded, _, encodedEq => by
+      simp [toExec] at encodedEq
+  | .literal (.bool value), encoded, _, encodedEq => by
+      simp only [toExec, Option.some.injEq] at encodedEq
+      subst encoded
+      rfl
+  | .local value, encoded, _, encodedEq => by
+      simp only [toExec, Option.some.injEq] at encodedEq
+      subst encoded
+      rfl
+  | .region _, _, _, encodedEq => by simp [toExec] at encodedEq
+  | .arith op left right, encoded, world, encodedEq => by
+      simp only [toExec] at encodedEq
+      cases leftEq : toExec left with
+      | none => simp [leftEq] at encodedEq
+      | some leftEncoded =>
+          cases rightEq : toExec right with
+          | none => simp [leftEq, rightEq] at encodedEq
+          | some rightEncoded =>
+              simp [leftEq, rightEq] at encodedEq
+              subst encoded
+              simp only [Thermite.RelationalFrame.Bounded.Expr.eval, Thermite.Exec.execDenote]
+              rw [eval_toExec left leftEq, eval_toExec right rightEq]
+  | .compare op left right, encoded, world, encodedEq => by
+      simp only [toExec] at encodedEq
+      cases leftEq : toExec left with
+      | none => simp [leftEq] at encodedEq
+      | some leftEncoded =>
+          cases rightEq : toExec right with
+          | none => simp [leftEq, rightEq] at encodedEq
+          | some rightEncoded =>
+              simp [leftEq, rightEq] at encodedEq
+              subst encoded
+              simp only [Thermite.RelationalFrame.Bounded.Expr.eval, Thermite.Exec.execDenote]
+              rw [eval_toExec left leftEq, eval_toExec right rightEq]
+  | .logic op left right, encoded, world, encodedEq => by
+      simp only [toExec] at encodedEq
+      cases leftEq : toExec left with
+      | none => simp [leftEq] at encodedEq
+      | some leftEncoded =>
+          cases rightEq : toExec right with
+          | none => simp [leftEq, rightEq] at encodedEq
+          | some rightEncoded =>
+              simp [leftEq, rightEq] at encodedEq
+              subst encoded
+              simp only [Thermite.RelationalFrame.Bounded.Expr.eval, Thermite.Exec.execDenote]
+              rw [eval_toExec left leftEq, eval_toExec right rightEq]
+  | .not value, encoded, world, encodedEq => by
+      simp only [toExec] at encodedEq
+      cases valueEq : toExec value with
+      | none => simp [valueEq] at encodedEq
+      | some valueEncoded =>
+          simp [valueEq] at encodedEq
+          subst encoded
+          simp only [Thermite.RelationalFrame.Bounded.Expr.eval, Thermite.Exec.execDenote]
+          rw [eval_toExec value valueEq]
+  | .cast value ty, encoded, world, encodedEq => by
+      simp only [toExec] at encodedEq
+      cases valueEq : toExec value with
+      | none => simp [valueEq] at encodedEq
+      | some valueEncoded =>
+          simp [valueEq] at encodedEq
+          subst encoded
+          simp only [Thermite.RelationalFrame.Bounded.Expr.eval, Thermite.Exec.execDenote]
+          rw [eval_toExec value valueEq]
+
+/-- A real region-free canonical return body reaches the existing T2 target
+    theorem without a caller-supplied result-congruence premise. The only
+    relational input is equality of executable locals. -/
+theorem bounded_return_pair_end_to_end
+    (expr : Thermite.RelationalFrame.Bounded.Expr)
+    (encoded : Thermite.Exec.ExecExpr)
+    (encodedEq : toExec expr = some encoded)
+    (left right : Thermite.RelationalFrame.Bounded.World)
+    (localsEq : left.locals = right.locals) :
+    Thermite.Exec.bodyRefState (.mk [] (some encoded)) left.locals =
+      Thermite.Exec.bodyRefState (.mk [] (some encoded)) right.locals := by
+  apply tv_meta_body_pair (.mk [] (some encoded)) left.locals right.locals
+  · simp only [Thermite.Exec.bodyDenote, Thermite.Exec.Block.blkTail,
+      Thermite.Exec.blockThread]
+    rw [localsEq]
+  · rfl
+  · rfl
+
 namespace Examples
 
 open Thermite.Exec

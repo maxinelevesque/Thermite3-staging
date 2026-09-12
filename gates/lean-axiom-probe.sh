@@ -127,6 +127,8 @@ THEOREMS=(
   "Thermite.RelationalFrameWitness.Examples.scope_upgrade_rejected"
   "Thermite.RelationalFrameWitness.Examples.structural_authority_is_not_result_authority"
   "Thermite.RelationalFrameTransport.tv_meta_body_pair"
+  "Thermite.RelationalFrameTransport.eval_toExec"
+  "Thermite.RelationalFrameTransport.bounded_return_pair_end_to_end"
   "Thermite.RelationalFrameTransport.Examples.identity_pair_end_to_end"
   "Thermite.LanguageCompleteness.expands_refl"
   "Thermite.LanguageCompleteness.expands_trans"

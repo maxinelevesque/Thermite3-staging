@@ -5,6 +5,7 @@
 //! transport theorem and receipt path.
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use thermite_syntax::{
     BinOp, Block, Effect, EffectRow, Expr, Item, PrimType, Program, Stmt, Type, UnaryOp,
@@ -192,6 +193,30 @@ pub struct RelationalFrameWitness {
     pub version: u32,
     pub canonical_ast_sha256: String,
     pub functions: Vec<RelationalFunctionWitness>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RelationalTransportReceipt {
+    pub version: u32,
+    pub function: String,
+    pub canonical_ast_sha256: String,
+    pub source_body: CanonicalRelationalProgram,
+    pub lowered_artifact_sha256: String,
+    pub theorem: String,
+    pub scope: RelationalScope,
+}
+
+#[derive(Debug)]
+pub enum RelationalTransportError {
+    Witness(WitnessError),
+    Lowering(String),
+    Mismatch(&'static str),
+}
+
+impl From<WitnessError> for RelationalTransportError {
+    fn from(value: WitnessError) -> Self {
+        Self::Witness(value)
+    }
 }
 
 impl RelationalFrameWitness {
@@ -823,6 +848,72 @@ pub fn replay_relational_frame_witness(
     Ok(checked)
 }
 
+fn t2_expr_supported(expr: &CanonicalRelationalExpr) -> bool {
+    match expr {
+        CanonicalRelationalExpr::Bool { .. } | CanonicalRelationalExpr::Local { .. } => true,
+        CanonicalRelationalExpr::Arith { left, right, .. }
+        | CanonicalRelationalExpr::Compare { left, right, .. }
+        | CanonicalRelationalExpr::Logic { left, right, .. } => {
+            t2_expr_supported(left) && t2_expr_supported(right)
+        }
+        CanonicalRelationalExpr::Not { value } | CanonicalRelationalExpr::Cast { value, .. } => {
+            t2_expr_supported(value)
+        }
+        // Integer literals need an in-range proof at the Rust→Lean boundary;
+        // retain source-only scope until that proof is carried explicitly.
+        CanonicalRelationalExpr::Int { .. } | CanonicalRelationalExpr::Region { .. } => false,
+    }
+}
+
+/// Produce end-to-end receipts only for exact region-free return bodies covered
+/// by `body_ref_sound`/T2. The source witness itself remains source-only; this
+/// separately replayed receipt is the sole scope-upgrade authority.
+pub fn emit_relational_transport_receipts(
+    source: &Program,
+    witness: &RelationalFrameWitness,
+) -> Result<Vec<RelationalTransportReceipt>, RelationalTransportError> {
+    replay_relational_frame_witness(source, witness)?;
+    let lowered = crate::lower(source)
+        .map_err(|error| RelationalTransportError::Lowering(format!("{error:?}")))?;
+    let lowered_artifact_sha256 = format!("{:x}", Sha256::digest(lowered.as_bytes()));
+    Ok(witness
+        .functions
+        .iter()
+        .filter_map(|function| {
+            let body = function.body.as_ref()?;
+            let CanonicalRelationalProgram::Return { value } = body else {
+                return None;
+            };
+            if !t2_expr_supported(value) {
+                return None;
+            }
+            Some(RelationalTransportReceipt {
+                version: 1,
+                function: function.function.clone(),
+                canonical_ast_sha256: witness.canonical_ast_sha256.clone(),
+                source_body: body.clone(),
+                lowered_artifact_sha256: lowered_artifact_sha256.clone(),
+                theorem: "Thermite.RelationalFrameTransport.bounded_return_pair_end_to_end".into(),
+                scope: RelationalScope::EndToEnd,
+            })
+        })
+        .collect())
+}
+
+pub fn replay_relational_transport_receipts(
+    source: &Program,
+    witness: &RelationalFrameWitness,
+    receipts: &[RelationalTransportReceipt],
+) -> Result<(), RelationalTransportError> {
+    let expected = emit_relational_transport_receipts(source, witness)?;
+    if receipts != expected {
+        return Err(RelationalTransportError::Mismatch(
+            "relational_transport_receipts",
+        ));
+    }
+    Ok(())
+}
+
 fn lean_string(value: &str) -> String {
     serde_json::to_string(value).expect("serializing a string cannot fail")
 }
@@ -914,6 +1005,67 @@ fn lean_rel_expr(expr: &CanonicalRelationalExpr) -> String {
         CanonicalRelationalExpr::Cast { value, ty } => {
             format!(".cast ({}) {}", lean_rel_expr(value), lean_int_ty(*ty))
         }
+    }
+}
+
+fn lean_exec_expr(expr: &CanonicalRelationalExpr) -> Option<String> {
+    match expr {
+        CanonicalRelationalExpr::Bool { value } => Some(format!(".boolLit {value}")),
+        CanonicalRelationalExpr::Local { name } => Some(format!(".var {}", lean_string(name))),
+        CanonicalRelationalExpr::Arith { op, left, right } => {
+            let op = match op {
+                RelationalArithOp::Add => ".add",
+                RelationalArithOp::Sub => ".sub",
+                RelationalArithOp::Mul => ".mul",
+                RelationalArithOp::Div => ".div",
+                RelationalArithOp::Rem => ".rem",
+                RelationalArithOp::Shl => ".shl",
+                RelationalArithOp::Shr => ".shr",
+                RelationalArithOp::BitAnd => ".bitAnd",
+                RelationalArithOp::BitOr => ".bitOr",
+                RelationalArithOp::BitXor => ".bitXor",
+            };
+            Some(format!(
+                ".arith {op} ({}) ({})",
+                lean_exec_expr(left)?,
+                lean_exec_expr(right)?
+            ))
+        }
+        CanonicalRelationalExpr::Compare { op, left, right } => {
+            let op = match op {
+                RelationalCompareOp::Eq => ".eq",
+                RelationalCompareOp::Ne => ".ne",
+                RelationalCompareOp::Lt => ".lt",
+                RelationalCompareOp::Le => ".le",
+                RelationalCompareOp::Gt => ".gt",
+                RelationalCompareOp::Ge => ".ge",
+            };
+            Some(format!(
+                ".cmp {op} ({}) ({})",
+                lean_exec_expr(left)?,
+                lean_exec_expr(right)?
+            ))
+        }
+        CanonicalRelationalExpr::Logic { op, left, right } => {
+            let op = match op {
+                RelationalLogicOp::And => ".and",
+                RelationalLogicOp::Or => ".or",
+            };
+            Some(format!(
+                ".logic {op} ({}) ({})",
+                lean_exec_expr(left)?,
+                lean_exec_expr(right)?
+            ))
+        }
+        CanonicalRelationalExpr::Not { value } => {
+            Some(format!(".not ({})", lean_exec_expr(value)?))
+        }
+        CanonicalRelationalExpr::Cast { value, ty } => Some(format!(
+            ".cast ({}) {}",
+            lean_exec_expr(value)?,
+            lean_int_ty(*ty)
+        )),
+        CanonicalRelationalExpr::Int { .. } | CanonicalRelationalExpr::Region { .. } => None,
     }
 }
 
@@ -1042,6 +1194,43 @@ pub fn lean_relational_frame_replay_source(
         ));
     }
     replay.push_str("#eval IO.println \"THERMITE_RELATIONAL_FRAME_REPLAY_ACCEPTED_V1\"\n");
+    Ok(replay)
+}
+
+pub fn lean_relational_transport_replay_source(
+    source: &Program,
+    witness: &RelationalFrameWitness,
+    receipts: &[RelationalTransportReceipt],
+) -> Result<String, RelationalTransportError> {
+    replay_relational_transport_receipts(source, witness, receipts)?;
+    let mut replay = String::from(
+        "import Thermite.RelationalFrameTransport\n\
+         open Thermite.RelationalFrame\n\
+         open Thermite.RelationalFrame.Bounded\n\
+         open Thermite.RelationalFrameTransport\n\n",
+    );
+    for (index, receipt) in receipts.iter().enumerate() {
+        let CanonicalRelationalProgram::Return { value } = &receipt.source_body else {
+            return Err(RelationalTransportError::Mismatch(
+                "relational_transport_source_body",
+            ));
+        };
+        let encoded = lean_exec_expr(value).ok_or(RelationalTransportError::Mismatch(
+            "relational_transport_exec_expression",
+        ))?;
+        replay.push_str(&format!(
+            "def transportedSourceExpr{index} : Thermite.RelationalFrame.Bounded.Expr := {}\n\
+             def transportedExecExpr{index} : Thermite.Exec.ExecExpr := {encoded}\n\
+             theorem transportedMapping{index} : toExec transportedSourceExpr{index} = some transportedExecExpr{index} := by rfl\n\
+             theorem transportedReceipt{index} (left right : World) (localsEq : left.locals = right.locals) :\n  \
+             Thermite.Exec.bodyRefState (.mk [] (some transportedExecExpr{index})) left.locals =\n    \
+             Thermite.Exec.bodyRefState (.mk [] (some transportedExecExpr{index})) right.locals := by\n  \
+             exact bounded_return_pair_end_to_end transportedSourceExpr{index} transportedExecExpr{index} transportedMapping{index} left right localsEq\n\
+             #print axioms transportedReceipt{index}\n\n",
+            lean_rel_expr(value),
+        ));
+    }
+    replay.push_str("#eval IO.println \"THERMITE_RELATIONAL_TRANSPORT_ACCEPTED_V1\"\n");
     Ok(replay)
 }
 
