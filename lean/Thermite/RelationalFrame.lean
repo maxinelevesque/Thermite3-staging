@@ -532,6 +532,10 @@ inductive Expr where
   | local (value : Thermite.Exec.ExecExpr)
   | region (name : Region)
   | arith (op : Thermite.Exec.AOp) (left right : Expr)
+  | compare (op : Thermite.Exec.COp) (left right : Expr)
+  | logic (op : Thermite.Exec.LOp) (left right : Expr)
+  | not (value : Expr)
+  | cast (value : Expr) (ty : Thermite.Exec.IntTy)
 deriving DecidableEq, Repr
 
 namespace Expr
@@ -541,6 +545,10 @@ def reads : Expr → List Region
   | .local _ => []
   | .region name => [name]
   | .arith _ left right => left.reads ++ right.reads
+  | .compare _ left right => left.reads ++ right.reads
+  | .logic _ left right => left.reads ++ right.reads
+  | .not value => value.reads
+  | .cast value _ => value.reads
 
 def eval : Expr → World → Option Thermite.Exec.ExecVal
   | .literal value, _ => some value
@@ -551,6 +559,20 @@ def eval : Expr → World → Option Thermite.Exec.ExecVal
       let rightValue ← Thermite.Exec.asInt (← right.eval world)
       let result ← Thermite.Exec.evalArith op leftValue rightValue
       some (.int result)
+  | .compare op left right, world => do
+      let leftValue ← Thermite.Exec.asInt (← left.eval world)
+      let rightValue ← Thermite.Exec.asInt (← right.eval world)
+      some (.bool (Thermite.Exec.cmpVal op leftValue rightValue))
+  | .logic op left right, world => do
+      let leftValue ← Thermite.Exec.asBool (← left.eval world)
+      let rightValue ← Thermite.Exec.asBool (← right.eval world)
+      some (.bool (Thermite.Exec.logVal op leftValue rightValue))
+  | .not value, world => do
+      let result ← Thermite.Exec.asBool (← value.eval world)
+      some (.bool (!result))
+  | .cast value ty, world => do
+      let result ← Thermite.Exec.asInt (← value.eval world)
+      some (.int (Thermite.Exec.castVal ty result))
 
 theorem eval_congruent : ∀ (expr : Expr) {left right : World},
     Agrees left right expr.reads → expr.eval left = expr.eval right
@@ -568,6 +590,28 @@ theorem eval_congruent : ∀ (expr : Expr) {left right : World},
         ⟨agrees.1, fun region member => agrees.2 region (by simp [reads, member])⟩
       simp only [eval]
       rw [leftEqual, rightEqual]
+  | .compare op leftExpr rightExpr, left, right, agrees => by
+      have leftEqual := eval_congruent leftExpr (left := left) (right := right)
+        ⟨agrees.1, fun region member => agrees.2 region (by simp [reads, member])⟩
+      have rightEqual := eval_congruent rightExpr (left := left) (right := right)
+        ⟨agrees.1, fun region member => agrees.2 region (by simp [reads, member])⟩
+      simp only [eval]
+      rw [leftEqual, rightEqual]
+  | .logic op leftExpr rightExpr, left, right, agrees => by
+      have leftEqual := eval_congruent leftExpr (left := left) (right := right)
+        ⟨agrees.1, fun region member => agrees.2 region (by simp [reads, member])⟩
+      have rightEqual := eval_congruent rightExpr (left := left) (right := right)
+        ⟨agrees.1, fun region member => agrees.2 region (by simp [reads, member])⟩
+      simp only [eval]
+      rw [leftEqual, rightEqual]
+  | .not value, left, right, agrees => by
+      have valueEqual := eval_congruent value (left := left) (right := right) agrees
+      simp only [eval]
+      rw [valueEqual]
+  | .cast value ty, left, right, agrees => by
+      have valueEqual := eval_congruent value (left := left) (right := right) agrees
+      simp only [eval]
+      rw [valueEqual]
 
 end Expr
 

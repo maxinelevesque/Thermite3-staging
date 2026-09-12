@@ -31,6 +31,9 @@ structure CanonicalInput where
   artifactDigest : String
   body : Bounded.Program
   normalizedRow : List EffectKind
+  normalizedRowText : List String
+  readFootprint : List Region
+  writeFootprint : List Region
   semanticFragment : String
   requested : List Projection
 deriving DecidableEq, Repr
@@ -39,6 +42,7 @@ structure Witness where
   artifactDigest : String
   body : Bounded.Program
   normalizedRow : List EffectKind
+  normalizedRowText : List String
   readFootprint : List Region
   writeFootprint : List Region
   effectSupport : List ProjectionSupport
@@ -69,12 +73,21 @@ def rowSupports (row : List EffectKind) (projection : Projection) : Bool :=
 def requestedSupported (input : CanonicalInput) : Bool :=
   input.requested.all (rowSupports input.normalizedRow)
 
+def sameRegionSet (left right : List Region) : Bool :=
+  left.all fun region => right.contains region
+    && right.all fun region => left.contains region
+
+def bodyMatchesFootprints (input : CanonicalInput) : Bool :=
+  sameRegionSet input.readFootprint input.body.reads &&
+    sameRegionSet input.writeFootprint input.body.writes
+
 def produce (input : CanonicalInput) : Witness :=
   { artifactDigest := input.artifactDigest
     body := input.body
     normalizedRow := input.normalizedRow
-    readFootprint := input.body.reads
-    writeFootprint := input.body.writes
+    normalizedRowText := input.normalizedRowText
+    readFootprint := input.readFootprint
+    writeFootprint := input.writeFootprint
     effectSupport := input.normalizedRow.map supportForKind
     semanticFragment := input.semanticFragment
     requested := input.requested
@@ -84,10 +97,11 @@ def producerRefines (input : CanonicalInput) (witness : Witness) : Bool :=
   decide (witness = produce input)
 
 def verify (input : CanonicalInput) (witness : Witness) : Bool :=
-  producerRefines input witness && requestedSupported input
+  producerRefines input witness && requestedSupported input && bodyMatchesFootprints input
 
 def Supported (input : CanonicalInput) (witness : Witness) : Prop :=
-  witness = produce input ∧ requestedSupported input = true
+  witness = produce input ∧ requestedSupported input = true ∧
+    bodyMatchesFootprints input = true
 
 theorem producerRefines_iff {input : CanonicalInput} {witness : Witness} :
     producerRefines input witness = true ↔ witness = produce input := by
@@ -95,12 +109,13 @@ theorem producerRefines_iff {input : CanonicalInput} {witness : Witness} :
 
 theorem verify_iff_supported {input : CanonicalInput} {witness : Witness} :
     verify input witness = true ↔ Supported input witness := by
-  simp [verify, Supported, producerRefines]
+  simp [verify, Supported, producerRefines, and_assoc]
 
 theorem produce_complete {input : CanonicalInput}
-    (supported : requestedSupported input = true) :
+    (supported : requestedSupported input = true)
+    (footprints : bodyMatchesFootprints input = true) :
     verify input (produce input) = true := by
-  simp [verify, producerRefines, supported]
+  simp [verify, producerRefines, supported, footprints]
 
 namespace Examples
 
@@ -110,6 +125,9 @@ def canonical : CanonicalInput :=
   { artifactDigest := "sha256:tier-a-increment-a"
     body := setA
     normalizedRow := [.read, .write]
+    normalizedRowText := ["read(a)", "write(a)"]
+    readFootprint := [regionA]
+    writeFootprint := [regionA]
     semanticFragment := "tier-a-state-core-v1"
     requested := [.result, .writeFrame, .outcome, .termination] }
 
@@ -128,6 +146,10 @@ theorem body_mutant_rejected :
 
 theorem row_mutant_rejected :
     verify canonical { witness with normalizedRow := [.read] } = false := by
+  decide
+
+theorem row_text_mutant_rejected :
+    verify canonical { witness with normalizedRowText := ["read(other)"] } = false := by
   decide
 
 theorem read_footprint_mutant_rejected :
@@ -162,6 +184,9 @@ def pureInput : CanonicalInput :=
   { artifactDigest := "sha256:pure"
     body := .ret (.literal (.bool false))
     normalizedRow := []
+    normalizedRowText := []
+    readFootprint := []
+    writeFootprint := []
     semanticFragment := "tier-a-state-core-v1"
     requested := [.result, .writeFrame, .outcome, .termination] }
 
@@ -174,6 +199,9 @@ def structuralOnly : CanonicalInput :=
   { artifactDigest := "sha256:structural-only"
     body := .ret (.literal (.bool false))
     normalizedRow := [.owns]
+    normalizedRowText := ["owns(lock)"]
+    readFootprint := []
+    writeFootprint := []
     semanticFragment := "tier-a-structural-authority-v1"
     requested := [.result] }
 

@@ -5,8 +5,10 @@
 //! transport theorem and receipt path.
 
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
-use thermite_syntax::{Effect, EffectRow, Item, Program};
+use std::collections::{BTreeMap, BTreeSet};
+use thermite_syntax::{
+    BinOp, Block, Effect, EffectRow, Expr, Item, PrimType, Program, Stmt, Type, UnaryOp,
+};
 
 use crate::{CheckedProgram, WitnessError};
 
@@ -59,6 +61,112 @@ pub enum RelationalScope {
     EndToEnd,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BoundedIntTy {
+    U8,
+    U16,
+    U32,
+    U64,
+    Usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RelationalArithOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
+    Shl,
+    Shr,
+    BitAnd,
+    BitOr,
+    BitXor,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RelationalCompareOp {
+    Eq,
+    Ne,
+    Lt,
+    Le,
+    Gt,
+    Ge,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RelationalLogicOp {
+    And,
+    Or,
+}
+
+/// Canonical executable expression admitted by the current bounded relational
+/// semantics. Region paths remain source strings in the receipt and are
+/// injectively encoded for Lean replay.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CanonicalRelationalExpr {
+    Int {
+        ty: BoundedIntTy,
+        value: u64,
+    },
+    Bool {
+        value: bool,
+    },
+    Local {
+        name: String,
+    },
+    Region {
+        path: String,
+    },
+    Arith {
+        op: RelationalArithOp,
+        left: Box<Self>,
+        right: Box<Self>,
+    },
+    Compare {
+        op: RelationalCompareOp,
+        left: Box<Self>,
+        right: Box<Self>,
+    },
+    Logic {
+        op: RelationalLogicOp,
+        left: Box<Self>,
+        right: Box<Self>,
+    },
+    Not {
+        value: Box<Self>,
+    },
+    Cast {
+        value: Box<Self>,
+        ty: BoundedIntTy,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum CanonicalRelationalProgram {
+    Return {
+        value: CanonicalRelationalExpr,
+    },
+    Write {
+        region: String,
+        value: CanonicalRelationalExpr,
+        next: Box<Self>,
+    },
+    Branch {
+        condition: CanonicalRelationalExpr,
+        then_program: Box<Self>,
+        else_program: Box<Self>,
+    },
+    Raise,
+    Diverge,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EffectSupport {
     pub effect: String,
@@ -72,6 +180,8 @@ pub struct RelationalFunctionWitness {
     pub read_footprint: Vec<String>,
     pub write_footprint: Vec<String>,
     pub effect_support: Vec<EffectSupport>,
+    pub body: Option<CanonicalRelationalProgram>,
+    pub unsupported_reason: Option<String>,
     pub semantic_fragment: String,
     pub projections: Vec<Projection>,
     pub scope: RelationalScope,
@@ -206,41 +316,6 @@ fn effect_name(effect: &Effect) -> String {
     }
 }
 
-fn ambient(name: &str) -> String {
-    name.to_owned()
-}
-
-fn read_region(effect: &Effect) -> Option<String> {
-    match effect {
-        Effect::Read(region) | Effect::Write(region) | Effect::Net(region) => {
-            Some(region.to_string())
-        }
-        Effect::Alloc => Some(ambient("heap")),
-        Effect::Time => Some(ambient("clock")),
-        Effect::Rand => Some(ambient("entropy")),
-        Effect::Term => Some(ambient("termios")),
-        Effect::Forgets(_) | Effect::Owns(_) | Effect::Blocks | Effect::Panic | Effect::Diverge => {
-            None
-        }
-    }
-}
-
-fn write_region(effect: &Effect) -> Option<String> {
-    match effect {
-        Effect::Write(region) | Effect::Net(region) => Some(region.to_string()),
-        Effect::Alloc => Some(ambient("heap")),
-        Effect::Rand => Some(ambient("entropy")),
-        Effect::Term => Some(ambient("termios")),
-        Effect::Read(_)
-        | Effect::Time
-        | Effect::Forgets(_)
-        | Effect::Owns(_)
-        | Effect::Blocks
-        | Effect::Panic
-        | Effect::Diverge => None,
-    }
-}
-
 fn row_effects(row: &EffectRow) -> Vec<Effect> {
     let mut effects = match row {
         EffectRow::Pure => Vec::new(),
@@ -292,13 +367,384 @@ fn projections(effects: &[Effect]) -> Vec<Projection> {
         .collect()
 }
 
-fn regions(effects: &BTreeSet<Effect>, projection: fn(&Effect) -> Option<String>) -> Vec<String> {
-    effects
-        .iter()
-        .filter_map(projection)
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .collect()
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ScalarTy {
+    Int(BoundedIntTy),
+    Bool,
+}
+
+fn scalar_ty(ty: &Type) -> Option<ScalarTy> {
+    match ty {
+        Type::Prim(PrimType::U8) => Some(ScalarTy::Int(BoundedIntTy::U8)),
+        Type::Prim(PrimType::U16) => Some(ScalarTy::Int(BoundedIntTy::U16)),
+        Type::Prim(PrimType::U32) => Some(ScalarTy::Int(BoundedIntTy::U32)),
+        Type::Prim(PrimType::U64) => Some(ScalarTy::Int(BoundedIntTy::U64)),
+        Type::Prim(PrimType::Usize) => Some(ScalarTy::Int(BoundedIntTy::Usize)),
+        Type::Prim(PrimType::Bool) => Some(ScalarTy::Bool),
+        _ => None,
+    }
+}
+
+struct TranslationEnv<'a> {
+    locals: BTreeMap<&'a str, ScalarTy>,
+    shared: BTreeMap<&'a str, &'a Type>,
+    structs: BTreeMap<&'a str, BTreeMap<&'a str, &'a Type>>,
+}
+
+impl<'a> TranslationEnv<'a> {
+    fn new(program: &'a Program, function: &'a thermite_syntax::FnItem) -> Self {
+        let locals = function
+            .params
+            .iter()
+            .filter_map(|param| scalar_ty(&param.ty).map(|ty| (param.name.as_str(), ty)))
+            .collect();
+        let shared = program
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                Item::SharedDecl(decl) => Some((decl.name.as_str(), &decl.ty)),
+                _ => None,
+            })
+            .collect();
+        let structs = program
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                Item::Struct(definition) => Some((
+                    definition.name.as_str(),
+                    definition
+                        .fields
+                        .iter()
+                        .map(|field| (field.name.as_str(), &field.ty))
+                        .collect(),
+                )),
+                _ => None,
+            })
+            .collect();
+        Self {
+            locals,
+            shared,
+            structs,
+        }
+    }
+
+    fn region_ty(&self, segments: &[String]) -> Option<ScalarTy> {
+        let mut ty = *self.shared.get(segments.first()?.as_str())?;
+        for segment in &segments[1..] {
+            let Type::Named(name) = ty else { return None };
+            ty = *self.structs.get(name.as_str())?.get(segment.as_str())?;
+        }
+        scalar_ty(ty)
+    }
+}
+
+fn field_path(expr: &Expr) -> Option<Vec<String>> {
+    match expr {
+        Expr::Path(path) => Some(path.clone()),
+        Expr::Field { receiver, name } => {
+            let mut path = field_path(receiver)?;
+            path.push(name.clone());
+            Some(path)
+        }
+        _ => None,
+    }
+}
+
+fn infer_expr_ty(expr: &Expr, env: &TranslationEnv<'_>) -> Option<ScalarTy> {
+    match expr {
+        Expr::BoolLit(_) => Some(ScalarTy::Bool),
+        Expr::Path(path) if path.len() == 1 => env.locals.get(path[0].as_str()).copied(),
+        Expr::Field { .. } => env.region_ty(&field_path(expr)?),
+        Expr::Binary { op, lhs, rhs } => match op {
+            BinOp::Eq
+            | BinOp::Ne
+            | BinOp::Lt
+            | BinOp::Le
+            | BinOp::Gt
+            | BinOp::Ge
+            | BinOp::And
+            | BinOp::Or => Some(ScalarTy::Bool),
+            _ => infer_expr_ty(lhs, env).or_else(|| infer_expr_ty(rhs, env)),
+        },
+        Expr::Unary { .. } => Some(ScalarTy::Bool),
+        Expr::Cast { ty, .. } => scalar_ty(ty),
+        Expr::IntLit { .. }
+        | Expr::Call { .. }
+        | Expr::MethodCall { .. }
+        | Expr::Closure { .. }
+        | Expr::Match { .. }
+        | Expr::If { .. }
+        | Expr::Index { .. }
+        | Expr::Ref { .. }
+        | Expr::StructLit { .. }
+        | Expr::Is { .. }
+        | Expr::Deref(_)
+        | Expr::StrLit(_)
+        | Expr::Tuple(_)
+        | Expr::TupleProj { .. }
+        | Expr::Quantifier { .. }
+        | Expr::Path(_) => None,
+    }
+}
+
+fn translate_expr(
+    expr: &Expr,
+    expected: Option<ScalarTy>,
+    env: &TranslationEnv<'_>,
+) -> Result<CanonicalRelationalExpr, String> {
+    match expr {
+        Expr::IntLit { value, .. } => {
+            let ScalarTy::Int(ty) = expected.ok_or("integer literal has no scalar context")? else {
+                return Err("integer literal appears in a boolean context".into());
+            };
+            let value = u64::try_from(*value)
+                .map_err(|_| "integer literal exceeds the bounded u64 carrier")?;
+            Ok(CanonicalRelationalExpr::Int { ty, value })
+        }
+        Expr::BoolLit(value) => {
+            if matches!(expected, Some(ScalarTy::Int(_))) {
+                return Err("boolean literal appears in an integer context".into());
+            }
+            Ok(CanonicalRelationalExpr::Bool { value: *value })
+        }
+        Expr::Path(path) if path.len() == 1 => {
+            let actual = env
+                .locals
+                .get(path[0].as_str())
+                .copied()
+                .ok_or_else(|| format!("non-scalar or unbound local `{}`", path[0]))?;
+            if expected.is_some_and(|expected| expected != actual) {
+                return Err(format!("local `{}` has a different scalar type", path[0]));
+            }
+            Ok(CanonicalRelationalExpr::Local {
+                name: path[0].clone(),
+            })
+        }
+        Expr::Field { .. } => {
+            let path = field_path(expr).ok_or("field expression is not a canonical path")?;
+            let actual = env.region_ty(&path).ok_or_else(|| {
+                format!("shared path `{}` is not a scalar region", path.join("."))
+            })?;
+            if expected.is_some_and(|expected| expected != actual) {
+                return Err(format!(
+                    "shared path `{}` has a different scalar type",
+                    path.join(".")
+                ));
+            }
+            Ok(CanonicalRelationalExpr::Region {
+                path: path.join("."),
+            })
+        }
+        Expr::Binary { op, lhs, rhs } => {
+            let operand_ty = infer_expr_ty(lhs, env)
+                .or_else(|| infer_expr_ty(rhs, env))
+                .or(expected)
+                .ok_or("binary expression has no scalar type context")?;
+            let left = Box::new(translate_expr(lhs, Some(operand_ty), env)?);
+            let right = Box::new(translate_expr(rhs, Some(operand_ty), env)?);
+            match op {
+                BinOp::Add
+                | BinOp::Sub
+                | BinOp::Mul
+                | BinOp::Div
+                | BinOp::Rem
+                | BinOp::Shl
+                | BinOp::Shr
+                | BinOp::BitAnd
+                | BinOp::BitOr
+                | BinOp::BitXor => {
+                    if !matches!(operand_ty, ScalarTy::Int(_)) {
+                        return Err("arithmetic operator has non-integer operands".into());
+                    }
+                    let op = match op {
+                        BinOp::Add => RelationalArithOp::Add,
+                        BinOp::Sub => RelationalArithOp::Sub,
+                        BinOp::Mul => RelationalArithOp::Mul,
+                        BinOp::Div => RelationalArithOp::Div,
+                        BinOp::Rem => RelationalArithOp::Rem,
+                        BinOp::Shl => RelationalArithOp::Shl,
+                        BinOp::Shr => RelationalArithOp::Shr,
+                        BinOp::BitAnd => RelationalArithOp::BitAnd,
+                        BinOp::BitOr => RelationalArithOp::BitOr,
+                        BinOp::BitXor => RelationalArithOp::BitXor,
+                        _ => unreachable!(),
+                    };
+                    Ok(CanonicalRelationalExpr::Arith { op, left, right })
+                }
+                BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge => {
+                    let op = match op {
+                        BinOp::Eq => RelationalCompareOp::Eq,
+                        BinOp::Ne => RelationalCompareOp::Ne,
+                        BinOp::Lt => RelationalCompareOp::Lt,
+                        BinOp::Le => RelationalCompareOp::Le,
+                        BinOp::Gt => RelationalCompareOp::Gt,
+                        BinOp::Ge => RelationalCompareOp::Ge,
+                        _ => unreachable!(),
+                    };
+                    Ok(CanonicalRelationalExpr::Compare { op, left, right })
+                }
+                BinOp::And | BinOp::Or => {
+                    if operand_ty != ScalarTy::Bool {
+                        return Err("logical operator has non-boolean operands".into());
+                    }
+                    Ok(CanonicalRelationalExpr::Logic {
+                        op: if *op == BinOp::And {
+                            RelationalLogicOp::And
+                        } else {
+                            RelationalLogicOp::Or
+                        },
+                        left,
+                        right,
+                    })
+                }
+            }
+        }
+        Expr::Unary {
+            op: UnaryOp::Not,
+            expr,
+        } => Ok(CanonicalRelationalExpr::Not {
+            value: Box::new(translate_expr(expr, Some(ScalarTy::Bool), env)?),
+        }),
+        Expr::Cast { expr, ty } => {
+            let ScalarTy::Int(ty) = scalar_ty(ty).ok_or("cast target is not a bounded integer")?
+            else {
+                return Err("cast target is not a bounded integer".into());
+            };
+            Ok(CanonicalRelationalExpr::Cast {
+                value: Box::new(translate_expr(expr, infer_expr_ty(expr, env), env)?),
+                ty,
+            })
+        }
+        _ => Err("expression is outside the bounded relational fragment".into()),
+    }
+}
+
+fn translate_block(
+    block: &Block,
+    continuation: Option<CanonicalRelationalProgram>,
+    return_ty: ScalarTy,
+    env: &TranslationEnv<'_>,
+) -> Result<CanonicalRelationalProgram, String> {
+    let mut current = match (&block.tail, continuation) {
+        (Some(tail), None) => CanonicalRelationalProgram::Return {
+            value: translate_expr(tail, Some(return_ty), env)?,
+        },
+        (None, Some(continuation)) => continuation,
+        (Some(_), Some(_)) => return Err("statement block has a discarded tail value".into()),
+        (None, None) => return Err("function has no relational return value".into()),
+    };
+    for statement in block.stmts.iter().rev() {
+        current = match statement {
+            Stmt::Assign { target, value } => {
+                let path = field_path(target)
+                    .filter(|path| env.region_ty(path).is_some())
+                    .ok_or("assignment target is not a scalar shared region")?;
+                let ty = env.region_ty(&path).expect("checked above");
+                CanonicalRelationalProgram::Write {
+                    region: path.join("."),
+                    value: translate_expr(value, Some(ty), env)?,
+                    next: Box::new(current),
+                }
+            }
+            Stmt::Return(Some(value)) => CanonicalRelationalProgram::Return {
+                value: translate_expr(value, Some(return_ty), env)?,
+            },
+            Stmt::If { cond, then, else_ } => CanonicalRelationalProgram::Branch {
+                condition: translate_expr(cond, Some(ScalarTy::Bool), env)?,
+                then_program: Box::new(translate_block(
+                    then,
+                    Some(current.clone()),
+                    return_ty,
+                    env,
+                )?),
+                else_program: Box::new(match else_ {
+                    Some(else_block) => translate_block(else_block, Some(current), return_ty, env)?,
+                    None => current,
+                }),
+            },
+            Stmt::Holding { body, .. } => translate_block(body, Some(current), return_ty, env)?,
+            Stmt::Let { .. }
+            | Stmt::Return(None)
+            | Stmt::Loop(_)
+            | Stmt::Forget { .. }
+            | Stmt::Break
+            | Stmt::Continue
+            | Stmt::Expr(_) => {
+                return Err("statement is outside the bounded relational fragment".into());
+            }
+        };
+    }
+    Ok(current)
+}
+
+fn translate_function(
+    program: &Program,
+    function: &thermite_syntax::FnItem,
+) -> Result<CanonicalRelationalProgram, String> {
+    let body = function
+        .body
+        .as_ref()
+        .ok_or("foreign boundary has no Thermite body")?;
+    let return_ty = scalar_ty(&function.ret).ok_or("return type is not a bounded scalar")?;
+    translate_block(
+        body,
+        None,
+        return_ty,
+        &TranslationEnv::new(program, function),
+    )
+}
+
+fn body_regions(body: &CanonicalRelationalProgram) -> (Vec<String>, Vec<String>) {
+    fn expr_reads(expr: &CanonicalRelationalExpr, reads: &mut BTreeSet<String>) {
+        match expr {
+            CanonicalRelationalExpr::Region { path } => {
+                reads.insert(path.clone());
+            }
+            CanonicalRelationalExpr::Arith { left, right, .. }
+            | CanonicalRelationalExpr::Compare { left, right, .. }
+            | CanonicalRelationalExpr::Logic { left, right, .. } => {
+                expr_reads(left, reads);
+                expr_reads(right, reads);
+            }
+            CanonicalRelationalExpr::Not { value }
+            | CanonicalRelationalExpr::Cast { value, .. } => expr_reads(value, reads),
+            CanonicalRelationalExpr::Int { .. }
+            | CanonicalRelationalExpr::Bool { .. }
+            | CanonicalRelationalExpr::Local { .. } => {}
+        }
+    }
+    fn walk(
+        body: &CanonicalRelationalProgram,
+        reads: &mut BTreeSet<String>,
+        writes: &mut BTreeSet<String>,
+    ) {
+        match body {
+            CanonicalRelationalProgram::Return { value } => expr_reads(value, reads),
+            CanonicalRelationalProgram::Write {
+                region,
+                value,
+                next,
+            } => {
+                writes.insert(region.clone());
+                expr_reads(value, reads);
+                walk(next, reads, writes);
+            }
+            CanonicalRelationalProgram::Branch {
+                condition,
+                then_program,
+                else_program,
+            } => {
+                expr_reads(condition, reads);
+                walk(then_program, reads, writes);
+                walk(else_program, reads, writes);
+            }
+            CanonicalRelationalProgram::Raise | CanonicalRelationalProgram::Diverge => {}
+        }
+    }
+    let mut reads = BTreeSet::new();
+    let mut writes = BTreeSet::new();
+    walk(body, &mut reads, &mut writes);
+    (reads.into_iter().collect(), writes.into_iter().collect())
 }
 
 pub fn emit_relational_frame_witness(checked: &CheckedProgram) -> RelationalFrameWitness {
@@ -306,17 +752,17 @@ pub fn emit_relational_frame_witness(checked: &CheckedProgram) -> RelationalFram
     for item in &checked.source().items {
         let Item::Fn(function) = item else { continue };
         let effects = row_effects(&function.contract.effects);
-        let inferred = checked
-            .effects()
-            .footprints
-            .get(&function.name)
-            .cloned()
-            .unwrap_or_default();
+        let translated = translate_function(checked.source(), function);
+        let (body, unsupported_reason) = match translated {
+            Ok(body) => (Some(body), None),
+            Err(reason) => (None, Some(reason)),
+        };
+        let (read_footprint, write_footprint) = body.as_ref().map(body_regions).unwrap_or_default();
         functions.push(RelationalFunctionWitness {
             function: function.name.clone(),
             normalized_row: effects.iter().map(effect_name).collect(),
-            read_footprint: regions(&inferred, read_region),
-            write_footprint: regions(&inferred, write_region),
+            read_footprint,
+            write_footprint,
             effect_support: effects
                 .iter()
                 .map(|effect| EffectSupport {
@@ -324,8 +770,18 @@ pub fn emit_relational_frame_witness(checked: &CheckedProgram) -> RelationalFram
                     support: effect_support(effect),
                 })
                 .collect(),
-            semantic_fragment: "tier-a-source-v1".into(),
-            projections: projections(&effects),
+            semantic_fragment: if body.is_some() {
+                "tier-a-bounded-relational-v1".into()
+            } else {
+                "outside-tier-a-bounded-relational-v1".into()
+            },
+            projections: if body.is_some() {
+                projections(&effects)
+            } else {
+                Vec::new()
+            },
+            body,
+            unsupported_reason,
             scope: RelationalScope::SourceOnly,
         });
     }
@@ -367,6 +823,228 @@ pub fn replay_relational_frame_witness(
     Ok(checked)
 }
 
+fn lean_string(value: &str) -> String {
+    serde_json::to_string(value).expect("serializing a string cannot fail")
+}
+
+/// Injective, prefix-preserving encoding of a segmented source region into the
+/// kernel's `List Nat` carrier. Each segment is length-prefixed UTF-8, so two
+/// different segment sequences cannot alias and source ancestry is preserved.
+fn lean_region(path: &str) -> String {
+    let encoded = path
+        .split('.')
+        .flat_map(|segment| {
+            std::iter::once(segment.len())
+                .chain(segment.as_bytes().iter().copied().map(usize::from))
+        })
+        .map(|byte| byte.to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!("[{encoded}]")
+}
+
+fn lean_int_ty(ty: BoundedIntTy) -> &'static str {
+    match ty {
+        BoundedIntTy::U8 => ".u8",
+        BoundedIntTy::U16 => ".u16",
+        BoundedIntTy::U32 => ".u32",
+        BoundedIntTy::U64 => ".u64",
+        BoundedIntTy::Usize => ".usize",
+    }
+}
+
+fn lean_rel_expr(expr: &CanonicalRelationalExpr) -> String {
+    match expr {
+        CanonicalRelationalExpr::Int { ty, value } => {
+            format!(".literal (.int ⟨{}, {}⟩)", lean_int_ty(*ty), value)
+        }
+        CanonicalRelationalExpr::Bool { value } => format!(".literal (.bool {value})"),
+        CanonicalRelationalExpr::Local { name } => {
+            format!(".local (.var {})", lean_string(name))
+        }
+        CanonicalRelationalExpr::Region { path } => format!(".region {}", lean_region(path)),
+        CanonicalRelationalExpr::Arith { op, left, right } => {
+            let op = match op {
+                RelationalArithOp::Add => ".add",
+                RelationalArithOp::Sub => ".sub",
+                RelationalArithOp::Mul => ".mul",
+                RelationalArithOp::Div => ".div",
+                RelationalArithOp::Rem => ".rem",
+                RelationalArithOp::Shl => ".shl",
+                RelationalArithOp::Shr => ".shr",
+                RelationalArithOp::BitAnd => ".bitAnd",
+                RelationalArithOp::BitOr => ".bitOr",
+                RelationalArithOp::BitXor => ".bitXor",
+            };
+            format!(
+                ".arith {op} ({}) ({})",
+                lean_rel_expr(left),
+                lean_rel_expr(right)
+            )
+        }
+        CanonicalRelationalExpr::Compare { op, left, right } => {
+            let op = match op {
+                RelationalCompareOp::Eq => ".eq",
+                RelationalCompareOp::Ne => ".ne",
+                RelationalCompareOp::Lt => ".lt",
+                RelationalCompareOp::Le => ".le",
+                RelationalCompareOp::Gt => ".gt",
+                RelationalCompareOp::Ge => ".ge",
+            };
+            format!(
+                ".compare {op} ({}) ({})",
+                lean_rel_expr(left),
+                lean_rel_expr(right)
+            )
+        }
+        CanonicalRelationalExpr::Logic { op, left, right } => {
+            let op = match op {
+                RelationalLogicOp::And => ".and",
+                RelationalLogicOp::Or => ".or",
+            };
+            format!(
+                ".logic {op} ({}) ({})",
+                lean_rel_expr(left),
+                lean_rel_expr(right)
+            )
+        }
+        CanonicalRelationalExpr::Not { value } => {
+            format!(".not ({})", lean_rel_expr(value))
+        }
+        CanonicalRelationalExpr::Cast { value, ty } => {
+            format!(".cast ({}) {}", lean_rel_expr(value), lean_int_ty(*ty))
+        }
+    }
+}
+
+fn lean_rel_program(program: &CanonicalRelationalProgram) -> String {
+    match program {
+        CanonicalRelationalProgram::Return { value } => {
+            format!(".ret ({})", lean_rel_expr(value))
+        }
+        CanonicalRelationalProgram::Write {
+            region,
+            value,
+            next,
+        } => format!(
+            ".write {} ({}) ({})",
+            lean_region(region),
+            lean_rel_expr(value),
+            lean_rel_program(next)
+        ),
+        CanonicalRelationalProgram::Branch {
+            condition,
+            then_program,
+            else_program,
+        } => format!(
+            ".branch ({}) ({}) ({})",
+            lean_rel_expr(condition),
+            lean_rel_program(then_program),
+            lean_rel_program(else_program)
+        ),
+        CanonicalRelationalProgram::Raise => ".raise".into(),
+        CanonicalRelationalProgram::Diverge => ".diverge".into(),
+    }
+}
+
+fn lean_effect_kind(effect: &str) -> &'static str {
+    if effect.starts_with("read(") {
+        ".read"
+    } else if effect.starts_with("write(") {
+        ".write"
+    } else if effect.starts_with("net(") {
+        ".net"
+    } else if effect.starts_with("owns(") {
+        ".owns"
+    } else if effect.starts_with("forgets(") {
+        ".forgets"
+    } else {
+        match effect {
+            "alloc" => ".alloc",
+            "time" => ".time",
+            "rand" => ".rand",
+            "blocks" => ".blocks",
+            "panic" => ".panic",
+            "diverge" => ".diverge",
+            "term" => ".term",
+            _ => unreachable!("closed checked effect row: {effect}"),
+        }
+    }
+}
+
+fn lean_projection(projection: Projection) -> &'static str {
+    match projection {
+        Projection::Result => ".result",
+        Projection::WriteFrame => ".writeFrame",
+        Projection::Outcome => ".outcome",
+        Projection::Termination => ".termination",
+        Projection::Trace => ".trace",
+        Projection::Accumulator => ".accumulator",
+    }
+}
+
+fn lean_list(values: impl IntoIterator<Item = String>) -> String {
+    format!("[{}]", values.into_iter().collect::<Vec<_>>().join(", "))
+}
+
+/// Emit a cold Lean replay for every authority-bearing function in an exact
+/// checked witness. Unsupported functions are intentionally absent because
+/// their canonical witness carries no projections.
+pub fn lean_relational_frame_replay_source(
+    source: &Program,
+    witness: &RelationalFrameWitness,
+) -> Result<String, WitnessError> {
+    replay_relational_frame_witness(source, witness)?;
+    let mut replay = String::from(
+        "import Thermite.RelationalFrameWitness\n\
+         open Thermite.RelationalFrame\n\
+         open Thermite.RelationalFrameWitness\n\
+         open Thermite.RelationalFrame.Bounded\n\n",
+    );
+    for (index, function) in witness.functions.iter().enumerate() {
+        let Some(body) = &function.body else { continue };
+        let row = lean_list(
+            function
+                .normalized_row
+                .iter()
+                .map(|effect| lean_effect_kind(effect).to_string()),
+        );
+        let row_text = lean_list(
+            function
+                .normalized_row
+                .iter()
+                .map(|value| lean_string(value)),
+        );
+        let reads = lean_list(function.read_footprint.iter().map(|path| lean_region(path)));
+        let writes = lean_list(
+            function
+                .write_footprint
+                .iter()
+                .map(|path| lean_region(path)),
+        );
+        let requested = lean_list(
+            function
+                .projections
+                .iter()
+                .map(|projection| lean_projection(*projection).to_string()),
+        );
+        replay.push_str(&format!(
+            "def relationalInput{index} : CanonicalInput :=\n  \
+             {{ artifactDigest := {}, body := {}, normalizedRow := {row}, \
+             normalizedRowText := {row_text}, readFootprint := {reads}, \
+             writeFootprint := {writes}, semanticFragment := {}, requested := {requested} }}\n\
+             def relationalWitness{index} : Witness := produce relationalInput{index}\n\
+             theorem relationalReplay{index} : verify relationalInput{index} relationalWitness{index} = true := by decide\n\
+             #print axioms relationalReplay{index}\n\n",
+            lean_string(&witness.canonical_ast_sha256),
+            lean_rel_program(body),
+            lean_string(&function.semantic_fragment),
+        ));
+    }
+    replay.push_str("#eval IO.println \"THERMITE_RELATIONAL_FRAME_REPLAY_ACCEPTED_V1\"\n");
+    Ok(replay)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -391,6 +1069,8 @@ mod tests {
         assert_eq!(witness.functions[0].scope, RelationalScope::SourceOnly);
         assert_eq!(witness.functions[0].read_footprint, ["state.n"]);
         assert_eq!(witness.functions[0].write_footprint, ["state.n"]);
+        assert!(witness.functions[0].body.is_some());
+        assert!(witness.functions[0].unsupported_reason.is_none());
         assert!(witness.functions[0]
             .projections
             .contains(&Projection::Result));
@@ -417,6 +1097,9 @@ mod tests {
         mutants.push(changed);
         let mut changed = witness.clone();
         changed.functions[0].effect_support.clear();
+        mutants.push(changed);
+        let mut changed = witness.clone();
+        changed.functions[0].body = None;
         mutants.push(changed);
         let mut changed = witness.clone();
         changed.functions[0].semantic_fragment = "other".into();
@@ -446,5 +1129,16 @@ mod tests {
     fn structural_atoms_do_not_mint_semantic_projections() {
         let projections = projections(&[Effect::Owns("lock".into())]);
         assert!(projections.is_empty());
+    }
+
+    #[test]
+    fn unsupported_body_fails_closed_without_semantic_projections() {
+        let parsed =
+            parse("fn f(x: u64) -> u64 ! pure requires true ensures result == x { let y = x; y }");
+        assert!(parsed.is_clean(), "{:?}", parsed.errors);
+        let witness = canonical_relational_frame_witness(&parsed.program).unwrap();
+        assert!(witness.functions[0].body.is_none());
+        assert!(witness.functions[0].unsupported_reason.is_some());
+        assert!(witness.functions[0].projections.is_empty());
     }
 }

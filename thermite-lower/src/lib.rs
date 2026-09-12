@@ -72,11 +72,12 @@ pub use protocol_witness::{
 };
 pub use relational_frame_witness::{
     canonical_relational_frame_witness, emit_relational_frame_witness,
-    replay_relational_frame_witness, EffectSupport as RelationalEffectSupport,
+    lean_relational_frame_replay_source, replay_relational_frame_witness, BoundedIntTy,
+    CanonicalRelationalExpr, CanonicalRelationalProgram, EffectSupport as RelationalEffectSupport,
     Projection as RelationalProjection, ProjectionSupport as RelationalProjectionSupport,
-    RelationalFrameWitness, RelationalFunctionWitness, RelationalScope,
-    ResearchGate as RelationalResearchGate, Support as RelationalSupport,
-    RELATIONAL_FRAME_WITNESS_VERSION,
+    RelationalArithOp, RelationalCompareOp, RelationalFrameWitness, RelationalFunctionWitness,
+    RelationalLogicOp, RelationalScope, ResearchGate as RelationalResearchGate,
+    Support as RelationalSupport, RELATIONAL_FRAME_WITNESS_VERSION,
 };
 pub use resource_witness::{
     canonical_resource_projection, emit_resource_witness, lean_resource_replay_source,
