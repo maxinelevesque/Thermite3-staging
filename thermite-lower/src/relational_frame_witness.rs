@@ -263,10 +263,7 @@ fn support_at(support: ProjectionSupport, projection: Projection) -> Support {
 }
 
 fn claimable(support: Support) -> bool {
-    matches!(
-        support,
-        Support::Derived | Support::Conditional(_) | Support::Structural
-    )
+    matches!(support, Support::Derived | Support::Conditional(_))
 }
 
 fn projections(effects: &[Effect]) -> Vec<Projection> {
@@ -443,5 +440,11 @@ mod tests {
             Support::Conditional(ResearchGate::ExternalCoupling)
         );
         assert_eq!(net.write_frame, Support::Derived);
+    }
+
+    #[test]
+    fn structural_atoms_do_not_mint_semantic_projections() {
+        let projections = projections(&[Effect::Owns("lock".into())]);
+        assert!(projections.is_empty());
     }
 }

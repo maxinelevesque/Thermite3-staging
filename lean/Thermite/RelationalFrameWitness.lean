@@ -59,7 +59,7 @@ def supportOf (projection : Projection) (support : ProjectionSupport) : Support 
 def claimable : Support → Bool
   | .derived => true
   | .conditional _ => true
-  | .structural => true
+  | .structural => false
   | .unavailable _ => false
   | .notApplicable => false
 
@@ -168,6 +168,19 @@ def pureInput : CanonicalInput :=
 /-- The empty surface row is pure, not the unavailable bare-random primitive. -/
 theorem pure_empty_row_is_supported :
     verify pureInput (produce pureInput) = true := by
+  decide
+
+def structuralOnly : CanonicalInput :=
+  { artifactDigest := "sha256:structural-only"
+    body := .ret (.literal (.bool false))
+    normalizedRow := [.owns]
+    semanticFragment := "tier-a-structural-authority-v1"
+    requested := [.result] }
+
+/-- Ownership evidence constrains witness admissibility; it is not a result
+    equation and therefore cannot mint the result projection by itself. -/
+theorem structural_authority_is_not_result_authority :
+    verify structuralOnly (produce structuralOnly) = false := by
   decide
 
 end Examples
