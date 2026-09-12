@@ -64,7 +64,7 @@ def claimable : Support → Bool
   | .notApplicable => false
 
 def rowSupports (row : List EffectKind) (projection : Projection) : Bool :=
-  !row.isEmpty && row.all fun kind => claimable (supportOf projection (supportForKind kind))
+  row.all fun kind => claimable (supportOf projection (supportForKind kind))
 
 def requestedSupported (input : CanonicalInput) : Bool :=
   input.requested.all (rowSupports input.normalizedRow)
@@ -158,17 +158,16 @@ theorem scope_upgrade_rejected :
     verify canonical { witness with scope := .endToEnd } = false := by
   decide
 
-def bareRandom : CanonicalInput :=
-  { artifactDigest := "sha256:bare-random"
+def pureInput : CanonicalInput :=
+  { artifactDigest := "sha256:pure"
     body := .ret (.literal 0)
     normalizedRow := []
-    semanticFragment := "tier-a-bare-random-research-gate"
-    requested := [.result] }
+    semanticFragment := "tier-a-state-core-v1"
+    requested := [.result, .writeFrame, .outcome, .termination] }
 
-/-- A bare-random request cannot be represented by a surface `EffectKind` row;
-    it remains outside this producer rather than acquiring state-rand authority. -/
-theorem empty_row_cannot_mint_result :
-    verify bareRandom (produce bareRandom) = false := by
+/-- The empty surface row is pure, not the unavailable bare-random primitive. -/
+theorem pure_empty_row_is_supported :
+    verify pureInput (produce pureInput) = true := by
   decide
 
 end Examples
