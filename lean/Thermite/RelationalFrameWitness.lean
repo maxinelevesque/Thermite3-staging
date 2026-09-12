@@ -29,7 +29,7 @@ deriving DecidableEq, Repr
 
 structure CanonicalInput where
   artifactDigest : String
-  body : Program
+  body : Bounded.Program
   normalizedRow : List EffectKind
   semanticFragment : String
   requested : List Projection
@@ -37,7 +37,7 @@ deriving DecidableEq, Repr
 
 structure Witness where
   artifactDigest : String
-  body : Program
+  body : Bounded.Program
   normalizedRow : List EffectKind
   readFootprint : List Region
   writeFootprint : List Region
@@ -104,11 +104,11 @@ theorem produce_complete {input : CanonicalInput}
 
 namespace Examples
 
-open Thermite.RelationalFrame.Examples
+open Thermite.RelationalFrame.Bounded.Examples
 
 def canonical : CanonicalInput :=
   { artifactDigest := "sha256:tier-a-increment-a"
-    body := incrementA
+    body := setA
     normalizedRow := [.read, .write]
     semanticFragment := "tier-a-state-core-v1"
     requested := [.result, .writeFrame, .outcome, .termination] }
@@ -123,7 +123,7 @@ theorem digest_mutant_rejected :
   decide
 
 theorem body_mutant_rejected :
-    verify canonical { witness with body := .ret (.literal 5) } = false := by
+    verify canonical { witness with body := .ret (.literal (.bool false)) } = false := by
   decide
 
 theorem row_mutant_rejected :
@@ -160,7 +160,7 @@ theorem scope_upgrade_rejected :
 
 def pureInput : CanonicalInput :=
   { artifactDigest := "sha256:pure"
-    body := .ret (.literal 0)
+    body := .ret (.literal (.bool false))
     normalizedRow := []
     semanticFragment := "tier-a-state-core-v1"
     requested := [.result, .writeFrame, .outcome, .termination] }
