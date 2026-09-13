@@ -2,7 +2,7 @@
 
 <!--
 status: approved
-audited-content-sha256: 95191c91817c0fb9fa36fad82b003390c553ab9c83eb16c010d93860c320eb2b (re-pinned 2026-09-11 after adding RFC-12 fields to shared certificate/checking surfaces; resource semantics are unchanged. prior: 4426367dd18b4867c5b150c2d72589a4f7fc336a34d22ded59bdc84a6fca53fa)
+audited-content-sha256: 1e858fc143de6640e5a33a979393c6a494a9dc4a2844fe5d2cbb8dcdbe1bad68 (re-pinned 2026-09-12 after adding Tier-A fields to shared certificate/checking surfaces; resource semantics are unchanged. prior: 95191c91817c0fb9fa36fad82b003390c553ab9c83eb16c010d93860c320eb2b)
 -->
 
 ## Summary

@@ -171,6 +171,10 @@ pub struct IntentReview {
     pub item: String,
     /// The body-free declarative spec layer (REQ-1).
     pub spec_layer: SpecLayer,
+    /// Typed Tier-A relational projections copied from the admitted
+    /// certificate. Absent for legacy certificates and unsupported bodies.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub relational: Option<crate::manifest::RelationalEvidence>,
     /// The per-contract "is this what you meant?" prompt (REQ-3) — the §7 question,
     /// framed so the only open question is spec-intent alignment (the mechanical
     /// questions already discharged by the battery).
@@ -179,11 +183,16 @@ pub struct IntentReview {
 
 impl IntentReview {
     /// Build the intent-review entry for one battery-passing `fn` (REQ-2/REQ-3).
-    fn new(item: String, spec_layer: SpecLayer) -> Self {
+    fn new(
+        item: String,
+        spec_layer: SpecLayer,
+        relational: Option<crate::manifest::RelationalEvidence>,
+    ) -> Self {
         let prompt = IntentReview::prompt(&item);
         IntentReview {
             item,
             spec_layer,
+            relational,
             prompt,
         }
     }
@@ -384,7 +393,7 @@ pub fn review_file(
 /// becomes an [`IntentReview`] with its body-free spec layer; a rejected cert
 /// becomes a [`BatteryFailing`] flag. A `spec fn` carries no contract, so it is a
 /// pure shared dependency the spec layer references, never a reviewed item itself.
-fn project_artifact(
+pub(crate) fn project_artifact(
     certs: &[Certificate],
     program: &Program,
     item_filter: Option<&str>,
@@ -457,7 +466,11 @@ fn project_artifact(
 
         if is_intent_reviewable(cert) {
             let spec_layer = SpecLayer::extract(contract, &spec_fns);
-            intent_reviewable.push(IntentReview::new(cert.item.clone(), spec_layer));
+            intent_reviewable.push(IntentReview::new(
+                cert.item.clone(),
+                spec_layer,
+                cert.relational.clone(),
+            ));
         } else if let Some(reject) = &cert.reject {
             // Battery-failing (R-DEFER-9): flagged with its cause, not surfaced for
             // intent review. A non-certifying cert always carries a `reject`
