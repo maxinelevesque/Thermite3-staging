@@ -1,6 +1,6 @@
 # Feature: Engineer assurance report and Level retirement
 
-audited-content-sha256: 220efda9b12ef05a26a65ad438756a1b31fb805458ee38571115c0cf400f0e64 (re-pinned 2026-09-11 after refreshing assurance-level inventory line locations for the RFC-12 certificate extensions; authority classification is unchanged. prior: 596e4c897686031410feb03b6b4fdd2e485f8528121407031eb0363c58832dd4)
+audited-content-sha256: a7ae8b5cd7caa59ca6cc32fdd24063f8b30ad8c3fc3b3f9609c7fad22bf699ec (re-pinned 2026-09-12 after refreshing assurance inventory locations and adding Tier-A evidence authority; the Level boundary is unchanged. prior: 220efda9b12ef05a26a65ad438756a1b31fb805458ee38571115c0cf400f0e64)
 
 ## Summary
 

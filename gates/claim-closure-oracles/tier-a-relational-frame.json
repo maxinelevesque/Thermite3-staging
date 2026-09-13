@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "probe": "tier-a-relational-frame",
+  "cases": [
+    {"id": "relational-semantic-derivation", "expected_exit": 0},
+    {"id": "relational-maximal-effect-coverage", "expected_exit": 0},
+    {"id": "relational-semantic-carrier", "expected_exit": 0},
+    {"id": "relational-row-composition", "expected_exit": 0},
+    {"id": "relational-universal-theorem", "expected_exit": 0},
+    {"id": "relational-artifact-witness", "expected_exit": 0},
+    {"id": "relational-semantic-transport", "expected_exit": 0},
+    {"id": "relational-certificate-projections", "expected_exit": 0},
+    {"id": "relational-mutation-evidence", "expected_exit": 0},
+    {"id": "relational-research-gates", "expected_exit": 0},
+    {"id": "relational-no-new-syntax", "expected_exit": 0},
+    {"id": "relational-vertical-slice", "expected_exit": 0}
+  ]
+}

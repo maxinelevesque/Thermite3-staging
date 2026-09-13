@@ -1,8 +1,10 @@
 # Tier-A relational frame metatheory
 
+audited-content-sha256: dcdbfab3a92633255c995a5a75585a69c4671d14797c1b98218de36fafcb363e (implementation and executable claim-closure pin, 2026-09-12)
+
 <!--
 tier: research-derived implementation
-status: approved for implementation by the user on 2026-09-12
+status: implemented; final repository qualification pending
 governing-roadmap: .design/post-t3-roadmap.md REQ-15 / AC-15
 research-basis:
   - .design/research/relational-contracts.md §3, §5.1, §7, §10
@@ -98,44 +100,44 @@ the unsupported projection; the certificate names the missing research gate.
 
 ## Acceptance Criteria
 
-- [ ] AC-1: (REQ-1, REQ-5) The admitted Lean theorem derives result congruence
+- [x] AC-1: (REQ-1, REQ-5) The admitted Lean theorem derives result congruence
   and write framing without taking either fact, or a proposition definitionally
   equivalent to it, as a premise; `#print axioms` reports only the repository's
   enumerated standard Lean axioms and no `sorryAx` or project axiom.
-- [ ] AC-2: (REQ-2, REQ-10) A checked classification artifact covers every
+- [x] AC-2: (REQ-2, REQ-10) A checked classification artifact covers every
   primitive effect theory and all twelve `EffectKind` variants in
   `thermite-lower/src/effects.rs`; deleting or duplicating a row fails the gate.
-- [ ] AC-3: (REQ-2, REQ-3, REQ-4) Focused theorem tests demonstrate the maximal
+- [x] AC-3: (REQ-2, REQ-3, REQ-4) Focused theorem tests demonstrate the maximal
   supported projections for state, monoid accumulation, I/O, exception, and
   partiality, plus explicit research-gated results for bare `random` and
   `blocks`.
-- [ ] AC-4: (REQ-3, REQ-5) The paired semantics has non-vacuous examples for
+- [x] AC-4: (REQ-3, REQ-5) The paired semantics has non-vacuous examples for
   equal and unequal initial footprints, a permitted write, a forbidden outside
   write, a successful pair, an exceptional outcome, and a partial execution.
-- [ ] AC-5: (REQ-4) Row-composition tests show that a component lacking result
+- [x] AC-5: (REQ-4) Row-composition tests show that a component lacking result
   congruence can still retain a proved write-frame projection, and that region
   overlap uses the same canonical decision as the production footprint path.
-- [ ] AC-6: (REQ-6) An emitted canonical/witness pair replays in Lean and binds
+- [x] AC-6: (REQ-6) An emitted canonical/witness pair replays in Lean and binds
   the exact artifact digest, normalized row, footprints, fragment identifier,
   requested projections, and derived classification; independent mutations of
   every bound field fail replay.
-- [ ] AC-7: (REQ-7) At least one real compiled Thermite function produces an
+- [x] AC-7: (REQ-7) At least one real compiled Thermite function produces an
   end-to-end relational claim by composing the source theorem with an existing
   T1/T2 transport theorem; a fixture outside the transported fragment is
   reported as source-only rather than end-to-end.
-- [ ] AC-8: (REQ-7, REQ-12) The end-to-end fixture fails when its production
+- [x] AC-8: (REQ-7, REQ-12) The end-to-end fixture fails when its production
   lowering is replaced by a semantically different lowering even when its
   source-level relational theorem remains true.
-- [ ] AC-9: (REQ-8, REQ-10, REQ-11) Certificate JSON, `forge review`, and
+- [x] AC-9: (REQ-8, REQ-10, REQ-11) Certificate JSON, `forge review`, and
   `forge audit` render the same typed relational projections and named research
   gates, and a pre-feature certificate deserializes without acquiring relational
   authority.
-- [ ] AC-10: (REQ-9) Hostile tests kill weakened, deleted, redirected, stale,
+- [x] AC-10: (REQ-9) Hostile tests kill weakened, deleted, redirected, stale,
   and cross-artifact relational evidence or return an explicit unsupported
   classification; no mutant is accepted with its original authority.
-- [ ] AC-11: (REQ-11) Parser and lowering golden tests confirm that no new
+- [x] AC-11: (REQ-11) Parser and lowering golden tests confirm that no new
   source clause or spelling is accepted by this Tier-A increment.
-- [ ] AC-12: (REQ-12) The implementation sequence names a focused command set
+- [x] AC-12: (REQ-12) The implementation sequence names a focused command set
   for each vertical increment and one final qualification boundary, with claim
   materialization deferred until the implementation tree is stable.
 
@@ -298,6 +300,50 @@ termination theorem, or a source-only theorem into an end-to-end one.
 Each increment ends with focused Lean/Rust checks. Content-bound claim receipts
 are materialized once after the complete tree stabilizes, followed by the full
 qualification and exact-head review protocol used elsewhere in the repository.
+
+## Implementation evidence
+
+The implementation preserves the design's separation between a source theorem
+and executable transport. `Thermite.RelationalFrame.Bounded.Program.relational_frame`
+derives paired result and frame conclusions from the executable program and
+initial agreement. `Thermite.RelationalFrameWitness.produce_complete` admits an
+exact canonical input/witness pair. Only
+`Thermite.RelationalFrameTransport.bounded_return_pair_end_to_end` transports
+the region-free return fragment, and the transport receipt lists the exact
+transported projection subset. Consequently the current identity fixture shows
+`Result`, `Outcome`, and `Termination` end to end while `WriteFrame` remains
+source-only; the shared-state increment fixture remains wholly source-only.
+
+The following checked surfaces discharge the acceptance criteria:
+
+| Evidence | Discharged boundary |
+| --- | --- |
+| `lean/Thermite/RelationalFrame.lean` and `gates/lean-axiom-probe.sh` | Universal paired execution, explicit outcomes, non-vacuous examples, exhaustive primitive/`EffectKind` lists, independent projection composition, and the allowed-axiom boundary (AC-1 through AC-5). |
+| `lean/Thermite/RelationalFrameWitness.lean` and `thermite-lower/src/relational_frame_witness.rs` | Canonical body, row, footprint, effect-law, fragment, projection, scope, and artifact binding; every authority-bearing field is mutation-tested (AC-2, AC-6, AC-10). |
+| `lean/Thermite/RelationalFrameTransport.lean` and `thermite-lower/tests/relational_frame_witness.rs` | Exact T2 return transport, changed-body/cross-artifact receipt rejection, and source-only fallback outside that transport (AC-7, AC-8). |
+| `forge/src/check.rs`, `forge/src/manifest.rs`, `forge/src/review.rs`, `forge/src/audit.rs`, and `forge/src/cli.rs` | One private audit authority feeds certificate JSON, review, and audit without inferring authority for legacy certificates or promoting source-only projections (AC-9, AC-10). |
+| `cargo test -p thermite-syntax` and an empty `git diff origin/main -- thermite-syntax` | The existing language and parser corpus remain unchanged; Tier A adds no surface spelling (AC-11). |
+
+Focused iteration used these commands:
+
+```text
+cargo test -p thermite-lower relational_frame --lib
+cargo test -p thermite-lower --test relational_frame_witness
+cargo test -p forge --bin forge relational_ -- --nocapture
+cargo test -p thermite-syntax
+cargo clippy -p thermite-lower -p forge --all-targets -- -D warnings
+cargo fmt --all --check
+bash gates/lean-axiom-probe.sh
+```
+
+The final boundary is deliberately singular: after the implementation and this
+evidence map are stable, add the typed claim-closure draft, materialize the
+content-bound receipts once, regenerate the requirement status view, and then
+run the complete registry, route/path, documentation-drift, claim-completeness,
+workspace build/test/clippy/fmt, and Lean axiom gates. The committed exact head
+is then the unit of adversarial review and CI admission. A change to an
+authority-bearing artifact after materialization invalidates that boundary and
+requires one new materialization, qualification, and exact-head review cycle.
 
 ## Resolved Questions
 

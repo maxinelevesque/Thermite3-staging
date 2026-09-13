@@ -19397,181 +19397,241 @@ note = "the proposal, with its design record and probe results"
 id = "REQ-RELFRAME-SEMANTIC-DERIVATION"
 title = "Relational facts derive from execution semantics"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "Result congruence and write framing are conclusions of checked operational semantics and effect laws rather than free ItemSemantics fields."
-remaining_scope = "Replace the assumption-packaging theorem with a non-vacuous derivation and axiom-probed Lean evidence."
-contributors = ["lean/Thermite/EffectRows.lean", "lean/Thermite/Exec/Stmt.lean"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "c7f52ada83ed71340e5fcde7d0fc77e178e0d85a209358bdc07e5f0ae50ba654" }
+remaining_scope = ""
+contributors = ["lean/Thermite/RelationalFrame.lean", "gates/lean-axiom-probe.sh"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-1 and AC-1 define the semantic-derivation boundary."
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.RelationalFrame.Bounded.Program.relational_frame"
+note = "derives paired result congruence and write framing from executable semantics and initial agreement"
 
 [[requirement]]
 id = "REQ-RELFRAME-MAXIMAL-EFFECT-COVERAGE"
 title = "Every current effect receives its maximal proved projection"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "A closed classification covers every basis primitive and current EffectKind without artificially restricting the supported fragment."
-remaining_scope = "Build and test the exhaustive relational-law classification, including explicit research-gated rows."
-contributors = ["thermite-lower/src/effects.rs", "lean/Thermite/EffectRows.lean"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "d2a234c5a906ce9cbbfdac07018a007f97a71bd0d5adf5a425e49d67f9b37df9" }
+remaining_scope = ""
+contributors = ["thermite-lower/src/effects.rs", "lean/Thermite/RelationalFrame.lean", "thermite-lower/src/relational_frame_witness.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-2 and AC-2/AC-3 define maximal current-metatheory coverage."
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.RelationalFrame.allEffectKinds_complete"
+note = "closed enumeration covers all twelve production effect variants"
 
 [[requirement]]
 id = "REQ-RELFRAME-SEMANTIC-CARRIER"
 title = "Region-aware paired execution has explicit outcomes"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "The canonical semantics combines existing bounded execution state with declared regions and distinguishes completed, exceptional, partial, external, and blocking behavior."
-remaining_scope = "Extend the semantic carrier and prove non-vacuous paired-execution examples."
-contributors = ["lean/Thermite/Exec.lean", "lean/Thermite/Exec/Stmt.lean", "lean/Thermite/Exec/Loop.lean"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "7f9df17a56e347e880274e311c42c977c0660cae45df56352647956fbcb0eded" }
+remaining_scope = ""
+contributors = ["lean/Thermite/RelationalFrame.lean", "lean/Thermite/Exec.lean"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-3 and AC-3/AC-4 define the canonical paired carrier."
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.RelationalFrame.Bounded.Program.run"
+note = "region-aware bounded execution distinguishes normal, exceptional, and incomplete outcomes"
 
 [[requirement]]
 id = "REQ-RELFRAME-ROW-COMPOSITION"
 title = "Rows compose relational projections independently"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "Row composition retains every proved result, frame, outcome, termination, trace, and accumulator projection supported by all relevant effect laws."
-remaining_scope = "Prove per-projection row composition over the canonical region-overlap and footprint decisions."
-contributors = ["lean/Thermite/EffectRows.lean", "thermite-lower/src/effects.rs"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "5c7de6064f1c9dc0980940ccd5692dc50a2c51ffd166bce7f4dec15974e537cf" }
+remaining_scope = ""
+contributors = ["lean/Thermite/RelationalFrame.lean", "thermite-lower/src/relational_frame_witness.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-4 and AC-3/AC-5 define independent maximal row composition."
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.RelationalFrame.combineProjection"
+note = "each relational projection composes independently across effect rows"
 
 [[requirement]]
 id = "REQ-RELFRAME-UNIVERSAL-THEOREM"
 title = "Lean proves the universal self-composition theorem"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "Primitive laws compose through rows and canonical program execution into a universal two-run theorem with no project axiom or sorry."
-remaining_scope = "Implement the primitive, row, and program proofs and run the allowed-axiom probe."
-contributors = ["lean/Thermite/EffectRows.lean"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "5ac137fefaab17b7e09448d3ddab423fd5bf7c627a0238791a8eb6839d0e3eb4" }
+remaining_scope = ""
+contributors = ["lean/Thermite/RelationalFrame.lean", "gates/lean-axiom-probe.sh"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-5 and AC-1/AC-4 define the universal theorem."
+[[requirement.evidence]]
+kind = "test"
+target = "gates/lean-axiom-probe.sh"
+note = "kernel-builds and axiom-probes the universal theorem, examples, classifications, replay, and transport"
 
 [[requirement]]
 id = "REQ-RELFRAME-ARTIFACT-WITNESS"
 title = "Exact artifacts carry checked relational witnesses"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "lower"
 summary = "Canonical and witness values bind the exact body, row, footprints, law classification, fragment, projections, and artifact identity for Lean replay."
-remaining_scope = "Add canonical witness types, producer refinement, deterministic emission, replay, and field-mutation rejection."
-contributors = ["lean/Thermite/CheckedTraversal.lean", "thermite-lower/src/witness.rs"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "93bba2aec2f7108ceaad3e1b4321de49f1fa4a9cac268cb15deb80e6dfee4136" }
+remaining_scope = ""
+contributors = ["lean/Thermite/RelationalFrameWitness.lean", "thermite-lower/src/relational_frame_witness.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-6 and AC-6 define exact per-artifact witness binding."
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/src/relational_frame_witness.rs"
+note = "canonical replay and hostile field-mutation tests bind every authority-bearing witness field"
 
 [[requirement]]
 id = "REQ-RELFRAME-SEMANTIC-TRANSPORT"
 title = "Relational facts transport to emitted artifacts"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "A source theorem becomes end-to-end authority only through an applicable semantic-preservation or verified-validation theorem."
-remaining_scope = "Compose the relational theorem with the supported T1/T2 routes and label uncovered fragments source-only."
-contributors = ["lean/Thermite/Faithfulness.lean", "lean/Thermite/Exec/Stmt.lean", "lean/Thermite/Exec/Loop.lean"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "a3739f3a18f9332156b936ca98a85a2438fea30a40d070e8cdca5bd560e67930" }
+remaining_scope = ""
+contributors = ["lean/Thermite/RelationalFrameTransport.lean", "thermite-lower/src/relational_frame_witness.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-7 and AC-7/AC-8 define source-to-artifact transport."
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/tests/relational_frame_witness.rs"
+note = "real source programs replay through Lean and the supported pure-return fixture receives exact T2 transport"
 
 [[requirement]]
 id = "REQ-RELFRAME-CERTIFICATE-PROJECTIONS"
 title = "Certificates preserve typed relational projections"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "forge"
 summary = "Current assurance records derived, conditional, source-only, transported, and research-gated relational facts without promoting one projection into another."
-remaining_scope = "Integrate typed relational evidence into the current manifest authority and all review/audit renderers."
-contributors = ["forge/src/manifest.rs"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "adfcbc46740651ff34ae983a3825f84fb94ae56f1c02b0c37e31b9152e57aa9e" }
+remaining_scope = ""
+contributors = ["forge/src/manifest.rs", "forge/src/check.rs", "forge/src/review.rs", "forge/src/audit.rs", "forge/src/cli.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-8 and AC-9 define certificate projection and presentation semantics."
+[[requirement.evidence]]
+kind = "test"
+target = "forge/src/check.rs"
+note = "certificate, review, and audit share exact typed projection evidence and reject public-evidence mutation"
 
 [[requirement]]
 id = "REQ-RELFRAME-MUTATION-EVIDENCE"
 title = "Hostile mutations cannot retain relational authority"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "conformance"
 summary = "Program, row, footprint, law, outcome, transport, and identity mutations reject or remove the affected relational projection."
-remaining_scope = "Add the complete mutation matrix and bind its outcomes into claim evidence."
-contributors = ["thermite-lower/src/witness.rs", "forge/src/manifest.rs"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "018563527d3bdd91d4396eaad57d8dc43c8e4ba7a5bae6c6045dbf0f4636f561" }
+remaining_scope = ""
+contributors = ["thermite-lower/src/relational_frame_witness.rs", "thermite-lower/tests/relational_frame_witness.rs", "forge/src/check.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-9 and AC-10 define hostile evidence requirements."
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-lower/src/relational_frame_witness.rs"
+note = "program, row, footprint, law, outcome, scope, transport, and artifact mutations lose authority"
 
 [[requirement]]
 id = "REQ-RELFRAME-RESEARCH-GATES"
 title = "Unsupported relational mathematics is explicitly gated"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "verified"
 summary = "Randomness, peer progress, free-I/O equality, termination sensitivity, and later relational clauses remain typed research gates until their missing theories exist."
-remaining_scope = "Represent and exhaustively test every named research gate without treating gate presence as discharge."
-contributors = [".design/research/relational-contracts.md", ".design/syntax/effect-algebra.md"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "d926b2d25e5e6c2e1c750f5280b29f7aeb4f380ca7b503c5c44bf3cef169735f" }
+remaining_scope = ""
+contributors = ["lean/Thermite/RelationalFrame.lean", "thermite-lower/src/relational_frame_witness.rs", ".design/research/relational-contracts.md"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-10 and AC-2/AC-3/AC-9 define the research-gate boundary."
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.RelationalFrame.bare_random_requires_new_denotation"
+note = "unsupported mathematics stays an exhaustive typed gate rather than acquiring a semantic projection"
 
 [[requirement]]
 id = "REQ-RELFRAME-NO-NEW-SYNTAX"
 title = "Tier-A framing adds no relational surface syntax"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "syntax"
 summary = "Existing programs and certificates remain compatible, and the Tier-A increment does not accept hides or another new relational clause."
-remaining_scope = "Add compatibility and negative parser/lowering evidence while preserving old certificate readability without new authority."
-contributors = ["thermite-syntax/src/ast.rs", "forge/src/manifest.rs"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "f6908d14360efc3b0a75e1658eaa6f1fcebc4ff09d5889216456469a6f137cf4" }
+remaining_scope = ""
+contributors = ["thermite-syntax/src/ast.rs", "forge/src/manifest.rs", "forge/src/check.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-11 and AC-9/AC-11 define the compatibility and no-syntax boundary."
+[[requirement.evidence]]
+kind = "test"
+target = "thermite-syntax"
+note = "the unchanged syntax crate's complete parser and compatibility corpus remains green"
 
 [[requirement]]
 id = "REQ-RELFRAME-VERTICAL-SLICE"
 title = "The first increment is an end-to-end relational slice"
 owner = ".design/tier-a-relational-frame.md"
-status = "not_started"
+status = "shipped"
 scope = "conformance"
 summary = "One real Thermite function traverses source semantics, paired proof, row-law derivation, witness replay, semantic transport, and typed certificate output."
-remaining_scope = "Land the first complete fixture, focused commands, final qualification boundary, and stable-tree claim materialization plan."
-contributors = ["lean/Thermite/EffectRows.lean", "thermite-lower/src/witness.rs", "forge/src/manifest.rs"]
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/tier-a-relational-frame.json", expected = ["accepted"], reviewed_summary_sha256 = "6d8528b73362f66840ef3c00eaa21b8e17dffab59be6a99443406fb07ccbeba8" }
+remaining_scope = ""
+contributors = ["lean/Thermite/RelationalFrame.lean", "lean/Thermite/RelationalFrameWitness.lean", "lean/Thermite/RelationalFrameTransport.lean", "thermite-lower/src/relational_frame_witness.rs", "forge/src/check.rs"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/tier-a-relational-frame.md"
 note = "REQ-12 and AC-7/AC-8/AC-12 define the vertical delivery sequence."
+[[requirement.evidence]]
+kind = "test"
+target = "gates/claim-closure-relational-frame.py"
+note = "one shared executable discriminator replays the focused Lean, lowerer, certificate, audit, transport, mutation, and compatibility evidence"
 
 [[requirement]]
 id = "REQ-FORGE-NESTED-ADT-ROOT"

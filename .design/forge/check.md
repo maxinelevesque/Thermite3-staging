@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 50b15dba56e0c0b03ab7e02f1d197fe50597c6451cc7a6a434efec5e8b43622b (re-pinned 2026-09-11 for the RFC-12 promise-mutation Lean replay and certificate gate. prior: eb0d5c050e0d0ebce5f08b93e87177be59e00619d46ca91d9cfa5a485c8fd1cf)
+audited-content-sha256: e3e408321fc3925506d2824efac60545102ead7428320ca365cd35413c7b825b (re-pinned 2026-09-12 for exact Tier-A relational replay and certificate admission. prior: 50b15dba56e0c0b03ab7e02f1d197fe50597c6451cc7a6a434efec5e8b43622b)
 governs: forge/src/check.rs
 thesis-refs:
   - thermite-design.md §5.1

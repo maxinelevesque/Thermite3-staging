@@ -1299,6 +1299,9 @@ mod tests {
         changed.canonical_ast_sha256.push('0');
         mutants.push(changed);
         let mut changed = witness.clone();
+        changed.functions[0].function = "other".into();
+        mutants.push(changed);
+        let mut changed = witness.clone();
         changed.functions[0].normalized_row.clear();
         mutants.push(changed);
         let mut changed = witness.clone();
@@ -1306,6 +1309,9 @@ mod tests {
         mutants.push(changed);
         let mut changed = witness.clone();
         changed.functions[0].write_footprint.clear();
+        mutants.push(changed);
+        let mut changed = witness.clone();
+        changed.functions[0].write_footprint[0] = "state.other".into();
         mutants.push(changed);
         let mut changed = witness.clone();
         changed.functions[0].effect_support.clear();
@@ -1321,6 +1327,9 @@ mod tests {
         mutants.push(changed);
         let mut changed = witness.clone();
         changed.functions[0].scope = RelationalScope::EndToEnd;
+        mutants.push(changed);
+        let mut changed = witness.clone();
+        changed.functions[0].unsupported_reason = Some("forged refusal".into());
         mutants.push(changed);
         for mutant in mutants {
             assert!(replay_relational_frame_witness(&program, &mutant).is_err());
