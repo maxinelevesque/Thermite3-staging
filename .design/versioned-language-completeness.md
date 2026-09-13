@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 0d65814f097a0e4cb10325c981f5e7e8a3266043b69fe068dca56662add2eb07 (re-pinned 2026-09-12 after materializing all 596 content-bound claims including the Tier-A relational slice. prior: eaeb35dba1ab9919aefe4c074ad0ea0edf1acdadab671804d17083262fc6b1bb)
+audited-content-sha256: 5fba7de84375962b5c482058d932323ced692550e23c0dafa1beb38d8ee9c183 (re-pinned 2026-09-12 after rematerializing 596 content-bound claims for the Tier-A CI module and partition repair. prior: 0d65814f097a0e4cb10325c981f5e7e8a3266043b69fe068dca56662add2eb07)
 
 ## Summary
 

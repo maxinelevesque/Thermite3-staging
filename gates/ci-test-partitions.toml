@@ -10301,3 +10301,66 @@ bucket = 8
 seconds = 0.007
 test = "forge::bin/forge manifest::tests::current_assurance::unversioned_levels_are_inspect_only_with_specific_warnings"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+# Tier-A relational-frame tests postdate the frozen timing source. Fast
+# in-process checks use the established 0.007s reviewed estimate; tests that
+# launch Lean replay use 0.500s until the next measured timing snapshot.
+[[assignment]]
+bucket = 10
+seconds = 0.500
+test = "forge::bin/forge check::tests::relational_evidence_is_exact_scoped_and_shared_by_certificate_review_and_audit"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.007
+test = "forge::bin/forge check::tests::relational_replay_accepts_only_the_enumerated_axiom_profile"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "thermite-lower relational_frame_witness::tests::encoded_region_overlap_matches_canonical_segment_prefix_overlap"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "thermite-lower relational_frame_witness::tests::every_authority_bearing_mutation_is_rejected"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "thermite-lower relational_frame_witness::tests::net_retains_frame_while_result_is_conditional"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "thermite-lower relational_frame_witness::tests::structural_atoms_do_not_mint_semantic_projections"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "thermite-lower relational_frame_witness::tests::unsupported_body_fails_closed_without_semantic_projections"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "thermite-lower relational_frame_witness::tests::witness_is_canonical_source_only_and_round_trips"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.500
+test = "thermite-lower::relational_frame_witness production_body_replays_in_the_lean_kernel"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.500
+test = "thermite-lower::relational_frame_witness production_pure_function_receives_exact_t2_transport"
+timing_provenance = "reviewed_local_estimate_after_baseline"

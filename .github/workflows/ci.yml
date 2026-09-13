@@ -284,7 +284,10 @@ jobs:
             Thermite.Reconstruct \
             Thermite.ResourceFlow \
             Thermite.Interference \
-            Thermite.Protocol
+            Thermite.Protocol \
+            Thermite.RelationalFrame \
+            Thermite.RelationalFrameWitness \
+            Thermite.RelationalFrameTransport
 
       - name: Generate exact-SHA assurance portrait
         id: generate
@@ -427,6 +430,9 @@ jobs:
           Thermite.ResourceFlow
           Thermite.Interference
           Thermite.Protocol
+          Thermite.RelationalFrame
+          Thermite.RelationalFrameWitness
+          Thermite.RelationalFrameTransport
       - name: Publish prepared Lean build
         uses: actions/upload-artifact@v4
         with:
@@ -490,6 +496,9 @@ jobs:
           Thermite.ResourceFlow
           Thermite.Interference
           Thermite.Protocol
+          Thermite.RelationalFrame
+          Thermite.RelationalFrameWitness
+          Thermite.RelationalFrameTransport
 
       - name: Install toolchain (pinned to rust-toolchain.toml channel)
         uses: dtolnay/rust-toolchain@1.95.0
