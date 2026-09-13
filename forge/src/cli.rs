@@ -103,6 +103,10 @@ pub enum ForgeError {
     Rfc13ReplayUnavailable { detail: String },
     /// RFC-13 protocol replay ran and kernel-rejected the checked witness.
     Rfc13ReplayRejected { detail: String },
+    /// Tier-A relational source/transport replay could not be invoked.
+    RelationalReplayUnavailable { detail: String },
+    /// Tier-A relational source/transport replay was kernel-rejected.
+    RelationalReplayRejected { detail: String },
     /// The `cargo kani` / kani binary was not found on `PATH` — an environment
     /// error, not a verification failure (`.design/lower/l2-kani.md` REQ-8). The
     /// L2 parallel of `VerusAbsent`.
@@ -239,6 +243,12 @@ impl fmt::Display for ForgeError {
             }
             ForgeError::Rfc13ReplayRejected { detail } => {
                 write!(f, "RFC-13 protocol replay rejected: {detail}")
+            }
+            ForgeError::RelationalReplayUnavailable { detail } => {
+                write!(f, "Tier-A relational replay unavailable: {detail}")
+            }
+            ForgeError::RelationalReplayRejected { detail } => {
+                write!(f, "Tier-A relational replay rejected: {detail}")
             }
             ForgeError::KaniAbsent { binary } => write!(
                 f,
@@ -3610,7 +3620,7 @@ fn review_record_path(file: &Path) -> PathBuf {
 /// declarative spec layer (req/ens/fx plus referenced spec-fn declarations, no
 /// bodies) and the "is this what you meant?" prompt; then the battery-failing fns
 /// flagged with their cause (not surfaced for intent review, R-DEFER-9).
-fn render_review(artifact: &ReviewArtifact) -> String {
+pub(crate) fn render_review(artifact: &ReviewArtifact) -> String {
     let mut out = String::new();
     out.push_str(&format!(
         "spec-intent review: {} intent-reviewable, {} battery-failing\n",
@@ -3629,6 +3639,38 @@ fn render_review(artifact: &ReviewArtifact) -> String {
         out.push_str(&format!("  fx  [{}]\n", r.spec_layer.fx.join(", ")));
         for decl in &r.spec_layer.referenced_spec_fns {
             out.push_str(&format!("  {} dec {}\n", decl.signature, decl.measures));
+        }
+        if let Some(relational) = &r.relational {
+            out.push_str(&format!(
+                "  relational: projections=[{}] effect-support=[{}]\n",
+                render_relational_projections(relational),
+                relational
+                    .function
+                    .effect_support
+                    .iter()
+                    .map(|entry| format!("{}={:?}", entry.effect, entry.support))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            ));
+            out.push_str(&format!(
+                "  relational-replay: checker={} canonical-ast-sha256={}\n",
+                relational.formal_replay.checker, relational.formal_replay.canonical_ast_sha256,
+            ));
+            if let Some(transport) = &relational.transport {
+                out.push_str(&format!(
+                    "  relational-transport: theorem={} lowered-artifact-sha256={}\n",
+                    transport.receipt.theorem, transport.receipt.lowered_artifact_sha256,
+                ));
+            }
+            out.push_str(&format!(
+                "  relational-residual-trust: {}\n",
+                relational
+                    .residual_trust
+                    .iter()
+                    .map(|entry| format!("{entry:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
         }
         out.push_str(&format!("  prompt: {}\n", r.prompt));
     }
@@ -3792,6 +3834,32 @@ fn render_repair_item(item: &RepairItem) -> String {
 /// `.design/forge/audit-manifest.md` REQ-2, OQ-1 — the human shape is a rendering
 /// detail; the `--json` document is the stable contract). Three sections: the
 /// per-fn table, the project assurance, and the §8/§9 greppable TCB inventory.
+fn render_relational_projections(evidence: &crate::manifest::RelationalEvidence) -> String {
+    if evidence.function.projections.is_empty() {
+        return "(none; research-gated or structural-only)".to_string();
+    }
+    evidence
+        .function
+        .projections
+        .iter()
+        .map(|projection| {
+            let transported = evidence
+                .transport
+                .as_ref()
+                .is_some_and(|transport| transport.receipt.projections.contains(projection));
+            format!(
+                "{projection:?}@{}",
+                if transported {
+                    "end-to-end"
+                } else {
+                    "source-only"
+                }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 pub(crate) fn render_audit(manifest: &AuditManifest) -> String {
     let mut out = String::new();
     out.push_str(&format!(
@@ -3884,6 +3952,41 @@ pub(crate) fn render_audit(manifest: &AuditManifest) -> String {
             out.push_str(&format!(
                 "    protocol residual trust: {}\n",
                 protocol
+                    .residual_trust
+                    .iter()
+                    .map(|entry| format!("{entry:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+        if let Some(relational) = &f.relational {
+            out.push_str(&format!(
+                "    relational: accepted; projections=[{}] checker={} canonical-ast-sha256={}\n",
+                render_relational_projections(relational),
+                relational.formal_replay.checker,
+                relational.formal_replay.canonical_ast_sha256,
+            ));
+            out.push_str(&format!(
+                "    relational effect support: {}\n",
+                relational
+                    .function
+                    .effect_support
+                    .iter()
+                    .map(|entry| format!("{}={:?}", entry.effect, entry.support))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+            if let Some(transport) = &relational.transport {
+                out.push_str(&format!(
+                    "    relational transport: theorem={} lowered-artifact-sha256={} checker={}\n",
+                    transport.receipt.theorem,
+                    transport.receipt.lowered_artifact_sha256,
+                    transport.checker,
+                ));
+            }
+            out.push_str(&format!(
+                "    relational residual trust: {}\n",
+                relational
                     .residual_trust
                     .iter()
                     .map(|entry| format!("{entry:?}"))
@@ -4141,6 +4244,41 @@ pub(crate) fn render_human(cert: &Certificate) -> String {
         out.push_str(&format!(
             "protocol_residual_trust: {}\n",
             protocol
+                .residual_trust
+                .iter()
+                .map(|entry| format!("{entry:?}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
+    if let Some(relational) = &cert.relational {
+        out.push_str(&format!(
+            "relational: accepted (formal replay: kernel-accepted, checker={}, canonical_ast_sha256={}, projections=[{}])\n",
+            relational.formal_replay.checker,
+            relational.formal_replay.canonical_ast_sha256,
+            render_relational_projections(relational),
+        ));
+        out.push_str(&format!(
+            "relational_effect_support: {}\n",
+            relational
+                .function
+                .effect_support
+                .iter()
+                .map(|entry| format!("{}={:?}", entry.effect, entry.support))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+        if let Some(transport) = &relational.transport {
+            out.push_str(&format!(
+                "relational_transport: theorem={}, lowered_artifact_sha256={}, checker={}\n",
+                transport.receipt.theorem,
+                transport.receipt.lowered_artifact_sha256,
+                transport.checker,
+            ));
+        }
+        out.push_str(&format!(
+            "relational_residual_trust: {}\n",
+            relational
                 .residual_trust
                 .iter()
                 .map(|entry| format!("{entry:?}"))

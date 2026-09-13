@@ -1776,6 +1776,39 @@ reference = [".design/research/relational-contracts.md"]
 conformance_ops = ["gates/lean-axiom-probe.sh"]
 
 # ---------------------------------------------------------------------
+# Tier-A relational frame metatheory
+# ---------------------------------------------------------------------
+[[route]]
+crate_pattern = "lean/Thermite/RelationalFrame*.lean"
+design = ".design/tier-a-relational-frame.md"
+reference = [".design/research/relational-contracts.md", "gates/lean-axiom-probe.sh"]
+conformance_ops = ["paired semantics", "witness replay", "T2 transport"]
+
+[[route]]
+crate_pattern = "thermite-lower/src/relational_frame_witness.rs"
+design = ".design/tier-a-relational-frame.md"
+reference = ["lean/Thermite/RelationalFrameWitness.lean", "thermite-lower/tests/relational_frame_witness.rs"]
+conformance_ops = ["canonical witness", "projection transport"]
+
+[[route]]
+crate_pattern = "thermite-lower/tests/relational_frame_witness.rs"
+design = ".design/tier-a-relational-frame.md"
+reference = ["thermite-lower/src/relational_frame_witness.rs", "lean/Thermite/RelationalFrameTransport.lean"]
+conformance_ops = ["live Lean replay", "hostile receipt mutation"]
+
+[[route]]
+crate_pattern = "gates/claim-closure-relational-frame.py"
+design = ".design/tier-a-relational-frame.md"
+reference = ["gates/claim-closure-oracles/tier-a-relational-frame.json"]
+conformance_ops = ["Tier-A closure discriminator"]
+
+[[route]]
+crate_pattern = "gates/claim-closure-oracles/tier-a-relational-frame.json"
+design = ".design/tier-a-relational-frame.md"
+reference = ["gates/claim-closure-relational-frame.py"]
+conformance_ops = []
+
+# ---------------------------------------------------------------------
 # Shared-state invariants and checked traversal (RFC-10 revision 2)
 # ---------------------------------------------------------------------
 [[route]]

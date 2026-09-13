@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: eaeb35dba1ab9919aefe4c074ad0ea0edf1acdadab671804d17083262fc6b1bb (re-pinned 2026-09-11 after the alpha.12 Cargo.lock change required regenerating all 584 content-bound claim-closure receipts. prior: ba2ae9f4141bf914d242055931c386ad6a5877a02b35654b5e8e478dc3388a06)
+audited-content-sha256: 5fba7de84375962b5c482058d932323ced692550e23c0dafa1beb38d8ee9c183 (re-pinned 2026-09-12 after rematerializing 596 content-bound claims for the Tier-A CI module and partition repair. prior: 0d65814f097a0e4cb10325c981f5e7e8a3266043b69fe068dca56662add2eb07)
 
 ## Summary
 

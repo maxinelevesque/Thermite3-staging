@@ -3,7 +3,7 @@
 <!--
 tier: 3-component
 status: shipped
-audited-content-sha256: a248816216d207daa7eeac30f9cacdc129e775e9ed0c5080f0b325235896ca11 (re-pinned 2026-09-11 after exposing RFC-12 promise-trace evidence through shared CLI/library surfaces; rich-composition behavior is unchanged. prior: 2548e73abe7af1292bd208cfb7d56cda8a8c5a3d0eeb55b2d4b09afc3ec1cbba)
+audited-content-sha256: 22345f9e75f0bd4f24a0bbbb8608996698d2221fe49b131b082eda80781c386a (re-pinned 2026-09-12 after exposing Tier-A relational evidence through shared CLI/library surfaces; rich-composition behavior is unchanged. prior: a248816216d207daa7eeac30f9cacdc129e775e9ed0c5080f0b325235896ca11)
 decision: one canonical Verus crate with crate-visible rich Thermite roots and public shell exports
 issue: github:dollspace-gay/Thermite#104
 governs:

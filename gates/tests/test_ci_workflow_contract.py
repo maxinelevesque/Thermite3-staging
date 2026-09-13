@@ -68,6 +68,9 @@ class CiWorkflowContractTests(unittest.TestCase):
                 "Thermite.ResourceFlow",
                 "Thermite.Interference",
                 "Thermite.Protocol",
+                "Thermite.RelationalFrame",
+                "Thermite.RelationalFrameWitness",
+                "Thermite.RelationalFrameTransport",
             ):
                 self.assertIn(module, job)
 

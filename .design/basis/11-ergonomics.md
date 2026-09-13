@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: draft
-audited-content-sha256: 124334a32d428be526fd8020a8d4803743260876ce0e609b5334dbd2dc5c379e (re-pinned 2026-09-11 after adding RFC-12 promise-trace evidence to the shared Forge checker; ergonomics behavior is unchanged. prior: 15779f3f5824361a39ebb7fe140766560644322042d0bbeff31c6d86e12adf6a)
+audited-content-sha256: 0900abd4bddf18517e359d8a04cb910180daeda2221e9b1c7f4e46450cc4ee04 (re-pinned 2026-09-12 after adding Tier-A relational evidence to shared Forge surfaces; ergonomics behavior is unchanged. prior: 124334a32d428be526fd8020a8d4803743260876ce0e609b5334dbd2dc5c379e)
 pin-extract: thermite-syntax/src/ast.rs=code-normalized
 pin-extract: thermite-syntax/src/parser.rs=code-normalized
 pin-extract: thermite-spec/src/validator.rs=code-normalized

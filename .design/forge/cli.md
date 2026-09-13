@@ -4,7 +4,7 @@
 tier: 3-component
 status: shipped
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 / AC-8 (#349), the automated Rust→Lean obligation exporter: the change to this doc's governed file (cli.rs) is the additive `forge smt-export [<file>] [--out <path>]` subcommand (`Command::SmtExport` → `run_smt_export`, emitting the `(P_prod) ⟺ (P_ref)` `by smt` Lean theorems + `#print axioms` probes via `lean_smt_export.rs`); every other subcommand + flag parse is unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-21 stage-2 REQ-8 / AC-8 (#330) `forge strat-faithful-tv`; 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `forge strat-tv` + `ForgeError::StratDifferential`; 2026-06-18 umbrella REQ-2c / AC-4 rotating-seed `--seed` flag on `forge tv`; §6 metrics dashboard `--metrics` value)
-audited-content-sha256: cc2a8a3840d742610c20fcf16aef21a53a330e9db489f9c2fd3b23c73b6f65dd (re-pinned 2026-09-11 to disclose typed RFC-12 promise-mutation scores in certificate and audit output. prior: ad0a73584d0ce082b011bdad2a4373ad681e66c82785033e73efbdf8b77e2c28)
+audited-content-sha256: 914de5b2d4a030c09ab673798f1bbab169143b5a416fbfa2041259062e745044 (re-pinned 2026-09-12 to disclose per-projection Tier-A relational scope in certificate, review, and audit output. prior: cc2a8a3840d742610c20fcf16aef21a53a330e9db489f9c2fd3b23c73b6f65dd)
 governs: forge/src/cli.rs
 thesis-refs:
   - thermite-design.md §5

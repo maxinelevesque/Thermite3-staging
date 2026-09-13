@@ -1468,6 +1468,52 @@ pub struct ProtocolEvidence {
     pub residual_trust: Vec<ProtocolResidualTrust>,
 }
 
+/// Tier-A relational projections admitted only after exact source replay. The
+/// optional transport receipt is independent authority: its absence means the
+/// projections remain source-only even when the source theorem is accepted.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RelationalEvidence {
+    pub function: thermite_lower::RelationalFunctionWitness,
+    pub formal_replay: RelationalFormalReplay,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transport: Option<RelationalTransportEvidence>,
+    pub residual_trust: Vec<RelationalResidualTrust>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RelationalFormalReplay {
+    pub checker: String,
+    pub checker_sha256: String,
+    pub witness_version: u32,
+    pub canonical_ast_sha256: String,
+    pub verdict: RelationalFormalReplayVerdict,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RelationalFormalReplayVerdict {
+    KernelAccepted,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RelationalTransportEvidence {
+    pub receipt: thermite_lower::RelationalTransportReceipt,
+    pub checker: String,
+    pub checker_sha256: String,
+    pub verdict: RelationalFormalReplayVerdict,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RelationalResidualTrust {
+    Parser,
+    BodyTranslation,
+    EffectAnalysis,
+    WitnessExtraction,
+    SourceModelCorrespondence,
+    ExecutableTargetBehavior,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProtocolVerdict {
@@ -1517,6 +1563,7 @@ struct AuditAdmission {
     resource: Option<ResourceAuditAuthority>,
     interference: Option<InterferenceAuditAuthority>,
     protocol: Option<ProtocolAuditAuthority>,
+    relational: Option<RelationalAuditAuthority>,
     clause_policy_digest: Option<String>,
 }
 
@@ -1543,6 +1590,11 @@ struct ProtocolAuditAuthority {
     evidence: ProtocolEvidence,
 }
 
+#[derive(Debug, Clone)]
+struct RelationalAuditAuthority {
+    evidence: RelationalEvidence,
+}
+
 impl AuditAdmission {
     fn live() -> Self {
         Self {
@@ -1551,6 +1603,7 @@ impl AuditAdmission {
             resource: None,
             interference: None,
             protocol: None,
+            relational: None,
             clause_policy_digest: None,
         }
     }
@@ -1807,6 +1860,10 @@ pub struct Certificate {
     /// RFC-13 binary projection, completion replay, and residual platform trust.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ProtocolEvidence>,
+    /// Tier-A relational projections with independently replayed source and
+    /// optional executable-transport authority.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub relational: Option<RelationalEvidence>,
     /// Process-local typed result provenance. This is deliberately absent from
     /// the public certificate wire format: live proof/policy producers stamp it
     /// so later backend arbitration never has to rediscover authority from
@@ -1937,6 +1994,7 @@ struct FormalAuthorityRecordV2<'a> {
     resource_flow: &'a Option<ResourceFlowEvidence>,
     interference: &'a Option<InterferenceEvidence>,
     protocol: &'a Option<ProtocolEvidence>,
+    relational: &'a Option<RelationalEvidence>,
     disposition: &'a str,
     settled_detail: Option<&'a str>,
     portfolio_lift_sha256: Option<&'a str>,
@@ -2580,6 +2638,10 @@ impl Certificate {
             .protocol
             .clone()
             .map(|evidence| ProtocolAuditAuthority { evidence });
+        self.audit_admission.relational = self
+            .relational
+            .clone()
+            .map(|evidence| RelationalAuditAuthority { evidence });
 
         for obligation in &mut self.obligations {
             if let Some(mut clause) = obligation.clause_certification.take() {
@@ -2873,6 +2935,8 @@ impl Certificate {
             .map_err(|error| NotCurrent::new(error.to_string()))?;
         self.validate_protocol_authority()
             .map_err(|error| NotCurrent::new(error.to_string()))?;
+        self.validate_relational_authority()
+            .map_err(|error| NotCurrent::new(error.to_string()))?;
         Ok(())
     }
 
@@ -3003,6 +3067,7 @@ impl Certificate {
             resource_flow: &self.resource_flow,
             interference: &self.interference,
             protocol: &self.protocol,
+            relational: &self.relational,
             disposition,
             settled_detail,
             portfolio_lift_sha256: portfolio_lift,
@@ -3889,6 +3954,7 @@ impl Certificate {
             resource_flow: None,
             interference: None,
             protocol: None,
+            relational: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -3946,6 +4012,7 @@ impl Certificate {
             resource_flow: None,
             interference: None,
             protocol: None,
+            relational: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -4024,6 +4091,7 @@ impl Certificate {
             resource_flow: None,
             interference: None,
             protocol: None,
+            relational: None,
             live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
@@ -4074,6 +4142,7 @@ impl Certificate {
             resource_flow: None,
             interference: None,
             protocol: None,
+            relational: None,
             live_disposition: LiveDispositionStamp::default(),
         }
         .graduate_triage_clean()
@@ -4123,6 +4192,7 @@ impl Certificate {
             resource_flow: None,
             interference: None,
             protocol: None,
+            relational: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }
@@ -4710,6 +4780,88 @@ impl Certificate {
         Ok(())
     }
 
+    pub(crate) fn with_relational_evidence_for_witness(
+        mut self,
+        witness: &thermite_lower::RelationalFrameWitness,
+        receipts: &[thermite_lower::RelationalTransportReceipt],
+        evidence: RelationalEvidence,
+    ) -> Result<Self, IncoherentCertificationPosition> {
+        self.validate_relational_evidence_against(witness, receipts, &evidence)?;
+        self.relational = Some(evidence.clone());
+        self.audit_admission.relational = Some(RelationalAuditAuthority { evidence });
+        Ok(self)
+    }
+
+    pub(crate) fn validate_relational_authority(
+        &self,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        match (&self.relational, &self.audit_admission.relational) {
+            (None, None) => Ok(()),
+            (Some(public), Some(authority)) if public == &authority.evidence => Ok(()),
+            (Some(_), None) => Err(IncoherentCertificationPosition {
+                reason: "Tier-A relational evidence requires live formal-replay authority",
+            }),
+            (None, Some(_)) => Err(IncoherentCertificationPosition {
+                reason: "Tier-A live authority requires a public evidence block",
+            }),
+            _ => Err(IncoherentCertificationPosition {
+                reason: "Tier-A public evidence differs from live replay authority",
+            }),
+        }
+    }
+
+    fn validate_relational_evidence_against(
+        &self,
+        witness: &thermite_lower::RelationalFrameWitness,
+        receipts: &[thermite_lower::RelationalTransportReceipt],
+        evidence: &RelationalEvidence,
+    ) -> Result<(), IncoherentCertificationPosition> {
+        let expected_function = witness
+            .functions
+            .iter()
+            .find(|function| function.function == self.item)
+            .ok_or(IncoherentCertificationPosition {
+                reason: "relational evidence item is absent from the checked witness",
+            })?;
+        let expected_receipt = receipts
+            .iter()
+            .find(|receipt| receipt.function == self.item);
+        let transport_valid = match (expected_receipt, evidence.transport.as_ref()) {
+            (None, None) => true,
+            (Some(expected), Some(actual)) => {
+                &actual.receipt == expected
+                    && actual.checker == "Thermite.RelationalFrameTransport/v1"
+                    && !actual.checker_sha256.is_empty()
+                    && actual.verdict == RelationalFormalReplayVerdict::KernelAccepted
+            }
+            _ => false,
+        };
+        let replay = &evidence.formal_replay;
+        let expected_residual = vec![
+            RelationalResidualTrust::Parser,
+            RelationalResidualTrust::BodyTranslation,
+            RelationalResidualTrust::EffectAnalysis,
+            RelationalResidualTrust::WitnessExtraction,
+            RelationalResidualTrust::SourceModelCorrespondence,
+            RelationalResidualTrust::ExecutableTargetBehavior,
+        ];
+        if &evidence.function != expected_function
+            || evidence.function.body.is_none()
+            || replay.checker != "Thermite.RelationalFrameWitness/v1"
+            || replay.checker_sha256.is_empty()
+            || replay.witness_version != witness.version
+            || replay.canonical_ast_sha256 != witness.canonical_ast_sha256
+            || replay.verdict != RelationalFormalReplayVerdict::KernelAccepted
+            || !transport_valid
+            || evidence.residual_trust != expected_residual
+        {
+            return Err(IncoherentCertificationPosition {
+                reason: "Tier-A relational evidence does not match the checked artifact",
+            });
+        }
+        Ok(())
+    }
+
     /// Revalidate the persisted general-Verus coordinates against the private
     /// live-producer facts retained across certificate transformations.
     pub(crate) fn validate_verus_artifact_authority(
@@ -5089,6 +5241,7 @@ impl Certificate {
             resource_flow: None,
             interference: None,
             protocol: None,
+            relational: None,
             live_disposition: LiveDispositionStamp::default(),
         }
     }

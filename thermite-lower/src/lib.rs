@@ -36,6 +36,7 @@ pub mod l3;
 pub mod locks;
 pub mod lower;
 pub mod protocol_witness;
+pub mod relational_frame_witness;
 pub mod resource_witness;
 pub mod witness;
 
@@ -68,6 +69,18 @@ pub use protocol_witness::{
     replay_protocol_witness, CanonicalProtocolProjection, ProtocolWitness, WitnessProtocolAction,
     WitnessProtocolDefinition, WitnessProtocolEndpoint, WitnessProtocolFunction,
     WitnessProtocolTransition, WitnessRoleProjection, PROTOCOL_WITNESS_VERSION,
+};
+pub use relational_frame_witness::{
+    canonical_relational_frame_witness, emit_relational_frame_witness,
+    emit_relational_transport_receipts, lean_relational_frame_replay_source,
+    lean_relational_transport_replay_source, replay_relational_frame_witness,
+    replay_relational_transport_receipts, BoundedIntTy, CanonicalRelationalExpr,
+    CanonicalRelationalProgram, EffectSupport as RelationalEffectSupport,
+    Projection as RelationalProjection, ProjectionSupport as RelationalProjectionSupport,
+    RelationalArithOp, RelationalCompareOp, RelationalFrameWitness, RelationalFunctionWitness,
+    RelationalLogicOp, RelationalScope, RelationalTransportError, RelationalTransportReceipt,
+    ResearchGate as RelationalResearchGate, Support as RelationalSupport,
+    RELATIONAL_FRAME_WITNESS_VERSION,
 };
 pub use resource_witness::{
     canonical_resource_projection, emit_resource_witness, lean_resource_replay_source,

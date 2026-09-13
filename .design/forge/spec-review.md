@@ -3,7 +3,7 @@
 tier: 3-component
 status: draft
 audited-sha: 8b4d2580b472d04fca2b14de5b6be52533a2d258 (re-pinned 2026-06-17 for stage-1 increment 3, REQ-9 lemma library: the only change to this doc's governed file (review.rs) is the additive REQ-9 burned_lemmas partition + BurnedLemma projection (a certified lemma surfaces like any certified item); the v1 intent-reviewable / battery-failing partitions are unchanged (REQ-S1-9). prior: 92396428567edc6940a9e2845217f5ff4c2ea3c6)
-audited-content-sha256: c1687d9a91bf70cb7a5160db713cabdb431d0e1c62fd29169c55920d0503830d (re-pinned 2026-09-08 after issue #56 moved review eligibility from Level to CurrentAssurance. prior: 4f7af1e08a3d85e7b430a4cc7e8ad0a4003246860116261d206bd3a072ba77b0)
+audited-content-sha256: bb3291e2f12d265bdc427eaa952d97ce4fa05f30e54617548e80d817e969b5cc (re-pinned 2026-09-12 after carrying exact Tier-A relational evidence into intent review. prior: c1687d9a91bf70cb7a5160db713cabdb431d0e1c62fd29169c55920d0503830d)
 governs: forge/src/review.rs
 thesis-refs:
   - thermite-design.md §7
