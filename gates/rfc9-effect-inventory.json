@@ -59,11 +59,12 @@
     {
       "atoms": [
         "read(state.n)",
-        "write(counter)"
+        "write(counter)",
+        "write(state.n)"
       ],
       "classification": "RFC-10 shared-state invariant program fixtures",
       "path": "forge/src/check.rs",
-      "sites": 5
+      "sites": 9
     },
     {
       "atoms": [
@@ -227,6 +228,15 @@
     },
     {
       "atoms": [
+        "read(state.n)",
+        "write(state.n)"
+      ],
+      "classification": "Tier-A relational-frame canonical witness fixtures with RFC-9 region effect atoms",
+      "path": "thermite-lower/src/relational_frame_witness.rs",
+      "sites": 2
+    },
+    {
+      "atoms": [
         "read(counter.n)",
         "read(right.n)"
       ],
@@ -275,6 +285,15 @@
       "classification": "RFC-12 relational-witness fixtures with RFC-9 region effect atoms",
       "path": "thermite-lower/tests/interference_witness.rs",
       "sites": 8
+    },
+    {
+      "atoms": [
+        "read(state.n)",
+        "write(state.n)"
+      ],
+      "classification": "Tier-A relational-frame replay fixtures with RFC-9 region effect atoms",
+      "path": "thermite-lower/tests/relational_frame_witness.rs",
+      "sites": 2
     },
     {
       "atoms": [
@@ -418,8 +437,8 @@
   "summary": {
     "json_missing_shared": 0,
     "json_program_fields_with_state_effects": 5,
-    "rust_files_reviewed": 37,
-    "rust_reviewed_sites": 225,
+    "rust_files_reviewed": 39,
+    "rust_reviewed_sites": 233,
     "th_missing_shared": 0,
     "th_programs_with_state_effects": 5,
     "tracked_th_files": 70
