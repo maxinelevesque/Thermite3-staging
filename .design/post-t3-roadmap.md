@@ -8,11 +8,12 @@ product spine—process cleanup, issues #55, #56, and #57, then alpha.11—and a
 explicit reassessment gate before any post-T3 research issue becomes an
 automatic implementation commitment.
 
-The post-alpha.11 checkpoint has now selected a second bounded product spine:
-finish checked assurance transport in #58, close the RFC-12 anti-vacuity debt
-in #146, cut alpha.12, then extend the product through #59, #60, and #63. A
-single design-only relational-assurance research slot follows alpha.12 without
-entering the product critical path.
+The post-alpha.11 checkpoint selected a second bounded product spine: checked
+assurance transport in #58, the RFC-12 anti-vacuity repair in #146, alpha.12,
+and a bounded Tier-A relational-frame allocation. Those stages are now landed.
+The active sequence first closes transport fidelity in #165 and #164, then
+extends the product through #59, #60, and #63. Later relational tiers remain
+research-gated rather than silently entering the product critical path.
 
 GitHub issues remain the executable work units and
 `.github/workflows/roadmap.yml` remains the issue-derived visualization. This
@@ -91,11 +92,16 @@ lanes remain provisional.
   established version-only release practice, including mechanically required
   content-bound receipt and audit-pin refresh, and shall not imply a tag or
   GitHub Release.
-- REQ-14: After alpha.12, issue #59 policy-version migration and report
-  comparability shall precede #60 workspace/build-matrix populations. Issue
-  #63 organization-level floors shall follow both so that organization policy
-  consumes proved transport, migration, and population semantics rather than
-  defining a parallel authority system.
+- REQ-14: After alpha.12 and the Tier-A relational-frame allocation, transport
+  fidelity shall be closed before a live migration consumer relies on it:
+  issue #165 shall type directional Rust boundary replay, then issue #164
+  shall implement the largest cross-model-family fragment supported by the
+  current metatheory or explicitly narrow the architecture at the first
+  research boundary. Issue #59 policy-version migration and report
+  comparability shall then precede #60 workspace/build-matrix populations.
+  Issue #63 organization-level floors shall follow both so that organization
+  policy consumes proved transport, migration, and population semantics rather
+  than defining a parallel authority system.
 - REQ-15: One bounded design-only research slot shall follow alpha.12. Its
   default subject is the relational-contract Tier-A frame lemma. The slot may
   refine a design and name decisive evidence, but shall not silently authorize
@@ -149,18 +155,20 @@ lanes remain provisional.
   request has reviewed test-partition ownership, current claim evidence and
   design status, full local qualification, an exact-head adversarial-review
   receipt, and all required CI green on that unchanged head.
-- [ ] AC-12: (REQ-12) #146 demonstrates at least weakening, deletion, and
+- [x] AC-12: (REQ-12) #146 demonstrates at least weakening, deletion, and
   redirection mutations across the declared Rust/Lean observation boundary,
   with every mutant either killed or returned as an explicit unsupported
   result rather than accepted as valid evidence.
-- [ ] AC-13: (REQ-13) Main contains merged #58 and #146 before the alpha.12
+- [x] AC-13: (REQ-13) Main contains merged #58 and #146 before the alpha.12
   version commit; locked metadata reports one workspace version; required
   receipts and pins are current; CI is green; and no alpha.12 tag or GitHub
   Release exists.
-- [ ] AC-14: (REQ-14) #59 lands before #60, and #63 consumes their checked
+- [ ] AC-14: (REQ-14) #165 lands before #164; #164 either supplies checked
+  cross-model-family transport for its supported fragment or records the exact
+  metatheory boundary; #59 then lands before #60; and #63 consumes their checked
   transport, migration, comparison, and population carriers without adding a
   second current-authority path.
-- [ ] AC-15: (REQ-15) The post-alpha.12 research slot produces a checked design
+- [x] AC-15: (REQ-15) The post-alpha.12 research slot produces a checked design
   or an explicit evidence-backed pause for the Tier-A frame lemma, while every
   other incubated lane retains a named disposition and no implicit
   implementation commitment.
@@ -348,6 +356,51 @@ request is surfaced once and remains pending without reminders. Exact-head
 qualification, review, CI, and merge receipts—not polling frequency—are the
 durable evidence of completion.
 
+### Alpha.12 and Tier-A landing checkpoint (landed 2026-09-13; reconciled 2026-09-15)
+
+The transport, RFC-12 anti-vacuity, alpha.12, and Tier-A boundaries are
+complete. GitHub reported every job successful on each recorded final head
+before squash merge.
+
+| Boundary | Exact admitted/reviewed head | Qualification and review | Final CI | Merge on `main` |
+| --- | --- | --- | --- | --- |
+| #58 / PR #162 | `c565b3a06d43037439866dda6e84fc7f1e48b0e7` | Current claims, full local qualification, and exact-head cold Opus 4.8 review | run `34595728028`, green | `4a3ee96f43b8b76c6e09819938835a7b0c664cc4` |
+| #146 / PR #166 | `5bd86eeff935f49deb8ea087f852b452bd84601d` | 584 typed claim closures, full Rust/Lean mutation-observable qualification, and cold Opus 4.8 `APPROVE WITH FOLLOW-UPS` with no blocker | run `34624289247`, 36/36 successful | `5bc8c881b164a42a5b3ef5d1559a7ca53d1a4410` |
+| alpha.12 / PR #167 | `37f1b84424179ac3eb64236076340473f78adb40` | Locked metadata, format, workspace check, 584 refreshed closures, full closure replay, and structural qualification | run `34643599958`, 36/36 successful | `8881ddeadcf1965ac8d5cb2252256f5eb4297df6` |
+| Tier-A relational frame / PR #168 | `64c9cc448b34357a1985daf97fd8eaeb24634e1c` | 596 typed claim closures, full workspace and 203/203 Lean axiom-probe qualification, and cold Opus 4.8 `APPROVE WITH FOLLOW-UPS` with no blocker | run `34739338628`, 36/36 successful | `271354d2da0a7c9371493577b2a66b7aca898fff` |
+
+Alpha.12 reports one workspace version at `3.0.0-alpha.12`; no alpha.12 tag or
+GitHub Release exists. Tier-A implemented the largest fragment licensed by the
+current metatheory without adding relational surface syntax: paired-execution
+result congruence and write framing are derived in Lean, exact artifact
+witnesses are replayed, and supported projections receive typed transport
+receipts. The separate implementation authorization followed the design-only
+research allocation and did not promote Tier B or Tier C.
+
+The Tier-A review's residual engineering work now has durable homes: #169 owns
+mechanical Lean/Rust projection and effect-kind linkage, while #170 owns
+per-claim counterfeit and authority-provenance hardening. Neither is on the
+active product critical path unless focused evidence reveals an invalid
+authority path.
+
+The active chain is now:
+
+```text
+#165 typed directional boundary replay
+  -> #164 largest currently supported cross-model-family transport fragment
+  -> #59 policy migration and report comparability
+  -> #60 workspace and build-matrix populations
+  -> #63 organization-level floors
+  -> release and research reassessment
+```
+
+#165 precedes #164 because it closes a concrete Rust/Lean decision mismatch
+inside the already shipped transport family. #164 then either wires the
+existing `ModelExpansion` seam over a named fragment or records the precise
+point where new denotational metatheory is required. This preserves the user's
+largest-supported-fragment rule without allowing research uncertainty to leak
+into #59's live authority consumer.
+
 ## Residual trust
 
 The roadmap trusts GitHub issue and milestone state as the scheduling view, but
@@ -381,12 +434,17 @@ content to an external reviewer.
 - Q-5: Issues #58–#63 are reconsidered after alpha.11 and are not an automatic queue.
 - Q-6: The second product spine finishes #58 in its existing pull request, then
   runs #146 before cutting alpha.12.
-- Q-7: After alpha.12 the product order is #59, #60, then #63; #61 and #62
-  remain demand-driven or research-bound rather than implicit prerequisites.
-- Q-8: The first post-alpha.12 research allocation is one design-only Tier-A
-  relational frame-lemma slot and does not authorize implementation.
+- Q-7: After alpha.12 and Tier-A, the product order is #165, #164, #59, #60,
+  then #63; #61 and #62 remain demand-driven or research-bound rather than
+  implicit prerequisites.
+- Q-8: The first post-alpha.12 research allocation was a design-only Tier-A
+  relational frame-lemma slot. A later explicit implementation authorization
+  produced PR #168 without promoting Tier B or Tier C.
 - Q-9: Monitoring and approval notifications are state-change-driven and
   one-shot; unchanged state is silent.
+- Q-10: Cross-model-family transport follows the largest-supported-fragment
+  rule: #164 implements every fragment justified by the present metatheory and
+  records an explicit boundary wherever genuinely new mathematics is required.
 
 ## Open Questions
 

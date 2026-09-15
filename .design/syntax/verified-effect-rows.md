@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 5fd6c2ceaec899f3df5f3983e8956f936745f578c92bf204d7cbccfbe55925de (re-pinned 2026-09-12 after classifying eight Tier-A relational-frame effect-token sites across two Rust files; effect semantics are unchanged. prior: 2c4f9bafcbd5fc872359e1986fb60446d368585e885f3a44ddd53bd938aeb4c5)
+audited-content-sha256: 5fd6c2ceaec899f3df5f3983e8956f936745f578c92bf204d7cbccfbe55925de (re-pinned 2026-09-12 after classifying four Tier-A relational-frame effect-token sites in two new Rust files and reconciling four sites in the existing Forge manifest module; effect semantics are unchanged. prior: 2c4f9bafcbd5fc872359e1986fb60446d368585e885f3a44ddd53bd938aeb4c5)
 -->
 
 ## Summary
