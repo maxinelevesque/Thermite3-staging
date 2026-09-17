@@ -69,6 +69,7 @@ IMPORTS=(
   "Thermite.AssurancePolicyV2"
   "Thermite.AssuranceV2Replay"
   "Thermite.AssuranceComposition"
+  "Thermite.AssuranceTransport"
   "Thermite.Interference"
   "Thermite.Protocol"
 )
@@ -196,6 +197,8 @@ THEOREMS=(
   "Thermite.CertificationMetatheory.model_refinement_refl"
   "Thermite.CertificationMetatheory.model_refinement_trans"
   "Thermite.CertificationMetatheory.rustc195_corresponds_on_thermite_fragment"
+  "Thermite.CertificationMetatheory.portable_rust_corresponds_on_thermite_fragment"
+  "Thermite.CertificationMetatheory.rustc195_to_portable_composes_with_target_identity"
   "Thermite.CertificationMetatheory.thermite_rust_v1_expands_to_v2"
   "Thermite.CertificationMetatheory.thermite_rust_narrowing_is_explicit"
   "Thermite.CertificationMetatheory.silent_rustc_version_substitution_rejected"

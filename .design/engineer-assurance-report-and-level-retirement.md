@@ -1,6 +1,6 @@
 # Feature: Engineer assurance report and Level retirement
 
-audited-content-sha256: a7ae8b5cd7caa59ca6cc32fdd24063f8b30ad8c3fc3b3f9609c7fad22bf699ec (re-pinned 2026-09-12 after refreshing assurance inventory locations and adding Tier-A evidence authority; the Level boundary is unchanged. prior: 220efda9b12ef05a26a65ad438756a1b31fb805458ee38571115c0cf400f0e64)
+audited-content-sha256: e5b093d350adb9ffc574bf1393d0ec9f48568e828abd53179e85bb38d6dba330 (re-pinned 2026-09-17 after extending the shared Lean axiom probe with exact assurance-transport theorems; report semantics are unchanged. prior: a7ae8b5cd7caa59ca6cc32fdd24063f8b30ad8c3fc3b3f9609c7fad22bf699ec)
 
 ## Summary
 

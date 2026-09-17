@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 3,
   "outcomes": [
     "strengthened",
     "weakened",
@@ -8,12 +8,19 @@
     "missing_classification"
   ],
   "case": [
-    {"id": "identity", "source": "v1", "target": "v1", "relation": "transported", "fiber": "same", "boundary": "same", "outcome": "strengthened"},
-    {"id": "semantic-expansion", "source": "v1", "target": "v2", "relation": "transported", "fiber": "same", "boundary": "same", "outcome": "strengthened"},
-    {"id": "boundary-weakening", "source": "v2", "target": "v2", "relation": "transported", "fiber": "same", "boundary": "weaker", "outcome": "weakened"},
-    {"id": "semantic-fork", "source": "v1", "target": "fork", "relation": "incompatible", "fiber": "different", "boundary": "same", "outcome": "incomparable"},
-    {"id": "procedure-fork", "source": "lean-v1", "target": "solver-v1", "relation": "incompatible", "fiber": "different", "boundary": "same", "outcome": "incomparable"},
-    {"id": "changed-fiber", "source": "v1", "target": "v2", "relation": "transported", "fiber": "different", "boundary": "same", "outcome": "changed_fiber"},
-    {"id": "missing", "source": "v1", "target": "v2", "relation": "missing", "fiber": "same", "boundary": "same", "outcome": "missing_classification"}
+    {"id": "identity", "source": "v1", "target": "v1", "relation": "transported", "model": "same", "fiber": "same", "boundary": "same", "outcome": "strengthened"},
+    {"id": "semantic-expansion", "source": "v1", "target": "v2", "relation": "transported", "model": "same", "fiber": "same", "boundary": "same", "outcome": "strengthened"},
+    {"id": "boundary-weakening", "source": "v2", "target": "v2", "relation": "transported", "model": "same", "fiber": "same", "boundary": "weaker", "outcome": "weakened"},
+    {"id": "boundary-strengthening", "source": "v2", "target": "v2", "relation": "transported", "model": "same", "fiber": "same", "boundary": "strengthening", "outcome": null},
+    {"id": "boundary-unrelated", "source": "v2", "target": "v2", "relation": "transported", "model": "same", "fiber": "same", "boundary": "unrelated", "outcome": null},
+    {"id": "boundary-unproved", "source": "v2", "target": "v2", "relation": "transported", "model": "same", "fiber": "same", "boundary": "unproved", "outcome": null},
+    {"id": "semantic-fork", "source": "v1", "target": "fork", "relation": "incompatible", "model": "same", "fiber": "different", "boundary": "same", "outcome": "incomparable"},
+    {"id": "procedure-fork", "source": "lean-v1", "target": "solver-v1", "relation": "incompatible", "model": "same", "fiber": "different", "boundary": "same", "outcome": "incomparable"},
+    {"id": "changed-fiber", "source": "v1", "target": "v2", "relation": "transported", "model": "same", "fiber": "different", "boundary": "same", "outcome": "changed_fiber"},
+    {"id": "model-refinement", "source": "rustc-1.95", "target": "portable-rust-1", "relation": "transported", "model": "refines", "fiber": "same", "boundary": "same", "outcome": "changed_fiber"},
+    {"id": "model-reverse", "source": "portable-rust-1", "target": "rustc-1.95", "relation": "transported", "model": "reverse_refines", "fiber": "same", "boundary": "same", "outcome": null},
+    {"id": "model-unproved", "source": "rustc-1.95", "target": "unknown", "relation": "transported", "model": "unproved", "fiber": "same", "boundary": "same", "outcome": null},
+    {"id": "model-compatibility-break", "source": "rustc-1.95", "target": "incompatible", "relation": "incompatible", "model": "compatibility_break", "fiber": "different", "boundary": "same", "outcome": "incomparable"},
+    {"id": "missing", "source": "v1", "target": "v2", "relation": "missing", "model": "same", "fiber": "same", "boundary": "same", "outcome": "missing_classification"}
   ]
 }

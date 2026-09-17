@@ -20202,15 +20202,15 @@ title = "Checked cross-version and cross-procedure assurance transport"
 owner = ".design/checked-cross-version-and-cross-procedure-assurance-transport.md"
 status = "shipped"
 scope = "verified"
-summary = "Checked assurance transports bind exact source and target coordinates, canonical witness receipts, semantic certification and refutation obligations, complete predecessor classifications, identity and composition laws, and deterministic Rust/Lean replay without consulting archival levels."
-claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/assurance-transport.json", expected = ["accepted"], reviewed_summary_sha256 = "cfcd8465e04b803e69691c8527dad583033b361455cf9e91a90902faa39dd95b" }
+summary = "Checked assurance transports bind exact source and target coordinates, canonical witness receipts, semantic certification and refutation obligations, typed directional boundary and implementation-model refinement, complete predecessor classifications, identity and composition laws, and deterministic Rust/Lean replay without consulting archival levels."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/assurance-transport.json", expected = ["accepted"], reviewed_summary_sha256 = "2d7f896327718903b6f788686aa50953ace9069a3625ae1d9ff14304a20268cb" }
 remaining_scope = "Policy-version migration, workspace/build-matrix populations, and organization-level floors remain with issues #59, #60, and #63."
 contributors = ["lean/Thermite/AssuranceTransport.lean", "forge/src/assurance_transport.rs", "gates/assurance-transport-replay.py"]
 generated_to = ["status"]
 [[requirement.evidence]]
 kind = "doc"
 target = ".design/checked-cross-version-and-cross-procedure-assurance-transport.md"
-note = "REQ-1 through REQ-9 and AC-1 through AC-9 define typed transport, exact fibers, complete predecessor classification, replay, and the archival-level boundary"
+note = "REQ-1 through REQ-11 and AC-1 through AC-11 define typed transport, exact fibers, directional boundary and implementation-model refinement, complete predecessor classification, replay, and the archival-level boundary"
 [[requirement.evidence]]
 kind = "symbol"
 target = "Thermite.CertificationMetatheory.AssuranceTransport"
@@ -20218,11 +20218,11 @@ note = "shares one typed program/evidence translation between semantic and proce
 [[requirement.evidence]]
 kind = "symbol"
 target = "assurance_transport::TransportWitnessV2::validate"
-note = "fails closed on invalid version directions and receipts that do not bind the canonical source, target, translations, premises, and derivation"
+note = "fails closed on invalid version directions; reverse, unproved, compatibility-break, or endpoint-mismatched implementation-model relations; strengthening, unrelated, unproved, or endpoint-mismatched boundary relations; and receipts that do not bind the canonical source, target, typed model/boundary facts, translations, premises, and derivation"
 [[requirement.evidence]]
 kind = "test"
 target = "gates/claim-closure-assurance-transport.py"
-note = "replays the Rust coordinate/receipt/domain hostility tests, Lean model, deterministic outcome matrix, and archival-level exclusion"
+note = "replays the Rust coordinate/receipt/domain hostility tests, Lean model, fourteen-row accepted/rejected directional boundary/model matrix, and archival-level exclusion"
 
 [[requirement]]
 id = "REQ-SPEC-CRASH-MODEL"

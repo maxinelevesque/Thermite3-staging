@@ -91,6 +91,164 @@ impl std::fmt::Display for TransportError {
 
 impl std::error::Error for TransportError {}
 
+/// The implementation-model-family relation replayed by Rust.
+///
+/// A cross-family transport is admissible only when it cites the Lean
+/// `ModelRefinement` witness for the source-to-target direction. Compatibility
+/// breaks belong to `PredecessorRelationV2::Incompatible`, never this transport
+/// witness.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum ImplementationModelRelationV2 {
+    SameFamily,
+    Refines {
+        witness: String,
+        source_fragment: String,
+        target_fragment: String,
+    },
+    ReverseRefines {
+        witness: String,
+        source_fragment: String,
+        target_fragment: String,
+    },
+    CompatibilityBreak,
+    Unproved,
+}
+
+impl ImplementationModelRelationV2 {
+    fn validate(
+        &self,
+        source: &str,
+        target: &str,
+        source_fragment: &str,
+        target_fragment: &str,
+    ) -> Result<(), TransportError> {
+        match self {
+            Self::SameFamily if source == target => Ok(()),
+            Self::SameFamily => Err(TransportError::new(
+                "same-family model relation requires equal model families",
+            )),
+            Self::Refines {
+                witness,
+                source_fragment: witnessed_source_fragment,
+                target_fragment: witnessed_target_fragment,
+            } if source != target
+                && !witness.is_empty()
+                && !witnessed_source_fragment.is_empty()
+                && !witnessed_target_fragment.is_empty()
+                && witnessed_source_fragment == source_fragment
+                && witnessed_target_fragment == target_fragment =>
+            {
+                Ok(())
+            }
+            Self::Refines { .. } if source == target => Err(TransportError::new(
+                "cross-family model refinement requires distinct model families",
+            )),
+            Self::Refines { .. } => Err(TransportError::new(
+                "cross-family model refinement requires a named Lean witness bound to the exact source and target fragments",
+            )),
+            Self::ReverseRefines { .. } => Err(TransportError::new(
+                "reverse model refinement cannot transport source authority",
+            )),
+            Self::CompatibilityBreak => Err(TransportError::new(
+                "a model compatibility break requires an incompatibility relation",
+            )),
+            Self::Unproved => Err(TransportError::new(
+                "model-family change requires a proved source-to-target refinement",
+            )),
+        }
+    }
+
+    fn compose(&self, second: &Self) -> Result<Self, TransportError> {
+        match (self, second) {
+            (Self::SameFamily, Self::SameFamily) => Ok(Self::SameFamily),
+            (Self::SameFamily, refinement @ Self::Refines { .. })
+            | (refinement @ Self::Refines { .. }, Self::SameFamily) => Ok(refinement.clone()),
+            (
+                Self::Refines {
+                    witness: first,
+                    source_fragment,
+                    target_fragment: middle_fragment,
+                },
+                Self::Refines {
+                    witness: second,
+                    source_fragment: second_middle_fragment,
+                    target_fragment,
+                },
+            ) if middle_fragment == second_middle_fragment => Ok(Self::Refines {
+                witness: compose_label(first, second),
+                source_fragment: source_fragment.clone(),
+                target_fragment: target_fragment.clone(),
+            }),
+            _ => Err(TransportError::new(
+                "rejected model relations cannot be composed",
+            )),
+        }
+    }
+}
+
+/// The directional boundary fact replayed by Rust for a transported witness.
+///
+/// `Refines` means the source boundary entails the target boundary, matching
+/// Lean's `BoundaryRefines source target`. The other non-identity variants are
+/// retained only so untrusted serialized inputs and the shared replay matrix
+/// can demonstrate fail-closed rejection; they never classify authority.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum BoundaryRelationV2 {
+    Same,
+    Refines { witness: String },
+    ReverseRefines { witness: String },
+    Unrelated,
+    Unproved,
+}
+
+impl BoundaryRelationV2 {
+    fn validate(&self, source: &str, target: &str) -> Result<(), TransportError> {
+        match self {
+            Self::Same if source == target => Ok(()),
+            Self::Same => Err(TransportError::new(
+                "same boundary relation requires equal source and target boundaries",
+            )),
+            Self::Refines { witness } if source != target && !witness.is_empty() => Ok(()),
+            Self::Refines { .. } if source == target => Err(TransportError::new(
+                "non-identity boundary refinement requires distinct boundaries",
+            )),
+            Self::Refines { .. } => Err(TransportError::new(
+                "boundary refinement requires a named Lean witness",
+            )),
+            Self::ReverseRefines { .. } => Err(TransportError::new(
+                "boundary strengthening cannot be used as source-to-target refinement",
+            )),
+            Self::Unrelated => Err(TransportError::new(
+                "unrelated boundaries cannot be transported",
+            )),
+            Self::Unproved => Err(TransportError::new(
+                "boundary change requires a proved source-to-target refinement",
+            )),
+        }
+    }
+
+    fn compose(&self, second: &Self) -> Result<Self, TransportError> {
+        match (self, second) {
+            (Self::Same, Self::Same) => Ok(Self::Same),
+            (Self::Same, Self::Refines { witness }) | (Self::Refines { witness }, Self::Same) => {
+                Ok(Self::Refines {
+                    witness: witness.clone(),
+                })
+            }
+            (Self::Refines { witness: first }, Self::Refines { witness: second }) => {
+                Ok(Self::Refines {
+                    witness: compose_label(first, second),
+                })
+            }
+            _ => Err(TransportError::new(
+                "rejected boundary relations cannot be composed",
+            )),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TransportWitnessV2 {
     pub source: AssuranceCoordinateV2,
@@ -99,7 +257,8 @@ pub struct TransportWitnessV2 {
     pub evidence_translation: String,
     pub observation_translation: String,
     pub context_entailment: String,
-    pub boundary_preservation: String,
+    pub model_relation: ImplementationModelRelationV2,
+    pub boundary_relation: BoundaryRelationV2,
     pub predecessor_receipts: Vec<String>,
     pub receipt: String,
 }
@@ -113,7 +272,8 @@ impl TransportWitnessV2 {
             &self.evidence_translation,
             &self.observation_translation,
             &self.context_entailment,
-            &self.boundary_preservation,
+            &self.model_relation,
+            &self.boundary_relation,
             &self.predecessor_receipts,
         ))
     }
@@ -135,18 +295,28 @@ impl TransportWitnessV2 {
             ("evidence_translation", &self.evidence_translation),
             ("observation_translation", &self.observation_translation),
             ("context_entailment", &self.context_entailment),
-            ("boundary_preservation", &self.boundary_preservation),
         ] {
             if value.is_empty() {
                 return Err(TransportError::new(format!("{name} must not be empty")));
             }
         }
+        self.model_relation.validate(
+            &self.source.implementation_model,
+            &self.target.implementation_model,
+            &self.source.fragment_lineage,
+            &self.target.fragment_lineage,
+        )?;
+        self.boundary_relation
+            .validate(&self.source.boundary, &self.target.boundary)?;
         if self.source.semantics != self.target.semantics
-            || self.source.implementation_model != self.target.implementation_model
             || self.source.environment != self.target.environment
             || self.source.tool_version != self.target.tool_version
             || self.source.semantics_version > self.target.semantics_version
-            || self.source.implementation_model_version > self.target.implementation_model_version
+            || (matches!(
+                self.model_relation,
+                ImplementationModelRelationV2::SameFamily
+            ) && self.source.implementation_model_version
+                > self.target.implementation_model_version)
             || self.source.fragment_revision > self.target.fragment_revision
             || self.source.procedure_version > self.target.procedure_version
             || self.source.resource_budget > self.target.resource_budget
@@ -171,7 +341,8 @@ impl TransportWitnessV2 {
             evidence_translation: "identity".into(),
             observation_translation: "identity".into(),
             context_entailment: "identity".into(),
-            boundary_preservation: "identity".into(),
+            model_relation: ImplementationModelRelationV2::SameFamily,
+            boundary_relation: BoundaryRelationV2::Same,
             predecessor_receipts: Vec::new(),
             receipt: String::new(),
         }
@@ -205,10 +376,8 @@ impl TransportWitnessV2 {
                 &first.context_entailment,
                 &second.context_entailment,
             ),
-            boundary_preservation: compose_label(
-                &first.boundary_preservation,
-                &second.boundary_preservation,
-            ),
+            model_relation: first.model_relation.compose(&second.model_relation)?,
+            boundary_relation: first.boundary_relation.compose(&second.boundary_relation)?,
             predecessor_receipts: vec![first.receipt.clone(), second.receipt.clone()],
             receipt: String::new(),
         };
@@ -465,10 +634,17 @@ pub fn compare_relation(
         {
             ComparisonOutcome::ChangedFiber
         }
-        PredecessorRelationV2::Transported(_) if source.boundary != target.boundary => {
-            ComparisonOutcome::Weakened
-        }
-        PredecessorRelationV2::Transported(_) => ComparisonOutcome::Strengthened,
+        PredecessorRelationV2::Transported(witness) => match &witness.boundary_relation {
+            BoundaryRelationV2::Same => ComparisonOutcome::Strengthened,
+            BoundaryRelationV2::Refines { .. } => ComparisonOutcome::Weakened,
+            BoundaryRelationV2::ReverseRefines { .. }
+            | BoundaryRelationV2::Unrelated
+            | BoundaryRelationV2::Unproved => {
+                return Err(TransportError::new(
+                    "rejected boundary relation reached comparison",
+                ));
+            }
+        },
     })
 }
 
@@ -485,9 +661,10 @@ mod tests {
     struct ReplayCase {
         id: String,
         relation: String,
+        model: String,
         fiber: String,
         boundary: String,
-        outcome: String,
+        outcome: Option<String>,
     }
 
     fn coordinate(version: u64, claim: &str) -> AssuranceCoordinateV2 {
@@ -515,6 +692,28 @@ mod tests {
         source: AssuranceCoordinateV2,
         target: AssuranceCoordinateV2,
     ) -> TransportWitnessV2 {
+        transport_with_boundary(source, target, BoundaryRelationV2::Same)
+    }
+
+    fn transport_with_boundary(
+        source: AssuranceCoordinateV2,
+        target: AssuranceCoordinateV2,
+        boundary_relation: BoundaryRelationV2,
+    ) -> TransportWitnessV2 {
+        transport_with_relations(
+            source,
+            target,
+            ImplementationModelRelationV2::SameFamily,
+            boundary_relation,
+        )
+    }
+
+    fn transport_with_relations(
+        source: AssuranceCoordinateV2,
+        target: AssuranceCoordinateV2,
+        model_relation: ImplementationModelRelationV2,
+        boundary_relation: BoundaryRelationV2,
+    ) -> TransportWitnessV2 {
         TransportWitnessV2 {
             source,
             target,
@@ -522,7 +721,8 @@ mod tests {
             evidence_translation: "checked-evidence-translation".into(),
             observation_translation: "checked-observation-translation".into(),
             context_entailment: "checked-context-entailment".into(),
-            boundary_preservation: "checked-boundary-preservation".into(),
+            model_relation,
+            boundary_relation,
             predecessor_receipts: Vec::new(),
             receipt: String::new(),
         }
@@ -647,9 +847,12 @@ mod tests {
 
         let mut weaker_boundary = target.clone();
         weaker_boundary.boundary = "compiler-only".into();
-        let relation = PredecessorRelationV2::Transported(Box::new(transport(
+        let relation = PredecessorRelationV2::Transported(Box::new(transport_with_boundary(
             source.clone(),
             weaker_boundary.clone(),
+            BoundaryRelationV2::Refines {
+                witness: "lean-boundary-refines".into(),
+            },
         )));
         assert_eq!(
             compare_relation(&source, &weaker_boundary, Some(&relation)),
@@ -673,26 +876,225 @@ mod tests {
     }
 
     #[test]
+    fn boundary_relation_is_directional_endpoint_checked_and_receipt_bound() {
+        let source = coordinate(1, "a");
+        let mut weaker = coordinate(2, "a");
+        weaker.boundary = "compiler-only".into();
+
+        let valid = transport_with_boundary(
+            source.clone(),
+            weaker.clone(),
+            BoundaryRelationV2::Refines {
+                witness: "lean-boundary-refines".into(),
+            },
+        );
+        valid.validate().unwrap();
+
+        let same_for_distinct =
+            transport_with_boundary(source.clone(), weaker.clone(), BoundaryRelationV2::Same);
+        assert!(same_for_distinct.validate().is_err());
+
+        let refines_equal = transport_with_boundary(
+            source.clone(),
+            coordinate(2, "a"),
+            BoundaryRelationV2::Refines {
+                witness: "lean-boundary-refines".into(),
+            },
+        );
+        assert!(refines_equal.validate().is_err());
+
+        let unproved = transport_with_boundary(
+            source.clone(),
+            weaker.clone(),
+            BoundaryRelationV2::Refines {
+                witness: String::new(),
+            },
+        );
+        assert!(unproved.validate().is_err());
+
+        let mut counterfeit = valid;
+        counterfeit.boundary_relation = BoundaryRelationV2::Refines {
+            witness: "counterfeit-lean-witness".into(),
+        };
+        assert!(counterfeit.validate().is_err());
+    }
+
+    #[test]
+    fn model_relation_is_directional_endpoint_checked_composable_and_receipt_bound() {
+        let source = coordinate(1, "a");
+        let mut portable = coordinate(2, "a");
+        portable.implementation_model = "thermite-portable-rust".into();
+        portable.implementation_model_version = 1;
+        let mut source = source;
+        source.implementation_model_version = 195;
+
+        let valid = transport_with_relations(
+            source.clone(),
+            portable.clone(),
+            ImplementationModelRelationV2::Refines {
+                witness: "rustc195_refines_portable_rust".into(),
+                source_fragment: "thermite-emitted-rust".into(),
+                target_fragment: "thermite-emitted-rust".into(),
+            },
+            BoundaryRelationV2::Same,
+        );
+        valid.validate().unwrap();
+        assert_eq!(
+            compare_relation(
+                &source,
+                &portable,
+                Some(&PredecessorRelationV2::Transported(Box::new(valid.clone())))
+            ),
+            Ok(ComparisonOutcome::ChangedFiber),
+        );
+
+        let identity = TransportWitnessV2::identity(portable.clone());
+        let composed = TransportWitnessV2::compose(&valid, &identity).unwrap();
+        composed.validate().unwrap();
+        assert!(matches!(
+            composed.model_relation,
+            ImplementationModelRelationV2::Refines { .. }
+        ));
+
+        let same_for_distinct = transport_with_relations(
+            source.clone(),
+            portable.clone(),
+            ImplementationModelRelationV2::SameFamily,
+            BoundaryRelationV2::Same,
+        );
+        assert!(same_for_distinct.validate().is_err());
+
+        let refines_equal = transport_with_relations(
+            source.clone(),
+            coordinate(2, "a"),
+            ImplementationModelRelationV2::Refines {
+                witness: "rustc195_refines_portable_rust".into(),
+                source_fragment: "thermite-emitted-rust".into(),
+                target_fragment: "thermite-emitted-rust".into(),
+            },
+            BoundaryRelationV2::Same,
+        );
+        assert!(refines_equal.validate().is_err());
+
+        for rejected in [
+            ImplementationModelRelationV2::Refines {
+                witness: String::new(),
+                source_fragment: "thermite-emitted-rust".into(),
+                target_fragment: "thermite-emitted-rust".into(),
+            },
+            ImplementationModelRelationV2::ReverseRefines {
+                witness: "reverse-direction".into(),
+                source_fragment: "thermite-emitted-rust".into(),
+                target_fragment: "thermite-emitted-rust".into(),
+            },
+            ImplementationModelRelationV2::Unproved,
+            ImplementationModelRelationV2::CompatibilityBreak,
+        ] {
+            assert!(transport_with_relations(
+                source.clone(),
+                portable.clone(),
+                rejected,
+                BoundaryRelationV2::Same,
+            )
+            .validate()
+            .is_err());
+        }
+
+        let wrong_fragment = transport_with_relations(
+            source.clone(),
+            portable.clone(),
+            ImplementationModelRelationV2::Refines {
+                witness: "rustc195_refines_portable_rust".into(),
+                source_fragment: "whole-rust".into(),
+                target_fragment: "thermite-emitted-rust".into(),
+            },
+            BoundaryRelationV2::Same,
+        );
+        assert!(wrong_fragment.validate().is_err());
+
+        let mut counterfeit = valid;
+        counterfeit.model_relation = ImplementationModelRelationV2::Refines {
+            witness: "counterfeit-refinement".into(),
+            source_fragment: "thermite-emitted-rust".into(),
+            target_fragment: "thermite-emitted-rust".into(),
+        };
+        assert!(counterfeit.validate().is_err());
+    }
+
+    #[test]
     fn checked_replay_matrix_is_consumed_by_rust_comparison() {
         let matrix: ReplayMatrix =
             serde_json::from_str(include_str!("../../gates/assurance-transport-replay.json"))
                 .unwrap();
-        assert_eq!(matrix.case.len(), 7);
+        assert_eq!(matrix.case.len(), 14);
 
         for case in matrix.case {
-            let source = coordinate(1, "claim");
+            let mut source = coordinate(1, "claim");
             let mut target = coordinate(if case.id == "identity" { 1 } else { 2 }, "claim");
             if case.fiber != "same" {
                 target.evidence_identity = format!("{}-evidence", case.id);
             }
-            if case.boundary == "weaker" {
-                target.boundary = "compiler-only".into();
-            }
+            let model_relation = match case.model.as_str() {
+                "same" => ImplementationModelRelationV2::SameFamily,
+                "refines" => {
+                    target.implementation_model = "thermite-portable-rust".into();
+                    ImplementationModelRelationV2::Refines {
+                        witness: "rustc195_refines_portable_rust".into(),
+                        source_fragment: source.fragment_lineage.clone(),
+                        target_fragment: target.fragment_lineage.clone(),
+                    }
+                }
+                "reverse_refines" => {
+                    target.implementation_model = "thermite-portable-rust".into();
+                    ImplementationModelRelationV2::ReverseRefines {
+                        witness: "reverse-direction".into(),
+                        source_fragment: source.fragment_lineage.clone(),
+                        target_fragment: target.fragment_lineage.clone(),
+                    }
+                }
+                "compatibility_break" => {
+                    target.implementation_model = "incompatible-model".into();
+                    ImplementationModelRelationV2::CompatibilityBreak
+                }
+                "unproved" => {
+                    target.implementation_model = "unproved-model".into();
+                    ImplementationModelRelationV2::Unproved
+                }
+                other => panic!("unknown matrix model relation {other}"),
+            };
+            let boundary_relation = match case.boundary.as_str() {
+                "same" => BoundaryRelationV2::Same,
+                "weaker" => {
+                    target.boundary = "compiler-only".into();
+                    BoundaryRelationV2::Refines {
+                        witness: "lean-boundary-refines".into(),
+                    }
+                }
+                "strengthening" => {
+                    source.boundary = "compiler-only".into();
+                    BoundaryRelationV2::ReverseRefines {
+                        witness: "reverse-direction".into(),
+                    }
+                }
+                "unrelated" => {
+                    target.boundary = "platform-only".into();
+                    BoundaryRelationV2::Unrelated
+                }
+                "unproved" => {
+                    target.boundary = "compiler-only".into();
+                    BoundaryRelationV2::Unproved
+                }
+                other => panic!("unknown matrix boundary {other}"),
+            };
             let relation = match case.relation.as_str() {
-                "transported" => Some(PredecessorRelationV2::Transported(Box::new(transport(
-                    source.clone(),
-                    target.clone(),
-                )))),
+                "transported" => Some(PredecessorRelationV2::Transported(Box::new(
+                    transport_with_relations(
+                        source.clone(),
+                        target.clone(),
+                        model_relation,
+                        boundary_relation,
+                    ),
+                ))),
                 "incompatible" => Some(PredecessorRelationV2::Incompatible(
                     IncompatibilityWitnessV2::new(
                         source.identity(),
@@ -704,14 +1106,10 @@ mod tests {
                 "missing" => None,
                 other => panic!("unknown matrix relation {other}"),
             };
-            assert_eq!(
-                compare_relation(&source, &target, relation.as_ref())
-                    .unwrap()
-                    .as_str(),
-                case.outcome,
-                "matrix case {}",
-                case.id,
-            );
+            let actual = compare_relation(&source, &target, relation.as_ref())
+                .ok()
+                .map(|outcome| outcome.as_str().to_owned());
+            assert_eq!(actual, case.outcome, "matrix case {}", case.id);
         }
     }
 }
