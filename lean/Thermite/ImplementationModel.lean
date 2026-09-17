@@ -181,6 +181,74 @@ theorem rustc195_corresponds_on_thermite_fragment :
   · by_cases admitted : thermiteRustV1Admits input = true <;>
       simp [rustc195Family, rustc195Denotation, rustc195Behavior, admitted]
 
+/-! A second, deliberately different model family over the same named input
+fragment. Its behavior carrier projects rustc's disposition into the portable
+acceptance observation consumed by assurance transport. This is the largest
+cross-family fragment justified by the current metatheory: the named
+Thermite-emitted Rust fragment, not whole Rust. -/
+
+structure PortableRustBehavior where
+  accepted : Bool
+  platform : String
+deriving DecidableEq, Repr
+
+def portableRustIdentity : ModelIdentity := ⟨"thermite-portable-rust", "1"⟩
+
+def portableRustBehavior (input : RustcInput) : PortableRustBehavior :=
+  ⟨thermiteRustV1Admits input, "x86_64-unknown-linux-gnu"⟩
+
+def portableRustDenotation (input : RustcInput) (behavior : PortableRustBehavior) : Prop :=
+  behavior.platform = "x86_64-unknown-linux-gnu" ∧
+    behavior.accepted = thermiteRustV1Admits input
+
+def portableRustReplayPayload (input : RustcInput) : String :=
+  "thermite-portable-rust-1:" ++ input.emitted.digest ++ ":x86_64-unknown-linux-gnu"
+
+def portableRustDecodeReplay (input : RustcInput) (payload : String) :
+    Option (ModelObservation PortableRustBehavior) :=
+  if payload = portableRustReplayPayload input then
+    some ⟨portableRustIdentity, portableRustBehavior input⟩
+  else none
+
+def portableRustFamily : ImplementationModelFamily where
+  Input := RustcInput
+  Behavior := PortableRustBehavior
+  identity := portableRustIdentity
+  toProgram := RustcInput.emitted
+  inputIdentity := fun input => input.emitted.digest
+  fragment := thermiteRustV1
+  denotes := portableRustDenotation
+  observe := fun input => ⟨portableRustIdentity, portableRustBehavior input⟩
+  decodeReplay := portableRustDecodeReplay
+
+theorem portable_rust_corresponds_on_thermite_fragment :
+    ModelCorresponds portableRustFamily := by
+  intro input _
+  exact ⟨rfl, rfl, rfl⟩
+
+def rustcBehaviorToPortable (behavior : RustcBehavior) : PortableRustBehavior :=
+  ⟨decide (behavior.disposition = .accepted), behavior.targetTriple⟩
+
+/-- Checked denotation correspondence from the concrete rustc model family to
+the portable assurance-observation family on exactly `thermiteRustV1`. -/
+def rustc195_refines_portable_rust :
+    ModelRefinement rustc195Family portableRustFamily := {
+  translateInput := id
+  translateBehavior := rustcBehaviorToPortable
+  membership := fun _ admitted => admitted
+  denotation := by
+    intro input behavior modeled
+    constructor
+    · exact modeled.1
+    · by_cases admitted : thermiteRustV1Admits input = true
+      · have accepted : behavior.disposition = .accepted := by
+          simpa [rustc195Denotation, admitted] using modeled.2
+        simp [rustcBehaviorToPortable, admitted, accepted]
+      · have rejected : behavior.disposition = .rejected := by
+          simpa [rustc195Denotation, admitted] using modeled.2
+        simp [rustcBehaviorToPortable, admitted, rejected]
+}
+
 theorem thermite_rust_v1_expands_to_v2 : Expands thermiteRustV1 thermiteRustV2 := by
   exact ⟨rfl, by decide, fun _ admitted => ⟨Or.inl admitted.1, admitted.2⟩⟩
 

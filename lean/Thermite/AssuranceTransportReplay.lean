@@ -4,27 +4,35 @@ import Thermite.AssuranceTransport
 namespace Thermite.CertificationMetatheory
 
 def generatedTransportReplayCases : List TransportReplayCase := [
-  ⟨"identity", "v1", "v1", .transported, .same, .same, .strengthened⟩,
-  ⟨"semantic-expansion", "v1", "v2", .transported, .same, .same, .strengthened⟩,
-  ⟨"boundary-weakening", "v2", "v2", .transported, .same, .weaker, .weakened⟩,
-  ⟨"semantic-fork", "v1", "fork", .incompatible, .different, .same, .incomparable⟩,
-  ⟨"procedure-fork", "lean-v1", "solver-v1", .incompatible, .different, .same, .incomparable⟩,
-  ⟨"changed-fiber", "v1", "v2", .transported, .different, .same, .changedFiber⟩,
-  ⟨"missing", "v1", "v2", .missing, .same, .same, .missingClassification⟩
+  ⟨"identity", "v1", "v1", .transported, .same, .same, .same, some .strengthened⟩,
+  ⟨"semantic-expansion", "v1", "v2", .transported, .same, .same, .same, some .strengthened⟩,
+  ⟨"boundary-weakening", "v2", "v2", .transported, .same, .same, .weaker, some .weakened⟩,
+  ⟨"boundary-strengthening", "v2", "v2", .transported, .same, .same, .strengthening, none⟩,
+  ⟨"boundary-unrelated", "v2", "v2", .transported, .same, .same, .unrelated, none⟩,
+  ⟨"boundary-unproved", "v2", "v2", .transported, .same, .same, .unproved, none⟩,
+  ⟨"semantic-fork", "v1", "fork", .incompatible, .same, .different, .same, some .incomparable⟩,
+  ⟨"procedure-fork", "lean-v1", "solver-v1", .incompatible, .same, .different, .same, some .incomparable⟩,
+  ⟨"changed-fiber", "v1", "v2", .transported, .same, .different, .same, some .changedFiber⟩,
+  ⟨"model-refinement", "rustc-1.95", "portable-rust-1", .transported, .refines, .same, .same, some .changedFiber⟩,
+  ⟨"model-reverse", "portable-rust-1", "rustc-1.95", .transported, .reverseRefines, .same, .same, none⟩,
+  ⟨"model-unproved", "rustc-1.95", "unknown", .transported, .unproved, .same, .same, none⟩,
+  ⟨"model-compatibility-break", "rustc-1.95", "incompatible", .incompatible, .compatibilityBreak, .different, .same, some .incomparable⟩,
+  ⟨"missing", "v1", "v2", .missing, .same, .same, .same, some .missingClassification⟩
 ]
 
 theorem generated_transport_replay_matches_checked_relation :
     generatedTransportReplayCases.all TransportReplayCase.accepts = true := by
   decide
 
-theorem generated_transport_replay_covers_seven_cases_and_five_outcomes :
-    generatedTransportReplayCases.length = 7 ∧
-      (generatedTransportReplayCases.map fun row => row.expected).eraseDups.length = 5 := by
+theorem generated_transport_replay_covers_fourteen_cases_five_outcomes_and_five_rejections :
+    generatedTransportReplayCases.length = 14 ∧
+      (generatedTransportReplayCases.filterMap fun row => row.expected).eraseDups.length = 5 ∧
+      (generatedTransportReplayCases.filter fun row => row.expected.isNone).length = 5 := by
   decide
 
 def changedIdentityOutcomeMutant : List TransportReplayCase :=
   generatedTransportReplayCases.map fun row =>
-    if row.id = "identity" then { row with expected := .missingClassification } else row
+    if row.id = "identity" then { row with expected := some .missingClassification } else row
 
 theorem changed_identity_outcome_mutant_is_rejected :
     changedIdentityOutcomeMutant.all TransportReplayCase.accepts = false := by

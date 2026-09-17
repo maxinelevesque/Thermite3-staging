@@ -10248,6 +10248,20 @@ seconds = 0.007
 test = "forge::bin/forge assurance_transport::tests::predecessor_domain_requires_transitive_classification"
 timing_provenance = "reviewed_local_estimate_after_baseline"
 
+# Issues #164/#165 extend the assurance-transport in-process checks. Both use
+# the established 0.007s estimate and fit in the currently lightest bucket.
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "forge::bin/forge assurance_transport::tests::boundary_relation_is_directional_endpoint_checked_and_receipt_bound"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "forge::bin/forge assurance_transport::tests::model_relation_is_directional_endpoint_checked_composable_and_receipt_bound"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
 [[assignment]]
 bucket = 10
 seconds = 0.007

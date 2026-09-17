@@ -1,4 +1,4 @@
-import Thermite.CertificationMetatheory
+import Thermite.ImplementationModel
 
 /-!
 Checked cross-version, cross-model, and cross-procedure assurance transport.
@@ -214,6 +214,206 @@ def AssuranceTransport.comp
   procedure := ProcedureSimulation.comp firstSecond.procedure secondThird.procedure
 }
 
+/-! Cross-implementation-model-family transport. The existing
+`AssuranceTransport` remains the version-only compatibility surface; this
+separate type makes a family change impossible without a typed
+`ModelRefinement` over the families' own input and behavior carriers. -/
+
+structure CrossModelAssuranceTransport
+    (sourceModel targetModel : ImplementationModelFamily)
+    (sourceFrame targetFrame : SemanticFrame)
+    (sourceContext targetContext : ResidualContext)
+    (sourceFragment targetFragment : Fragment)
+    (sourceProcedure targetProcedure : CertificationProcedure)
+    (sourceClaim targetClaim : Program → Prop)
+    (SourceEvidence TargetEvidence : Type)
+    (sourceObservation targetObservation : ObservationContract)
+    (sourceCertifies : SourceEvidence → Program → Prop)
+    (targetCertifies : TargetEvidence → Program → Prop) where
+  reindexProgram : Program → Program
+  translateEvidence : SourceEvidence → TargetEvidence
+  sourceFamily : sourceFrame.implementationModel = sourceModel.identity.family
+  targetFamily : targetFrame.implementationModel = targetModel.identity.family
+  sourceModelFragment : sourceFragment = sourceModel.fragment
+  targetModelFragment : targetFragment = targetModel.fragment
+  model : ModelRefinement sourceModel targetModel
+  modelPrograms : ∀ input, reindexProgram (sourceModel.toProgram input) =
+    targetModel.toProgram (model.translateInput input)
+  semantics : sourceFrame.semantics = targetFrame.semantics
+  semanticsVersion : sourceFrame.semanticsVersion ≤ targetFrame.semanticsVersion
+  context : ContextRefines sourceContext targetContext
+  membership : ∀ program, sourceFragment.admits program →
+    targetFragment.admits (reindexProgram program)
+  claim : ∀ program, sourceClaim program → targetClaim (reindexProgram program)
+  boundary : BoundaryRefines sourceFrame.boundary targetFrame.boundary
+  observation : ObservationRefines reindexProgram sourceObservation targetObservation
+  certification : ∀ evidence program, sourceCertifies evidence program →
+    targetCertifies (translateEvidence evidence) (reindexProgram program)
+  sourceRefutationSoundness : RefutationSoundness sourceClaim sourceObservation
+  targetRefutationSoundness : RefutationSoundness targetClaim targetObservation
+  sourceRefutationCompleteness : RefutationCompleteness sourceClaim sourceObservation
+  targetRefutationCompleteness : RefutationCompleteness targetClaim targetObservation
+  procedure : ProcedureSimulation sourceProcedure targetProcedure SourceEvidence TargetEvidence
+    reindexProgram translateEvidence sourceObservation targetObservation
+
+theorem CrossModelAssuranceTransport.identity
+    (modelFamily : ImplementationModelFamily)
+    (frame : SemanticFrame)
+    (familyBinding : frame.implementationModel = modelFamily.identity.family)
+    (context : ResidualContext) (fragment : Fragment)
+    (fragmentBinding : fragment = modelFamily.fragment)
+    (procedure : CertificationProcedure) (claim : Program → Prop)
+    (Evidence : Type) (observation : ObservationContract)
+    (certifies : Evidence → Program → Prop)
+    (refutationSoundness : RefutationSoundness claim observation)
+    (refutationCompleteness : RefutationCompleteness claim observation) :
+    Nonempty (CrossModelAssuranceTransport modelFamily modelFamily frame frame context context
+      fragment fragment procedure procedure claim claim Evidence Evidence observation observation
+      certifies certifies) := by
+  let model : ModelRefinement modelFamily modelFamily := {
+    translateInput := id
+    translateBehavior := id
+    membership := fun _ admitted => admitted
+    denotation := fun _ _ modeled => modeled
+  }
+  exact ⟨{
+    reindexProgram := id
+    translateEvidence := id
+    sourceFamily := familyBinding
+    targetFamily := familyBinding
+    sourceModelFragment := fragmentBinding
+    targetModelFragment := fragmentBinding
+    model := model
+    modelPrograms := fun _ => rfl
+    semantics := rfl
+    semanticsVersion := Nat.le_refl _
+    context := fun held => held
+    membership := fun _ admitted => admitted
+    claim := fun _ proved => proved
+    boundary := fun _ qualified => qualified
+    observation := fun _ observed => observed
+    certification := fun _ _ certified => certified
+    sourceRefutationSoundness := refutationSoundness
+    targetRefutationSoundness := refutationSoundness
+    sourceRefutationCompleteness := refutationCompleteness
+    targetRefutationCompleteness := refutationCompleteness
+    procedure := ProcedureSimulation.identity procedure Evidence observation
+  }⟩
+
+def CrossModelAssuranceTransport.comp
+    {model₁ model₂ model₃ : ImplementationModelFamily}
+    {frame₁ frame₂ frame₃ : SemanticFrame}
+    {context₁ context₂ context₃ : ResidualContext}
+    {fragment₁ fragment₂ fragment₃ : Fragment}
+    {procedure₁ procedure₂ procedure₃ : CertificationProcedure}
+    {claim₁ claim₂ claim₃ : Program → Prop}
+    {Evidence₁ Evidence₂ Evidence₃ : Type}
+    {observation₁ observation₂ observation₃ : ObservationContract}
+    {certifies₁ : Evidence₁ → Program → Prop}
+    {certifies₂ : Evidence₂ → Program → Prop}
+    {certifies₃ : Evidence₃ → Program → Prop}
+    (firstSecond : CrossModelAssuranceTransport model₁ model₂ frame₁ frame₂ context₁ context₂
+      fragment₁ fragment₂ procedure₁ procedure₂ claim₁ claim₂ Evidence₁ Evidence₂
+      observation₁ observation₂ certifies₁ certifies₂)
+    (secondThird : CrossModelAssuranceTransport model₂ model₃ frame₂ frame₃ context₂ context₃
+      fragment₂ fragment₃ procedure₂ procedure₃ claim₂ claim₃ Evidence₂ Evidence₃
+      observation₂ observation₃ certifies₂ certifies₃) :
+    CrossModelAssuranceTransport model₁ model₃ frame₁ frame₃ context₁ context₃
+      fragment₁ fragment₃ procedure₁ procedure₃ claim₁ claim₃ Evidence₁ Evidence₃
+      observation₁ observation₃ certifies₁ certifies₃ := {
+  reindexProgram := secondThird.reindexProgram ∘ firstSecond.reindexProgram
+  translateEvidence := secondThird.translateEvidence ∘ firstSecond.translateEvidence
+  sourceFamily := firstSecond.sourceFamily
+  targetFamily := secondThird.targetFamily
+  sourceModelFragment := firstSecond.sourceModelFragment
+  targetModelFragment := secondThird.targetModelFragment
+  model := model_refinement_trans firstSecond.model secondThird.model
+  modelPrograms := by
+    intro input
+    simp only [Function.comp_apply]
+    rw [firstSecond.modelPrograms, secondThird.modelPrograms]
+    rfl
+  semantics := firstSecond.semantics.trans secondThird.semantics
+  semanticsVersion := Nat.le_trans firstSecond.semanticsVersion secondThird.semanticsVersion
+  context := fun held => secondThird.context (firstSecond.context held)
+  membership := fun program admitted =>
+    secondThird.membership _ (firstSecond.membership program admitted)
+  claim := fun program proved => secondThird.claim _ (firstSecond.claim program proved)
+  boundary := fun program qualified =>
+    secondThird.boundary program (firstSecond.boundary program qualified)
+  observation := fun program observed =>
+    secondThird.observation _ (firstSecond.observation program observed)
+  certification := fun evidence program certified =>
+    secondThird.certification _ _ (firstSecond.certification evidence program certified)
+  sourceRefutationSoundness := firstSecond.sourceRefutationSoundness
+  targetRefutationSoundness := secondThird.targetRefutationSoundness
+  sourceRefutationCompleteness := firstSecond.sourceRefutationCompleteness
+  targetRefutationCompleteness := secondThird.targetRefutationCompleteness
+  procedure := ProcedureSimulation.comp firstSecond.procedure secondThird.procedure
+}
+
+/-! Concrete cross-family witness on the currently proved fragment. It carries
+the rustc-to-portable behavior translation from `ImplementationModel.lean` and
+does not claim correspondence for programs outside `thermiteRustV1`. -/
+
+def rustc195TransportFrame : SemanticFrame :=
+  ⟨"thermite-language", 1, rustc195Identity.family, 1, unqualifiedBoundary⟩
+
+def portableRustTransportFrame : SemanticFrame :=
+  ⟨"thermite-language", 1, portableRustIdentity.family, 1, unqualifiedBoundary⟩
+
+def fragmentRefutationObservation (fragment : Fragment) : ObservationContract :=
+  ⟨"fragment-refutation", fun program => ¬ fragment.admits program⟩
+
+def rustc195_to_portable_assurance_transport :
+    CrossModelAssuranceTransport rustc195Family portableRustFamily
+      rustc195TransportFrame portableRustTransportFrame noResiduals noResiduals
+      thermiteRustV1 thermiteRustV1 logicalProcedure logicalProcedure
+      thermiteRustV1.admits thermiteRustV1.admits Unit Unit
+      (fragmentRefutationObservation thermiteRustV1)
+      (fragmentRefutationObservation thermiteRustV1)
+      (fun _ program => thermiteRustV1.admits program)
+      (fun _ program => thermiteRustV1.admits program) := {
+  reindexProgram := id
+  translateEvidence := id
+  sourceFamily := rfl
+  targetFamily := rfl
+  sourceModelFragment := rfl
+  targetModelFragment := rfl
+  model := rustc195_refines_portable_rust
+  modelPrograms := fun _ => rfl
+  semantics := rfl
+  semanticsVersion := Nat.le_refl _
+  context := fun held => held
+  membership := fun _ admitted => admitted
+  claim := fun _ proved => proved
+  boundary := fun _ qualified => qualified
+  observation := fun _ observed => observed
+  certification := fun _ _ certified => certified
+  sourceRefutationSoundness := ⟨fun _ refuted proved => refuted proved⟩
+  targetRefutationSoundness := ⟨fun _ refuted proved => refuted proved⟩
+  sourceRefutationCompleteness := ⟨fun _ refuted => refuted⟩
+  targetRefutationCompleteness := ⟨fun _ refuted => refuted⟩
+  procedure := ProcedureSimulation.identity logicalProcedure Unit
+    (fragmentRefutationObservation thermiteRustV1)
+}
+
+theorem rustc195_to_portable_composes_with_target_identity :
+    Nonempty (CrossModelAssuranceTransport rustc195Family portableRustFamily
+      rustc195TransportFrame portableRustTransportFrame noResiduals noResiduals
+      thermiteRustV1 thermiteRustV1 logicalProcedure logicalProcedure
+      thermiteRustV1.admits thermiteRustV1.admits Unit Unit
+      (fragmentRefutationObservation thermiteRustV1)
+      (fragmentRefutationObservation thermiteRustV1)
+      (fun _ program => thermiteRustV1.admits program)
+      (fun _ program => thermiteRustV1.admits program)) := by
+  rcases CrossModelAssuranceTransport.identity portableRustFamily
+    portableRustTransportFrame rfl noResiduals thermiteRustV1 rfl logicalProcedure
+    thermiteRustV1.admits Unit (fragmentRefutationObservation thermiteRustV1)
+    (fun _ program => thermiteRustV1.admits program)
+    ⟨fun _ refuted proved => refuted proved⟩ ⟨fun _ refuted => refuted⟩ with ⟨identity⟩
+  exact ⟨CrossModelAssuranceTransport.comp rustc195_to_portable_assurance_transport identity⟩
+
 inductive IncompatibilityReason where
   | semanticFork
   | modelBreak
@@ -273,9 +473,20 @@ inductive TransportFiberKind where
   | different
 deriving DecidableEq, Repr
 
+inductive TransportModelKind where
+  | same
+  | refines
+  | reverseRefines
+  | compatibilityBreak
+  | unproved
+deriving DecidableEq, Repr
+
 inductive TransportBoundaryKind where
   | same
   | weaker
+  | strengthening
+  | unrelated
+  | unproved
 deriving DecidableEq, Repr
 
 inductive TransportComparisonOutcome where
@@ -288,28 +499,40 @@ deriving DecidableEq, Repr
 
 def classifyTransportReplay
     (relation : TransportRelationKind)
+    (model : TransportModelKind)
     (fiber : TransportFiberKind)
-    (boundary : TransportBoundaryKind) : TransportComparisonOutcome :=
+    (boundary : TransportBoundaryKind) : Option TransportComparisonOutcome :=
   match relation with
-  | .missing => .missingClassification
-  | .incompatible => .incomparable
+  | .missing => some .missingClassification
+  | .incompatible => some .incomparable
   | .transported =>
-      if fiber = .different then .changedFiber
-      else if boundary = .weaker then .weakened
-      else .strengthened
+      match model with
+      | .reverseRefines | .compatibilityBreak | .unproved => none
+      | .same | .refines =>
+          match boundary with
+          | .strengthening | .unrelated | .unproved => none
+          | .same =>
+              if model = .refines ∨ fiber = .different then
+                some .changedFiber
+              else some .strengthened
+          | .weaker =>
+              if model = .refines ∨ fiber = .different then
+                some .changedFiber
+              else some .weakened
 
 structure TransportReplayCase where
   id : String
   source : String
   target : String
   relation : TransportRelationKind
+  model : TransportModelKind
   fiber : TransportFiberKind
   boundary : TransportBoundaryKind
-  expected : TransportComparisonOutcome
+  expected : Option TransportComparisonOutcome
 deriving DecidableEq, Repr
 
 def TransportReplayCase.accepts (row : TransportReplayCase) : Bool :=
-  decide (classifyTransportReplay row.relation row.fiber row.boundary = row.expected)
+  decide (classifyTransportReplay row.relation row.model row.fiber row.boundary = row.expected)
 
 theorem assurance_transport_identity_left
     {frame targetFrame : SemanticFrame}

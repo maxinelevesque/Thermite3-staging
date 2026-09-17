@@ -9,7 +9,7 @@
         "kind": "executable_discriminator",
         "subject": "oracle:gates/claim-closure-oracles/assurance-transport.json",
         "expected": ["accepted"],
-        "reviewed_summary_sha256": "cfcd8465e04b803e69691c8527dad583033b361455cf9e91a90902faa39dd95b"
+        "reviewed_summary_sha256": "2d7f896327718903b6f788686aa50953ace9069a3625ae1d9ff14304a20268cb"
       },
       "closure": {
         "verifier": ["uv", "run", "python", "gates/claim-closure-assurance-transport.py"],

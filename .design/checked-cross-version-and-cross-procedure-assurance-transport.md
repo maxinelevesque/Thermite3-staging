@@ -1,6 +1,6 @@
 # Feature: Generalize checked cross-version and cross-procedure assurance transport
 
-audited-content-sha256: a57469efcaefba6f63dc760cdd21e8108cb163ed51726a6c0a5b7e0d7e0bbc0f (re-pinned 2026-09-11 after binding the canonical transport matrix to a generated Lean replay theorem. prior: 865c462eb7b60ce85a3ca487f2fe3368c2d58c999b2d64d1d4aef9e7250a9437)
+audited-content-sha256: 7d957691f179786a92065d6cdff23a1d5087410439c56f4fda6cc691afec2bad (re-pinned 2026-09-17 after adding typed directional boundary refinement and exact-fragment cross-implementation-model transport. prior: a57469efcaefba6f63dc760cdd21e8108cb163ed51726a6c0a5b7e0d7e0bbc0f)
 
 ## Summary
 
@@ -28,6 +28,8 @@ authority boundary without reopening it.
 - REQ-7: Transport composition and identity shall be proved for supported paths. Composing two checked witnesses shall yield a witness with the composed translations and premises, and the identity witness shall preserve all transported coordinates and evidence exactly.
 - REQ-8: Rust replay shall implement the formal identity, composition, transport, and incompatibility decisions over canonical serialized coordinates. Deterministic CI comparison shall classify strengthened, weakened, incomparable/policy-skewed, changed-fiber, and missing-classification outcomes without consulting archival `Level`/`L0…L4` values.
 - REQ-9: The replacement for archival `Lx` terminology shall be the typed coordinate tuple already emerging from `forge/src/manifest.rs` and the Assurance V2 model: `CertificationScope`, `RefutationChannel`, `ResidualTrust`, `CertificationBoundary`, `ClassificationCertificate`, `ClauseProcedure`/frame, clause identity and portfolio composition, semantic/model versions, fragment lineage, procedure/environment/tool/resource identity, residual context, claim/evidence identity, and composition witnesses. No single scalar or engineer display label shall serve as the transport authority.
+- REQ-10: Rust transport replay shall carry a typed, directional boundary relation bound inside the canonical witness. Equality is valid only for the same boundary; a non-identity transport is valid only as an explicitly witnessed source-to-target `BoundaryRefines` step. Reverse strengthening, unrelated boundaries, and unproved weakening shall be rejected before comparison, and the shared Rust/Lean replay matrix shall exercise each decision.
+- REQ-11: Cross-implementation-model transport shall retain the exact source and target `ImplementationModelFamily` identities and carry a directional `ModelRefinement` over their own input and behavior carriers. The witness shall name the supported source fragment and prove input reindexing, fragment membership, and denotation correspondence; identity and composition shall remain typed. Rust replay shall bind the corresponding same-family or source-to-target refinement declaration into the canonical receipt, reject reverse, unproved, endpoint-mismatched, and counterfeit declarations, and represent a proved compatibility break only as an incompatible predecessor relation.
 
 ## Acceptance Criteria
 
@@ -40,6 +42,8 @@ authority boundary without reopening it.
 - [x] AC-7: (REQ-7) Lean proves transport identity and composition, including composed program/member and evidence translations and preservation of the composed observation/context/boundary obligations; Rust replay agrees with the generated or replayed Lean decisions.
 - [x] AC-8: (REQ-8) Deterministic CI comparison emits stable results for strengthened, weakened, incomparable/policy-skewed, changed-fiber, and missing-classification cases across repeated runs and process boundaries.
 - [x] AC-9: (REQ-9) The implementation inventory and negative tests show that no transport, comparison, authority, routing, aggregation, cache-authority, audit-authority, or CI decision reads archival `Level`/`L0…L4` as its transport coordinate; archival values remain inspect-only compatibility data.
+- [x] AC-10: (REQ-10) Rust comparison consumes a receipt-bound typed boundary relation rather than string inequality; an explicit source-to-target weakening succeeds, while strengthening, unrelated, unproved, endpoint-mismatched, and counterfeit-receipt fixtures fail. The generated Lean replay and Rust consumer agree on all accepted and rejected rows.
+- [x] AC-11: (REQ-11) Lean defines a generic cross-model assurance transport over `ModelRefinement`, proves typed identity and composition, and instantiates a nontrivial rustc-1.95-to-portable-Rust correspondence on exactly `thermiteRustV1`. Rust validates and receipt-binds the matching directional model relation, rejects unsupported directions and model-family endpoint mismatches, and agrees with the generated Lean replay on all fourteen accepted and rejected rows.
 
 ## Architecture
 
@@ -61,6 +65,20 @@ their own input and behavior types, and denotation correspondence is checked
 on the named fragment. A model expansion is a supported predecessor relation;
 an explicit compatibility break is an incomparable relation unless a separate
 typed witness proves another path.
+
+The largest fragment supported by the current metatheory is the generic
+`CrossModelAssuranceTransport` relation over any pair of exact
+`ImplementationModelFamily` values for which a directional `ModelRefinement`
+can be constructed. It does not weaken the existing version-only
+`AssuranceTransport`: same-family evolution still uses that narrower type,
+while a family change must supply translations between the families' typed
+inputs and behaviors and a denotation-preservation proof. The concrete witness
+maps the rustc 1.95 behavior carrier to a distinct portable-Rust observation
+carrier on exactly `thermiteRustV1`; it deliberately makes no whole-Rust or
+cross-platform compiler-correctness claim. Identity and composition are proved
+at the generic relation, so this is not a one-off nominal bridge. Model version
+numbers remain exact endpoint coordinates but are not ordered across different
+families; only same-family version transport requires numerical monotonicity.
 
 Procedure transport is a separate relation, not an alias for model transport.
 The current `ProcedureRefines` equality in
@@ -119,6 +137,26 @@ identities before hashing or comparing, retain source-ordered predecessor
 matrix entries, and fail closed on contradictory transport facts, missing
 predecessors, duplicate classifications, or altered witness receipts.
 
+Boundary replay is directional even though Rust remains non-authoritative. A
+transport witness carries one typed boundary declaration: identity for an
+exactly equal source/target boundary, or a named `BoundaryRefines` witness for
+a source-to-target weakening. The declaration is part of the canonical
+transport receipt. Reverse refinement, unrelated boundaries, and an unproved
+change are representable only as rejected input states so the shared matrix can
+prove the failure behavior; none may reach a comparison outcome. Rust does not
+infer semantic entailment from boundary display strings—the Lean witness is the
+authority and Rust checks only its typed, receipt-bound replay shape.
+
+Implementation-model replay follows the same authority split. The Rust
+envelope distinguishes exact same-family identity, witnessed source-to-target
+refinement, reverse refinement, compatibility break, and unproved change. A
+transported relation accepts only identity over equal family names or a named
+forward refinement over distinct family names. Reverse and unproved changes
+fail before comparison; a compatibility break is accepted only through the
+separate incompatible-predecessor envelope. The refinement name and exact
+endpoints are receipt-bound replay evidence, not a Rust substitute for the
+Lean `ModelRefinement` proof.
+
 The deterministic CI comparison gate shall run the same matrix in repeated
 processes and compare canonical bytes. It shall distinguish transport-derived
 strengthening or weakening from incomparable/policy-skewed relations, changed
@@ -162,6 +200,8 @@ than being converted into stronger assurance.
 - Q-3: Procedure simulation generalizes equality with typed evidence/observation/environment/tool/resource preservation; unsupported procedures remain separate fibers.
 - Q-4: The comparison domain consists of declared direct predecessors plus their reachable closure; every reachable predecessor needs exactly one checked transport or incompatibility classification.
 - Q-5: Checked incompatibility is a complete policy-skew/incomparable result that preserves independent authority, while missing classification blocks new authority for the declared domain.
+- Q-6: Boundary direction follows Lean's `BoundaryRefines source target`: equality is identity, a proved source-to-target refinement is weakening, and strengthening, unrelated, or unproved changes reject rather than becoming comparison outcomes. Rust replay remains evidence of agreement, not authority to invent refinement.
+- Q-7: The present cross-model boundary is the full generic `ModelRefinement` relation on a named admitted fragment, with a concrete rustc-1.95-to-portable-Rust witness on `thermiteRustV1`. Relations needing whole-language compiler correctness, a new denotation, or correspondence outside a named current fragment are bracketed as research expansion rather than silently narrowed or accepted by Rust.
 
 ## Out of Scope
 
