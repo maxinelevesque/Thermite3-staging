@@ -20281,6 +20281,33 @@ target = "gates/claim-closure-workspace-assurance.py"
 note = "replays the Rust denominator/comparison hostility tests, CLI parser, Lean conjunction laws, ten-row matrix, and archival-level exclusion"
 
 [[requirement]]
+id = "REQ-ASSURANCE-ORGANIZATION-POLICY"
+title = "Organization-level formal assurance floor policies"
+owner = ".design/organization-formal-assurance-policies.md"
+status = "shipped"
+scope = "verified"
+summary = "Organization assurance evaluates versioned digest-bound inheritance over exact repository, workspace-plan, and claim-fiber coordinates; admits only protected exact-SHA live ProjectLift/WorkspaceLift common-claim authority; requires checked policy normalization; enforces delegated ownership, deterministic strengthening/conflict rules, and expiring auditable exceptions that never masquerade as formal satisfaction."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/organization-policy.json", expected = ["accepted"], reviewed_summary_sha256 = "ca8c27c1bd37ea9a597b287d589b8e5ec3db236502d9c8cdcc7027d5f8784f29" }
+contributors = ["lean/Thermite/OrganizationPolicy.lean", "forge/src/organization_assurance.rs", "forge/src/workspace_assurance.rs", "forge/src/cli.rs", "gates/organization-policy-replay.py"]
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/organization-formal-assurance-policies.md"
+note = "REQ-1 through REQ-14 and AC-1 through AC-11 define exact cross-repository population, live authority, inheritance, delegation, exception, normalization, receipt, and evidence contracts"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.CertificationMetatheory.CheckedWorkspaceFloor.satisfies"
+note = "requires exact floor identity, checked project/workspace lifts, a nonempty project population, and common-frontier dominance"
+[[requirement.evidence]]
+kind = "symbol"
+target = "organization_assurance::evaluate_organization_policy"
+note = "validates the exact protected repository population, digest-bound inheritance, checked policy normalization, delegated ownership, comparable strengthening, expiring exceptions, and canonical receipt"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/claim-closure-organization-policy.py"
+note = "replays Rust authority hostility tests, CLI parsing, Lean laws, twelve-row outcome matrix, and presentation-field exclusion"
+
+[[requirement]]
 id = "REQ-SPEC-CRASH-MODEL"
 title = "The crash model is a named per-device assumption"
 owner = ".design/rfcs"

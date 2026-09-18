@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: e11559ac7236d10762438e8b0adba12e4d0fa1da81c66b392b7c3cd9a1ef01b4 (re-pinned 2026-09-18 after classifying workspace-plan CLI `read(...)` tokens as structured diagnostic output; effect semantics are unchanged. prior: 6f6409b73ce1a8e487a735dc766e2f8a8f42d3189cd1cba539057917bca16e53)
+audited-content-sha256: ac3b63fa248ccbc2e3fc97d70dcc4412ad8e6a428813640648cf4be3ea66b63c (re-pinned 2026-09-18 after classifying organization-plan CLI filesystem `read(...)` tokens as structured diagnostic output; effect semantics are unchanged. prior: e11559ac7236d10762438e8b0adba12e4d0fa1da81c66b392b7c3cd9a1ef01b4)
 -->
 
 ## Summary

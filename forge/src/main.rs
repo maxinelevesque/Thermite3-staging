@@ -56,6 +56,7 @@ mod meaning;
 mod metrics;
 mod mutation;
 mod obligation;
+mod organization_assurance;
 #[allow(dead_code)]
 mod outcome_matrix;
 mod profile;

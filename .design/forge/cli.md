@@ -4,7 +4,7 @@
 tier: 3-component
 status: shipped
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 / AC-8 (#349), the automated Rust→Lean obligation exporter: the change to this doc's governed file (cli.rs) is the additive `forge smt-export [<file>] [--out <path>]` subcommand (`Command::SmtExport` → `run_smt_export`, emitting the `(P_prod) ⟺ (P_ref)` `by smt` Lean theorems + `#print axioms` probes via `lean_smt_export.rs`); every other subcommand + flag parse is unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-21 stage-2 REQ-8 / AC-8 (#330) `forge strat-faithful-tv`; 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `forge strat-tv` + `ForgeError::StratDifferential`; 2026-06-18 umbrella REQ-2c / AC-4 rotating-seed `--seed` flag on `forge tv`; §6 metrics dashboard `--metrics` value)
-audited-content-sha256: d40103efdacade8d24b58c69f23fe4b8801870efb8a1ceb53f7053e4849766fa (re-pinned 2026-09-18 after adding workspace-assurance CLI runtime contract coverage and fail-closed comparison arguments. prior: d0125ed3adedac3e32f8ee4fa710d35e87edfe709ce2eb38e54d192f557bc083)
+audited-content-sha256: 47f24117fa438d6fdcec7083444c8de95171a84d77752c63e0590abce21e5257 (re-pinned 2026-09-18 after adding exact protected organization-policy orchestration. prior: d40103efdacade8d24b58c69f23fe4b8801870efb8a1ceb53f7053e4849766fa)
 governs: forge/src/cli.rs
 thesis-refs:
   - thermite-design.md §5
@@ -224,6 +224,16 @@ What the old doc never saw, grouped (each verb cites its issue in the code):
   capability and returns `EXIT_VERIFICATION_FAILURE` without suppressing output
   artifacts. Source: `.design/engineer-assurance-report-and-level-retirement.md`
   REQ-13 through REQ-16.
+- REQ-13 (workspace and organization assurance, #60/#63):
+  `--workspace-plan` rebuilds every exact build-matrix cell and composes only
+  live `ProjectLift` capabilities. `--organization-plan` additionally requires
+  exact `REPOSITORY=WORKSPACE-PLAN.json` bindings, ordered versioned policy
+  packages, and an explicit evaluation epoch; it rebuilds every repository at
+  the protected exact revision named by the organization plan before applying
+  formal floors. Persisted reports, presentation labels, and exception prose
+  never become formal authority. Source:
+  `.design/workspace-build-matrix-assurance.md` and
+  `.design/organization-formal-assurance-policies.md`.
 
 ## Acceptance criteria
 

@@ -1,6 +1,6 @@
 # Feature: Engineer assurance report and Level retirement
 
-audited-content-sha256: 936e3876bcdc7aa72b896435d8855441a2e3fbfce5fcdc0bc3505aeb4607a816 (re-pinned 2026-09-18 after refreshing reviewed CLI authority-site locations for the adversarial-review follow-up. prior: 6a8e1584e51ae86b28f2f882eb411054b2c83e71b6b229b0374723ac62196fa6)
+audited-content-sha256: d149a3bda522fd6faf50db0712aab69ae4ae87b5d02021766121a9b55d7250c1 (re-pinned 2026-09-18 after refreshing the non-authoritative assurance-level inventory for organization policy; report authority is unchanged. prior: 5f9d423db42502ffcfbd2a2bd8439ecabba2b1e4c95e7f88dc6ecc59a7ded4d7)
 
 ## Summary
 

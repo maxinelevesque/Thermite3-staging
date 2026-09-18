@@ -1722,6 +1722,60 @@ reference = ["gates/claim-closure-workspace-assurance.py"]
 conformance_ops = []
 
 [[route]]
+crate_pattern = "lean/Thermite/OrganizationPolicy.lean"
+design = ".design/organization-formal-assurance-policies.md"
+reference = ["forge/src/organization_assurance.rs", "lean/Thermite/PolicyMigration.lean", "lean/Thermite/WorkspaceComposition.lean"]
+conformance_ops = ["exact floor key", "comparable inheritance", "lift-gated dominance", "exception honesty", "checked normalization"]
+
+[[route]]
+crate_pattern = "lean/Thermite/OrganizationPolicyReplay.lean"
+design = ".design/organization-formal-assurance-policies.md"
+reference = ["lean/Thermite/OrganizationPolicy.lean", "gates/organization-policy-replay.py", "gates/organization-policy-replay.json"]
+conformance_ops = ["generated organization policy replay"]
+
+[[route]]
+crate_pattern = "forge/src/organization_assurance.rs"
+design = ".design/organization-formal-assurance-policies.md"
+reference = ["forge/src/workspace_assurance.rs", "forge/src/policy_migration.rs", "lean/Thermite/OrganizationPolicy.lean"]
+conformance_ops = ["versioned package chain", "delegated ownership", "expiring scoped exceptions", "live protected evaluation"]
+
+[[route]]
+crate_pattern = "gates/organization-policy-replay.py"
+design = ".design/organization-formal-assurance-policies.md"
+reference = ["gates/organization-policy-replay.json", "lean/Thermite/OrganizationPolicyReplay.lean", "forge/src/organization_assurance.rs"]
+conformance_ops = ["policy hostility matrix", "generated Lean replay"]
+
+[[route]]
+crate_pattern = "gates/organization-policy-replay.json"
+design = ".design/organization-formal-assurance-policies.md"
+reference = ["gates/organization-policy-replay.py", "lean/Thermite/OrganizationPolicyReplay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_organization_policy_replay.py"
+design = ".design/organization-formal-assurance-policies.md"
+reference = ["gates/organization-policy-replay.py", "gates/organization-policy-replay.json", "forge/src/organization_assurance.rs"]
+conformance_ops = ["generated matrix", "presentation-field exclusion"]
+
+[[route]]
+crate_pattern = "gates/claim-closure-organization-policy.py"
+design = ".design/organization-formal-assurance-policies.md"
+reference = ["gates/claim-closure-oracles/organization-policy.json", "lean/Thermite/OrganizationPolicy.lean", "forge/src/organization_assurance.rs"]
+conformance_ops = ["typed claim discrimination", "counterfeit rejection"]
+
+[[route]]
+crate_pattern = "gates/claim-closure-oracles/organization-policy.json"
+design = ".design/organization-formal-assurance-policies.md"
+reference = ["gates/claim-closure-organization-policy.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-drafts/organization-policy.json"
+design = ".design/organization-formal-assurance-policies.md"
+reference = ["gates/claim-closure-organization-policy.py", "gates/claim-closure-oracles/organization-policy.json"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "gates/claim-closure-drafts/workspace-assurance.json"
 design = ".design/workspace-build-matrix-assurance.md"
 reference = ["gates/claim-closure-workspace-assurance.py", "gates/claim-closure-oracles/workspace-assurance.json"]

@@ -1,6 +1,6 @@
 # Feature: Complete assurance populations across workspaces and build matrices
 
-audited-content-sha256: 3951e15d4a6ef58ed9648380ab070e680d9dc00f314d517e4734a5c09c6be18e (initial issue #60 workspace/build-matrix assurance implementation)
+audited-content-sha256: d26b5bd0780b38dfbb7cbe01a9feaf0f512755c7017256a0795bcb05d69f8516 (re-pinned 2026-09-18 after adding the live exact-floor consumer and its checked-normalization fixture for issue #63. prior: 0ea88e48b7cccb100d23aabb72eaea046e6158dbf305c4388b8c7beab7de0122)
 
 ## Summary
 
