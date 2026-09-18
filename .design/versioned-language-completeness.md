@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: 7f18c7bba6df0d797b9ac287f811a7e9ad443039f01d47842e8764d091dd44bb (re-pinned 2026-09-17 after rematerializing all 596 content-bound claims with the final explicit CI partition assignment. prior: ff4d46f64c130804f38fd59d4715df522a78ac883cbcdd8926b03c69d5c9a970)
+audited-content-sha256: 2d58c27d7f2d0497df8610c7513d89239aea7a7e640faef87d75ab26d8007f6a (re-pinned 2026-09-17 after materializing the 597-claim fixed point including checked policy-version migration. prior: 7f18c7bba6df0d797b9ac287f811a7e9ad443039f01d47842e8764d091dd44bb)
 
 ## Summary
 

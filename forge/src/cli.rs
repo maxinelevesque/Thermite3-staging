@@ -386,6 +386,7 @@ enum Command {
         out_html: Option<PathBuf>,
         compare: Option<PathBuf>,
         base_sha: Option<String>,
+        policy_migration: Option<PathBuf>,
         out_comparison: Option<PathBuf>,
         floor: Option<PathBuf>,
     },
@@ -900,6 +901,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             let mut out_html = None;
             let mut compare = None;
             let mut base_sha = None;
+            let mut policy_migration = None;
             let mut out_comparison = None;
             let mut floor = None;
             let mut iter = iter.peekable();
@@ -969,6 +971,11 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                                 .clone(),
                         );
                     }
+                    "--policy-migration" => {
+                        policy_migration = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                            ForgeError::Usage("`--policy-migration` requires a receipt path".into())
+                        })?));
+                    }
                     "--out-comparison" => {
                         out_comparison = Some(PathBuf::from(iter.next().ok_or_else(|| {
                             ForgeError::Usage("`--out-comparison` requires a path".into())
@@ -1009,6 +1016,11 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                     "`--out-comparison` requires `--compare` and `--base-sha`".into(),
                 ));
             }
+            if policy_migration.is_some() && compare.is_none() {
+                return Err(ForgeError::Usage(
+                    "`--policy-migration` requires `--compare` and `--base-sha`".into(),
+                ));
+            }
             Ok(Command::Assurance {
                 file: file.ok_or_else(|| {
                     ForgeError::Usage("`forge assurance` requires a <file>".into())
@@ -1025,6 +1037,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                 out_html,
                 compare,
                 base_sha,
+                policy_migration,
                 out_comparison,
                 floor,
             })
@@ -1979,6 +1992,7 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             out_html,
             compare,
             base_sha,
+            policy_migration,
             out_comparison,
             floor,
         } => run_assurance(AssuranceRun {
@@ -1993,6 +2007,7 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             out_html: out_html.as_deref(),
             compare: compare.as_deref(),
             base_sha: base_sha.as_deref(),
+            policy_migration: policy_migration.as_deref(),
             out_comparison: out_comparison.as_deref(),
             floor: floor.as_deref(),
         }),
@@ -2501,6 +2516,7 @@ struct AssuranceRun<'a> {
     out_html: Option<&'a Path>,
     compare: Option<&'a Path>,
     base_sha: Option<&'a str>,
+    policy_migration: Option<&'a Path>,
     out_comparison: Option<&'a Path>,
     floor: Option<&'a Path>,
 }
@@ -2578,7 +2594,22 @@ fn run_assurance(options: AssuranceRun<'_>) -> Result<ExitCode, ForgeError> {
             source,
         })?;
         let base = assurance_report::parse_report_json(&bytes).map_err(report_error)?;
-        let comparison = assurance_report::compare_reports(&base, report, base_sha);
+        let comparison = if let Some(migration_path) = options.policy_migration {
+            let migration_bytes =
+                std::fs::read(migration_path).map_err(|source| ForgeError::Io {
+                    path: migration_path.display().to_string(),
+                    source,
+                })?;
+            let migration = crate::policy_migration::parse_policy_migration_json(&migration_bytes)
+                .map_err(|error| ForgeError::AssuranceReport {
+                    detail: error.to_string(),
+                })?;
+            assurance_report::compare_reports_with_policy_migration(
+                &base, report, base_sha, &migration,
+            )
+        } else {
+            assurance_report::compare_reports(&base, report, base_sha)
+        };
         let rendered = serde_json::to_string_pretty(&comparison).map_err(|error| {
             ForgeError::AssuranceReport {
                 detail: format!("comparison serialization failed: {error}"),
@@ -4556,6 +4587,8 @@ mod tests {
             "base.json".into(),
             "--base-sha".into(),
             sha.clone(),
+            "--policy-migration".into(),
+            "migration.json".into(),
             "--out-comparison".into(),
             "comparison.json".into(),
             "--floor".into(),
@@ -4575,6 +4608,7 @@ mod tests {
                 out_html: Some(PathBuf::from("report.html")),
                 compare: Some(PathBuf::from("base.json")),
                 base_sha: Some("a".repeat(40)),
+                policy_migration: Some(PathBuf::from("migration.json")),
                 out_comparison: Some(PathBuf::from("comparison.json")),
                 floor: Some(PathBuf::from("floor.json")),
             }
@@ -4591,6 +4625,17 @@ mod tests {
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "--compare",
                 "base.json"
+            ])),
+            Err(ForgeError::Usage(_))
+        ));
+        assert!(matches!(
+            parse_args(&argv(&[
+                "assurance",
+                "a.th",
+                "--revision",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "--policy-migration",
+                "migration.json"
             ])),
             Err(ForgeError::Usage(_))
         ));

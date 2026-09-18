@@ -723,6 +723,38 @@ impl ProjectFrontiersV2 {
         &self.scope
     }
 
+    /// Translate only the closed formal policy-family vocabulary. Exact claim
+    /// fiber, population, provenance, unavailable transports, and scope remain
+    /// unchanged; policy migration is not authority rebasing.
+    pub fn translate_policy_kinds(
+        &self,
+        translate: impl Fn(AssuranceKindV2) -> AssuranceKindV2 + Copy,
+    ) -> Self {
+        let common_claim_frontier = match &self.common_claim_frontier {
+            CommonClaimFrontierV2::NoItems => CommonClaimFrontierV2::NoItems,
+            CommonClaimFrontierV2::Frontier(kinds) => {
+                CommonClaimFrontierV2::Frontier(kinds.iter().copied().map(translate).collect())
+            }
+        };
+        let evidence_frontier = self
+            .evidence_frontier
+            .iter()
+            .cloned()
+            .map(|mut entry| {
+                entry.kind = translate(entry.kind);
+                entry
+            })
+            .collect();
+        Self {
+            population_sha256: self.population_sha256.clone(),
+            claim_fiber: self.claim_fiber.clone(),
+            unavailable_transports: self.unavailable_transports.clone(),
+            common_claim_frontier,
+            evidence_frontier,
+            scope: self.scope.clone(),
+        }
+    }
+
     pub fn aggregate(
         population: &ProjectPopulationV2,
         claim_fiber: ClaimFiberAddressV2,

@@ -20204,7 +20204,7 @@ status = "shipped"
 scope = "verified"
 summary = "Checked assurance transports bind exact source and target coordinates, canonical witness receipts, semantic certification and refutation obligations, typed directional boundary and implementation-model refinement, complete predecessor classifications, identity and composition laws, and deterministic Rust/Lean replay without consulting archival levels."
 claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/assurance-transport.json", expected = ["accepted"], reviewed_summary_sha256 = "2d7f896327718903b6f788686aa50953ace9069a3625ae1d9ff14304a20268cb" }
-remaining_scope = "Policy-version migration, workspace/build-matrix populations, and organization-level floors remain with issues #59, #60, and #63."
+remaining_scope = "Workspace/build-matrix populations and organization-level floors remain with issues #60 and #63."
 contributors = ["lean/Thermite/AssuranceTransport.lean", "forge/src/assurance_transport.rs", "gates/assurance-transport-replay.py"]
 generated_to = ["status"]
 [[requirement.evidence]]
@@ -20223,6 +20223,34 @@ note = "fails closed on invalid version directions; reverse, unproved, compatibi
 kind = "test"
 target = "gates/claim-closure-assurance-transport.py"
 note = "replays the Rust coordinate/receipt/domain hostility tests, Lean model, fourteen-row accepted/rejected directional boundary/model matrix, and archival-level exclusion"
+
+[[requirement]]
+id = "REQ-ASSURANCE-POLICY-MIGRATION"
+title = "Checked assurance policy-version migration"
+owner = ".design/assurance-policy-version-migration.md"
+status = "shipped"
+scope = "verified"
+summary = "A checked assurance policy migration proves a strict directional exact-family order isomorphism in Lean, replays a canonical six-family receipt in Rust, translates only diagnostic policy points and frontiers while preserving authority identities, and fails closed to empty policy skew for missing, lossy, reverse, incomplete, misbound, non-order-isomorphic, or forged witnesses."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/assurance-policy-migration.json", expected = ["accepted"], reviewed_summary_sha256 = "ceee1134708b3eceaacf927056d4965812ee69e1791cf3a2f4f5b0e83b05643f" }
+remaining_scope = "Workspace/build-matrix population composition and organization-level policy inheritance remain with issues #60 and #63."
+contributors = ["lean/Thermite/PolicyMigration.lean", "forge/src/policy_migration.rs", "forge/src/assurance_report.rs", "gates/assurance-policy-migration-replay.py"]
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/assurance-policy-version-migration.md"
+note = "REQ-1 through REQ-11 and AC-1 through AC-7 define the exact-fiber migration, diagnostic-only comparison, failure vocabulary, and evidence contract"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.PolicyVersionMigration"
+note = "binds a strict forward version edge to a total policy-family order isomorphism and lifts it through normalized antichains"
+[[requirement.evidence]]
+kind = "symbol"
+target = "policy_migration::PolicyMigrationReceiptV1::validate"
+note = "fails closed on missing, lossy, reverse, incomplete, non-order-isomorphic, endpoint-mismatched, or digest-forged migration receipts"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/claim-closure-policy-migration.py"
+note = "replays the Rust receipt/report hostility tests, Lean laws, ten-row accepted/skew matrix, and archival-level exclusion"
 
 [[requirement]]
 id = "REQ-SPEC-CRASH-MODEL"

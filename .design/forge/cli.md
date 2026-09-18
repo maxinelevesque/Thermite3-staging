@@ -4,7 +4,7 @@
 tier: 3-component
 status: shipped
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 / AC-8 (#349), the automated Rust→Lean obligation exporter: the change to this doc's governed file (cli.rs) is the additive `forge smt-export [<file>] [--out <path>]` subcommand (`Command::SmtExport` → `run_smt_export`, emitting the `(P_prod) ⟺ (P_ref)` `by smt` Lean theorems + `#print axioms` probes via `lean_smt_export.rs`); every other subcommand + flag parse is unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-21 stage-2 REQ-8 / AC-8 (#330) `forge strat-faithful-tv`; 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `forge strat-tv` + `ForgeError::StratDifferential`; 2026-06-18 umbrella REQ-2c / AC-4 rotating-seed `--seed` flag on `forge tv`; §6 metrics dashboard `--metrics` value)
-audited-content-sha256: 914de5b2d4a030c09ab673798f1bbab169143b5a416fbfa2041259062e745044 (re-pinned 2026-09-12 to disclose per-projection Tier-A relational scope in certificate, review, and audit output. prior: cc2a8a3840d742610c20fcf16aef21a53a330e9db489f9c2fd3b23c73b6f65dd)
+audited-content-sha256: 955f090e18c2d4097a3629e57c9487dc66327699050542d63b61ff4f739d0831 (re-pinned 2026-09-17 after adding the optional checked policy-migration receipt for assurance comparison. prior: 914de5b2d4a030c09ab673798f1bbab169143b5a416fbfa2041259062e745044)
 governs: forge/src/cli.rs
 thesis-refs:
   - thermite-design.md §5
@@ -50,6 +50,12 @@ validated report bound to that exact base revision and keeps stronger, weaker,
 incomparable, fiber, boundary, residual, population, historical, and policy/schema
 movements distinct. `--floor <policy.json>` is evaluated only through the
 non-serializable live capability; uploaded JSON cannot become floor authority.
+Issue #59 adds optional `--policy-migration <receipt.json>` beside `--compare`.
+The receipt must bind the exact base/head policy versions and replay the closed
+six-family Lean order isomorphism. Without it, policy mismatch remains skew;
+lossy, reverse, incomplete, misbound, or forged receipts also remain skew and
+cannot yield a stronger/weaker verdict. Migration changes only the temporary
+diagnostic policy portrait and never rewrites certificate authority digests.
 
 The public method names, synopses, and short descriptions live in
 `thermite_skill::ForgeMethod`. The parser recognizes its first argument through
