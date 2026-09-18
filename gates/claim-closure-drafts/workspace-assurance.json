@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "slice_id": "workspace-assurance",
+  "entries": [
+    {
+      "requirement_id": "REQ-ASSURANCE-WORKSPACE-COMPOSITION",
+      "witness_id": "W-ASSURANCE-WORKSPACE-COMPOSITION",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/workspace-assurance.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "ab1d6ba00ed7ba9eb9a80e52a125b20937b313efb8269159a9e81a61cdcf49aa"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-workspace-assurance.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-workspace-assurance.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/workspace-assurance.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/workspace-assurance.json",
+          "gates/claim-closure-workspace-assurance.py",
+          ".design/workspace-build-matrix-assurance.md",
+          "lean/Thermite/WorkspaceComposition.lean",
+          "lean/Thermite/WorkspaceCompositionReplay.lean",
+          "forge/src/workspace_assurance.rs",
+          "forge/src/assurance_report.rs",
+          "forge/src/assurance_v2.rs",
+          "forge/src/cli.rs",
+          "forge/src/main.rs",
+          "gates/workspace-assurance-replay.py",
+          "gates/workspace-assurance-replay.json",
+          "gates/tests/test_workspace_assurance_replay.py",
+          "gates/ci-test-partitions.toml",
+          ".github/workflows/ci.yml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-workspace-assurance-rust-checks",
+            "mutation": "replace_text",
+            "from": "workspace-assurance-rust",
+            "to": "workspace-assurance-rust-erased",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

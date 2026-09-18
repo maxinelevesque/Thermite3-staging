@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "outcomes": ["whole_workspace", "accepted_subset", "rejected"],
+  "case": [
+    {"id":"complete-two-package-matrix","plan_exact":true,"coordinates_unique":true,"all_reports":true,"items_exact":true,"all_project_lifts":true,"nonempty":true,"outcome":"whole_workspace"},
+    {"id":"missing-package-report","plan_exact":true,"coordinates_unique":true,"all_reports":false,"items_exact":true,"all_project_lifts":true,"nonempty":true,"outcome":"accepted_subset"},
+    {"id":"missing-target-report","plan_exact":true,"coordinates_unique":true,"all_reports":false,"items_exact":true,"all_project_lifts":true,"nonempty":true,"outcome":"accepted_subset"},
+    {"id":"feature-cell-misbound","plan_exact":false,"coordinates_unique":true,"all_reports":true,"items_exact":true,"all_project_lifts":true,"nonempty":true,"outcome":"rejected"},
+    {"id":"platform-cell-misbound","plan_exact":false,"coordinates_unique":true,"all_reports":true,"items_exact":true,"all_project_lifts":true,"nonempty":true,"outcome":"rejected"},
+    {"id":"generated-source-omitted","plan_exact":false,"coordinates_unique":true,"all_reports":true,"items_exact":true,"all_project_lifts":true,"nonempty":true,"outcome":"rejected"},
+    {"id":"planned-item-omitted","plan_exact":true,"coordinates_unique":true,"all_reports":true,"items_exact":false,"all_project_lifts":true,"nonempty":true,"outcome":"rejected"},
+    {"id":"duplicate-matrix-cell","plan_exact":true,"coordinates_unique":false,"all_reports":true,"items_exact":true,"all_project_lifts":true,"nonempty":true,"outcome":"rejected"},
+    {"id":"empty-workspace","plan_exact":true,"coordinates_unique":true,"all_reports":true,"items_exact":true,"all_project_lifts":true,"nonempty":false,"outcome":"accepted_subset"},
+    {"id":"missing-project-lift","plan_exact":true,"coordinates_unique":true,"all_reports":true,"items_exact":true,"all_project_lifts":false,"nonempty":true,"outcome":"accepted_subset"}
+  ]
+}

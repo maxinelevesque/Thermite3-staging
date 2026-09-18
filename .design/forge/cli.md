@@ -4,7 +4,7 @@
 tier: 3-component
 status: shipped
 audited-sha: 5ae0816c042debb01c70eb9b89c775837f0c0f24 (content-sha256 re-pinned 2026-06-23 for stage-3 REQ-7 / AC-8 (#349), the automated Rust→Lean obligation exporter: the change to this doc's governed file (cli.rs) is the additive `forge smt-export [<file>] [--out <path>]` subcommand (`Command::SmtExport` → `run_smt_export`, emitting the `(P_prod) ⟺ (P_ref)` `by smt` Lean theorems + `#print axioms` probes via `lean_smt_export.rs`); every other subcommand + flag parse is unchanged. The legacy commit pin stays at the 5ae0816c stable-main ancestor; only the active content-sha256 digest moves. prior: 2026-06-21 stage-2 REQ-8 / AC-8 (#330) `forge strat-faithful-tv`; 2026-06-20 stage-2 REQ-4 / AC-4 (#326) `forge strat-tv` + `ForgeError::StratDifferential`; 2026-06-18 umbrella REQ-2c / AC-4 rotating-seed `--seed` flag on `forge tv`; §6 metrics dashboard `--metrics` value)
-audited-content-sha256: 955f090e18c2d4097a3629e57c9487dc66327699050542d63b61ff4f739d0831 (re-pinned 2026-09-17 after adding the optional checked policy-migration receipt for assurance comparison. prior: 914de5b2d4a030c09ab673798f1bbab169143b5a416fbfa2041259062e745044)
+audited-content-sha256: d40103efdacade8d24b58c69f23fe4b8801870efb8a1ceb53f7053e4849766fa (re-pinned 2026-09-18 after adding workspace-assurance CLI runtime contract coverage and fail-closed comparison arguments. prior: d0125ed3adedac3e32f8ee4fa710d35e87edfe709ce2eb38e54d192f557bc083)
 governs: forge/src/cli.rs
 thesis-refs:
   - thermite-design.md §5
@@ -56,6 +56,14 @@ six-family Lean order isomorphism. Without it, policy mismatch remains skew;
 lossy, reverse, incomplete, misbound, or forged receipts also remain skew and
 cannot yield a stronger/weaker verdict. Migration changes only the temporary
 diagnostic policy portrait and never rewrites certificate authority digests.
+Issue #60 adds `forge assurance --workspace-plan <plan.json> --revision <sha>`.
+The plan independently enumerates package, target, feature, platform,
+generated-source, source-path, and item-population coordinates.  Forge checks
+every planned source, constructs one live project report per exact coordinate,
+and composes the results without allowing a missing matrix cell to disappear
+from the denominator.  Workspace JSON and exact-base comparisons remain
+diagnostic; only the in-process conjunction of live project capabilities can
+authorize a whole-workspace claim.
 
 The public method names, synopses, and short descriptions live in
 `thermite_skill::ForgeMethod`. The parser recognizes its first argument through

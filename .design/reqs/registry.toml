@@ -20204,7 +20204,7 @@ status = "shipped"
 scope = "verified"
 summary = "Checked assurance transports bind exact source and target coordinates, canonical witness receipts, semantic certification and refutation obligations, typed directional boundary and implementation-model refinement, complete predecessor classifications, identity and composition laws, and deterministic Rust/Lean replay without consulting archival levels."
 claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/assurance-transport.json", expected = ["accepted"], reviewed_summary_sha256 = "2d7f896327718903b6f788686aa50953ace9069a3625ae1d9ff14304a20268cb" }
-remaining_scope = "Workspace/build-matrix populations and organization-level floors remain with issues #60 and #63."
+remaining_scope = "Organization-level floors remain with issue #63; workspace/build-matrix composition is owned by REQ-ASSURANCE-WORKSPACE-COMPOSITION."
 contributors = ["lean/Thermite/AssuranceTransport.lean", "forge/src/assurance_transport.rs", "gates/assurance-transport-replay.py"]
 generated_to = ["status"]
 [[requirement.evidence]]
@@ -20232,7 +20232,7 @@ status = "shipped"
 scope = "verified"
 summary = "A checked assurance policy migration proves a strict directional exact-family order isomorphism in Lean, replays a canonical six-family receipt in Rust, translates only diagnostic policy points and frontiers while preserving authority identities, and fails closed to empty policy skew for missing, lossy, reverse, incomplete, misbound, non-order-isomorphic, or forged witnesses."
 claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/assurance-policy-migration.json", expected = ["accepted"], reviewed_summary_sha256 = "ceee1134708b3eceaacf927056d4965812ee69e1791cf3a2f4f5b0e83b05643f" }
-remaining_scope = "Workspace/build-matrix population composition and organization-level policy inheritance remain with issues #60 and #63."
+remaining_scope = "Organization-level policy inheritance remains with issue #63; workspace/build-matrix composition is owned by REQ-ASSURANCE-WORKSPACE-COMPOSITION."
 contributors = ["lean/Thermite/PolicyMigration.lean", "forge/src/policy_migration.rs", "forge/src/assurance_report.rs", "gates/assurance-policy-migration-replay.py"]
 generated_to = ["status"]
 [[requirement.evidence]]
@@ -20251,6 +20251,34 @@ note = "fails closed on missing, lossy, reverse, incomplete, non-order-isomorphi
 kind = "test"
 target = "gates/claim-closure-policy-migration.py"
 note = "replays the Rust receipt/report hostility tests, Lean laws, ten-row accepted/skew matrix, and archival-level exclusion"
+
+[[requirement]]
+id = "REQ-ASSURANCE-WORKSPACE-COMPOSITION"
+title = "Complete assurance populations across workspaces and build matrices"
+owner = ".design/workspace-build-matrix-assurance.md"
+status = "shipped"
+scope = "verified"
+summary = "Workspace assurance composes an independently declared canonical package/target/feature/platform/generated-source matrix, preserves every planned item in an exact denominator, binds live project lifts into a non-vacuous whole-workspace conjunction, and detects matrix drift without consulting archival levels."
+claim = { kind = "executable_discriminator", subject = "oracle:gates/claim-closure-oracles/workspace-assurance.json", expected = ["accepted"], reviewed_summary_sha256 = "ab1d6ba00ed7ba9eb9a80e52a125b20937b313efb8269159a9e81a61cdcf49aa" }
+remaining_scope = "Organization-level policy inheritance, scoped exceptions, expiry, ownership, and cross-repository formal floors remain with issue #63."
+contributors = ["lean/Thermite/WorkspaceComposition.lean", "forge/src/workspace_assurance.rs", "forge/src/assurance_report.rs", "gates/workspace-assurance-replay.py"]
+generated_to = ["status"]
+[[requirement.evidence]]
+kind = "doc"
+target = ".design/workspace-build-matrix-assurance.md"
+note = "REQ-1 through REQ-12 and AC-1 through AC-11 define the independent matrix denominator, live composition boundary, workspace lift, comparison vocabulary, and evidence contract"
+[[requirement.evidence]]
+kind = "symbol"
+target = "Thermite.CertificationMetatheory.WorkspaceLift.certifiesWorkspace"
+note = "proves the non-vacuous conjunction of the exact source-ordered checked project judgments"
+[[requirement.evidence]]
+kind = "symbol"
+target = "workspace_assurance::build_live_workspace_report"
+note = "matches live reports by canonical build coordinate, retains missing cells as non-claims, and binds every checked project lift before authorizing a workspace claim"
+[[requirement.evidence]]
+kind = "test"
+target = "gates/claim-closure-workspace-assurance.py"
+note = "replays the Rust denominator/comparison hostility tests, CLI parser, Lean conjunction laws, ten-row matrix, and archival-level exclusion"
 
 [[requirement]]
 id = "REQ-SPEC-CRASH-MODEL"

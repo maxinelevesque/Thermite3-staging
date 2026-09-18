@@ -87,6 +87,7 @@ mod vacuity;
 mod vacuity_solver;
 mod verdict;
 mod verified_build;
+mod workspace_assurance;
 
 use std::process::ExitCode;
 

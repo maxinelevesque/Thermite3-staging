@@ -165,6 +165,8 @@ jobs:
         run: uv run python gates/assurance-transport-replay.py
       - name: Checked assurance policy migration replay
         run: uv run python gates/assurance-policy-migration-replay.py
+      - name: Workspace/build-matrix assurance replay
+        run: uv run python gates/workspace-assurance-replay.py
       - name: language RFC fragment-evolution discipline
         run: uv run python gates/language-rfc-evolution.py
       - name: claim-closure frozen population

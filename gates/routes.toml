@@ -1674,6 +1674,60 @@ reference = ["lean/Thermite/PolicyMigration.lean", "forge/src/policy_migration.r
 conformance_ops = ["canonical compatible receipt"]
 
 [[route]]
+crate_pattern = "lean/Thermite/WorkspaceComposition.lean"
+design = ".design/workspace-build-matrix-assurance.md"
+reference = ["forge/src/workspace_assurance.rs", "lean/Thermite/AssuranceComposition.lean", "gates/workspace-assurance-replay.py"]
+conformance_ops = ["exact population", "permutation invariance", "duplicate invariance", "workspace conjunction"]
+
+[[route]]
+crate_pattern = "lean/Thermite/WorkspaceCompositionReplay.lean"
+design = ".design/workspace-build-matrix-assurance.md"
+reference = ["lean/Thermite/WorkspaceComposition.lean", "gates/workspace-assurance-replay.py", "gates/workspace-assurance-replay.json"]
+conformance_ops = ["generated replay", "omitted-item mutation rejection"]
+
+[[route]]
+crate_pattern = "forge/src/workspace_assurance.rs"
+design = ".design/workspace-build-matrix-assurance.md"
+reference = ["lean/Thermite/WorkspaceComposition.lean", "forge/src/assurance_report.rs", "gates/workspace-assurance-replay.py"]
+conformance_ops = ["canonical plan", "exact denominator", "live workspace lift", "matrix comparison"]
+
+[[route]]
+crate_pattern = "gates/workspace-assurance-replay.py"
+design = ".design/workspace-build-matrix-assurance.md"
+reference = ["gates/workspace-assurance-replay.json", "lean/Thermite/WorkspaceCompositionReplay.lean", "forge/src/workspace_assurance.rs"]
+conformance_ops = ["matrix hostility", "generated Lean replay"]
+
+[[route]]
+crate_pattern = "gates/workspace-assurance-replay.json"
+design = ".design/workspace-build-matrix-assurance.md"
+reference = ["gates/workspace-assurance-replay.py", "lean/Thermite/WorkspaceCompositionReplay.lean"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_workspace_assurance_replay.py"
+design = ".design/workspace-build-matrix-assurance.md"
+reference = ["gates/workspace-assurance-replay.py", "gates/workspace-assurance-replay.json", "forge/src/workspace_assurance.rs"]
+conformance_ops = ["denominator dimension coverage", "archival-level exclusion"]
+
+[[route]]
+crate_pattern = "gates/claim-closure-workspace-assurance.py"
+design = ".design/workspace-build-matrix-assurance.md"
+reference = ["gates/claim-closure-oracles/workspace-assurance.json", "lean/Thermite/WorkspaceComposition.lean", "forge/src/workspace_assurance.rs"]
+conformance_ops = ["typed claim discrimination", "counterfeit rejection"]
+
+[[route]]
+crate_pattern = "gates/claim-closure-oracles/workspace-assurance.json"
+design = ".design/workspace-build-matrix-assurance.md"
+reference = ["gates/claim-closure-workspace-assurance.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-drafts/workspace-assurance.json"
+design = ".design/workspace-build-matrix-assurance.md"
+reference = ["gates/claim-closure-workspace-assurance.py", "gates/claim-closure-oracles/workspace-assurance.json"]
+conformance_ops = []
+
+[[route]]
 crate_pattern = "gates/claim-closure-assurance-composition.py"
 design = ".design/engineer-assurance-report-and-level-retirement.md"
 reference = ["gates/claim-closure-oracles/assurance-project-composition.json", "lean/Thermite/AssuranceComposition.lean", "forge/src/assurance_v2.rs"]
