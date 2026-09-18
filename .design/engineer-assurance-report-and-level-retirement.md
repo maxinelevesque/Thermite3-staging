@@ -1,6 +1,6 @@
 # Feature: Engineer assurance report and Level retirement
 
-audited-content-sha256: e5b093d350adb9ffc574bf1393d0ec9f48568e828abd53179e85bb38d6dba330 (re-pinned 2026-09-17 after extending the shared Lean axiom probe with exact assurance-transport theorems; report semantics are unchanged. prior: a7ae8b5cd7caa59ca6cc32fdd24063f8b30ad8c3fc3b3f9609c7fad22bf699ec)
+audited-content-sha256: 6f0455cfbfbd4dd7f3025eeff24a00a4cfa51670514f063467677f459e54264b (re-pinned 2026-09-17 after regenerating the assurance-level inventory for policy-migration CLI line shifts; the reviewed-site identities and zero-authority classification are unchanged. prior: a8d7a638a7ccdd1b27687f885e093bdf2dd4656652cc7190a770f099be0252bc)
 
 ## Summary
 
@@ -21,6 +21,14 @@ They never authorize certification, routing, floors, caching, or aggregation.
 Historical `L0..L4` certificates remain readable only as inspect-only records
 with a loud re-certification warning; they cannot be promoted into current
 formal positions.
+
+Policy-version migration is a separately checked extension. A report from an
+older policy version becomes diagnostically comparable only through the exact
+forward order-isomorphism and canonical receipt defined by
+`.design/assurance-policy-version-migration.md`. The migration translates
+policy points and frontiers for comparison while preserving the original
+authority identities; absent, lossy, reverse, or forged witnesses remain
+explicit policy skew.
 
 Project aggregation uses semantic refinement rather than a scalar minimum. For
 each exact semantic/frame/boundary fiber, the report retains both the
@@ -726,6 +734,8 @@ Migration stages:
    authority/presentation digests, and least-privilege publication workflow.
 5. Replace the scalar project-min proof and delete/isolate the enum after its
    frozen human/legacy-inspection compatibility window.
+6. Admit cross-policy report comparison only through the checked migration
+   object and receipt, without rewriting either report's authority digest.
 
 Each stage has one authority path. Compatibility can coexist as presentation,
 but never as a second decision source.
@@ -774,6 +784,10 @@ visibility but does not change an existing certificate's formal meaning.
   tax. Every new admitted family/version classifies its predecessor relations
   with checked transport/simulation theorems or checked incompatibility
   witnesses; it may not defer those relationships into an untracked backlog.
+- Q-7: Collapse-policy versions use the narrower checked policy-migration
+  contract. Only a strict forward exact-family order isomorphism may enable
+  comparison; every lossy or invalid edge remains policy skew with no formal
+  movement verdict.
 
 ## Out of Scope
 

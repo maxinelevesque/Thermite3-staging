@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "slice_id": "assurance-policy-migration",
+  "entries": [
+    {
+      "requirement_id": "REQ-ASSURANCE-POLICY-MIGRATION",
+      "witness_id": "W-ASSURANCE-POLICY-MIGRATION",
+      "claim": {
+        "kind": "executable_discriminator",
+        "subject": "oracle:gates/claim-closure-oracles/assurance-policy-migration.json",
+        "expected": ["accepted"],
+        "reviewed_summary_sha256": "ceee1134708b3eceaacf927056d4965812ee69e1791cf3a2f4f5b0e83b05643f"
+      },
+      "closure": {
+        "verifier": ["uv", "run", "python", "gates/claim-closure-policy-migration.py"],
+        "tool_version_argv": ["uv", "run", "python", "gates/claim-closure-policy-migration.py", "--version"],
+        "oracle": "gates/claim-closure-oracles/assurance-policy-migration.json",
+        "artifacts": [
+          "gates/claim-closure-oracles/assurance-policy-migration.json",
+          "gates/claim-closure-policy-migration.py",
+          ".design/assurance-policy-version-migration.md",
+          "lean/Thermite/PolicyMigration.lean",
+          "lean/Thermite/PolicyMigrationReplay.lean",
+          "forge/src/policy_migration.rs",
+          "forge/src/assurance_report.rs",
+          "forge/src/assurance_v2.rs",
+          "forge/src/cli.rs",
+          "gates/assurance-policy-migration-replay.py",
+          "gates/assurance-policy-migration-replay.json",
+          "gates/policy-v1-to-v2-migration.json",
+          "gates/tests/test_assurance_policy_migration_replay.py",
+          "gates/ci-test-partitions.toml",
+          ".github/workflows/ci.yml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "gates/completeness-review.py",
+          "gates/claim_closure_schema.py"
+        ],
+        "counterfeit": [
+          {
+            "name": "erase-policy-migration-rust-checks",
+            "mutation": "replace_text",
+            "from": "policy-migration-rust",
+            "to": "policy-migration-rust-erased",
+            "expected_exit": 4
+          }
+        ]
+      }
+    }
+  ]
+}

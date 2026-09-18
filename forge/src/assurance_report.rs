@@ -23,6 +23,7 @@ use crate::manifest::{
     ClauseCertification, ContractQuality, CurrentAssurance, CurrentClaim, CurrentDisposition,
     ObligationResult,
 };
+use crate::policy_migration::PolicyMigrationReceiptV1;
 
 pub const REPORT_SCHEMA: &str = "thermite-assurance-report/v1";
 pub const REPORT_SCHEMA_VERSION: u64 = 1;
@@ -489,14 +490,19 @@ fn engineer_statements(
     statements.into_iter().collect()
 }
 
-fn presentation_digest(authority: &str, item: &str, statements: &[EngineerStatement]) -> String {
+fn presentation_digest(
+    authority: &str,
+    item: &str,
+    policy_version: u64,
+    statements: &[EngineerStatement],
+) -> String {
     digest(
         b"thermite-assurance-report-presentation-v1\0",
         &(
             authority,
             item,
             REPORT_SCHEMA_VERSION,
-            COLLAPSE_POLICY_VERSION,
+            policy_version,
             statements,
         ),
     )
@@ -771,9 +777,9 @@ pub fn build_live_report(
             }
         };
         let statements = engineer_statements(&points, &positions);
-        let presentation_sha256 = authority
-            .as_deref()
-            .map(|authority| presentation_digest(authority, name, &statements));
+        let presentation_sha256 = authority.as_deref().map(|authority| {
+            presentation_digest(authority, name, COLLAPSE_POLICY_VERSION, &statements)
+        });
         items.push(ItemPortrait {
             identity: identity.clone(),
             source_ordinal,
@@ -968,15 +974,19 @@ pub fn build_live_report(
 
 impl AssuranceReport {
     pub fn validate(&self) -> Result<(), ReportError> {
+        self.validate_for_policy(COLLAPSE_POLICY_VERSION)
+    }
+
+    fn validate_for_policy(&self, expected_policy_version: u64) -> Result<(), ReportError> {
         if self.schema != REPORT_SCHEMA {
             return Err(ReportError::new(format!(
                 "schema skew: expected {REPORT_SCHEMA}, found {}",
                 self.schema
             )));
         }
-        if self.body.collapse_policy_version != COLLAPSE_POLICY_VERSION {
+        if self.body.collapse_policy_version != expected_policy_version {
             return Err(ReportError::new(format!(
-                "collapse-policy skew: expected {COLLAPSE_POLICY_VERSION}, found {}",
+                "collapse-policy skew: expected {expected_policy_version}, found {}",
                 self.body.collapse_policy_version
             )));
         }
@@ -1048,6 +1058,7 @@ impl AssuranceReport {
                     != presentation_digest(
                         authority,
                         &item.identity.item_path,
+                        self.body.collapse_policy_version,
                         &item.engineer_statements,
                     )
                 {
@@ -1427,9 +1438,23 @@ fn escape_html(value: &str) -> String {
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum ComparisonStatus {
     Compared,
-    NoComparison { reason: String },
-    SchemaSkew { base: String, head: String },
-    PolicySkew { base: u64, head: u64 },
+    PolicyMigrated {
+        source: u64,
+        target: u64,
+        receipt_sha256: String,
+        lean_witness: String,
+    },
+    NoComparison {
+        reason: String,
+    },
+    SchemaSkew {
+        base: String,
+        head: String,
+    },
+    PolicySkew {
+        base: u64,
+        head: u64,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Ord, PartialOrd, Serialize)]
@@ -1514,6 +1539,82 @@ pub fn compare_reports(
             base.body.source.revision, expected_base_revision
         ));
     }
+    compare_validated_reports(base, head, ComparisonStatus::Compared)
+}
+
+/// Compare reports across a checked policy-version edge. The source report is
+/// translated only in a temporary diagnostic portrait; its authority digests
+/// and exact fiber identities remain the original evidence shown in the result.
+pub fn compare_reports_with_policy_migration(
+    base: &AssuranceReport,
+    head: &AssuranceReport,
+    expected_base_revision: &str,
+    receipt: &PolicyMigrationReceiptV1,
+) -> ReportComparison {
+    let skew = || ReportComparison {
+        status: ComparisonStatus::PolicySkew {
+            base: base.body.collapse_policy_version,
+            head: head.body.collapse_policy_version,
+        },
+        base_revision: base.body.source.revision.clone(),
+        head_revision: head.body.source.revision.clone(),
+        common_frontier_changed: false,
+        items: Vec::new(),
+    };
+    if base.schema != head.schema || base.schema != REPORT_SCHEMA {
+        return ReportComparison {
+            status: ComparisonStatus::SchemaSkew {
+                base: base.schema.clone(),
+                head: head.schema.clone(),
+            },
+            ..skew()
+        };
+    }
+    let Ok(migration) = receipt.validate(
+        base.body.collapse_policy_version,
+        head.body.collapse_policy_version,
+    ) else {
+        return skew();
+    };
+    if base
+        .validate_for_policy(migration.source_policy_version())
+        .is_err()
+        || head
+            .validate_for_policy(migration.target_policy_version())
+            .is_err()
+        || base.body.source.revision != expected_base_revision
+    {
+        return skew();
+    }
+    let mut translated_base = base.clone();
+    translated_base.body.collapse_policy_version = migration.target_policy_version();
+    for item in &mut translated_base.body.items {
+        item.policy_points = migration.translate_kinds(&item.policy_points);
+    }
+    translated_base.body.project.frontiers = translated_base
+        .body
+        .project
+        .frontiers
+        .iter()
+        .map(|frontier| frontier.translate_policy_kinds(|kind| migration.translate_kind(kind)))
+        .collect();
+    compare_validated_reports(
+        &translated_base,
+        head,
+        ComparisonStatus::PolicyMigrated {
+            source: migration.source_policy_version(),
+            target: migration.target_policy_version(),
+            receipt_sha256: migration.receipt_sha256().into(),
+            lean_witness: migration.lean_witness().into(),
+        },
+    )
+}
+
+fn compare_validated_reports(
+    base: &AssuranceReport,
+    head: &AssuranceReport,
+    status: ComparisonStatus,
+) -> ReportComparison {
     let base_items = base
         .body
         .items
@@ -1553,7 +1654,7 @@ pub fn compare_reports(
         }
     }
     ReportComparison {
-        status: ComparisonStatus::Compared,
+        status,
         base_revision: base.body.source.revision.clone(),
         head_revision: head.body.source.revision.clone(),
         common_frontier_changed: base.body.project.frontiers != head.body.project.frontiers,
@@ -1778,6 +1879,21 @@ mod tests {
         report.report_sha256 = digest(b"thermite-assurance-report-v1\0", &report.body);
     }
 
+    fn rebind_policy_version(report: &mut AssuranceReport, policy_version: u64) {
+        report.body.collapse_policy_version = policy_version;
+        for item in &mut report.body.items {
+            item.presentation_sha256 = item.authority_sha256.as_deref().map(|authority| {
+                presentation_digest(
+                    authority,
+                    &item.identity.item_path,
+                    policy_version,
+                    &item.engineer_statements,
+                )
+            });
+        }
+        report.report_sha256 = digest(b"thermite-assurance-report-v1\0", &report.body);
+    }
+
     #[test]
     fn one_validated_object_drives_all_disclosure_layers_deterministically() {
         let first = report(AssuranceKindV2::SolverComplete, 'a');
@@ -1925,6 +2041,51 @@ mod tests {
             compare_reports(&head, &policy_skew, &"b".repeat(40)).status,
             ComparisonStatus::PolicySkew { .. }
         ));
+    }
+
+    #[test]
+    fn checked_policy_migration_enables_cross_version_comparison_only() {
+        let base = report(AssuranceKindV2::SolverIncomplete, 'a').into_report();
+        let mut head = report(AssuranceKindV2::SolverComplete, 'b').into_report();
+        rebind_policy_version(&mut head, 2);
+
+        let skew = compare_reports(&base, &head, &"a".repeat(40));
+        assert!(matches!(skew.status, ComparisonStatus::PolicySkew { .. }));
+        assert!(skew.items.is_empty());
+
+        let receipt = crate::policy_migration::PolicyMigrationReceiptV1::compatible_identity(
+            1,
+            2,
+            "policy_v1_to_v2_order_isomorphism",
+        );
+        let migrated =
+            compare_reports_with_policy_migration(&base, &head, &"a".repeat(40), &receipt);
+        assert!(matches!(
+            migrated.status,
+            ComparisonStatus::PolicyMigrated {
+                source: 1,
+                target: 2,
+                ..
+            }
+        ));
+        assert_eq!(
+            migrated.items[0].movements,
+            vec![FormalMovement::Strengthened]
+        );
+        assert_eq!(
+            migrated.items[0].base_authority_sha256,
+            base.body.items[0].authority_sha256
+        );
+
+        let mut forged = receipt;
+        forged.lean_witness = "counterfeit".into();
+        let rejected =
+            compare_reports_with_policy_migration(&base, &head, &"a".repeat(40), &forged);
+        assert!(matches!(
+            rejected.status,
+            ComparisonStatus::PolicySkew { .. }
+        ));
+        assert!(rejected.items.is_empty());
     }
 
     #[test]

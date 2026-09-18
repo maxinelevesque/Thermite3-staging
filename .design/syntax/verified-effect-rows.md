@@ -2,7 +2,7 @@
 <!--
 tier: 3-component
 status: implemented
-audited-content-sha256: 5fd6c2ceaec899f3df5f3983e8956f936745f578c92bf204d7cbccfbe55925de (re-pinned 2026-09-12 after classifying four Tier-A relational-frame effect-token sites in two new Rust files and reconciling four sites in the existing Forge manifest module; effect semantics are unchanged. prior: 2c4f9bafcbd5fc872359e1986fb60446d368585e885f3a44ddd53bd938aeb4c5)
+audited-content-sha256: 6f6409b73ce1a8e487a735dc766e2f8a8f42d3189cd1cba539057917bca16e53 (re-pinned 2026-09-18 after classifying the policy-migration CLI fixture's `read(migration_path)` token as structured diagnostic output; effect semantics are unchanged. prior: 5fd6c2ceaec899f3df5f3983e8956f936745f578c92bf204d7cbccfbe55925de)
 -->
 
 ## Summary

@@ -73,6 +73,7 @@ mod rfc3_replay;
 mod assurance_transport;
 #[allow(dead_code)]
 mod assurance_v2;
+mod policy_migration;
 mod sandbox;
 /// The seven-verdict hermetic suite (REQ-10 / AC-14) — test-only.
 #[cfg(test)]

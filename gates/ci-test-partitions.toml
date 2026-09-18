@@ -10378,3 +10378,33 @@ bucket = 11
 seconds = 0.500
 test = "thermite-lower::relational_frame_witness production_pure_function_receives_exact_t2_transport"
 timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "forge::bin/forge assurance_report::tests::checked_policy_migration_enables_cross_version_comparison_only"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "forge::bin/forge policy_migration::tests::checked_replay_matrix_is_consumed_by_rust_comparison"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "forge::bin/forge policy_migration::tests::compatible_receipt_is_total_directional_and_deterministic"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 6
+seconds = 0.007
+test = "forge::bin/forge policy_migration::tests::missing_duplicate_lossy_reverse_and_forged_receipts_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 7
+seconds = 0.007
+test = "forge::bin/forge policy_migration::tests::non_monotone_and_non_reflecting_maps_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"

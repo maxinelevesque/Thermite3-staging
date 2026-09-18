@@ -1,0 +1,16 @@
+{
+  "schema": "thermite-policy-migration/v1",
+  "source_policy_version": 1,
+  "target_policy_version": 2,
+  "disposition": "compatible",
+  "lean_witness": "policy_v1_to_v2_order_isomorphism",
+  "rows": [
+    {"source": "runtime", "target": "runtime"},
+    {"source": "bounded", "target": "bounded"},
+    {"source": "solver_incomplete", "target": "solver_incomplete"},
+    {"source": "solver_complete", "target": "solver_complete"},
+    {"source": "lean_empirical", "target": "lean_empirical"},
+    {"source": "lean_complete", "target": "lean_complete"}
+  ],
+  "receipt_sha256": "b96c92682b6d7b550de38c28afbb41187b86cbf3f8faff2632291b55cf8a9ffc"
+}

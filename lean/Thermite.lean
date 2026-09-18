@@ -67,3 +67,5 @@ import Thermite.AssuranceV2Replay
 import Thermite.AssuranceComposition
 import Thermite.AssuranceTransport
 import Thermite.AssuranceTransportReplay
+import Thermite.PolicyMigration
+import Thermite.PolicyMigrationReplay

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "probe": "assurance-policy-migration",
+  "cases": [
+    {"id": "policy-migration-rust", "expected_exit": 0},
+    {"id": "policy-migration-lean", "expected_exit": 0},
+    {"id": "policy-migration-replay", "expected_exit": 0},
+    {"id": "policy-migration-level-boundary", "expected_exit": 0}
+  ]
+}

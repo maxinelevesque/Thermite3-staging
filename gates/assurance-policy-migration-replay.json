@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "outcomes": ["compared", "policy_skew"],
+  "case": [
+    {"id":"compatible","relation":"compatible","direction":"forward","complete":true,"order_isomorphism":true,"receipt_bound":true,"outcome":"compared"},
+    {"id":"missing","relation":"missing","direction":"forward","complete":false,"order_isomorphism":false,"receipt_bound":false,"outcome":"policy_skew"},
+    {"id":"information-loss","relation":"information_loss","direction":"forward","complete":true,"order_isomorphism":false,"receipt_bound":true,"outcome":"policy_skew"},
+    {"id":"incompatible","relation":"incompatible","direction":"forward","complete":true,"order_isomorphism":false,"receipt_bound":true,"outcome":"policy_skew"},
+    {"id":"reverse","relation":"compatible","direction":"reverse","complete":true,"order_isomorphism":true,"receipt_bound":true,"outcome":"policy_skew"},
+    {"id":"equal-version","relation":"compatible","direction":"equal","complete":true,"order_isomorphism":true,"receipt_bound":true,"outcome":"policy_skew"},
+    {"id":"misbound-endpoints","relation":"compatible","direction":"misbound","complete":true,"order_isomorphism":true,"receipt_bound":true,"outcome":"policy_skew"},
+    {"id":"incomplete-families","relation":"compatible","direction":"forward","complete":false,"order_isomorphism":true,"receipt_bound":true,"outcome":"policy_skew"},
+    {"id":"non-order-isomorphism","relation":"compatible","direction":"forward","complete":true,"order_isomorphism":false,"receipt_bound":true,"outcome":"policy_skew"},
+    {"id":"forged-receipt","relation":"compatible","direction":"forward","complete":true,"order_isomorphism":true,"receipt_bound":false,"outcome":"policy_skew"}
+  ]
+}

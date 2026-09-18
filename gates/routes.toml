@@ -1614,6 +1614,66 @@ reference = ["forge/src/assurance_v2.rs", "gates/assurance-v2-replay.py", "gates
 conformance_ops = []
 
 [[route]]
+crate_pattern = "lean/Thermite/PolicyMigration.lean"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["lean/Thermite/AssurancePolicyV2.lean", "forge/src/policy_migration.rs", "gates/assurance-policy-migration-replay.py"]
+conformance_ops = ["order isomorphism", "frontier migration", "identity", "composition"]
+
+[[route]]
+crate_pattern = "lean/Thermite/PolicyMigrationReplay.lean"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["lean/Thermite/PolicyMigration.lean", "gates/assurance-policy-migration-replay.py", "gates/assurance-policy-migration-replay.json"]
+conformance_ops = ["generated replay", "forged receipt mutation rejection"]
+
+[[route]]
+crate_pattern = "forge/src/policy_migration.rs"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["lean/Thermite/PolicyMigration.lean", "gates/assurance-policy-migration-replay.py", "forge/src/assurance_report.rs"]
+conformance_ops = ["canonical receipt", "closed family map", "hostile mutation"]
+
+[[route]]
+crate_pattern = "gates/assurance-policy-migration-replay.py"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["gates/assurance-policy-migration-replay.json", "lean/Thermite/PolicyMigrationReplay.lean", "forge/src/policy_migration.rs"]
+conformance_ops = ["canonical bytes", "policy skew matrix"]
+
+[[route]]
+crate_pattern = "gates/assurance-policy-migration-replay.json"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["gates/assurance-policy-migration-replay.py", "lean/Thermite/PolicyMigrationReplay.lean", "forge/src/policy_migration.rs"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/tests/test_assurance_policy_migration_replay.py"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["gates/assurance-policy-migration-replay.py", "gates/assurance-policy-migration-replay.json"]
+conformance_ops = ["policy skew rejection", "archival-level exclusion"]
+
+[[route]]
+crate_pattern = "gates/claim-closure-policy-migration.py"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["gates/claim-closure-oracles/assurance-policy-migration.json", "gates/claim-closure-drafts/assurance-policy-migration.json"]
+conformance_ops = ["typed claim discrimination", "counterfeit rejection"]
+
+[[route]]
+crate_pattern = "gates/claim-closure-oracles/assurance-policy-migration.json"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["gates/claim-closure-policy-migration.py"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/claim-closure-drafts/assurance-policy-migration.json"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["gates/claim-closure-policy-migration.py", "gates/claim-closure-oracles/assurance-policy-migration.json"]
+conformance_ops = []
+
+[[route]]
+crate_pattern = "gates/policy-v1-to-v2-migration.json"
+design = ".design/assurance-policy-version-migration.md"
+reference = ["lean/Thermite/PolicyMigration.lean", "forge/src/policy_migration.rs"]
+conformance_ops = ["canonical compatible receipt"]
+
+[[route]]
 crate_pattern = "gates/claim-closure-assurance-composition.py"
 design = ".design/engineer-assurance-report-and-level-retirement.md"
 reference = ["gates/claim-closure-oracles/assurance-project-composition.json", "lean/Thermite/AssuranceComposition.lean", "forge/src/assurance_v2.rs"]
