@@ -408,6 +408,27 @@ issue metadata does not prove implementation completion. Completion still
 depends on repository qualification, exact-head review, required CI, merge
 state, and the formal evidence named by each issue's controlling design.
 
+### Product spine continuation (2026-09-18)
+
+#165, #164, and #59 are complete.  Policy migration landed through PR #173 at
+reviewed head `906213f3b5d88e5938dbafbd97287afc5c173631`, with green required CI
+run `35319407570`; main advanced to
+`bc99a3ccbb7ed210542a104d9b6110a5d48e8b07`, and issue #59 is closed.
+
+#60 is therefore the active implementation boundary.  It composes the current
+typed project authority over an independently declared canonical
+package/target/feature/platform/generated-source matrix, retaining missing
+matrix cells as explicit non-claims and admitting a workspace conjunction only
+from live checked project lifts.  #63 remains the sole next product-spine
+consumer: organization inheritance, exceptions, expiry, ownership, and
+cross-repository formal floors are deliberately not folded into #60.
+
+```text
+#59 landed -> #60 workspace/build-matrix populations (active)
+           -> #63 organization-level floors
+           -> release and research reassessment
+```
+
 The proposed local parallel materializer can reduce wall-clock time but cannot
 increase claim authority. Its correctness continues to depend on the existing
 claim author, execution-identity partition, deterministic renderer, Python

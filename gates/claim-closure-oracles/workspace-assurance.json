@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "probe": "workspace-assurance",
+  "cases": [
+    {"id": "workspace-assurance-rust", "expected_exit": 0},
+    {"id": "workspace-assurance-cli", "expected_exit": 0},
+    {"id": "workspace-assurance-lean", "expected_exit": 0},
+    {"id": "workspace-assurance-replay", "expected_exit": 0},
+    {"id": "workspace-assurance-level-boundary", "expected_exit": 0}
+  ]
+}

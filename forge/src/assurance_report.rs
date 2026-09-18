@@ -13,9 +13,9 @@ use thermite_syntax::{ForgeItem, Item, Program};
 
 use crate::assurance_v2::{
     assurance_kind_leq, AssuranceKindV2, ClaimFiberAddressV2, CommonClaimFrontierV2,
-    LiftedItemEvidenceV2, PopulationClaimSetTransportV2, ProjectBuildIdentityV2,
-    ProjectDispositionV2, ProjectFrontiersV2, ProjectItemIdentityV2, ProjectLiftV2,
-    ProjectPopulationMemberV2, ProjectPopulationV2, ProjectPortraitScopeV2,
+    LiftedItemEvidenceV2, PopulationClaimSetTransportV2, ProjectBuildCoordinateV2,
+    ProjectBuildIdentityV2, ProjectDispositionV2, ProjectFrontiersV2, ProjectItemIdentityV2,
+    ProjectLiftV2, ProjectPopulationMemberV2, ProjectPopulationV2, ProjectPortraitScopeV2,
 };
 use crate::audit::{AuditManifest, Tcb, Toolchain};
 use crate::manifest::{
@@ -382,7 +382,7 @@ fn is_revision(value: &str) -> bool {
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
-fn claim_subject_names(program: &Program) -> Vec<String> {
+pub(crate) fn claim_subject_names(program: &Program) -> Vec<String> {
     program
         .items
         .iter()
@@ -637,6 +637,38 @@ pub fn build_live_report(
     trust: ReportTrust,
     toolchain: Toolchain,
 ) -> Result<LiveAssuranceReport, ReportError> {
+    build_live_report_for_coordinate(
+        certs,
+        program,
+        source_path,
+        source,
+        revision,
+        trust,
+        toolchain,
+        ProjectBuildCoordinateV2 {
+            crate_name: source_path.to_string(),
+            target: "thermite-source".into(),
+            features: Vec::new(),
+            platform: format!("{}-{}", std::env::consts::ARCH, std::env::consts::OS),
+            generated_sources: Vec::new(),
+        },
+    )
+}
+
+/// Construct a project report under an explicit package/target/feature/platform
+/// coordinate. The artifact identity remains derived from the checked source
+/// and toolchain; callers cannot nominate it.
+#[allow(clippy::too_many_arguments)]
+pub fn build_live_report_for_coordinate(
+    certs: &[Certificate],
+    program: &Program,
+    source_path: &str,
+    source: &str,
+    revision: &str,
+    trust: ReportTrust,
+    toolchain: Toolchain,
+    build_coordinate: ProjectBuildCoordinateV2,
+) -> Result<LiveAssuranceReport, ReportError> {
     if source_path.trim().is_empty() {
         return Err(ReportError::new("source path must not be empty"));
     }
@@ -668,7 +700,12 @@ pub fn build_live_report(
     let source_sha256 = digest(b"thermite-assurance-report-source-v1\0", &source);
     let artifact_sha256 = digest(
         b"thermite-assurance-report-artifact-v1\0",
-        &(source_sha256.as_str(), format!("{program:?}"), &toolchain),
+        &(
+            source_sha256.as_str(),
+            format!("{program:?}"),
+            &toolchain,
+            &build_coordinate,
+        ),
     );
     let item_identities = names
         .iter()
@@ -803,12 +840,15 @@ pub fn build_live_report(
         });
     }
 
+    build_coordinate
+        .validate()
+        .map_err(|error| ReportError::new(error.to_string()))?;
     let build = ProjectBuildIdentityV2 {
-        crate_name: source_path.to_string(),
-        target: "thermite-source".into(),
-        features: Vec::new(),
-        platform: format!("{}-{}", std::env::consts::ARCH, std::env::consts::OS),
-        generated_sources: Vec::new(),
+        crate_name: build_coordinate.crate_name,
+        target: build_coordinate.target,
+        features: build_coordinate.features,
+        platform: build_coordinate.platform,
+        generated_sources: build_coordinate.generated_sources,
         artifact_sha256: artifact_sha256.clone(),
     };
     let population = ProjectPopulationV2::derive(

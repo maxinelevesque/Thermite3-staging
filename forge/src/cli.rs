@@ -390,6 +390,19 @@ enum Command {
         out_comparison: Option<PathBuf>,
         floor: Option<PathBuf>,
     },
+    /// `forge assurance --workspace-plan <plan.json>` composes live project
+    /// reports over an independently declared package/target/feature/platform
+    /// matrix. Persisted workspace reports remain diagnostic only.
+    AssuranceWorkspace {
+        plan: PathBuf,
+        revision: String,
+        trust: ReportTrust,
+        json: bool,
+        out_json: Option<PathBuf>,
+        compare: Option<PathBuf>,
+        base_sha: Option<String>,
+        out_comparison: Option<PathBuf>,
+    },
     /// `forge repair <file> [item]` — the background L1/L2 → L3 upgrade loop
     /// (issue #18; `.design/forge/proof-repair.md` REQ-1). Re-derives the per-item
     /// certs at the default budget, finds the sub-L3 items, and for a timeout item
@@ -891,6 +904,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
         }
         ForgeMethod::Assurance => {
             let mut file = None;
+            let mut workspace_plan = None;
             let mut revision = None;
             let mut trust = ReportTrust::LocalDiagnostic;
             let mut json = false;
@@ -907,6 +921,11 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
             let mut iter = iter.peekable();
             while let Some(arg) = iter.next() {
                 match arg.as_str() {
+                    "--workspace-plan" => {
+                        workspace_plan = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                            ForgeError::Usage("`--workspace-plan` requires a path".into())
+                        })?));
+                    }
                     "--revision" => {
                         revision = Some(
                             iter.next()
@@ -1020,6 +1039,33 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                 return Err(ForgeError::Usage(
                     "`--policy-migration` requires `--compare` and `--base-sha`".into(),
                 ));
+            }
+            if let Some(plan) = workspace_plan {
+                if file.is_some()
+                    || html
+                    || items
+                    || explain.is_some()
+                    || out_html.is_some()
+                    || policy_migration.is_some()
+                    || floor.is_some()
+                {
+                    return Err(ForgeError::Usage(
+                        "workspace assurance accepts --json, --out-json, --compare, --base-sha, and --out-comparison only; it takes no single-file positional"
+                            .into(),
+                    ));
+                }
+                return Ok(Command::AssuranceWorkspace {
+                    plan,
+                    revision: revision.ok_or_else(|| {
+                        ForgeError::Usage("workspace assurance requires `--revision <sha>`".into())
+                    })?,
+                    trust,
+                    json,
+                    out_json,
+                    compare,
+                    base_sha,
+                    out_comparison,
+                });
             }
             Ok(Command::Assurance {
                 file: file.ok_or_else(|| {
@@ -2011,6 +2057,25 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             out_comparison: out_comparison.as_deref(),
             floor: floor.as_deref(),
         }),
+        Command::AssuranceWorkspace {
+            plan,
+            revision,
+            trust,
+            json,
+            out_json,
+            compare,
+            base_sha,
+            out_comparison,
+        } => run_workspace_assurance(WorkspaceAssuranceRun {
+            plan: &plan,
+            revision: &revision,
+            trust,
+            json,
+            out_json: out_json.as_deref(),
+            compare: compare.as_deref(),
+            base_sha: base_sha.as_deref(),
+            out_comparison: out_comparison.as_deref(),
+        }),
         Command::Repair { file, item, json } => run_repair(&file, item.as_deref(), json),
         Command::Review {
             file,
@@ -2642,6 +2707,142 @@ fn run_assurance(options: AssuranceRun<'_>) -> Result<ExitCode, ForgeError> {
         }
     }
 
+    Ok(ExitCode::SUCCESS)
+}
+
+struct WorkspaceAssuranceRun<'a> {
+    plan: &'a Path,
+    revision: &'a str,
+    trust: ReportTrust,
+    json: bool,
+    out_json: Option<&'a Path>,
+    compare: Option<&'a Path>,
+    base_sha: Option<&'a str>,
+    out_comparison: Option<&'a Path>,
+}
+
+fn workspace_report_error(error: crate::workspace_assurance::WorkspaceReportError) -> ForgeError {
+    ForgeError::AssuranceReport {
+        detail: error.reason,
+    }
+}
+
+/// Build one live project portrait per independently declared matrix cell and
+/// compose them without allowing a missing cell to disappear from the
+/// denominator. Serialized workspace reports are comparison data only.
+fn run_workspace_assurance(options: WorkspaceAssuranceRun<'_>) -> Result<ExitCode, ForgeError> {
+    if options.compare.is_some() != options.base_sha.is_some() {
+        return Err(ForgeError::Usage(
+            "`--compare` and `--base-sha` must be supplied together".into(),
+        ));
+    }
+    if options.out_comparison.is_some() && options.compare.is_none() {
+        return Err(ForgeError::Usage(
+            "`--out-comparison` requires `--compare` and `--base-sha`".into(),
+        ));
+    }
+    let plan_bytes = std::fs::read(options.plan).map_err(|source| ForgeError::Io {
+        path: options.plan.display().to_string(),
+        source,
+    })?;
+    let plan = crate::workspace_assurance::parse_workspace_plan_json(&plan_bytes)
+        .map_err(workspace_report_error)?;
+    let verus_version = audit::resolve_verus_version()?;
+    let mut project_reports = Vec::with_capacity(plan.matrices.len());
+    for matrix in &plan.matrices {
+        let path = Path::new(&matrix.source_path);
+        let source = std::fs::read_to_string(path).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
+        let parsed = thermite_syntax::parse(&source);
+        if !parsed.is_clean() {
+            return Err(ForgeError::Parse(parsed.errors));
+        }
+        let derived_items = assurance_report::claim_subject_names(&parsed.program)
+            .into_iter()
+            .map(|item_path| crate::assurance_v2::ProjectItemIdentityV2 {
+                source_path: matrix.source_path.clone(),
+                item_path,
+            })
+            .collect::<Vec<_>>();
+        if derived_items != matrix.intended {
+            return Err(ForgeError::AssuranceReport {
+                detail: format!(
+                    "workspace matrix {}:{} item inventory differs from its parsed source",
+                    matrix.coordinate.crate_name, matrix.coordinate.target
+                ),
+            });
+        }
+        let certificates = crate::cache::without_reuse(|| {
+            check::check_file_with_engine(
+                path,
+                CheckOptions {
+                    engine: check::EngineSelection::Auto,
+                    ..Default::default()
+                },
+            )
+        })?;
+        project_reports.push(
+            assurance_report::build_live_report_for_coordinate(
+                &certificates,
+                &parsed.program,
+                &matrix.source_path,
+                &source,
+                options.revision,
+                options.trust.clone(),
+                audit::Toolchain::new(verus_version.clone()),
+                matrix.coordinate.clone(),
+            )
+            .map_err(report_error)?,
+        );
+    }
+    let references = project_reports.iter().collect::<Vec<_>>();
+    let live = crate::workspace_assurance::build_live_workspace_report(
+        plan,
+        &references,
+        options.revision,
+        options.trust,
+    )
+    .map_err(workspace_report_error)?;
+    let report = live.report();
+    let json = report.normalized_json().map_err(workspace_report_error)?;
+    if let Some(path) = options.out_json {
+        std::fs::write(path, &json).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
+    }
+    if options.json {
+        print!("{json}");
+    } else {
+        print!(
+            "{}",
+            report.render_headline().map_err(workspace_report_error)?
+        );
+    }
+    if let (Some(base_path), Some(base_sha)) = (options.compare, options.base_sha) {
+        let bytes = std::fs::read(base_path).map_err(|source| ForgeError::Io {
+            path: base_path.display().to_string(),
+            source,
+        })?;
+        let base = crate::workspace_assurance::parse_workspace_report_json(&bytes)
+            .map_err(workspace_report_error)?;
+        let comparison =
+            crate::workspace_assurance::compare_workspace_reports(&base, report, base_sha);
+        let rendered = serde_json::to_string_pretty(&comparison).map_err(|error| {
+            ForgeError::AssuranceReport {
+                detail: format!("workspace comparison serialization failed: {error}"),
+            }
+        })?;
+        if let Some(path) = options.out_comparison {
+            std::fs::write(path, format!("{rendered}\n")).map_err(|source| ForgeError::Io {
+                path: path.display().to_string(),
+                source,
+            })?;
+        }
+        eprintln!("workspace comparison:\n{rendered}");
+    }
     Ok(ExitCode::SUCCESS)
 }
 
@@ -4650,6 +4851,173 @@ mod tests {
             ])),
             Err(ForgeError::Usage(_))
         ));
+
+        let workspace = parse_args(&argv(&[
+            "assurance",
+            "--workspace-plan",
+            "workspace.json",
+            "--revision",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "--trust",
+            "pr",
+            "--json",
+            "--out-json",
+            "report.json",
+            "--compare",
+            "base.json",
+            "--base-sha",
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "--out-comparison",
+            "comparison.json",
+        ]))
+        .unwrap();
+        assert_eq!(
+            workspace,
+            Command::AssuranceWorkspace {
+                plan: PathBuf::from("workspace.json"),
+                revision: "a".repeat(40),
+                trust: ReportTrust::UntrustedPullRequest,
+                json: true,
+                out_json: Some(PathBuf::from("report.json")),
+                compare: Some(PathBuf::from("base.json")),
+                base_sha: Some("b".repeat(40)),
+                out_comparison: Some(PathBuf::from("comparison.json")),
+            }
+        );
+        assert!(matches!(
+            parse_args(&argv(&[
+                "assurance",
+                "single.th",
+                "--workspace-plan",
+                "workspace.json",
+                "--revision",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ])),
+            Err(ForgeError::Usage(_))
+        ));
+    }
+
+    #[test]
+    fn workspace_assurance_runtime_checks_io_inventory_and_comparison_contract() {
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "forge_workspace_assurance_cli_{}_{}",
+            std::process::id(),
+            nonce
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let plan_path = dir.join("plan.json");
+        let report_path = dir.join("report.json");
+        let comparison_path = dir.join("comparison.json");
+        let revision = "a".repeat(40);
+
+        let empty_plan =
+            crate::workspace_assurance::WorkspacePlanV1::new("6".repeat(64), Vec::new()).unwrap();
+        std::fs::write(&plan_path, serde_json::to_vec(&empty_plan).unwrap()).unwrap();
+
+        let success = run_workspace_assurance(WorkspaceAssuranceRun {
+            plan: &plan_path,
+            revision: &revision,
+            trust: ReportTrust::LocalDiagnostic,
+            json: false,
+            out_json: Some(&report_path),
+            compare: None,
+            base_sha: None,
+            out_comparison: None,
+        })
+        .unwrap();
+        assert_eq!(success, ExitCode::SUCCESS);
+        let report = crate::workspace_assurance::parse_workspace_report_json(
+            &std::fs::read(&report_path).unwrap(),
+        )
+        .unwrap();
+        report.validate().unwrap();
+        assert!(matches!(
+            report.body.scope,
+            crate::workspace_assurance::WorkspacePortraitScopeV1::NoItems
+        ));
+
+        let compared = run_workspace_assurance(WorkspaceAssuranceRun {
+            plan: &plan_path,
+            revision: &revision,
+            trust: ReportTrust::LocalDiagnostic,
+            json: false,
+            out_json: None,
+            compare: Some(&report_path),
+            base_sha: Some(&revision),
+            out_comparison: Some(&comparison_path),
+        })
+        .unwrap();
+        assert_eq!(compared, ExitCode::SUCCESS);
+        let comparison: crate::workspace_assurance::WorkspaceReportComparisonV1 =
+            serde_json::from_slice(&std::fs::read(&comparison_path).unwrap()).unwrap();
+        assert!(matches!(
+            comparison.status,
+            crate::workspace_assurance::WorkspaceComparisonStatusV1::Compared
+        ));
+
+        assert!(matches!(
+            run_workspace_assurance(WorkspaceAssuranceRun {
+                plan: &plan_path,
+                revision: &revision,
+                trust: ReportTrust::LocalDiagnostic,
+                json: false,
+                out_json: None,
+                compare: Some(&report_path),
+                base_sha: None,
+                out_comparison: None,
+            }),
+            Err(ForgeError::Usage(_))
+        ));
+
+        let source_path = dir.join("actual.th");
+        std::fs::write(
+            &source_path,
+            "fn actual(x: Int) -> Int ! pure requires true ensures result == x { x }\n",
+        )
+        .unwrap();
+        let source = source_path.to_string_lossy().into_owned();
+        let coordinate = crate::assurance_v2::ProjectBuildCoordinateV2 {
+            crate_name: "fixture".into(),
+            target: "lib".into(),
+            features: vec!["default".into()],
+            platform: "x86_64-unknown-linux-gnu".into(),
+            generated_sources: Vec::new(),
+        };
+        let wrong_matrix = crate::workspace_assurance::WorkspaceMatrixPlanV1::new(
+            coordinate,
+            source.clone(),
+            vec![crate::assurance_v2::ProjectItemIdentityV2 {
+                source_path: source,
+                item_path: "declared_not_actual".into(),
+            }],
+        )
+        .unwrap();
+        let wrong_plan =
+            crate::workspace_assurance::WorkspacePlanV1::new("7".repeat(64), vec![wrong_matrix])
+                .unwrap();
+        std::fs::write(&plan_path, serde_json::to_vec(&wrong_plan).unwrap()).unwrap();
+        let error = run_workspace_assurance(WorkspaceAssuranceRun {
+            plan: &plan_path,
+            revision: &revision,
+            trust: ReportTrust::LocalDiagnostic,
+            json: false,
+            out_json: None,
+            compare: None,
+            base_sha: None,
+            out_comparison: None,
+        })
+        .unwrap_err();
+        assert!(matches!(
+            error,
+            ForgeError::AssuranceReport { ref detail }
+                if detail.contains("item inventory differs from its parsed source")
+        ));
+
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     // Stage-2 REQ-7 (`.design/stage2-stratified-cage.md` REQ-7 / AC-7): `forge edit

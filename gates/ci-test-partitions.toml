@@ -15,6 +15,8 @@ timing_source = "gates/fixtures/ci-test-timings-run-31837152080-attempt2.tsv"
 # checks and 0.500s for compiler or Lean subprocess checks.
 # Issue #57 assurance-report unit/CLI parser tests are in-process and use the
 # same 0.007s reviewed estimate until the next measured timing snapshot.
+# Issue #60 workspace-assurance unit tests are in-process and use the same
+# 0.007s reviewed estimate until the next measured timing snapshot.
 
 [[assignment]]
 bucket = 1
@@ -10407,4 +10409,40 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 bucket = 7
 seconds = 0.007
 test = "forge::bin/forge policy_migration::tests::non_monotone_and_non_reflecting_maps_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
+test = "forge::bin/forge workspace_assurance::tests::composition_is_input_order_invariant_and_duplicates_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 9
+seconds = 0.007
+test = "forge::bin/forge workspace_assurance::tests::every_matrix_coordinate_dimension_changes_identity_and_comparison"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 10
+seconds = 0.007
+test = "forge::bin/forge workspace_assurance::tests::matrix_item_omission_changes_denominator_and_fails_exact_report_binding"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 11
+seconds = 0.007
+test = "forge::bin/forge workspace_assurance::tests::omitted_matrix_preserves_denominator_and_suppresses_workspace_claim"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 12
+seconds = 0.007
+test = "forge::bin/forge workspace_assurance::tests::workspace_json_is_diagnostic_and_tampering_is_detected"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 1
+seconds = 0.050
+test = "forge::bin/forge cli::tests::workspace_assurance_runtime_checks_io_inventory_and_comparison_contract"
 timing_provenance = "reviewed_local_estimate_after_baseline"

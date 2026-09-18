@@ -216,7 +216,16 @@ impl AntichainNf {
 /// Exact source/build identity for one project population. Lists are required
 /// to be sorted and duplicate-free so logically identical builds serialize
 /// identically rather than depending on caller insertion order.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct ProjectBuildCoordinateV2 {
+    pub crate_name: String,
+    pub target: String,
+    pub features: Vec<String>,
+    pub platform: String,
+    pub generated_sources: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ProjectBuildIdentityV2 {
     pub crate_name: String,
     pub target: String,
@@ -328,11 +337,28 @@ impl ClaimFiberAddressV2 {
 }
 
 impl ProjectBuildIdentityV2 {
-    fn validate(&self) -> Result<(), CompositionError> {
+    pub fn coordinate(&self) -> ProjectBuildCoordinateV2 {
+        ProjectBuildCoordinateV2 {
+            crate_name: self.crate_name.clone(),
+            target: self.target.clone(),
+            features: self.features.clone(),
+            platform: self.platform.clone(),
+            generated_sources: self.generated_sources.clone(),
+        }
+    }
+
+    pub(crate) fn validate(&self) -> Result<(), CompositionError> {
+        self.coordinate().validate()?;
+        nonempty(&self.artifact_sha256, "artifact_sha256")?;
+        Ok(())
+    }
+}
+
+impl ProjectBuildCoordinateV2 {
+    pub(crate) fn validate(&self) -> Result<(), CompositionError> {
         nonempty(&self.crate_name, "crate_name")?;
         nonempty(&self.target, "target")?;
         nonempty(&self.platform, "platform")?;
-        nonempty(&self.artifact_sha256, "artifact_sha256")?;
         canonical_strings(&self.features, "features")?;
         canonical_strings(&self.generated_sources, "generated_sources")
     }
@@ -894,6 +920,10 @@ pub struct ProjectLiftV2 {
 impl ProjectLiftV2 {
     pub fn claim_fiber(&self) -> &ClaimFiberAddressV2 {
         &self.claim_fiber
+    }
+
+    pub fn identity_digest(&self) -> String {
+        self.digest()
     }
 
     pub fn validate_against(
