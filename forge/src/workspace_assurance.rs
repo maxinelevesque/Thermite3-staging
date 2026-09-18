@@ -294,6 +294,103 @@ impl LiveWorkspaceAssuranceReportV1 {
     pub fn into_report(self) -> WorkspaceAssuranceReportV1 {
         self.report
     }
+
+    /// Evaluate one exact formal floor across every project in this live
+    /// workspace capability. Persisted workspace JSON cannot call this path.
+    pub(crate) fn evaluate_exact_floor(
+        &self,
+        fiber_sha256: &str,
+        minimum: crate::assurance_v2::AssuranceKindV2,
+    ) -> (bool, String) {
+        use crate::assurance_v2::{
+            assurance_kind_leq, CommonClaimFrontierV2, ProjectPortraitScopeV2,
+        };
+
+        if !self.report.body.whole_workspace_claim || self.report.body.workspace_lift.is_none() {
+            return (
+                false,
+                "exact workspace population lacks a checked WorkspaceLift".into(),
+            );
+        }
+        if self.report.body.matrices.is_empty() {
+            return (false, "exact workspace population is empty".into());
+        }
+        for matrix in &self.report.body.matrices {
+            let Some(project) = matrix.project_report.as_ref() else {
+                return (
+                    false,
+                    "an exact build-matrix cell lacks a live project report".into(),
+                );
+            };
+            let Some(frontier) = project
+                .body
+                .project
+                .frontiers
+                .iter()
+                .find(|frontier| frontier.claim_fiber().as_str() == fiber_sha256)
+            else {
+                return (
+                    false,
+                    format!(
+                        "exact claim fiber is absent from {}:{}",
+                        matrix.plan.coordinate.crate_name, matrix.plan.coordinate.target
+                    ),
+                );
+            };
+            if !matches!(
+                frontier.scope(),
+                ProjectPortraitScopeV2::WholeProject { .. }
+            ) {
+                return (
+                    false,
+                    format!(
+                        "exact claim fiber lacks a checked ProjectLift in {}:{}",
+                        matrix.plan.coordinate.crate_name, matrix.plan.coordinate.target
+                    ),
+                );
+            }
+            let dominates = match frontier.common_claim_frontier() {
+                CommonClaimFrontierV2::NoItems => false,
+                CommonClaimFrontierV2::Frontier(actual) => actual
+                    .iter()
+                    .any(|actual| assurance_kind_leq(minimum, *actual)),
+            };
+            if !dominates {
+                return (
+                    false,
+                    format!(
+                        "live common-claim frontier does not dominate the floor in {}:{}",
+                        matrix.plan.coordinate.crate_name, matrix.plan.coordinate.target
+                    ),
+                );
+            }
+        }
+        (
+            true,
+            "every exact build-matrix cell has a checked ProjectLift whose live common-claim frontier dominates the floor".into(),
+        )
+    }
+
+    pub(crate) fn plan_sha256(&self) -> String {
+        self.report.body.plan.identity_digest()
+    }
+
+    pub(crate) fn collapse_policy_version(&self) -> u64 {
+        self.report.body.collapse_policy_version
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_collapse_policy_version_for_test(&mut self, version: u64) {
+        self.report.body.collapse_policy_version = version;
+    }
+
+    pub(crate) fn revision(&self) -> &str {
+        &self.report.body.revision
+    }
+
+    pub(crate) fn trust(&self) -> &ReportTrust {
+        &self.report.body.trust
+    }
 }
 
 fn workspace_item(

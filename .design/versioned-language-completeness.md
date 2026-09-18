@@ -1,6 +1,6 @@
 # Feature: Versioned Language-Wide Soundness and Completeness
 
-audited-content-sha256: b1ea0b52293a661d1632bd374039c4db805ece6c6f1ac02f0d4e8199eeb111e0 (re-pinned 2026-09-18 after rematerializing the 598-claim fixed point for the reviewed CLI follow-up. prior: 1317a9237ecea4bf0cf8ccd3f26b75c5b9130f95f6b8132a63f0dadaeb457e09)
+audited-content-sha256: d114db2e0c48864387c0517e70dcefd38bc65140cf8d987bf39ab0a3fbda3be8 (re-pinned 2026-09-18 after the adversarial-review migration hardening rematerialization. prior: 7bf47b387ec959155b52ce2135527710ec1c4d4572e254f0ce038ee3de0e20a1)
 
 ## Summary
 

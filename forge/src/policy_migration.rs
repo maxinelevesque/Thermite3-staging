@@ -2,7 +2,9 @@
 //!
 //! The Lean `PolicyVersionMigration` theorem is authority. This receipt binds a
 //! reviewed theorem name to exact versions and the closed six-family order
-//! isomorphism used by diagnostic report comparison.
+//! isomorphism used by diagnostic report comparison. Until Rust replays
+//! Lean's population-admissibility law directly, compatible receipts are
+//! restricted to identity-on-kind version renames.
 
 use crate::assurance_v2::{assurance_kind_leq, AssuranceKindV2, ALL_ASSURANCE_KINDS_V2};
 use serde::{Deserialize, Serialize};
@@ -184,6 +186,15 @@ impl PolicyMigrationReceiptV1 {
                 "policy migration loses information between formal families".into(),
             ));
         }
+        if ALL_ASSURANCE_KINDS_V2
+            .iter()
+            .any(|kind| mapping.get(kind) != Some(kind))
+        {
+            return Err(PolicyMigrationError(
+                "policy migration changes formal kind semantics; only identity-on-kind version renames are accepted"
+                    .into(),
+            ));
+        }
         for left in ALL_ASSURANCE_KINDS_V2 {
             for right in ALL_ASSURANCE_KINDS_V2 {
                 let translated_left = mapping[&left];
@@ -304,6 +315,22 @@ mod tests {
         incompatible.disposition = PolicyMigrationDisposition::Incompatible;
         incompatible.reseal();
         assert!(incompatible.validate(1, 2).is_err());
+    }
+
+    #[test]
+    fn order_automorphism_that_changes_kind_semantics_fails_closed() {
+        let mut relabeled = receipt();
+        for row in &mut relabeled.rows {
+            row.target = match row.source {
+                AssuranceKindV2::SolverComplete => AssuranceKindV2::LeanEmpirical,
+                AssuranceKindV2::LeanEmpirical => AssuranceKindV2::SolverComplete,
+                kind => kind,
+            };
+        }
+        relabeled.reseal();
+
+        let error = relabeled.validate(1, 2).unwrap_err();
+        assert!(error.0.contains("identity-on-kind"));
     }
 
     #[derive(Deserialize)]

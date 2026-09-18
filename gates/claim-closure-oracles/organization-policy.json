@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "probe": "organization-policy",
+  "cases": [
+    {"id": "organization-policy-rust", "expected_exit": 0},
+    {"id": "organization-policy-cli", "expected_exit": 0},
+    {"id": "organization-policy-lean", "expected_exit": 0},
+    {"id": "organization-policy-replay", "expected_exit": 0},
+    {"id": "organization-policy-authority-boundary", "expected_exit": 0}
+  ]
+}

@@ -403,6 +403,17 @@ enum Command {
         base_sha: Option<String>,
         out_comparison: Option<PathBuf>,
     },
+    /// `forge assurance --organization-plan <plan.json>` evaluates versioned
+    /// organization policy packages from protected exact-SHA live workspaces.
+    AssuranceOrganization {
+        plan: PathBuf,
+        repository_workspaces: Vec<String>,
+        policies: Vec<PathBuf>,
+        policy_migration: Option<PathBuf>,
+        evaluation_epoch: u64,
+        json: bool,
+        out_json: Option<PathBuf>,
+    },
     /// `forge repair <file> [item]` — the background L1/L2 → L3 upgrade loop
     /// (issue #18; `.design/forge/proof-repair.md` REQ-1). Re-derives the per-item
     /// certs at the default budget, finds the sub-L3 items, and for a timeout item
@@ -905,8 +916,13 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
         ForgeMethod::Assurance => {
             let mut file = None;
             let mut workspace_plan = None;
+            let mut organization_plan = None;
+            let mut organization_policies = Vec::new();
+            let mut repository_workspaces = Vec::new();
+            let mut evaluation_epoch = None;
             let mut revision = None;
             let mut trust = ReportTrust::LocalDiagnostic;
+            let mut trust_explicit = false;
             let mut json = false;
             let mut html = false;
             let mut items = false;
@@ -926,6 +942,38 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                             ForgeError::Usage("`--workspace-plan` requires a path".into())
                         })?));
                     }
+                    "--organization-plan" => {
+                        organization_plan = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                            ForgeError::Usage("`--organization-plan` requires a path".into())
+                        })?));
+                    }
+                    "--organization-policy" => {
+                        organization_policies.push(PathBuf::from(iter.next().ok_or_else(
+                            || ForgeError::Usage("`--organization-policy` requires a path".into()),
+                        )?));
+                    }
+                    "--repository-workspace" => {
+                        repository_workspaces.push(
+                            iter.next()
+                                .ok_or_else(|| {
+                                    ForgeError::Usage(
+                                        "`--repository-workspace` requires REPOSITORY=PLAN.json"
+                                            .into(),
+                                    )
+                                })?
+                                .clone(),
+                        );
+                    }
+                    "--evaluation-epoch" => {
+                        let raw = iter.next().ok_or_else(|| {
+                            ForgeError::Usage("`--evaluation-epoch` requires an integer".into())
+                        })?;
+                        evaluation_epoch = Some(raw.parse::<u64>().map_err(|_| {
+                            ForgeError::Usage(
+                                "`--evaluation-epoch` requires an unsigned integer".into(),
+                            )
+                        })?);
+                    }
                     "--revision" => {
                         revision = Some(
                             iter.next()
@@ -936,6 +984,7 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                         );
                     }
                     "--trust" => {
+                        trust_explicit = true;
                         trust = match iter.next().map(String::as_str) {
                             Some("local") => ReportTrust::LocalDiagnostic,
                             Some("pr") => ReportTrust::UntrustedPullRequest,
@@ -1035,9 +1084,57 @@ fn parse_args(args: &[String]) -> Result<Command, ForgeError> {
                     "`--out-comparison` requires `--compare` and `--base-sha`".into(),
                 ));
             }
-            if policy_migration.is_some() && compare.is_none() {
+            if policy_migration.is_some() && compare.is_none() && organization_plan.is_none() {
                 return Err(ForgeError::Usage(
                     "`--policy-migration` requires `--compare` and `--base-sha`".into(),
+                ));
+            }
+            if let Some(plan) = organization_plan {
+                if file.is_some()
+                    || workspace_plan.is_some()
+                    || revision.is_some()
+                    || trust_explicit
+                    || html
+                    || items
+                    || explain.is_some()
+                    || out_html.is_some()
+                    || compare.is_some()
+                    || base_sha.is_some()
+                    || out_comparison.is_some()
+                    || floor.is_some()
+                {
+                    return Err(ForgeError::Usage(
+                        "organization assurance accepts --repository-workspace, --organization-policy, optional --policy-migration, --evaluation-epoch, --json, and --out-json only"
+                            .into(),
+                    ));
+                }
+                if repository_workspaces.is_empty() || organization_policies.is_empty() {
+                    return Err(ForgeError::Usage(
+                        "organization assurance requires at least one --repository-workspace and --organization-policy"
+                            .into(),
+                    ));
+                }
+                return Ok(Command::AssuranceOrganization {
+                    plan,
+                    repository_workspaces,
+                    policies: organization_policies,
+                    policy_migration,
+                    evaluation_epoch: evaluation_epoch.ok_or_else(|| {
+                        ForgeError::Usage(
+                            "organization assurance requires --evaluation-epoch".into(),
+                        )
+                    })?,
+                    json,
+                    out_json,
+                });
+            }
+            if !organization_policies.is_empty()
+                || !repository_workspaces.is_empty()
+                || evaluation_epoch.is_some()
+            {
+                return Err(ForgeError::Usage(
+                    "organization policy, repository workspace, and evaluation epoch flags require `--organization-plan`"
+                        .into(),
                 ));
             }
             if let Some(plan) = workspace_plan {
@@ -2076,6 +2173,23 @@ fn dispatch(args: &[String]) -> Result<ExitCode, ForgeError> {
             base_sha: base_sha.as_deref(),
             out_comparison: out_comparison.as_deref(),
         }),
+        Command::AssuranceOrganization {
+            plan,
+            repository_workspaces,
+            policies,
+            policy_migration,
+            evaluation_epoch,
+            json,
+            out_json,
+        } => run_organization_assurance(OrganizationAssuranceRun {
+            plan: &plan,
+            repository_workspaces: &repository_workspaces,
+            policies: &policies,
+            policy_migration: policy_migration.as_deref(),
+            evaluation_epoch,
+            json,
+            out_json: out_json.as_deref(),
+        }),
         Command::Repair { file, item, json } => run_repair(&file, item.as_deref(), json),
         Command::Review {
             file,
@@ -2727,27 +2841,12 @@ fn workspace_report_error(error: crate::workspace_assurance::WorkspaceReportErro
     }
 }
 
-/// Build one live project portrait per independently declared matrix cell and
-/// compose them without allowing a missing cell to disappear from the
-/// denominator. Serialized workspace reports are comparison data only.
-fn run_workspace_assurance(options: WorkspaceAssuranceRun<'_>) -> Result<ExitCode, ForgeError> {
-    if options.compare.is_some() != options.base_sha.is_some() {
-        return Err(ForgeError::Usage(
-            "`--compare` and `--base-sha` must be supplied together".into(),
-        ));
-    }
-    if options.out_comparison.is_some() && options.compare.is_none() {
-        return Err(ForgeError::Usage(
-            "`--out-comparison` requires `--compare` and `--base-sha`".into(),
-        ));
-    }
-    let plan_bytes = std::fs::read(options.plan).map_err(|source| ForgeError::Io {
-        path: options.plan.display().to_string(),
-        source,
-    })?;
-    let plan = crate::workspace_assurance::parse_workspace_plan_json(&plan_bytes)
-        .map_err(workspace_report_error)?;
-    let verus_version = audit::resolve_verus_version()?;
+fn build_live_workspace_from_plan(
+    plan: crate::workspace_assurance::WorkspacePlanV1,
+    revision: &str,
+    trust: ReportTrust,
+    verus_version: &str,
+) -> Result<crate::workspace_assurance::LiveWorkspaceAssuranceReportV1, ForgeError> {
     let mut project_reports = Vec::with_capacity(plan.matrices.len());
     for matrix in &plan.matrices {
         let path = Path::new(&matrix.source_path);
@@ -2789,22 +2888,42 @@ fn run_workspace_assurance(options: WorkspaceAssuranceRun<'_>) -> Result<ExitCod
                 &parsed.program,
                 &matrix.source_path,
                 &source,
-                options.revision,
-                options.trust.clone(),
-                audit::Toolchain::new(verus_version.clone()),
+                revision,
+                trust.clone(),
+                audit::Toolchain::new(verus_version.to_string()),
                 matrix.coordinate.clone(),
             )
             .map_err(report_error)?,
         );
     }
     let references = project_reports.iter().collect::<Vec<_>>();
-    let live = crate::workspace_assurance::build_live_workspace_report(
-        plan,
-        &references,
-        options.revision,
-        options.trust,
-    )
-    .map_err(workspace_report_error)?;
+    crate::workspace_assurance::build_live_workspace_report(plan, &references, revision, trust)
+        .map_err(workspace_report_error)
+}
+
+/// Build one live project portrait per independently declared matrix cell and
+/// compose them without allowing a missing cell to disappear from the
+/// denominator. Serialized workspace reports are comparison data only.
+fn run_workspace_assurance(options: WorkspaceAssuranceRun<'_>) -> Result<ExitCode, ForgeError> {
+    if options.compare.is_some() != options.base_sha.is_some() {
+        return Err(ForgeError::Usage(
+            "`--compare` and `--base-sha` must be supplied together".into(),
+        ));
+    }
+    if options.out_comparison.is_some() && options.compare.is_none() {
+        return Err(ForgeError::Usage(
+            "`--out-comparison` requires `--compare` and `--base-sha`".into(),
+        ));
+    }
+    let plan_bytes = std::fs::read(options.plan).map_err(|source| ForgeError::Io {
+        path: options.plan.display().to_string(),
+        source,
+    })?;
+    let plan = crate::workspace_assurance::parse_workspace_plan_json(&plan_bytes)
+        .map_err(workspace_report_error)?;
+    let verus_version = audit::resolve_verus_version()?;
+    let live =
+        build_live_workspace_from_plan(plan, options.revision, options.trust, &verus_version)?;
     let report = live.report();
     let json = report.normalized_json().map_err(workspace_report_error)?;
     if let Some(path) = options.out_json {
@@ -2844,6 +2963,165 @@ fn run_workspace_assurance(options: WorkspaceAssuranceRun<'_>) -> Result<ExitCod
         eprintln!("workspace comparison:\n{rendered}");
     }
     Ok(ExitCode::SUCCESS)
+}
+
+struct OrganizationAssuranceRun<'a> {
+    plan: &'a Path,
+    repository_workspaces: &'a [String],
+    policies: &'a [PathBuf],
+    policy_migration: Option<&'a Path>,
+    evaluation_epoch: u64,
+    json: bool,
+    out_json: Option<&'a Path>,
+}
+
+fn organization_policy_error(
+    error: crate::organization_assurance::OrganizationPolicyError,
+) -> ForgeError {
+    ForgeError::AssuranceReport { detail: error.0 }
+}
+
+/// Rebuild every independently named repository workspace at its protected
+/// exact revision, then evaluate the organization package chain in-process.
+/// Serialized project/workspace reports are never admitted here.
+fn run_organization_assurance(
+    options: OrganizationAssuranceRun<'_>,
+) -> Result<ExitCode, ForgeError> {
+    let plan_bytes = std::fs::read(options.plan).map_err(|source| ForgeError::Io {
+        path: options.plan.display().to_string(),
+        source,
+    })?;
+    let plan = crate::organization_assurance::parse_organization_plan_json(&plan_bytes)
+        .map_err(organization_policy_error)?;
+    let mut workspace_paths = std::collections::BTreeMap::new();
+    for binding in options.repository_workspaces {
+        let (repository, path) = binding.split_once('=').ok_or_else(|| {
+            ForgeError::Usage(
+                "`--repository-workspace` must be REPOSITORY=WORKSPACE-PLAN.json".into(),
+            )
+        })?;
+        if repository.is_empty() || path.is_empty() {
+            return Err(ForgeError::Usage(
+                "`--repository-workspace` must have nonempty repository and path".into(),
+            ));
+        }
+        if workspace_paths
+            .insert(repository.to_string(), PathBuf::from(path))
+            .is_some()
+        {
+            return Err(ForgeError::Usage(format!(
+                "duplicate workspace binding for repository {repository}"
+            )));
+        }
+    }
+    let expected = plan
+        .repositories
+        .iter()
+        .map(|repository| repository.repository.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let actual = workspace_paths
+        .keys()
+        .map(String::as_str)
+        .collect::<std::collections::BTreeSet<_>>();
+    if expected != actual {
+        return Err(ForgeError::Usage(
+            "repository workspace bindings must exactly equal the organization plan".into(),
+        ));
+    }
+    let verus_version = audit::resolve_verus_version()?;
+    let mut live_workspaces = Vec::with_capacity(plan.repositories.len());
+    for repository in &plan.repositories {
+        let path = &workspace_paths[&repository.repository];
+        let bytes = std::fs::read(path).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
+        let workspace_plan = crate::workspace_assurance::parse_workspace_plan_json(&bytes)
+            .map_err(workspace_report_error)?;
+        if workspace_plan.identity_digest() != repository.workspace_plan_sha256 {
+            return Err(ForgeError::AssuranceReport {
+                detail: format!(
+                    "workspace plan for {} does not match the organization plan digest",
+                    repository.repository
+                ),
+            });
+        }
+        live_workspaces.push(build_live_workspace_from_plan(
+            workspace_plan,
+            &repository.revision,
+            ReportTrust::ProtectedExactSha,
+            &verus_version,
+        )?);
+    }
+    let live_inputs = plan
+        .repositories
+        .iter()
+        .zip(&live_workspaces)
+        .map(|(repository, workspace)| {
+            crate::organization_assurance::LiveOrganizationRepositoryV1 {
+                repository: repository.repository.clone(),
+                workspace,
+            }
+        })
+        .collect::<Vec<_>>();
+    let mut packages = Vec::with_capacity(options.policies.len());
+    for path in options.policies {
+        let bytes = std::fs::read(path).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
+        packages.push(
+            crate::organization_assurance::parse_policy_package_json(&bytes)
+                .map_err(organization_policy_error)?,
+        );
+    }
+    let migrations = if let Some(path) = options.policy_migration {
+        let bytes = std::fs::read(path).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
+        vec![
+            crate::policy_migration::parse_policy_migration_json(&bytes).map_err(|error| {
+                ForgeError::AssuranceReport {
+                    detail: error.to_string(),
+                }
+            })?,
+        ]
+    } else {
+        Vec::new()
+    };
+    let evaluation = crate::organization_assurance::evaluate_organization_policy(
+        &plan,
+        &packages,
+        &live_inputs,
+        &migrations,
+        options.evaluation_epoch,
+    )
+    .map_err(organization_policy_error)?;
+    let json = evaluation
+        .normalized_json()
+        .map_err(organization_policy_error)?;
+    if let Some(path) = options.out_json {
+        std::fs::write(path, &json).map_err(|source| ForgeError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
+    }
+    if options.json {
+        print!("{json}");
+    } else {
+        println!(
+            "Organization formal floor: {} ({} exact floor(s), evaluation {})",
+            if evaluation.passed { "PASS" } else { "FAIL" },
+            evaluation.floors.len(),
+            &evaluation.evaluation_sha256[..12]
+        );
+    }
+    Ok(if evaluation.passed {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(EXIT_VERIFICATION_FAILURE)
+    })
 }
 
 /// Run `forge audit`: emit the project audit manifest v1 (#15;
@@ -4892,6 +5170,61 @@ mod tests {
                 "workspace.json",
                 "--revision",
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ])),
+            Err(ForgeError::Usage(_))
+        ));
+    }
+
+    #[test]
+    fn parses_organization_assurance() {
+        let command = parse_args(&argv(&[
+            "assurance",
+            "--organization-plan",
+            "organization.json",
+            "--repository-workspace",
+            "acme/alpha=alpha-workspace.json",
+            "--repository-workspace",
+            "acme/beta=beta-workspace.json",
+            "--organization-policy",
+            "root-policy.json",
+            "--organization-policy",
+            "child-policy.json",
+            "--policy-migration",
+            "migration.json",
+            "--evaluation-epoch",
+            "42",
+            "--json",
+            "--out-json",
+            "evaluation.json",
+        ]))
+        .unwrap();
+        assert_eq!(
+            command,
+            Command::AssuranceOrganization {
+                plan: PathBuf::from("organization.json"),
+                repository_workspaces: vec![
+                    "acme/alpha=alpha-workspace.json".into(),
+                    "acme/beta=beta-workspace.json".into(),
+                ],
+                policies: vec![
+                    PathBuf::from("root-policy.json"),
+                    PathBuf::from("child-policy.json"),
+                ],
+                policy_migration: Some(PathBuf::from("migration.json")),
+                evaluation_epoch: 42,
+                json: true,
+                out_json: Some(PathBuf::from("evaluation.json")),
+            }
+        );
+        assert!(matches!(
+            parse_args(&argv(&[
+                "assurance",
+                "--organization-plan",
+                "organization.json",
+                "--organization-policy",
+                "root-policy.json",
+                "--evaluation-epoch",
+                "42"
             ])),
             Err(ForgeError::Usage(_))
         ));

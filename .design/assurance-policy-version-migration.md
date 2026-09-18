@@ -1,6 +1,6 @@
 # Feature: Checked assurance policy-version migration
 
-audited-content-sha256: 1a2f909af51771dda88369116c0dda1e5c9382e647f1a0e2c576d750c6c83e75 (initial implementation audit 2026-09-17)
+audited-content-sha256: 7d0df445db5341005b5f04f2f5c6cc5e7f260e63be306d754881fc011904429b (identity-on-kind semantic hardening after organization-policy adversarial review)
 
 ## Summary
 
@@ -38,7 +38,10 @@ migration cannot produce a strengthened or weakened code verdict.
   and target policy versions, all six source-to-target family rows, the named
   Lean witness, and a canonical digest over those fields.  Validation shall
   reject reverse/equal endpoints, duplicates, omissions, unknown kinds,
-  non-monotone or non-reflecting maps, empty witnesses, and digest tampering.
+  non-monotone or non-reflecting maps, semantics-changing family relabelings,
+  empty witnesses, and digest tampering. Until Rust directly replays Lean's
+  population-admissibility law, checked-compatible receipts shall be
+  identity-on-kind version renames.
 - REQ-7: Report comparison shall continue to require the exact base revision,
   schema equality, structural report validation, and exact source/target policy
   versions.  It shall compare only after a validated migration translates the
@@ -63,7 +66,8 @@ migration cannot produce a strengthened or weakened code verdict.
   identity, and composition laws without new axioms.
 - [x] AC-2: Deleting one family row, changing one target family, changing an
   endpoint, or reversing the edge makes the Rust receipt invalid and the Lean
-  replay row reject.
+  replay row reject. Even a bijective order automorphism is rejected when it
+  changes kind semantics.
 - [x] AC-3: A report pair with different policy versions remains `policy_skew`
   under the existing comparison API and becomes comparable only through the
   new API with an exact validated witness.

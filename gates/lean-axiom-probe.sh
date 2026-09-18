@@ -74,6 +74,8 @@ IMPORTS=(
   "Thermite.PolicyMigrationReplay"
   "Thermite.WorkspaceComposition"
   "Thermite.WorkspaceCompositionReplay"
+  "Thermite.OrganizationPolicy"
+  "Thermite.OrganizationPolicyReplay"
   "Thermite.Interference"
   "Thermite.Protocol"
 )

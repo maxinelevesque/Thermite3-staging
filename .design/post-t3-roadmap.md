@@ -415,17 +415,21 @@ reviewed head `906213f3b5d88e5938dbafbd97287afc5c173631`, with green required CI
 run `35319407570`; main advanced to
 `bc99a3ccbb7ed210542a104d9b6110a5d48e8b07`, and issue #59 is closed.
 
-#60 is therefore the active implementation boundary.  It composes the current
-typed project authority over an independently declared canonical
+#60 landed through PR #174 at reviewed head
+`b27c189f4b3df4df7d4fa14ebace62c77c57f3ff`; main advanced to
+`432b06f103ba7e9877ce338ad7f8e903f40a9367`, and issue #60 is closed. It
+composes typed project authority over an independently declared canonical
 package/target/feature/platform/generated-source matrix, retaining missing
 matrix cells as explicit non-claims and admitting a workspace conjunction only
-from live checked project lifts.  #63 remains the sole next product-spine
-consumer: organization inheritance, exceptions, expiry, ownership, and
-cross-repository formal floors are deliberately not folded into #60.
+from live checked project lifts. #63 is now the active product-spine boundary:
+versioned organization inheritance, exact-scope delegation and exceptions,
+expiry, ownership, checked policy normalization, and cross-repository formal
+floors consume the completed #59/#60 layers without admitting presentation
+fields.
 
 ```text
-#59 landed -> #60 workspace/build-matrix populations (active)
-           -> #63 organization-level floors
+#59 landed -> #60 workspace/build-matrix populations landed
+           -> #63 organization-level floors (active)
            -> release and research reassessment
 ```
 

@@ -10414,6 +10414,12 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 [[assignment]]
 bucket = 8
 seconds = 0.007
+test = "forge::bin/forge policy_migration::tests::order_automorphism_that_changes_kind_semantics_fails_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 8
+seconds = 0.007
 test = "forge::bin/forge workspace_assurance::tests::composition_is_input_order_invariant_and_duplicates_fail_closed"
 timing_provenance = "reviewed_local_estimate_after_baseline"
 
@@ -10445,4 +10451,34 @@ timing_provenance = "reviewed_local_estimate_after_baseline"
 bucket = 1
 seconds = 0.050
 test = "forge::bin/forge cli::tests::workspace_assurance_runtime_checks_io_inventory_and_comparison_contract"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 2
+seconds = 0.007
+test = "forge::bin/forge organization_assurance::tests::exact_live_common_claims_are_the_only_floor_authority"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 3
+seconds = 0.007
+test = "forge::bin/forge organization_assurance::tests::inheritance_delegation_exceptions_expiry_and_conflicts_fail_closed"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 4
+seconds = 0.007
+test = "forge::bin/forge organization_assurance::tests::missing_population_skew_forgery_and_undelegated_changes_are_rejected"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "forge::bin/forge organization_assurance::tests::checked_policy_normalization_is_required_and_preserves_the_exact_floor"
+timing_provenance = "reviewed_local_estimate_after_baseline"
+
+[[assignment]]
+bucket = 5
+seconds = 0.007
+test = "forge::bin/forge cli::tests::parses_organization_assurance"
 timing_provenance = "reviewed_local_estimate_after_baseline"

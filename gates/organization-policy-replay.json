@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "outcomes": ["passed", "excepted", "failed", "rejected"],
+  "case": [
+    {"id":"exact-floor","exact_scope":true,"checked_normalization":true,"delegated_owner":true,"lifts_present":true,"floor_dominated":true,"exception_active":false,"conflict_free":true,"outcome":"passed"},
+    {"id":"active-exception","exact_scope":true,"checked_normalization":true,"delegated_owner":true,"lifts_present":true,"floor_dominated":false,"exception_active":true,"conflict_free":true,"outcome":"excepted"},
+    {"id":"expired-exception","exact_scope":true,"checked_normalization":true,"delegated_owner":true,"lifts_present":true,"floor_dominated":false,"exception_active":false,"conflict_free":true,"outcome":"failed"},
+    {"id":"missing-project-lift","exact_scope":true,"checked_normalization":true,"delegated_owner":true,"lifts_present":false,"floor_dominated":true,"exception_active":false,"conflict_free":true,"outcome":"failed"},
+    {"id":"missing-repository","exact_scope":false,"checked_normalization":true,"delegated_owner":true,"lifts_present":true,"floor_dominated":true,"exception_active":false,"conflict_free":true,"outcome":"rejected"},
+    {"id":"schema-skew","exact_scope":true,"checked_normalization":false,"delegated_owner":true,"lifts_present":true,"floor_dominated":true,"exception_active":false,"conflict_free":true,"outcome":"rejected"},
+    {"id":"policy-skew-no-transport","exact_scope":true,"checked_normalization":false,"delegated_owner":true,"lifts_present":true,"floor_dominated":true,"exception_active":false,"conflict_free":true,"outcome":"rejected"},
+    {"id":"undelegated-owner","exact_scope":true,"checked_normalization":true,"delegated_owner":false,"lifts_present":true,"floor_dominated":true,"exception_active":false,"conflict_free":true,"outcome":"rejected"},
+    {"id":"incomparable-inheritance","exact_scope":true,"checked_normalization":true,"delegated_owner":true,"lifts_present":true,"floor_dominated":true,"exception_active":false,"conflict_free":false,"outcome":"rejected"},
+    {"id":"forged-package","exact_scope":false,"checked_normalization":true,"delegated_owner":true,"lifts_present":true,"floor_dominated":true,"exception_active":false,"conflict_free":true,"outcome":"rejected"},
+    {"id":"empty-population","exact_scope":true,"checked_normalization":true,"delegated_owner":true,"lifts_present":false,"floor_dominated":false,"exception_active":false,"conflict_free":true,"outcome":"failed"},
+    {"id":"checked-policy-normalization","exact_scope":true,"checked_normalization":true,"delegated_owner":true,"lifts_present":true,"floor_dominated":true,"exception_active":false,"conflict_free":true,"outcome":"passed"}
+  ]
+}
